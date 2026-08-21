@@ -8,90 +8,246 @@
 // logic remains authoritative for resolving the parent Dairy,
 // storage facility and actual storage allocation.
 //
+// STORAGE TYPES:
+//     "room"
+//     "agroStore"
+//
+// IMPORTANT:
+//     "agroStore" is the exact database value.
+//     Do NOT change it to "agrostore".
+//     Do NOT use toLowerCase().
+//
 // ==========================================================
+
 
 const storageListService = require("./list");
 const storageContentsService = require("./contents");
 
 
+/* ============================================================
+   SERVICE ERROR
+============================================================ */
+
 function serviceError(message, statusCode = 400) {
-    const error = new Error(message);
-    error.statusCode = statusCode;
+
+    const error =
+        new Error(message);
+
+    error.statusCode =
+        statusCode;
+
     return error;
 }
 
 
+/* ============================================================
+   CLEAN VALUE
+============================================================ */
+
 function clean(value) {
-    return typeof value === "string" ? value.trim() : value;
+
+    return typeof value === "string"
+        ? value.trim()
+        : value;
+
 }
 
+
+/* ============================================================
+   NUMBER OR UNDEFINED
+============================================================ */
 
 function numberOrUndefined(value) {
-    if (value === undefined || value === null || value === "") {
+
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+
         return undefined;
+
     }
 
-    const number = Number(value);
 
-    if (!Number.isFinite(number)) {
-        throw serviceError("Numeric fields must contain valid numbers.");
+    const number =
+        Number(value);
+
+
+    if (
+        !Number.isFinite(number)
+    ) {
+
+        throw serviceError(
+            "Numeric fields must contain valid numbers."
+        );
+
     }
+
 
     return number;
+
 }
 
+
+/* ============================================================
+   STORAGE TYPE
+============================================================ */
+
+/*
+IMPORTANT:
+
+The database uses the exact storage types:
+
+    "room"
+    "agroStore"
+
+We intentionally do NOT call toLowerCase().
+
+This preserves the database value exactly.
+*/
 
 function getStorageType(storage) {
-    return clean(storage?.type);
+
+    return clean(
+        storage?.type
+    );
+
 }
 
+
+/* ============================================================
+   GET DAIRY BREEDS
+============================================================ */
 
 function getBreeds(dairy) {
-    if (Array.isArray(dairy?.dairyBreeds)) return dairy.dairyBreeds;
-    if (Array.isArray(dairy?.breeds)) return dairy.breeds;
-    if (Array.isArray(dairy?.breed)) return dairy.breed;
+
+    if (
+        Array.isArray(dairy?.dairyBreeds)
+    ) {
+
+        return dairy.dairyBreeds;
+
+    }
+
+
+    if (
+        Array.isArray(dairy?.breeds)
+    ) {
+
+        return dairy.breeds;
+
+    }
+
+
+    if (
+        Array.isArray(dairy?.breed)
+    ) {
+
+        return dairy.breed;
+
+    }
+
+
     return [];
+
 }
 
+
+/* ============================================================
+   CALL SERVICE
+============================================================ */
+
+/*
+Allows this adapter to work with the existing storage service
+without assuming one exact function signature.
+
+Only genuine argument/signature mismatches cause the next
+candidate signature to be attempted.
+
+Application/database errors are allowed to propagate.
+*/
 
 async function callService(fn, candidates) {
 
-    if (typeof fn !== "function") {
+    if (
+        typeof fn !== "function"
+    ) {
+
         throw serviceError(
             "The required storage service operation is not available.",
             500
         );
+
     }
+
 
     let lastError;
 
-    for (const args of candidates) {
-        try {
-            return await fn(...args);
-        } catch (error) {
-            lastError = error;
 
-            // Only fall through for argument/signature mismatches.
-            // Application validation/database errors must propagate.
-            const message = String(error?.message || "");
+    for (
+        const args of candidates
+    ) {
+
+        try {
+
+            return await fn(...args);
+
+        } catch (error) {
+
+            lastError =
+                error;
+
+
+            /*
+            ----------------------------------------------------
+            Only fall through for argument/signature mismatches.
+            ----------------------------------------------------
+            */
+
+            const message =
+                String(
+                    error?.message || ""
+                );
+
 
             const signatureMismatch =
                 error?.code === "ERR_INVALID_ARG_TYPE" ||
-                message.includes("Cannot read properties of undefined") ||
-                message.includes("is not a function");
+                message.includes(
+                    "Cannot read properties of undefined"
+                ) ||
+                message.includes(
+                    "is not a function"
+                );
 
-            if (!signatureMismatch) {
+
+            if (
+                !signatureMismatch
+            ) {
+
                 throw error;
+
             }
+
         }
+
     }
 
-    throw lastError || serviceError(
-        "Storage service invocation failed.",
-        500
+
+    throw (
+        lastError ||
+        serviceError(
+            "Storage service invocation failed.",
+            500
+        )
     );
+
 }
 
+
+/* ============================================================
+   RESOLVE PARENT DAIRY
+============================================================ */
 
 async function resolveParentDairy(dairyId) {
 
@@ -102,14 +258,23 @@ async function resolveParentDairy(dairyId) {
             [{ dairyId }]
         ]
     );
+
 }
 
 
-async function resolveStorage(dairyId, storageId) {
+/* ============================================================
+   RESOLVE STORAGE
+============================================================ */
+
+async function resolveStorage(
+    dairyId,
+    storageId
+) {
 
     const fn =
         storageListService.getStorageFacility ||
         storageListService.getStorage;
+
 
     return callService(
         fn,
@@ -120,126 +285,490 @@ async function resolveStorage(dairyId, storageId) {
             [storageId]
         ]
     );
+
 }
 
 
-async function getAddNewContext({ dairyId, storageId }) {
+/* ============================================================
+   GET ADD NEW CONTEXT
+============================================================ */
 
-    if (!dairyId || !storageId) {
+async function getAddNewContext({
+    dairyId,
+    storageId
+}) {
+
+    /*
+    ------------------------------------------------------------
+    Required identifiers
+    ------------------------------------------------------------
+    */
+
+    if (
+        !dairyId ||
+        !storageId
+    ) {
+
         throw serviceError(
             "Dairy and storage identifiers are required.",
             400
         );
+
     }
 
-    const dairy = await resolveParentDairy(dairyId);
-    const storage = await resolveStorage(dairyId, storageId);
 
-    if (!dairy) {
-        throw serviceError("Dairy Farm not found.", 404);
+    /*
+    ------------------------------------------------------------
+    Resolve parent Dairy
+    ------------------------------------------------------------
+    */
+
+    const dairy =
+        await resolveParentDairy(
+            dairyId
+        );
+
+
+    /*
+    ------------------------------------------------------------
+    Resolve storage facility
+    ------------------------------------------------------------
+    */
+
+    const storage =
+        await resolveStorage(
+            dairyId,
+            storageId
+        );
+
+
+    /*
+    ------------------------------------------------------------
+    Validate Dairy
+    ------------------------------------------------------------
+    */
+
+    if (
+        !dairy
+    ) {
+
+        throw serviceError(
+            "Dairy Farm not found.",
+            404
+        );
+
     }
 
-    if (!storage) {
-        throw serviceError("Storage facility not found.", 404);
+
+    /*
+    ------------------------------------------------------------
+    Validate storage
+    ------------------------------------------------------------
+    */
+
+    if (
+        !storage
+    ) {
+
+        throw serviceError(
+            "Storage facility not found.",
+            404
+        );
+
     }
 
-    const storageType = getStorageType(storage);
 
-    if (!["room", "agrostore"].includes(storageType)) {
+    /*
+    ------------------------------------------------------------
+    Resolve exact storage type
+    ------------------------------------------------------------
+    */
+
+    const storageType =
+        getStorageType(
+            storage
+        );
+
+
+    /*
+    ------------------------------------------------------------
+    SUPPORTED STORAGE TYPES
+    ------------------------------------------------------------
+
+    Exact database values:
+
+        room
+        agroStore
+
+    DO NOT change agroStore to agrostore.
+    ------------------------------------------------------------
+    */
+
+    if (
+        ![
+            "room",
+            "agroStore"
+        ].includes(storageType)
+    ) {
+
         throw serviceError(
             "This storage facility has an unsupported storage type.",
             400
         );
+
     }
+
+
+    /*
+    ------------------------------------------------------------
+    Return complete context
+    ------------------------------------------------------------
+    */
 
     return {
+
         dairy,
+
         storage,
+
         storageType,
-        dairyBreeds: getBreeds(dairy)
+
+        dairyBreeds:
+            getBreeds(dairy)
+
     };
+
 }
 
 
-function validateAndNormalize({ body, storageType }) {
+/* ============================================================
+   VALIDATE AND NORMALIZE
+============================================================ */
 
-    const data = { ...body };
+function validateAndNormalize({
+    body,
+    storageType
+}) {
 
-    const name = clean(data.name);
+    const data =
+        {
+            ...body
+        };
 
-    if (!name) {
-        throw serviceError("Name is required.");
+
+    /* ========================================================
+       NAME
+    ======================================================== */
+
+    const name =
+        clean(
+            data.name
+        );
+
+
+    if (
+        !name
+    ) {
+
+        throw serviceError(
+            "Name is required."
+        );
+
     }
 
-    data.name = name;
 
-    data.buyingPrice = numberOrUndefined(data.buyingPrice);
-    data.currentWorth = numberOrUndefined(data.currentWorth);
-    data.mass = numberOrUndefined(data.mass);
+    data.name =
+        name;
 
-    if (data.buyingPrice !== undefined && data.buyingPrice < 0) {
-        throw serviceError("Buying Price cannot be negative.");
+
+    /* ========================================================
+       NUMERIC FIELDS
+    ======================================================== */
+
+    data.buyingPrice =
+        numberOrUndefined(
+            data.buyingPrice
+        );
+
+
+    data.currentWorth =
+        numberOrUndefined(
+            data.currentWorth
+        );
+
+
+    data.mass =
+        numberOrUndefined(
+            data.mass
+        );
+
+
+    /* ========================================================
+       BUYING PRICE VALIDATION
+    ======================================================== */
+
+    if (
+        data.buyingPrice !== undefined &&
+        data.buyingPrice < 0
+    ) {
+
+        throw serviceError(
+            "Buying Price cannot be negative."
+        );
+
     }
 
-    if (data.currentWorth !== undefined && data.currentWorth < 0) {
-        throw serviceError("Current Worth cannot be negative.");
+
+    /* ========================================================
+       CURRENT WORTH VALIDATION
+    ======================================================== */
+
+    if (
+        data.currentWorth !== undefined &&
+        data.currentWorth < 0
+    ) {
+
+        throw serviceError(
+            "Current Worth cannot be negative."
+        );
+
     }
 
-    if (data.mass !== undefined && data.mass < 0) {
-        throw serviceError("Mass cannot be negative.");
+
+    /* ========================================================
+       MASS VALIDATION
+    ======================================================== */
+
+    if (
+        data.mass !== undefined &&
+        data.mass < 0
+    ) {
+
+        throw serviceError(
+            "Mass cannot be negative."
+        );
+
     }
 
-    if (storageType === "agrostore") {
 
-        data.recordType = "structure";
-        data.type = "feeds";
+    /* ========================================================
+       AGROSTORE
+    ======================================================== */
 
-        data.quantity = numberOrUndefined(data.quantity);
-        data.unit = clean(data.unit);
+    /*
+    IMPORTANT:
 
-        if (data.quantity === undefined || data.quantity < 0) {
-            throw serviceError("Please enter a valid feed quantity.");
+    Exact storage type:
+
+        "agroStore"
+
+    NOT:
+
+        "agrostore"
+    */
+
+    if (
+        storageType === "agroStore"
+    ) {
+
+        /*
+        --------------------------------------------------------
+        AgroStore records are feeds.
+        --------------------------------------------------------
+        */
+
+        data.recordType =
+            "structure";
+
+
+        data.type =
+            "feeds";
+
+
+        /*
+        --------------------------------------------------------
+        Quantity
+        --------------------------------------------------------
+        */
+
+        data.quantity =
+            numberOrUndefined(
+                data.quantity
+            );
+
+
+        data.unit =
+            clean(
+                data.unit
+            );
+
+
+        if (
+            data.quantity === undefined ||
+            data.quantity < 0
+        ) {
+
+            throw serviceError(
+                "Please enter a valid feed quantity."
+            );
+
         }
 
-        if (!data.unit) {
-            throw serviceError("Feed unit is required.");
+
+        if (
+            !data.unit
+        ) {
+
+            throw serviceError(
+                "Feed unit is required."
+            );
+
         }
 
-    } else {
+    }
 
-        if (!["animal", "structure"].includes(clean(data.recordType))) {
-            throw serviceError("Please select what you are adding.");
+
+    /* ========================================================
+       NORMAL STORAGE ROOM
+    ======================================================== */
+
+    else {
+
+        /*
+        --------------------------------------------------------
+        Record type
+        --------------------------------------------------------
+        */
+
+        if (
+            ![
+                "animal",
+                "structure"
+            ].includes(
+                clean(
+                    data.recordType
+                )
+            )
+        ) {
+
+            throw serviceError(
+                "Please select what you are adding."
+            );
+
         }
 
-        data.recordType = clean(data.recordType);
 
-        if (data.recordType === "animal") {
+        data.recordType =
+            clean(
+                data.recordType
+            );
 
-            data.gender = clean(data.gender);
-            data.type = clean(data.type);
-            data.dateOfBirth = clean(data.dateOfBirth);
 
-            if (!data.gender) {
-                throw serviceError("Animal gender is required.");
+        /* ====================================================
+           ANIMAL
+        ==================================================== */
+
+        if (
+            data.recordType === "animal"
+        ) {
+
+            data.gender =
+                clean(
+                    data.gender
+                );
+
+
+            data.type =
+                clean(
+                    data.type
+                );
+
+
+            data.dateOfBirth =
+                clean(
+                    data.dateOfBirth
+                );
+
+
+            /*
+            ----------------------------------------------------
+            Gender
+            ----------------------------------------------------
+            */
+
+            if (
+                !data.gender
+            ) {
+
+                throw serviceError(
+                    "Animal gender is required."
+                );
+
             }
 
-            if (!data.dateOfBirth) {
-                throw serviceError("Animal Date of Birth is required.");
+
+            /*
+            ----------------------------------------------------
+            Date of Birth
+            ----------------------------------------------------
+            */
+
+            if (
+                !data.dateOfBirth
+            ) {
+
+                throw serviceError(
+                    "Animal Date of Birth is required."
+                );
+
             }
 
-            if (!data.type) {
-                throw serviceError("Animal breed is required.");
+
+            /*
+            ----------------------------------------------------
+            Breed
+            ----------------------------------------------------
+            */
+
+            if (
+                !data.type
+            ) {
+
+                throw serviceError(
+                    "Animal breed is required."
+                );
+
             }
+
         }
 
-        if (data.recordType === "structure" && !clean(data.type)) {
-            throw serviceError("Structure type is required.");
+
+        /* ====================================================
+           STRUCTURE
+        ==================================================== */
+
+        if (
+            data.recordType === "structure" &&
+            !clean(data.type)
+        ) {
+
+            throw serviceError(
+                "Structure type is required."
+            );
+
         }
+
     }
+
 
     return data;
+
 }
 
+
+/* ============================================================
+   ADD NEW ITEM
+============================================================ */
 
 async function addNewItem({
     dairyId,
@@ -249,65 +778,174 @@ async function addNewItem({
     request
 }) {
 
-    const context = await getAddNewContext({
-        dairyId,
-        storageId
-    });
+    /*
+    ============================================================
+    RESOLVE STORAGE CONTEXT
+    ============================================================
+    */
 
-    const data = validateAndNormalize({
-        body,
-        storageType: context.storageType
-    });
+    const context =
+        await getAddNewContext({
+            dairyId,
+            storageId
+        });
 
-    // The browser never controls these destination fields.
-    // They are deliberately removed from the submitted payload
-    // and the existing contents service is responsible for the
-    // final allocation.
+
+    /*
+    ============================================================
+    VALIDATE AND NORMALIZE SUBMITTED DATA
+    ============================================================
+    */
+
+    const data =
+        validateAndNormalize({
+            body,
+            storageType:
+                context.storageType
+        });
+
+
+    /*
+    ============================================================
+    REMOVE DESTINATION-CONTROLLED FIELDS
+    ============================================================
+
+    The browser must never control these fields.
+
+    The existing storage contents service is responsible for
+    determining the final storage allocation.
+    ============================================================
+    */
 
     delete data.dairyId;
+
     delete data.storageId;
+
     delete data.assetCode;
+
     delete data.dwellNumber;
+
     delete data.roomNumber;
+
     delete data.storage;
 
-    if (file) {
-        data.profileImage = file;
+
+    /* ========================================================
+       PROFILE IMAGE
+    ======================================================== */
+
+    if (
+        file
+    ) {
+
+        data.profileImage =
+            file;
+
     }
 
-    const addItems = storageContentsService.addItemsToStorage;
 
-    if (typeof addItems !== "function") {
+    /*
+    ============================================================
+    EXISTING STORAGE ADD OPERATION
+    ============================================================
+    */
+
+    const addItems =
+        storageContentsService.addItemsToStorage;
+
+
+    if (
+        typeof addItems !== "function"
+    ) {
+
         throw serviceError(
             "The existing storage contents add operation is unavailable.",
             500
         );
+
     }
 
-    const result = await callService(
-        addItems,
-        [
-            [dairyId, storageId, data, request],
-            [dairyId, storageId, data],
-            [context.dairy, context.storage, data, request],
-            [context.dairy, context.storage, data],
-            [{
-                dairyId,
-                storageId,
-                data,
-                dairy: context.dairy,
-                storage: context.storage,
-                request
-            }]
-        ]
+
+    /*
+    ============================================================
+    CALL EXISTING CONTENTS SERVICE
+    ============================================================
+    */
+
+    const result =
+        await callService(
+            addItems,
+            [
+
+                [
+                    dairyId,
+                    storageId,
+                    data,
+                    request
+                ],
+
+                [
+                    dairyId,
+                    storageId,
+                    data
+                ],
+
+                [
+                    context.dairy,
+                    context.storage,
+                    data,
+                    request
+                ],
+
+                [
+                    context.dairy,
+                    context.storage,
+                    data
+                ],
+
+                [
+                    {
+                        dairyId,
+                        storageId,
+                        data,
+                        dairy:
+                            context.dairy,
+                        storage:
+                            context.storage,
+                        request
+                    }
+                ]
+
+            ]
+        );
+
+
+    /*
+    ============================================================
+    RETURN RESULT
+    ============================================================
+    */
+
+    return (
+        result ||
+        {
+            success: true
+        }
     );
 
-    return result || { success: true };
 }
 
 
+/* ============================================================
+   EXPORTS
+============================================================ */
+
 module.exports = {
+
     getAddNewContext,
+
     addNewItem,
+
     validateAndNormalize
+
 };
