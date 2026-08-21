@@ -1,7 +1,7 @@
 // ==========================================================
 // controllers/storage/list.js
 // STORAGE LIST CONTROLLER
-// =========================================================
+// ==========================================================
 //
 // HANDLES:
 //
@@ -11,7 +11,7 @@
 //
 //     :id = parent Dairy._id
 //
-// RELATION:
+// NEW DAIRY ARCHITECTURE:
 //
 //     req.params.id
 //          ↓
@@ -19,7 +19,21 @@
 //          ↓
 //     Dairy.code
 //          ↓
-//     DairyStorage.farmCode
+//     Dairy.assetCode
+//          ↓
+//     Storage Dairy records
+//
+// Each storage facility is itself a Dairy document.
+//
+// Therefore:
+//
+//     parent farm ID = dairy._id
+//
+//     storage Dairy ID = item._id
+//
+// View URL:
+//
+//     /storage/:parentFarmId/contents/:dairyId
 //
 // ==========================================================
 
@@ -36,7 +50,7 @@ const storageService =
 //
 //     /storage/:id
 //
-// :id = Dairy._id
+// :id = parent Dairy._id
 //
 // ==========================================================
 
@@ -49,7 +63,7 @@ async function list(
     try {
 
         // ==================================================
-        // GET DAIRY ID
+        // GET PARENT DAIRY ID
         // ==================================================
 
         const dairyId =
@@ -81,6 +95,7 @@ async function list(
 
                     }
                 );
+
         }
 
 
@@ -98,13 +113,17 @@ async function list(
         // GET STORAGE
         // ==================================================
         //
-        // Service resolves:
+        // The service resolves:
         //
         //     Dairy._id
         //          ↓
-        //     Dairy.code
+        //     Parent Dairy Farm
         //          ↓
-        //     DairyStorage.farmCode
+        //     Parent Dairy.code
+        //          ↓
+        //     Storage Dairy.assetCode
+        //
+        // No DairyStorage model is involved.
         //
         // ==================================================
 
@@ -129,20 +148,59 @@ async function list(
                 title:
                     "Feed Store",
 
+                // ------------------------------------------
+                // Parent Dairy Farm
+                // ------------------------------------------
+
                 dairy:
                     result.dairy,
+
+                // ------------------------------------------
+                // Storage Dairy records
+                // ------------------------------------------
+                //
+                // Each item is a document from models/dairy.js
+                //
+                // item._id
+                // item.assetCode
+                // item.dwellNumber
+                // item.type
+                //
+                // ------------------------------------------
 
                 storage:
                     result.storage,
 
+                // ------------------------------------------
+                // Selected filter
+                // ------------------------------------------
+
                 selectedType:
                     result.type,
+
+                // ------------------------------------------
+                // Parent Dairy MongoDB ID
+                // ------------------------------------------
+                //
+                // Used by the view as:
+                //
+                // /storage/<dairyId>/contents/<item._id>
+                //
+                // ------------------------------------------
 
                 dairyId:
                     result.dairy._id,
 
+                // ------------------------------------------
+                // Parent Dairy Farm Code
+                // ------------------------------------------
+
                 farmCode:
                     result.farmCode,
+
+                // ------------------------------------------
+                // Logged-in user
+                // ------------------------------------------
 
                 user:
                     req.session?.user || null
@@ -158,7 +216,9 @@ async function list(
         );
 
         return next(error);
+
     }
+
 }
 
 
