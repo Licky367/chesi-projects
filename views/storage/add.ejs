@@ -15,557 +15,728 @@
          name
          type
 
-     SERVER DETERMINES:
+     BACKEND DETERMINES:
 
-         farmCode
+         recordType = "structure"
+         assetCode = parent Dairy.code
          roomNumber
+
+     IMPORTANT:
+
+         The parent Dairy is identified by MongoDB _id
+         in the URL.
+
+         The parent relationship stored on the new
+         structure record is assetCode = parent Dairy.code.
 
 ========================================================== -->
 
 
 <style>
 
-    /* ======================================================
-       PAGE
-    ====================================================== */
+/* ==========================================================
+   PAGE
+========================================================== */
+
+.storage-add-page {
+
+    max-width: 900px;
+
+    margin: 0 auto;
+
+    padding: 24px 16px 60px;
+
+}
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.storage-add-header {
+
+    margin-bottom: 24px;
+
+}
+
+.storage-add-header-top {
+
+    display: flex;
+
+    align-items: center;
+
+    margin-bottom: 18px;
+
+}
+
+.storage-back-link {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    color: #15803d;
+
+    text-decoration: none;
+
+    font-weight: 700;
+
+    font-size: 14px;
+
+}
+
+.storage-back-link:hover {
+
+    color: #166534;
+
+    text-decoration: underline;
+
+}
+
+.storage-add-header h1 {
+
+    margin: 0;
+
+    color: #172033;
+
+    font-size: 30px;
+
+    line-height: 1.2;
+
+}
+
+.storage-add-header p {
+
+    margin: 8px 0 0;
+
+    color: #6b7280;
+
+    font-size: 15px;
+
+    line-height: 1.6;
+
+}
+
+
+/* ==========================================================
+   MAIN CARD
+========================================================== */
+
+.storage-add-card {
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 22px;
+
+    padding: 26px;
+
+    box-shadow:
+        0 8px 30px rgba(15, 23, 42, 0.08);
+
+}
+
+
+/* ==========================================================
+   FORM STATUS
+========================================================== */
+
+.form-save-status {
+
+    display: none;
+
+    margin-bottom: 20px;
+
+    padding: 13px 15px;
+
+    border-radius: 12px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    line-height: 1.5;
+
+}
+
+.form-save-status.success {
+
+    display: block;
+
+    background: #ecfdf5;
+
+    color: #047857;
+
+    border: 1px solid #a7f3d0;
+
+}
+
+.form-save-status.error {
+
+    display: block;
+
+    background: #fef2f2;
+
+    color: #b91c1c;
+
+    border: 1px solid #fecaca;
+
+}
+
+
+/* ==========================================================
+   BACKEND-CONTROLLED RECORD INFORMATION
+========================================================== */
+
+.record-info-card {
+
+    padding: 18px;
+
+    margin-bottom: 24px;
+
+    border-radius: 16px;
+
+    background: #f0fdf4;
+
+    border: 1px solid #bbf7d0;
+
+}
+
+.record-info-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+
+}
+
+.record-info-item {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+}
+
+.record-info-label {
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.4px;
+
+}
+
+.record-info-value {
+
+    color: #172033;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+}
+
+
+/* ==========================================================
+   FORM GROUP
+========================================================== */
+
+.form-group {
+
+    margin-bottom: 20px;
+
+}
+
+.form-group label {
+
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #273449;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+}
+
+
+/* ==========================================================
+   INPUTS
+========================================================== */
+
+.form-group input,
+.form-group select {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    border: 1px solid #d9dee7;
+
+    border-radius: 12px;
+
+    background: #ffffff;
+
+    color: #172033;
+
+    font-size: 15px;
+
+    padding: 12px 13px;
+
+    outline: none;
+
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        background .2s ease;
+
+}
+
+.form-group input:focus,
+.form-group select:focus {
+
+    border-color: #16a34a;
+
+    box-shadow:
+        0 0 0 3px rgba(22, 163, 74, 0.12);
+
+}
+
+.form-group input::placeholder {
+
+    color: #9aa3af;
+
+}
+
+.form-help {
+
+    margin-top: 7px;
+
+    color: #7b8494;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+
+}
+
+
+/* ==========================================================
+   STORAGE TYPE OPTIONS
+========================================================== */
+
+.storage-type-options {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 14px;
+
+}
+
+.storage-type-option {
+
+    position: relative;
+
+    display: block;
+
+    cursor: pointer;
+
+}
+
+.storage-type-option input {
+
+    position: absolute;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+}
+
+.storage-type-card {
+
+    min-height: 95px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 17px;
+
+    background: #ffffff;
+
+    border: 1.5px solid #d9dee7;
+
+    border-radius: 14px;
+
+    transition:
+        border-color .2s ease,
+        background .2s ease,
+        box-shadow .2s ease,
+        transform .2s ease;
+
+}
+
+.storage-type-card:hover {
+
+    background: #f8fcf9;
+
+    border-color: #76a985;
+
+    transform: translateY(-1px);
+
+}
+
+.storage-type-option input:checked
++ .storage-type-card {
+
+    background: #f0fdf4;
+
+    border-color: #16a34a;
+
+    box-shadow:
+        0 5px 16px rgba(22, 163, 74, 0.10);
+
+}
+
+.storage-option-icon {
+
+    width: 48px;
+
+    height: 48px;
+
+    min-width: 48px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #e9f5ec;
+
+    font-size: 24px;
+
+}
+
+.storage-option-content {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+}
+
+.storage-option-content strong {
+
+    color: #174b27;
+
+    font-size: 15px;
+
+}
+
+.storage-option-content small {
+
+    margin: 0;
+
+    color: #718177;
+
+    font-size: 12px;
+
+    line-height: 1.4;
+
+}
+
+
+/* ==========================================================
+   ACTIONS
+========================================================== */
+
+.form-actions {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-top: 28px;
+
+    padding-top: 22px;
+
+    border-top: 1px solid #edf0f4;
+
+}
+
+.button {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 46px;
+
+    padding: 0 20px;
+
+    border-radius: 12px;
+
+    border: none;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    transition:
+        transform .15s ease,
+        opacity .15s ease,
+        box-shadow .15s ease;
+
+}
+
+.button:hover {
+
+    transform: translateY(-1px);
+
+}
+
+.button:disabled {
+
+    opacity: .65;
+
+    cursor: not-allowed;
+
+    transform: none;
+
+}
+
+.button-secondary {
+
+    background: #f1f4f8;
+
+    color: #374151;
+
+}
+
+.button-primary {
+
+    background: #16a34a;
+
+    color: #ffffff;
+
+    box-shadow:
+        0 5px 14px rgba(22, 163, 74, 0.22);
+
+}
+
+.button-primary:hover {
+
+    background: #15803d;
+
+    box-shadow:
+        0 7px 18px rgba(22, 163, 74, 0.28);
+
+}
+
+
+/* ==========================================================
+   PARENT FARM CARD
+========================================================== */
+
+.storage-farm-card {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    margin-top: 18px;
+
+    padding: 18px 20px;
+
+    background: #ffffff;
+
+    border: 1px solid #dce9df;
+
+    border-radius: 15px;
+
+    box-shadow:
+        0 5px 18px rgba(15, 60, 28, 0.05);
+
+}
+
+.storage-farm-icon {
+
+    width: 48px;
+
+    height: 48px;
+
+    min-width: 48px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #eaf6ed;
+
+    font-size: 23px;
+
+}
+
+.storage-farm-details {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+}
+
+.storage-farm-label {
+
+    color: #7a8c80;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.5px;
+
+}
+
+.storage-farm-details strong {
+
+    color: #174b27;
+
+    font-size: 15px;
+
+}
+
+.storage-farm-code {
+
+    color: #687a6e;
+
+    font-size: 12px;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 700px) {
 
     .storage-add-page {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 25px 18px 50px;
-        color: #183b24;
+
+        padding:
+            18px 12px 40px;
+
     }
 
+    .storage-add-card {
 
-    /* ======================================================
-       HEADER
-    ====================================================== */
+        padding: 18px;
 
-    .storage-add-header {
-        margin-bottom: 24px;
-    }
-
-    .storage-back-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 20px;
-        color: #0b5d1e;
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 700;
-        transition: 0.2s ease;
-    }
-
-    .storage-back-link:hover {
-        color: #084817;
-        transform: translateX(-2px);
-    }
-
-
-    .storage-header-content {
-        display: flex;
-        align-items: center;
-        gap: 17px;
-        padding: 25px;
         border-radius: 18px;
-        background:
-            linear-gradient(
-                135deg,
-                #0b5d1e,
-                #168534
-            );
-        color: #ffffff;
-        box-shadow:
-            0 10px 28px rgba(11, 93, 30, 0.18);
+
     }
 
+    .storage-add-header h1 {
 
-    .storage-header-icon {
-        width: 62px;
-        height: 62px;
-        min-width: 62px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 16px;
-        background: rgba(255,255,255,0.16);
-        border: 1px solid rgba(255,255,255,0.25);
-        font-size: 30px;
+        font-size: 25px;
+
     }
 
+    .record-info-grid {
 
-    .storage-header-content h1 {
-        margin: 0 0 6px;
-        font-size: 26px;
-        line-height: 1.2;
-        font-weight: 800;
+        grid-template-columns: 1fr;
+
+        gap: 12px;
+
     }
-
-
-    .storage-header-content p {
-        margin: 0;
-        font-size: 14px;
-        line-height: 1.6;
-        opacity: 0.92;
-    }
-
-
-    .storage-header-content strong {
-        color: #ffffff;
-    }
-
-
-    /* ======================================================
-       ERROR
-    ====================================================== */
-
-    .storage-alert {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 14px 16px;
-        margin-bottom: 20px;
-        border-radius: 12px;
-        font-size: 14px;
-        line-height: 1.5;
-    }
-
-
-    .storage-alert-error {
-        background: #fff1f1;
-        color: #9f1d1d;
-        border: 1px solid #f3c2c2;
-    }
-
-
-    /* ======================================================
-       FORM CARD
-    ====================================================== */
-
-    .storage-form-card {
-        overflow: hidden;
-        background: #ffffff;
-        border: 1px solid #dce9df;
-        border-radius: 18px;
-        box-shadow:
-            0 8px 25px rgba(15, 60, 28, 0.07);
-    }
-
-
-    .storage-form-heading {
-        padding: 24px 25px 20px;
-        background: #fbfefb;
-        border-bottom: 1px solid #e5eee8;
-    }
-
-
-    .storage-form-heading h2 {
-        margin: 0 0 5px;
-        color: #0b5d1e;
-        font-size: 20px;
-        font-weight: 800;
-    }
-
-
-    .storage-form-heading p {
-        margin: 0;
-        color: #6b7d71;
-        font-size: 14px;
-    }
-
-
-    /* ======================================================
-       FORM
-    ====================================================== */
-
-    .storage-form {
-        padding: 25px;
-    }
-
-
-    .form-group {
-        margin-bottom: 26px;
-    }
-
-
-    .form-group > label {
-        display: block;
-        margin-bottom: 9px;
-        color: #234d30;
-        font-size: 14px;
-        font-weight: 750;
-    }
-
-
-    .required {
-        color: #c62828;
-    }
-
-
-    /* ======================================================
-       NAME INPUT
-    ====================================================== */
-
-    .form-group input[type="text"] {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 13px 15px;
-        outline: none;
-        border: 1px solid #cdded2;
-        border-radius: 11px;
-        background: #ffffff;
-        color: #183b24;
-        font-size: 15px;
-        transition:
-            border-color 0.2s ease,
-            box-shadow 0.2s ease;
-    }
-
-
-    .form-group input[type="text"]:focus {
-        border-color: #0b5d1e;
-        box-shadow:
-            0 0 0 4px rgba(11, 93, 30, 0.09);
-    }
-
-
-    .form-group input::placeholder {
-        color: #9aaa9f;
-    }
-
-
-    .form-group small {
-        display: block;
-        margin-top: 7px;
-        color: #7a8c80;
-        font-size: 12px;
-        line-height: 1.5;
-    }
-
-
-    /* ======================================================
-       TYPE OPTIONS
-    ====================================================== */
 
     .storage-type-options {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 14px;
+
+        grid-template-columns: 1fr;
+
     }
 
+    .form-actions {
 
-    .storage-type-option {
-        position: relative;
-        display: block;
-        cursor: pointer;
+        flex-direction: column-reverse;
+
+        align-items: stretch;
+
     }
 
+    .button {
 
-    .storage-type-option input {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
+        width: 100%;
+
     }
 
+}
 
+
+/* ==========================================================
+   REDUCED MOTION
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .button,
+    .form-group input,
+    .form-group select,
     .storage-type-card {
-        min-height: 95px;
-        box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 17px;
-        background: #ffffff;
-        border: 1.5px solid #d4e2d8;
-        border-radius: 14px;
-        transition:
-            border-color 0.2s ease,
-            background 0.2s ease,
-            box-shadow 0.2s ease,
-            transform 0.2s ease;
-    }
 
-
-    .storage-type-card:hover {
-        background: #f8fcf9;
-        border-color: #76a985;
-        transform: translateY(-1px);
-    }
-
-
-    .storage-type-option input:checked
-    + .storage-type-card {
-        background: #f0f9f2;
-        border-color: #0b5d1e;
-        box-shadow:
-            0 5px 16px rgba(11, 93, 30, 0.10);
-    }
-
-
-    .storage-option-icon {
-        width: 48px;
-        height: 48px;
-        min-width: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        background: #e9f5ec;
-        font-size: 24px;
-    }
-
-
-    .storage-option-content {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-
-    .storage-option-content strong {
-        color: #174b27;
-        font-size: 15px;
-    }
-
-
-    .storage-option-content small {
-        margin: 0;
-        color: #718177;
-        font-size: 12px;
-        line-height: 1.4;
-    }
-
-
-    /* ======================================================
-       ACTIONS
-    ====================================================== */
-
-    .storage-form-actions {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        gap: 11px;
-        padding-top: 21px;
-        border-top: 1px solid #e5eee8;
-    }
-
-
-    .storage-btn {
-        min-height: 44px;
-        box-sizing: border-box;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 10px 19px;
-        border-radius: 10px;
-        text-decoration: none;
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 14px;
-        font-weight: 750;
-        transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease,
-            background 0.2s ease;
-    }
-
-
-    .storage-btn-secondary {
-        color: #496052;
-        background: #edf2ee;
-        border: 1px solid #d8e1da;
-    }
-
-
-    .storage-btn-secondary:hover {
-        background: #e3eae5;
-        transform: translateY(-1px);
-    }
-
-
-    .storage-btn-primary {
-        color: #ffffff;
-        background: #0b5d1e;
-        border: none;
-        box-shadow:
-            0 5px 14px rgba(11, 93, 30, 0.20);
-    }
-
-
-    .storage-btn-primary:hover {
-        background: #084817;
-        transform: translateY(-1px);
-        box-shadow:
-            0 7px 18px rgba(11, 93, 30, 0.25);
-    }
-
-
-    .storage-btn-primary span {
-        font-size: 20px;
-        line-height: 1;
-    }
-
-
-    /* ======================================================
-       PARENT FARM CARD
-    ====================================================== */
-
-    .storage-farm-card {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-top: 18px;
-        padding: 18px 20px;
-        background: #ffffff;
-        border: 1px solid #dce9df;
-        border-radius: 15px;
-        box-shadow:
-            0 5px 18px rgba(15, 60, 28, 0.05);
-    }
-
-
-    .storage-farm-icon {
-        width: 48px;
-        height: 48px;
-        min-width: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        background: #eaf6ed;
-        font-size: 23px;
-    }
-
-
-    .storage-farm-details {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-    }
-
-
-    .storage-farm-label {
-        color: #7a8c80;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-
-    .storage-farm-details strong {
-        color: #174b27;
-        font-size: 15px;
-    }
-
-
-    .storage-farm-code {
-        color: #687a6e;
-        font-size: 12px;
-    }
-
-
-    /* ======================================================
-       MOBILE
-    ====================================================== */
-
-    @media (max-width: 650px) {
-
-        .storage-add-page {
-            padding: 17px 12px 35px;
-        }
-
-
-        .storage-header-content {
-            padding: 20px 17px;
-            border-radius: 15px;
-        }
-
-
-        .storage-header-icon {
-            width: 50px;
-            height: 50px;
-            min-width: 50px;
-            font-size: 24px;
-            border-radius: 13px;
-        }
-
-
-        .storage-header-content h1 {
-            font-size: 21px;
-        }
-
-
-        .storage-header-content p {
-            font-size: 13px;
-        }
-
-
-        .storage-form {
-            padding: 19px 16px;
-        }
-
-
-        .storage-form-heading {
-            padding: 20px 16px 17px;
-        }
-
-
-        .storage-type-options {
-            grid-template-columns: 1fr;
-        }
-
-
-        .storage-form-actions {
-            flex-direction: column-reverse;
-            align-items: stretch;
-        }
-
-
-        .storage-btn {
-            width: 100%;
-        }
-
-
-        .storage-farm-card {
-            padding: 15px;
-        }
+        transition: none;
 
     }
 
-
-    /* ======================================================
-       VERY SMALL SCREENS
-    ====================================================== */
-
-    @media (max-width: 380px) {
-
-        .storage-header-content {
-            align-items: flex-start;
-        }
-
-
-        .storage-header-icon {
-            width: 44px;
-            height: 44px;
-            min-width: 44px;
-        }
-
-
-        .storage-header-content h1 {
-            font-size: 19px;
-        }
-
-
-        .storage-option-icon {
-            width: 42px;
-            height: 42px;
-            min-width: 42px;
-        }
-
-    }
+}
 
 </style>
 
@@ -579,123 +750,160 @@
 
     <div class="storage-add-header">
 
-        <!-- IMPORTANT:
-             dairy._id is the parent farm MongoDB ID.
-             Never use dairy.code here.
-        -->
+        <div class="storage-add-header-top">
 
-        <a
-            href="/storage/<%= dairy._id %>"
-            class="storage-back-link"
-        >
+            <a
+                href="/storage/<%= dairy._id %>"
+                class="storage-back-link"
+            >
 
-            <span>←</span>
+                ← Back to Storage
 
-            <span>
-                Back to Storage
-            </span>
-
-        </a>
-
-
-        <div class="storage-header-content">
-
-            <div class="storage-header-icon">
-                📦
-            </div>
-
-            <div>
-
-                <h1>
-                    Add Storage Facility
-                </h1>
-
-                <p>
-                    Add a new storage facility to
-                    <strong>
-                        <%= dairy.name %>
-                    </strong>
-                </p>
-
-            </div>
+            </a>
 
         </div>
+
+
+        <h1>
+            Add Storage Facility
+        </h1>
+
+
+        <p>
+            Create a storage facility under
+            <strong>
+                <%= dairy.name %>
+            </strong>.
+        </p>
 
     </div>
 
 
     <!-- ======================================================
-         ERROR
+         MAIN CARD
     ====================================================== -->
 
-    <% if (
-        typeof error !== "undefined" &&
-        error
-    ) { %>
+    <div class="storage-add-card">
 
-        <div
-            class="storage-alert storage-alert-error"
-            role="alert"
-        >
 
-            <span>⚠️</span>
+        <!-- ==================================================
+             FORM STATUS
+        ================================================== -->
 
-            <span>
+        <% if (
+            typeof error !== "undefined" &&
+            error
+        ) { %>
+
+            <div
+                id="formSaveStatus"
+                class="form-save-status error"
+                role="alert"
+                aria-live="polite"
+            >
+
                 <%= error %>
-            </span>
 
-        </div>
+            </div>
 
-    <% } %>
+        <% } else { %>
+
+            <div
+                id="formSaveStatus"
+                class="form-save-status"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+        <% } %>
 
 
-    <!-- ======================================================
-         FORM CARD
-    ====================================================== -->
+        <!-- ==================================================
+             BACKEND-CONTROLLED RECORD INFORMATION
+        ================================================== -->
 
-    <div class="storage-form-card">
+        <div class="record-info-card">
+
+            <div class="record-info-grid">
 
 
-        <div class="storage-form-heading">
+                <div class="record-info-item">
 
-            <h2>
-                Storage Details
-            </h2>
+                    <span class="record-info-label">
+                        Record Type
+                    </span>
 
-            <p>
-                Enter the name and select the storage type.
-            </p>
+                    <span class="record-info-value">
+                        Structure
+                    </span>
+
+                </div>
+
+
+                <div class="record-info-item">
+
+                    <span class="record-info-label">
+                        Parent Dairy Farm
+                    </span>
+
+                    <span class="record-info-value">
+                        <%= dairy.name %>
+                    </span>
+
+                </div>
+
+
+            </div>
 
         </div>
 
 
         <!-- ==================================================
              FORM
-        =================================================== -->
+        ================================================== -->
 
         <form
+            id="addStorageForm"
             action="/storage/<%= dairy._id %>/add"
             method="POST"
-            class="storage-form"
+            class="storage-add-form"
         >
 
 
-            <!-- ==============================================
+            <!-- ==================================================
+                 BACKEND-CONTROLLED VALUES
+
+                 These are included for consistency with the
+                 /add form's field naming.
+
+                 IMPORTANT:
+                 The server MUST NOT trust these values.
+                 It must derive recordType and assetCode from
+                 req.params.id and the parent Dairy record.
+            ================================================== -->
+
+            <input
+                type="hidden"
+                name="recordType"
+                value="structure"
+            >
+
+            <input
+                type="hidden"
+                name="assetCode"
+                value="<%= dairy.code %>"
+            >
+
+
+            <!-- ==================================================
                  NAME
-            =============================================== -->
+            ================================================== -->
 
             <div class="form-group">
 
                 <label for="name">
-
-                    Storage Name
-
-                    <span class="required">
-                        *
-                    </span>
-
+                    Name
                 </label>
-
 
                 <input
                     type="text"
@@ -705,43 +913,36 @@
                         typeof formData !== 'undefined' &&
                         formData
                     ) ? (formData.name || '') : '' %>"
-                    placeholder="e.g. Main Feed Store"
-                    maxlength="200"
                     required
+                    maxlength="200"
                     autocomplete="off"
+                    placeholder="e.g. Main Feed Store"
                 >
 
-
-                <small>
-                    Give the storage facility a clear name.
-                </small>
+                <div class="form-help">
+                    Enter a clear name for this storage facility.
+                </div>
 
             </div>
 
 
-            <!-- ==============================================
-                 TYPE
-            =============================================== -->
+            <!-- ==================================================
+                 STORAGE TYPE
+            ================================================== -->
 
             <div class="form-group">
 
                 <label>
-
                     Storage Type
-
-                    <span class="required">
-                        *
-                    </span>
-
                 </label>
 
 
                 <div class="storage-type-options">
 
 
-                    <!-- ======================================
+                    <!-- ==========================================
                          ROOM
-                    ======================================= -->
+                    =========================================== -->
 
                     <label
                         class="storage-type-option"
@@ -754,7 +955,7 @@
                             name="type"
                             value="room"
                             <%= (
-                                typeof formData === 'undefined' ||
+                                typeof formData === "undefined" ||
                                 !formData ||
                                 !formData.type ||
                                 formData.type === "room"
@@ -770,6 +971,7 @@
                             <span class="storage-option-icon">
                                 🚪
                             </span>
+
 
                             <span class="storage-option-content">
 
@@ -788,9 +990,9 @@
                     </label>
 
 
-                    <!-- ======================================
+                    <!-- ==========================================
                          AGROSTORE
-                    ======================================= -->
+                    =========================================== -->
 
                     <label
                         class="storage-type-option"
@@ -803,7 +1005,7 @@
                             name="type"
                             value="agroStore"
                             <%= (
-                                typeof formData !== 'undefined' &&
+                                typeof formData !== "undefined" &&
                                 formData &&
                                 formData.type === "agroStore"
                             )
@@ -817,6 +1019,7 @@
                             <span class="storage-option-icon">
                                 🌾
                             </span>
+
 
                             <span class="storage-option-content">
 
@@ -842,17 +1045,13 @@
 
             <!-- ==================================================
                  ACTIONS
-            =================================================== -->
+            ================================================== -->
 
-            <div class="storage-form-actions">
-
-                <!-- IMPORTANT:
-                     This uses parent Dairy._id.
-                -->
+            <div class="form-actions">
 
                 <a
                     href="/storage/<%= dairy._id %>"
-                    class="storage-btn storage-btn-secondary"
+                    class="button button-secondary"
                 >
                     Cancel
                 </a>
@@ -860,10 +1059,9 @@
 
                 <button
                     type="submit"
-                    class="storage-btn storage-btn-primary"
+                    id="saveStorageButton"
+                    class="button button-primary"
                 >
-
-                    <span>+</span>
 
                     Add Storage
 
@@ -879,7 +1077,7 @@
 
     <!-- ======================================================
          PARENT FARM
-    ======================================================= -->
+    ====================================================== -->
 
     <div class="storage-farm-card">
 
@@ -900,9 +1098,6 @@
             </strong>
 
 
-            <!-- This is informational only.
-                 The route ID remains dairy._id. -->
-
             <span class="storage-farm-code">
 
                 Farm Code:
@@ -916,3 +1111,132 @@
 
 
 </div>
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+
+        const form =
+            document.getElementById(
+                "addStorageForm"
+            );
+
+
+        const saveButton =
+            document.getElementById(
+                "saveStorageButton"
+            );
+
+
+        const statusBox =
+            document.getElementById(
+                "formSaveStatus"
+            );
+
+
+        function clearStatus() {
+
+            statusBox.textContent =
+                "";
+
+            statusBox.className =
+                "form-save-status";
+
+        }
+
+
+        function showError(
+            message
+        ) {
+
+            statusBox.textContent =
+                message;
+
+            statusBox.className =
+                "form-save-status error";
+
+        }
+
+
+        function validateForm() {
+
+            const name =
+                document
+                    .getElementById(
+                        "name"
+                    )
+                    .value
+                    .trim();
+
+
+            if (!name) {
+
+                return (
+                    "Storage name is required."
+                );
+
+            }
+
+
+            const selectedType =
+                form.querySelector(
+                    'input[name="type"]:checked'
+                );
+
+
+            if (!selectedType) {
+
+                return (
+                    "Please select a storage type."
+                );
+
+            }
+
+
+            return null;
+
+        }
+
+
+        form.addEventListener(
+            "submit",
+            function (event) {
+
+                clearStatus();
+
+
+                const error =
+                    validateForm();
+
+
+                if (error) {
+
+                    event.preventDefault();
+
+                    showError(
+                        error
+                    );
+
+                    return;
+
+                }
+
+
+                saveButton.disabled =
+                    true;
+
+                saveButton.textContent =
+                    "Creating Storage...";
+
+            }
+        );
+
+
+    }
+);
+
+</script>
