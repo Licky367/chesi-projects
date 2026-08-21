@@ -1,4 +1,4 @@
-// =========================================================
+// ==========================================================
 // controllers/storage/contents.js
 // STORAGE CONTENTS CONTROLLER
 // ==========================================================
@@ -11,6 +11,16 @@
 // PAGE URL:
 //
 //     /storage/:dairyId/contents/:storageId
+//
+// DIRECT ADD PAGE:
+//
+//     GET
+//
+//         /storage/:dairyId/contents/:storageId/add
+//
+//     POST
+//
+//         /storage/:dairyId/contents/:storageId/add
 //
 // URL ID CONTRACT:
 //
@@ -45,6 +55,10 @@
 
 const storageContentsService =
     require("../../services/storage/contents");
+
+
+const storageListService =
+    require("../../services/storage/list");
 
 
 // ==========================================================
@@ -242,6 +256,627 @@ function getContentsUrl(
         ? `${baseUrl}?${queryString}`
 
         : baseUrl;
+
+}
+
+
+// ==========================================================
+// GET DIRECT-ADD PAGE
+// ==========================================================
+//
+// GET:
+//
+//     /storage/:dairyId/contents/:storageId/add
+//
+// IMPORTANT:
+//
+//     The browser does NOT choose the destination storage.
+//
+//     The destination is resolved from:
+//
+//         dairyId
+//         storageId
+//
+//     The service remains responsible for validating that
+//     the storage belongs to the parent Dairy.
+//
+// ==========================================================
+
+async function getAddItemPage(
+    req,
+    res
+) {
+
+    try {
+
+        const {
+
+            dairyId,
+
+            storageId
+
+        } =
+            getRouteIds(
+                req
+            );
+
+
+        // ==================================================
+        // REQUIRE DAIRY ID
+        // ==================================================
+
+        if (
+            !dairyId
+        ) {
+
+            const error =
+                new Error(
+                    "Dairy ID is required."
+                );
+
+            error.status =
+                400;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // REQUIRE STORAGE ID
+        // ==================================================
+
+        if (
+            !storageId
+        ) {
+
+            const error =
+                new Error(
+                    "Storage ID is required."
+                );
+
+            error.status =
+                400;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // RESOLVE PARENT DAIRY
+        // ==================================================
+
+        const dairy =
+            await storageListService
+                .getParentDairy(
+                    dairyId
+                );
+
+
+        if (
+            !dairy
+        ) {
+
+            const error =
+                new Error(
+                    "Parent Dairy Farm was not found."
+                );
+
+            error.status =
+                404;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // RESOLVE STORAGE
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // The storage service should verify that this
+        // storage belongs to the supplied parent Dairy.
+        //
+        // ==================================================
+
+        const storage =
+            await storageListService
+                .getStorageFacility({
+
+                    dairyId,
+
+                    storageId
+
+                });
+
+
+        if (
+            !storage
+        ) {
+
+            const error =
+                new Error(
+                    "Storage facility was not found."
+                );
+
+            error.status =
+                404;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // DETERMINE STORAGE TYPE
+        // ==================================================
+
+        const storageType =
+            String(
+
+                storage.type ||
+                ""
+
+            )
+            .trim();
+
+
+        // ==================================================
+        // LOAD BREEDS
+        // ==================================================
+        //
+        // The direct-add view expects:
+        //
+        //     dairyBreeds
+        //
+        // Different projects expose breeds differently.
+        //
+        // Prefer a breeds collection already supplied by the
+        // Dairy/list service if available.
+        //
+        // ==================================================
+
+        let dairyBreeds = [];
+
+
+        if (
+            Array.isArray(
+                dairy.dairyBreeds
+            )
+        ) {
+
+            dairyBreeds =
+                dairy.dairyBreeds;
+
+        }
+
+        else if (
+            Array.isArray(
+                dairy.breeds
+            )
+        ) {
+
+            dairyBreeds =
+                dairy.breeds;
+
+        }
+
+
+        // ==================================================
+        // RENDER DIRECT-ADD PAGE
+        // ==================================================
+
+        return res.render(
+
+            "storage/addNew",
+
+            {
+
+                title:
+                    `Add Item to ${
+                        storage.displayName ||
+                        storage.name ||
+                        "Storage"
+                    }`,
+
+                dairy,
+
+                storage,
+
+                dairyBreeds,
+
+                storageType,
+
+                dairyId,
+
+                storageId
+
+            }
+
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Storage direct-add page error:",
+            error
+        );
+
+
+        return sendError(
+
+            res,
+
+            error,
+
+            "Unable to load the storage item form."
+
+        );
+
+    }
+
+}
+
+
+// ==========================================================
+// POST DIRECT ADD ITEM
+// ==========================================================
+//
+// POST:
+//
+//     /storage/:dairyId/contents/:storageId/add
+//
+// IMPORTANT:
+//
+//     This controller deliberately does NOT calculate:
+//
+//         assetCode
+//         dwellNumber
+//         roomNumber
+//         recordType
+//         storage ownership
+//
+//     Those values belong to the service layer.
+//
+// ==========================================================
+
+async function postAddItem(
+    req,
+    res
+) {
+
+    try {
+
+        const {
+
+            dairyId,
+
+            storageId
+
+        } =
+            getRouteIds(
+                req
+            );
+
+
+        // ==================================================
+        // REQUIRE ROUTE IDS
+        // ==================================================
+
+        if (
+            !dairyId
+        ) {
+
+            const error =
+                new Error(
+                    "Dairy ID is required."
+                );
+
+            error.status =
+                400;
+
+            throw error;
+
+        }
+
+
+        if (
+            !storageId
+        ) {
+
+            const error =
+                new Error(
+                    "Storage ID is required."
+                );
+
+            error.status =
+                400;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // CREATE ITEM THROUGH SERVICE
+        // ==================================================
+        //
+        // The service is the final authority.
+        //
+        // It must determine:
+        //
+        //     parent Dairy
+        //     storage
+        //     storage type
+        //     recordType
+        //     assetCode
+        //     roomNumber / dwellNumber
+        //
+        // and reject invalid combinations.
+        //
+        // ==================================================
+
+        const result =
+            await storageContentsService
+                .createItemInStorage({
+
+                    dairyId,
+
+                    storageId,
+
+                    data:
+                        req.body,
+
+                    file:
+                        req.file,
+
+                    files:
+                        req.files
+
+                });
+
+
+        // ==================================================
+        // SUCCESS
+        // ==================================================
+
+        const itemName =
+            result &&
+            result.item &&
+            result.item.name
+
+                ? result.item.name
+
+                : "Item";
+
+
+        const message =
+            `${itemName} was added to ${
+                result &&
+                result.storage &&
+                (
+                    result.storage.displayName ||
+                    result.storage.name
+                )
+
+                    ? (
+                        result.storage.displayName ||
+                        result.storage.name
+                    )
+
+                    : "storage"
+            }.`;
+
+
+
+        // ==================================================
+        // REDIRECT TO CONTENTS
+        // ==================================================
+
+        return res.redirect(
+
+            getContentsUrl(
+
+                dairyId,
+
+                storageId,
+
+                {
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
+                }
+
+            )
+
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Storage direct-add item error:",
+            error
+        );
+
+
+        // ==================================================
+        // CLIENT / VALIDATION ERROR
+        // ==================================================
+        //
+        // Re-render the form when the service rejects the
+        // submitted data.
+        //
+        // This avoids losing the useful validation message.
+        //
+        // ==================================================
+
+        const statusCode =
+            Number(
+
+                error.status ||
+                error.statusCode ||
+                500
+
+            );
+
+
+        if (
+            statusCode >= 400 &&
+            statusCode < 500
+        ) {
+
+            try {
+
+                const {
+
+                    dairyId,
+
+                    storageId
+
+                } =
+                    getRouteIds(
+                        req
+                    );
+
+
+                const dairy =
+                    await storageListService
+                        .getParentDairy(
+                            dairyId
+                        );
+
+
+                const storage =
+                    await storageListService
+                        .getStorageFacility({
+
+                            dairyId,
+
+                            storageId
+
+                        });
+
+
+                let dairyBreeds = [];
+
+
+                if (
+                    Array.isArray(
+                        dairy?.dairyBreeds
+                    )
+                ) {
+
+                    dairyBreeds =
+                        dairy.dairyBreeds;
+
+                }
+
+                else if (
+                    Array.isArray(
+                        dairy?.breeds
+                    )
+                ) {
+
+                    dairyBreeds =
+                        dairy.breeds;
+
+                }
+
+
+                const storageType =
+                    String(
+
+                        storage?.type ||
+                        ""
+
+                    )
+                    .trim();
+
+
+                return res
+
+                    .status(
+                        statusCode
+                    )
+
+                    .render(
+
+                        "storage/addNew",
+
+                        {
+
+                            title:
+                                `Add Item to ${
+                                    storage?.displayName ||
+                                    storage?.name ||
+                                    "Storage"
+                                }`,
+
+                            dairy,
+
+                            storage,
+
+                            dairyBreeds,
+
+                            storageType,
+
+                            dairyId,
+
+                            storageId,
+
+                            pageError:
+                                error.message ||
+                                "Unable to add item to storage."
+
+                        }
+
+                    );
+
+            } catch (renderError) {
+
+                console.error(
+                    "Storage direct-add form render error:",
+                    renderError
+                );
+
+
+                return sendError(
+
+                    res,
+
+                    renderError,
+
+                    "Unable to add item to storage."
+
+                );
+
+            }
+
+        }
+
+
+        // ==================================================
+        // SERVER ERROR
+        // ==================================================
+
+        return sendError(
+
+            res,
+
+            error,
+
+            "Unable to add item to storage."
+
+        );
+
+    }
 
 }
 
@@ -473,6 +1108,14 @@ async function contents(
 //
 //     /storage/:dairyId/contents/:storageId/add
 //
+// This is the EXISTING bulk/add-existing-item operation.
+//
+// It is intentionally kept separate from:
+//
+//     postAddItem()
+//
+// which creates a NEW item directly in storage.
+//
 // ==========================================================
 
 async function addItems(
@@ -582,22 +1225,6 @@ async function addItems(
 // POST:
 //
 //     /storage/:dairyId/contents/:storageId/quantity
-//
-// ==========================================================
-//
-// This operation is primarily for AgroStore.
-//
-// The service determines whether:
-//
-//     quantity > 0
-//
-// or:
-//
-//     quantity === 0
-//
-// If quantity reaches zero, the service automatically
-// clears dwellNumber and therefore removes the item from
-// the AgroStore.
 //
 // ==========================================================
 
@@ -756,11 +1383,6 @@ async function updateQuantity(
 //
 //     /storage/:dairyId/contents/:storageId/omit
 //
-// This operation remains for NORMAL storage.
-//
-// AgroStore omission is automatic and therefore the service
-// must reject manual omission for type === "feeds".
-//
 // ==========================================================
 
 async function omitItems(
@@ -811,10 +1433,6 @@ async function omitItems(
             }.`;
 
 
-
-        // ==================================================
-        // REDIRECT BACK TO SAME STORAGE
-        // ==================================================
 
         return res.redirect(
 
@@ -870,10 +1488,6 @@ async function omitItems(
 // POST:
 //
 //     /storage/:dairyId/contents/:storageId/reshuffle
-//
-// This operation remains for NORMAL storage.
-//
-// AgroStore does not support reshuffling.
 //
 // ==========================================================
 
@@ -938,10 +1552,6 @@ async function reshuffleItems(
 
 
 
-        // ==================================================
-        // REDIRECT BACK TO ORIGINAL STORAGE
-        // ==================================================
-
         return res.redirect(
 
             getContentsUrl(
@@ -983,52 +1593,6 @@ async function reshuffleItems(
             "view"
 
         );
-
-    }
-
-}
-
-// ==========================================================
-// POST CREATE ITEM DIRECTLY IN STORAGE
-// ==========================================================
-
-async function postAddItem(
-    req,
-    res,
-    next
-) {
-
-    try {
-
-        const {
-            dairyId,
-            storageId
-        } = req.params;
-
-
-        const result =
-            await storageContentsService
-                .createItemInStorage({
-
-                    dairyId,
-
-                    storageId,
-
-                    data:
-                        req.body
-
-                });
-
-
-        return res.redirect(
-
-            `/storage/${dairyId}/contents/${storageId}`
-
-        );
-
-    } catch (error) {
-
-        next(error);
 
     }
 
@@ -1165,6 +1729,20 @@ function sendError(
 // ==========================================================
 // EXPORT
 // ==========================================================
+//
+// IMPORTANT:
+//
+// routes/storage.js expects:
+//
+//     contents
+//     addItems
+//     omitItems
+//     reshuffleItems
+//     updateQuantity
+//     getAddItemPage
+//     postAddItem
+//
+// ==========================================================
 
 module.exports = {
 
@@ -1176,6 +1754,10 @@ module.exports = {
 
     reshuffleItems,
 
-    updateQuantity
+    updateQuantity,
+
+    getAddItemPage,
+
+    postAddItem
 
 };
