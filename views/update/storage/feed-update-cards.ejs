@@ -1,0 +1,762 @@
+<% /*
+==========================================================
+AVAILABLE ANIMAL FEED UPDATE CARDS
+
+FILE:
+    views/update/feed-update-cards.ejs
+
+PURPOSE:
+    Compact WhatsApp-style horizontal cards for giving
+    updates about available animal feeds.
+
+    The section:
+        - Introduces the available animal feeds
+        - Shows feed items in horizontally scrollable cards
+        - Shows the feed image
+        - Shows the feed name
+        - Shows a short feed description/type
+        - Links to a page that can be defined later
+
+EXPECTED DATA:
+    availableFeeds
+
+IMPORTANT:
+    The destination URL is currently a placeholder.
+
+    Replace:
+
+        "#"
+
+    with the appropriate route when the destination page
+    has been decided.
+
+CARD BEHAVIOUR:
+    - Horizontal scrolling
+    - Left/right swiping on mobile
+    - Same card dimensions as dairy asset cards
+    - Cards do NOT open a post modal
+==========================================================
+*/ %>
+
+
+<%
+    /* ======================================================
+       SAFE FEED ARRAY
+    ====================================================== */
+
+    const feeds =
+        Array.isArray(availableFeeds)
+            ? availableFeeds
+            : [];
+%>
+
+
+<% if (feeds.length) { %>
+
+<section
+    class="animal-feed-update-strip"
+    aria-label="Available Animal Feed Updates"
+>
+
+
+    <!-- =====================================================
+         SECTION HEADER
+    ===================================================== -->
+
+    <div class="animal-feed-update-strip-header">
+
+        <div class="animal-feed-update-strip-title">
+
+            <strong>
+                Give Any Updates About the Available Animal Feeds
+            </strong>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         HORIZONTAL SCROLL AREA
+    ===================================================== -->
+
+    <div
+        class="animal-feed-update-scroll"
+        role="list"
+        aria-label="Available animal feeds"
+    >
+
+
+        <% feeds.forEach(function (feed) { %>
+
+            <%
+                /* =================================================
+                   SAFETY CHECK
+                ================================================= */
+
+                if (!feed) {
+                    return;
+                }
+
+
+                /* =================================================
+                   FEED NAME
+                ================================================= */
+
+                const feedName =
+                    feed.name ||
+                    feed.feedName ||
+                    feed.title ||
+                    "Animal Feed";
+
+
+                /* =================================================
+                   FEED IMAGE
+
+                   Prefer:
+                       profileImage
+                       displayImage
+                       image
+
+                   Otherwise use a simple avatar.
+                ================================================= */
+
+                const feedImage =
+                    feed.profileImage ||
+                    feed.displayImage ||
+                    feed.image ||
+                    (
+                        "https://ui-avatars.com/api/?name=" +
+                        encodeURIComponent(feedName) +
+                        "&background=e8f5ee&color=198754"
+                    );
+
+
+                /* =================================================
+                   FEED TYPE / DESCRIPTION
+
+                   Backend can provide either:
+
+                       type
+                       category
+                       description
+
+                   The first available value is displayed.
+                ================================================= */
+
+                const feedType =
+                    feed.type ||
+                    feed.category ||
+                    feed.description ||
+                    "Animal Feed";
+
+
+                /* =================================================
+                   DESTINATION
+
+                   PLACEHOLDER ONLY.
+
+                   Replace "#" later with the required route.
+
+                   Example:
+
+                       /dairy/<%= dairy._id %>/feedstore/update
+
+                   or whatever destination is decided.
+                ================================================= */
+
+                const feedUrl =
+                    "#";
+            %>
+
+
+
+            <!-- =================================================
+                 FEED CARD
+            ================================================== -->
+
+            <a
+                href="<%= feedUrl %>"
+                class="animal-feed-update-card"
+                role="listitem"
+                aria-label="Give an update about <%= feedName %>"
+            >
+
+
+                <!-- =============================================
+                     IMAGE
+                ============================================== -->
+
+                <div class="animal-feed-update-image-wrap">
+
+                    <img
+                        src="<%= feedImage %>"
+                        alt="<%= feedName %>"
+                        class="animal-feed-update-image"
+                        loading="lazy"
+                    >
+
+                </div>
+
+
+
+                <!-- =============================================
+                     FEED NAME
+                ============================================== -->
+
+                <div class="animal-feed-update-name">
+
+                    <%= feedName %>
+
+                </div>
+
+
+
+                <!-- =============================================
+                     FEED TYPE / DESCRIPTION
+                ============================================== -->
+
+                <div class="animal-feed-update-type">
+
+                    <span
+                        class="animal-feed-update-type-icon"
+                        aria-hidden="true"
+                    >
+                        🌾
+                    </span>
+
+                    <span>
+                        <%= feedType %>
+                    </span>
+
+                </div>
+
+
+            </a>
+
+
+        <% }); %>
+
+
+    </div>
+
+
+</section>
+
+
+
+<style>
+
+/* ==========================================================
+   AVAILABLE ANIMAL FEED UPDATE STRIP
+
+   Namespaced specifically for this component.
+========================================================== */
+
+.animal-feed-update-strip {
+
+    width: 100%;
+
+    margin:
+        0
+        0
+        16px;
+
+    padding: 0;
+
+    overflow: hidden;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+}
+
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.animal-feed-update-strip-header {
+
+    width: 100%;
+
+    padding:
+        0
+        2px
+        10px;
+
+}
+
+
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
+.animal-feed-update-strip-title {
+
+    width: 100%;
+
+}
+
+
+.animal-feed-update-strip-title strong {
+
+    display: block;
+
+    color:
+        #202520;
+
+    font-size:
+        18px;
+
+    font-weight:
+        700;
+
+    line-height:
+        1.3;
+
+}
+
+
+
+/* ==========================================================
+   HORIZONTAL SCROLL
+========================================================== */
+
+.animal-feed-update-scroll {
+
+    width: 100%;
+
+    display: flex;
+
+    gap:
+        10px;
+
+    overflow-x:
+        auto;
+
+    overflow-y:
+        hidden;
+
+    padding:
+        2px
+        2px
+        8px;
+
+    scroll-behavior:
+        smooth;
+
+    -webkit-overflow-scrolling:
+        touch;
+
+    scrollbar-width:
+        none;
+
+}
+
+
+.animal-feed-update-scroll::-webkit-scrollbar {
+
+    display:
+        none;
+
+}
+
+
+
+/* ==========================================================
+   FEED CARD
+
+   SAME SIZE AS THE DAIRY ASSET CARD
+========================================================== */
+
+.animal-feed-update-card {
+
+    position:
+        relative;
+
+    flex:
+        0 0
+        116px;
+
+    width:
+        116px;
+
+    height:
+        178px;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    overflow:
+        hidden;
+
+    text-decoration:
+        none;
+
+    border:
+        1px solid
+        #e4e9e6;
+
+    border-radius:
+        15px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 2px 8px
+        rgba(20, 40, 28, .06);
+
+    transition:
+        transform .16s ease,
+        box-shadow .16s ease;
+
+}
+
+
+
+/* ==========================================================
+   CARD HOVER
+========================================================== */
+
+.animal-feed-update-card:hover {
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 5px 14px
+        rgba(20, 40, 28, .10);
+
+}
+
+
+
+/* ==========================================================
+   CARD ACTIVE
+========================================================== */
+
+.animal-feed-update-card:active {
+
+    transform:
+        scale(.97);
+
+}
+
+
+
+/* ==========================================================
+   IMAGE WRAPPER
+========================================================== */
+
+.animal-feed-update-image-wrap {
+
+    position:
+        relative;
+
+    width:
+        100%;
+
+    height:
+        116px;
+
+    flex:
+        0 0
+        116px;
+
+    overflow:
+        hidden;
+
+    background:
+        #eef3ef;
+
+}
+
+
+
+/* ==========================================================
+   IMAGE
+========================================================== */
+
+.animal-feed-update-image {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    display:
+        block;
+
+    object-fit:
+        cover;
+
+}
+
+
+
+/* ==========================================================
+   FEED NAME
+========================================================== */
+
+.animal-feed-update-name {
+
+    width:
+        100%;
+
+    padding:
+        8px
+        8px
+        2px;
+
+    color:
+        #202520;
+
+    font-size:
+        13px;
+
+    font-weight:
+        700;
+
+    line-height:
+        16px;
+
+    overflow:
+        hidden;
+
+    display:
+        -webkit-box;
+
+    -webkit-box-orient:
+        vertical;
+
+    -webkit-line-clamp:
+        2;
+
+}
+
+
+
+/* ==========================================================
+   FEED TYPE / DESCRIPTION
+========================================================== */
+
+.animal-feed-update-type {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        4px;
+
+    padding:
+        1px
+        8px
+        8px;
+
+    color:
+        #7b847e;
+
+    font-size:
+        10px;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* ==========================================================
+   TYPE ICON
+========================================================== */
+
+.animal-feed-update-type-icon {
+
+    flex:
+        0 0 auto;
+
+    font-size:
+        10px;
+
+}
+
+
+
+/* ==========================================================
+   TYPE TEXT
+========================================================== */
+
+.animal-feed-update-type span:last-child {
+
+    min-width:
+        0;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
+
+
+/* ==========================================================
+   FOCUS ACCESSIBILITY
+========================================================== */
+
+.animal-feed-update-card:focus-visible {
+
+    outline:
+        2px solid
+        #198754;
+
+    outline-offset:
+        2px;
+
+}
+
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+
+    .animal-feed-update-strip {
+
+        margin-bottom:
+            14px;
+
+    }
+
+
+
+    /* ==============================================
+       TITLE
+    ============================================== */
+
+    .animal-feed-update-strip-title strong {
+
+        font-size:
+            17px;
+
+    }
+
+
+
+    /* ==============================================
+       CARD
+    ============================================== */
+
+    .animal-feed-update-card {
+
+        flex-basis:
+            112px;
+
+        width:
+            112px;
+
+        height:
+            174px;
+
+        border-radius:
+            14px;
+
+    }
+
+
+
+    /* ==============================================
+       IMAGE
+    ============================================== */
+
+    .animal-feed-update-image-wrap {
+
+        height:
+            112px;
+
+        flex-basis:
+            112px;
+
+    }
+
+
+
+    /* ==============================================
+       NAME
+    ============================================== */
+
+    .animal-feed-update-name {
+
+        padding:
+            7px
+            7px
+            2px;
+
+        font-size:
+            12px;
+
+        line-height:
+            15px;
+
+    }
+
+
+
+    /* ==============================================
+       TYPE
+    ============================================== */
+
+    .animal-feed-update-type {
+
+        padding:
+            1px
+            7px
+            7px;
+
+        font-size:
+            9px;
+
+    }
+
+
+
+    .animal-feed-update-type-icon {
+
+        font-size:
+            9px;
+
+    }
+
+}
+
+</style>
+
+
+<% } %>
