@@ -35,20 +35,20 @@
 //     structure
 //         = room / agroStore / building / machine / feeds / etc.
 //
-// STORAGE EXAMPLE:
+// STORAGE:
 //
-//     recordType: "structure"
-//     type: "room"
+//     recordType = "structure"
+//     type       = "room"
+//     roomNumber = 1, 2, 3, ...
 //
-//     OR
+//     recordType = "structure"
+//     type       = "agroStore"
+//     roomNumber = -1, -2, -3, ...
 //
-//     recordType: "structure"
-//     type: "agroStore"
+// FEED:
 //
-// FEED STOCK EXAMPLE:
-//
-//     recordType: "structure"
-//     type: "feeds"
+//     recordType = "structure"
+//     type       = "feeds"
 //
 // ==========================================================
 //
@@ -84,48 +84,51 @@
 // Standalone Structure / Asset:
 //     assetCode = null
 //
+// ==========================================================
+//
+// STORAGE NUMBER
+// ----------------------------------------------------------
+//
+// roomNumber
+//
+//     room:
+//         1, 2, 3, ...
+//
+//     agroStore:
+//         -1, -2, -3, ...
+//
 // IMPORTANT:
 //
-// The parent farm is identified by MongoDB _id when passed
-// through routes such as:
+// The model DOES NOT generate the next roomNumber.
 //
-//     /storage/:id/add
+// The CREATE SERVICE generates it.
 //
-// The relationship stored on the created record is:
-//
-//     assetCode = parentDairy.code
+// The model only guarantees that a valid room/agroStore
+// cannot be saved without a valid roomNumber.
 //
 // ==========================================================
 //
-// DWELLING / ALLOCATION
+// DWELL / CONTENT ALLOCATION
 // ----------------------------------------------------------
 //
-// dwellNumber >= 0
-//     = Normal Room
+// dwellNumber
 //
-// dwellNumber < 0
-//     = AgroStore
+//     >= 0
+//         = content allocated to a normal room
 //
-// dwellNumber === null
-//     = Not Allocated
+//     < 0
+//         = content allocated to an AgroStore
 //
-// ==========================================================
+//     null
+//         = not allocated
 //
-// FEED STOCK
-// ----------------------------------------------------------
+// IMPORTANT:
 //
-// type === "feeds"
-//     = Feed Stock Item
+// roomNumber identifies the STORAGE FACILITY itself.
 //
-// recordType remains independent:
+// dwellNumber identifies WHERE A CONTENT RECORD is allocated.
 //
-//     recordType === "structure"
-//     type === "feeds"
-//
-// Only feed records may contain:
-//
-//     quantity
-//     unit
+// They are NOT the same field.
 //
 // ==========================================================
 
@@ -144,19 +147,13 @@ const MAX_PROFILE_IMAGES = 5;
 // ==========================================================
 // RECORD TYPES
 // ==========================================================
-//
-// IMPORTANT:
-//
-// This is the record classification.
-//
-// It is NOT the same thing as `type`.
-//
-// ==========================================================
 
 const RECORD_TYPES = [
+
     "farm",
     "animal",
     "structure"
+
 ];
 
 
@@ -201,25 +198,7 @@ const DAIRY_FARM_TYPES = [
 
 
 // ==========================================================
-// STRUCTURE / FACILITY / ASSET TYPES
-// ==========================================================
-//
-// IMPORTANT:
-//
-// Storage types are also represented through `type`.
-//
-// Therefore:
-//
-//     recordType = "structure"
-//     type = "room"
-//
-//     recordType = "structure"
-//     type = "agroStore"
-//
-// `recordType` identifies the record as a structure.
-//
-// `type` identifies the specific structure/facility type.
-//
+// STRUCTURE TYPES
 // ==========================================================
 
 const STRUCTURE_TYPES = [
@@ -241,9 +220,6 @@ const STRUCTURE_TYPES = [
     "solarSystem",
     "feedStore",
 
-    // Feed stock item.
-    //
-    // This is deliberately a `type`, not a `recordType`.
     "feeds",
 
     "other"
@@ -254,16 +230,9 @@ const STRUCTURE_TYPES = [
 // ==========================================================
 // FEED TYPE
 // ==========================================================
-//
-// IMPORTANT:
-//
-// `feeds` belongs to the `type` field.
-//
-// It does NOT become a recordType.
-//
-// ==========================================================
 
-const FEED_TYPE = "feeds";
+const FEED_TYPE =
+    "feeds";
 
 
 // ==========================================================
@@ -330,6 +299,56 @@ function isNegativeIntegerOrNull(value) {
 
 
 // ==========================================================
+// HELPER: VALID ROOM NUMBER
+// ==========================================================
+//
+// Normal rooms:
+//
+//     1
+//     2
+//     3
+//     ...
+//
+// ==========================================================
+
+function isValidRoomNumber(value) {
+
+    return (
+
+        Number.isInteger(value) &&
+        value > 0
+
+    );
+
+}
+
+
+// ==========================================================
+// HELPER: VALID AGROSTORE NUMBER
+// ==========================================================
+//
+// AgroStores:
+//
+//     -1
+//     -2
+//     -3
+//     ...
+//
+// ==========================================================
+
+function isValidAgroStoreNumber(value) {
+
+    return (
+
+        Number.isInteger(value) &&
+        value < 0
+
+    );
+
+}
+
+
+// ==========================================================
 // HELPER: NORMALIZE PROFILE IMAGE
 // ==========================================================
 
@@ -382,18 +401,6 @@ const dairySchema =
 
             // ==================================================
             // RECORD TYPE
-            // ==================================================
-            //
-            // IMPORTANT:
-            //
-            // recordType is NOT `type`.
-            //
-            // recordType:
-            //
-            //     farm
-            //     animal
-            //     structure
-            //
             // ==================================================
 
             recordType: {
@@ -560,12 +567,6 @@ const dairySchema =
             // ==================================================
             // ASSET CODE
             // ==================================================
-            //
-            // Parent Dairy Farm code.
-            //
-            // MUST be negative when supplied.
-            //
-            // ==================================================
 
             assetCode: {
 
@@ -593,17 +594,130 @@ const dairySchema =
 
 
             // ==================================================
+            // ROOM NUMBER
+            // ==================================================
+            //
+            // THIS IDENTIFIES A STORAGE FACILITY.
+            //
+            // room:
+            //
+            //     1, 2, 3, ...
+            //
+            // agroStore:
+            //
+            //     -1, -2, -3, ...
+            //
+            // The service generates this value.
+            //
+            // The model validates it.
+            //
+            // ==================================================
+
+            roomNumber: {
+
+                type: Number,
+
+                default: null,
+
+                validate: {
+
+                    validator:
+                        function (value) {
+
+                            // ----------------------------------
+                            // Non-storage records
+                            // ----------------------------------
+
+                            if (
+                                this.type !== "room" &&
+                                this.type !== "agroStore"
+                            ) {
+
+                                return (
+                                    value === null ||
+                                    value === undefined
+                                );
+
+                            }
+
+
+                            // ----------------------------------
+                            // Normal room
+                            // ----------------------------------
+
+                            if (
+                                this.type === "room"
+                            ) {
+
+                                return isValidRoomNumber(
+                                    value
+                                );
+
+                            }
+
+
+                            // ----------------------------------
+                            // AgroStore
+                            // ----------------------------------
+
+                            if (
+                                this.type === "agroStore"
+                            ) {
+
+                                return isValidAgroStoreNumber(
+                                    value
+                                );
+
+                            }
+
+
+                            return false;
+
+                        },
+
+                    message:
+                        function () {
+
+                            if (
+                                this.type === "room"
+                            ) {
+
+                                return (
+                                    "A room must have a positive integer roomNumber."
+                                );
+
+                            }
+
+
+                            if (
+                                this.type === "agroStore"
+                            ) {
+
+                                return (
+                                    "An AgroStore must have a negative integer roomNumber."
+                                );
+
+                            }
+
+
+                            return (
+                                "Non-storage records must not have a roomNumber."
+                            );
+
+                        }
+
+                }
+
+            },
+
+
+            // ==================================================
             // DWELL NUMBER
             // ==================================================
             //
-            // >= 0
-            //     normal room
+            // This is for CONTENT allocation.
             //
-            // < 0
-            //     AgroStore
-            //
-            // null
-            //     not allocated
+            // It is NOT the storage facility number.
             //
             // ==================================================
 
@@ -635,12 +749,6 @@ const dairySchema =
             // ==================================================
             // FEED QUANTITY
             // ==================================================
-            //
-            // ONLY VALID WHEN:
-            //
-            //     type === "feeds"
-            //
-            // ==================================================
 
             quantity: {
 
@@ -655,12 +763,6 @@ const dairySchema =
 
             // ==================================================
             // FEED UNIT
-            // ==================================================
-            //
-            // ONLY VALID WHEN:
-            //
-            //     type === "feeds"
-            //
             // ==================================================
 
             unit: {
@@ -881,29 +983,6 @@ const dairySchema =
 
             // ==================================================
             // TYPE
-            // ==================================================
-            //
-            // IMPORTANT:
-            //
-            // This is NOT recordType.
-            //
-            // Examples:
-            //
-            //     recordType: "structure"
-            //     type: "room"
-            //
-            //     recordType: "structure"
-            //     type: "agroStore"
-            //
-            //     recordType: "structure"
-            //     type: "feeds"
-            //
-            //     recordType: "animal"
-            //     type: "Friesian"
-            //
-            //     recordType: "farm"
-            //     type: "ranch"
-            //
             // ==================================================
 
             type: {
@@ -1135,10 +1214,6 @@ dairySchema.virtual(
 // ==========================================================
 // VIRTUAL: IS MANUAL ASSET
 // ==========================================================
-//
-// A structure with no parent farm.
-//
-// ==========================================================
 
 dairySchema.virtual(
     "isManualAsset"
@@ -1217,8 +1292,8 @@ dairySchema.virtual(
 
     return (
 
-        this.isDwelling &&
-        Number(this.dwellNumber) >= 0
+        this.isStructure &&
+        this.type === "room"
 
     );
 
@@ -1228,17 +1303,6 @@ dairySchema.virtual(
 // ==========================================================
 // VIRTUAL: IS AGROSTORE
 // ==========================================================
-//
-// IMPORTANT:
-//
-// This checks the STRUCTURE TYPE.
-//
-// A storage facility itself is:
-//
-//     recordType = "structure"
-//     type = "agroStore"
-//
-// ==========================================================
 
 dairySchema.virtual(
     "isAgroStore"
@@ -1247,10 +1311,7 @@ dairySchema.virtual(
     return (
 
         this.isStructure &&
-        String(this.type || "")
-            .trim()
-            .toLowerCase() ===
-            "agrostore"
+        this.type === "agroStore"
 
     );
 
@@ -1268,10 +1329,7 @@ dairySchema.virtual(
     return (
 
         this.isStructure &&
-        String(this.type || "")
-            .trim()
-            .toLowerCase() ===
-            "room"
+        this.type === "room"
 
     );
 
@@ -1280,11 +1338,6 @@ dairySchema.virtual(
 
 // ==========================================================
 // VIRTUAL: IS AGROSTORE CONTENT
-// ==========================================================
-//
-// A record allocated to an AgroStore is identified by a
-// negative dwellNumber.
-//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1334,14 +1387,6 @@ dairySchema.virtual(
 
 // ==========================================================
 // VIRTUAL: IS FEED
-// ==========================================================
-//
-// IMPORTANT:
-//
-// Feed is determined by `type`.
-//
-// NOT by recordType.
-//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1559,11 +1604,9 @@ dairySchema.virtual(
         now.getFullYear() -
         dob.getFullYear();
 
-
     let months =
         now.getMonth() -
         dob.getMonth();
-
 
     let days =
         now.getDate() -
@@ -1953,6 +1996,15 @@ dairySchema.pre(
 
 
         if (
+            this.roomNumber === undefined
+        ) {
+
+            this.roomNumber = null;
+
+        }
+
+
+        if (
             this.dwellNumber === undefined
         ) {
 
@@ -1978,19 +2030,6 @@ dairySchema.pre(
         // ======================================================
         // DETERMINE RECORD TYPE
         // ======================================================
-        //
-        // New records should provide recordType.
-        //
-        // For compatibility with existing records, if
-        // recordType is missing it is derived from code.
-        //
-        // IMPORTANT:
-        //
-        // This is only deriving the record classification.
-        //
-        // It does NOT turn `type` into `recordType`.
-        //
-        // ======================================================
 
         if (
             !this.recordType
@@ -2005,19 +2044,22 @@ dairySchema.pre(
                     Number(this.code) < 0
                 ) {
 
-                    this.recordType = "farm";
+                    this.recordType =
+                        "farm";
 
                 } else if (
                     Number(this.code) > 0
                 ) {
 
-                    this.recordType = "animal";
+                    this.recordType =
+                        "animal";
 
                 }
 
             } else {
 
-                this.recordType = "structure";
+                this.recordType =
+                    "structure";
 
             }
 
@@ -2035,9 +2077,7 @@ dairySchema.pre(
             if (
                 this.code === null ||
                 this.code === undefined ||
-                !Number.isInteger(
-                    this.code
-                ) ||
+                !Number.isInteger(this.code) ||
                 Number(this.code) >= 0
             ) {
 
@@ -2062,9 +2102,7 @@ dairySchema.pre(
             if (
                 this.code === null ||
                 this.code === undefined ||
-                !Number.isInteger(
-                    this.code
-                ) ||
+                !Number.isInteger(this.code) ||
                 Number(this.code) <= 0
             ) {
 
@@ -2106,15 +2144,90 @@ dairySchema.pre(
 
 
         // ======================================================
-        // FEED STOCK NORMALIZATION
+        // STORAGE ROOM NUMBER
         // ======================================================
         //
-        // Feed is identified by:
+        // This is the critical protection.
         //
-        //     type === "feeds"
+        // The service MUST generate roomNumber.
         //
-        // NOT by recordType.
+        // The model refuses to save:
         //
+        //     room       without positive roomNumber
+        //     agroStore  without negative roomNumber
+        //
+        // The model does NOT generate the number.
+        //
+        // ======================================================
+
+        if (
+            this.recordType === "structure" &&
+            this.type === "room"
+        ) {
+
+            if (
+                !isValidRoomNumber(
+                    this.roomNumber
+                )
+            ) {
+
+                const error =
+                    new Error(
+                        "A room must have an autogenerated positive integer roomNumber."
+                    );
+
+                error.status = 400;
+
+                return next(error);
+
+            }
+
+        }
+
+
+        if (
+            this.recordType === "structure" &&
+            this.type === "agroStore"
+        ) {
+
+            if (
+                !isValidAgroStoreNumber(
+                    this.roomNumber
+                )
+            ) {
+
+                const error =
+                    new Error(
+                        "An AgroStore must have an autogenerated negative integer roomNumber."
+                    );
+
+                error.status = 400;
+
+                return next(error);
+
+            }
+
+        }
+
+
+        // ======================================================
+        // NON-STORAGE STRUCTURES
+        // ======================================================
+
+        if (
+            this.recordType === "structure" &&
+            !STORAGE_TYPES.includes(
+                this.type
+            )
+        ) {
+
+            this.roomNumber = null;
+
+        }
+
+
+        // ======================================================
+        // FEED STOCK NORMALIZATION
         // ======================================================
 
         const isFeed =
@@ -2127,10 +2240,6 @@ dairySchema.pre(
 
 
         if (isFeed) {
-
-            // --------------------------------------------------
-            // Feed must be a structure record.
-            // --------------------------------------------------
 
             if (
                 this.recordType !== "structure"
@@ -2147,10 +2256,6 @@ dairySchema.pre(
 
             }
 
-
-            // --------------------------------------------------
-            // QUANTITY
-            // --------------------------------------------------
 
             if (
                 this.quantity === null ||
@@ -2208,10 +2313,6 @@ dairySchema.pre(
             }
 
 
-            // --------------------------------------------------
-            // UNIT
-            // --------------------------------------------------
-
             if (
                 this.unit !== null &&
                 this.unit !== undefined
@@ -2233,10 +2334,6 @@ dairySchema.pre(
 
         } else {
 
-            // --------------------------------------------------
-            // NON-FEEDS MUST NEVER RETAIN FEED DATA
-            // --------------------------------------------------
-
             this.quantity = null;
 
             this.unit = null;
@@ -2252,18 +2349,11 @@ dairySchema.pre(
             this.recordType === "farm"
         ) {
 
-            // --------------------------------------------------
-            // Farm is a root entity.
-            // --------------------------------------------------
-
             this.assetCode = null;
 
+            this.roomNumber = null;
+
             this.dwellNumber = null;
-
-
-            // --------------------------------------------------
-            // Farm cannot have animal-specific fields.
-            // --------------------------------------------------
 
             this.dateOfBirth = null;
 
@@ -2271,23 +2361,10 @@ dairySchema.pre(
 
             this.isMilking = false;
 
-
-            // --------------------------------------------------
-            // Farm cannot be feed stock.
-            // --------------------------------------------------
-
             this.quantity = null;
 
             this.unit = null;
 
-
-            // --------------------------------------------------
-            // Validate farm type.
-            //
-            // IMPORTANT:
-            //
-            // This is `type`, not `recordType`.
-            // --------------------------------------------------
 
             if (
                 this.type &&
@@ -2318,10 +2395,6 @@ dairySchema.pre(
             this.recordType === "animal"
         ) {
 
-            // --------------------------------------------------
-            // Male animals cannot be marked as milking.
-            // --------------------------------------------------
-
             if (
                 !this.isFemale
             ) {
@@ -2330,10 +2403,6 @@ dairySchema.pre(
 
             }
 
-
-            // --------------------------------------------------
-            // Every animal must belong to a farm.
-            // --------------------------------------------------
 
             if (
                 this.assetCode === null ||
@@ -2352,14 +2421,8 @@ dairySchema.pre(
             }
 
 
-            // --------------------------------------------------
-            // Parent farm code must be negative.
-            // --------------------------------------------------
-
             if (
-                Number(
-                    this.assetCode
-                ) >= 0
+                Number(this.assetCode) >= 0
             ) {
 
                 const error =
@@ -2374,22 +2437,12 @@ dairySchema.pre(
             }
 
 
-            // --------------------------------------------------
-            // Animals cannot have feed data.
-            // --------------------------------------------------
-
             this.quantity = null;
 
             this.unit = null;
 
+            this.roomNumber = null;
 
-            // --------------------------------------------------
-            // Validate breed.
-            //
-            // IMPORTANT:
-            //
-            // Breed is `type`.
-            // --------------------------------------------------
 
             if (
                 this.type &&
@@ -2420,10 +2473,6 @@ dairySchema.pre(
             this.recordType === "structure"
         ) {
 
-            // --------------------------------------------------
-            // Structures cannot have animal-specific fields.
-            // --------------------------------------------------
-
             this.dateOfBirth = null;
 
             this.mass = 0;
@@ -2431,19 +2480,13 @@ dairySchema.pre(
             this.isMilking = false;
 
 
-            // --------------------------------------------------
-            // Assigned structure / asset
-            // --------------------------------------------------
-
             if (
                 this.assetCode !== null &&
                 this.assetCode !== undefined
             ) {
 
                 if (
-                    Number(
-                        this.assetCode
-                    ) >= 0
+                    Number(this.assetCode) >= 0
                 ) {
 
                     const error =
@@ -2459,18 +2502,6 @@ dairySchema.pre(
 
             }
 
-
-            // --------------------------------------------------
-            // Validate structure type.
-            //
-            // IMPORTANT:
-            //
-            // Storage uses:
-            //
-            //     type = room
-            //     type = agroStore
-            //
-            // --------------------------------------------------
 
             if (
                 this.type &&
@@ -2664,6 +2695,8 @@ dairySchema.pre(
 
             this.assetCode = null;
 
+            this.roomNumber = null;
+
             this.dwellNumber = null;
 
             this.dateOfBirth = null;
@@ -2675,6 +2708,19 @@ dairySchema.pre(
             this.quantity = null;
 
             this.unit = null;
+
+        }
+
+
+        // ======================================================
+        // ANIMAL NORMALIZATION
+        // ======================================================
+
+        if (
+            this.recordType === "animal"
+        ) {
+
+            this.roomNumber = null;
 
         }
 
@@ -2692,6 +2738,60 @@ dairySchema.pre(
             this.mass = 0;
 
             this.isMilking = false;
+
+        }
+
+
+        // ======================================================
+        // FINAL STORAGE NUMBER VALIDATION
+        // ======================================================
+
+        if (
+            this.recordType === "structure" &&
+            this.type === "room"
+        ) {
+
+            if (
+                !isValidRoomNumber(
+                    this.roomNumber
+                )
+            ) {
+
+                const error =
+                    new Error(
+                        "Room creation requires an autogenerated positive roomNumber."
+                    );
+
+                error.status = 400;
+
+                return next(error);
+
+            }
+
+        }
+
+
+        if (
+            this.recordType === "structure" &&
+            this.type === "agroStore"
+        ) {
+
+            if (
+                !isValidAgroStoreNumber(
+                    this.roomNumber
+                )
+            ) {
+
+                const error =
+                    new Error(
+                        "AgroStore creation requires an autogenerated negative roomNumber."
+                    );
+
+                error.status = 400;
+
+                return next(error);
+
+            }
 
         }
 
@@ -2726,9 +2826,7 @@ dairySchema.pre(
 
 
             if (
-                !Number.isFinite(
-                    quantity
-                ) ||
+                !Number.isFinite(quantity) ||
                 quantity < 0
             ) {
 
@@ -2804,11 +2902,6 @@ dairySchema.pre(
 // INDEXES
 // ==========================================================
 
-
-// ----------------------------------------------------------
-// RECORD TYPE
-// ----------------------------------------------------------
-
 dairySchema.index({
 
     recordType: 1,
@@ -2817,20 +2910,12 @@ dairySchema.index({
 });
 
 
-// ----------------------------------------------------------
-// MILKING
-// ----------------------------------------------------------
-
 dairySchema.index({
 
     isMilking: 1
 
 });
 
-
-// ----------------------------------------------------------
-// MAINTENANCE
-// ----------------------------------------------------------
 
 dairySchema.index({
 
@@ -2839,10 +2924,6 @@ dairySchema.index({
 });
 
 
-// ----------------------------------------------------------
-// MEDICAL
-// ----------------------------------------------------------
-
 dairySchema.index({
 
     "medicalAttention.isMarked": 1
@@ -2850,10 +2931,6 @@ dairySchema.index({
 });
 
 
-// ----------------------------------------------------------
-// ASSET ASSIGNMENT
-// ----------------------------------------------------------
-
 dairySchema.index({
 
     assetCode: 1,
@@ -2861,10 +2938,6 @@ dairySchema.index({
 
 });
 
-
-// ----------------------------------------------------------
-// DWELLING / ALLOCATION
-// ----------------------------------------------------------
 
 dairySchema.index({
 
@@ -2874,10 +2947,6 @@ dairySchema.index({
 });
 
 
-// ----------------------------------------------------------
-// FARM + DWELLING
-// ----------------------------------------------------------
-
 dairySchema.index({
 
     assetCode: 1,
@@ -2886,10 +2955,6 @@ dairySchema.index({
 
 });
 
-
-// ----------------------------------------------------------
-// RECORD TYPE + TYPE
-// ----------------------------------------------------------
 
 dairySchema.index({
 
@@ -2900,9 +2965,62 @@ dairySchema.index({
 });
 
 
-// ----------------------------------------------------------
+// ==========================================================
+// STORAGE NUMBER INDEX
+// ==========================================================
+//
+// roomNumber is unique within a parent farm + storage type.
+//
+// This prevents:
+//
+//     Farm -7 / room 1
+//     Farm -7 / room 1
+//
+// while allowing:
+//
+//     Farm -7 / room 1
+//     Farm -8 / room 1
+//
+// and:
+//
+//     Farm -7 / room 1
+//     Farm -7 / agroStore -1
+//
+// ==========================================================
+
+dairySchema.index({
+
+    assetCode: 1,
+    type: 1,
+    roomNumber: 1
+
+}, {
+
+    unique: true,
+
+    partialFilterExpression: {
+
+        recordType: "structure",
+
+        type: {
+            $in: [
+                "room",
+                "agroStore"
+            ]
+        },
+
+        roomNumber: {
+            $type: "number"
+        }
+
+    }
+
+});
+
+
+// ==========================================================
 // FEED STOCK
-// ----------------------------------------------------------
+// ==========================================================
 
 dairySchema.index({
 
@@ -2915,9 +3033,9 @@ dairySchema.index({
 });
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // CODE UNIQUENESS
-// ----------------------------------------------------------
+// ==========================================================
 
 dairySchema.index(
 
@@ -3170,22 +3288,28 @@ dairySchema.statics.getActiveRoomNumbers =
 
                         assetCode: farm,
 
-                        dwellNumber: {
-                            $gte: 0
+                        recordType: "structure",
+
+                        type: "room",
+
+                        roomNumber: {
+                            $gt: 0
                         },
 
                         status: "active"
 
                     }
+
                 },
 
                 {
                     $group: {
 
                         _id:
-                            "$dwellNumber"
+                            "$roomNumber"
 
                     }
+
                 },
 
                 {
@@ -3194,6 +3318,7 @@ dairySchema.statics.getActiveRoomNumbers =
                         _id: 1
 
                     }
+
                 }
 
             ]);
@@ -3235,28 +3360,34 @@ dairySchema.statics.getActiveAgroStoreNumbers =
 
                         assetCode: farm,
 
-                        dwellNumber: {
+                        recordType: "structure",
+
+                        type: "agroStore",
+
+                        roomNumber: {
                             $lt: 0
                         },
 
                         status: "active"
 
                     }
+
                 },
 
                 {
                     $group: {
 
                         _id:
-                            "$dwellNumber"
+                            "$roomNumber"
 
                     }
+
                 },
 
                 {
                     $sort: {
 
-                        _id: 1
+                        _id: -1
 
                     }
 
@@ -3313,16 +3444,6 @@ dairySchema.statics.getFarmAgroStoreContents =
 // ==========================================================
 // STATIC: GET FARM FEEDS
 // ==========================================================
-//
-// Feed identification remains:
-//
-//     type: "feeds"
-//
-// NOT:
-//
-//     recordType: "feeds"
-//
-// ==========================================================
 
 dairySchema.statics.getFarmFeeds =
     function (farmCode) {
@@ -3358,16 +3479,6 @@ dairySchema.statics.getFarmFeeds =
 
 // ==========================================================
 // STATIC: GET AVAILABLE FARM FEEDS
-// ==========================================================
-//
-// Available means:
-//
-//     correct farm
-//     recordType = structure
-//     type = feeds
-//     unallocated
-//     quantity > 0
-//
 // ==========================================================
 
 dairySchema.statics.getAvailableFarmFeeds =
@@ -3423,10 +3534,6 @@ dairySchema.statics.getAvailableFarmFeeds =
 // ==========================================================
 // STATIC: GET AGROSTORE FEEDS
 // ==========================================================
-//
-// Returns only feeds currently allocated to an AgroStore.
-//
-// ==========================================================
 
 dairySchema.statics.getAgroStoreFeeds =
     function (
@@ -3473,14 +3580,6 @@ dairySchema.statics.getAgroStoreFeeds =
 // ==========================================================
 // STATIC: GET STANDALONE ASSETS
 // ==========================================================
-//
-// Manual / standalone assets:
-//
-//     recordType = structure
-//     code = null
-//     assetCode = null
-//
-// ==========================================================
 
 dairySchema.statics.getStandaloneAssets =
     function () {
@@ -3500,16 +3599,6 @@ dairySchema.statics.getStandaloneAssets =
 
 // ==========================================================
 // STATIC: GET STORAGE FACILITIES
-// ==========================================================
-//
-// Returns storage structures:
-//
-//     recordType = structure
-//
-//     type = room
-//     OR
-//     type = agroStore
-//
 // ==========================================================
 
 dairySchema.statics.getStorageFacilities =
@@ -3539,6 +3628,10 @@ dairySchema.statics.getStorageFacilities =
 
             type: {
                 $in: STORAGE_TYPES
+            },
+
+            roomNumber: {
+                $ne: null
             }
 
         });
@@ -3577,6 +3670,10 @@ dairySchema.statics.getRooms =
 
             type: "room",
 
+            roomNumber: {
+                $gt: 0
+            },
+
             status: "active"
 
         });
@@ -3614,6 +3711,10 @@ dairySchema.statics.getAgroStores =
             assetCode: farm,
 
             type: "agroStore",
+
+            roomNumber: {
+                $lt: 0
+            },
 
             status: "active"
 
@@ -3733,10 +3834,6 @@ dairySchema.statics.getFeedType =
 // ==========================================================
 // STATIC: CALCULATE NET WORTH
 // ==========================================================
-//
-// Current worth of all active records.
-//
-// ==========================================================
 
 dairySchema.statics.calculateNetWorth =
     async function () {
@@ -3750,6 +3847,7 @@ dairySchema.statics.calculateNetWorth =
                         status: "active"
 
                     }
+
                 },
 
                 {
