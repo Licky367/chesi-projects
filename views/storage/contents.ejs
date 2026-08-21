@@ -21,6 +21,19 @@ IMPORTANT:
 
     DO NOT change "agroStore" to "agrostore".
 
+ADD ITEM LINK:
+    The Add Item button uses:
+
+        ../add/<storageType>
+
+    Therefore:
+
+        room
+            ../add/room
+
+        agroStore
+            ../add/agroStore
+
 ==============================================================
 */
 
@@ -1486,8 +1499,18 @@ const addItemCount =
 
         <div class="storage-header-actions">
 
+            <!-- =================================================
+                 CORRECTED ADD ITEM LINK
+
+                 room:
+                     ../add/room
+
+                 agroStore:
+                     ../add/agroStore
+            ================================================== -->
+
             <a
-                href="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
+                href="../add/<%= storageType %>"
                 class="add-storage-item-button"
             >
 
