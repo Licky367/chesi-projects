@@ -402,21 +402,6 @@
 
 
 /* ==========================================================
-   INVALID TYPE
-   ========================================================== */
-
-.storage-invalid {
-    background: #fff8e8;
-    border: 1px solid #ead7a5;
-    color: #795b00;
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-
-/* ==========================================================
    EMPTY STATE
    ========================================================== */
 
@@ -669,6 +654,35 @@
     </div>
 
 
+    <%
+        /*
+         * ==================================================
+         * VALID STORAGE TYPES
+         * ==================================================
+         *
+         * The list is strictly limited to:
+         *
+         *     room
+         *     agroStore
+         *
+         * Any other storage type is excluded completely.
+         *
+         * ==================================================
+         */
+
+        const validStorage =
+            Array.isArray(storage)
+                ? storage.filter(function (item) {
+                    return item &&
+                        (
+                            item.type === "room" ||
+                            item.type === "agroStore"
+                        );
+                })
+                : [];
+    %>
+
+
     <!-- ==================================================
          SUMMARY
          ================================================== -->
@@ -678,10 +692,10 @@
         <span>
 
             <strong>
-                <%= Array.isArray(storage) ? storage.length : 0 %>
+                <%= validStorage.length %>
             </strong>
 
-            <%= Array.isArray(storage) && storage.length === 1
+            <%= validStorage.length === 1
                 ? "storage facility"
                 : "storage facilities"
             %>
@@ -695,12 +709,12 @@
          STORAGE LIST
          ================================================== -->
 
-    <% if (Array.isArray(storage) && storage.length > 0) { %>
+    <% if (validStorage.length > 0) { %>
 
         <div class="storage-list">
 
 
-            <% storage.forEach(function (item) { %>
+            <% validStorage.forEach(function (item) { %>
 
 
                 <%
@@ -709,30 +723,11 @@
                      * STORAGE TYPE
                      * ==================================================
                      *
-                     * The ONLY field used to identify the storage type
-                     * is:
+                     * Because validStorage has already been filtered,
+                     * item.type can ONLY be:
                      *
-                     *     item.type
-                     *
-                     * room:
-                     *
-                     *     item.type === "room"
-                     *
-                     * AgroStore:
-                     *
-                     *     item.type === "agroStore"
-                     *
-                     * Do NOT infer type from:
-                     *
-                     *     dwellNumber
-                     *
-                     * Do NOT infer type from:
-                     *
-                     *     roomNumber
-                     *
-                     * Do NOT infer type from:
-                     *
-                     *     _id
+                     *     room
+                     *     agroStore
                      *
                      * ==================================================
                      */
@@ -762,13 +757,9 @@
 
                             🏪
 
-                        <% } else if (isRoom) { %>
-
-                            🏠
-
                         <% } else { %>
 
-                            ⚠️
+                            🏠
 
                         <% } %>
 
@@ -799,13 +790,9 @@
 
                                     AgroStore <%= Math.abs(item.roomNumber) %>
 
-                                <% } else if (isRoom) { %>
-
-                                    Room <%= item.roomNumber %>
-
                                 <% } else { %>
 
-                                    Storage
+                                    Room <%= item.roomNumber %>
 
                                 <% } %>
 
@@ -817,21 +804,7 @@
 
                                 <!-- ==================================
                                      VIEW CONTENTS
-                                     ==================================
-
-                                     Parent farm:
-                                         dairy._id
-
-                                     Storage facility:
-                                         item._id
-
-                                     IMPORTANT:
-                                         item._id identifies the
-                                         storage facility.
-
-                                     roomNumber and dwellNumber
-                                     are NOT used here.
-                                ================================== -->
+                                     ================================== -->
 
                                 <a
                                     href="/storage/<%= dairy._id %>/contents/<%= item._id %>"
@@ -853,20 +826,12 @@
                                         AgroStore
                                     </span>
 
-                                <% } else if (isRoom) { %>
+                                <% } else { %>
 
                                     <span
                                         class="storage-type room-type"
                                     >
                                         Room
-                                    </span>
-
-                                <% } else { %>
-
-                                    <span
-                                        class="storage-invalid"
-                                    >
-                                        Unknown type
                                     </span>
 
                                 <% } %>
@@ -910,17 +875,6 @@
                             <!-- ======================================
                                  STORAGE NUMBER
                                  ====================================== -->
-                            <!--
-                                IMPORTANT:
-
-                                roomNumber is NOT dwellNumber.
-
-                                roomNumber is used for the displayed
-                                Room / AgroStore number, exactly as
-                                defined by the storage record.
-
-                                We do NOT replace it with dwellNumber.
-                            -->
 
                             <div class="storage-detail">
 
@@ -930,13 +884,9 @@
 
                                         AgroStore Number
 
-                                    <% } else if (isRoom) { %>
-
-                                        Room Number
-
                                     <% } else { %>
 
-                                        Storage Number
+                                        Room Number
 
                                     <% } %>
 
@@ -949,13 +899,9 @@
 
                                         <%= Math.abs(item.roomNumber) %>
 
-                                    <% } else if (isRoom) { %>
-
-                                        <%= item.roomNumber %>
-
                                     <% } else { %>
 
-                                        <%= item.roomNumber ?? "—" %>
+                                        <%= item.roomNumber %>
 
                                     <% } %>
 
@@ -1062,11 +1008,7 @@
 
             <div class="empty-storage-icon">
 
-                <% if (selectedType === "room") { %>
-
-                    🏠
-
-                <% } else if (selectedType === "agroStore") { %>
+                <% if (selectedType === "agroStore") { %>
 
                     🏪
 
