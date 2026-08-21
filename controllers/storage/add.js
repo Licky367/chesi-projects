@@ -1,79 +1,44 @@
-// =========================================================
-// controllers/storage/add.js
-// STORAGE ADD CONTROLLER
+// ==========================================================
+// controllers/storageController.js
+// STORAGE CONTROLLER
 // ==========================================================
 //
-// HANDLES:
+// RESPONSIBILITY
+// ----------------------------------------------------------
 //
-//     GET  /storage/:id/add
-//     POST /storage/:id/add
+// Handles HTTP concerns for Storage.
 //
-// IMPORTANT ID CONTRACT:
+// The controller:
 //
-//     :id = parent Dairy._id
+//     - reads route parameters
+//     - reads user-submitted form values
+//     - calls the storage service
+//     - renders views
+//     - redirects after successful creation
 //
-// RELATION:
+// The controller DOES NOT:
+//
+//     - resolve the parent Dairy
+//     - determine farmCode
+//     - determine assetCode
+//     - determine recordType
+//     - generate roomNumber
+//     - validate storage ownership
+//     - check duplicate names
+//
+// Those responsibilities belong to the service.
+//
+// PARENT DAIRY:
 //
 //     req.params.id
-//          ↓
-//     Dairy._id
-//          ↓
-//     Dairy.code
-//          ↓
-//     DairyStorage.farmCode
+//
+// is ALWAYS the MongoDB _id of the parent Dairy Farm.
 //
 // ==========================================================
 
 
 const storageService =
-    require("../../services/storage");
-
-
-// ==========================================================
-// ADMIN CHECK
-// ==========================================================
-//
-// Only administrators can create storage.
-//
-// Viewing storage remains available according to the
-// application's normal route access.
-//
-// ==========================================================
-
-function requireAdmin(
-    req,
-    res
-) {
-
-    if (
-        !req.session ||
-        !req.session.user
-    ) {
-
-        res
-            .status(401)
-            .send("Unauthorized");
-
-        return false;
-    }
-
-
-    if (
-        req.session.user.role !== "admin"
-    ) {
-
-        res
-            .status(403)
-            .send(
-                "Only administrators can add storage facilities."
-            );
-
-        return false;
-    }
-
-
-    return true;
-}
+    require("../services/storage");
 
 
 // ==========================================================
@@ -84,36 +49,19 @@ function requireAdmin(
 //
 //     /storage/:id/add
 //
-// :id = Dairy._id
+// :id = parent Dairy._id
+//
+// The service resolves the actual parent Dairy.
 //
 // ==========================================================
 
-async function form(
+async function getAddStorage(
     req,
     res,
     next
 ) {
 
     try {
-
-        // ==================================================
-        // ADMIN CHECK
-        // ==================================================
-
-        if (
-            !requireAdmin(
-                req,
-                res
-            )
-        ) {
-
-            return;
-        }
-
-
-        // ==================================================
-        // GET DAIRY ID
-        // ==================================================
 
         const dairyId =
             String(
@@ -121,15 +69,32 @@ async function form(
             ).trim();
 
 
-        // ==================================================
-        // GET PARENT DAIRY
-        // ==================================================
+        if (!dairyId) {
+
+            const error =
+                new Error(
+                    "Dairy Farm ID is required."
+                );
+
+            error.status =
+                400;
+
+            throw error;
+
+        }
+
+
+        // --------------------------------------------------
+        // Resolve parent Dairy
+        // --------------------------------------------------
+        //
+        // The ID in the URL identifies the parent Dairy.
+        //
+        // --------------------------------------------------
 
         const {
 
-            dairy,
-
-            farmCode
+            dairy
 
         } =
             await storageService.getParentDairy(
@@ -137,88 +102,60 @@ async function form(
             );
 
 
-        // ==================================================
-        // RENDER
-        // ==================================================
+        // --------------------------------------------------
+        // Render add form
+        // --------------------------------------------------
 
         return res.render(
             "storage/add",
             {
 
-                title:
-                    "Add Storage",
-
                 dairy,
 
-                dairyId,
+                formData: {},
 
-                farmCode,
-
-                user:
-                    req.session.user,
-
-                error:
-                    null,
-
-                formData: {
-
-                    name:
-                        "",
-
-                    type:
-                        "room"
-
-                }
+                error: null
 
             }
         );
 
     } catch (error) {
 
-        console.error(
-            "STORAGE ADD FORM ERROR:",
-            error
-        );
-
         return next(error);
+
     }
+
 }
 
 
 // ==========================================================
-// CREATE STORAGE
+// POST ADD STORAGE
 // ==========================================================
 //
 // POST:
 //
 //     /storage/:id/add
 //
-// USER:
+// USER PROVIDES:
 //
 //     name
 //     type
 //
-// SERVER:
+// SERVICE DETERMINES:
 //
+//     recordType
+//     assetCode
 //     farmCode
 //     roomNumber
+//     status
 //
 // ==========================================================
 
-async function create(
+async function createStorage(
     req,
     res,
     next
 ) {
-
-    // ======================================================
-    // THESE ARE DECLARED OUTSIDE try
-    // ======================================================
-    //
-    // This is important because the catch block needs them
-    // when redisplaying the form after validation errors.
-    //
-    // ======================================================
 
     const dairyId =
         String(
@@ -226,178 +163,135 @@ async function create(
         ).trim();
 
 
-    const name =
-        String(
-            req.body?.name || ""
-        ).trim();
+    const formData = {
 
+        name:
+            String(
+                req.body?.name || ""
+            ).trim(),
 
-    const type =
-        String(
-            req.body?.type || ""
-        ).trim();
+        type:
+            String(
+                req.body?.type || ""
+            ).trim()
+
+    };
 
 
     try {
 
-        // ==================================================
-        // ADMIN CHECK
-        // ==================================================
+        // --------------------------------------------------
+        // Validate route parameter exists
+        // --------------------------------------------------
 
-        if (
-            !requireAdmin(
-                req,
-                res
-            )
-        ) {
+        if (!dairyId) {
 
-            return;
+            const error =
+                new Error(
+                    "Dairy Farm ID is required."
+                );
+
+            error.status =
+                400;
+
+            throw error;
+
         }
 
 
-        // ==================================================
-        // CREATE STORAGE
-        // ==================================================
+        // --------------------------------------------------
+        // Create storage
+        // --------------------------------------------------
         //
         // IMPORTANT:
         //
-        // We do NOT send farmCode or roomNumber from the
-        // browser.
+        // Only user-controlled fields are passed here.
         //
-        // The service generates both.
+        // recordType, assetCode, farmCode and roomNumber
+        // are NOT accepted from the controller.
         //
-        // ==================================================
-
-        await storageService.createStorage({
-
-            dairyId,
-
-            name,
-
-            type
-
-        });
-
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
+        // The service derives them from the parent Dairy.
         //
-        // Redirect using Dairy._id.
+        // --------------------------------------------------
+
+        const result =
+            await storageService.createStorage({
+
+                dairyId,
+
+                name:
+                    formData.name,
+
+                type:
+                    formData.type
+
+            });
+
+
+        // --------------------------------------------------
+        // Successful creation
+        // --------------------------------------------------
         //
-        // ==================================================
+        // Redirect using the parent Dairy._id.
+        //
+        // Never use farmCode as the URL identifier.
+        //
+        // --------------------------------------------------
 
         return res.redirect(
-            `/storage/${dairyId}`
+            `/storage/${result.dairy._id}`
         );
 
     } catch (error) {
 
-        console.error(
-            "CREATE STORAGE ERROR:",
-            error
-        );
+        // --------------------------------------------------
+        // Re-resolve parent Dairy for form rendering
+        // --------------------------------------------------
+        //
+        // If the service failed after resolving the parent,
+        // we still need the Dairy object to render the form.
+        //
+        // --------------------------------------------------
 
+        try {
 
-        // ==================================================
-        // EXPECTED APPLICATION ERROR
-        // ==================================================
+            const {
 
-        if (
-            error.status
-        ) {
+                dairy
 
-            // =================================================
-            // VALIDATION / CONFLICT
-            // =================================================
-
-            if (
-                error.status >= 400 &&
-                error.status < 500
-            ) {
-
-                try {
-
-                    const {
-
-                        dairy,
-
-                        farmCode
-
-                    } =
-                        await storageService.getParentDairy(
-                            dairyId
-                        );
-
-
-                    return res
-                        .status(
-                            error.status
-                        )
-                        .render(
-                            "storage/add",
-                            {
-
-                                title:
-                                    "Add Storage",
-
-                                dairy,
-
-                                dairyId,
-
-                                farmCode,
-
-                                user:
-                                    req.session?.user || null,
-
-                                error:
-                                    error.message,
-
-                                formData: {
-
-                                    name,
-
-                                    type
-
-                                }
-
-                            }
-                        );
-
-                } catch (renderError) {
-
-                    console.error(
-                        "STORAGE ADD ERROR PAGE:",
-                        renderError
-                    );
-
-                    return next(
-                        renderError
-                    );
-                }
-            }
-
-
-            // =================================================
-            // OTHER APPLICATION ERROR
-            // =================================================
-
-            return res
-                .status(
-                    error.status
-                )
-                .send(
-                    error.message
+            } =
+                await storageService.getParentDairy(
+                    dairyId
                 );
+
+
+            return res.status(
+                error.status || 400
+            ).render(
+                "storage/add",
+                {
+
+                    dairy,
+
+                    formData,
+
+                    error:
+                        error.message ||
+                        "Unable to create storage facility."
+
+                }
+            );
+
+        } catch (renderError) {
+
+            return next(
+                renderError
+            );
+
         }
 
-
-        // ==================================================
-        // UNEXPECTED ERROR
-        // ==================================================
-
-        return next(error);
     }
+
 }
 
 
@@ -407,8 +301,8 @@ async function create(
 
 module.exports = {
 
-    form,
+    getAddStorage,
 
-    create
+    createStorage
 
 };
