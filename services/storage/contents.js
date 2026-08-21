@@ -50,6 +50,27 @@
 //     dwellNumber on an item stores the roomNumber of the
 //     storage in which the item currently resides.
 //
+// ADD ITEMS:
+//
+//     An item may appear in the Add Items tab ONLY when:
+//
+//         item.assetCode === parentFarm.code
+//
+//         AND
+//
+//         item.dwellNumber is not allocated.
+//
+//     "Not allocated" means:
+//
+//         dwellNumber does not exist
+//         OR dwellNumber === null
+//         OR dwellNumber === ""
+//
+//     Storage structures are NEVER displayed as Add Items:
+//
+//         type === "room"
+//         type === "agroStore"
+//
 // ==========================================================
 
 
@@ -712,25 +733,45 @@ function currentContentFilter({
 // AVAILABLE ITEM FILTER
 // ==========================================================
 //
-// "Add Items" is based on farm ownership:
+// "Add Items" MUST contain ONLY:
 //
-//     assetCode === farm.code
+//     1. Items belonging to the parent farm:
 //
-// AgroStore:
+//            assetCode === farm.code
 //
-//     type === "feeds"
+//     2. Items that currently have NO dwellNumber:
 //
-// Normal room:
+//            dwellNumber does not exist
+//            OR dwellNumber === null
+//            OR dwellNumber === ""
 //
-//     type !== "feeds"
+//     3. Items that are appropriate for the selected
+//        storage type.
 //
-// NOTE:
+// IMPORTANT:
 //
-// No dwellNumber condition is applied here.
+//     Storage structures MUST NEVER appear here.
 //
-// The requested Add Items list therefore contains ALL
-// farm-owned eligible dairies, regardless of their current
-// dwellNumber.
+//     Therefore:
+//
+//         type === "room"
+//         type === "agroStore"
+//
+//     are excluded.
+//
+// STORAGE TYPE RULES:
+//
+//     AgroStore:
+//
+//         type === "feeds"
+//
+//     Normal Room:
+//
+//         non-feed items
+//         AND
+//         NOT room
+//         AND
+//         NOT agroStore
 //
 // ==========================================================
 
@@ -739,17 +780,104 @@ function availableItemFilter({
     storage
 }) {
 
-    return {
+    const filter = {
 
         ...farmItemFilter(
             dairy
         ),
 
-        ...storageItemTypeFilter(
-            storage
-        )
+        $or: [
+
+            {
+                dwellNumber: {
+                    $exists: false
+                }
+            },
+
+            {
+                dwellNumber:
+                    null
+            },
+
+            {
+                dwellNumber:
+                    ""
+            }
+
+        ]
 
     };
+
+
+    // ======================================================
+    // AGROSTORE
+    // ======================================================
+    //
+    // AgroStore can only contain feeds.
+    //
+    // Because feeds are not storage structures, no additional
+    // structure exclusion is necessary here.
+    //
+    // ======================================================
+
+    if (
+        isAgroStore(
+            storage
+        )
+    ) {
+
+        filter.type =
+            FEED_TYPE;
+
+        return filter;
+
+    }
+
+
+    // ======================================================
+    // NORMAL STORAGE ROOM
+    // ======================================================
+    //
+    // Normal rooms can contain non-feed items.
+    //
+    // Explicitly exclude:
+    //
+    //     room
+    //     agroStore
+    //
+    // so storage structures can NEVER appear in Add Items.
+    //
+    // ======================================================
+
+    if (
+        isNormalRoom(
+            storage
+        )
+    ) {
+
+        filter.type = {
+
+            $nin: [
+
+                FEED_TYPE,
+
+                ROOM_TYPE,
+
+                AGROSTORE_TYPE
+
+            ]
+
+        };
+
+        return filter;
+
+    }
+
+
+    throw createError(
+        "Invalid storage type.",
+        400
+    );
 
 }
 
@@ -904,6 +1032,17 @@ async function getStorageContents({
     // ------------------------------------------------------
     // AVAILABLE ITEMS
     // ------------------------------------------------------
+    //
+    // IMPORTANT:
+    //
+    // This now returns ONLY unallocated farm items.
+    //
+    // Items already assigned to another storage are NOT
+    // displayed in Add Items.
+    //
+    // Rooms and AgroStores are also excluded.
+    //
+    // ------------------------------------------------------
 
     const availableItems =
         await Dairy.find(
@@ -1046,7 +1185,15 @@ async function getAvailableItems({
 //
 // Normal room:
 //
-//     ONLY non-feeds
+//     ONLY non-feed items
+//
+// IMPORTANT:
+//
+//     Selected items must satisfy the same Add Items filter:
+//
+//         assetCode === farm.code
+//         AND no dwellNumber
+//         AND eligible type
 //
 // ==========================================================
 
@@ -1141,7 +1288,7 @@ async function addItemsToStorage({
         ) {
 
             throw createError(
-                "One or more selected items do not belong to this Dairy Farm or are not feeds.",
+                "One or more selected items do not belong to this Dairy Farm, already have a dwellNumber, or are not feeds.",
                 400
             );
 
@@ -1149,7 +1296,7 @@ async function addItemsToStorage({
 
 
         throw createError(
-            "One or more selected items do not belong to this Dairy Farm or are feeds. Feeds can only be added to an AgroStore.",
+            "One or more selected items do not belong to this Dairy Farm, already have a dwellNumber, are feeds, or are storage structures.",
             400
         );
 
@@ -1160,12 +1307,8 @@ async function addItemsToStorage({
     // ALLOCATE
     // ======================================================
     //
-    // IMPORTANT:
-    //
-    // We deliberately do NOT check the old dwellNumber.
-    //
-    // Add Items displays all farm-owned eligible items.
-    // Selecting an item assigns it to this storage.
+    // The selected item's dwellNumber becomes the
+    // roomNumber of the selected storage.
     //
     // ======================================================
 
