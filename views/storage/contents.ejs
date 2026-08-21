@@ -13,89 +13,13 @@ PURPOSE:
         1. Normal Storage Rooms
         2. AgroStore
 
-URL CONTRACT:
-    /storage/:dairyId/contents/:itemId
+IMPORTANT:
+    The database uses the exact storage type:
 
-URL IDENTIFIERS:
-    :dairyId
-        = parent Dairy Farm MongoDB _id
+        "room"
+        "agroStore"
 
-    :itemId
-        = storage Dairy MongoDB _id
-
-IMPORTANT STORAGE LOGIC
-==============================================================
-
-PARENT FARM:
-
-    dairy._id
-        = first ID in URL
-
-    dairy.code
-        = authoritative farm relationship code
-
-STORAGE:
-
-    storage._id
-        = second ID in URL
-
-    storage.recordType === "structure"
-
-    storage.type
-        = "room"
-        OR
-        = "agroStore"
-
-CONTENT LOCATION:
-
-    item.dwellNumber === storage.roomNumber
-
-FARM OWNERSHIP:
-
-    item.assetCode === dairy.code
-
-ADD ITEMS:
-
-    ONLY Dairy records where:
-
-        item.assetCode === dairy.code
-
-    AND:
-
-        item.dwellNumber is empty
-
-    AND:
-
-        item is NOT a storage structure
-
-    AND:
-
-        item.type !== "room"
-
-    AND:
-
-        item.type !== "agroStore"
-
-OMIT:
-
-    selected item.dwellNumber = null
-
-RESHUFFLE:
-
-    selected item.dwellNumber =
-        destinationStorage.roomNumber
-
-RESHUFFLE TARGETS:
-
-    destinationStorage.type === storage.type
-
-    Therefore:
-
-        room
-            → room
-
-        agroStore
-            → agroStore
+    DO NOT change "agroStore" to "agrostore".
 
 ==============================================================
 */
@@ -105,17 +29,30 @@ RESHUFFLE TARGETS:
    STORAGE TYPE
 ============================================================ */
 
-const storageType = String(
-    storage && storage.type
-        ? storage.type
-        : ""
-)
-.trim()
-.toLowerCase();
+/*
+IMPORTANT:
+
+The database value is exactly:
+
+    agroStore
+
+We intentionally DO NOT call toLowerCase() here.
+
+This prevents the view from inventing/expecting:
+
+    agrostore
+
+*/
+
+const storageType =
+    storage &&
+    storage.type
+        ? String(storage.type).trim()
+        : "";
 
 
 const isAgroStore =
-    storageType === "agrostore";
+    storageType === "agroStore";
 
 
 const isNormalRoom =
@@ -143,10 +80,8 @@ const storageName =
             : "Room " +
                 (
                     storage &&
-                    (
-                        storage.roomNumber !== null &&
-                        storage.roomNumber !== undefined
-                    )
+                    storage.roomNumber !== null &&
+                    storage.roomNumber !== undefined
                         ? storage.roomNumber
                         : "—"
                 )
@@ -253,6 +188,22 @@ function displayStorageName(item) {
     }
 
 
+    /*
+    ------------------------------------------------------------
+    If the record itself is an AgroStore, use AgroStore.
+    ------------------------------------------------------------
+    */
+
+    if (
+        item &&
+        item.type === "agroStore"
+    ) {
+
+        return "AgroStore";
+
+    }
+
+
     return "Storage";
 
 }
@@ -264,16 +215,49 @@ function displayStorageName(item) {
 
 function itemIsFeed(item) {
 
+    if (!item) {
+
+        return false;
+
+    }
+
+
     return (
+        String(item.type || "").trim() === "feeds"
+    );
 
-        item &&
+}
 
-        String(
-            item.type || ""
-        )
-        .trim()
-        .toLowerCase() === "feeds"
 
+/* ============================================================
+   AGROSTORE RECORD CLASSIFICATION
+============================================================ */
+
+/*
+IMPORTANT:
+
+The database uses:
+
+    type: "agroStore"
+
+NOT:
+
+    type: "agrostore"
+
+This comparison is intentionally case-sensitive.
+*/
+
+function itemIsAgroStore(item) {
+
+    if (!item) {
+
+        return false;
+
+    }
+
+
+    return (
+        String(item.type || "").trim() === "agroStore"
     );
 
 }
@@ -283,26 +267,7 @@ function itemIsFeed(item) {
    ANIMAL CLASSIFICATION
 ============================================================ */
 
-/*
-IMPORTANT:
-
-Do NOT name a local variable itemIsAnimal.
-
-The helper itself is called itemIsAnimal().
-*/
-
 function itemIsAnimal(item) {
-
-    /*
-    ----------------------------------------------------------
-    Display classification only.
-
-    Storage allocation is NOT determined from code.
-
-    A positive code is simply rendered as an animal-style
-    record for presentation where applicable.
-    ----------------------------------------------------------
-    */
 
     if (!item) {
 
@@ -312,9 +277,7 @@ function itemIsAnimal(item) {
 
 
     const code =
-        Number(
-            item.code
-        );
+        Number(item.code);
 
 
     return (
@@ -348,9 +311,7 @@ function hasEmptyDwellNumber(item) {
 
         item.dwellNumber === undefined ||
 
-        String(
-            item.dwellNumber
-        ).trim() === ""
+        String(item.dwellNumber).trim() === ""
 
     );
 
@@ -360,6 +321,22 @@ function hasEmptyDwellNumber(item) {
 /* ============================================================
    STORAGE RECORD CHECK
 ============================================================ */
+
+/*
+A storage record is:
+
+    recordType === "structure"
+
+OR:
+
+    type === "room"
+
+OR:
+
+    type === "agroStore"
+
+Again, "agroStore" is the exact DB value.
+*/
 
 function isStorageRecord(item) {
 
@@ -371,25 +348,17 @@ function isStorageRecord(item) {
 
 
     const recordType =
-        String(
-            item.recordType || ""
-        )
-        .trim()
-        .toLowerCase();
+        String(item.recordType || "").trim();
 
 
     const type =
-        String(
-            item.type || ""
-        )
-        .trim()
-        .toLowerCase();
+        String(item.type || "").trim();
 
 
     /*
-    ----------------------------------------------------------
-    A structure record is a storage/facility record.
-    ----------------------------------------------------------
+    ------------------------------------------------------------
+    Structure records are storage/facility records.
+    ------------------------------------------------------------
     */
 
     if (
@@ -402,14 +371,32 @@ function isStorageRecord(item) {
 
 
     /*
-    ----------------------------------------------------------
-    Explicitly exclude room and AgroStore types.
-    ----------------------------------------------------------
+    ------------------------------------------------------------
+    Normal storage room.
+    ------------------------------------------------------------
     */
 
     if (
-        type === "room" ||
-        type === "agrostore"
+        type === "room"
+    ) {
+
+        return true;
+
+    }
+
+
+    /*
+    ------------------------------------------------------------
+    AgroStore.
+
+    EXACT DB VALUE:
+
+        agroStore
+    ------------------------------------------------------------
+    */
+
+    if (
+        type === "agroStore"
     ) {
 
         return true;
@@ -427,8 +414,7 @@ function isStorageRecord(item) {
 ============================================================ */
 
 /*
-Only records satisfying ALL conditions are displayed in
-the Add Items tab:
+Only records satisfying ALL conditions are displayed:
 
     1. assetCode === parent farm dairy.code
     2. dwellNumber is empty
@@ -446,39 +432,34 @@ function canBeAddedToStorage(item) {
     }
 
 
-    /*
-    ----------------------------------------------------------
-    PARENT FARM OWNERSHIP
-    ----------------------------------------------------------
-    */
+    /* ========================================================
+       PARENT FARM OWNERSHIP
+    ======================================================== */
 
     if (
-        dairy &&
-        dairy.code !== null &&
-        dairy.code !== undefined
+        !dairy ||
+        dairy.code === null ||
+        dairy.code === undefined
     ) {
-
-        if (
-            String(item.assetCode) !==
-            String(dairy.code)
-        ) {
-
-            return false;
-
-        }
-
-    } else {
 
         return false;
 
     }
 
 
-    /*
-    ----------------------------------------------------------
-    MUST NOT ALREADY HAVE A DWELL NUMBER
-    ----------------------------------------------------------
-    */
+    if (
+        String(item.assetCode) !==
+        String(dairy.code)
+    ) {
+
+        return false;
+
+    }
+
+
+    /* ========================================================
+       MUST NOT ALREADY HAVE A DWELL NUMBER
+    ======================================================== */
 
     if (
         !hasEmptyDwellNumber(item)
@@ -489,11 +470,9 @@ function canBeAddedToStorage(item) {
     }
 
 
-    /*
-    ----------------------------------------------------------
-    MUST NOT BE A STORAGE RECORD
-    ----------------------------------------------------------
-    */
+    /* ========================================================
+       MUST NOT BE STORAGE
+    ======================================================== */
 
     if (
         isStorageRecord(item)
@@ -512,16 +491,6 @@ function canBeAddedToStorage(item) {
 /* ============================================================
    FILTERED ADD ITEMS
 ============================================================ */
-
-/*
-Do not rely solely on the controller/service to filter this.
-
-The EJS view enforces the display rule as well.
-
-This prevents rooms and AgroStores from appearing in the
-Add Items tab even if they accidentally arrive inside
-availableItems.
-*/
 
 const filteredAddItems =
     addItems.filter(
@@ -1427,16 +1396,22 @@ const addItemCount =
             <p class="storage-header-eyebrow">
 
                 <% if (isAgroStore) { %>
+
                     AgroStore
+
                 <% } else { %>
+
                     Storage Room
+
                 <% } %>
 
             </p>
 
 
             <h1 class="storage-page-title">
+
                 <%= storageName %>
+
             </h1>
 
 
@@ -1463,7 +1438,9 @@ const addItemCount =
             href="/storage/<%= dairy._id %>"
             class="back-storage"
         >
+
             ← Back to Storage
+
         </a>
 
     </header>
@@ -1514,7 +1491,9 @@ const addItemCount =
             class="storage-tab <% if (currentTab === 'view') { %>active<% } %>"
             data-storage-tab="view"
         >
+
             View Contents
+
         </button>
 
 
@@ -1523,7 +1502,9 @@ const addItemCount =
             class="storage-tab <% if (currentTab === 'add') { %>active<% } %>"
             data-storage-tab="add"
         >
+
             Add Items
+
         </button>
 
     </div>
@@ -1555,9 +1536,13 @@ const addItemCount =
 
 
                 <% if (currentItemCount === 1) { %>
+
                     item
+
                 <% } else { %>
+
                     items
+
                 <% } %>
 
             </div>
@@ -1600,7 +1585,9 @@ const addItemCount =
                             id="contentsSelectionCount"
                             class="selection-count"
                         >
+
                             0 selected
+
                         </span>
 
                     </div>
@@ -1614,7 +1601,9 @@ const addItemCount =
                             class="storage-action-button reshuffle-button"
                             disabled
                         >
+
                             Reshuffle
+
                         </button>
 
 
@@ -1624,7 +1613,9 @@ const addItemCount =
                             class="storage-action-button omit-button"
                             disabled
                         >
+
                             Omit Selected
+
                         </button>
 
                     </div>
@@ -1642,7 +1633,9 @@ const addItemCount =
                 >
 
                     <h3 class="reshuffle-heading">
+
                         Reshuffle Selected Items
+
                     </h3>
 
 
@@ -1661,7 +1654,9 @@ const addItemCount =
                         <div class="reshuffle-select-group">
 
                             <label for="destinationStorage">
+
                                 Destination
+
                             </label>
 
 
@@ -1672,7 +1667,9 @@ const addItemCount =
                             >
 
                                 <option value="">
+
                                     Select destination...
+
                                 </option>
 
 
@@ -1685,6 +1682,7 @@ const addItemCount =
                                         >
 
                                             <%= displayStorageName(destination) %>
+
 
                                             <% if (
                                                 destination.roomNumber !== null &&
@@ -1705,7 +1703,9 @@ const addItemCount =
                                         value=""
                                         disabled
                                     >
+
                                         No other compatible storage available
+
                                     </option>
 
                                 <% } %>
@@ -1721,7 +1721,9 @@ const addItemCount =
                             class="storage-action-button add-button"
                             disabled
                         >
+
                             Reshuffle Selected
+
                         </button>
 
 
@@ -1730,7 +1732,9 @@ const addItemCount =
                             id="cancelReshuffleButton"
                             class="storage-action-button omit-button"
                         >
+
                             Cancel
+
                         </button>
 
                     </div>
@@ -1748,23 +1752,16 @@ const addItemCount =
                     <% currentItems.forEach(function(item) { %>
 
                         <%
-                            /*
-                            IMPORTANT:
-                            Do NOT use:
-
-                                const itemIsAnimal = itemIsAnimal(item);
-
-                            That creates a TDZ/shadowing error.
-
-                            Use a differently named local variable.
-                            */
-
                             const currentItemIsAnimal =
                                 itemIsAnimal(item);
 
 
                             const currentItemIsFeed =
                                 itemIsFeed(item);
+
+
+                            const currentItemIsAgroStore =
+                                itemIsAgroStore(item);
                         %>
 
 
@@ -1801,6 +1798,10 @@ const addItemCount =
 
                                     🐄
 
+                                <% } else if (currentItemIsAgroStore) { %>
+
+                                    🌾
+
                                 <% } else { %>
 
                                     🔧
@@ -1818,7 +1819,9 @@ const addItemCount =
                                 <div class="content-title-row">
 
                                     <h3>
+
                                         <%= item.name || "Unnamed Item" %>
+
                                     </h3>
 
 
@@ -1840,6 +1843,10 @@ const addItemCount =
                                         <% } else if (currentItemIsAnimal) { %>
 
                                             Animal
+
+                                        <% } else if (currentItemIsAgroStore) { %>
+
+                                            AgroStore
 
                                         <% } else { %>
 
@@ -2003,9 +2010,13 @@ const addItemCount =
                                             </strong>
 
                                             <% if (item.isMilking) { %>
+
                                                 Yes
+
                                             <% } else { %>
+
                                                 No
+
                                             <% } %>
 
                                         </span>
@@ -2018,7 +2029,9 @@ const addItemCount =
                                 <% if (item.description) { %>
 
                                     <p class="content-description">
+
                                         <%= item.description %>
+
                                     </p>
 
                                 <% } %>
@@ -2171,7 +2184,9 @@ const addItemCount =
                         id="addSelectionCount"
                         class="selection-count"
                     >
+
                         0 selected
+
                     </span>
 
                 </div>
@@ -2186,7 +2201,9 @@ const addItemCount =
                         class="storage-action-button add-button"
                         disabled
                     >
+
                         Add Selected
+
                     </button>
 
                 </div>
@@ -2211,18 +2228,16 @@ const addItemCount =
                     <% filteredAddItems.forEach(function(item) { %>
 
                         <%
-                            /*
-                            IMPORTANT:
-                            Local variable names are deliberately
-                            different from the helper functions.
-                            */
-
                             const addRecordIsAnimal =
                                 itemIsAnimal(item);
 
 
                             const addRecordIsFeed =
                                 itemIsFeed(item);
+
+
+                            const addRecordIsAgroStore =
+                                itemIsAgroStore(item);
                         %>
 
 
@@ -2259,6 +2274,10 @@ const addItemCount =
 
                                     🐄
 
+                                <% } else if (addRecordIsAgroStore) { %>
+
+                                    🌾
+
                                 <% } else { %>
 
                                     🔧
@@ -2276,7 +2295,9 @@ const addItemCount =
                                 <div class="add-title">
 
                                     <h3>
+
                                         <%= item.name || "Unnamed Item" %>
+
                                     </h3>
 
 
@@ -2298,6 +2319,10 @@ const addItemCount =
                                         <% } else if (addRecordIsAnimal) { %>
 
                                             Animal
+
+                                        <% } else if (addRecordIsAgroStore) { %>
+
+                                            AgroStore
 
                                         <% } else { %>
 
@@ -2454,7 +2479,12 @@ const addItemCount =
                     to add to this storage.
 
                     Records must have
-                    <strong>assetCode = <%= displayValue(dairy && dairy.code) %></strong>,
+                    <strong>
+                        assetCode = <%= displayValue(
+                            dairy && dairy.code
+                        ) %>
+                    </strong>,
+
                     must have no <strong>dwellNumber</strong>, and
                     must not be a storage room or AgroStore.
 
@@ -2993,16 +3023,6 @@ document.addEventListener(
 
                     }
 
-
-                    /*
-                    ------------------------------------------------
-                    The service receives itemIds.
-
-                    Backend operation:
-
-                        selected item.dwellNumber = null
-                    ------------------------------------------------
-                    */
 
                     omitInputs.innerHTML =
                         "";
