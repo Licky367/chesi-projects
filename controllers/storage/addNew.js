@@ -2,10 +2,50 @@
 // controllers/storage/addNew.js
 // ADD ITEM DIRECTLY TO AN EXISTING STORAGE FACILITY
 // ==========================================================
+//
+// URL CONTRACT:
+//
+//     /storage/:dairyId/contents/:storageId/add/:storageType
+//
+// URL PARAMETERS:
+//
+//     dairyId
+//         = parent Dairy Farm _id
+//
+//     storageId
+//         = selected storage facility _id
+//
+//     storageType
+//         = exact storage type supplied by the URL
+//
+//           "room"
+//           "agroStore"
+//
+// IMPORTANT:
+//
+//     The storage type is supplied by the URL.
+//
+//     The controller does NOT determine the storage type
+//     from the storage database record.
+//
+//     "agroStore" is case-sensitive.
+//
+//     Do NOT change it to:
+//         "agrostore"
+//
+//     Do NOT use:
+//         toLowerCase()
+//
+// ==========================================================
 
-const storageService = require("../../services/storage");
-const addNewService = require("../../services/storage/addNew");
 
+const addNewService =
+    require("../../services/storage/addNew");
+
+
+/* ============================================================
+   ERROR MESSAGE
+============================================================ */
 
 function getErrorMessage(error) {
 
@@ -32,13 +72,31 @@ async function getAddNewStorage(req, res) {
 
     try {
 
+        /*
+        --------------------------------------------------------
+        Resolve add-item context.
+
+        storageType comes directly from the URL.
+        --------------------------------------------------------
+        */
+
         const context =
             await addNewService.getAddNewContext({
+
                 dairyId,
+
                 storageId,
+
                 storageType
+
             });
 
+
+        /*
+        --------------------------------------------------------
+        Render add-item form.
+        --------------------------------------------------------
+        */
 
         return res.render(
             "storage/addNew",
@@ -54,7 +112,10 @@ async function getAddNewStorage(req, res) {
                     context.dairyBreeds,
 
                 storageType:
-                    context.storageType
+                    context.storageType,
+
+                formData:
+                    {}
 
             }
         );
@@ -100,6 +161,12 @@ async function addNewItem(req, res) {
 
     try {
 
+        /*
+        --------------------------------------------------------
+        Add item using the storage type supplied by the URL.
+        --------------------------------------------------------
+        */
+
         const result =
             await addNewService.addNewItem({
 
@@ -123,7 +190,7 @@ async function addNewItem(req, res) {
 
         /*
         --------------------------------------------------------
-        Explicit redirect supplied by service
+        Explicit redirect supplied by service.
         --------------------------------------------------------
         */
 
@@ -140,12 +207,12 @@ async function addNewItem(req, res) {
 
         /*
         --------------------------------------------------------
-        Normal successful redirect
+        Normal successful redirect.
         --------------------------------------------------------
         */
 
         return res.redirect(
-            `/storage/${dairyId}/contents/${storageId}`
+            `/storage/${dairyId}/contents/${storageId}/add/${storageType}`
         );
 
 
@@ -217,7 +284,9 @@ async function addNewItem(req, res) {
 
             return res
                 .status(
-                    error.statusCode || 400
+                    error.statusCode ||
+                    renderError.statusCode ||
+                    400
                 )
                 .send(
                     getErrorMessage(error)
