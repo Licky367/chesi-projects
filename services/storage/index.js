@@ -1,7 +1,7 @@
 // ==========================================================
 // services/storage/index.js
 // STORAGE SERVICE ENTRY POINT
-// =========================================================
+// ==========================================================
 //
 // Combines:
 //
@@ -15,8 +15,10 @@
 const list =
     require("./list");
 
+
 const add =
     require("./add");
+
 
 const contents =
     require("./contents");
@@ -28,6 +30,7 @@ const contents =
 
 module.exports = {
 
+
     // ======================================================
     // LIST / READ
     // ======================================================
@@ -35,20 +38,26 @@ module.exports = {
     normalizeType:
         list.normalizeType,
 
+
     getParentDairy:
         list.getParentDairy,
+
 
     getStorage:
         list.getStorage,
 
+
     getAllStorage:
         list.getAllStorage,
+
 
     getRooms:
         list.getRooms,
 
+
     getAgroStores:
         list.getAgroStores,
+
 
     getStorageFacility:
         list.getStorageFacility,
@@ -69,8 +78,10 @@ module.exports = {
     getStorageContents:
         contents.getStorageContents,
 
+
     getAvailableItems:
         contents.getAvailableItems,
+
 
     addItemsToStorage:
         contents.addItemsToStorage,
@@ -83,6 +94,7 @@ module.exports = {
     omitItemsFromStorage:
         contents.omitItemsFromStorage,
 
+
     reshuffleItems:
         contents.reshuffleItems,
 
@@ -93,6 +105,7 @@ module.exports = {
 
     updateFeedQuantity:
         contents.updateFeedQuantity,
+
 
     updateFeedQuantities:
         contents.updateFeedQuantities
