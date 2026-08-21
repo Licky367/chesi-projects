@@ -41,8 +41,8 @@ function numberOrUndefined(value) {
 }
 
 
-function normalizeStorageType(storage) {
-    return clean(storage?.type).toLowerCase();
+function getStorageType(storage) {
+    return clean(storage?.type);
 }
 
 
@@ -57,7 +57,10 @@ function getBreeds(dairy) {
 async function callService(fn, candidates) {
 
     if (typeof fn !== "function") {
-        throw serviceError("The required storage service operation is not available.", 500);
+        throw serviceError(
+            "The required storage service operation is not available.",
+            500
+        );
     }
 
     let lastError;
@@ -70,10 +73,11 @@ async function callService(fn, candidates) {
 
             // Only fall through for argument/signature mismatches.
             // Application validation/database errors must propagate.
-            const message = String(error?.message || "").toLowerCase();
+            const message = String(error?.message || "");
+
             const signatureMismatch =
                 error?.code === "ERR_INVALID_ARG_TYPE" ||
-                message.includes("cannot read properties of undefined") ||
+                message.includes("Cannot read properties of undefined") ||
                 message.includes("is not a function");
 
             if (!signatureMismatch) {
@@ -82,7 +86,10 @@ async function callService(fn, candidates) {
         }
     }
 
-    throw lastError || serviceError("Storage service invocation failed.", 500);
+    throw lastError || serviceError(
+        "Storage service invocation failed.",
+        500
+    );
 }
 
 
@@ -119,7 +126,10 @@ async function resolveStorage(dairyId, storageId) {
 async function getAddNewContext({ dairyId, storageId }) {
 
     if (!dairyId || !storageId) {
-        throw serviceError("Dairy and storage identifiers are required.", 400);
+        throw serviceError(
+            "Dairy and storage identifiers are required.",
+            400
+        );
     }
 
     const dairy = await resolveParentDairy(dairyId);
@@ -133,10 +143,13 @@ async function getAddNewContext({ dairyId, storageId }) {
         throw serviceError("Storage facility not found.", 404);
     }
 
-    const storageType = normalizeStorageType(storage);
+    const storageType = getStorageType(storage);
 
-    if (!['room', 'agrostore'].includes(storageType)) {
-        throw serviceError("This storage facility has an unsupported storage type.", 400);
+    if (!["room", "agrostore"].includes(storageType)) {
+        throw serviceError(
+            "This storage facility has an unsupported storage type.",
+            400
+        );
     }
 
     return {
@@ -194,7 +207,7 @@ function validateAndNormalize({ body, storageType }) {
 
     } else {
 
-        if (!['animal', 'structure'].includes(clean(data.recordType))) {
+        if (!["animal", "structure"].includes(clean(data.recordType))) {
             throw serviceError("Please select what you are adding.");
         }
 
@@ -217,7 +230,6 @@ function validateAndNormalize({ body, storageType }) {
             if (!data.type) {
                 throw serviceError("Animal breed is required.");
             }
-
         }
 
         if (data.recordType === "structure" && !clean(data.type)) {
@@ -229,7 +241,13 @@ function validateAndNormalize({ body, storageType }) {
 }
 
 
-async function addNewItem({ dairyId, storageId, body, file, request }) {
+async function addNewItem({
+    dairyId,
+    storageId,
+    body,
+    file,
+    request
+}) {
 
     const context = await getAddNewContext({
         dairyId,
@@ -245,6 +263,7 @@ async function addNewItem({ dairyId, storageId, body, file, request }) {
     // They are deliberately removed from the submitted payload
     // and the existing contents service is responsible for the
     // final allocation.
+
     delete data.dairyId;
     delete data.storageId;
     delete data.assetCode;
@@ -253,20 +272,18 @@ async function addNewItem({ dairyId, storageId, body, file, request }) {
     delete data.storage;
 
     if (file) {
-        // Existing upload middleware/service can consume req.file.
-        // Keep the file attached without inventing a storage path.
         data.profileImage = file;
     }
 
     const addItems = storageContentsService.addItemsToStorage;
 
     if (typeof addItems !== "function") {
-        throw serviceError("The existing storage contents add operation is unavailable.", 500);
+        throw serviceError(
+            "The existing storage contents add operation is unavailable.",
+            500
+        );
     }
 
-    // The adapter supports the common signatures used by storage
-    // service implementations while preserving the existing service
-    // as the final authority for storage allocation.
     const result = await callService(
         addItems,
         [
@@ -274,7 +291,14 @@ async function addNewItem({ dairyId, storageId, body, file, request }) {
             [dairyId, storageId, data],
             [context.dairy, context.storage, data, request],
             [context.dairy, context.storage, data],
-            [{ dairyId, storageId, data, dairy: context.dairy, storage: context.storage, request }]
+            [{
+                dairyId,
+                storageId,
+                data,
+                dairy: context.dairy,
+                storage: context.storage,
+                request
+            }]
         ]
     );
 
