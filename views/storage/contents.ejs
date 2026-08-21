@@ -84,11 +84,20 @@ RESHUFFLE TARGETS:
 ==============================================================
 */
 
+
+/*
+==============================================================
+STORAGE TYPE
+==============================================================
+*/
+
 const storageType = String(
     storage && storage.type
         ? storage.type
         : ""
-).trim().toLowerCase();
+)
+.trim()
+.toLowerCase();
 
 
 const isAgroStore =
@@ -99,17 +108,23 @@ const isNormalRoom =
     storageType === "room";
 
 
+/*
+==============================================================
+STORAGE NAME
+==============================================================
+*/
+
 const storageName =
     (
         storage &&
         storage.displayName
     )
-        ||
+    ||
     (
         storage &&
         storage.name
     )
-        ||
+    ||
     (
         isAgroStore
             ? "AgroStore"
@@ -126,6 +141,12 @@ const storageName =
     );
 
 
+/*
+==============================================================
+STORAGE ROOM NUMBER
+==============================================================
+*/
+
 const storageRoomNumber =
     (
         storage &&
@@ -135,6 +156,12 @@ const storageRoomNumber =
         ? storage.roomNumber
         : "—";
 
+
+/*
+==============================================================
+ACTIVE TAB
+==============================================================
+*/
 
 const currentTab =
     activeTab === "add"
@@ -172,7 +199,7 @@ const currentItemCount =
 
 /*
 ==============================================================
-HELPERS FOR DISPLAY
+DISPLAY HELPERS
 ==============================================================
 */
 
@@ -188,6 +215,12 @@ function displayValue(value) {
 
 }
 
+
+/*
+==============================================================
+DISPLAY STORAGE NAME
+==============================================================
+*/
 
 function displayStorageName(item) {
 
@@ -227,7 +260,19 @@ function displayStorageName(item) {
 }
 
 
-function itemIsFeed(item) {
+/*
+==============================================================
+FEED CLASSIFICATION HELPER
+
+IMPORTANT:
+
+This helper is deliberately named isFeedItem()
+instead of itemIsFeed() to avoid variable/function
+name collisions inside EJS blocks.
+==============================================================
+*/
+
+function isFeedItem(item) {
 
     return (
 
@@ -244,18 +289,27 @@ function itemIsFeed(item) {
 }
 
 
-function itemIsAnimal(item) {
+/*
+==============================================================
+ANIMAL CLASSIFICATION HELPER
 
-    /*
-    ----------------------------------------------------------
-    Display classification only.
+IMPORTANT:
 
-    Storage allocation is NOT determined from code.
+This helper is deliberately named isAnimalItem()
+instead of itemIsAnimal() to prevent:
 
-    A positive code is simply rendered as an animal-style
-    record for presentation where applicable.
-    ----------------------------------------------------------
-    */
+    const itemIsAnimal = itemIsAnimal(item);
+
+from shadowing the function.
+
+Storage allocation itself is NOT determined from code.
+
+A positive code is only used here for display
+classification where applicable.
+==============================================================
+*/
+
+function isAnimalItem(item) {
 
     if (
         !item
@@ -266,19 +320,27 @@ function itemIsAnimal(item) {
     }
 
 
-    const code =
-        Number(
-            item.code
-        );
+    const hasCode =
+        item.code !== null &&
+        item.code !== undefined;
+
+
+    if (
+        !hasCode
+    ) {
+
+        return false;
+
+    }
+
+
+    const numericCode =
+        Number(item.code);
 
 
     return (
-
-        item.code !== null &&
-        item.code !== undefined &&
-        !Number.isNaN(code) &&
-        code > 0
-
+        !Number.isNaN(numericCode) &&
+        numericCode > 0
     );
 
 }
@@ -1278,7 +1340,6 @@ function itemIsAnimal(item) {
         data-storage-panel="view"
     >
 
-
         <div class="contents-topbar">
 
             <h2 class="contents-heading">
@@ -1483,15 +1544,26 @@ function itemIsAnimal(item) {
 
                 <div class="contents-list">
 
-
                     <% currentItems.forEach(function(item) { %>
 
                         <%
-                            const itemIsAnimal =
-                                itemIsAnimal(item);
+                            /*
+                             * IMPORTANT:
+                             *
+                             * Do NOT write:
+                             *
+                             * const itemIsAnimal = itemIsAnimal(item);
+                             *
+                             * because that shadows the helper function.
+                             *
+                             * The helper is now isAnimalItem().
+                             */
 
-                            const itemIsFeedRecord =
-                                itemIsFeed(item);
+                            const currentItemIsAnimal =
+                                isAnimalItem(item);
+
+                            const currentItemIsFeed =
+                                isFeedItem(item);
                         %>
 
 
@@ -1520,12 +1592,18 @@ function itemIsAnimal(item) {
 
                             <div class="content-icon">
 
-                                <% if (itemIsFeedRecord) { %>
+                                <% if (currentItemIsFeed) { %>
+
                                     🌾
-                                <% } else if (itemIsAnimal) { %>
+
+                                <% } else if (currentItemIsAnimal) { %>
+
                                     🐄
+
                                 <% } else { %>
+
                                     🔧
+
                                 <% } %>
 
                             </div>
@@ -1545,21 +1623,27 @@ function itemIsAnimal(item) {
 
                                     <span
                                         class="content-type
-                                        <% if (itemIsFeedRecord) { %>
+                                        <% if (currentItemIsFeed) { %>
                                             feed-type
-                                        <% } else if (itemIsAnimal) { %>
+                                        <% } else if (currentItemIsAnimal) { %>
                                             animal-type
                                         <% } else { %>
                                             asset-type
                                         <% } %>"
                                     >
 
-                                        <% if (itemIsFeedRecord) { %>
+                                        <% if (currentItemIsFeed) { %>
+
                                             Feed
-                                        <% } else if (itemIsAnimal) { %>
+
+                                        <% } else if (currentItemIsAnimal) { %>
+
                                             Animal
+
                                         <% } else { %>
+
                                             Asset
+
                                         <% } %>
 
                                     </span>
@@ -1685,7 +1769,7 @@ function itemIsAnimal(item) {
                                 </div>
 
 
-                                <% if (itemIsAnimal) { %>
+                                <% if (currentItemIsAnimal) { %>
 
                                     <div class="animal-information">
 
@@ -1718,9 +1802,13 @@ function itemIsAnimal(item) {
                                             </strong>
 
                                             <% if (item.isMilking) { %>
+
                                                 Yes
+
                                             <% } else { %>
+
                                                 No
+
                                             <% } %>
 
                                         </span>
@@ -1745,7 +1833,6 @@ function itemIsAnimal(item) {
 
 
                     <% }); %>
-
 
                 </div>
 
@@ -1780,9 +1867,13 @@ function itemIsAnimal(item) {
                 <div class="empty-icon">
 
                     <% if (isAgroStore) { %>
+
                         🌾
+
                     <% } else { %>
+
                         📦
+
                     <% } %>
 
                 </div>
@@ -1791,9 +1882,13 @@ function itemIsAnimal(item) {
                 <h3>
 
                     <% if (isAgroStore) { %>
+
                         AgroStore is Empty
+
                     <% } else { %>
+
                         Storage Room is Empty
+
                     <% } %>
 
                 </h3>
@@ -1907,7 +2002,6 @@ function itemIsAnimal(item) {
                 id="addItemsForm"
             >
 
-
                 <div class="add-list">
 
 
@@ -1915,10 +2009,10 @@ function itemIsAnimal(item) {
 
                         <%
                             const addItemIsAnimal =
-                                itemIsAnimal(item);
+                                isAnimalItem(item);
 
                             const addItemIsFeed =
-                                itemIsFeed(item);
+                                isFeedItem(item);
                         %>
 
 
@@ -1948,11 +2042,17 @@ function itemIsAnimal(item) {
                             <div class="add-icon">
 
                                 <% if (addItemIsFeed) { %>
+
                                     🌾
+
                                 <% } else if (addItemIsAnimal) { %>
+
                                     🐄
+
                                 <% } else { %>
+
                                     🔧
+
                                 <% } %>
 
                             </div>
@@ -1982,11 +2082,17 @@ function itemIsAnimal(item) {
                                     >
 
                                         <% if (addItemIsFeed) { %>
+
                                             Feed
+
                                         <% } else if (addItemIsAnimal) { %>
+
                                             Animal
+
                                         <% } else { %>
+
                                             Asset
+
                                         <% } %>
 
                                     </span>
@@ -2115,9 +2221,13 @@ function itemIsAnimal(item) {
                 <div class="empty-icon">
 
                     <% if (isAgroStore) { %>
+
                         🌾
+
                     <% } else { %>
+
                         📦
+
                     <% } %>
 
                 </div>
@@ -2182,11 +2292,11 @@ document.addEventListener(
 
 
                         tabs.forEach(
-                            function(item){
+                            function(tabItem){
 
-                                item.classList.toggle(
+                                tabItem.classList.toggle(
                                     "active",
-                                    item.dataset.storageTab === target
+                                    tabItem.dataset.storageTab === target
                                 );
 
                             }
