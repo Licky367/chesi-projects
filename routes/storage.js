@@ -1,7 +1,7 @@
 // ==========================================================
 // routes/storage.js
 // STORAGE ROUTES
-// ========================================================
+// ==========================================================
 //
 // GET
 //
@@ -25,19 +25,73 @@
 //
 // ARCHITECTURE
 //
+// PARENT DAIRY
+// ----------------------------------------------------------
+//
+//     :id
+//     :dairyId
+//
+// identify the parent Dairy by MongoDB _id.
+//
+// IMPORTANT:
+//
+// The parent Dairy is NEVER identified by its code in the
+// URL.
+//
+// ----------------------------------------------------------
+//
+// STORAGE
+// ----------------------------------------------------------
+//
+// Every storage facility is a Dairy record with:
+//
+//     recordType = "structure"
+//
+// The user chooses:
+//
+//     type = "room"
+//     type = "agroStore"
+//
+// The service determines:
+//
+//     assetCode
+//     roomNumber
+//     recordType
+//     status
+//
+// ----------------------------------------------------------
+//
 // NORMAL STORAGE
+// ----------------------------------------------------------
+//
+//     room
+//
+// Supports:
+//
 //     add
 //     omit
 //     reshuffle
 //
-// AGROSTORE (type === "feeds")
+// ----------------------------------------------------------
+//
+// AGROSTORE
+// ----------------------------------------------------------
+//
+//     agroStore
+//
+// Supports:
+//
 //     add
 //     update quantity
-//     automatic omission when quantity reaches 0
 //
-// The service layer is the final authority and will reject
-// invalid AgroStore operations even if someone manually calls
-// the normal-storage routes.
+// Quantity reaching zero causes the service to remove the
+// item from active AgroStore contents automatically.
+//
+// Manual omission and reshuffling are not permitted for
+// AgroStore.
+//
+// The service layer remains the final authority and rejects
+// invalid operations regardless of which route is called.
 //
 // ==========================================================
 
@@ -57,6 +111,14 @@ const storageController =
 // ==========================================================
 // STORAGE LIST
 // ==========================================================
+//
+// Parent Dairy:
+//
+//     req.params.id
+//
+// This is the MongoDB _id of the parent Dairy Farm.
+//
+// ==========================================================
 
 router.get(
 
@@ -69,6 +131,16 @@ router.get(
 
 // ==========================================================
 // ADD STORAGE FORM
+// ==========================================================
+//
+// Parent Dairy:
+//
+//     req.params.id
+//
+// The controller resolves the parent Dairy and renders:
+//
+//     views/storage/add.ejs
+//
 // ==========================================================
 
 router.get(
@@ -83,6 +155,28 @@ router.get(
 // ==========================================================
 // CREATE STORAGE
 // ==========================================================
+//
+// User provides:
+//
+//     name
+//     type
+//
+// Where:
+//
+//     type = "room"
+//     OR
+//     type = "agroStore"
+//
+// The controller passes those values to the service.
+//
+// The service determines:
+//
+//     recordType = "structure"
+//     assetCode = parent Dairy.code
+//     roomNumber
+//     status
+//
+// ==========================================================
 
 router.post(
 
@@ -96,6 +190,14 @@ router.post(
 // ==========================================================
 // STORAGE CONTENTS
 // ==========================================================
+//
+// :dairyId
+//     MongoDB _id of the parent Dairy Farm.
+//
+// :storageId
+//     MongoDB _id of the storage facility.
+//
+// ==========================================================
 
 router.get(
 
@@ -107,7 +209,15 @@ router.get(
 
 
 // ==========================================================
-// ADD ITEMS
+// ADD ITEMS TO STORAGE
+// ==========================================================
+//
+// Applies to storage facilities according to the service
+// rules.
+//
+// The service determines whether the selected storage type
+// permits the requested operation.
+//
 // ==========================================================
 
 router.post(
@@ -120,17 +230,21 @@ router.post(
 
 
 // ==========================================================
-// OMIT ITEMS
+// OMIT ITEMS FROM STORAGE
 // ==========================================================
 //
-// NORMAL STORAGE ONLY.
+// NORMAL ROOM STORAGE:
 //
-// For AgroStore:
+//     Manual omission is allowed.
 //
-//     manual omission is NOT allowed.
+// AGROSTORE:
 //
-// Feed items are automatically omitted when quantity reaches
-// zero.
+//     Manual omission is NOT allowed.
+//
+//     Items are automatically removed from active AgroStore
+//     contents when their quantity reaches zero.
+//
+// The service is responsible for enforcing this distinction.
 //
 // ==========================================================
 
@@ -147,9 +261,15 @@ router.post(
 // RESHUFFLE ITEMS
 // ==========================================================
 //
-// NORMAL STORAGE ONLY.
+// NORMAL ROOM STORAGE:
 //
-// AgroStore does NOT support reshuffling.
+//     Reshuffling is allowed.
+//
+// AGROSTORE:
+//
+//     Reshuffling is NOT allowed.
+//
+// The service is responsible for enforcing this distinction.
 //
 // ==========================================================
 
@@ -163,12 +283,14 @@ router.post(
 
 
 // ==========================================================
-// UPDATE FEED QUANTITY
+// UPDATE STORAGE QUANTITY
 // ==========================================================
 //
-// Primarily used by AgroStore.
+// Primarily used for:
 //
-// Example:
+//     type = "agroStore"
+//
+// Request:
 //
 //     POST
 //     /storage/:dairyId/contents/:storageId/quantity
@@ -178,15 +300,17 @@ router.post(
 //     itemId
 //     quantity
 //
-// The service will:
+// Service behavior:
 //
 //     quantity > 0
-//         -> update quantity
+//         update the stored quantity
 //
 //     quantity === 0
-//         -> set quantity to 0
-//         -> clear dwellNumber
-//         -> item leaves AgroStore
+//         set quantity to zero
+//         clear the relevant allocation/dwell information
+//         remove the item from active AgroStore contents
+//
+// Negative quantities are rejected by the service.
 //
 // ==========================================================
 
