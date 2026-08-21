@@ -988,6 +988,52 @@ async function reshuffleItems(
 
 }
 
+// ==========================================================
+// POST CREATE ITEM DIRECTLY IN STORAGE
+// ==========================================================
+
+async function postAddItem(
+    req,
+    res,
+    next
+) {
+
+    try {
+
+        const {
+            dairyId,
+            storageId
+        } = req.params;
+
+
+        const result =
+            await storageContentsService
+                .createItemInStorage({
+
+                    dairyId,
+
+                    storageId,
+
+                    data:
+                        req.body
+
+                });
+
+
+        return res.redirect(
+
+            `/storage/${dairyId}/contents/${storageId}`
+
+        );
+
+    } catch (error) {
+
+        next(error);
+
+    }
+
+}
+
 
 // ==========================================================
 // HANDLE MUTATION ERROR
