@@ -8,25 +8,70 @@ URL CONTRACT:
 
     /storage/:dairyId/contents/:storageId/add/:storageType
 
+
 STORAGE TYPES:
 
     room
     agroStore
 
-The storage type is supplied by the URL.
-
-The browser does not select the storage type.
 
 IMPORTANT:
 
-    "agroStore"
+    storageType is supplied by the URL and passed to the view
+    by the controller.
 
-is the exact value.
+    The view does NOT determine storageType from:
 
-Do NOT convert it to lowercase.
+        storage.type
+
+
+    "agroStore" is case-sensitive.
+
+    Do NOT use:
+
+        toLowerCase()
 ============================================================
 */
 
+
+/*
+============================================================
+FORM DATA
+============================================================
+
+The controller always supplies formData.
+
+The fallback protects the view if the page is rendered
+without formData for any reason.
+============================================================
+*/
+
+const form =
+    formData || {};
+
+
+/*
+============================================================
+FORM ERROR
+============================================================
+
+The controller supplies formError when validation fails.
+
+The fallback prevents:
+
+    formError is not defined
+============================================================
+*/
+
+const errorMessage =
+    formError || "";
+
+
+/*
+============================================================
+DAIRY BREEDS
+============================================================
+*/
 
 const breeds =
     Array.isArray(dairyBreeds)
@@ -36,18 +81,19 @@ const breeds =
 
 /*
 ============================================================
-STORAGE TYPE FROM URL
+STORAGE TYPE
 ============================================================
 
-The controller must provide:
+storageType comes from:
 
-    storageType = req.params.storageType
+    req.params.storageType
 
-The view does NOT determine the storage type from:
+The controller passes it directly to the view.
 
-    storage.type
+Expected values:
 
-The URL is authoritative for this page.
+    room
+    agroStore
 ============================================================
 */
 
@@ -64,10 +110,6 @@ const isAgroStore =
 const isRoom =
     selectedStorageType === "room";
 
-
-const form =
-    formData || {};
-
 %>
 
 
@@ -82,24 +124,55 @@ const form =
 .storage-context-description{margin:5px 0 0;color:#4b5563;font-size:13px;line-height:1.5}.storage-context-type{flex-shrink:0;padding:8px 12px;border-radius:999px;background:#dcfce7;color:#166534;font-size:12px;font-weight:800}
 .storage-add-card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;padding:26px;box-shadow:0 8px 30px rgba(15,23,42,.08)}
 .form-save-status{display:none;margin-bottom:20px;padding:13px 15px;border-radius:12px;font-size:14px;font-weight:600;line-height:1.5}
-.form-save-status.success{display:block;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}.form-save-status.error{display:block;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
-.storage-mode-card{margin-bottom:24px;padding:18px;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0}.storage-mode-title{color:#172033;font-size:15px;font-weight:800;margin-bottom:5px}.storage-mode-description{color:#64748b;font-size:13px;line-height:1.5}
+.form-save-status.success{display:block;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
+.form-save-status.error{display:block;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.storage-mode-card{margin-bottom:24px;padding:18px;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0}
+.storage-mode-title{color:#172033;font-size:15px;font-weight:800;margin-bottom:5px}
+.storage-mode-description{color:#64748b;font-size:13px;line-height:1.5}
 .form-group{margin-bottom:20px}.form-group label{display:block;margin-bottom:8px;color:#273449;font-size:14px;font-weight:700}
 .form-group input,.form-group select,.form-group textarea{width:100%;box-sizing:border-box;border:1px solid #d9dee7;border-radius:12px;background:#fff;color:#172033;font-size:15px;padding:12px 13px;outline:none;transition:border-color .2s,box-shadow .2s,background .2s}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.12)}
-.form-group textarea{min-height:120px;resize:vertical}.form-group input:disabled,.form-group select:disabled{background:#f4f6f8;color:#9aa2ad;cursor:not-allowed}
+.form-group textarea{min-height:120px;resize:vertical}
+.form-group input:disabled,.form-group select:disabled{background:#f4f6f8;color:#9aa2ad;cursor:not-allowed}
 .profile-image-section{display:flex;flex-direction:column;align-items:center;text-align:center;padding-bottom:28px;margin-bottom:24px;border-bottom:1px solid #edf0f4}
 .profile-image-preview{width:125px;height:125px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f0fdf4;border:4px solid #fff;box-shadow:0 4px 18px rgba(0,0,0,.1);margin-bottom:14px}
-.profile-image-preview img{width:100%;height:100%;object-fit:cover}.profile-image-placeholder{font-size:48px}.profile-image-title{color:#172033;font-size:17px;font-weight:700}.profile-image-description{margin:5px 0 14px;color:#7b8494;font-size:13px}.profile-image-input{width:100%;max-width:300px;font-size:13px}
-.record-type-card{padding:18px;margin-bottom:24px;border-radius:16px;background:#f0fdf4;border:1px solid #bbf7d0}.record-type-card .form-group{margin-bottom:0}
-.record-section{display:none;padding:18px;margin-bottom:18px;border-radius:16px;background:#fbfefc;border:1px solid #dcfce7}.record-section.visible{display:block}.record-section::before{content:"";display:block;width:36px;height:3px;margin-bottom:15px;border-radius:5px;background:#16a34a}
-.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.form-grid .form-group{margin-bottom:0}.form-actions{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:28px;padding-top:22px;border-top:1px solid #edf0f4}
-.button{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border-radius:12px;border:none;text-decoration:none;cursor:pointer;font-size:14px;font-weight:700;transition:transform .15s,opacity .15s,box-shadow .15s}.button:hover{transform:translateY(-1px)}.button:disabled{opacity:.65;cursor:not-allowed;transform:none}.button-secondary{background:#f1f4f8;color:#374151}.button-primary{background:#16a34a;color:#fff;box-shadow:0 5px 14px rgba(22,163,74,.22)}.button-primary:hover{background:#15803d}
-@media(max-width:700px){.storage-add-page{padding:18px 12px 40px}.storage-add-card{padding:18px;border-radius:18px}.storage-add-header h1{font-size:25px}.storage-context-card{flex-direction:column;align-items:flex-start}.form-grid{grid-template-columns:1fr;gap:0}.form-actions{flex-direction:column-reverse;align-items:stretch}.button{width:100%}}
+.profile-image-preview img{width:100%;height:100%;object-fit:cover}
+.profile-image-placeholder{font-size:48px}
+.profile-image-title{color:#172033;font-size:17px;font-weight:700}
+.profile-image-description{margin:5px 0 14px;color:#7b8494;font-size:13px}
+.profile-image-input{width:100%;max-width:300px;font-size:13px}
+.record-type-card{padding:18px;margin-bottom:24px;border-radius:16px;background:#f0fdf4;border:1px solid #bbf7d0}
+.record-type-card .form-group{margin-bottom:0}
+.record-section{display:none;padding:18px;margin-bottom:18px;border-radius:16px;background:#fbfefc;border:1px solid #dcfce7}
+.record-section.visible{display:block}
+.record-section::before{content:"";display:block;width:36px;height:3px;margin-bottom:15px;border-radius:5px;background:#16a34a}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.form-grid .form-group{margin-bottom:0}
+.form-actions{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:28px;padding-top:22px;border-top:1px solid #edf0f4}
+.button{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border-radius:12px;border:none;text-decoration:none;cursor:pointer;font-size:14px;font-weight:700;transition:transform .15s,opacity .15s,box-shadow .15s}
+.button:hover{transform:translateY(-1px)}
+.button:disabled{opacity:.65;cursor:not-allowed;transform:none}
+.button-secondary{background:#f1f4f8;color:#374151}
+.button-primary{background:#16a34a;color:#fff;box-shadow:0 5px 14px rgba(22,163,74,.22)}
+.button-primary:hover{background:#15803d}
+@media(max-width:700px){
+    .storage-add-page{padding:18px 12px 40px}
+    .storage-add-card{padding:18px;border-radius:18px}
+    .storage-add-header h1{font-size:25px}
+    .storage-context-card{flex-direction:column;align-items:flex-start}
+    .form-grid{grid-template-columns:1fr;gap:0}
+    .form-actions{flex-direction:column-reverse;align-items:stretch}
+    .button{width:100%}
+}
 </style>
 
 
 <div class="storage-add-page">
+
+
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
 
     <div class="storage-add-header">
 
@@ -126,6 +199,10 @@ const form =
 
     </div>
 
+
+    <!-- =====================================================
+         STORAGE CONTEXT
+    ====================================================== -->
 
     <div class="storage-context-card">
 
@@ -166,7 +243,12 @@ const form =
     </div>
 
 
+    <!-- =====================================================
+         ADD ITEM FORM
+    ====================================================== -->
+
     <div class="storage-add-card">
+
 
         <form
             id="storageAddForm"
@@ -176,14 +258,18 @@ const form =
         >
 
 
-            <% if (formError) { %>
+            <!-- =================================================
+                 FORM ERROR
+            ================================================== -->
+
+            <% if (errorMessage) { %>
 
                 <div
                     id="formSaveStatus"
                     class="form-save-status error"
                     role="alert"
                 >
-                    <%= formError %>
+                    <%= errorMessage %>
                 </div>
 
             <% } else { %>
@@ -197,6 +283,10 @@ const form =
 
             <% } %>
 
+
+            <!-- =================================================
+                 PROFILE IMAGE
+            ================================================== -->
 
             <div class="profile-image-section">
 
@@ -241,7 +331,12 @@ const form =
             </div>
 
 
+            <!-- =================================================
+                 AGROSTORE
+            ================================================== -->
+
             <% if (isAgroStore) { %>
+
 
                 <div class="record-type-card">
 
@@ -342,7 +437,12 @@ const form =
                 </div>
 
 
+            <!-- =================================================
+                 STORAGE ROOM
+            ================================================== -->
+
             <% } else if (isRoom) { %>
+
 
                 <div class="record-type-card">
 
@@ -392,6 +492,10 @@ const form =
                     style="display:none"
                 ></div>
 
+
+                <!-- =================================================
+                     STRUCTURE TYPE
+                ================================================== -->
 
                 <div
                     id="structureTypeGroup"
@@ -488,6 +592,10 @@ const form =
                 </div>
 
 
+                <!-- =================================================
+                     ANIMAL GENDER
+                ================================================== -->
+
                 <div
                     id="animalGenderGroup"
                     class="form-group record-section"
@@ -523,6 +631,10 @@ const form =
                 </div>
 
 
+                <!-- =================================================
+                     DATE OF BIRTH
+                ================================================== -->
+
                 <div
                     id="dateOfBirthGroup"
                     class="form-group record-section"
@@ -542,6 +654,10 @@ const form =
 
                 </div>
 
+
+                <!-- =================================================
+                     ANIMAL BREED
+                ================================================== -->
 
                 <div
                     id="animalBreedGroup"
@@ -577,6 +693,10 @@ const form =
                 </div>
 
 
+                <!-- =================================================
+                     ANIMAL MASS
+                ================================================== -->
+
                 <div
                     id="massGroup"
                     class="form-group record-section"
@@ -594,13 +714,19 @@ const form =
                         min="0"
                         step="0.01"
                         placeholder="Enter animal mass"
+                        value="<%= form.mass ?? "" %>"
                         disabled
                     >
 
                 </div>
 
+
             <% } %>
 
+
+            <!-- =================================================
+                 NAME
+            ================================================== -->
 
             <div class="form-group">
 
@@ -622,18 +748,22 @@ const form =
             </div>
 
 
+            <!-- =================================================
+                 AGROSTORE MASS
+            ================================================== -->
+
             <% if (isAgroStore) { %>
 
                 <div class="form-group">
 
-                    <label for="mass">
+                    <label for="feedMass">
                         Mass (kg)
                     </label>
 
 
                     <input
                         type="number"
-                        id="mass"
+                        id="feedMass"
                         name="mass"
                         min="0"
                         step="0.01"
@@ -645,6 +775,10 @@ const form =
 
             <% } %>
 
+
+            <!-- =================================================
+                 FINANCIAL INFORMATION
+            ================================================== -->
 
             <div class="form-grid">
 
@@ -690,6 +824,10 @@ const form =
             </div>
 
 
+            <!-- =================================================
+                 DESCRIPTION
+            ================================================== -->
+
             <div class="form-group">
 
                 <label for="description">
@@ -705,6 +843,10 @@ const form =
 
             </div>
 
+
+            <!-- =================================================
+                 CONDITION
+            ================================================== -->
 
             <div class="form-group">
 
@@ -724,6 +866,10 @@ const form =
             </div>
 
 
+            <!-- =================================================
+                 PHYSICAL LOCATION
+            ================================================== -->
+
             <div class="form-group">
 
                 <label for="location">
@@ -741,6 +887,10 @@ const form =
 
             </div>
 
+
+            <!-- =================================================
+                 STATUS
+            ================================================== -->
 
             <div class="form-group">
 
@@ -790,6 +940,10 @@ const form =
             </div>
 
 
+            <!-- =================================================
+                 FORM ACTIONS
+            ================================================== -->
+
             <div class="form-actions">
 
                 <a
@@ -823,6 +977,7 @@ const form =
 document.addEventListener(
     "DOMContentLoaded",
     function () {
+
 
         const form =
             document.getElementById(
@@ -893,6 +1048,12 @@ document.addEventListener(
 
         }
 
+
+        /*
+        ========================================================
+        PROFILE IMAGE PREVIEW
+        ========================================================
+        */
 
         if (profileImage) {
 
@@ -973,6 +1134,12 @@ document.addEventListener(
 
         }
 
+
+        /*
+        ========================================================
+        RECORD TYPE
+        ========================================================
+        */
 
         const recordType =
             document.getElementById(
@@ -1353,6 +1520,12 @@ document.addEventListener(
         }
 
 
+        /*
+        ========================================================
+        RECORD TYPE CHANGE
+        ========================================================
+        */
+
         recordType.addEventListener(
             "change",
             function () {
@@ -1364,6 +1537,12 @@ document.addEventListener(
             }
         );
 
+
+        /*
+        ========================================================
+        ROOM FORM SUBMISSION
+        ========================================================
+        */
 
         form.addEventListener(
             "submit",
@@ -1540,6 +1719,12 @@ document.addEventListener(
             }
         );
 
+
+        /*
+        ========================================================
+        INITIAL ROOM STATE
+        ========================================================
+        */
 
         updateRoomRecordType();
 
