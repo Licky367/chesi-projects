@@ -4,31 +4,54 @@
 // ==========================================================
 //
 // This service is intentionally an adapter around the existing
-// storage service. Existing storage/list and storage/contents
-// logic remains authoritative for resolving the parent Dairy,
-// storage facility and actual storage allocation.
+// storage service.
 //
-// STORAGE TYPES:
+// STORAGE TYPE CONTRACT:
+//
+//     The storage type is supplied explicitly by the route.
+//
 //     "room"
 //     "agroStore"
 //
 // IMPORTANT:
-//     "agroStore" is the exact database value.
-//     Do NOT change it to "agrostore".
-//     Do NOT use toLowerCase().
+//
+//     "agroStore" is the exact database/application value.
+//
+//     Do NOT change it to:
+//         "agrostore"
+//
+//     Do NOT use:
+//         toLowerCase()
+//
+// URL CONTRACT:
+//
+//     /storage/:dairyId/contents/:storageId/add/:storageType
+//
+// Example:
+//
+//     /storage/123/contents/456/add/room
+//
+//     /storage/123/contents/456/add/agroStore
 //
 // ==========================================================
 
 
-const storageListService = require("./list");
-const storageContentsService = require("./contents");
+const storageListService =
+    require("./list");
+
+const storageContentsService =
+    require("./contents");
+
 
 
 /* ============================================================
    SERVICE ERROR
 ============================================================ */
 
-function serviceError(message, statusCode = 400) {
+function serviceError(
+    message,
+    statusCode = 400
+) {
 
     const error =
         new Error(message);
@@ -37,7 +60,9 @@ function serviceError(message, statusCode = 400) {
         statusCode;
 
     return error;
+
 }
+
 
 
 /* ============================================================
@@ -51,6 +76,7 @@ function clean(value) {
         : value;
 
 }
+
 
 
 /* ============================================================
@@ -90,30 +116,57 @@ function numberOrUndefined(value) {
 }
 
 
+
 /* ============================================================
-   STORAGE TYPE
+   VALIDATE STORAGE TYPE
 ============================================================ */
 
 /*
 IMPORTANT:
 
-The database uses the exact storage types:
+The storage type comes from the URL.
+
+Supported values are exactly:
 
     "room"
     "agroStore"
 
-We intentionally do NOT call toLowerCase().
+We do NOT determine the type from:
 
-This preserves the database value exactly.
+    storage.type
+
+We do NOT convert the value to lowercase.
 */
 
-function getStorageType(storage) {
+function validateStorageType(
+    storageType
+) {
 
-    return clean(
-        storage?.type
-    );
+    const type =
+        clean(
+            storageType
+        );
+
+
+    if (
+        ![
+            "room",
+            "agroStore"
+        ].includes(type)
+    ) {
+
+        throw serviceError(
+            "Unsupported storage type. Expected 'room' or 'agroStore'.",
+            400
+        );
+
+    }
+
+
+    return type;
 
 }
+
 
 
 /* ============================================================
@@ -123,7 +176,9 @@ function getStorageType(storage) {
 function getBreeds(dairy) {
 
     if (
-        Array.isArray(dairy?.dairyBreeds)
+        Array.isArray(
+            dairy?.dairyBreeds
+        )
     ) {
 
         return dairy.dairyBreeds;
@@ -132,7 +187,9 @@ function getBreeds(dairy) {
 
 
     if (
-        Array.isArray(dairy?.breeds)
+        Array.isArray(
+            dairy?.breeds
+        )
     ) {
 
         return dairy.breeds;
@@ -141,7 +198,9 @@ function getBreeds(dairy) {
 
 
     if (
-        Array.isArray(dairy?.breed)
+        Array.isArray(
+            dairy?.breed
+        )
     ) {
 
         return dairy.breed;
@@ -152,6 +211,7 @@ function getBreeds(dairy) {
     return [];
 
 }
+
 
 
 /* ============================================================
@@ -168,7 +228,10 @@ candidate signature to be attempted.
 Application/database errors are allowed to propagate.
 */
 
-async function callService(fn, candidates) {
+async function callService(
+    fn,
+    candidates
+) {
 
     if (
         typeof fn !== "function"
@@ -191,7 +254,9 @@ async function callService(fn, candidates) {
 
         try {
 
-            return await fn(...args);
+            return await fn(
+                ...args
+            );
 
         } catch (error) {
 
@@ -212,10 +277,13 @@ async function callService(fn, candidates) {
 
 
             const signatureMismatch =
-                error?.code === "ERR_INVALID_ARG_TYPE" ||
+                error?.code ===
+                    "ERR_INVALID_ARG_TYPE" ||
+
                 message.includes(
                     "Cannot read properties of undefined"
                 ) ||
+
                 message.includes(
                     "is not a function"
                 );
@@ -245,21 +313,34 @@ async function callService(fn, candidates) {
 }
 
 
+
 /* ============================================================
    RESOLVE PARENT DAIRY
 ============================================================ */
 
-async function resolveParentDairy(dairyId) {
+async function resolveParentDairy(
+    dairyId
+) {
 
     return callService(
         storageListService.getParentDairy,
         [
-            [dairyId],
-            [{ dairyId }]
+
+            [
+                dairyId
+            ],
+
+            [
+                {
+                    dairyId
+                }
+            ]
+
         ]
     );
 
 }
+
 
 
 /* ============================================================
@@ -279,23 +360,59 @@ async function resolveStorage(
     return callService(
         fn,
         [
-            [dairyId, storageId],
-            [storageId, dairyId],
-            [{ dairyId, storageId }],
-            [storageId]
+
+            [
+                dairyId,
+                storageId
+            ],
+
+            [
+                storageId,
+                dairyId
+            ],
+
+            [
+                {
+                    dairyId,
+                    storageId
+                }
+            ],
+
+            [
+                storageId
+            ]
+
         ]
     );
 
 }
 
 
+
 /* ============================================================
    GET ADD NEW CONTEXT
 ============================================================ */
 
+/*
+The storage type is now REQUIRED as an explicit argument.
+
+The service does NOT inspect:
+
+    storage.type
+
+The caller must supply:
+
+    "room"
+
+or:
+
+    "agroStore"
+*/
+
 async function getAddNewContext({
     dairyId,
-    storageId
+    storageId,
+    storageType
 }) {
 
     /*
@@ -315,6 +432,18 @@ async function getAddNewContext({
         );
 
     }
+
+
+    /*
+    ------------------------------------------------------------
+    Validate explicit storage type
+    ------------------------------------------------------------
+    */
+
+    const validatedStorageType =
+        validateStorageType(
+            storageType
+        );
 
 
     /*
@@ -380,47 +509,6 @@ async function getAddNewContext({
 
     /*
     ------------------------------------------------------------
-    Resolve exact storage type
-    ------------------------------------------------------------
-    */
-
-    const storageType =
-        getStorageType(
-            storage
-        );
-
-
-    /*
-    ------------------------------------------------------------
-    SUPPORTED STORAGE TYPES
-    ------------------------------------------------------------
-
-    Exact database values:
-
-        room
-        agroStore
-
-    DO NOT change agroStore to agrostore.
-    ------------------------------------------------------------
-    */
-
-    if (
-        ![
-            "room",
-            "agroStore"
-        ].includes(storageType)
-    ) {
-
-        throw serviceError(
-            "This storage facility has an unsupported storage type.",
-            400
-        );
-
-    }
-
-
-    /*
-    ------------------------------------------------------------
     Return complete context
     ------------------------------------------------------------
     */
@@ -431,7 +519,8 @@ async function getAddNewContext({
 
         storage,
 
-        storageType,
+        storageType:
+            validatedStorageType,
 
         dairyBreeds:
             getBreeds(dairy)
@@ -439,6 +528,7 @@ async function getAddNewContext({
     };
 
 }
+
 
 
 /* ============================================================
@@ -454,6 +544,18 @@ function validateAndNormalize({
         {
             ...body
         };
+
+
+    /*
+    ============================================================
+    VALIDATE STORAGE TYPE
+    ============================================================
+    */
+
+    const validatedStorageType =
+        validateStorageType(
+            storageType
+        );
 
 
     /* ========================================================
@@ -555,20 +657,8 @@ function validateAndNormalize({
        AGROSTORE
     ======================================================== */
 
-    /*
-    IMPORTANT:
-
-    Exact storage type:
-
-        "agroStore"
-
-    NOT:
-
-        "agrostore"
-    */
-
     if (
-        storageType === "agroStore"
+        validatedStorageType === "agroStore"
     ) {
 
         /*
@@ -632,7 +722,9 @@ function validateAndNormalize({
        NORMAL STORAGE ROOM
     ======================================================== */
 
-    else {
+    if (
+        validatedStorageType === "room"
+    ) {
 
         /*
         --------------------------------------------------------
@@ -749,7 +841,9 @@ function validateAndNormalize({
 
         if (
             data.recordType === "structure" &&
-            !clean(data.type)
+            !clean(
+                data.type
+            )
         ) {
 
             throw serviceError(
@@ -766,6 +860,7 @@ function validateAndNormalize({
 }
 
 
+
 /* ============================================================
    ADD NEW ITEM
 ============================================================ */
@@ -773,10 +868,23 @@ function validateAndNormalize({
 async function addNewItem({
     dairyId,
     storageId,
+    storageType,
     body,
     file,
     request
 }) {
+
+    /*
+    ============================================================
+    VALIDATE EXPLICIT STORAGE TYPE
+    ============================================================
+    */
+
+    const validatedStorageType =
+        validateStorageType(
+            storageType
+        );
+
 
     /*
     ============================================================
@@ -786,8 +894,14 @@ async function addNewItem({
 
     const context =
         await getAddNewContext({
+
             dairyId,
-            storageId
+
+            storageId,
+
+            storageType:
+                validatedStorageType
+
         });
 
 
@@ -799,21 +913,18 @@ async function addNewItem({
 
     const data =
         validateAndNormalize({
+
             body,
+
             storageType:
-                context.storageType
+                validatedStorageType
+
         });
 
 
     /*
     ============================================================
     REMOVE DESTINATION-CONTROLLED FIELDS
-    ============================================================
-
-    The browser must never control these fields.
-
-    The existing storage contents service is responsible for
-    determining the final storage allocation.
     ============================================================
     */
 
@@ -906,13 +1017,22 @@ async function addNewItem({
                 [
                     {
                         dairyId,
+
                         storageId,
+
+                        storageType:
+                            validatedStorageType,
+
                         data,
+
                         dairy:
                             context.dairy,
+
                         storage:
                             context.storage,
+
                         request
+
                     }
                 ]
 
@@ -934,6 +1054,7 @@ async function addNewItem({
     );
 
 }
+
 
 
 /* ============================================================
