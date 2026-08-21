@@ -31,9 +31,11 @@
 //     "agroStore" is case-sensitive.
 //
 //     Do NOT change it to:
+//
 //         "agrostore"
 //
 //     Do NOT use:
+//
 //         toLowerCase()
 //
 // ==========================================================
@@ -95,6 +97,9 @@ async function getAddNewStorage(req, res) {
         /*
         --------------------------------------------------------
         Render add-item form.
+
+        formData and formError are always supplied so the EJS
+        template never attempts to access undefined variables.
         --------------------------------------------------------
         */
 
@@ -115,7 +120,10 @@ async function getAddNewStorage(req, res) {
                     context.storageType,
 
                 formData:
-                    {}
+                    {},
+
+                formError:
+                    null
 
             }
         );
@@ -209,10 +217,18 @@ async function addNewItem(req, res) {
         --------------------------------------------------------
         Normal successful redirect.
         --------------------------------------------------------
+
+        The add form URL is:
+
+            /storage/:dairyId/contents/:storageId/add/:storageType
+
+        After a successful add, return to the storage contents
+        page rather than displaying the add form again.
+        --------------------------------------------------------
         */
 
         return res.redirect(
-            `/storage/${dairyId}/contents/${storageId}/add/${storageType}`
+            `/storage/${dairyId}/contents/${storageId}`
         );
 
 
@@ -227,6 +243,8 @@ async function addNewItem(req, res) {
         /*
         --------------------------------------------------------
         Re-render the same form after validation failure.
+
+        The submitted form data is preserved.
         --------------------------------------------------------
         */
 
