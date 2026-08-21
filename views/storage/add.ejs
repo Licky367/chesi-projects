@@ -15,6 +15,9 @@
          name
          type
 
+             room
+             agroStore
+
      BACKEND DETERMINES:
 
          recordType = "structure"
@@ -23,11 +26,23 @@
 
      IMPORTANT:
 
+         recordType and type are DIFFERENT fields.
+
+         recordType:
+             "structure"
+
+         type:
+             "room"
+             OR
+             "agroStore"
+
          The parent Dairy is identified by MongoDB _id
          in the URL.
 
          The parent relationship stored on the new
-         structure record is assetCode = parent Dairy.code.
+         storage record is:
+
+             assetCode = parent Dairy.code
 
 ========================================================== -->
 
@@ -873,13 +888,30 @@
             <!-- ==================================================
                  BACKEND-CONTROLLED VALUES
 
-                 These are included for consistency with the
-                 /add form's field naming.
+                 These are displayed/posted only for consistency
+                 with the /add form's field naming.
 
                  IMPORTANT:
-                 The server MUST NOT trust these values.
-                 It must derive recordType and assetCode from
-                 req.params.id and the parent Dairy record.
+
+                 recordType is NOT the storage type.
+
+                 recordType:
+                     structure
+
+                 type:
+                     room
+                     OR
+                     agroStore
+
+                 The server MUST NOT trust recordType or assetCode
+                 from req.body.
+
+                 It must derive:
+
+                     recordType = "structure"
+                     assetCode = parent Dairy.code
+
+                 from req.params.id and the parent Dairy record.
             ================================================== -->
 
             <input
@@ -928,7 +960,7 @@
 
             <!-- ==================================================
                  STORAGE TYPE
-            ================================================== -->
+================================================== -->
 
             <div class="form-group">
 
@@ -942,6 +974,10 @@
 
                     <!-- ==========================================
                          ROOM
+
+                         type = "room"
+
+                         This is NOT recordType.
                     =========================================== -->
 
                     <label
@@ -992,6 +1028,10 @@
 
                     <!-- ==========================================
                          AGROSTORE
+
+                         type = "agroStore"
+
+                         This is NOT recordType.
                     =========================================== -->
 
                     <label
