@@ -4,8 +4,15 @@
 // ==========================================================
 
 const express = require("express");
-const router = express.Router();
-const storageController = require("../controllers/storage");
+
+const router =
+    express.Router();
+
+const storageController =
+    require("../controllers/storage");
+
+const uploadMiddleware =
+    require("../middleware/uploadMiddleware");
 
 
 // ==========================================================
@@ -43,6 +50,7 @@ router.post(
 // ==========================================================
 //
 // GET
+//
 //     /storage/:dairyId/contents/:storageId
 //
 // :dairyId
@@ -50,6 +58,7 @@ router.post(
 //
 // :storageId
 //     = storage facility ID
+//
 // ==========================================================
 
 router.get(
@@ -63,6 +72,7 @@ router.get(
 // ==========================================================
 //
 // GET
+//
 //     /storage/:dairyId/contents/:storageId/add/:storageType
 //
 // Examples:
@@ -85,7 +95,12 @@ router.get(
 //     room
 //     agroStore
 //
-// The storage type is supplied explicitly by the URL.
+// IMPORTANT:
+//
+//     storageType is supplied explicitly by the URL.
+//
+//     "agroStore" is case-sensitive.
+//
 // ==========================================================
 
 router.get(
@@ -95,23 +110,59 @@ router.get(
 
 
 // ==========================================================
-// ADD ITEM TO STORAGE
+// ADD ITEM DIRECTLY TO STORAGE
 // ==========================================================
 //
 // POST
+//
 //     /storage/:dairyId/contents/:storageId/add/:storageType
 //
-// The storage type is supplied explicitly by the URL.
+// The form uses:
+//
+//     enctype="multipart/form-data"
+//
+// Therefore the upload middleware MUST execute before:
+//
+//     storageController.addNewItem
+//
+// This allows:
+//
+//     req.body.name
+//     req.body.recordType
+//     req.body.type
+//     req.body.quantity
+//     req.body.unit
+//     req.body.mass
+//     req.body.buyingPrice
+//     req.body.currentWorth
+//     req.body.description
+//     req.body.condition
+//     req.body.location
+//     req.body.status
+//
+// to be populated correctly.
+//
+// The uploaded profile image is made available through:
+//
+//     req.file
+//
 // ==========================================================
 
 router.post(
     "/:dairyId/contents/:storageId/add/:storageType",
+    uploadMiddleware.single("profileImage"),
     storageController.addNewItem
 );
 
 
 // ==========================================================
 // OMIT ITEMS FROM STORAGE
+// ==========================================================
+//
+// POST
+//
+//     /storage/:dairyId/contents/:storageId/omit
+//
 // ==========================================================
 
 router.post(
@@ -123,6 +174,12 @@ router.post(
 // ==========================================================
 // RESHUFFLE ITEMS
 // ==========================================================
+//
+// POST
+//
+//     /storage/:dairyId/contents/:storageId/reshuffle
+//
+// ==========================================================
 
 router.post(
     "/:dairyId/contents/:storageId/reshuffle",
@@ -133,6 +190,12 @@ router.post(
 // ==========================================================
 // UPDATE STORAGE QUANTITY
 // ==========================================================
+//
+// POST
+//
+//     /storage/:dairyId/contents/:storageId/quantity
+//
+// ==========================================================
 
 router.post(
     "/:dairyId/contents/:storageId/quantity",
@@ -140,4 +203,9 @@ router.post(
 );
 
 
-module.exports = router;
+// ==========================================================
+// EXPORT ROUTER
+// ==========================================================
+
+module.exports =
+    router;
