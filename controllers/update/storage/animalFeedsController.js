@@ -4,14 +4,14 @@
 //
 // AGROSTORE ANIMAL FEED / STOCK CONTROLLER
 //
-// Responsibilities:
+// RESPONSIBILITIES:
 //
-//     • Receive AgroStore ID
-//     • Ask the service for the AgroStore
-//     • Ask the service for updates belonging to Dairy
-//       records located in that AgroStore's room
-//     • Return feed/update data
-//     • Receive quantity updates for individual stock items
+//     • Receive AgroStore._id
+//     • Load the AgroStore
+//     • Load its contents
+//     • Load updates belonging to those contents
+//     • Return stock/update data
+//     • Receive stock quantity updates
 //     • Receive additional stock information
 //     • Return the user to the AgroStore page
 //
@@ -21,24 +21,14 @@
 //         = AgroStore._id
 //
 //     req.params.feedId
-//         = individual stock item's Dairy._id
+//         = individual CONTENT Dairy._id
 //
-// FEED RELATIONSHIP:
+// NEVER:
 //
-//     AgroStore._id
-//         ↓
-//     AgroStore.roomNumber
-//         ↓
-//     Dairy.dwellingNumber
-//         ↓
-//     Matching Dairy records
-//         ↓
-//     Update.dairy
-//         ↓
-//     Feed cards
+//     req.params.id
+//         = parent Dairy ID
 //
-// The controller does NOT build this relationship.
-// animalFeedsService.js is responsible for it.
+// The AgroStore is the page being viewed.
 //
 // ==========================================================
 
@@ -48,26 +38,14 @@ const animalFeedsService =
 
 
 // ==========================================================
-// GET AGROSTORE FEED UPDATES
+// GET AGROSTORE ANIMAL FEEDS
 // ==========================================================
 //
 // GET:
 //
 //     /dairy/:id/animal-feeds
 //
-// :id
-//     = AgroStore._id
-//
-// The service determines:
-//
-//     AgroStore.roomNumber
-//
-// and then finds:
-//
-//     Dairy.dwellingNumber === AgroStore.roomNumber
-//
-// The resulting Dairy records supply the Update records
-// displayed by animal-feed-card.ejs.
+// :id = AgroStore._id
 //
 // ==========================================================
 
@@ -88,43 +66,7 @@ async function getAnimalFeeds(
 
 
         // ==================================================
-        // VALIDATE PARAMETER
-        // ==================================================
-
-        if (!storageId) {
-
-            const error =
-                new Error(
-                    "AgroStore ID is required."
-                );
-
-            error.status = 400;
-
-            return next(error);
-
-        }
-
-
-        // ==================================================
-        // GET FEED UPDATES
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // The service receives ONLY the AgroStore ID.
-        //
-        // It is responsible for:
-        //
-        //     AgroStore
-        //         ↓
-        //     roomNumber
-        //         ↓
-        //     dwellingNumber
-        //         ↓
-        //     Dairy records
-        //         ↓
-        //     Updates
-        //
+        // LOAD AGROSTORE + CONTENTS + CONTENT UPDATES
         // ==================================================
 
         const result =
@@ -149,34 +91,30 @@ async function getAnimalFeeds(
 
             return res.json({
 
-                success:
-                    true,
-
-                // ------------------------------------------
-                // CURRENT AGROSTORE ID
-                // ------------------------------------------
+                success: true,
 
                 storageId,
 
                 // ------------------------------------------
-                // CURRENT AGROSTORE
+                // THE ACTUAL AGROSTORE
                 // ------------------------------------------
 
                 agroStore:
                     result.agroStore,
 
                 // ------------------------------------------
-                // FEED / UPDATE CARDS
-                //
-                // These are NOT the AgroStore itself.
-                //
-                // They are updates belonging to Dairy
-                // records whose dwellingNumber matches
-                // agroStore.roomNumber.
+                // CONTENTS OF THE AGROSTORE
                 // ------------------------------------------
 
                 feeds:
-                    result.feeds
+                    result.feeds,
+
+                // ------------------------------------------
+                // UPDATES OF THOSE CONTENTS
+                // ------------------------------------------
+
+                feedUpdates:
+                    result.feedUpdates
 
             });
 
@@ -187,7 +125,8 @@ async function getAnimalFeeds(
         // NORMAL RESPONSE
         // ==================================================
         //
-        // Render the reusable animal-feed-card component.
+        // This route can independently render the
+        // animal-feed page/card if required.
         //
         // ==================================================
 
@@ -198,18 +137,25 @@ async function getAnimalFeeds(
             {
 
                 // ------------------------------------------
-                // CURRENT AGROSTORE
+                // AGROSTORE
                 // ------------------------------------------
 
                 agroStore:
                     result.agroStore,
 
                 // ------------------------------------------
-                // FEED / UPDATE CARDS
+                // AGROSTORE CONTENTS
                 // ------------------------------------------
 
                 feeds:
                     result.feeds,
+
+                // ------------------------------------------
+                // UPDATES BELONGING TO CONTENTS
+                // ------------------------------------------
+
+                feedUpdates:
+                    result.feedUpdates,
 
                 // ------------------------------------------
                 // AGROSTORE ID
@@ -238,12 +184,6 @@ async function getAnimalFeeds(
 //
 //     /dairy/:id/animal-feeds/:feedId/update
 //
-// :id
-//     = AgroStore._id
-//
-// :feedId
-//     = individual stock item's Dairy._id
-//
 // Body:
 //
 //     quantity
@@ -268,7 +208,7 @@ async function updateAnimalFeed(
 
 
         // ==================================================
-        // STOCK ITEM ID
+        // CONTENT / STOCK ITEM ID
         // ==================================================
 
         const feedId =
@@ -276,7 +216,7 @@ async function updateAnimalFeed(
 
 
         // ==================================================
-        // REQUEST BODY
+        // FORM DATA
         // ==================================================
 
         const quantity =
@@ -288,44 +228,7 @@ async function updateAnimalFeed(
 
 
         // ==================================================
-        // VALIDATE PARAMETERS
-        // ==================================================
-
-        if (!storageId) {
-
-            const error =
-                new Error(
-                    "AgroStore ID is required."
-                );
-
-            error.status = 400;
-
-            return next(error);
-
-        }
-
-
-        if (!feedId) {
-
-            const error =
-                new Error(
-                    "Stock item ID is required."
-                );
-
-            error.status = 400;
-
-            return next(error);
-
-        }
-
-
-        // ==================================================
-        // UPDATE THROUGH SERVICE
-        // ==================================================
-        //
-        // The service verifies that feedId belongs to the
-        // specified AgroStore before changing anything.
-        //
+        // UPDATE CONTENT
         // ==================================================
 
         const result =
@@ -343,7 +246,7 @@ async function updateAnimalFeed(
 
 
         // ==================================================
-        // JSON RESPONSE
+        // JSON REQUEST
         // ==================================================
 
         if (
@@ -358,20 +261,19 @@ async function updateAnimalFeed(
 
             return res.json({
 
-                success:
-                    true,
+                success: true,
 
                 message:
                     "Stock updated successfully.",
 
                 // ------------------------------------------
-                // AgroStore remains the page context
+                // KEEP THE AGROSTORE ID
                 // ------------------------------------------
 
                 storageId,
 
                 // ------------------------------------------
-                // UPDATED STOCK ITEM
+                // UPDATED CONTENT
                 // ------------------------------------------
 
                 feed:
@@ -383,16 +285,22 @@ async function updateAnimalFeed(
 
 
         // ==================================================
-        // NORMAL PAGE RESPONSE
+        // NORMAL RESPONSE
         // ==================================================
         //
-        // Always return to the AgroStore page.
+        // IMPORTANT:
         //
-        // /dairy/:id
+        // Redirect back to:
         //
-        // where :id remains:
+        //     /dairy/:agroStoreId
         //
-        //     AgroStore._id
+        // NOT:
+        //
+        //     /dairy/:feedId
+        //
+        // NOT:
+        //
+        //     /dairy/:parentId
         //
         // ==================================================
 
