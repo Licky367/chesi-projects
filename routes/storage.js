@@ -68,6 +68,44 @@ router.get(
 
 
 // ==========================================================
+// STORAGE CONTENT ITEM DETAILS
+// ==========================================================
+//
+// GET
+//
+//     /storage/:dairyId/contents/:storageId/details/:itemId
+//
+// Example:
+//
+//     /storage/DAIRY_ID/contents/STORAGE_ID/details/ITEM_ID
+//
+// :dairyId
+//     = parent Dairy Farm ID
+//
+// :storageId
+//     = storage facility ID
+//
+// :itemId
+//     = Dairy record / content item ID
+//
+// PURPOSE:
+//
+//     Display the complete details of one item currently
+//     associated with the selected storage facility.
+//
+// VIEW:
+//
+//     views/storage/content-item.ejs
+//
+// ==========================================================
+
+router.get(
+    "/:dairyId/contents/:storageId/details/:itemId",
+    storageController.contentItem
+);
+
+
+// ==========================================================
 // ADD ITEM DIRECTLY TO STORAGE - FORM
 // ==========================================================
 //
