@@ -1,43 +1,42 @@
 <% /*
 ==========================================================
-DAIRY ASSET HORIZONTAL CARDS
+DAIRY FEED HORIZONTAL CARDS
 
 FILE:
     views/update/asset-cards.ejs
 
 PURPOSE:
-    Compact WhatsApp-style horizontal dairy asset navigator.
+    Compact horizontal feed navigator.
 
     The section:
-        - Introduces the dairy's assets
-        - Shows assets in horizontally scrollable cards
-        - Shows the asset profile image
-        - Shows the asset name
-        - Shows whether it is an Animal or Structure / Tool
+        - Displays ONLY Dairy records whose type is "feeds"
+        - Shows the feed profile image
+        - Shows the feed name
+        - Shows the feed quantity and unit when available
         - Links directly to /dairy/:id
+        - Provides a feed-specific update heading
 
-EXPECTED DATA:
-    assetDairies
-
-TYPE RULES:
+FEED RULES:
 ----------------------------------------------------------
-    code > 0
-        Animal
-
-    code === null
-    code === undefined
-    code === ""
-        Structure / Facility / Tool
-
-    code < 0
-        Not displayed
+    recordType === "structure"
+        AND
+    type === "feeds"
 
 IMPORTANT:
-    Cards DO NOT open the post modal.
+    "feeds" is a TYPE.
 
-    Clicking an asset takes the user directly to:
+    It is NOT a recordType.
 
-        /dairy/:id
+    Therefore:
+
+        recordType = "structure"
+        type       = "feeds"
+
+Cards DO NOT open the post modal.
+
+Clicking a feed takes the user directly to:
+
+    /dairy/:id
 ==========================================================
 */ %>
 
@@ -51,14 +50,57 @@ IMPORTANT:
         Array.isArray(assetDairies)
             ? assetDairies
             : [];
+
+
+    /* ======================================================
+       ONLY FEED RECORDS
+       
+       According to models/dairy.js:
+
+           recordType = "structure"
+           type       = "feeds"
+
+       Do NOT use code to determine this.
+    ====================================================== */
+
+    const feeds =
+        assets.filter(function (asset) {
+
+            if (!asset) {
+                return false;
+            }
+
+
+            const recordType =
+                String(
+                    asset.recordType || ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            const type =
+                String(
+                    asset.type || ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            return (
+                recordType === "structure" &&
+                type === "feeds"
+            );
+
+        });
 %>
 
 
-<% if (assets.length) { %>
+<% if (feeds.length) { %>
 
 <section
-    class="dairy-asset-strip"
-    aria-label="Dairy Farm Assets"
+    class="dairy-feed-strip"
+    aria-label="Dairy animal feeds"
 >
 
 
@@ -66,145 +108,130 @@ IMPORTANT:
          SECTION HEADER
     ====================================================== -->
 
-    <div class="dairy-asset-strip-header">
+    <div class="dairy-feed-strip-header">
 
-        <div class="dairy-asset-strip-title">
+
+        <div class="dairy-feed-strip-title">
 
             <strong>
-                View the dairy assets
+                Give updates about the animal feeds present in
+                <%= dairy.name %>
             </strong>
 
         </div>
 
 
-        <div class="dairy-asset-strip-description">
+        <div class="dairy-feed-strip-description">
 
-            Explore the animals, structures, facilities, and
-            tools that make up
-            <strong><%= dairy.name %></strong>.
+            Select a feed below to view its details and give
+            updates about the animal feeds currently present
+            in <strong><%= dairy.name %></strong>.
 
         </div>
+
 
     </div>
 
 
 
     <!-- =====================================================
-         HORIZONTAL SCROLL AREA
+         HORIZONTAL FEED SCROLL
     ====================================================== -->
 
     <div
-        class="dairy-asset-scroll"
+        class="dairy-feed-scroll"
         role="list"
-        aria-label="Dairy assets"
+        aria-label="Animal feeds in <%= dairy.name %>"
     >
 
 
-        <% assets.forEach(function (asset) { %>
+        <% feeds.forEach(function (feed) { %>
 
             <%
                 /* =================================================
                    SAFETY CHECK
                 ================================================= */
 
-                if (!asset || !asset._id) {
-                    return;
-                }
-
-
-                /* =================================================
-                   RAW CODE
-                ================================================= */
-
-                const assetCode =
-                    asset.code;
-
-
-                /* =================================================
-                   NORMALIZE CODE
-                ================================================= */
-
-                const numericCode =
-                    (
-                        assetCode !== null &&
-                        assetCode !== undefined &&
-                        assetCode !== ""
-                    )
-                        ? Number(assetCode)
-                        : null;
-
-
-
-                /* =================================================
-                   NEVER DISPLAY NEGATIVE-CODE RECORDS
-                ================================================= */
-
                 if (
-                    numericCode !== null &&
-                    Number.isFinite(numericCode) &&
-                    numericCode < 0
+                    !feed ||
+                    !feed._id
                 ) {
                     return;
                 }
 
 
-
                 /* =================================================
-                   DETERMINE ASSET TYPE
-
-                   code > 0
-                       Animal
-
-                   no code
-                       Structure / Facility / Tool
+                   FEED NAME
                 ================================================= */
 
-                const isAnimal =
-                    numericCode !== null &&
-                    Number.isFinite(numericCode) &&
-                    numericCode > 0;
-
-
-                const assetType =
-                    isAnimal
-                        ? "Animal"
-                        : "Structure / Tool";
-
+                const feedName =
+                    feed.name ||
+                    "Unnamed Feed";
 
 
                 /* =================================================
-                   IMAGE
-
-                   Prefer:
-                       profileImage
-                       displayImage
-
-                   Otherwise generate a simple avatar.
+                   FEED IMAGE
                 ================================================= */
 
-                const assetImage =
-                    asset.profileImage ||
-                    asset.displayImage ||
+                const feedImage =
+                    feed.displayImage ||
+                    feed.profileImage ||
                     (
                         "https://ui-avatars.com/api/?name=" +
                         encodeURIComponent(
-                            asset.name || "Asset"
+                            feedName
                         ) +
                         "&background=e8f5ee&color=198754"
                     );
+
+
+                /* =================================================
+                   FEED QUANTITY
+                ================================================= */
+
+                let feedQuantityText = "";
+
+
+                if (
+                    feed.quantity !== null &&
+                    feed.quantity !== undefined &&
+                    feed.quantity !== ""
+                ) {
+
+                    const quantity =
+                        Number(feed.quantity);
+
+
+                    if (
+                        Number.isFinite(
+                            quantity
+                        )
+                    ) {
+
+                        feedQuantityText =
+                            `${quantity}` +
+                            (
+                                feed.unit
+                                    ? ` ${feed.unit}`
+                                    : ""
+                            );
+
+                    }
+
+                }
             %>
 
 
 
             <!-- =================================================
-                 ASSET CARD
+                 FEED CARD
             ================================================== -->
 
             <a
-                href="/dairy/<%= asset._id %>"
-                class="dairy-asset-card"
+                href="/dairy/<%= feed._id %>"
+                class="dairy-feed-card"
                 role="listitem"
-                aria-label="View <%= asset.name || 'Asset' %>"
+                aria-label="Give updates about <%= feedName %>"
             >
 
 
@@ -212,12 +239,12 @@ IMPORTANT:
                      IMAGE
                 ============================================== -->
 
-                <div class="dairy-asset-image-wrap">
+                <div class="dairy-feed-image-wrap">
 
                     <img
-                        src="<%= assetImage %>"
-                        alt="<%= asset.name || 'Asset' %>"
-                        class="dairy-asset-image"
+                        src="<%= feedImage %>"
+                        alt="<%= feedName %>"
+                        class="dairy-feed-image"
                         loading="lazy"
                     >
 
@@ -226,50 +253,64 @@ IMPORTANT:
 
 
                 <!-- =============================================
-                     ASSET NAME
+                     FEED INFORMATION
                 ============================================== -->
 
-                <div class="dairy-asset-name">
-
-                    <%= asset.name || "Unnamed Asset" %>
-
-                </div>
+                <div class="dairy-feed-content">
 
 
+                    <!-- =========================================
+                         FEED NAME
+                    ========================================== -->
 
-                <!-- =============================================
-                     ASSET TYPE
-                ============================================== -->
+                    <div class="dairy-feed-name">
 
-                <div class="dairy-asset-type">
+                        <%= feedName %>
+
+                    </div>
 
 
-                    <% if (isAnimal) { %>
+
+                    <!-- =========================================
+                         FEED TYPE
+                    ========================================== -->
+
+                    <div class="dairy-feed-type">
 
                         <span
-                            class="dairy-asset-type-icon"
+                            class="dairy-feed-type-icon"
                             aria-hidden="true"
                         >
-                            🐄
+                            🌾
                         </span>
 
                         <span>
-                            <%= assetType %>
+                            Animal Feed
                         </span>
 
+                    </div>
 
-                    <% } else { %>
 
-                        <span
-                            class="dairy-asset-type-icon"
-                            aria-hidden="true"
-                        >
-                            🏗️
-                        </span>
 
-                        <span>
-                            <%= assetType %>
-                        </span>
+                    <!-- =========================================
+                         QUANTITY
+                    ========================================== -->
+
+                    <% if (feedQuantityText) { %>
+
+                        <div class="dairy-feed-quantity">
+
+                            <span
+                                class="dairy-feed-quantity-label"
+                            >
+                                Stock:
+                            </span>
+
+                            <span>
+                                <%= feedQuantityText %>
+                            </span>
+
+                        </div>
 
                     <% } %>
 
@@ -293,23 +334,26 @@ IMPORTANT:
 <style>
 
 /* ==========================================================
-   DAIRY ASSET STRIP
+   DAIRY FEED STRIP
 
    Namespaced specifically for this component.
 ========================================================== */
 
-.dairy-asset-strip {
+.dairy-feed-strip {
 
-    width: 100%;
+    width:
+        100%;
 
     margin:
         0
         0
         16px;
 
-    padding: 0;
+    padding:
+        0;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
     font-family:
         Arial,
@@ -324,9 +368,10 @@ IMPORTANT:
    HEADER
 ========================================================== */
 
-.dairy-asset-strip-header {
+.dairy-feed-strip-header {
 
-    width: 100%;
+    width:
+        100%;
 
     padding:
         0
@@ -341,16 +386,18 @@ IMPORTANT:
    TITLE
 ========================================================== */
 
-.dairy-asset-strip-title {
+.dairy-feed-strip-title {
 
-    width: 100%;
+    width:
+        100%;
 
 }
 
 
-.dairy-asset-strip-title strong {
+.dairy-feed-strip-title strong {
 
-    display: block;
+    display:
+        block;
 
     color:
         #202520;
@@ -362,7 +409,7 @@ IMPORTANT:
         700;
 
     line-height:
-        1.3;
+        1.35;
 
 }
 
@@ -372,13 +419,13 @@ IMPORTANT:
    DESCRIPTION
 ========================================================== */
 
-.dairy-asset-strip-description {
+.dairy-feed-strip-description {
 
     max-width:
         620px;
 
     margin-top:
-        3px;
+        4px;
 
     color:
         #7b847e;
@@ -392,7 +439,7 @@ IMPORTANT:
 }
 
 
-.dairy-asset-strip-description strong {
+.dairy-feed-strip-description strong {
 
     color:
         #4e5952;
@@ -408,11 +455,13 @@ IMPORTANT:
    HORIZONTAL SCROLL
 ========================================================== */
 
-.dairy-asset-scroll {
+.dairy-feed-scroll {
 
-    width: 100%;
+    width:
+        100%;
 
-    display: flex;
+    display:
+        flex;
 
     gap:
         10px;
@@ -440,7 +489,7 @@ IMPORTANT:
 }
 
 
-.dairy-asset-scroll::-webkit-scrollbar {
+.dairy-feed-scroll::-webkit-scrollbar {
 
     display:
         none;
@@ -450,10 +499,10 @@ IMPORTANT:
 
 
 /* ==========================================================
-   ASSET CARD
+   FEED CARD
 ========================================================== */
 
-.dairy-asset-card {
+.dairy-feed-card {
 
     position:
         relative;
@@ -466,7 +515,7 @@ IMPORTANT:
         116px;
 
     height:
-        178px;
+        190px;
 
     display:
         flex;
@@ -506,7 +555,7 @@ IMPORTANT:
    CARD HOVER
 ========================================================== */
 
-.dairy-asset-card:hover {
+.dairy-feed-card:hover {
 
     transform:
         translateY(-2px);
@@ -523,7 +572,7 @@ IMPORTANT:
    CARD ACTIVE
 ========================================================== */
 
-.dairy-asset-card:active {
+.dairy-feed-card:active {
 
     transform:
         scale(.97);
@@ -536,7 +585,7 @@ IMPORTANT:
    IMAGE WRAPPER
 ========================================================== */
 
-.dairy-asset-image-wrap {
+.dairy-feed-image-wrap {
 
     position:
         relative;
@@ -565,7 +614,7 @@ IMPORTANT:
    IMAGE
 ========================================================== */
 
-.dairy-asset-image {
+.dairy-feed-image {
 
     width:
         100%;
@@ -584,10 +633,35 @@ IMPORTANT:
 
 
 /* ==========================================================
-   ASSET NAME
+   FEED CONTENT
 ========================================================== */
 
-.dairy-asset-name {
+.dairy-feed-content {
+
+    width:
+        100%;
+
+    min-width:
+        0;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    flex:
+        1;
+
+}
+
+
+
+/* ==========================================================
+   FEED NAME
+========================================================== */
+
+.dairy-feed-name {
 
     width:
         100%;
@@ -626,10 +700,10 @@ IMPORTANT:
 
 
 /* ==========================================================
-   ASSET TYPE
+   FEED TYPE
 ========================================================== */
 
-.dairy-asset-type {
+.dairy-feed-type {
 
     width:
         100%;
@@ -646,7 +720,7 @@ IMPORTANT:
     padding:
         1px
         8px
-        8px;
+        3px;
 
     color:
         #7b847e;
@@ -668,10 +742,11 @@ IMPORTANT:
    TYPE ICON
 ========================================================== */
 
-.dairy-asset-type-icon {
+.dairy-feed-type-icon {
 
     flex:
-        0 0 auto;
+        0 0
+        auto;
 
     font-size:
         10px;
@@ -684,7 +759,91 @@ IMPORTANT:
    TYPE TEXT
 ========================================================== */
 
-.dairy-asset-type span:last-child {
+.dairy-feed-type span:last-child {
+
+    min-width:
+        0;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
+
+
+/* ==========================================================
+   FEED QUANTITY
+========================================================== */
+
+.dairy-feed-quantity {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        baseline;
+
+    gap:
+        3px;
+
+    padding:
+        1px
+        8px
+        8px;
+
+    color:
+        #198754;
+
+    font-size:
+        10px;
+
+    font-weight:
+        600;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* ==========================================================
+   QUANTITY LABEL
+========================================================== */
+
+.dairy-feed-quantity-label {
+
+    flex:
+        0 0
+        auto;
+
+    color:
+        #8a938d;
+
+    font-weight:
+        400;
+
+}
+
+
+
+/* ==========================================================
+   QUANTITY VALUE
+========================================================== */
+
+.dairy-feed-quantity > span:last-child {
 
     min-width:
         0;
@@ -706,7 +865,7 @@ IMPORTANT:
    FOCUS ACCESSIBILITY
 ========================================================== */
 
-.dairy-asset-card:focus-visible {
+.dairy-feed-card:focus-visible {
 
     outline:
         2px solid
@@ -726,7 +885,7 @@ IMPORTANT:
 @media (max-width: 600px) {
 
 
-    .dairy-asset-strip {
+    .dairy-feed-strip {
 
         margin-bottom:
             14px;
@@ -739,10 +898,13 @@ IMPORTANT:
        TITLE
     ============================================== */
 
-    .dairy-asset-strip-title strong {
+    .dairy-feed-strip-title strong {
 
         font-size:
             17px;
+
+        line-height:
+            1.3;
 
     }
 
@@ -752,7 +914,7 @@ IMPORTANT:
        DESCRIPTION
     ============================================== */
 
-    .dairy-asset-strip-description {
+    .dairy-feed-strip-description {
 
         font-size:
             11px;
@@ -768,7 +930,7 @@ IMPORTANT:
        CARD
     ============================================== */
 
-    .dairy-asset-card {
+    .dairy-feed-card {
 
         flex-basis:
             112px;
@@ -777,7 +939,7 @@ IMPORTANT:
             112px;
 
         height:
-            174px;
+            184px;
 
         border-radius:
             14px;
@@ -790,7 +952,7 @@ IMPORTANT:
        IMAGE
     ============================================== */
 
-    .dairy-asset-image-wrap {
+    .dairy-feed-image-wrap {
 
         height:
             112px;
@@ -806,7 +968,7 @@ IMPORTANT:
        NAME
     ============================================== */
 
-    .dairy-asset-name {
+    .dairy-feed-name {
 
         padding:
             7px
@@ -827,12 +989,12 @@ IMPORTANT:
        TYPE
     ============================================== */
 
-    .dairy-asset-type {
+    .dairy-feed-type {
 
         padding:
             1px
             7px
-            7px;
+            3px;
 
         font-size:
             9px;
@@ -841,7 +1003,25 @@ IMPORTANT:
 
 
 
-    .dairy-asset-type-icon {
+    .dairy-feed-type-icon {
+
+        font-size:
+            9px;
+
+    }
+
+
+
+    /* ==============================================
+       QUANTITY
+    ============================================== */
+
+    .dairy-feed-quantity {
+
+        padding:
+            1px
+            7px
+            7px;
 
         font-size:
             9px;
