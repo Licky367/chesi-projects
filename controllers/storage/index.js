@@ -282,6 +282,35 @@ const updateQuantity =
 
 
 // =========================================================
+// UPDATE STORAGE CONTENT ITEM
+// =========================================================
+//
+// POST:
+//
+// /storage/:dairyId/contents/:storageId/update/:itemId
+//
+// Controller:
+//
+//     controllers/storage/contents.js
+//
+// Handler:
+//
+//     updateContentItem
+//
+// =========================================================
+
+const updateContentItem =
+    resolveHandler(
+        contentsController,
+        [
+            "updateContentItem",
+            "updateQuantity"
+        ],
+        "updateContentItem"
+    );
+
+
+// =========================================================
 // EXPORT
 // =========================================================
 
@@ -326,6 +355,8 @@ module.exports = {
 
     reshuffleItems,
 
-    updateQuantity
+    updateQuantity,
+
+    updateContentItem
 
 };
