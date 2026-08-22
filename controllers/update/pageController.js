@@ -161,6 +161,29 @@ async (req, res) => {
 
 
                 // ------------------------------------------
+                // AGROSTORE INVENTORY
+                //
+                // Only populated when the current Dairy
+                // record is an AgroStore.
+                //
+                // AgroStore:
+                //
+                //     roomNumber < 0
+                //
+                // Animal feeds:
+                //
+                //     Dairy.dwellNumber ===
+                //     AgroStore.roomNumber
+                //
+                // This is INVENTORY, not the normal
+                // Update feed.
+                // ------------------------------------------
+
+                animalFeeds:
+                    data.animalFeeds || [],
+
+
+                // ------------------------------------------
                 // LOGGED-IN USER
                 // ------------------------------------------
 
