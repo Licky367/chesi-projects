@@ -102,7 +102,7 @@ async function getAnimalFeeds(
 
         return res.render(
 
-            "update/storage/animal-feeds",
+            "update/storage/animal-feed-card",
 
             {
 
