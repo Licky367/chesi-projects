@@ -3,14 +3,33 @@
 // STORAGE CONTROLLER ENTRY POINT
 // =========================================================
 
-const listController = require("./list");
-const addController = require("./add");
-const addNewController = require("./addNew");
-const contentsController = require("./contents");
+const listController =
+    require("./list");
+
+const addController =
+    require("./add");
+
+const addNewController =
+    require("./addNew");
+
+const contentsController =
+    require("./contents");
 
 
 // =========================================================
-// RESOLVE CONTROLLER HANDLER
+// RESOLVE ROUTE HANDLER
+// =========================================================
+//
+// Allows individual controller files to export either:
+//
+//     module.exports = function
+//
+// OR:
+//
+//     module.exports = {
+//         handlerName: function
+//     }
+//
 // =========================================================
 
 function resolveHandler(
@@ -19,9 +38,22 @@ function resolveHandler(
     controllerName
 ) {
 
-    if (typeof controller === "function") {
+    // -----------------------------------------------------
+    // CONTROLLER ITSELF IS A FUNCTION
+    // -----------------------------------------------------
+
+    if (
+        typeof controller === "function"
+    ) {
+
         return controller;
+
     }
+
+
+    // -----------------------------------------------------
+    // CONTROLLER IS AN OBJECT
+    // -----------------------------------------------------
 
     if (
         controller &&
@@ -44,6 +76,11 @@ function resolveHandler(
         }
 
     }
+
+
+    // -----------------------------------------------------
+    // INVALID CONTROLLER
+    // -----------------------------------------------------
 
     throw new TypeError(
         `Storage controller "${controllerName}" does not export a valid route handler function.`
@@ -68,7 +105,7 @@ const list =
 
 
 // =========================================================
-// ADD STORAGE
+// ADD STORAGE FORM
 // =========================================================
 
 const form =
@@ -83,6 +120,10 @@ const form =
         "form"
     );
 
+
+// =========================================================
+// CREATE STORAGE
+// =========================================================
 
 const create =
     resolveHandler(
@@ -100,6 +141,11 @@ const create =
 // ADD ITEM DIRECTLY TO EXISTING STORAGE
 // =========================================================
 
+
+// ---------------------------------------------------------
+// ADD ITEM FORM
+// ---------------------------------------------------------
+
 const addNewForm =
     resolveHandler(
         addNewController,
@@ -112,6 +158,10 @@ const addNewForm =
         "addNewForm"
     );
 
+
+// ---------------------------------------------------------
+// CREATE ITEM
+// ---------------------------------------------------------
 
 const addNewItem =
     resolveHandler(
@@ -141,14 +191,22 @@ const contents =
 
 
 // =========================================================
-// STORAGE CONTENT ITEM DETAILS
+// SINGLE CONTENT ITEM DETAILS
 // =========================================================
 //
 // GET:
 //
 // /storage/:dairyId/contents/:storageId/details/:itemId
 //
-// This resolves the handler responsible for rendering:
+// Controller:
+//
+//     controllers/storage/contents.js
+//
+// Handler:
+//
+//     contentItem
+//
+// View:
 //
 //     views/storage/content-item.ejs
 //
@@ -159,15 +217,15 @@ const contentItem =
         contentsController,
         [
             "contentItem",
-            "itemDetails",
-            "details"
+            "details",
+            "itemDetails"
         ],
         "contentItem"
     );
 
 
 // =========================================================
-// ADD ITEMS TO STORAGE
+// ADD ITEMS
 // =========================================================
 
 const addItems =
@@ -181,7 +239,7 @@ const addItems =
 
 
 // =========================================================
-// OMIT ITEMS FROM STORAGE
+// OMIT ITEMS
 // =========================================================
 
 const omitItems =
@@ -209,7 +267,7 @@ const reshuffleItems =
 
 
 // =========================================================
-// UPDATE STORAGE QUANTITY
+// UPDATE AGROSTORE QUANTITY
 // =========================================================
 
 const updateQuantity =
@@ -229,19 +287,38 @@ const updateQuantity =
 
 module.exports = {
 
+    // -----------------------------------------------------
+    // STORAGE
+    // -----------------------------------------------------
+
     list,
 
     form,
 
     create,
 
+
+    // -----------------------------------------------------
+    // DIRECT ITEM CREATION
+    // -----------------------------------------------------
+
     addNewForm,
 
     addNewItem,
 
+
+    // -----------------------------------------------------
+    // STORAGE CONTENTS
+    // -----------------------------------------------------
+
     contents,
 
     contentItem,
+
+
+    // -----------------------------------------------------
+    // CONTENT OPERATIONS
+    // -----------------------------------------------------
 
     addItems,
 
