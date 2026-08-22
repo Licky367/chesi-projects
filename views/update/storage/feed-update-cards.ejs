@@ -6,38 +6,325 @@ FILE:
     views/update/storage/feed-update-cards.ejs
 
 PURPOSE:
-    Horizontal navigation cards for giving updates about
-    available animal feeds.
-
-    These cards are navigation only.
-
-    They do NOT:
-        - Load feed data from the backend
-        - Require availableFeeds
-        - Create feed records
-        - Open a post modal
-
-    Each card simply links to another page.
-
-IMPORTANT:
-    The destination URLs below are placeholders and can
-    be changed later.
-
-CARD SIZE:
-    Same dimensions as the dairy asset cards.
+    Display every currently available item/feed inside the
+    selected AgroStore.
 
 CARD BEHAVIOUR:
-    - Horizontal scrolling
-    - Left/right swiping on mobile
-    - Clickable cards
+    Each individual card links directly to the details page:
+
+    /dairy/:parentId/contents/:storageId/details/:itemId
+
+IMPORTANT:
+
+    No feed names are hard-coded.
+
+    The cards are generated dynamically from the items
+    supplied by the controller.
+
+EXPECTED VARIABLES:
+
+    parentId
+        OR
+    dairyId
+        OR
+    dairy._id
+
+    storageId
+        OR
+    storage._id
+
+    items
+        OR
+    availableItems
+        OR
+    availableFeeds
+
+OPTIONAL ITEM IMAGE FIELDS:
+
+    profileImage
+    displayImage
+    image
+    imageUrl
+
+The template falls back to /images/h1.png when no image
+is available.
 ==========================================================
 */ %>
 
 
+<%
+/* ==========================================================
+   SAFE PARENT DAIRY ID
+========================================================== */
 
-<!-- =====================================================
+const feedParentId =
+    typeof parentId !== "undefined" && parentId
+        ? parentId
+        : (
+            typeof dairyId !== "undefined" && dairyId
+                ? dairyId
+                : (
+                    typeof dairy !== "undefined" &&
+                    dairy &&
+                    dairy._id
+                        ? dairy._id
+                        : ""
+                )
+        );
+
+
+/* ==========================================================
+   SAFE STORAGE ID
+========================================================== */
+
+const feedStorageId =
+    typeof storageId !== "undefined" && storageId
+        ? storageId
+        : (
+            typeof storage !== "undefined" &&
+            storage &&
+            storage._id
+                ? storage._id
+                : ""
+        );
+
+
+/* ==========================================================
+   AVAILABLE AGROSTORE ITEMS
+========================================================== */
+
+let agroStoreItems = [];
+
+
+/*
+   Prefer the normal "items" variable.
+*/
+
+if (
+    typeof items !== "undefined" &&
+    Array.isArray(items)
+) {
+
+    agroStoreItems = items;
+
+
+/*
+   Otherwise use availableItems.
+*/
+
+} else if (
+    typeof availableItems !== "undefined" &&
+    Array.isArray(availableItems)
+) {
+
+    agroStoreItems = availableItems;
+
+
+/*
+   Otherwise use availableFeeds.
+*/
+
+} else if (
+    typeof availableFeeds !== "undefined" &&
+    Array.isArray(availableFeeds)
+) {
+
+    agroStoreItems = availableFeeds;
+
+}
+
+
+/* ==========================================================
+   HELPER
+========================================================== */
+
+function feedDisplayValue(value) {
+
+    return (
+        value !== null &&
+        value !== undefined &&
+        String(value).trim() !== ""
+    )
+        ? String(value)
+        : "";
+
+}
+
+
+/* ==========================================================
+   IMAGE HELPER
+========================================================== */
+
+function getFeedImage(item) {
+
+    if (!item) {
+
+        return "/images/h1.png";
+
+    }
+
+
+    const image =
+        item.profileImage ||
+        item.displayImage ||
+        item.image ||
+        item.imageUrl ||
+        "";
+
+
+    if (!image) {
+
+        return "/images/h1.png";
+
+    }
+
+
+    /*
+       If the backend already supplies a complete URL/path,
+       use it exactly as supplied.
+    */
+
+    return String(image);
+
+}
+
+
+/* ==========================================================
+   CARD TYPE
+========================================================== */
+
+function getFeedType(item) {
+
+    if (!item) {
+
+        return "Animal Feed";
+
+    }
+
+
+    const type =
+        feedDisplayValue(
+            item.recordType ||
+            item.type
+        );
+
+
+    if (!type) {
+
+        return "Animal Feed";
+
+    }
+
+
+    return type;
+
+}
+
+
+/* ==========================================================
+   CARD ICON
+========================================================== */
+
+function getFeedIcon(item) {
+
+    if (!item) {
+
+        return "🌾";
+
+    }
+
+
+    const type =
+        String(
+            item.recordType ||
+            item.type ||
+            ""
+        ).toLowerCase();
+
+
+    if (
+        type.includes("feed")
+    ) {
+
+        return "🌾";
+
+    }
+
+
+    if (
+        type.includes("silage")
+    ) {
+
+        return "🌱";
+
+    }
+
+
+    if (
+        type.includes("hay")
+    ) {
+
+        return "🌾";
+
+    }
+
+
+    if (
+        type.includes("mineral")
+    ) {
+
+        return "🧂";
+
+    }
+
+
+    return "🌾";
+
+}
+
+
+/* ==========================================================
+   DETAILS URL HELPER
+========================================================== */
+
+function getFeedDetailsUrl(item) {
+
+    if (
+        !item ||
+        !item._id ||
+        !feedParentId ||
+        !feedStorageId
+    ) {
+
+        return "#";
+
+    }
+
+
+    return (
+        "/dairy/" +
+        encodeURIComponent(
+            String(feedParentId)
+        ) +
+        "/contents/" +
+        encodeURIComponent(
+            String(feedStorageId)
+        ) +
+        "/details/" +
+        encodeURIComponent(
+            String(item._id)
+        )
+    );
+
+}
+
+%>
+
+
+
+<!-- ==========================================================
      ANIMAL FEED UPDATE SECTION
-===================================================== -->
+========================================================== -->
 
 <section
     class="animal-feed-update-strip"
@@ -45,9 +332,9 @@ CARD BEHAVIOUR:
 >
 
 
-    <!-- =================================================
+    <!-- ======================================================
          SECTION HEADER
-    ================================================== -->
+    ======================================================= -->
 
     <div class="animal-feed-update-strip-header">
 
@@ -63,261 +350,124 @@ CARD BEHAVIOUR:
 
 
 
-    <!-- =================================================
+    <!-- ======================================================
          HORIZONTAL CARD SCROLLER
-    ================================================== -->
+    ======================================================= -->
 
     <div
         class="animal-feed-update-scroll"
         role="list"
-        aria-label="Animal feed update options"
+        aria-label="Available animal feeds"
     >
 
 
+        <% if (agroStoreItems.length > 0) { %>
 
-        <!-- =================================================
-             FODDER
-        ================================================== -->
 
-        <a
-            href="#"
-            class="animal-feed-update-card"
-            role="listitem"
-            aria-label="Give an update about fodder"
-        >
+            <% agroStoreItems.forEach(function(feed) { %>
 
-            <div class="animal-feed-update-image-wrap">
 
-                <img
-                    src="/images/h1.png"
-                    alt="Fodder"
-                    class="animal-feed-update-image"
-                    loading="lazy"
+                <!-- ==========================================
+                     DYNAMIC AGROSTORE ITEM CARD
+                =========================================== -->
+
+                <a
+                    href="<%= getFeedDetailsUrl(feed) %>"
+                    class="animal-feed-update-card"
+                    role="listitem"
+                    aria-label="Give an update about <%= feedDisplayValue(feed.name) || 'this feed' %>"
                 >
 
-            </div>
+
+                    <!-- ======================================
+                         IMAGE
+                    ======================================= -->
+
+                    <div class="animal-feed-update-image-wrap">
+
+                        <img
+                            src="<%= getFeedImage(feed) %>"
+                            alt="<%= feedDisplayValue(feed.name) || 'Animal Feed' %>"
+                            class="animal-feed-update-image"
+                            loading="lazy"
+                            onerror="this.onerror=null;this.src='/images/h1.png';"
+                        >
+
+                    </div>
 
 
-            <div class="animal-feed-update-name">
 
-                Fodder
+                    <!-- ======================================
+                         ITEM NAME
+                    ======================================= -->
 
-            </div>
+                    <div class="animal-feed-update-name">
+
+                        <%= feedDisplayValue(feed.name) || "Unnamed Feed" %>
+
+                    </div>
 
 
-            <div class="animal-feed-update-type">
 
-                <span
-                    class="animal-feed-update-type-icon"
+                    <!-- ======================================
+                         ITEM TYPE
+                    ======================================= -->
+
+                    <div class="animal-feed-update-type">
+
+                        <span
+                            class="animal-feed-update-type-icon"
+                            aria-hidden="true"
+                        >
+                            <%= getFeedIcon(feed) %>
+                        </span>
+
+                        <span>
+                            <%= getFeedType(feed) %>
+                        </span>
+
+                    </div>
+
+
+                </a>
+
+
+            <% }); %>
+
+
+        <% } else { %>
+
+
+            <!-- ==================================================
+                 NO AVAILABLE FEEDS
+            =================================================== -->
+
+            <div class="animal-feed-update-empty">
+
+                <div
+                    class="animal-feed-update-empty-icon"
                     aria-hidden="true"
                 >
                     🌾
-                </span>
+                </div>
 
-                <span>
-                    Animal Feed
-                </span>
+                <div class="animal-feed-update-empty-text">
 
-            </div>
+                    <strong>
+                        No available animal feeds
+                    </strong>
 
-        </a>
+                    <span>
+                        There are currently no available items
+                        in this AgroStore.
+                    </span>
 
-
-
-        <!-- =================================================
-             SILAGE
-        ================================================== -->
-
-        <a
-            href="#"
-            class="animal-feed-update-card"
-            role="listitem"
-            aria-label="Give an update about silage"
-        >
-
-            <div class="animal-feed-update-image-wrap">
-
-                <img
-                    src="/images/h1.png"
-                    alt="Silage"
-                    class="animal-feed-update-image"
-                    loading="lazy"
-                >
+                </div>
 
             </div>
 
 
-            <div class="animal-feed-update-name">
-
-                Silage
-
-            </div>
-
-
-            <div class="animal-feed-update-type">
-
-                <span
-                    class="animal-feed-update-type-icon"
-                    aria-hidden="true"
-                >
-                    🌱
-                </span>
-
-                <span>
-                    Animal Feed
-                </span>
-
-            </div>
-
-        </a>
-
-
-
-        <!-- =================================================
-             HAY
-        ================================================== -->
-
-        <a
-            href="#"
-            class="animal-feed-update-card"
-            role="listitem"
-            aria-label="Give an update about hay"
-        >
-
-            <div class="animal-feed-update-image-wrap">
-
-                <img
-                    src="/images/h1.png"
-                    alt="Hay"
-                    class="animal-feed-update-image"
-                    loading="lazy"
-                >
-
-            </div>
-
-
-            <div class="animal-feed-update-name">
-
-                Hay
-
-            </div>
-
-
-            <div class="animal-feed-update-type">
-
-                <span
-                    class="animal-feed-update-type-icon"
-                    aria-hidden="true"
-                >
-                    🌾
-                </span>
-
-                <span>
-                    Animal Feed
-                </span>
-
-            </div>
-
-        </a>
-
-
-
-        <!-- =================================================
-             DAIRY MEAL
-        ================================================== -->
-
-        <a
-            href="#"
-            class="animal-feed-update-card"
-            role="listitem"
-            aria-label="Give an update about dairy meal"
-        >
-
-            <div class="animal-feed-update-image-wrap">
-
-                <img
-                    src="/images/h1.png"
-                    alt="Dairy Meal"
-                    class="animal-feed-update-image"
-                    loading="lazy"
-                >
-
-            </div>
-
-
-            <div class="animal-feed-update-name">
-
-                Dairy Meal
-
-            </div>
-
-
-            <div class="animal-feed-update-type">
-
-                <span
-                    class="animal-feed-update-type-icon"
-                    aria-hidden="true"
-                >
-                    🥣
-                </span>
-
-                <span>
-                    Animal Feed
-                </span>
-
-            </div>
-
-        </a>
-
-
-
-        <!-- =================================================
-             MINERAL SUPPLEMENTS
-        ================================================== -->
-
-        <a
-            href="#"
-            class="animal-feed-update-card"
-            role="listitem"
-            aria-label="Give an update about mineral supplements"
-        >
-
-            <div class="animal-feed-update-image-wrap">
-
-                <img
-                    src="/images/h1.png"
-                    alt="Mineral Supplements"
-                    class="animal-feed-update-image"
-                    loading="lazy"
-                >
-
-            </div>
-
-
-            <div class="animal-feed-update-name">
-
-                Mineral Supplements
-
-            </div>
-
-
-            <div class="animal-feed-update-type">
-
-                <span
-                    class="animal-feed-update-type-icon"
-                    aria-hidden="true"
-                >
-                    🧂
-                </span>
-
-                <span>
-                    Animal Feed
-                </span>
-
-            </div>
-
-        </a>
-
+        <% } %>
 
 
     </div>
@@ -595,6 +745,9 @@ CARD BEHAVIOUR:
         8px
         2px;
 
+    box-sizing:
+        border-box;
+
     color:
         #202520;
 
@@ -645,6 +798,9 @@ CARD BEHAVIOUR:
         1px
         8px
         8px;
+
+    box-sizing:
+        border-box;
 
     color:
         #7b847e;
@@ -712,6 +868,126 @@ CARD BEHAVIOUR:
 
     outline-offset:
         2px;
+
+}
+
+
+
+/* ==========================================================
+   EMPTY STATE
+========================================================== */
+
+.animal-feed-update-empty {
+
+    flex:
+        0 0
+        100%;
+
+    min-height:
+        86px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        12px;
+
+    padding:
+        14px;
+
+    box-sizing:
+        border-box;
+
+    border:
+        1px solid
+        #e4e9e6;
+
+    border-radius:
+        14px;
+
+    background:
+        #fafcfb;
+
+}
+
+
+.animal-feed-update-empty-icon {
+
+    flex:
+        0 0
+        42px;
+
+    width:
+        42px;
+
+    height:
+        42px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border-radius:
+        11px;
+
+    background:
+        #edf5ef;
+
+    font-size:
+        20px;
+
+}
+
+
+.animal-feed-update-empty-text {
+
+    min-width:
+        0;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        3px;
+
+}
+
+
+.animal-feed-update-empty-text strong {
+
+    color:
+        #34483a;
+
+    font-size:
+        12px;
+
+    font-weight:
+        750;
+
+}
+
+
+.animal-feed-update-empty-text span {
+
+    color:
+        #7d8981;
+
+    font-size:
+        10px;
+
+    line-height:
+        1.45;
 
 }
 
@@ -801,6 +1077,14 @@ CARD BEHAVIOUR:
 
         font-size:
             9px;
+
+    }
+
+
+    .animal-feed-update-empty {
+
+        min-height:
+            78px;
 
     }
 
