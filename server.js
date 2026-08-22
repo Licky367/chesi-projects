@@ -167,6 +167,59 @@ try {
 }
 
 
+// ==========================================================
+// STORAGE URL CODE GENERATOR
+// ==========================================================
+//
+// FILE:
+//
+//     routes/code-gen.js
+//
+// ROUTER DEFINITION:
+//
+//     router.get(
+//         "/storage/code-gen",
+//         controller.index
+//     );
+//
+// REQUIRED FINAL URL:
+//
+//     GET /update/storage/code-gen
+//
+// THEREFORE:
+//
+//     app.use(
+//         "/update",
+//         storageCodeGenRoutes
+//     );
+//
+// DO NOT mount this router at:
+//
+//     /update/storage
+//
+// because that would produce:
+//
+//     /update/storage/storage/code-gen
+//
+// ==========================================================
+
+let storageCodeGenRoutes;
+
+try {
+
+  storageCodeGenRoutes =
+    require("./routes/code-gen");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load storage code-generation routes:",
+    err.message
+  );
+
+}
+
+
 // ----------------------------------------------------------
 // ADD DAIRY / ASSET
 // ----------------------------------------------------------
@@ -360,15 +413,10 @@ try {
 //
 // ----------------------------------------------------------
 //
-// Inventory updates can use:
+// Inventory updates:
 //
 //     POST
 //     /dairy/:parentId/agroStore/:roomNumber/inventory/:inventoryId/update
-//
-// Therefore routes/inventory.js should define:
-//
-//     POST
-//     /:parentId/agroStore/:roomNumber/inventory/:inventoryId/update
 //
 // ==========================================================
 
@@ -1006,6 +1054,39 @@ if (authRoutes) {
 }
 
 
+// ==========================================================
+// STORAGE URL CODE GENERATOR
+// ==========================================================
+//
+// routes/code-gen.js contains:
+//
+//     router.get(
+//         "/storage/code-gen",
+//         controller.index
+//     );
+//
+// Mount:
+//
+//     /update
+//
+// Final route:
+//
+//     /update + /storage/code-gen
+//
+//     = /update/storage/code-gen
+//
+// ==========================================================
+
+if (storageCodeGenRoutes) {
+
+  app.use(
+    "/update",
+    storageCodeGenRoutes
+  );
+
+}
+
+
 // ----------------------------------------------------------
 // UPDATE
 // ----------------------------------------------------------
@@ -1120,22 +1201,6 @@ if (storageRoutes) {
 
 // ==========================================================
 // INVENTORY
-// ==========================================================
-//
-// routes/inventory.js
-//
-// Mounted at:
-//
-//     /dairy
-//
-// Final inventory URLs:
-//
-//     GET
-//     /dairy/:parentId/agroStore/:roomNumber
-//
-//     POST
-//     /dairy/:parentId/agroStore/:roomNumber/inventory/:inventoryId/update
-//
 // ==========================================================
 
 if (inventoryRoutes) {
