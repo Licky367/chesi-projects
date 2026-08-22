@@ -26,22 +26,31 @@
 //         - feed storage
 //         - add feeds
 //         - update quantity
+//         - stock update note
+//         - update recorder
+//         - update timestamp
+//         - update images
 //         - automatic omission when quantity = 0
 //         - no manual omit
 //         - no reshuffle
 //
 // IMPORTANT:
 //
-//     Every render of storage/content-item.ejs explicitly
-//     receives:
+//     The authenticated user is taken from:
 //
-//         successMessage
-//         pageError
+//         req.user
 //
-//     This prevents:
+//     The controller passes:
 //
-//         ReferenceError:
-//         successMessage is not defined
+//         user
+//         user._id
+//         images
+//         stockUpdateNote
+//
+//     to the service.
+//
+//     The service remains responsible for all database
+//     mutations.
 //
 // ==========================================================
 
@@ -56,9 +65,11 @@ const storageContentsService =
 
 const STORAGE_TYPES = {
 
-    ROOM: "room",
+    ROOM:
+        "room",
 
-    AGRO_STORE: "agroStore"
+    AGRO_STORE:
+        "agroStore"
 
 };
 
@@ -67,7 +78,10 @@ const STORAGE_TYPES = {
 // BODY HELPERS
 // ==========================================================
 
-function getBodyValue(req, key) {
+function getBodyValue(
+    req,
+    key
+) {
 
     if (
         req.body &&
@@ -90,7 +104,9 @@ function getBodyValue(req, key) {
 // GET ITEM IDS
 // ==========================================================
 
-function getItemIds(req) {
+function getItemIds(
+    req
+) {
 
     const value =
         getBodyValue(
@@ -99,12 +115,17 @@ function getItemIds(req) {
         );
 
 
-    if (Array.isArray(value)) {
+    if (
+        Array.isArray(
+            value
+        )
+    ) {
 
         return value
             .filter(Boolean)
             .map(
-                value => String(value).trim()
+                value =>
+                    String(value).trim()
             )
             .filter(Boolean);
 
@@ -156,7 +177,9 @@ function createCountMessage(
 // ROUTE IDS
 // ==========================================================
 
-function getRouteIds(req) {
+function getRouteIds(
+    req
+) {
 
     return {
 
@@ -179,7 +202,9 @@ function getRouteIds(req) {
 // CONTENT ITEM ROUTE IDS
 // ==========================================================
 
-function getContentItemRouteIds(req) {
+function getContentItemRouteIds(
+    req
+) {
 
     return {
 
@@ -225,7 +250,9 @@ function getContentsUrl(
         new URLSearchParams();
 
 
-    Object.entries(query).forEach(
+    Object.entries(
+        query
+    ).forEach(
         function ([key, value]) {
 
             if (
@@ -285,15 +312,19 @@ function getContentItemUrl(
 // VALIDATE STORAGE TYPE
 // ==========================================================
 
-function validateStorageType(storage) {
+function validateStorageType(
+    storage
+) {
 
     const storageType =
         storage?.type;
 
 
     if (
-        storageType !== STORAGE_TYPES.ROOM &&
-        storageType !== STORAGE_TYPES.AGRO_STORE
+        storageType !==
+            STORAGE_TYPES.ROOM &&
+        storageType !==
+            STORAGE_TYPES.AGRO_STORE
     ) {
 
         const error =
@@ -301,7 +332,8 @@ function validateStorageType(storage) {
                 "Storage facility must be either room or agroStore."
             );
 
-        error.status = 400;
+        error.status =
+            400;
 
         throw error;
 
@@ -314,68 +346,7 @@ function validateStorageType(storage) {
 
 
 // ==========================================================
-// FIND ITEM INSIDE STORAGE
-// ==========================================================
-
-function findContentItem(
-    items,
-    itemId
-) {
-
-    if (!Array.isArray(items)) {
-
-        return null;
-
-    }
-
-
-    return (
-        items.find(
-            function (item) {
-
-                if (
-                    !item ||
-                    item._id === undefined ||
-                    item._id === null
-                ) {
-
-                    return false;
-
-                }
-
-
-                return (
-                    String(item._id) ===
-                    String(itemId)
-                );
-
-            }
-        ) || null
-    );
-
-}
-
-
-// ==========================================================
-// NORMALIZE RENDER VARIABLES
-// ==========================================================
-//
-// This is important.
-//
-// EJS throws:
-//
-//     ReferenceError:
-//     successMessage is not defined
-//
-// when a variable was not supplied at all.
-//
-// We therefore ALWAYS supply:
-//
-//     successMessage
-//     pageError
-//
-// even when their value is null.
-//
+// NORMALIZE RENDER MESSAGES
 // ==========================================================
 
 function getRenderMessages(
@@ -392,7 +363,9 @@ function getRenderMessages(
             ? options.successMessage
             : (
                 querySuccess !== undefined
-                    ? String(querySuccess)
+                    ? String(
+                        querySuccess
+                    )
                     : null
             );
 
@@ -415,7 +388,164 @@ function getRenderMessages(
 
 
 // ==========================================================
-// RENDER STORAGE CONTENTS
+// GET AUTHENTICATED USER
+// ==========================================================
+//
+// The storage update must always know who performed the
+// update.
+//
+// req.user is supplied by the authentication middleware.
+//
+// ==========================================================
+
+function getAuthenticatedUser(
+    req
+) {
+
+    const user =
+        req.user;
+
+
+    if (
+        !user
+    ) {
+
+        const error =
+            new Error(
+                "Authentication is required."
+            );
+
+        error.status =
+            401;
+
+        throw error;
+
+    }
+
+
+    if (
+        !user._id
+    ) {
+
+        const error =
+            new Error(
+                "Authenticated user ID is missing."
+            );
+
+        error.status =
+            401;
+
+        throw error;
+
+    }
+
+
+    return user;
+
+}
+
+
+// ==========================================================
+// GET UPLOADED IMAGES
+// ==========================================================
+//
+// Supports:
+//
+//     req.files
+//     req.file
+//
+// This allows the route to use either:
+//
+//     upload.array(...)
+//
+// or:
+//
+//     upload.single(...)
+//
+// The service receives the actual uploaded file objects.
+//
+// ==========================================================
+
+function getUploadedImages(
+    req
+) {
+
+    if (
+        Array.isArray(
+            req.files
+        )
+    ) {
+
+        return req.files
+            .filter(Boolean);
+
+    }
+
+
+    if (
+        req.files &&
+        typeof req.files === "object"
+    ) {
+
+        return Object.values(
+            req.files
+        )
+        .flat()
+        .filter(Boolean);
+
+    }
+
+
+    if (
+        req.file
+    ) {
+
+        return [
+            req.file
+        ];
+
+    }
+
+
+    return [];
+
+}
+
+
+// ==========================================================
+// GET STOCK UPDATE NOTE
+// ==========================================================
+
+function getStockUpdateNote(
+    req
+) {
+
+    const value =
+        getBodyValue(
+            req,
+            "stockUpdateNote"
+        );
+
+
+    if (
+        value === undefined ||
+        value === null
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(
+        value
+    ).trim();
+
+}
+
+
+// ==========================================================
+// GET STORAGE CONTENTS
 // ==========================================================
 
 async function renderContents(
@@ -424,56 +554,48 @@ async function renderContents(
     options = {}
 ) {
 
-    // ------------------------------------------------------
-    // IDS
-    // ------------------------------------------------------
-
     const {
         dairyId,
         storageId
     } =
-        getRouteIds(req);
+        getRouteIds(
+            req
+        );
 
 
-    // ------------------------------------------------------
-    // REQUIRE DAIRY ID
-    // ------------------------------------------------------
-
-    if (!dairyId) {
+    if (
+        !dairyId
+    ) {
 
         const error =
             new Error(
                 "Dairy ID is required."
             );
 
-        error.status = 400;
+        error.status =
+            400;
 
         throw error;
 
     }
 
 
-    // ------------------------------------------------------
-    // REQUIRE STORAGE ID
-    // ------------------------------------------------------
-
-    if (!storageId) {
+    if (
+        !storageId
+    ) {
 
         const error =
             new Error(
                 "Storage ID is required."
             );
 
-        error.status = 400;
+        error.status =
+            400;
 
         throw error;
 
     }
 
-
-    // ------------------------------------------------------
-    // LOAD STORAGE CONTENTS
-    // ------------------------------------------------------
 
     const result =
         await storageContentsService
@@ -482,10 +604,6 @@ async function renderContents(
                 storageId
             });
 
-
-    // ------------------------------------------------------
-    // REQUIRE RESULT
-    // ------------------------------------------------------
 
     if (
         !result ||
@@ -497,16 +615,13 @@ async function renderContents(
                 "Storage facility not found."
             );
 
-        error.status = 404;
+        error.status =
+            404;
 
         throw error;
 
     }
 
-
-    // ------------------------------------------------------
-    // STORAGE TYPE
-    // ------------------------------------------------------
 
     const storageType =
         validateStorageType(
@@ -514,19 +629,11 @@ async function renderContents(
         );
 
 
-    // ------------------------------------------------------
-    // ACTIVE TAB
-    // ------------------------------------------------------
-
     const activeTab =
         options.activeTab ||
         req.query?.tab ||
         "view";
 
-
-    // ------------------------------------------------------
-    // MESSAGES
-    // ------------------------------------------------------
 
     const {
         successMessage,
@@ -538,16 +645,12 @@ async function renderContents(
         );
 
 
-    // ------------------------------------------------------
-    // RENDER
-    // ------------------------------------------------------
-
     return res.render(
         "storage/contents",
         {
 
             // =================================================
-            // BASIC PAGE INFORMATION
+            // PAGE
             // =================================================
 
             title:
@@ -557,12 +660,19 @@ async function renderContents(
 
 
             // =================================================
+            // USER
+            // =================================================
+
+            user:
+                req.user || null,
+
+
+            // =================================================
             // DAIRY
             // =================================================
 
             dairy:
                 result.dairy || null,
-
 
             dairyId,
 
@@ -574,7 +684,6 @@ async function renderContents(
             storage:
                 result.storage,
 
-
             storageId,
 
 
@@ -584,11 +693,9 @@ async function renderContents(
 
             storageType,
 
-
             isRoom:
                 storageType ===
                 STORAGE_TYPES.ROOM,
-
 
             isAgroStore:
                 storageType ===
@@ -600,13 +707,17 @@ async function renderContents(
             // =================================================
 
             items:
-                Array.isArray(result.items)
+                Array.isArray(
+                    result.items
+                )
                     ? result.items
                     : [],
 
 
             itemCount:
-                Number(result.itemCount) || 0,
+                Number(
+                    result.itemCount
+                ) || 0,
 
 
             availableItems:
@@ -626,19 +737,18 @@ async function renderContents(
 
 
             // =================================================
-            // UI STATE
+            // UI
             // =================================================
 
             activeTab,
 
 
-            // IMPORTANT:
-            // ALWAYS DEFINED
+            // =================================================
+            // MESSAGES
+            // =================================================
+
             successMessage,
 
-
-            // IMPORTANT:
-            // ALWAYS DEFINED
             pageError
 
         }
@@ -648,183 +758,148 @@ async function renderContents(
 
 
 // ==========================================================
-// GET CONTENT ITEM DETAILS
+// GET STORAGE CONTENT ITEM DETAILS
 // ==========================================================
 //
 // GET:
 //
 // /storage/:dairyId/contents/:storageId/details/:itemId
 //
+// IMPORTANT:
+//
+// Uses:
+//
+//     getContentItemDetails()
+//
+// rather than loading the entire contents collection and
+// manually finding the item.
+//
+// This allows the service to enforce the exact storage
+// membership rules.
+//
 // ==========================================================
 
-async function contentItem(req, res) {
+async function contentItem(
+    req,
+    res
+) {
 
     try {
-
-        // ----------------------------------------------------
-        // ROUTE IDS
-        // ----------------------------------------------------
 
         const {
             dairyId,
             storageId,
             itemId
         } =
-            getContentItemRouteIds(req);
+            getContentItemRouteIds(
+                req
+            );
 
 
-        // ----------------------------------------------------
-        // VALIDATE DAIRY ID
-        // ----------------------------------------------------
-
-        if (!dairyId) {
+        if (
+            !dairyId
+        ) {
 
             const error =
                 new Error(
                     "Dairy ID is required."
                 );
 
-            error.status = 400;
+            error.status =
+                400;
 
             throw error;
 
         }
 
 
-        // ----------------------------------------------------
-        // VALIDATE STORAGE ID
-        // ----------------------------------------------------
-
-        if (!storageId) {
+        if (
+            !storageId
+        ) {
 
             const error =
                 new Error(
                     "Storage ID is required."
                 );
 
-            error.status = 400;
+            error.status =
+                400;
 
             throw error;
 
         }
 
 
-        // ----------------------------------------------------
-        // VALIDATE ITEM ID
-        // ----------------------------------------------------
-
-        if (!itemId) {
+        if (
+            !itemId
+        ) {
 
             const error =
                 new Error(
                     "Content item ID is required."
                 );
 
-            error.status = 400;
+            error.status =
+                400;
 
             throw error;
 
         }
 
-
-        // ----------------------------------------------------
-        // GET STORAGE CONTENTS
-        // ----------------------------------------------------
 
         const result =
             await storageContentsService
-                .getStorageContents({
+                .getContentItemDetails({
+
                     dairyId,
-                    storageId
+
+                    storageId,
+
+                    itemId
+
                 });
 
 
-        // ----------------------------------------------------
-        // REQUIRE RESULT
-        // ----------------------------------------------------
-
-        if (!result) {
-
-            const error =
-                new Error(
-                    "Storage contents could not be loaded."
-                );
-
-            error.status = 404;
-
-            throw error;
-
-        }
-
-
-        // ----------------------------------------------------
-        // REQUIRE STORAGE
-        // ----------------------------------------------------
-
-        if (!result.storage) {
+        if (
+            !result ||
+            !result.storage
+        ) {
 
             const error =
                 new Error(
                     "Storage facility not found."
                 );
 
-            error.status = 404;
+            error.status =
+                404;
 
             throw error;
 
         }
 
 
-        // ----------------------------------------------------
-        // VALIDATE STORAGE TYPE
-        // ----------------------------------------------------
-
-        const storageType =
-            validateStorageType(
-                result.storage
-            );
-
-
-        // ----------------------------------------------------
-        // FIND ITEM
-        // ----------------------------------------------------
-
-        const item =
-            findContentItem(
-                result.items || [],
-                itemId
-            );
-
-
-        // ----------------------------------------------------
-        // ITEM NOT FOUND
-        // ----------------------------------------------------
-
-        if (!item) {
+        if (
+            !result.item
+        ) {
 
             const error =
                 new Error(
                     "Content item was not found in this storage facility."
                 );
 
-            error.status = 404;
+            error.status =
+                404;
 
             throw error;
 
         }
 
 
-        // ----------------------------------------------------
-        // MESSAGES
-        // ----------------------------------------------------
-        //
-        // THIS IS THE FIX FOR:
-        //
-        //     successMessage is not defined
-        //
-        // We explicitly provide BOTH variables to EJS.
-        //
-        // ----------------------------------------------------
+        const storageType =
+            validateStorageType(
+                result.storage
+            );
+
 
         const {
             successMessage,
@@ -835,20 +910,12 @@ async function contentItem(req, res) {
             );
 
 
-        // ----------------------------------------------------
-        // CONTENTS URL
-        // ----------------------------------------------------
-
         const contentsUrl =
             getContentsUrl(
                 dairyId,
                 storageId
             );
 
-
-        // ----------------------------------------------------
-        // ITEM URL
-        // ----------------------------------------------------
 
         const contentItemUrl =
             getContentItemUrl(
@@ -857,10 +924,6 @@ async function contentItem(req, res) {
                 itemId
             );
 
-
-        // ----------------------------------------------------
-        // RENDER
-        // ----------------------------------------------------
 
         return res.render(
             "storage/content-item",
@@ -871,8 +934,16 @@ async function contentItem(req, res) {
                 // =================================================
 
                 title:
-                    item.name ||
+                    result.item.name ||
                     "Content Item",
+
+
+                // =================================================
+                // USER
+                // =================================================
+
+                user:
+                    req.user || null,
 
 
                 // =================================================
@@ -881,7 +952,6 @@ async function contentItem(req, res) {
 
                 dairy:
                     result.dairy || null,
-
 
                 dairyId,
 
@@ -893,7 +963,6 @@ async function contentItem(req, res) {
                 storage:
                     result.storage,
 
-
                 storageId,
 
 
@@ -901,8 +970,8 @@ async function contentItem(req, res) {
                 // ITEM
                 // =================================================
 
-                item,
-
+                item:
+                    result.item,
 
                 itemId,
 
@@ -913,11 +982,9 @@ async function contentItem(req, res) {
 
                 storageType,
 
-
                 isRoom:
                     storageType ===
                     STORAGE_TYPES.ROOM,
-
 
                 isAgroStore:
                     storageType ===
@@ -934,11 +1001,7 @@ async function contentItem(req, res) {
 
 
                 // =================================================
-                // IMPORTANT EJS VARIABLES
-                // =================================================
-                //
-                // These MUST exist even when null.
-                //
+                // MESSAGES
                 // =================================================
 
                 successMessage,
@@ -971,7 +1034,10 @@ async function contentItem(req, res) {
 // GET STORAGE CONTENTS
 // ==========================================================
 
-async function contents(req, res) {
+async function contents(
+    req,
+    res
+) {
 
     try {
 
@@ -1009,7 +1075,10 @@ async function contents(req, res) {
 //
 // ==========================================================
 
-async function addItems(req, res) {
+async function addItems(
+    req,
+    res
+) {
 
     try {
 
@@ -1017,19 +1086,27 @@ async function addItems(req, res) {
             dairyId,
             storageId
         } =
-            getRouteIds(req);
+            getRouteIds(
+                req
+            );
 
 
         const itemIds =
-            getItemIds(req);
+            getItemIds(
+                req
+            );
 
 
         const result =
             await storageContentsService
                 .addItemsToStorage({
+
                     dairyId,
+
                     storageId,
+
                     itemIds
+
                 });
 
 
@@ -1045,14 +1122,18 @@ async function addItems(req, res) {
             }.`;
 
 
-
         return res.redirect(
             getContentsUrl(
                 dairyId,
                 storageId,
                 {
-                    tab: "add",
-                    success: message
+
+                    tab:
+                        "add",
+
+                    success:
+                        message
+
                 }
             )
         );
@@ -1078,25 +1159,71 @@ async function addItems(req, res) {
 
 
 // ==========================================================
-// UPDATE AGROSTORE QUANTITY
+// UPDATE AGROSTORE FEED
 // ==========================================================
 //
 // POST:
 //
 // /storage/:dairyId/contents/:storageId/quantity
 //
+// EXPECTED BODY:
+//
+//     itemId
+//     quantity
+//     unit
+//     stockUpdateNote
+//
+// EXPECTED FILES:
+//
+//     images
+//
+// AUTHENTICATED USER:
+//
+//     req.user
+//
+// The service is responsible for storing:
+//
+//     quantity
+//     user._id
+//     timestamp
+//     stockUpdateNote
+//     images
+//
 // ==========================================================
 
-async function updateQuantity(req, res) {
+async function updateQuantity(
+    req,
+    res
+) {
 
     try {
+
+        // ----------------------------------------------------
+        // AUTHENTICATED USER
+        // ----------------------------------------------------
+
+        const user =
+            getAuthenticatedUser(
+                req
+            );
+
+
+        // ----------------------------------------------------
+        // ROUTE IDS
+        // ----------------------------------------------------
 
         const {
             dairyId,
             storageId
         } =
-            getRouteIds(req);
+            getRouteIds(
+                req
+            );
 
+
+        // ----------------------------------------------------
+        // BODY
+        // ----------------------------------------------------
 
         const itemId =
             getBodyValue(
@@ -1119,16 +1246,52 @@ async function updateQuantity(req, res) {
             );
 
 
+        const stockUpdateNote =
+            getStockUpdateNote(
+                req
+            );
+
+
+        // ----------------------------------------------------
+        // IMAGES
+        // ----------------------------------------------------
+
+        const images =
+            getUploadedImages(
+                req
+            );
+
+
+        // ====================================================
+        // SERVICE
+        // ====================================================
+
         const result =
             await storageContentsService
                 .updateFeedQuantity({
+
                     dairyId,
+
                     storageId,
+
                     itemId,
+
                     quantity,
-                    unit
+
+                    unit,
+
+                    stockUpdateNote,
+
+                    images,
+
+                    user
+
                 });
 
+
+        // ====================================================
+        // MESSAGE
+        // ====================================================
 
         let message;
 
@@ -1139,7 +1302,7 @@ async function updateQuantity(req, res) {
 
             message =
                 `${
-                    result.item?.name ||
+                    result?.item?.name ||
                     "Feed item"
                 } has been automatically omitted because its quantity reached zero.`;
 
@@ -1161,13 +1324,22 @@ async function updateQuantity(req, res) {
         }
 
 
+        // ====================================================
+        // REDIRECT
+        // ====================================================
+
         return res.redirect(
             getContentsUrl(
                 dairyId,
                 storageId,
                 {
-                    tab: "view",
-                    success: message
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
                 }
             )
         );
@@ -1193,6 +1365,174 @@ async function updateQuantity(req, res) {
 
 
 // ==========================================================
+// UPDATE MULTIPLE FEED QUANTITIES
+// ==========================================================
+//
+// POST:
+//
+// Can be used by a bulk-update form.
+//
+// Each record may contain:
+//
+//     itemId
+//     quantity
+//     unit
+//     stockUpdateNote
+//     images
+//
+// ==========================================================
+
+async function updateQuantities(
+    req,
+    res
+) {
+
+    try {
+
+        const user =
+            getAuthenticatedUser(
+                req
+            );
+
+
+        const {
+            dairyId,
+            storageId
+        } =
+            getRouteIds(
+                req
+            );
+
+
+        const records =
+            getBodyValue(
+                req,
+                "records"
+            );
+
+
+        if (
+            !Array.isArray(
+                records
+            ) ||
+            records.length === 0
+        ) {
+
+            const error =
+                new Error(
+                    "No feed quantity records were supplied."
+                );
+
+            error.status =
+                400;
+
+            throw error;
+
+        }
+
+
+        const images =
+            getUploadedImages(
+                req
+            );
+
+
+        const normalizedRecords =
+            records.map(
+                function (record) {
+
+                    return {
+
+                        itemId:
+                            record?.itemId,
+
+                        quantity:
+                            record?.quantity,
+
+                        unit:
+                            record?.unit,
+
+                        stockUpdateNote:
+                            record?.stockUpdateNote ||
+                            "",
+
+                        images
+
+                    };
+
+                }
+            );
+
+
+        const result =
+            await storageContentsService
+                .updateFeedQuantities({
+
+                    dairyId,
+
+                    storageId,
+
+                    records:
+                        normalizedRecords,
+
+                    user
+
+                });
+
+
+        const count =
+            Array.isArray(
+                result?.results
+            )
+                ? result.results.length
+                : 0;
+
+
+        const message =
+            `${createCountMessage(
+                count,
+                "feed quantity",
+                "feed quantities"
+            )} updated successfully.`;
+
+
+        return res.redirect(
+            getContentsUrl(
+                dairyId,
+                storageId,
+                {
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
+                }
+            )
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Storage multiple quantity update error:",
+            error
+        );
+
+
+        return handleMutationError(
+            req,
+            res,
+            error,
+            "view"
+        );
+
+    }
+
+}
+
+
+// ==========================================================
 // OMIT ITEMS
 // ==========================================================
 //
@@ -1200,9 +1540,14 @@ async function updateQuantity(req, res) {
 //
 // /storage/:dairyId/contents/:storageId/omit
 //
+// AgroStore omission is rejected by the service.
+//
 // ==========================================================
 
-async function omitItems(req, res) {
+async function omitItems(
+    req,
+    res
+) {
 
     try {
 
@@ -1210,19 +1555,27 @@ async function omitItems(req, res) {
             dairyId,
             storageId
         } =
-            getRouteIds(req);
+            getRouteIds(
+                req
+            );
 
 
         const itemIds =
-            getItemIds(req);
+            getItemIds(
+                req
+            );
 
 
         const result =
             await storageContentsService
                 .omitItemsFromStorage({
+
                     dairyId,
+
                     storageId,
+
                     itemIds
+
                 });
 
 
@@ -1238,14 +1591,18 @@ async function omitItems(req, res) {
             }.`;
 
 
-
         return res.redirect(
             getContentsUrl(
                 dairyId,
                 storageId,
                 {
-                    tab: "view",
-                    success: message
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
                 }
             )
         );
@@ -1278,9 +1635,14 @@ async function omitItems(req, res) {
 //
 // /storage/:dairyId/contents/:storageId/reshuffle
 //
+// AgroStore reshuffling is rejected by the service.
+//
 // ==========================================================
 
-async function reshuffleItems(req, res) {
+async function reshuffleItems(
+    req,
+    res
+) {
 
     try {
 
@@ -1288,11 +1650,15 @@ async function reshuffleItems(req, res) {
             dairyId,
             storageId
         } =
-            getRouteIds(req);
+            getRouteIds(
+                req
+            );
 
 
         const itemIds =
-            getItemIds(req);
+            getItemIds(
+                req
+            );
 
 
         const targetStorageId =
@@ -1305,10 +1671,15 @@ async function reshuffleItems(req, res) {
         const result =
             await storageContentsService
                 .reshuffleItems({
+
                     dairyId,
+
                     storageId,
+
                     targetStorageId,
+
                     itemIds
+
                 });
 
 
@@ -1324,14 +1695,18 @@ async function reshuffleItems(req, res) {
             }.`;
 
 
-
         return res.redirect(
             getContentsUrl(
                 dairyId,
                 storageId,
                 {
-                    tab: "view",
-                    success: message
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
                 }
             )
         );
@@ -1379,7 +1754,9 @@ async function handleMutationError(
     // SERVER ERROR
     // ------------------------------------------------------
 
-    if (statusCode >= 500) {
+    if (
+        statusCode >= 500
+    ) {
 
         return sendError(
             res,
@@ -1458,7 +1835,9 @@ function sendError(
 
 
     return res
-        .status(safeStatus)
+        .status(
+            safeStatus
+        )
         .send(
             error?.message ||
             fallbackMessage
@@ -1492,6 +1871,13 @@ module.exports = {
 
     reshuffleItems,
 
-    updateQuantity
+
+    // ------------------------------------------------------
+    // AGROSTORE
+    // ------------------------------------------------------
+
+    updateQuantity,
+
+    updateQuantities
 
 };
