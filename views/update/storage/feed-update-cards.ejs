@@ -1,648 +1,266 @@
-// ==========================================================
-// services/update/storage/animalFeedsService.js
-// ==========================================================
-//
-// AGROSTORE ANIMAL FEED / STOCK SERVICE
-//
-// RESPONSIBILITIES:
-//
-//     • Locate AgroStore by its own MongoDB _id
-//     • Read the AgroStore roomNumber
-//     • Find stock/content records using dwellNumber
-//     • Find updates belonging to those CONTENT records
-//     • Never treat the AgroStore itself as a feed/update record
-//     • Validate stock updates
-//     • Update stock quantity
-//     • Update stock information
-//
-// IMPORTANT RELATIONSHIP:
-//
-//     /dairy/:id
-//          |
-//          | id = AgroStore._id
-//          v
-//     AgroStore
-//          |
-//          | roomNumber
-//          v
-//     Dairy contents
-//          |
-//          | dwellNumber === AgroStore.roomNumber
-//          v
-//     Content Dairy._id
-//          |
-//          | Update.dairy === Content Dairy._id
-//          v
-//     Feed / stock updates
-//
-// NEVER:
-//
-//     Update.dairy === AgroStore._id
-//
-// unless the AgroStore itself actually owns that update.
-// For the animal-feed page, we specifically want updates
-// belonging to the AgroStore's CONTENTS.
-//
-// ==========================================================
+<% /*
+==========================================================
+DAIRY ASSET HORIZONTAL CARDS
+
+FILE:
+    views/update/asset-cards.ejs
+
+PURPOSE:
+    Compact WhatsApp-style horizontal dairy asset navigator.
+
+    The section:
+        - Introduces the dairy's assets
+        - Shows assets in horizontally scrollable cards
+        - Shows the asset profile image
+        - Shows the asset name
+        - Shows whether it is an Animal or Structure / Tool
+        - Links directly to /dairy/:id
+
+EXPECTED DATA:
+    assetDairies
+
+TYPE RULES:
+    code > 0
+        Animal
+
+    code === null
+    code === undefined
+    code === ""
+        Structure / Facility / Tool
+
+    code < 0
+        Not displayed
+
+IMPORTANT:
+    Cards DO NOT open the post modal.
+
+    Clicking an asset takes the user directly to:
+        /dairy/:id
+
+==========================================================
+*/ %>
 
 
-const mongoose =
-    require("mongoose");
+<% /* ======================================================
+   SAFE ASSET ARRAY
+====================================================== */ %>
 
-const Dairy =
-    require("../../../models/dairy");
-
-const Update =
-    require("../../../models/Update");
-
-
-// ==========================================================
-// VALIDATE MONGODB OBJECT ID
-// ==========================================================
-
-function isValidObjectId(id) {
-
-    return mongoose.Types.ObjectId.isValid(
-        id
-    );
-
-}
+<%
+const assets =
+    Array.isArray(assetDairies)
+        ? assetDairies
+        : [];
+%>
 
 
-// ==========================================================
-// GET AGROSTORE BY ITS OWN ID
-// ==========================================================
-//
-// IMPORTANT:
-//
-// storageId is:
-//
-//     AgroStore._id
-//
-// It is NOT:
-//
-//     parentDairyId
-//
-// It is NOT:
-//
-//     assetCode
-//
-// It is NOT:
-//
-//     roomNumber
-//
-// ==========================================================
+<% if (assets.length) { %>
 
-async function getAgroStore(
-    storageId
-) {
+    <!-- =====================================================
+         SECTION HEADER
+    ====================================================== -->
 
-    // ======================================================
-    // VALIDATE ID
-    // ======================================================
+    <div class="dairy-asset-strip-header">
 
-    if (
-        !isValidObjectId(
-            storageId
-        )
-    ) {
+        <div class="dairy-asset-strip-title">
 
-        const error =
-            new Error(
-                "Invalid AgroStore ID."
-            );
+            <strong>
+                View the dairy assets
+            </strong>
 
-        error.status = 400;
-
-        throw error;
-
-    }
+        </div>
 
 
-    // ======================================================
-    // FIND THE AGROSTORE
-    // ======================================================
+        <div class="dairy-asset-strip-description">
 
-    const agroStore =
-        await Dairy.findOne({
+            Explore the animals, structures, facilities, and
+            tools that make up
+            <strong><%= dairy.name %></strong>.
 
-            _id:
-                storageId,
+        </div>
 
-            recordType:
-                "structure",
+    </div>
 
-            type:
-                "agroStore",
 
-            status:
-                "active",
+    <!-- =====================================================
+         HORIZONTAL SCROLL AREA
+    ====================================================== -->
 
-            roomNumber: {
-                $lt: 0
+    <div
+        class="dairy-asset-scroll"
+        role="list"
+        aria-label="Dairy assets"
+    >
+
+        <% assets.forEach(function (asset) { %>
+
+            <%
+            /* =================================================
+               SAFETY CHECK
+            ================================================= */
+
+            if (!asset || !asset._id) {
+                return;
             }
 
-        });
 
+            /* =================================================
+               RAW CODE
+            ================================================= */
 
-    // ======================================================
-    // AGROSTORE NOT FOUND
-    // ======================================================
+            const assetCode =
+                asset.code;
 
-    if (!agroStore) {
 
-        const error =
-            new Error(
-                "AgroStore not found."
-            );
+            /* =================================================
+               NORMALIZE CODE
+            ================================================= */
 
-        error.status = 404;
+            const numericCode =
+                (
+                    assetCode !== null &&
+                    assetCode !== undefined &&
+                    assetCode !== ""
+                )
+                    ? Number(assetCode)
+                    : null;
 
-        throw error;
 
-    }
+            /* =================================================
+               NEVER DISPLAY NEGATIVE-CODE RECORDS
+            ================================================= */
 
+            if (
+                numericCode !== null &&
+                Number.isFinite(numericCode) &&
+                numericCode < 0
+            ) {
+                return;
+            }
 
-    return agroStore;
-
-}
-
-
-// ==========================================================
-// GET AGROSTORE CONTENTS
-// ==========================================================
-//
-// CORE RELATIONSHIP:
-//
-//     AgroStore.roomNumber
-//
-//             ===
-//
-//     Content.dwellNumber
-//
-// The AgroStore itself is NOT returned as a feed.
-//
-// ==========================================================
-
-async function getAnimalFeeds(
-    storageId
-) {
-
-    // ======================================================
-    // GET THE ACTUAL AGROSTORE
-    // ======================================================
-
-    const agroStore =
-        await getAgroStore(
-            storageId
-        );
-
-
-    // ======================================================
-    // FIND CONTENTS
-    // ======================================================
-    //
-    // We intentionally use dwellNumber as the relationship.
-    //
-    // We do NOT use:
-    //
-    //     assetCode
-    //
-    // as the storage-content relationship.
-    //
-    // ======================================================
-
-    const feeds =
-        await Dairy.find({
-
-            dwellNumber:
-                agroStore.roomNumber,
-
-            recordType:
-                "structure",
-
-            status:
-                "active"
-
-        })
-        .sort({
 
-            updatedAt:
-                -1,
+            /* =================================================
+               DETERMINE ASSET TYPE
 
-            createdAt:
-                -1
+               code > 0
+                   Animal
 
-        });
+               no code
+                   Structure / Facility / Tool
+            ================================================= */
 
+            const isAnimal =
+                numericCode !== null &&
+                Number.isFinite(numericCode) &&
+                numericCode > 0;
 
-    // ======================================================
-    // GET CONTENT IDs
-    // ======================================================
-    //
-    // These IDs are what Update.dairy must point to.
-    //
-    // ======================================================
-
-    const feedIds =
-        feeds.map(
-            feed =>
-                feed._id
-        );
-
-
-    // ======================================================
-    // GET UPDATES BELONGING TO CONTENTS
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // We query:
-    //
-    //     Update.dairy
-    //
-    // using:
-    //
-    //     content._id
-    //
-    // NOT:
-    //
-    //     AgroStore._id
-    //
-    // This prevents AgroStore updates from appearing as
-    // animal-feed updates.
-    //
-    // ======================================================
-
-    let feedUpdates = [];
-
-
-    if (
-        feedIds.length > 0
-    ) {
-
-        feedUpdates =
-            await Update.find({
-
-                dairy: {
-                    $in:
-                        feedIds
-                }
-
-            })
-            .populate({
-
-                path:
-                    "dairy",
-
-                select:
-                    [
-                        "name",
-                        "type",
-                        "code",
-                        "roomNumber",
-                        "dwellNumber",
-                        "assetCode",
-                        "profileImage",
-                        "quantity",
-                        "unit",
-                        "stockUpdateNote"
-                    ].join(" ")
-
-            })
-            .sort({
-
-                createdAt:
-                    -1
-
-            });
-
-    }
-
-
-    // ======================================================
-    // RETURN COMPLETE AGROSTORE DATA
-    // ======================================================
-
-    return {
-
-        agroStore,
-
-        feeds,
-
-        feedUpdates
-
-    };
 
-}
-
+            const assetType =
+                isAnimal
+                    ? "Animal"
+                    : "Structure / Tool";
 
-// ==========================================================
-// GET ONE AGROSTORE CONTENT
-// ==========================================================
-//
-// Verifies that:
-//
-//     feedId
-//
-// is actually a content item belonging to:
-//
-//     storageId
-//
-// through:
-//
-//     feed.dwellNumber
-//         ===
-//     agroStore.roomNumber
-//
-// ==========================================================
 
-async function getAnimalFeed(
-    storageId,
-    feedId
-) {
+            /* =================================================
+               IMAGE
 
-    // ======================================================
-    // GET AGROSTORE
-    // ======================================================
+               Prefer:
+                   profileImage
+                   displayImage
 
-    const agroStore =
-        await getAgroStore(
-            storageId
-        );
+               Otherwise generate a simple avatar.
+            ================================================= */
 
+            const assetImage =
+                asset.profileImage ||
+                asset.displayImage ||
+                (
+                    "https://ui-avatars.com/api/?name=" +
+                    encodeURIComponent(
+                        asset.name || "Asset"
+                    ) +
+                    "&background=e8f5ee&color=198754"
+                );
+            %>
 
-    // ======================================================
-    // VALIDATE CONTENT ID
-    // ======================================================
 
-    if (
-        !isValidObjectId(
-            feedId
-        )
-    ) {
+            <!-- =================================================
+                 ASSET CARD
+            ================================================== -->
 
-        const error =
-            new Error(
-                "Invalid stock item ID."
-            );
+            <a
+                href="/dairy/<%= asset._id %>"
+                class="dairy-asset-card"
+                role="listitem"
+                aria-label="View <%= asset.name || 'Asset' %>"
+            >
 
-        error.status = 400;
+                <!-- =============================================
+                     IMAGE
+                ============================================== -->
 
-        throw error;
+                <div class="dairy-asset-image-wrap">
 
-    }
+                    <img
+                        src="<%= assetImage %>"
+                        alt="<%= asset.name || 'Asset' %>"
+                        class="dairy-asset-image"
+                        loading="lazy"
+                    >
 
+                </div>
 
-    // ======================================================
-    // FIND CONTENT
-    // ======================================================
-    //
-    // Again:
-    //
-    //     dwellNumber === agroStore.roomNumber
-    //
-    // is the ownership relationship.
-    //
-    // ======================================================
 
-    const feed =
-        await Dairy.findOne({
+                <!-- =============================================
+                     ASSET NAME
+                ============================================== -->
 
-            _id:
-                feedId,
+                <div class="dairy-asset-name">
 
-            dwellNumber:
-                agroStore.roomNumber,
+                    <%= asset.name || "Unnamed Asset" %>
 
-            recordType:
-                "structure",
+                </div>
 
-            status:
-                "active"
 
-        });
+                <!-- =============================================
+                     ASSET TYPE
+                ============================================== -->
 
+                <div class="dairy-asset-type">
 
-    // ======================================================
-    // CONTENT NOT FOUND
-    // ======================================================
+                    <% if (isAnimal) { %>
 
-    if (!feed) {
+                        <span
+                            class="dairy-asset-type-icon"
+                            aria-hidden="true"
+                        >
+                            🐄
+                        </span>
 
-        const error =
-            new Error(
+                        <span>
+                            <%= assetType %>
+                        </span>
 
-                "The selected stock item does not belong " +
-                "to this AgroStore."
+                    <% } else { %>
 
-            );
+                        <span
+                            class="dairy-asset-type-icon"
+                            aria-hidden="true"
+                        >
+                            🏗️
+                        </span>
 
-        error.status = 404;
+                        <span>
+                            <%= assetType %>
+                        </span>
 
-        throw error;
+                    <% } %>
 
-    }
+                </div>
 
+            </a>
 
-    return {
+        <% }); %>
 
-        agroStore,
+    </div>
 
-        feed
-
-    };
-
-}
-
-
-// ==========================================================
-// UPDATE ONE ANIMAL FEED / STOCK ITEM
-// ==========================================================
-//
-// Updates:
-//
-//     quantity
-//     stockUpdateNote
-//
-// ==========================================================
-
-async function updateAnimalFeed(
-
-    storageId,
-
-    feedId,
-
-    quantity,
-
-    stockUpdateNote
-
-) {
-
-    // ======================================================
-    // VERIFY THAT THE CONTENT BELONGS TO THE AGROSTORE
-    // ======================================================
-
-    const result =
-        await getAnimalFeed(
-
-            storageId,
-
-            feedId
-
-        );
-
-
-    const feed =
-        result.feed;
-
-
-    // ======================================================
-    // QUANTITY REQUIRED
-    // ======================================================
-
-    if (
-        quantity === undefined ||
-        quantity === null ||
-        quantity === ""
-    ) {
-
-        const error =
-            new Error(
-                "Quantity is required."
-            );
-
-        error.status = 400;
-
-        throw error;
-
-    }
-
-
-    // ======================================================
-    // CONVERT QUANTITY TO NUMBER
-    // ======================================================
-
-    const numericQuantity =
-        Number(
-            quantity
-        );
-
-
-    // ======================================================
-    // VALIDATE NUMBER
-    // ======================================================
-
-    if (
-        !Number.isFinite(
-            numericQuantity
-        )
-    ) {
-
-        const error =
-            new Error(
-                "Quantity must be a valid number."
-            );
-
-        error.status = 400;
-
-        throw error;
-
-    }
-
-
-    // ======================================================
-    // PREVENT NEGATIVE QUANTITY
-    // ======================================================
-
-    if (
-        numericQuantity < 0
-    ) {
-
-        const error =
-            new Error(
-                "Quantity cannot be negative."
-            );
-
-        error.status = 400;
-
-        throw error;
-
-    }
-
-
-    // ======================================================
-    // NORMALIZE STOCK UPDATE NOTE
-    // ======================================================
-
-    const note =
-        String(
-            stockUpdateNote || ""
-        ).trim();
-
-
-    // ======================================================
-    // UPDATE QUANTITY
-    // ======================================================
-
-    feed.quantity =
-        numericQuantity;
-
-
-    // ======================================================
-    // UPDATE ADDITIONAL INFORMATION
-    // ======================================================
-
-    feed.stockUpdateNote =
-        note;
-
-
-    // ======================================================
-    // SAVE
-    // ======================================================
-
-    await feed.save();
-
-
-    // ======================================================
-    // FETCH FRESH DOCUMENT
-    // ======================================================
-
-    const updatedFeed =
-        await Dairy.findById(
-            feed._id
-        );
-
-
-    // ======================================================
-    // RETURN UPDATED DATA
-    // ======================================================
-
-    return {
-
-        agroStore:
-            result.agroStore,
-
-        feed:
-            updatedFeed
-
-    };
-
-}
-
-
-// ==========================================================
-// EXPORT
-// ==========================================================
-
-module.exports = {
-
-    getAgroStore,
-
-    getAnimalFeeds,
-
-    getAnimalFeed,
-
-    updateAnimalFeed
-
-};
+<% } %>
