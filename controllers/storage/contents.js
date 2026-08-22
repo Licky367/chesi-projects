@@ -47,7 +47,7 @@
 
 
 const storageContentsService =
-    require("../../services/storage/contents");
+    require("../../services/storage");
 
 
 // ==========================================================
