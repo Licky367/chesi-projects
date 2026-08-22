@@ -8,9 +8,11 @@
 //     Display and manage everything allocated inside an
 //     existing Room or AgroStore.
 //
-// PAGE URL:
+// PAGES:
 //
 //     /storage/:dairyId/contents/:storageId
+//
+//     /storage/:dairyId/contents/:storageId/details/:itemId
 //
 // URL ID CONTRACT:
 //
@@ -20,11 +22,8 @@
 //     :storageId
 //         = storage facility Dairy._id
 //
-// IMPORTANT:
-//
-//     item._id is used inside forms as itemId.
-//
-//     It is NOT used as the storage contents page ID.
+//     :itemId
+//         = Dairy._id of the item inside the storage
 //
 // STORAGE FACILITY TYPES:
 //
@@ -43,6 +42,7 @@
 //         - no reshuffle
 //
 // ==========================================================
+
 
 const storageContentsService =
     require("../../services/storage/contents");
@@ -83,10 +83,13 @@ function getBodyValue(req, key) {
             key
         )
     ) {
+
         return req.body[key];
+
     }
 
     return undefined;
+
 }
 
 
@@ -157,18 +160,12 @@ function createCountMessage(
 
 
 // ----------------------------------------------------------
-// GET URL PARAMETERS
+// GET CONTENTS ROUTE PARAMETERS
 // ----------------------------------------------------------
 //
 // URL:
 //
 //     /storage/:dairyId/contents/:storageId
-//
-// :dairyId
-//     = parent Dairy._id
-//
-// :storageId
-//     = storage facility Dairy._id
 //
 // ----------------------------------------------------------
 
@@ -184,6 +181,40 @@ function getRouteIds(req) {
         storageId:
             String(
                 req.params.storageId || ""
+            ).trim()
+
+    };
+
+}
+
+
+// ----------------------------------------------------------
+// GET CONTENT ITEM ROUTE PARAMETERS
+// ----------------------------------------------------------
+//
+// URL:
+//
+//     /storage/:dairyId/contents/:storageId/details/:itemId
+//
+// ----------------------------------------------------------
+
+function getContentItemRouteIds(req) {
+
+    return {
+
+        dairyId:
+            String(
+                req.params.dairyId || ""
+            ).trim(),
+
+        storageId:
+            String(
+                req.params.storageId || ""
+            ).trim(),
+
+        itemId:
+            String(
+                req.params.itemId || ""
             ).trim()
 
     };
@@ -257,6 +288,37 @@ function getContentsUrl(
 }
 
 
+// ----------------------------------------------------------
+// BUILD CONTENT ITEM DETAILS URL
+// ----------------------------------------------------------
+//
+// ALWAYS returns:
+//
+//     /storage/:dairyId/contents/:storageId/details/:itemId
+//
+// ----------------------------------------------------------
+
+function getContentItemUrl(
+    dairyId,
+    storageId,
+    itemId
+) {
+
+    return (
+        `/storage/${encodeURIComponent(
+            dairyId
+        )}` +
+        `/contents/${encodeURIComponent(
+            storageId
+        )}` +
+        `/details/${encodeURIComponent(
+            itemId
+        )}`
+    );
+
+}
+
+
 // ==========================================================
 // VALIDATE STORAGE TYPE
 // ==========================================================
@@ -294,6 +356,61 @@ function validateStorageType(storage) {
 
 
     return storageType;
+
+}
+
+
+// ==========================================================
+// FIND ITEM INSIDE STORAGE CONTENTS
+// ==========================================================
+//
+// IMPORTANT:
+//
+//     We deliberately use the contents returned by
+//     getStorageContents().
+//
+// This guarantees that the requested item belongs to the
+// requested storage facility before content-item.ejs is
+// rendered.
+//
+// ==========================================================
+
+function findContentItem(
+    items,
+    itemId
+) {
+
+    if (
+        !Array.isArray(items)
+    ) {
+
+        return null;
+
+    }
+
+
+    return items.find(
+        function(item) {
+
+            if (
+                !item ||
+                item._id === null ||
+                item._id === undefined
+            ) {
+
+                return false;
+
+            }
+
+
+            return String(
+                item._id
+            ) === String(
+                itemId
+            );
+
+        }
+    ) || null;
 
 }
 
@@ -491,6 +608,300 @@ async function renderContents(
 
         }
     );
+
+}
+
+
+// ==========================================================
+// GET CONTENT ITEM DETAILS
+// ==========================================================
+//
+// GET:
+//
+//     /storage/:dairyId/contents/:storageId/details/:itemId
+//
+// PURPOSE:
+//
+//     Display one item currently contained inside a Room or
+//     AgroStore.
+//
+// VIEW:
+//
+//     views/storage/content-item.ejs
+//
+// ==========================================================
+
+async function contentItem(req, res) {
+
+    try {
+
+        // ==================================================
+        // GET ROUTE IDS
+        // ==================================================
+
+        const {
+            dairyId,
+            storageId,
+            itemId
+        } =
+            getContentItemRouteIds(req);
+
+
+        // ==================================================
+        // REQUIRE DAIRY ID
+        // ==================================================
+
+        if (!dairyId) {
+
+            const error =
+                new Error(
+                    "Dairy ID is required."
+                );
+
+            error.status = 400;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // REQUIRE STORAGE ID
+        // ==================================================
+
+        if (!storageId) {
+
+            const error =
+                new Error(
+                    "Storage ID is required."
+                );
+
+            error.status = 400;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // REQUIRE ITEM ID
+        // ==================================================
+
+        if (!itemId) {
+
+            const error =
+                new Error(
+                    "Content item ID is required."
+                );
+
+            error.status = 400;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // GET STORAGE CONTENTS
+        // ==================================================
+        //
+        // We use the same service already used by the
+        // contents page.
+        //
+        // This also allows us to verify that the item really
+        // belongs to the requested storage facility.
+        //
+        // ==================================================
+
+        const result =
+            await storageContentsService
+                .getStorageContents({
+                    dairyId,
+                    storageId
+                });
+
+
+        // ==================================================
+        // REQUIRE RESULT
+        // ==================================================
+
+        if (
+            !result
+        ) {
+
+            const error =
+                new Error(
+                    "Storage contents could not be loaded."
+                );
+
+            error.status = 404;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // REQUIRE STORAGE
+        // ==================================================
+
+        if (
+            !result.storage
+        ) {
+
+            const error =
+                new Error(
+                    "Storage facility not found."
+                );
+
+            error.status = 404;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // VALIDATE STORAGE TYPE
+        // ==================================================
+
+        const storageType =
+            validateStorageType(
+                result.storage
+            );
+
+
+        // ==================================================
+        // FIND REQUESTED ITEM
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // The item must exist in result.items.
+        //
+        // This prevents somebody from using an arbitrary
+        // Dairy._id together with a storage URL to view an
+        // unrelated record.
+        //
+        // ==================================================
+
+        const item =
+            findContentItem(
+                result.items || [],
+                itemId
+            );
+
+
+        // ==================================================
+        // ITEM NOT FOUND
+        // ==================================================
+
+        if (!item) {
+
+            const error =
+                new Error(
+                    "Content item was not found in this storage facility."
+                );
+
+            error.status = 404;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // RENDER CONTENT ITEM
+        // ==================================================
+
+        return res.render(
+            "storage/content-item",
+            {
+
+                // ------------------------------------------
+                // PAGE TITLE
+                // ------------------------------------------
+
+                title:
+                    item.name ||
+                    "Content Item",
+
+                // ------------------------------------------
+                // PARENT DAIRY
+                // ------------------------------------------
+
+                dairy:
+                    result.dairy,
+
+                // ------------------------------------------
+                // STORAGE FACILITY
+                // ------------------------------------------
+
+                storage:
+                    result.storage,
+
+                // ------------------------------------------
+                // REQUESTED ITEM
+                // ------------------------------------------
+
+                item,
+
+                // ------------------------------------------
+                // STORAGE TYPE
+                // ------------------------------------------
+
+                storageType,
+
+                isRoom:
+                    storageType === STORAGE_TYPES.ROOM,
+
+                isAgroStore:
+                    storageType === STORAGE_TYPES.AGRO_STORE,
+
+                // ------------------------------------------
+                // EXPLICIT IDS
+                // ------------------------------------------
+
+                dairyId,
+
+                storageId,
+
+                itemId,
+
+                // ------------------------------------------
+                // URLS
+                // ------------------------------------------
+
+                contentsUrl:
+                    getContentsUrl(
+                        dairyId,
+                        storageId
+                    ),
+
+                contentItemUrl:
+                    getContentItemUrl(
+                        dairyId,
+                        storageId,
+                        itemId
+                    )
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Storage content item error:",
+            error
+        );
+
+        return sendError(
+            res,
+            error,
+            "Unable to load content item."
+        );
+
+    }
 
 }
 
@@ -821,7 +1232,7 @@ async function omitItems(req, res) {
                 "storage"
             }.`;
 
-
+        
         // ==================================================
         // REDIRECT BACK TO SAME STORAGE
         // ==================================================
@@ -916,7 +1327,7 @@ async function reshuffleItems(req, res) {
                 "the selected storage"
             }.`;
 
-        
+
         // ==================================================
         // REDIRECT BACK TO ORIGINAL STORAGE
         // ==================================================
@@ -1069,7 +1480,17 @@ function sendError(
 
 module.exports = {
 
+    // ------------------------------------------------------
+    // GET PAGES
+    // ------------------------------------------------------
+
     contents,
+
+    contentItem,
+
+    // ------------------------------------------------------
+    // STORAGE OPERATIONS
+    // ------------------------------------------------------
 
     addItems,
 
