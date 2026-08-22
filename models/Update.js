@@ -11,31 +11,56 @@
 //     • Medical updates
 //     • Maintenance updates
 //     • Asset-added updates
+//     • Animal-feed / stock updates
 //     • Post images
 //     • Likes
 //
 // IMPORTANT:
 //
-// FEED STORE / ANIMAL FEED / VETERINARY MEDICINE
+// ANIMAL FEED / STOCK UPDATES
 // ----------------------------------------------------------
 //
-// Feed-stock is NOT handled by this model.
+// Feed STOCK itself belongs to:
 //
-// Feed-stock belongs entirely to:
+//     Dairy
 //
-//     Dairy.feedStocks[]
+// Specifically:
 //
-// The feed-store service/controller should handle:
+//     Dairy.dwellNumber
+//     Dairy.quantity
+//     Dairy.stockUpdateNote
 //
-//     • Adding stock
-//     • Restocking
-//     • Reducing stock
-//     • Current quantity
-//     • Unit price
-//     • Stock expenditure
-//     • Feed / medicine options
+// The Update model stores the HISTORY / FEED CARD generated
+// when an animal-feed stock record is updated.
 //
-// This model must NEVER be used for feed-stock operations.
+// IMPORTANT RELATIONSHIP:
+//
+//     AgroStore._id
+//         = storageId
+//
+//     AgroStore.roomNumber
+//         = negative number
+//
+//     Stock Dairy.dwellNumber
+//         = same negative number
+//
+// Therefore:
+//
+//     stock.dwellNumber === agroStore.roomNumber
+//
+// The Update belongs to the STOCK DAIRY:
+//
+//     Update.dairy = stockDairy._id
+//
+// NOT:
+//
+//     Update.dairy = agroStore._id
+//
+// This allows the AgroStore page to:
+//
+//     1. Find its contents using roomNumber/dwellNumber.
+//     2. Find updates belonging to those contents.
+//     3. Display those updates as feed cards.
 //
 // ==========================================================
 
@@ -157,10 +182,6 @@ const medicalSchema =
 
         {
 
-            // ==================================================
-            // STATUS
-            // ==================================================
-
             status: {
 
                 type: String,
@@ -171,10 +192,6 @@ const medicalSchema =
 
             },
 
-
-            // ==================================================
-            // MEDICAL TYPE
-            // ==================================================
 
             type: {
 
@@ -187,10 +204,6 @@ const medicalSchema =
             },
 
 
-            // ==================================================
-            // DETAILS
-            // ==================================================
-
             details: {
 
                 type: String,
@@ -202,10 +215,6 @@ const medicalSchema =
             },
 
 
-            // ==================================================
-            // MARKED AT
-            // ==================================================
-
             markedAt: {
 
                 type: Date,
@@ -214,10 +223,6 @@ const medicalSchema =
 
             },
 
-
-            // ==================================================
-            // MARKED BY
-            // ==================================================
 
             markedBy: {
 
@@ -231,10 +236,6 @@ const medicalSchema =
             },
 
 
-            // ==================================================
-            // CLEARED AT
-            // ==================================================
-
             clearedAt: {
 
                 type: Date,
@@ -243,10 +244,6 @@ const medicalSchema =
 
             },
 
-
-            // ==================================================
-            // CLEARED BY
-            // ==================================================
 
             clearedBy: {
 
@@ -260,10 +257,6 @@ const medicalSchema =
             },
 
 
-            // ==================================================
-            // CHARGES
-            // ==================================================
-
             charges: {
 
                 type: Number,
@@ -274,10 +267,6 @@ const medicalSchema =
 
             },
 
-
-            // ==================================================
-            // CLEAR DESCRIPTION
-            // ==================================================
 
             clearDescription: {
 
@@ -309,10 +298,6 @@ const maintenanceSchema =
 
         {
 
-            // ==================================================
-            // STATUS
-            // ==================================================
-
             status: {
 
                 type: String,
@@ -323,10 +308,6 @@ const maintenanceSchema =
 
             },
 
-
-            // ==================================================
-            // MAINTENANCE TYPE
-            // ==================================================
 
             type: {
 
@@ -339,10 +320,6 @@ const maintenanceSchema =
             },
 
 
-            // ==================================================
-            // DESCRIPTION
-            // ==================================================
-
             description: {
 
                 type: String,
@@ -354,10 +331,6 @@ const maintenanceSchema =
             },
 
 
-            // ==================================================
-            // MARKED AT
-            // ==================================================
-
             markedAt: {
 
                 type: Date,
@@ -366,10 +339,6 @@ const maintenanceSchema =
 
             },
 
-
-            // ==================================================
-            // MARKED BY
-            // ==================================================
 
             markedBy: {
 
@@ -383,10 +352,6 @@ const maintenanceSchema =
             },
 
 
-            // ==================================================
-            // CLEARED AT
-            // ==================================================
-
             clearedAt: {
 
                 type: Date,
@@ -395,10 +360,6 @@ const maintenanceSchema =
 
             },
 
-
-            // ==================================================
-            // CLEARED BY
-            // ==================================================
 
             clearedBy: {
 
@@ -412,10 +373,6 @@ const maintenanceSchema =
             },
 
 
-            // ==================================================
-            // CHARGES
-            // ==================================================
-
             charges: {
 
                 type: Number,
@@ -426,10 +383,6 @@ const maintenanceSchema =
 
             },
 
-
-            // ==================================================
-            // CLEAR DESCRIPTION
-            // ==================================================
 
             clearDescription: {
 
@@ -461,10 +414,6 @@ const assetAddSchema =
 
         {
 
-            // ==================================================
-            // ASSET ID
-            // ==================================================
-
             assetId: {
 
                 type:
@@ -476,10 +425,6 @@ const assetAddSchema =
 
             },
 
-
-            // ==================================================
-            // ASSET NAME
-            // ==================================================
 
             name: {
 
@@ -494,10 +439,6 @@ const assetAddSchema =
             },
 
 
-            // ==================================================
-            // ASSET TYPE
-            // ==================================================
-
             type: {
 
                 type: String,
@@ -511,10 +452,6 @@ const assetAddSchema =
             },
 
 
-            // ==================================================
-            // BUYING PRICE
-            // ==================================================
-
             buyingPrice: {
 
                 type: Number,
@@ -526,10 +463,6 @@ const assetAddSchema =
             },
 
 
-            // ==================================================
-            // CURRENT WORTH
-            // ==================================================
-
             currentWorth: {
 
                 type: Number,
@@ -540,10 +473,6 @@ const assetAddSchema =
 
             },
 
-
-            // ==================================================
-            // DESCRIPTION
-            // ==================================================
 
             description: {
 
@@ -558,10 +487,6 @@ const assetAddSchema =
             },
 
 
-            // ==================================================
-            // CONDITION
-            // ==================================================
-
             condition: {
 
                 type: String,
@@ -574,10 +499,6 @@ const assetAddSchema =
 
             },
 
-
-            // ==================================================
-            // LOCATION
-            // ==================================================
 
             location: {
 
@@ -592,10 +513,6 @@ const assetAddSchema =
             },
 
 
-            // ==================================================
-            // STATUS
-            // ==================================================
-
             status: {
 
                 type: String,
@@ -607,10 +524,6 @@ const assetAddSchema =
             },
 
 
-            // ==================================================
-            // ASSET CODE
-            // ==================================================
-
             assetCode: {
 
                 type: Number,
@@ -619,10 +532,6 @@ const assetAddSchema =
 
             },
 
-
-            // ==================================================
-            // PARENT DAIRY ID
-            // ==================================================
 
             parentDairyId: {
 
@@ -636,10 +545,6 @@ const assetAddSchema =
             },
 
 
-            // ==================================================
-            // PARENT DAIRY NAME
-            // ==================================================
-
             parentDairyName: {
 
                 type: String,
@@ -651,15 +556,210 @@ const assetAddSchema =
             },
 
 
-            // ==================================================
-            // PARENT DAIRY CODE
-            // ==================================================
-
             parentDairyCode: {
 
                 type: Number,
 
                 default: null
+
+            }
+
+        },
+
+        {
+
+            _id: false
+
+        }
+
+    );
+
+
+// ==========================================================
+// ANIMAL FEED / STOCK UPDATE SUBDOCUMENT
+// ==========================================================
+//
+// This describes an UPDATE to an existing animal-feed,
+// fodder, hay, silage or veterinary-stock Dairy record.
+//
+// IMPORTANT:
+//
+//     feedId
+//         = Dairy._id of the stock item
+//
+//     storageId
+//         = AgroStore._id
+//
+//     roomNumber
+//         = AgroStore.roomNumber
+//         = stock.dwellNumber
+//
+// The actual owner of the Update remains:
+//
+//     Update.dairy = feedId
+//
+// ==========================================================
+
+const animalFeedSchema =
+    new mongoose.Schema(
+
+        {
+
+            // ==================================================
+            // STOCK ITEM
+            // ==================================================
+            //
+            // This is the Dairy record representing the actual
+            // stock item.
+            //
+            // It is NOT the AgroStore ID.
+            //
+            // ==================================================
+
+            feedId: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref: "Dairy",
+
+                default: null
+
+            },
+
+
+            // ==================================================
+            // AGROSTORE
+            // ==================================================
+            //
+            // Reference to the AgroStore where the stock item
+            // resides.
+            //
+            // This is contextual information only.
+            //
+            // It does NOT become Update.dairy.
+            //
+            // ==================================================
+
+            storageId: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref: "Dairy",
+
+                default: null
+
+            },
+
+
+            // ==================================================
+            // STOCK ITEM NAME
+            // ==================================================
+
+            feedName: {
+
+                type: String,
+
+                default: "",
+
+                trim: true,
+
+                maxlength: 200
+
+            },
+
+
+            // ==================================================
+            // STOCK TYPE
+            // ==================================================
+
+            feedType: {
+
+                type: String,
+
+                default: "",
+
+                trim: true,
+
+                maxlength: 100
+
+            },
+
+
+            // ==================================================
+            // ROOM / DWELL NUMBER
+            // ==================================================
+            //
+            // This records the relationship used to locate
+            // the stock inside the AgroStore.
+            //
+            // Example:
+            //
+            //     AgroStore.roomNumber = -2
+            //
+            //     Stock.dwellNumber   = -2
+            //
+            // ==================================================
+
+            roomNumber: {
+
+                type: Number,
+
+                default: null
+
+            },
+
+
+            // ==================================================
+            // QUANTITY
+            // ==================================================
+            //
+            // Quantity remaining AFTER the update.
+            //
+            // ==================================================
+
+            quantity: {
+
+                type: Number,
+
+                default: 0,
+
+                min: 0
+
+            },
+
+
+            // ==================================================
+            // UNIT
+            // ==================================================
+
+            unit: {
+
+                type: String,
+
+                default: "",
+
+                trim: true,
+
+                maxlength: 50
+
+            },
+
+
+            // ==================================================
+            // STOCK UPDATE NOTE
+            // ==================================================
+
+            stockUpdateNote: {
+
+                type: String,
+
+                default: "",
+
+                trim: true,
+
+                maxlength: 2000
 
             }
 
@@ -685,6 +785,15 @@ const updateSchema =
 
             // ==================================================
             // DAIRY
+            // ==================================================
+            //
+            // IMPORTANT:
+            //
+            // For animal-feed updates this is the STOCK
+            // DAIRY record's _id.
+            //
+            // It is NOT the AgroStore _id.
+            //
             // ==================================================
 
             dairy: {
@@ -796,7 +905,9 @@ const updateSchema =
 
                     "maintenance",
 
-                    "assetAdd"
+                    "assetAdd",
+
+                    "animalFeed"
 
                 ],
 
@@ -992,6 +1103,20 @@ const updateSchema =
 
                 default: undefined
 
+            },
+
+
+            // ==================================================
+            // ANIMAL FEED / STOCK UPDATE
+            // ==================================================
+
+            animalFeed: {
+
+                type:
+                    animalFeedSchema,
+
+                default: undefined
+
             }
 
         },
@@ -1009,10 +1134,7 @@ const updateSchema =
 // INDEXES
 // ==========================================================
 //
-// These indexes are only for the actual Update model.
-//
-// There are NO feed-stock indexes.
-//
+// Normal Update queries
 // ==========================================================
 
 updateSchema.index({
@@ -1029,6 +1151,42 @@ updateSchema.index({
     dairy: 1,
 
     type: 1,
+
+    createdAt: -1
+
+});
+
+
+// ==========================================================
+// ANIMAL FEED UPDATE INDEX
+// ==========================================================
+//
+// Useful when retrieving animal-feed updates belonging to
+// a particular AgroStore.
+//
+// ==========================================================
+
+updateSchema.index({
+
+    "animalFeed.storageId": 1,
+
+    createdAt: -1
+
+});
+
+
+updateSchema.index({
+
+    "animalFeed.feedId": 1,
+
+    createdAt: -1
+
+});
+
+
+updateSchema.index({
+
+    "animalFeed.roomNumber": 1,
 
     createdAt: -1
 
@@ -1362,6 +1520,94 @@ updateSchema.pre(
                     String(
                         this.asset.parentDairyName
                     ).trim();
+
+            }
+
+        }
+
+
+        // ==================================================
+        // NORMALIZE ANIMAL FEED UPDATE
+        // ==================================================
+
+        if (
+            this.animalFeed
+        ) {
+
+            if (
+                this.animalFeed.feedName
+            ) {
+
+                this.animalFeed.feedName =
+                    String(
+                        this.animalFeed.feedName
+                    ).trim();
+
+            }
+
+
+            if (
+                this.animalFeed.feedType
+            ) {
+
+                this.animalFeed.feedType =
+                    String(
+                        this.animalFeed.feedType
+                    ).trim();
+
+            }
+
+
+            if (
+                this.animalFeed.unit
+            ) {
+
+                this.animalFeed.unit =
+                    String(
+                        this.animalFeed.unit
+                    ).trim();
+
+            }
+
+
+            if (
+                this.animalFeed.stockUpdateNote
+            ) {
+
+                this.animalFeed.stockUpdateNote =
+                    String(
+                        this.animalFeed.stockUpdateNote
+                    ).trim();
+
+            }
+
+
+            // ==================================================
+            // KEEP QUANTITY VALID
+            // ==================================================
+
+            if (
+                this.animalFeed.quantity !== null &&
+                this.animalFeed.quantity !== undefined
+            ) {
+
+                const quantity =
+                    Number(
+                        this.animalFeed.quantity
+                    );
+
+
+                if (
+                    Number.isFinite(
+                        quantity
+                    ) &&
+                    quantity >= 0
+                ) {
+
+                    this.animalFeed.quantity =
+                        quantity;
+
+                }
 
             }
 
