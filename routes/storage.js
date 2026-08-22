@@ -14,13 +14,17 @@
 //     5. Adding new items directly into storage
 //     6. Adding existing items into storage
 //     7. Omitting items from Room storage
-//     8. Reshuffling items between Room storages
-//     9. Updating AgroStore feed quantities
+//     8. Reshuffling items between storage facilities
+//     9. Updating storage content items
+//    10. Recording quantity changes
+//    11. Recording stock update notes
+//    12. Uploading images with stock updates
 //
 // ==========================================================
 
 
-const express = require("express");
+const express =
+    require("express");
 
 const router =
     express.Router();
@@ -45,11 +49,6 @@ const uploadMiddleware =
 // :id
 //     = parent Dairy._id
 //
-// PURPOSE:
-//
-//     Display all storage facilities belonging to the
-//     selected dairy.
-//
 // ==========================================================
 
 router.get(
@@ -66,14 +65,6 @@ router.get(
 //
 //     /storage/:id/add
 //
-// :id
-//     = parent Dairy._id
-//
-// PURPOSE:
-//
-//     Display the form used to create a new Room or
-//     AgroStore.
-//
 // ==========================================================
 
 router.get(
@@ -89,13 +80,6 @@ router.get(
 // POST:
 //
 //     /storage/:id/add
-//
-// :id
-//     = parent Dairy._id
-//
-// PURPOSE:
-//
-//     Create a new storage facility.
 //
 // ==========================================================
 
@@ -119,16 +103,6 @@ router.post(
 // :storageId
 //     = storage facility Dairy._id
 //
-// PURPOSE:
-//
-//     Display everything currently allocated inside the
-//     selected storage facility.
-//
-// SUPPORTED STORAGE TYPES:
-//
-//     room
-//     agroStore
-//
 // ==========================================================
 
 router.get(
@@ -145,22 +119,9 @@ router.get(
 //
 //     /storage/:dairyId/contents/:storageId/details/:itemId
 //
-// Example:
-//
-//     /storage/DAIRY_ID/contents/STORAGE_ID/details/ITEM_ID
-//
-// :dairyId
-//     = parent Dairy._id
-//
-// :storageId
-//     = storage facility Dairy._id
-//
-// :itemId
-//     = Dairy._id of the item inside the storage
-//
 // PURPOSE:
 //
-//     Display complete details of one item currently
+//     Display the complete details of one item currently
 //     contained inside the selected storage facility.
 //
 // VIEW:
@@ -183,31 +144,14 @@ router.get(
 //
 //     /storage/:dairyId/contents/:storageId/add/:storageType
 //
-// Examples:
-//
-//     /storage/DAIRY_ID/contents/STORAGE_ID/add/room
-//
-//     /storage/DAIRY_ID/contents/STORAGE_ID/add/agroStore
-//
-// :dairyId
-//     = parent Dairy._id
-//
-// :storageId
-//     = selected storage facility Dairy._id
-//
-// :storageType
-//     = storage facility type
-//
-// SUPPORTED VALUES:
+// SUPPORTED:
 //
 //     room
 //     agroStore
 //
 // IMPORTANT:
 //
-//     agroStore is case-sensitive and must remain:
-//
-//         agroStore
+//     "agroStore" is case-sensitive.
 //
 // ==========================================================
 
@@ -229,20 +173,11 @@ router.get(
 //
 //     enctype="multipart/form-data"
 //
-// IMAGE FIELD:
+// IMAGE:
 //
 //     profileImage
 //
-// The upload middleware MUST execute before the controller
-// so that:
-//
-//     req.body
-//
-// and:
-//
-//     req.file
-//
-// are available to storageController.addNewItem.
+// The upload middleware executes before the controller.
 //
 // ==========================================================
 
@@ -265,16 +200,11 @@ router.post(
 //
 //     /storage/:dairyId/contents/:storageId/add
 //
-// PURPOSE:
-//
-//     Add already-existing Dairy records to the selected
-//     storage facility.
-//
 // BODY:
 //
 //     itemIds
 //
-// itemIds may be:
+// Examples:
 //
 //     itemIds[]=ID1
 //     itemIds[]=ID2
@@ -282,14 +212,6 @@ router.post(
 // or:
 //
 //     itemIds=ID1
-//
-// SUPPORTED:
-//
-//     room
-//     agroStore
-//
-// The service is responsible for enforcing the storage
-// type rules.
 //
 // ==========================================================
 
@@ -300,33 +222,25 @@ router.post(
 
 
 // ==========================================================
-// OMIT ITEMS FROM STORAGE
+// OMIT ITEMS FROM ROOM STORAGE
 // ==========================================================
 //
 // POST:
 //
 //     /storage/:dairyId/contents/:storageId/omit
 //
-// PURPOSE:
-//
-//     Remove selected items from a Room storage.
-//
 // BODY:
 //
 //     itemIds
 //
-// SUPPORTED:
-//
-//     room
-//
 // IMPORTANT:
 //
-//     AgroStore does NOT use manual omission.
+//     This is for normal Room storage only.
 //
-//     AgroStore items are automatically omitted when their
-//     quantity reaches zero.
+//     AgroStore items are not manually omitted.
 //
-// The service is responsible for enforcing this rule.
+//     AgroStore items are automatically removed from the
+//     storage allocation when quantity becomes zero.
 //
 // ==========================================================
 
@@ -344,25 +258,23 @@ router.post(
 //
 //     /storage/:dairyId/contents/:storageId/reshuffle
 //
-// PURPOSE:
-//
-//     Move selected items from one Room storage facility
-//     to another Room storage facility.
-//
 // BODY:
 //
 //     itemIds
 //     targetStorageId
 //
-// SUPPORTED:
+// PURPOSE:
 //
-//     room
+//     Move selected items from the current storage facility
+//     into another storage facility of the permitted type.
 //
-// NOT SUPPORTED:
+// The service enforces:
 //
-//     agroStore
-//
-// The service is responsible for enforcing the rule.
+//     - valid target storage
+//     - same storage type
+//     - active storage
+//     - item ownership
+//     - current allocation
 //
 // ==========================================================
 
@@ -373,48 +285,94 @@ router.post(
 
 
 // ==========================================================
-// UPDATE AGROSTORE QUANTITY
+// UPDATE STORAGE CONTENT ITEM
 // ==========================================================
 //
 // POST:
 //
-//     /storage/:dairyId/contents/:storageId/quantity
+//     /storage/:dairyId/contents/:storageId/update/:itemId
 //
 // PURPOSE:
 //
-//     Update the quantity of a feed item inside an
-//     AgroStore.
+//     Update one item currently contained in storage.
 //
-// BODY:
+// POSSIBLE FORM FIELDS:
 //
-//     itemId
 //     quantity
 //     unit
+//     stockUpdateNote
 //
-// EXAMPLE:
+// OPTIONAL FILES:
 //
-//     itemId=ITEM_ID
-//     quantity=25
-//     unit=kg
+//     images
 //
-// AUTOMATIC OMISSION:
+// The update records:
 //
-//     If quantity becomes zero, the storage service
-//     automatically removes the item from the AgroStore.
+//     1. New quantity
+//     2. Unit
+//     3. Stock update note
+//     4. Images
+//     5. User._id of the person who made the update
+//     6. Timestamp of the update
 //
-// SUPPORTED:
+// IMPORTANT:
 //
-//     agroStore
+//     This route uses multipart/form-data because the update
+//     may contain images.
 //
-// The service is responsible for enforcing the storage
-// type.
+// ==========================================================
+//
+// IMAGE FIELD:
+//
+//     images
+//
+// The controller receives:
+//
+//     req.files
+//
+// rather than:
+//
+//     req.file
+//
+// because an update may contain multiple images.
 //
 // ==========================================================
 
 router.post(
-    "/:dairyId/contents/:storageId/quantity",
-    storageController.updateQuantity
+    "/:dairyId/contents/:storageId/update/:itemId",
+
+    uploadMiddleware.array(
+        "images",
+        10
+    ),
+
+    storageController.updateContentItem
 );
+
+
+// ==========================================================
+// UPDATE AGROSTORE QUANTITY
+// ==========================================================
+//
+// DEPRECATED ARCHITECTURE:
+//
+//     /quantity
+//
+// Quantity updates are now handled by:
+//
+//     /update/:itemId
+//
+// together with:
+//
+//     stockUpdateNote
+//     images
+//     recordedBy
+//     timestamp
+//
+// DO NOT KEEP THE OLD ROUTE if the controller/service has
+// been migrated to the new content-item update architecture.
+//
+// ==========================================================
 
 
 // ==========================================================
