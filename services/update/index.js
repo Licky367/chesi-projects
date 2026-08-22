@@ -4,6 +4,7 @@
 // ==========================================================
 
 module.exports = {
+    ...require("./itemLink"),
 
     ...require("./projectService"),
 
@@ -17,8 +18,6 @@ module.exports = {
 
     ...require("./medicalService"),
 
-    ...require("./maintenanceService"),
-
-    ...require("./itemLink")
+    ...require("./maintenanceService")
 
 };
