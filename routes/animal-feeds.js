@@ -3,13 +3,25 @@
 // AGROSTORE ANIMAL FEED / STOCK UPDATE ROUTES
 // ==========================================================
 //
-// IMPORTANT:
+// MOUNTED IN server.js AS:
+//
+//     app.use("/dairy", animalFeedsRoutes);
+//
+// THEREFORE:
 //
 //     :id
 //         = AgroStore._id
 //
 //     :feedId
 //         = individual AgroStore content Dairy._id
+//
+// FINAL ROUTES:
+//
+//     GET
+//     /dairy/:id/animal-feeds
+//
+//     POST
+//     /dairy/:id/animal-feeds/:feedId/update
 //
 // EXAMPLE:
 //
@@ -21,9 +33,11 @@
 //
 // ==========================================================
 
-const express = require("express");
+const express =
+    require("express");
 
-const router = express.Router();
+const router =
+    express.Router();
 
 
 // ==========================================================
@@ -31,23 +45,30 @@ const router = express.Router();
 // ==========================================================
 
 const animalFeedsController =
-    require("../controllers/update/storage/animalFeedsController");
+    require(
+        "../controllers/update/storage/animalFeedsController"
+    );
 
 
 // ==========================================================
 // GET AGROSTORE ANIMAL FEEDS
 // ==========================================================
 //
-// Returns all active Dairy records allocated to the
-// AgroStore represented by :id.
+// Displays the animal-feed / stock contents belonging to
+// the AgroStore identified by :id.
 //
-// :id = AgroStore._id
+// :id
+//     = AgroStore._id
+//
+// FINAL URL:
+//
+//     GET /dairy/:id/animal-feeds
 //
 // ==========================================================
 
 router.get(
 
-    "/dairy/:id/animal-feeds",
+    "/:id/animal-feeds",
 
     animalFeedsController.getAnimalFeeds
 
@@ -58,7 +79,9 @@ router.get(
 // UPDATE AGROSTORE CONTENT
 // ==========================================================
 //
-// Updates:
+// Updates an individual AgroStore stock item.
+//
+// Supported update data:
 //
 //     • quantity
 //     • stockUpdateNote
@@ -67,13 +90,17 @@ router.get(
 //     = AgroStore._id
 //
 // :feedId
-//     = content Dairy._id
+//     = individual stock/content Dairy._id
+//
+// FINAL URL:
+//
+//     POST /dairy/:id/animal-feeds/:feedId/update
 //
 // ==========================================================
 
 router.post(
 
-    "/dairy/:id/animal-feeds/:feedId/update",
+    "/:id/animal-feeds/:feedId/update",
 
     animalFeedsController.updateAnimalFeed
 
@@ -84,4 +111,5 @@ router.post(
 // EXPORT
 // ==========================================================
 
-module.exports = router;
+module.exports =
+    router;
