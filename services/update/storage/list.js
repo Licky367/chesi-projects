@@ -6,21 +6,13 @@
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Load the inventory belonging to a specific AgroStore.
+// Load inventory belonging to a specific AgroStore.
 //
 // URL CONTRACT:
 //
 //     /dairy/:parentId/agroStore/:roomNumber
 //
-// Therefore:
-//
-//     parentId
-//         = parent Dairy Farm MongoDB _id
-//
-//     roomNumber
-//         = AgroStore.roomNumber
-//
-// RELATIONSHIP:
+// ID RELATIONSHIP:
 //
 //     parentId
 //         ↓
@@ -30,14 +22,13 @@
 //         ↓
 //     AgroStore.assetCode
 //
-// AND:
-//
+//     roomNumber
+//         ↓
 //     AgroStore.roomNumber
 //         ↓
 //     Inventory.dwellNumber
 //
 // ==========================================================
-
 
 const mongoose =
     require("mongoose");
@@ -80,22 +71,18 @@ async function list({
 
 
     // ======================================================
-    // NORMALIZE AGROSTORE ROOM NUMBER
+    // NORMALIZE ROOM NUMBER
     // ======================================================
 
     const storeNumber =
-        Number(
-            roomNumber
-        );
+        Number(roomNumber);
 
 
     // ======================================================
-    // VALIDATE AGROSTORE ROOM NUMBER
+    // VALIDATE ROOM NUMBER
     // ======================================================
     //
-    // AgroStore roomNumber MUST be:
-    //
-    //     negative integer
+    // AgroStore roomNumber must be a negative integer.
     //
     // ======================================================
 
@@ -118,14 +105,6 @@ async function list({
 
     // ======================================================
     // FIND PARENT DAIRY FARM
-    // ======================================================
-    //
-    // parentId is the actual MongoDB _id supplied
-    // by the URL.
-    //
-    // We therefore do NOT try to guess the parent
-    // from AgroStore.roomNumber.
-    //
     // ======================================================
 
     const parentDairy =
@@ -164,19 +143,16 @@ async function list({
 
 
     // ======================================================
-    // VALIDATE PARENT FARM CODE
-    // ======================================================
-    //
-    // A Dairy Farm's code is the value used by its
-    // child AgroStore as assetCode.
-    //
+    // GET FARM CODE
     // ======================================================
 
     const farmCode =
-        Number(
-            parentDairy.code
-        );
+        Number(parentDairy.code);
 
+
+    // ======================================================
+    // VALIDATE FARM CODE
+    // ======================================================
 
     if (
         !Number.isInteger(farmCode) ||
@@ -199,20 +175,17 @@ async function list({
     // FIND AGROSTORE
     // ======================================================
     //
-    // The AgroStore MUST satisfy BOTH relationships:
+    // BOTH relationships are required:
     //
-    //     assetCode
-    //         =
+    //     AgroStore.assetCode
+    //         ===
     //     parentDairy.code
     //
-    // AND
+    // AND:
     //
-    //     roomNumber
-    //         =
+    //     AgroStore.roomNumber
+    //         ===
     //     supplied roomNumber
-    //
-    // This is important because AgroStore roomNumber
-    // is unique only within a parent farm.
     //
     // ======================================================
 
@@ -262,9 +235,7 @@ async function list({
     // ======================================================
 
     const authoritativeStoreNumber =
-        Number(
-            agroStore.roomNumber
-        );
+        Number(agroStore.roomNumber);
 
 
     if (
@@ -287,7 +258,7 @@ async function list({
 
 
     // ======================================================
-    // VERIFY AGROSTORE ROOM NUMBER MATCH
+    // VERIFY ROOM NUMBER MATCH
     // ======================================================
 
     if (
@@ -308,18 +279,11 @@ async function list({
 
 
     // ======================================================
-    // VERIFY AGROSTORE OWNERSHIP
-    // ======================================================
-    //
-    // AgroStore.assetCode MUST equal the parent
-    // Dairy Farm's code.
-    //
+    // VERIFY AGROSTORE FARM CODE
     // ======================================================
 
     const agroStoreFarmCode =
-        Number(
-            agroStore.assetCode
-        );
+        Number(agroStore.assetCode);
 
 
     if (
@@ -347,14 +311,14 @@ async function list({
     //
     // Inventory belongs to this AgroStore through:
     //
-    //     assetCode
-    //         =
-    //     parent Dairy Farm.code
+    //     Inventory.assetCode
+    //         ===
+    //     parentDairy.code
     //
-    // AND
+    // AND:
     //
-    //     dwellNumber
-    //         =
+    //     Inventory.dwellNumber
+    //         ===
     //     AgroStore.roomNumber
     //
     // ======================================================
@@ -376,10 +340,8 @@ async function list({
 
         })
         .sort({
-
             updatedAt:
                 -1
-
         });
 
 
