@@ -6,28 +6,14 @@
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Updates an inventory record belonging to a specific
+// Update an inventory record belonging to a specific
 // AgroStore within a specific Dairy Farm.
 //
 // URL CONTRACT:
 //
 //     /dairy/:parentId/agroStore/:roomNumber/inventory/:inventoryId/update
 //
-// Therefore:
-//
-//     parentId
-//         = parent Dairy Farm MongoDB _id
-//
-//     roomNumber
-//         = AgroStore.roomNumber
-//
-//     inventoryId
-//         = Inventory MongoDB _id
-//
-// ==========================================================
-//
-// RELATIONSHIP
-// ----------------------------------------------------------
+// ID RELATIONSHIP:
 //
 //     parentId
 //         ↓
@@ -37,27 +23,17 @@
 //         ↓
 //     AgroStore.assetCode
 //
-// AND:
-//
+//     roomNumber
+//         ↓
 //     AgroStore.roomNumber
 //         ↓
 //     Inventory.dwellNumber
 //
-// Therefore an inventory record belongs to the requested
-// AgroStore only when:
-//
-//     inventory.assetCode
-//         ===
-//     parentDairy.code
-//
-// AND:
-//
-//     inventory.dwellNumber
-//         ===
-//     agroStore.roomNumber
+//     inventoryId
+//         ↓
+//     Inventory._id
 //
 // ==========================================================
-
 
 const mongoose =
     require("mongoose");
@@ -69,33 +45,6 @@ const Dairy =
 // ==========================================================
 // UPDATE AGROSTORE INVENTORY
 // ==========================================================
-//
-// Quantity:
-//
-//     old = 250
-//     new = 200
-//         → allowed
-//
-//     old = 250
-//     new = 250
-//         → allowed
-//
-//     old = 250
-//     new = 300
-//         → rejected
-//
-// ==========================================================
-//
-// REQUIRED INPUT:
-//
-//     parentId
-//     roomNumber
-//     inventoryId
-//     quantity
-//     stockUpdateNote
-//
-// ==========================================================
-
 
 async function update({
 
@@ -110,7 +59,6 @@ async function update({
     stockUpdateNote
 
 }) {
-
 
     // ======================================================
     // VALIDATE PARENT DAIRY ID
@@ -134,23 +82,15 @@ async function update({
 
 
     // ======================================================
-    // NORMALIZE AGROSTORE ROOM NUMBER
+    // NORMALIZE ROOM NUMBER
     // ======================================================
 
     const storeNumber =
-        Number(
-            roomNumber
-        );
+        Number(roomNumber);
 
 
     // ======================================================
-    // VALIDATE AGROSTORE ROOM NUMBER
-    // ======================================================
-    //
-    // AgroStore roomNumber MUST be:
-    //
-    //     negative integer
-    //
+    // VALIDATE ROOM NUMBER
     // ======================================================
 
     if (
@@ -173,15 +113,9 @@ async function update({
     // ======================================================
     // VALIDATE INVENTORY ID
     // ======================================================
-    //
-    // inventoryId IS a MongoDB _id.
-    //
-    // This is different from roomNumber.
-    //
-    // ======================================================
 
     if (
-        !mongoose.Types.ObjectId.isValid(
+        !mongoose.isValidObjectId(
             inventoryId
         )
     ) {
@@ -200,11 +134,6 @@ async function update({
 
     // ======================================================
     // FIND PARENT DAIRY FARM
-    // ======================================================
-    //
-    // parentId is the actual MongoDB _id supplied by
-    // the URL.
-    //
     // ======================================================
 
     const parentDairy =
@@ -243,17 +172,15 @@ async function update({
 
 
     // ======================================================
-    // GET PARENT FARM CODE
+    // GET FARM CODE
     // ======================================================
 
     const farmCode =
-        Number(
-            parentDairy.code
-        );
+        Number(parentDairy.code);
 
 
     // ======================================================
-    // VALIDATE PARENT FARM CODE
+    // VALIDATE FARM CODE
     // ======================================================
 
     if (
@@ -277,19 +204,8 @@ async function update({
     // FIND AGROSTORE
     // ======================================================
     //
-    // The AgroStore must belong to THIS parent farm.
-    //
-    // Therefore both relationships are required:
-    //
-    //     assetCode
-    //         =
-    //     parentDairy.code
-    //
-    // AND:
-    //
-    //     roomNumber
-    //         =
-    //     supplied roomNumber
+    // The AgroStore must belong to this exact parent farm
+    // AND have the supplied roomNumber.
     //
     // ======================================================
 
@@ -335,13 +251,11 @@ async function update({
 
 
     // ======================================================
-    // VALIDATE AGROSTORE ROOM NUMBER
+    // VERIFY AGROSTORE ROOM NUMBER
     // ======================================================
 
     const authoritativeStoreNumber =
-        Number(
-            agroStore.roomNumber
-        );
+        Number(agroStore.roomNumber);
 
 
     if (
@@ -387,16 +301,9 @@ async function update({
     // ======================================================
     // VERIFY AGROSTORE OWNERSHIP
     // ======================================================
-    //
-    // The AgroStore's assetCode MUST equal the parent
-    // Dairy Farm's code.
-    //
-    // ======================================================
 
     const agroStoreFarmCode =
-        Number(
-            agroStore.assetCode
-        );
+        Number(agroStore.assetCode);
 
 
     if (
@@ -419,14 +326,14 @@ async function update({
 
 
     // ======================================================
-    // FIND INVENTORY RECORD
+    // FIND EXACT INVENTORY RECORD
     // ======================================================
     //
-    // The inventory must belong to:
+    // Three identities are enforced:
     //
-    //     1. This exact inventory _id
-    //     2. This parent Dairy Farm
-    //     3. This exact AgroStore
+    //     inventory._id
+    //     inventory.assetCode
+    //     inventory.dwellNumber
     //
     // ======================================================
 
@@ -472,19 +379,11 @@ async function update({
 
 
     // ======================================================
-    // VERIFY INVENTORY IS AGROSTORE CONTENT
-    // ======================================================
-    //
-    // AgroStore inventory must have:
-    //
-    //     dwellNumber < 0
-    //
+    // VERIFY INVENTORY DWELL NUMBER
     // ======================================================
 
     const inventoryDwellNumber =
-        Number(
-            inventory.dwellNumber
-        );
+        Number(inventory.dwellNumber);
 
 
     if (
@@ -507,12 +406,7 @@ async function update({
 
 
     // ======================================================
-    // VERIFY INVENTORY ROOM NUMBER
-    // ======================================================
-    //
-    // Inventory.dwellNumber MUST equal the AgroStore's
-    // roomNumber.
-    //
+    // VERIFY INVENTORY BELONGS TO AGROSTORE
     // ======================================================
 
     if (
@@ -533,17 +427,11 @@ async function update({
 
 
     // ======================================================
-    // VERIFY INVENTORY PARENT FARM
-    // ======================================================
-    //
-    // Inventory.assetCode MUST equal the parent farm code.
-    //
+    // VERIFY INVENTORY BELONGS TO FARM
     // ======================================================
 
     const inventoryFarmCode =
-        Number(
-            inventory.assetCode
-        );
+        Number(inventory.assetCode);
 
 
     if (
@@ -566,13 +454,11 @@ async function update({
 
 
     // ======================================================
-    // INVENTORY MUST HAVE VALID QUANTITY
+    // VALIDATE CURRENT QUANTITY
     // ======================================================
 
     const currentQuantity =
-        Number(
-            inventory.quantity
-        );
+        Number(inventory.quantity);
 
 
     if (
@@ -599,9 +485,7 @@ async function update({
     // ======================================================
 
     const newQuantity =
-        Number(
-            quantity
-        );
+        Number(quantity);
 
 
     // ======================================================
@@ -628,7 +512,7 @@ async function update({
 
 
     // ======================================================
-    // NO NEGATIVE STOCK
+    // NO NEGATIVE QUANTITY
     // ======================================================
 
     if (
@@ -648,7 +532,7 @@ async function update({
 
 
     // ======================================================
-    // QUANTITY MAY ONLY REDUCE
+    // QUANTITY MAY ONLY DECREASE
     // ======================================================
 
     if (
@@ -706,7 +590,7 @@ async function update({
 
 
     // ======================================================
-    // RETURN UPDATED DATA
+    // RETURN
     // ======================================================
 
     return {
