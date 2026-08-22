@@ -54,6 +54,19 @@ RULES:
        dairy.needsMaintenance === true.
 
 
+ITEM LINKS:
+------------------------------------------------------------
+
+itemLink.ejs
+   Appears when:
+       itemLinks contains one or more items.
+
+   Variable:
+       itemLinks
+
+   This variable name is used consistently.
+
+
 CARD LAYOUT:
 ------------------------------------------------------------
 
@@ -69,12 +82,14 @@ ORDER:
 ------------------------------------------------------------
 
 1. Add an update
-2. Milking status
-3. Milking history
-4. Food Stock
-5. Medical
-6. Maintenance
-7. Clear maintenance
+2. H1
+3. Animal feed item links
+4. Milking status
+5. Milking history
+6. Food Stock
+7. Medical
+8. Maintenance
+9. Clear maintenance
 
 
 EXPECTED DATA:
@@ -82,6 +97,7 @@ EXPECTED DATA:
 
 dairy
 user
+itemLinks
 
 ============================================================
 */ %>
@@ -172,7 +188,7 @@ user
          DETERMINE FEED STORE
 
          A Feed Store is a STRUCTURE whose exact
-         STRUCTURE_TYPES value is:
+         structure type is:
 
              "feedStore"
 
@@ -241,7 +257,7 @@ user
 
 
         <!-- =================================================
-             1. CREATE
+             1. ADD AN UPDATE
 
              ALWAYS VISIBLE
         ================================================== -->
@@ -254,7 +270,41 @@ user
 
 
         <!-- =================================================
-             2. MILKING STATUS
+             2. H1
+
+             ALWAYS VISIBLE
+        ================================================== -->
+
+        <%- include("h1", {
+            dairy: dairy,
+            user: user
+        }) %>
+
+
+
+        <!-- =================================================
+             3. ANIMAL FEED ITEM LINKS
+
+             Uses:
+
+                 itemLinks
+
+             The itemLink partial internally handles
+             an empty itemLinks array.
+
+             No other variable name is used.
+        ================================================== -->
+
+        <%- include("storage/itemLink", {
+            dairy: dairy,
+            user: user,
+            itemLinks: itemLinks || []
+        }) %>
+
+
+
+        <!-- =================================================
+             4. MILKING STATUS
 
              Positive EVEN dairy code only.
         ================================================== -->
@@ -271,7 +321,7 @@ user
 
 
         <!-- =================================================
-             3. MILKING HISTORY
+             5. MILKING HISTORY
 
              Positive EVEN dairy code only.
 
@@ -292,7 +342,7 @@ user
 
 
         <!-- =================================================
-             4. FOOD STOCK
+             6. FOOD STOCK
 
              Appears ONLY for a structure whose exact
              structure type is:
@@ -318,7 +368,7 @@ user
 
 
         <!-- =================================================
-             5. MARK MEDICAL
+             7. MARK MEDICAL
 
              Appears when:
 
@@ -338,7 +388,7 @@ user
 
 
         <!-- =================================================
-             6. CLEAR MEDICAL
+             8. CLEAR MEDICAL
 
              Appears when:
 
@@ -358,7 +408,7 @@ user
 
 
         <!-- =================================================
-             7. MAINTENANCE COMPOSER
+             9. MAINTENANCE COMPOSER
 
              ONLY when:
 
@@ -383,7 +433,7 @@ user
 
 
         <!-- =================================================
-             8. CLEAR MAINTENANCE
+             10. CLEAR MAINTENANCE
 
              ONLY when:
 
