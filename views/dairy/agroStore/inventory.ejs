@@ -1,0 +1,1215 @@
+<style>
+
+    /* =========================================================
+       AGROSTORE INVENTORY PAGE
+    ========================================================= */
+
+    .agrostore-page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+
+    /* =========================================================
+       PAGE HEADER
+    ========================================================= */
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+
+        margin-bottom: 25px;
+        padding: 22px;
+
+        background: #ffffff;
+
+        border-radius: 16px;
+
+        border-left: 5px solid #0b5d1e;
+
+        box-shadow:
+            0 6px 20px rgba(0, 0, 0, 0.06);
+    }
+
+
+    .page-header-main {
+        min-width: 0;
+    }
+
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+
+        margin-bottom: 10px;
+
+        color: #0b5d1e;
+
+        font-size: 14px;
+        font-weight: 600;
+
+        text-decoration: none;
+    }
+
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+
+
+    .page-header h2 {
+        margin: 0;
+
+        color: #0b5d1e;
+
+        font-size: 25px;
+        line-height: 1.25;
+
+        word-break: break-word;
+    }
+
+
+    .page-subtitle {
+        margin: 7px 0 0;
+
+        color: #777;
+
+        font-size: 14px;
+    }
+
+
+    /* =========================================================
+       STORE BADGE
+    ========================================================= */
+
+    .store-badge {
+        flex-shrink: 0;
+
+        min-width: 90px;
+
+        padding: 12px 16px;
+
+        text-align: center;
+
+        background: #f1f8f3;
+
+        border: 1px solid #d7eadb;
+
+        border-radius: 12px;
+    }
+
+
+    .store-badge span {
+        display: block;
+
+        margin-bottom: 4px;
+
+        color: #6c7a70;
+
+        font-size: 11px;
+        font-weight: 600;
+
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+
+    .store-badge strong {
+        display: block;
+
+        color: #0b5d1e;
+
+        font-size: 22px;
+    }
+
+
+    /* =========================================================
+       EMPTY STATE
+    ========================================================= */
+
+    .empty-state {
+        padding: 55px 25px;
+
+        text-align: center;
+
+        background: #ffffff;
+
+        border-radius: 16px;
+
+        border: 1px solid #e8e8e8;
+
+        box-shadow:
+            0 6px 20px rgba(0, 0, 0, 0.05);
+    }
+
+
+    .empty-icon {
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        width: 65px;
+        height: 65px;
+
+        margin: 0 auto 18px;
+
+        background: #f1f8f3;
+
+        border-radius: 50%;
+
+        font-size: 28px;
+    }
+
+
+    .empty-state h3 {
+        margin: 0 0 8px;
+
+        color: #333;
+
+        font-size: 20px;
+    }
+
+
+    .empty-state p {
+        max-width: 500px;
+
+        margin: 0 auto;
+
+        color: #777;
+
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+
+    /* =========================================================
+       INVENTORY GRID
+    ========================================================= */
+
+    .inventory-grid {
+        display: grid;
+
+        grid-template-columns:
+            repeat(auto-fill, minmax(340px, 1fr));
+
+        gap: 22px;
+    }
+
+
+    /* =========================================================
+       INVENTORY CARD
+    ========================================================= */
+
+    .inventory-card {
+        overflow: hidden;
+
+        background: #ffffff;
+
+        border-radius: 17px;
+
+        border: 1px solid #e7e7e7;
+
+        box-shadow:
+            0 7px 22px rgba(0, 0, 0, 0.07);
+
+        transition:
+            transform .2s ease,
+            box-shadow .2s ease;
+    }
+
+
+    .inventory-card:hover {
+        transform: translateY(-2px);
+
+        box-shadow:
+            0 10px 28px rgba(0, 0, 0, 0.09);
+    }
+
+
+    /* =========================================================
+       SYSTEM HEADER
+    ========================================================= */
+
+    .inventory-header {
+        display: flex;
+
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 15px;
+
+        padding: 16px;
+
+        border-bottom: 1px solid #eeeeee;
+    }
+
+
+    .sender {
+        display: flex;
+
+        align-items: center;
+
+        min-width: 0;
+    }
+
+
+    .sender-image {
+        width: 44px;
+        height: 44px;
+
+        flex-shrink: 0;
+
+        object-fit: cover;
+
+        border-radius: 50%;
+
+        border: 2px solid #e5f1e8;
+    }
+
+
+    .sender-details {
+        min-width: 0;
+
+        margin-left: 11px;
+    }
+
+
+    .sender-details strong {
+        display: block;
+
+        color: #222;
+
+        font-size: 14px;
+    }
+
+
+    .sender-details span {
+        display: block;
+
+        margin-top: 3px;
+
+        color: #888;
+
+        font-size: 11px;
+    }
+
+
+    /* =========================================================
+       LAST UPDATED
+    ========================================================= */
+
+    .last-updated {
+        flex-shrink: 0;
+
+        text-align: right;
+    }
+
+
+    .last-updated span {
+        display: block;
+
+        color: #999;
+
+        font-size: 10px;
+
+        text-transform: uppercase;
+
+        letter-spacing: .4px;
+    }
+
+
+    .last-updated time {
+        display: block;
+
+        margin-top: 3px;
+
+        color: #555;
+
+        font-size: 11px;
+    }
+
+
+    /* =========================================================
+       ALERT / NOTIFICATION
+    ========================================================= */
+
+    .inventory-alert {
+        margin: 16px 16px 0;
+
+        padding: 13px 15px;
+
+        background: #f1f8f3;
+
+        border-left: 4px solid #0b5d1e;
+
+        border-radius: 9px;
+    }
+
+
+    .inventory-alert h3 {
+        margin: 0;
+
+        color: #0b5d1e;
+
+        font-size: 15px;
+
+        line-height: 1.4;
+    }
+
+
+    /* =========================================================
+       INVENTORY CONTENT
+    ========================================================= */
+
+    .inventory-content {
+        padding: 18px 16px 20px;
+    }
+
+
+    /* =========================================================
+       ITEM TITLE
+    ========================================================= */
+
+    .item-title {
+        display: flex;
+
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 10px;
+
+        margin-bottom: 17px;
+    }
+
+
+    .item-title h4 {
+        margin: 0;
+
+        color: #222;
+
+        font-size: 19px;
+
+        word-break: break-word;
+    }
+
+
+    .item-type {
+        flex-shrink: 0;
+
+        padding: 5px 9px;
+
+        color: #0b5d1e;
+
+        background: #eef7f1;
+
+        border-radius: 20px;
+
+        font-size: 10px;
+        font-weight: 600;
+
+        text-transform: uppercase;
+    }
+
+
+    /* =========================================================
+       SECTION
+    ========================================================= */
+
+    .inventory-section {
+        margin-bottom: 18px;
+    }
+
+
+    .section-label {
+        display: block;
+
+        margin-bottom: 6px;
+
+        color: #777;
+
+        font-size: 11px;
+        font-weight: 700;
+
+        text-transform: uppercase;
+
+        letter-spacing: .5px;
+    }
+
+
+    .description {
+        margin: 0;
+
+        color: #444;
+
+        font-size: 14px;
+
+        line-height: 1.65;
+
+        white-space: pre-wrap;
+    }
+
+
+    /* =========================================================
+       QUANTITY DISPLAY
+    ========================================================= */
+
+    .quantity-display {
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        margin-bottom: 20px;
+
+        padding: 17px;
+
+        background: #fafafa;
+
+        border: 1px solid #eeeeee;
+
+        border-radius: 12px;
+    }
+
+
+    .quantity-value {
+        display: block;
+
+        color: #0b5d1e;
+
+        font-size: 29px;
+
+        line-height: 1.1;
+    }
+
+
+    .quantity-unit {
+        margin-left: 4px;
+
+        color: #777;
+
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+
+    /* =========================================================
+       UPDATE FORM
+    ========================================================= */
+
+    .inventory-update-form {
+        padding-top: 18px;
+
+        border-top: 1px solid #eeeeee;
+    }
+
+
+    .form-group {
+        margin-bottom: 17px;
+    }
+
+
+    .form-group label {
+        display: block;
+
+        margin-bottom: 7px;
+
+        color: #333;
+
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+
+    /* =========================================================
+       QUANTITY INPUT
+    ========================================================= */
+
+    .quantity-input-wrapper {
+        position: relative;
+
+        display: flex;
+
+        align-items: center;
+    }
+
+
+    .quantity-input-wrapper input {
+        width: 100%;
+
+        box-sizing: border-box;
+
+        padding: 12px 55px 12px 13px;
+
+        color: #222;
+
+        background: #ffffff;
+
+        border: 1px solid #d9d9d9;
+
+        border-radius: 9px;
+
+        outline: none;
+
+        font-size: 14px;
+    }
+
+
+    .quantity-input-wrapper input:focus {
+        border-color: #0b5d1e;
+
+        box-shadow:
+            0 0 0 3px rgba(11, 93, 30, .10);
+    }
+
+
+    .input-unit {
+        position: absolute;
+
+        right: 13px;
+
+        color: #777;
+
+        font-size: 12px;
+        font-weight: 600;
+
+        pointer-events: none;
+    }
+
+
+    /* =========================================================
+       TEXTAREA
+    ========================================================= */
+
+    .inventory-update-form textarea {
+        display: block;
+
+        width: 100%;
+
+        min-height: 95px;
+
+        box-sizing: border-box;
+
+        padding: 12px 13px;
+
+        resize: vertical;
+
+        color: #333;
+
+        background: #ffffff;
+
+        border: 1px solid #d9d9d9;
+
+        border-radius: 9px;
+
+        outline: none;
+
+        font-family: inherit;
+
+        font-size: 13px;
+
+        line-height: 1.5;
+    }
+
+
+    .inventory-update-form textarea:focus {
+        border-color: #0b5d1e;
+
+        box-shadow:
+            0 0 0 3px rgba(11, 93, 30, .10);
+    }
+
+
+    /* =========================================================
+       FORM HELP
+    ========================================================= */
+
+    .field-help {
+        display: block;
+
+        margin-top: 6px;
+
+        color: #888;
+
+        font-size: 11px;
+
+        line-height: 1.5;
+    }
+
+
+    .field-help strong {
+        color: #555;
+    }
+
+
+    /* =========================================================
+       UPDATE BUTTON
+    ========================================================= */
+
+    .update-stock-button {
+        display: block;
+
+        width: 100%;
+
+        padding: 13px 18px;
+
+        color: #ffffff;
+
+        background: #0b5d1e;
+
+        border: none;
+
+        border-radius: 9px;
+
+        cursor: pointer;
+
+        font-family: inherit;
+
+        font-size: 14px;
+        font-weight: 700;
+
+        transition:
+            background .2s ease,
+            transform .1s ease;
+    }
+
+
+    .update-stock-button:hover {
+        background: #084a17;
+    }
+
+
+    .update-stock-button:active {
+        transform: scale(.99);
+    }
+
+
+    /* =========================================================
+       PREVIOUS UPDATE
+    ========================================================= */
+
+    .previous-update {
+        margin-top: 18px;
+
+        padding: 13px 14px;
+
+        background: #fffdf3;
+
+        border-left: 3px solid #d8b84c;
+
+        border-radius: 8px;
+    }
+
+
+    .previous-update p {
+        margin: 0;
+
+        color: #555;
+
+        font-size: 13px;
+
+        line-height: 1.6;
+
+        white-space: pre-wrap;
+    }
+
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+
+    @media (max-width: 700px) {
+
+        .agrostore-page {
+            padding: 14px;
+        }
+
+
+        .page-header {
+            align-items: flex-start;
+
+            padding: 17px;
+
+            border-radius: 13px;
+        }
+
+
+        .page-header h2 {
+            font-size: 21px;
+        }
+
+
+        .store-badge {
+            min-width: 65px;
+
+            padding: 9px 11px;
+        }
+
+
+        .store-badge strong {
+            font-size: 18px;
+        }
+
+
+        .inventory-grid {
+            grid-template-columns: 1fr;
+
+            gap: 17px;
+        }
+
+
+        .inventory-header {
+            align-items: flex-start;
+        }
+
+
+        .last-updated time {
+            max-width: 100px;
+
+            line-height: 1.4;
+        }
+
+    }
+
+
+    @media (max-width: 430px) {
+
+        .page-header {
+            display: block;
+        }
+
+
+        .store-badge {
+            display: inline-block;
+
+            margin-top: 14px;
+        }
+
+
+        .inventory-header {
+            display: block;
+        }
+
+
+        .last-updated {
+            margin-top: 12px;
+
+            text-align: left;
+        }
+
+
+        .last-updated time {
+            max-width: none;
+        }
+
+
+        .item-title {
+            align-items: flex-start;
+
+            flex-direction: column;
+        }
+
+
+        .item-type {
+            align-self: flex-start;
+        }
+
+    }
+
+</style>
+
+
+<div class="agrostore-page">
+
+
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+
+    <div class="page-header">
+
+        <div class="page-header-main">
+
+            <a
+                href="/dairy/<%= parentDairy._id %>"
+                class="back-link"
+            >
+                ← Back to Dairy Farm
+            </a>
+
+            <h2>
+                <%= agroStore.name || "AgroStore Inventory" %>
+            </h2>
+
+            <p class="page-subtitle">
+                AgroStore
+                <%= agroStore.roomNumber %>
+            </p>
+
+        </div>
+
+
+        <div class="store-badge">
+
+            <span>
+                Storage
+            </span>
+
+            <strong>
+                <%= agroStore.roomNumber %>
+            </strong>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         EMPTY INVENTORY
+    ====================================================== -->
+
+    <% if (!inventory || inventory.length === 0) { %>
+
+        <div class="empty-state">
+
+            <div class="empty-icon">
+                📦
+            </div>
+
+            <h3>
+                No inventory yet
+            </h3>
+
+            <p>
+                There are currently no active records allocated
+                to this AgroStore.
+            </p>
+
+        </div>
+
+    <% } else { %>
+
+
+
+        <!-- =================================================
+             INVENTORY GRID
+        ================================================== -->
+
+        <div class="inventory-grid">
+
+            <% inventory.forEach(item => { %>
+
+                <article
+                    class="inventory-card"
+                    data-inventory-id="<%= item._id %>"
+                >
+
+
+                    <!-- ======================================
+                         SYSTEM HEADER
+                    ======================================= -->
+
+                    <div class="inventory-header">
+
+                        <div class="sender">
+
+                            <img
+                                src="/images/h1.png"
+                                alt="System"
+                                class="sender-image"
+                            >
+
+                            <div class="sender-details">
+
+                                <strong>
+                                    System
+                                </strong>
+
+                                <span>
+                                    AgroStore Inventory
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="last-updated">
+
+                            <span>
+                                Last updated
+                            </span>
+
+                            <time
+                                datetime="<%= item.updatedAt
+                                    ? new Date(item.updatedAt).toISOString()
+                                    : ""
+                                %>"
+                            >
+                                <%= item.updatedAt
+                                    ? new Date(item.updatedAt).toLocaleString()
+                                    : "Not available"
+                                %>
+                            </time>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- ======================================
+                         ALERT
+                    ======================================= -->
+
+                    <div class="inventory-alert">
+
+                        <h3>
+                            New animal feeds around.
+                        </h3>
+
+                    </div>
+
+
+
+                    <!-- ======================================
+                         CONTENT
+                    ======================================= -->
+
+                    <div class="inventory-content">
+
+
+                        <!-- ==================================
+                             ITEM NAME
+                        =================================== -->
+
+                        <div class="item-title">
+
+                            <h4>
+                                <%= item.name || "Unnamed Inventory Item" %>
+                            </h4>
+
+
+                            <% if (item.type) { %>
+
+                                <span class="item-type">
+                                    <%= item.type %>
+                                </span>
+
+                            <% } %>
+
+                        </div>
+
+
+
+                        <!-- ==================================
+                             DESCRIPTION
+                        =================================== -->
+
+                        <% if (item.description) { %>
+
+                            <div class="inventory-section">
+
+                                <span class="section-label">
+                                    Description
+                                </span>
+
+                                <p class="description">
+                                    <%= item.description %>
+                                </p>
+
+                            </div>
+
+                        <% } %>
+
+
+
+                        <!-- ==================================
+                             CURRENT QUANTITY
+                        =================================== -->
+
+                        <div class="quantity-display">
+
+                            <div>
+
+                                <span class="section-label">
+                                    Current quantity
+                                </span>
+
+                                <strong class="quantity-value">
+
+                                    <%= item.quantity !== null &&
+                                        item.quantity !== undefined
+                                            ? item.quantity
+                                            : 0 %>
+
+                                    <% if (item.unit) { %>
+
+                                        <span class="quantity-unit">
+                                            <%= item.unit %>
+                                        </span>
+
+                                    <% } %>
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- ==================================
+                             UPDATE FORM
+                        =================================== -->
+
+                        <form
+                            method="POST"
+                            action="/dairy/<%= parentDairy._id %>/agroStore/<%= agroStore.roomNumber %>/inventory/<%= item._id %>/update"
+                            class="inventory-update-form"
+                        >
+
+
+                            <!-- ==================================
+                                 QUANTITY
+                            =================================== -->
+
+                            <div class="form-group">
+
+                                <label
+                                    for="quantity-<%= item._id %>"
+                                >
+                                    New remaining quantity
+                                </label>
+
+
+                                <div class="quantity-input-wrapper">
+
+                                    <input
+                                        id="quantity-<%= item._id %>"
+                                        type="number"
+                                        name="quantity"
+                                        min="0"
+                                        max="<%= Number(item.quantity) || 0 %>"
+                                        step="any"
+                                        value="<%= Number(item.quantity) || 0 %>"
+                                        required
+                                    />
+
+
+                                    <% if (item.unit) { %>
+
+                                        <span class="input-unit">
+                                            <%= item.unit %>
+                                        </span>
+
+                                    <% } %>
+
+                                </div>
+
+
+                                <small class="field-help">
+
+                                    You can only reduce the current
+                                    stock quantity.
+
+                                    Maximum:
+                                    <strong>
+                                        <%= Number(item.quantity) || 0 %>
+                                    </strong>
+
+                                    <%= item.unit || "" %>
+
+                                </small>
+
+                            </div>
+
+
+
+                            <!-- ==================================
+                                 ADDITIONAL INFORMATION
+                            =================================== -->
+
+                            <div class="form-group">
+
+                                <label
+                                    for="stockUpdateNote-<%= item._id %>"
+                                >
+                                    Stock update information
+                                </label>
+
+
+                                <textarea
+                                    id="stockUpdateNote-<%= item._id %>"
+                                    name="stockUpdateNote"
+                                    rows="4"
+                                    maxlength="5000"
+                                    placeholder="Enter additional information about this stock update..."
+                                ><%= item.stockUpdateNote || "" %></textarea>
+
+
+                                <small class="field-help">
+
+                                    Describe what happened to the
+                                    stock or add any other useful
+                                    information.
+
+                                </small>
+
+                            </div>
+
+
+
+                            <!-- ==================================
+                                 SUBMIT
+                            =================================== -->
+
+                            <button
+                                type="submit"
+                                class="update-stock-button"
+                            >
+                                Update Stock
+                            </button>
+
+                        </form>
+
+
+
+                        <!-- ==================================
+                             LATEST STOCK UPDATE
+                        =================================== -->
+
+                        <% if (item.stockUpdateNote) { %>
+
+                            <div class="previous-update">
+
+                                <span class="section-label">
+                                    Latest stock update information
+                                </span>
+
+                                <p>
+                                    <%= item.stockUpdateNote %>
+                                </p>
+
+                            </div>
+
+                        <% } %>
+
+
+                    </div>
+
+                </article>
+
+            <% }) %>
+
+        </div>
+
+    <% } %>
+
+
+</div>
