@@ -2,38 +2,20 @@
 // server.js
 // ==========================================================
 
-const express =
-  require("express");
+const express = require("express");
+const http = require("http");
+const path = require("path");
 
-const http =
-  require("http");
+const expressLayouts = require("express-ejs-layouts");
+const session = require("express-session");
 
-const path =
-  require("path");
+const { rateLimit } = require("express-rate-limit");
+const { Server } = require("socket.io");
 
-const expressLayouts =
-  require("express-ejs-layouts");
-
-const session =
-  require("express-session");
-
-const { rateLimit } =
-  require("express-rate-limit");
-
-const { Server } =
-  require("socket.io");
-
-const helmet =
-  require("helmet");
-
-const compression =
-  require("compression");
-
-const morgan =
-  require("morgan");
-
-const methodOverride =
-  require("method-override");
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
+const methodOverride = require("method-override");
 
 require("dotenv").config();
 
@@ -46,8 +28,7 @@ let MongoStore;
 
 try {
 
-  MongoStore =
-    require("connect-mongo");
+  MongoStore = require("connect-mongo");
 
 } catch (error) {
 
@@ -69,13 +50,9 @@ const isProduction =
 if (isProduction) {
 
   const requiredEnvVars = [
-
     "MONGO_URI",
-
     "SESSION_SECRET",
-
     "FRONTEND_URL"
-
   ];
 
 
@@ -88,9 +65,7 @@ if (isProduction) {
   if (missing.length) {
 
     console.error(
-
       `❌ Production startup failed: missing required environment variables: ${missing.join(", ")}`
-
     );
 
     process.exit(1);
@@ -104,8 +79,7 @@ if (isProduction) {
 // DATABASE
 // ==========================================================
 
-const connectDB =
-  require("./db");
+const connectDB = require("./db");
 
 
 // ==========================================================
@@ -121,8 +95,7 @@ let indexRoutes;
 
 try {
 
-  indexRoutes =
-    require("./routes/index");
+  indexRoutes = require("./routes/index");
 
 } catch (err) {
 
@@ -142,8 +115,7 @@ let authRoutes;
 
 try {
 
-  authRoutes =
-    require("./routes/auth");
+  authRoutes = require("./routes/auth");
 
 } catch (err) {
 
@@ -163,8 +135,7 @@ let createRoutes;
 
 try {
 
-  createRoutes =
-    require("./routes/create");
+  createRoutes = require("./routes/create");
 
 } catch (err) {
 
@@ -184,8 +155,7 @@ let updateRoutes;
 
 try {
 
-  updateRoutes =
-    require("./routes/update");
+  updateRoutes = require("./routes/update");
 
 } catch (err) {
 
@@ -205,8 +175,7 @@ let addRoutes;
 
 try {
 
-  addRoutes =
-    require("./routes/add");
+  addRoutes = require("./routes/add");
 
 } catch (err) {
 
@@ -226,8 +195,7 @@ let profileRoutes;
 
 try {
 
-  profileRoutes =
-    require("./routes/profile");
+  profileRoutes = require("./routes/profile");
 
 } catch (err) {
 
@@ -247,8 +215,7 @@ let milkRoutes;
 
 try {
 
-  milkRoutes =
-    require("./routes/milk");
+  milkRoutes = require("./routes/milk");
 
 } catch (err) {
 
@@ -268,8 +235,7 @@ let accountsRoutes;
 
 try {
 
-  accountsRoutes =
-    require("./routes/accounts");
+  accountsRoutes = require("./routes/accounts");
 
 } catch (err) {
 
@@ -289,8 +255,7 @@ let networthRoutes;
 
 try {
 
-  networthRoutes =
-    require("./routes/networth");
+  networthRoutes = require("./routes/networth");
 
 } catch (err) {
 
@@ -310,8 +275,7 @@ let financialsRoutes;
 
 try {
 
-  financialsRoutes =
-    require("./routes/financials");
+  financialsRoutes = require("./routes/financials");
 
 } catch (err) {
 
@@ -327,9 +291,7 @@ try {
 // STORAGE
 // ==========================================================
 //
-// Rooms
-// AgroStores
-// Storage filtering
+// Handles storage facilities / rooms / AgroStores.
 //
 // Mounted at:
 //
@@ -347,8 +309,7 @@ let storageRoutes;
 
 try {
 
-  storageRoutes =
-    require("./routes/storage");
+  storageRoutes = require("./routes/storage");
 
 } catch (err) {
 
@@ -361,34 +322,53 @@ try {
 
 
 // ==========================================================
-// ANIMAL FEEDS / AGROSTORE STOCK
+// INVENTORY
 // ==========================================================
 //
-// Animal-feed stock update routes.
+// AgroStore inventory.
+//
+// IMPORTANT ROUTING CONTRACT
+// ----------------------------------------------------------
+//
+// Inventory pages use:
+//
+//     /dairy/:parentId/agroStore/:roomNumber
+//
+// Where:
+//
+//     parentId
+//         = _id of the parent Dairy farm
+//
+//     roomNumber
+//         = roomNumber of the AgroStore
 //
 // IMPORTANT:
 //
-// The EJS card submits to:
+// parentId is NOT the AgroStore's _id.
 //
-//     /dairy/:storageId/animal-feeds/:feedId/update
-//
-// Therefore this router is mounted at:
+// The inventory router is mounted at:
 //
 //     /dairy
 //
-// The animal-feeds router itself must define:
+// Therefore routes/inventory.js should define:
 //
-//     POST /:storageId/animal-feeds/:feedId/update
+//     GET /:parentId/agroStore/:roomNumber
 //
-// Resulting in:
+// Result:
 //
-//     POST /dairy/:storageId/animal-feeds/:feedId/update
+//     GET /dairy/:parentId/agroStore/:roomNumber
 //
-// where:
+// ----------------------------------------------------------
 //
-//     storageId = AgroStore dairy._id
+// Inventory updates can use:
 //
-//     feedId    = individual stock item's _id
+//     POST
+//     /dairy/:parentId/agroStore/:roomNumber/inventory/:inventoryId/update
+//
+// Therefore routes/inventory.js should define:
+//
+//     POST
+//     /:parentId/agroStore/:roomNumber/inventory/:inventoryId/update
 //
 // ==========================================================
 
@@ -396,13 +376,12 @@ let inventoryRoutes;
 
 try {
 
-  inventoryRoutes =
-    require("./inventory");
+  inventoryRoutes = require("./routes/inventory");
 
 } catch (err) {
 
   console.warn(
-    "Warning: failed to load animal-feeds routes:",
+    "Warning: failed to load inventory routes:",
     err.message
   );
 
@@ -594,17 +573,13 @@ const socketHandler =
 // APP
 // ==========================================================
 
-const app =
-  express();
-
+const app = express();
 
 const server =
   http.createServer(app);
 
 
-app.disable(
-  "x-powered-by"
-);
+app.disable("x-powered-by");
 
 
 // ==========================================================
@@ -616,15 +591,11 @@ if (
   process.env.TRUST_PROXY === "1"
 ) {
 
-  app.enable(
-    "trust proxy"
-  );
+  app.enable("trust proxy");
 
 } else {
 
-  app.disable(
-    "trust proxy"
-  );
+  app.disable("trust proxy");
 
 }
 
@@ -637,11 +608,9 @@ app.use(
 
   helmet({
 
-    contentSecurityPolicy:
-      false,
+    contentSecurityPolicy: false,
 
-    crossOriginEmbedderPolicy:
-      false
+    crossOriginEmbedderPolicy: false
 
   })
 
@@ -664,11 +633,9 @@ app.use(
         ? 200
         : 1000,
 
-    standardHeaders:
-      true,
+    standardHeaders: true,
 
-    legacyHeaders:
-      false,
+    legacyHeaders: false,
 
     message: {
 
@@ -733,11 +700,8 @@ const io =
           allowedOrigin,
 
         methods: [
-
           "GET",
-
           "POST"
-
         ]
 
       }
@@ -747,15 +711,10 @@ const io =
   );
 
 
-app.set(
-  "io",
-  io
-);
+app.set("io", io);
 
 
-socketHandler(
-  io
-);
+socketHandler(io);
 
 
 // ==========================================================
@@ -766,11 +725,9 @@ app.use(
 
   express.urlencoded({
 
-    extended:
-      true,
+    extended: true,
 
-    limit:
-      "10mb"
+    limit: "10mb"
 
   })
 
@@ -781,8 +738,7 @@ app.use(
 
   express.json({
 
-    limit:
-      "10mb"
+    limit: "10mb"
 
   })
 
@@ -805,9 +761,7 @@ app.use(
 const sessionStore =
 
   isProduction &&
-
   process.env.MONGO_URI &&
-
   MongoStore
 
     ? MongoStore.create({
@@ -835,11 +789,9 @@ app.use(
       process.env.SESSION_SECRET ||
 
       (
-
         isProduction
           ? ""
           : "development-session-secret"
-
       ),
 
     store:
@@ -863,13 +815,9 @@ app.use(
         "lax",
 
       maxAge:
-
         1000 *
-
         60 *
-
         60 *
-
         24
 
     }
@@ -927,11 +875,9 @@ app.get(
 
     return res.status(200).json({
 
-      status:
-        "ok",
+      status: "ok",
 
       environment:
-
         process.env.NODE_ENV ||
         "development"
 
@@ -971,11 +917,8 @@ app.use(
   express.static(
 
     path.join(
-
       __dirname,
-
       "public/uploads"
-
     )
 
   )
@@ -1017,7 +960,7 @@ app.set(
 
 
 // ==========================================================
-// ROUTES
+// ROUTE MOUNTING
 // ==========================================================
 
 
@@ -1028,11 +971,8 @@ app.set(
 if (indexRoutes) {
 
   app.use(
-
     "/",
-
     indexRoutes
-
   );
 
 }
@@ -1045,11 +985,8 @@ if (indexRoutes) {
 if (createRoutes) {
 
   app.use(
-
     "/create-invite",
-
     createRoutes
-
   );
 
 }
@@ -1062,11 +999,8 @@ if (createRoutes) {
 if (authRoutes) {
 
   app.use(
-
     "/",
-
     authRoutes
-
   );
 
 }
@@ -1079,11 +1013,8 @@ if (authRoutes) {
 if (updateRoutes) {
 
   app.use(
-
     "/",
-
     updateRoutes
-
   );
 
 }
@@ -1096,11 +1027,8 @@ if (updateRoutes) {
 if (addRoutes) {
 
   app.use(
-
     "/add",
-
     addRoutes
-
   );
 
 }
@@ -1113,11 +1041,8 @@ if (addRoutes) {
 if (profileRoutes) {
 
   app.use(
-
     "/",
-
     profileRoutes
-
   );
 
 }
@@ -1130,11 +1055,8 @@ if (profileRoutes) {
 if (milkRoutes) {
 
   app.use(
-
     "/",
-
     milkRoutes
-
   );
 
 }
@@ -1147,11 +1069,8 @@ if (milkRoutes) {
 if (accountsRoutes) {
 
   app.use(
-
     "/accounts",
-
     accountsRoutes
-
   );
 
 }
@@ -1164,11 +1083,8 @@ if (accountsRoutes) {
 if (networthRoutes) {
 
   app.use(
-
     "/networth",
-
     networthRoutes
-
   );
 
 }
@@ -1181,11 +1097,8 @@ if (networthRoutes) {
 if (financialsRoutes) {
 
   app.use(
-
     "/financials",
-
     financialsRoutes
-
   );
 
 }
@@ -1194,61 +1107,42 @@ if (financialsRoutes) {
 // ==========================================================
 // STORAGE
 // ==========================================================
-//
-// Storage routes:
-//
-//     /storage
-//
-// Examples:
-//
-//     /storage
-//     /storage?type=room
-//     /storage?type=agroStore
-//
-// ==========================================================
 
 if (storageRoutes) {
 
   app.use(
-
     "/storage",
-
     storageRoutes
-
   );
 
 }
 
 
 // ==========================================================
-// ANIMAL FEEDS / AGROSTORE STOCK
+// INVENTORY
 // ==========================================================
 //
-// IMPORTANT ROUTING:
+// routes/inventory.js
 //
-// The view uses:
+// Mounted at:
+//
+//     /dairy
+//
+// Final inventory URLs:
+//
+//     GET
+//     /dairy/:parentId/agroStore/:roomNumber
 //
 //     POST
-//     /dairy/<storageId>/animal-feeds/<feedId>/update
-//
-// Therefore:
-//
-//     app.use("/dairy", animalFeedsRoutes)
-//
-// NOT:
-//
-//     app.use("/inventory", inventoryRoutes)
+//     /dairy/:parentId/agroStore/:roomNumber/inventory/:inventoryId/update
 //
 // ==========================================================
 
 if (inventoryRoutes) {
 
   app.use(
-
     "/dairy",
-
     inventoryRoutes
-
   );
 
 }
@@ -1261,11 +1155,8 @@ if (inventoryRoutes) {
 if (poultryStatsRoutes) {
 
   app.use(
-
     "/poultry-stats",
-
     poultryStatsRoutes
-
   );
 
 }
@@ -1274,11 +1165,8 @@ if (poultryStatsRoutes) {
 if (eggRoutes) {
 
   app.use(
-
     "/eggs",
-
     eggRoutes
-
   );
 
 }
@@ -1287,11 +1175,8 @@ if (eggRoutes) {
 if (cageRoutes) {
 
   app.use(
-
     "/cage",
-
     cageRoutes
-
   );
 
 }
@@ -1300,11 +1185,8 @@ if (cageRoutes) {
 if (nursingRoutes) {
 
   app.use(
-
     "/nursing",
-
     nursingRoutes
-
   );
 
 }
@@ -1313,11 +1195,8 @@ if (nursingRoutes) {
 if (incubationRoutes) {
 
   app.use(
-
     "/incubation",
-
     incubationRoutes
-
   );
 
 }
@@ -1326,11 +1205,8 @@ if (incubationRoutes) {
 if (financeRoutes) {
 
   app.use(
-
     "/finance",
-
     financeRoutes
-
   );
 
 }
@@ -1339,11 +1215,8 @@ if (financeRoutes) {
 if (dashboardRoutes) {
 
   app.use(
-
     "/dashboard",
-
     dashboardRoutes
-
   );
 
 }
@@ -1356,11 +1229,8 @@ if (dashboardRoutes) {
 if (farmRoutes) {
 
   app.use(
-
     "/farm",
-
     farmRoutes
-
   );
 
 }
@@ -1419,9 +1289,7 @@ app.use(
       Number(
 
         err.statusCode ||
-
         err.status ||
-
         500
 
       );
@@ -1441,8 +1309,7 @@ app.use(
         "LIMIT_FILE_SIZE"
       ) {
 
-        statusCode =
-          400;
+        statusCode = 400;
 
         err.message =
           "The uploaded image is too large. Maximum size is 5MB.";
@@ -1462,26 +1329,19 @@ app.use(
 
       const views = {
 
-        400:
-          "400",
+        400: "400",
 
-        401:
-          "401",
+        401: "401",
 
-        403:
-          "403",
+        403: "403",
 
-        404:
-          "404",
+        404: "404",
 
-        409:
-          "409",
+        409: "409",
 
-        422:
-          "422",
+        422: "422",
 
-        500:
-          "500"
+        500: "500"
 
       };
 
@@ -1524,8 +1384,7 @@ app.use(
       statusCode
     ).json({
 
-      success:
-        false,
+      success: false,
 
       message:
 
@@ -1549,10 +1408,8 @@ app.use(
 
 const PORT =
   Number(
-
     process.env.PORT ||
     3000
-
   );
 
 
@@ -1560,9 +1417,7 @@ const PORT =
 // START SERVER
 // ==========================================================
 
-const startServer = (
-  port
-) => {
+const startServer = (port) => {
 
   server.listen(
 
@@ -1696,9 +1551,7 @@ const bootstrap = async () => {
     // DATABASE AVAILABLE
     // ======================================================
 
-    if (
-      dbConnected
-    ) {
+    if (dbConnected) {
 
       console.log(
         "✅ MongoDB connected."
@@ -1711,14 +1564,10 @@ const bootstrap = async () => {
     // DATABASE UNAVAILABLE
     // ======================================================
 
-    else if (
-      isProduction
-    ) {
+    else if (isProduction) {
 
       console.error(
-
         "❌ Production startup failed: MongoDB is unavailable."
-
       );
 
       process.exit(1);
@@ -1728,9 +1577,7 @@ const bootstrap = async () => {
     else {
 
       console.warn(
-
         "⚠️ MongoDB is unavailable. Starting server without database initialization."
-
       );
 
     }
@@ -1740,10 +1587,7 @@ const bootstrap = async () => {
     // START SERVER
     // ======================================================
 
-    startServer(
-      PORT
-    );
-
+    startServer(PORT);
 
   } catch (error) {
 
@@ -1753,9 +1597,7 @@ const bootstrap = async () => {
     );
 
 
-    if (
-      isProduction
-    ) {
+    if (isProduction) {
 
       process.exit(1);
 
@@ -1763,12 +1605,10 @@ const bootstrap = async () => {
 
 
     // ------------------------------------------------------
-    // Development mode
+    // DEVELOPMENT MODE
     // ------------------------------------------------------
 
-    startServer(
-      PORT
-    );
+    startServer(PORT);
 
   }
 
