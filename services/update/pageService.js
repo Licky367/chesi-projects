@@ -1,6 +1,47 @@
 // ==========================================================
 // services/update/pageService.js
 // ==========================================================
+//
+// DAIRY PAGE SERVICE
+//
+// Responsibilities:
+//
+// - Current Dairy Farm / Asset
+// - Farm assets
+// - Updates
+// - Weekly milk feeds
+// - Comment count
+// - Assigned farms for dairy workers
+// - AgroStore animal-feed contents
+//
+// IMPORTANT AGROSTORE LOGIC:
+//
+// When /dairy/:id points to an AgroStore:
+//
+//     id
+//       ↓
+//     AgroStore._id
+//       ↓
+//     AgroStore.roomNumber
+//       ↓
+//     Dairy.dwellNumber
+//
+// Therefore:
+//
+//     AgroStore._id
+//         identifies the AgroStore
+//
+//     AgroStore.roomNumber
+//         identifies its contents
+//
+//     Dairy.dwellNumber
+//         identifies which AgroStore a stock item belongs to
+//
+// The AgroStore itself is NOT an animal-feed item.
+//
+// The normal Update feed remains completely separate.
+// ==========================================================
+
 
 const Dairy =
     require("../../models/dairy");
@@ -18,6 +59,20 @@ const {
 
 
 // ==========================================================
+// AGROSTORE ANIMAL FEED SERVICE
+// ==========================================================
+//
+// This service is used ONLY to obtain the contents of an
+// AgroStore.
+//
+// It does NOT replace the normal Update feed.
+// ==========================================================
+
+const animalFeedsService =
+    require("./storage/animalFeedsService");
+
+
+// ==========================================================
 // GET COMPLETE DAIRY PAGE
 //
 // Loads:
@@ -28,6 +83,7 @@ const {
 // - Weekly milk feeds
 // - Comment count
 // - Assigned farms for the logged-in dairy worker
+// - AgroStore animal-feed contents
 //
 // FARM FEED:
 //
@@ -52,6 +108,15 @@ const {
 //     Only updates belonging to that specific asset.
 //     Only weekly milk feeds belonging to that asset.
 //
+// AGROSTORE FEED:
+//
+// When the current Dairy is an AgroStore:
+//
+//     animalFeeds contains ONLY the Dairy records whose:
+//
+//         dwellNumber === AgroStore.roomNumber
+//
+// The AgroStore itself is NOT included in animalFeeds.
 // ==========================================================
 
 exports.getDairyPage =
@@ -73,6 +138,65 @@ async (
         throw new Error(
             "Dairy profile not found."
         );
+
+    }
+
+
+    // ======================================================
+    // AGROSTORE ANIMAL FEEDS
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // This is deliberately separate from the normal
+    // Update feed below.
+    //
+    // For an AgroStore:
+    //
+    //     dairy._id
+    //          ↓
+    //     AgroStore._id
+    //          ↓
+    //     AgroStore.roomNumber
+    //          ↓
+    //     Dairy.dwellNumber
+    //
+    // Only matching contents are returned.
+    //
+    // We do NOT use:
+    //
+    //     dairy._id
+    //
+    // as a feed item's parent.
+    //
+    // We do NOT treat AgroStores in stock as feed cards.
+    //
+    // The AgroStore is the storage location.
+    // The matching dwellNumber records are its contents.
+    // ======================================================
+
+    let animalFeeds = [];
+
+
+    const isAgroStore =
+
+        dairy.recordType ===
+            "structure" &&
+
+        dairy.type ===
+            "agroStore";
+
+
+    if (isAgroStore) {
+
+        const animalFeedResult =
+            await animalFeedsService.getAnimalFeeds(
+                dairy._id
+            );
+
+
+        animalFeeds =
+            animalFeedResult.feeds || [];
 
     }
 
@@ -144,7 +268,8 @@ async (
 
             user &&
 
-            user.role === "dairyWorker" &&
+            user.role ===
+                "dairyWorker" &&
 
             Array.isArray(
                 user.assignedFarm
@@ -245,6 +370,11 @@ async (
     //     - maintenance updates
     //     - weekly milk feeds
     //
+    // IMPORTANT:
+    //
+    // AgroStore animalFeeds are NOT added to this list.
+    //
+    // They remain separate from the normal Update feed.
     // ======================================================
 
     let updateDairyIds = [
@@ -334,6 +464,11 @@ async (
     //     Farm maintenance
     //     Asset maintenance
     //
+    // IMPORTANT:
+    //
+    // This query is completely independent of animalFeeds.
+    //
+    // AgroStore contents do NOT enter the Update feed here.
     // ======================================================
 
     const updates =
@@ -485,7 +620,6 @@ async (
         // and also gives us the ID for:
         //
         //     /dairy/:id
-        //
         // ==================================================
 
         dairyWeeklyFeeds.forEach(
@@ -602,17 +736,68 @@ async (
 
     return {
 
+        // --------------------------------------------------
+        // CURRENT DAIRY / ASSET
+        // --------------------------------------------------
+
         dairy,
+
+
+        // --------------------------------------------------
+        // NORMAL UPDATE FEED
+        //
+        // Existing logic.
+        // --------------------------------------------------
 
         feed,
 
+
+        // --------------------------------------------------
+        // WEEKLY MILK FEEDS
+        //
+        // Existing logic.
+        // --------------------------------------------------
+
         weeklyFeeds,
+
+
+        // --------------------------------------------------
+        // COMMENT COUNT
+        // --------------------------------------------------
 
         commentCount,
 
+
+        // --------------------------------------------------
+        // CURRENT FARM ASSETS
+        // --------------------------------------------------
+
         assetDairies,
 
-        assignedFarms
+
+        // --------------------------------------------------
+        // ASSIGNED FARMS
+        // --------------------------------------------------
+
+        assignedFarms,
+
+
+        // --------------------------------------------------
+        // AGROSTORE CONTENTS
+        //
+        // Only populated when the current dairy is an
+        // AgroStore.
+        //
+        // These are records where:
+        //
+        //     Dairy.dwellNumber
+        //         ===
+        //     AgroStore.roomNumber
+        //
+        // This is intentionally NOT merged into `feed`.
+        // --------------------------------------------------
+
+        animalFeeds
 
     };
 
@@ -636,7 +821,6 @@ async (
 //     • modify any other Dairy fields
 //
 // Returns the updated Dairy document.
-//
 // ==========================================================
 
 exports.toggleMilking =
@@ -713,7 +897,6 @@ async (
 //
 // The requested farm MUST exist inside the logged-in
 // user's assignedFarm array.
-//
 // ==========================================================
 
 exports.getAssignedFarmForUser =
@@ -746,7 +929,8 @@ async (
     // ======================================================
 
     if (
-        user.role !== "dairyWorker"
+        user.role !==
+        "dairyWorker"
     ) {
 
         return null;
