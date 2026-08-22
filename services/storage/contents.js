@@ -1092,6 +1092,166 @@ async function getStorageContents({
 
 
 // ==========================================================
+// GET SINGLE CONTENT ITEM DETAILS
+// ==========================================================
+//
+// URL:
+//
+//     /storage/:dairyId/contents/:storageId/details/:itemId
+//
+// PURPOSE:
+//
+//     Retrieve one specific item currently contained inside
+//     a specific storage facility.
+//
+// IMPORTANT:
+//
+//     The item must:
+//
+//         1. Belong to the parent Dairy Farm
+//
+//         2. Belong to the requested storage facility
+//
+//         3. Satisfy the existing storage content rules
+//
+// ----------------------------------------------------------
+// ROOM
+// ----------------------------------------------------------
+//
+//     assetCode === dairy.code
+//     dwellNumber === storage.roomNumber
+//     type !== "feeds"
+//     recordType !== "structure"
+//
+// ----------------------------------------------------------
+// AGROSTORE
+// ----------------------------------------------------------
+//
+//     assetCode === dairy.code
+//     dwellNumber === storage.roomNumber
+//     quantity > 0
+//
+// ==========================================================
+
+async function getContentItemDetails({
+    dairyId,
+    storageId,
+    itemId
+}) {
+
+    // ======================================================
+    // VALIDATE ITEM ID
+    // ======================================================
+
+    if (
+        !isValidObjectId(
+            itemId
+        )
+    ) {
+
+        throw createError(
+            "Invalid content item ID.",
+            400
+        );
+    }
+
+
+    // ======================================================
+    // FIND PARENT FARM
+    // ======================================================
+
+    const dairy =
+        await findParentFarm(
+            dairyId
+        );
+
+
+    // ======================================================
+    // FIND STORAGE
+    // ======================================================
+
+    const storage =
+        await findStorageForFarm({
+
+            dairy,
+
+            storageId
+
+        });
+
+
+    // ======================================================
+    // CURRENT CONTENT FILTER
+    // ======================================================
+    //
+    // Reuse exactly the same rules as the contents page.
+    //
+    // This guarantees that the details page cannot display
+    // an item that is not actually contained in the selected
+    // storage facility.
+    //
+    // ======================================================
+
+    const contentFilter =
+        currentContentFilter({
+
+            dairy,
+
+            storage
+
+        });
+
+
+    // ======================================================
+    // FIND ITEM
+    // ======================================================
+
+    const item =
+        await Dairy.findOne({
+
+            _id:
+                itemId,
+
+            ...contentFilter
+
+        })
+        .lean();
+
+
+    // ======================================================
+    // ITEM NOT FOUND
+    // ======================================================
+
+    if (
+        !item
+    ) {
+
+        throw createError(
+            "The selected item was not found in this storage facility.",
+            404
+        );
+
+    }
+
+
+    // ======================================================
+    // RETURN
+    // ======================================================
+
+    return {
+
+        dairy,
+
+        storage,
+
+        item
+
+    };
+
+}
+
+
+// ==========================================================
 // GET AVAILABLE ITEMS
 // ==========================================================
 
@@ -1989,15 +2149,6 @@ async function updateFeedQuantity({
     // ======================================================
     // FIND CURRENT FEED
     // ======================================================
-    //
-    // The selected Dairy record is located by:
-    //
-    //     dwellNumber === roomNumber
-    //
-    // Quantity is deliberately not required here because
-    // the current quantity may be changed to zero.
-    //
-    // ======================================================
 
     const feed =
         await Dairy.findOne({
@@ -2225,6 +2376,8 @@ module.exports = {
     // ------------------------------------------------------
 
     getStorageContents,
+
+    getContentItemDetails,
 
     getAvailableItems,
 
