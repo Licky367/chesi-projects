@@ -296,7 +296,7 @@ router.post(
 //
 //     Update one item currently contained in storage.
 //
-// POSSIBLE FORM FIELDS:
+// BODY:
 //
 //     quantity
 //     unit
@@ -351,28 +351,36 @@ router.post(
 
 
 // ==========================================================
-// UPDATE AGROSTORE QUANTITY
+// LEGACY AGROSTORE QUANTITY UPDATE
 // ==========================================================
 //
-// DEPRECATED ARCHITECTURE:
+// POST:
 //
-//     /quantity
+//     /storage/:dairyId/contents/:storageId/quantity
 //
-// Quantity updates are now handled by:
+// PURPOSE:
+//
+//     Retained for compatibility with forms or code that
+//     still uses the previous quantity-update architecture.
+//
+// NEW CODE SHOULD USE:
 //
 //     /update/:itemId
 //
-// together with:
-//
-//     stockUpdateNote
-//     images
-//     recordedBy
-//     timestamp
-//
-// DO NOT KEEP THE OLD ROUTE if the controller/service has
-// been migrated to the new content-item update architecture.
+// The same controller/service logic is used.
 //
 // ==========================================================
+
+router.post(
+    "/:dairyId/contents/:storageId/quantity",
+
+    uploadMiddleware.array(
+        "images",
+        10
+    ),
+
+    storageController.updateQuantity
+);
 
 
 // ==========================================================
