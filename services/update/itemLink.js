@@ -1,138 +1,45 @@
- // ==========================================================
+// ==========================================================
 // services/update/itemLink.js
-// STORAGE ITEM LINK SERVICE
 // ==========================================================
 //
-// PURPOSE
-// ----------------------------------------------------------
+// PURPOSE:
 //
-// Detect Dairy records that are STORAGE ITEMS and generate
-// their storage details URL.
+// Generates the animal-feed item links that are displayed
+// on:
 //
-// DEFINITIONS
-// ----------------------------------------------------------
+//     views/update/storage/itemLink.ejs
 //
-// PARENT FARM:
+// CONTRACT:
 //
-//     recordType = "farm"
-//     code < 0
+//     Input:
+//         dairy
 //
-// AGROSTORE:
+//     Output:
+//         Array of itemLinks
 //
-//     recordType = "structure"
-//     type = "agroStore"
-//     roomNumber < 0
-//
-// NORMAL ROOM:
-//
-//     recordType = "structure"
-//     type = "room"
-//     roomNumber > 0
-//
-// ITEM:
-//
-//     Any Dairy record with a non-null dwellNumber.
-//
-// OWNERSHIP:
-//
-//     Parent Farm owns:
-//
-//         item.assetCode === parentFarm.code
-//
-//         storage.assetCode === parentFarm.code
-//
-//     Storage owns:
-//
-//         item.dwellNumber === storage.roomNumber
-//
-// GENERATED URL:
-//
-//     storage/<parentId>/contents/<storageId>/details/<itemId>
+// Every returned itemLink represents an animal-feed item
+// belonging to an AgroStore associated with the current
+// Dairy Farm.
 //
 // ==========================================================
 
 
 const Dairy =
-    require("../../models/dairy");
+    require("../../models/Dairy");
 
 
 // ==========================================================
-// BUILD ITEM DETAILS URL
+// GET ITEM LINKS
 // ==========================================================
 
-function buildItemDetailsUrl(
-    parentId,
-    storageId,
-    itemId
-) {
-
-    if (
-        !parentId ||
-        !storageId ||
-        !itemId
-    ) {
-
-        return null;
-
-    }
-
-
-    return (
-        `storage/${parentId}` +
-        `/contents/${storageId}` +
-        `/details/${itemId}`
-    );
-
-}
-
-
-// ==========================================================
-// GET ALL STORAGE ITEMS
-// ==========================================================
-//
-// Detects all Dairy records having a dwellNumber.
-//
-// For every valid item:
-//
-//     item.assetCode
-//         -> parent farm code
-//
-//     item.dwellNumber
-//         -> storage.roomNumber
-//
-// The returned object contains:
-//
-//     item
-//     parentFarm
-//     storage
-//     detailsUrl
-//
-// ==========================================================
-
-async function getAllStorageItems() {
+exports.getItemLinks =
+async function (dairyId) {
 
     // ======================================================
-    // FIND ITEMS
+    // SAFETY
     // ======================================================
 
-    const items =
-        await Dairy.find({
-
-            dwellNumber: {
-                $ne: null
-            },
-
-            assetCode: {
-                $ne: null
-            }
-
-        })
-        .lean();
-
-
-    if (
-        !items.length
-    ) {
+    if (!dairyId) {
 
         return [];
 
@@ -140,35 +47,36 @@ async function getAllStorageItems() {
 
 
     // ======================================================
-    // GET UNIQUE PARENT FARM CODES
+    // CURRENT DAIRY
     // ======================================================
 
-    const farmCodes = [
-
-        ...new Set(
-
-            items
-
-                .map(
-                    item =>
-                        Number(
-                            item.assetCode
-                        )
-                )
-
-                .filter(
-                    code =>
-                        Number.isInteger(code) &&
-                        code < 0
-                )
-
+    const dairy =
+        await Dairy.findById(
+            dairyId
         )
+        .lean();
 
-    ];
+
+    if (!dairy) {
+
+        return [];
+
+    }
+
+
+    // ======================================================
+    // ONLY DAIRY FARM
+    //
+    // Dairy Farms use negative codes.
+    // ======================================================
+
+    const dairyCode =
+        Number(dairy.code);
 
 
     if (
-        !farmCodes.length
+        !Number.isFinite(dairyCode) ||
+        dairyCode >= 0
     ) {
 
         return [];
@@ -177,471 +85,32 @@ async function getAllStorageItems() {
 
 
     // ======================================================
-    // FIND PARENT FARMS
+    // FIND AGROSTORES
+    //
+    // AgroStores are structures whose roomNumber is
+    // negative.
+    //
+    // The parent farm is identified through farmCode.
     // ======================================================
 
-    const farms =
+    const agroStores =
         await Dairy.find({
 
-            recordType: "farm",
-
-            code: {
-                $in: farmCodes
-            }
-
-        })
-        .lean();
-
-
-    // ======================================================
-    // INDEX FARMS BY CODE
-    // ======================================================
-
-    const farmsByCode =
-        new Map();
-
-
-    for (
-        const farm of farms
-    ) {
-
-        farmsByCode.set(
-
-            Number(
-                farm.code
-            ),
-
-            farm
-
-        );
-
-    }
-
-
-    // ======================================================
-    // FIND STORAGE FACILITIES
-    // ======================================================
-
-    const storages =
-        await Dairy.find({
-
-            recordType: "structure",
-
-            type: {
-                $in: [
-                    "room",
-                    "agroStore"
-                ]
-            },
-
-            assetCode: {
-                $in: farmCodes
-            },
+            farmCode:
+                dairy.code,
 
             roomNumber: {
-                $ne: null
-            }
-
-        })
-        .lean();
-
-
-    // ======================================================
-    // INDEX STORAGE
-    //
-    // KEY:
-    //
-    //     farmCode:roomNumber
-    //
-    // ======================================================
-
-    const storageMap =
-        new Map();
-
-
-    for (
-        const storage of storages
-    ) {
-
-        const key =
-            `${Number(storage.assetCode)}:` +
-            `${Number(storage.roomNumber)}`;
-
-
-        storageMap.set(
-            key,
-            storage
-        );
-
-    }
-
-
-    // ======================================================
-    // RESOLVE ITEMS
-    // ======================================================
-
-    const resolvedItems = [];
-
-
-    for (
-        const item of items
-    ) {
-
-        const farmCode =
-            Number(
-                item.assetCode
-            );
-
-
-        const dwellNumber =
-            Number(
-                item.dwellNumber
-            );
-
-
-        // ==================================================
-        // PARENT FARM
-        // ==================================================
-
-        const parentFarm =
-            farmsByCode.get(
-                farmCode
-            );
-
-
-        if (
-            !parentFarm
-        ) {
-
-            continue;
-
-        }
-
-
-        // ==================================================
-        // STORAGE
-        // ==================================================
-
-        const storageKey =
-            `${farmCode}:${dwellNumber}`;
-
-
-        const storage =
-            storageMap.get(
-                storageKey
-            );
-
-
-        if (
-            !storage
-        ) {
-
-            continue;
-
-        }
-
-
-        // ==================================================
-        // VERIFY PARENT OWNERSHIP
-        // ==================================================
-
-        if (
-            Number(
-                storage.assetCode
-            ) !==
-            Number(
-                parentFarm.code
-            )
-        ) {
-
-            continue;
-
-        }
-
-
-        // ==================================================
-        // VERIFY STORAGE OWNERSHIP
-        // ==================================================
-
-        if (
-            Number(
-                storage.roomNumber
-            ) !==
-            Number(
-                item.dwellNumber
-            )
-        ) {
-
-            continue;
-
-        }
-
-
-        // ==================================================
-        // GENERATE DETAILS URL
-        // ==================================================
-
-        const detailsUrl =
-            buildItemDetailsUrl(
-
-                parentFarm._id,
-
-                storage._id,
-
-                item._id
-
-            );
-
-
-        if (
-            !detailsUrl
-        ) {
-
-            continue;
-
-        }
-
-
-        // ==================================================
-        // ADD RESOLVED ITEM
-        // ==================================================
-
-        resolvedItems.push({
-
-            ...item,
-
-            parentFarm,
-
-            storage,
-
-            detailsUrl
-
-        });
-
-    }
-
-
-    return resolvedItems;
-
-}
-
-
-// ==========================================================
-// GET ONE STORAGE ITEM LINK
-// ==========================================================
-//
-// Finds one item and resolves:
-//
-//     item
-//     parentFarm
-//     storage
-//     detailsUrl
-//
-// ==========================================================
-
-async function getStorageItemLink(
-    itemId
-) {
-
-    if (
-        !itemId
-    ) {
-
-        return null;
-
-    }
-
-
-    const item =
-        await Dairy.findOne({
-
-            _id: itemId,
-
-            dwellNumber: {
-                $ne: null
-            },
-
-            assetCode: {
-                $ne: null
-            }
-
-        })
-        .lean();
-
-
-    if (
-        !item
-    ) {
-
-        return null;
-
-    }
-
-
-    const farmCode =
-        Number(
-            item.assetCode
-        );
-
-
-    if (
-        !Number.isInteger(farmCode) ||
-        farmCode >= 0
-    ) {
-
-        return null;
-
-    }
-
-
-    // ======================================================
-    // FIND PARENT FARM
-    // ======================================================
-
-    const parentFarm =
-        await Dairy.findOne({
-
-            recordType: "farm",
-
-            code: farmCode
-
-        })
-        .lean();
-
-
-    if (
-        !parentFarm
-    ) {
-
-        return null;
-
-    }
-
-
-    // ======================================================
-    // FIND STORAGE
-    // ======================================================
-
-    const storage =
-        await Dairy.findOne({
-
-            recordType: "structure",
-
-            type: {
-                $in: [
-                    "room",
-                    "agroStore"
-                ]
-            },
-
-            assetCode: farmCode,
-
-            roomNumber:
-                Number(
-                    item.dwellNumber
-                )
-
-        })
-        .lean();
-
-
-    if (
-        !storage
-    ) {
-
-        return null;
-
-    }
-
-
-    // ======================================================
-    // GENERATE URL
-    // ======================================================
-
-    const detailsUrl =
-        buildItemDetailsUrl(
-
-            parentFarm._id,
-
-            storage._id,
-
-            item._id
-
-        );
-
-
-    return {
-
-        item,
-
-        parentFarm,
-
-        storage,
-
-        detailsUrl
-
-    };
-
-}
-
-
-// ==========================================================
-// GET ITEMS FOR ONE STORAGE
-// ==========================================================
-//
-// parentFarmId
-//     = Dairy Farm _id
-//
-// storageId
-//     = Room / AgroStore _id
-//
-// Returns every item satisfying:
-//
-//     item.assetCode === parentFarm.code
-//
-// AND
-//
-//     item.dwellNumber === storage.roomNumber
-//
-// ==========================================================
-
-async function getStorageItems(
-    parentFarmId,
-    storageId
-) {
-
-    if (
-        !parentFarmId ||
-        !storageId
-    ) {
-
-        return [];
-
-    }
-
-
-    // ======================================================
-    // FIND PARENT FARM
-    // ======================================================
-
-    const parentFarm =
-        await Dairy.findOne({
-
-            _id: parentFarmId,
-
-            recordType: "farm",
-
-            code: {
                 $lt: 0
             }
 
         })
+        .sort({
+            roomNumber: 1
+        })
         .lean();
 
 
-    if (
-        !parentFarm
-    ) {
+    if (!Array.isArray(agroStores)) {
 
         return [];
 
@@ -649,98 +118,111 @@ async function getStorageItems(
 
 
     // ======================================================
-    // FIND STORAGE
+    // BUILD ITEM LINKS
     // ======================================================
 
-    const storage =
-        await Dairy.findOne({
-
-            _id: storageId,
-
-            recordType: "structure",
-
-            type: {
-                $in: [
-                    "room",
-                    "agroStore"
-                ]
-            },
-
-            assetCode:
-                parentFarm.code
-
-        })
-        .lean();
+    const itemLinks = [];
 
 
-    if (
-        !storage
-    ) {
+    agroStores.forEach(
+        function (agroStore) {
 
-        return [];
+            if (
+                !agroStore ||
+                !agroStore._id
+            ) {
 
-    }
+                return;
 
-
-    // ======================================================
-    // FIND ITEMS
-    // ======================================================
-
-    const items =
-        await Dairy.find({
-
-            assetCode:
-                parentFarm.code,
-
-            dwellNumber:
-                storage.roomNumber
-
-        })
-        .lean();
+            }
 
 
-    // ======================================================
-    // ATTACH URL
-    // ======================================================
+            // ==================================================
+            // INVENTORY
+            //
+            // Animal feeds associated with this AgroStore
+            // use:
+            //
+            //     Dairy.dwellNumber ===
+            //     AgroStore.roomNumber
+            //
+            // ==================================================
 
-    return items.map(
-        item => ({
-
-            ...item,
-
-            parentFarm,
-
-            storage,
-
-            detailsUrl:
-                buildItemDetailsUrl(
-
-                    parentFarm._id,
-
-                    storage._id,
-
-                    item._id
-
+            const items =
+                Array.isArray(
+                    agroStore.animalFeeds
                 )
+                    ? agroStore.animalFeeds
+                    : [];
 
-        })
+
+            // ==================================================
+            // CREATE LINK FOR EACH ITEM
+            // ==================================================
+
+            items.forEach(
+                function (item) {
+
+                    if (!item) {
+
+                        return;
+
+                    }
+
+
+                    const itemId =
+                        item._id ||
+                        item.id;
+
+
+                    if (!itemId) {
+
+                        return;
+
+                    }
+
+
+                    const itemName =
+                        item.name ||
+                        item.feedName ||
+                        item.itemName ||
+                        item.title ||
+                        "Animal Feed";
+
+
+                    itemLinks.push({
+
+                        _id:
+                            itemId,
+
+                        name:
+                            itemName,
+
+                        agroStoreId:
+                            agroStore._id,
+
+                        agroStoreName:
+                            agroStore.name ||
+                            agroStore.roomName ||
+                            agroStore.roomNumber ||
+                            "AgroStore",
+
+                        href:
+                            `/dairy/${itemId}`
+
+                    });
+
+                }
+            );
+
+        }
     );
 
-}
 
+    // ======================================================
+    // RETURN
+    // ======================================================
 
-// ==========================================================
-// EXPORTS
-// ==========================================================
-
-module.exports = {
-
-    buildItemDetailsUrl,
-
-    getAllStorageItems,
-
-    getStorageItemLink,
-
-    getStorageItems
+    return itemLinks;
 
 };
