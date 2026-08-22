@@ -1,6 +1,6 @@
 // ==========================================================
 // services/update/storage/animalFeedsService.js
-// =========================================================
+// ==========================================================
 //
 // AGROSTORE ANIMAL FEED / STOCK SERVICE
 //
@@ -8,26 +8,41 @@
 //
 //     • Locate AgroStore by MongoDB _id
 //     • Determine its roomNumber
-//     • Find its contents using dwellNumber
-//     • Return current contents
+//     • Find Dairy records whose dwellingNumber matches
+//       the AgroStore roomNumber
+//     • Load updates belonging to those Dairy records
+//     • Return those updates for feed cards
 //     • Validate stock updates
 //     • Update quantity
 //     • Update additional stock information
 //
-// IMPORTANT STORAGE RELATIONSHIP:
+// IMPORTANT:
 //
+//     The AgroStore itself is ONLY the context.
+//
+//     It is NOT a feed card.
+//
+// RELATIONSHIP:
+//
+//     /dairy/:agroStoreId
+//              │
+//              ▼
 //     AgroStore._id
-//         = storageId
-//
+//              │
+//              ▼
 //     AgroStore.roomNumber
-//         = negative AgroStore number
-//
-//     Content.dwellNumber
-//         = same negative number
-//
-// Therefore:
-//
-//     content.dwellNumber === agroStore.roomNumber
+//              │
+//              ▼
+//     Dairy.dwellingNumber
+//              │
+//              ▼
+//     Matching Dairy records
+//              │
+//              ▼
+//     Update.dairy
+//              │
+//              ▼
+//     Feed cards
 //
 // ==========================================================
 
@@ -37,6 +52,9 @@ const mongoose =
 
 const Dairy =
     require("../../../models/dairy");
+
+const Update =
+    require("../../../models/Update");
 
 
 // ==========================================================
@@ -138,10 +156,16 @@ async function getAgroStore(
 
 
 // ==========================================================
-// GET AGROSTORE CONTENTS
+// GET AGROSTORE FEED UPDATES
 // ==========================================================
 //
-// This is the core relationship.
+// IMPORTANT:
+//
+// This function does NOT return the AgroStore's stock
+// contents.
+//
+// It returns UPDATE records belonging to Dairy records
+// located in the AgroStore's room.
 //
 // Example:
 //
@@ -153,18 +177,26 @@ async function getAgroStore(
 //         roomNumber:
 //             -2
 //
-//     Contents:
+//     Dairy records:
 //
-//         dwellNumber:
+//         dwellingNumber:
 //             -2
 //
-// All such contents belong to that AgroStore.
+//     Updates:
+//
+//         Update.dairy === matching Dairy._id
+//
+// Those Update records become the feed cards.
 //
 // ==========================================================
 
 async function getAnimalFeeds(
     storageId
 ) {
+
+    // ======================================================
+    // GET THE CURRENT AGROSTORE
+    // ======================================================
 
     const agroStore =
         await getAgroStore(
@@ -173,48 +205,128 @@ async function getAnimalFeeds(
 
 
     // ======================================================
-    // FIND CONTENTS
+    // AGROSTORE ROOM NUMBER
     // ======================================================
 
-    const feeds =
+    const roomNumber =
+        Number(
+            agroStore.roomNumber
+        );
+
+
+    // ======================================================
+    // VALIDATE ROOM NUMBER
+    // ======================================================
+
+    if (
+        !Number.isFinite(
+            roomNumber
+        )
+    ) {
+
+        return {
+
+            agroStore,
+
+            feeds: []
+
+        };
+
+    }
+
+
+    // ======================================================
+    // FIND DAIRY RECORDS IN THIS AGROSTORE ROOM
+    // ======================================================
+    //
+    // THIS IS THE IMPORTANT RELATIONSHIP.
+    //
+    // We deliberately DO NOT use:
+    //
+    //     assetCode
+    //
+    // because the feed is determined by:
+    //
+    //     dwellingNumber === AgroStore.roomNumber
+    //
+    // ======================================================
+
+    const roomDairies =
         await Dairy.find({
 
-            // ----------------------------------------------
-            // Same farm
-            // ----------------------------------------------
-
-            assetCode:
-                agroStore.assetCode,
-
-
-            // ----------------------------------------------
-            // Contents are structures
-            // ----------------------------------------------
-
-            recordType:
-                "structure",
-
-
-            // ----------------------------------------------
-            // The content belongs to this AgroStore
-            // ----------------------------------------------
-
-            dwellNumber:
-                agroStore.roomNumber,
-
-
-            // ----------------------------------------------
-            // Only active contents
-            // ----------------------------------------------
+            dwellingNumber:
+                roomNumber,
 
             status:
                 "active"
 
         })
-        .sort({
+        .select(
+            "_id name code type recordType assetCode dwellingNumber profileImage"
+        );
 
-            updatedAt:
-                -1,
+
+    // ======================================================
+    // NO DAIRIES IN THIS ROOM
+    // ======================================================
+
+    if (
+        roomDairies.length === 0
+    ) {
+
+        return {
+
+            agroStore,
+
+            feeds: []
+
+        };
+
+    }
+
+
+    // ======================================================
+    // COLLECT DAIRY IDS
+    // ======================================================
+
+    const dairyIds =
+        roomDairies.map(
+            dairy => dairy._id
+        );
+
+
+    // ======================================================
+    // FIND UPDATES BELONGING TO THOSE DAIRIES
+    // ======================================================
+    //
+    // The AgroStore is NOT queried here.
+    //
+    // Only the matching Dairy records can supply feed
+    // cards.
+    //
+    // ======================================================
+
+    const updates =
+        await Update.find({
+
+            dairy: {
+
+                $in:
+                    dairyIds
+
+            }
+
+        })
+        .populate({
+
+            path:
+                "dairy",
+
+            select:
+                "_id name code type recordType assetCode dwellingNumber profileImage"
+
+        })
+        .sort({
 
             createdAt:
                 -1
@@ -222,11 +334,16 @@ async function getAnimalFeeds(
         });
 
 
+    // ======================================================
+    // RETURN
+    // ======================================================
+
     return {
 
         agroStore,
 
-        feeds
+        feeds:
+            updates
 
     };
 
@@ -237,13 +354,15 @@ async function getAnimalFeeds(
 // GET ONE AGROSTORE CONTENT
 // ==========================================================
 //
-// Verifies BOTH:
+// This function is for the actual stock-management side.
+//
+// It verifies:
 //
 //     feedId
 //
 // AND:
 //
-//     feed belongs to the specified AgroStore
+//     feed belongs to the specified AgroStore.
 //
 // ==========================================================
 
@@ -293,9 +412,6 @@ async function getAnimalFeed(
 
             _id:
                 feedId,
-
-            assetCode:
-                agroStore.assetCode,
 
             recordType:
                 "structure",
@@ -482,15 +598,7 @@ async function updateAnimalFeed(
 
 
     // ======================================================
-    // SAVE THROUGH MONGOOSE
-    // ======================================================
-    //
-    // This is important.
-    //
-    // We use .save() rather than blindly using updateOne()
-    // so the Dairy model's validation/pre-save logic remains
-    // active.
-    //
+    // SAVE
     // ======================================================
 
     await feed.save();
@@ -505,6 +613,10 @@ async function updateAnimalFeed(
             feed._id
         );
 
+
+    // ======================================================
+    // RETURN
+    // ======================================================
 
     return {
 
