@@ -1,180 +1,493 @@
 <%
 /*
 ==============================================================
-DAIRY / ASSET / AGROSTORE PAGE
+ANIMAL FEED / AGROSTORE INVENTORY ITEM
 
 FILE:
-    views/dairySet.ejs
+    views/update/storage/animal-feed-updates.ejs
 
-ROUTE:
-    /dairy/:id
+PURPOSE:
+    Display ONE actual inventory item stored inside an
+    AgroStore.
 
 IMPORTANT:
-    req.params.id
-        = current Dairy._id
 
-FOR AGROSTORE:
-
-    dairy._id
+    storageId
         = AgroStore._id
 
-    dairy.roomNumber
-        = AgroStore roomNumber
+    agroStore
+        = current AgroStore record
 
-    animalFeeds
-        = stock/content belonging to this AgroStore
+    feed._id
+        = inventory item's Dairy._id
 
     feed.dwellNumber
-        = dairy.roomNumber
+        = AgroStore.roomNumber
 
-Therefore:
+RELATIONSHIP:
 
-    feed.dwellNumber === dairy.roomNumber
+    agroStore.roomNumber
+        ===
+    feed.dwellNumber
 
 IMPORTANT:
 
-    animalFeeds are INVENTORY.
+    This is an INVENTORY ITEM.
 
-    They are NOT:
-        • Update documents
-        • Feed/news posts
-        • AgroStore records
-        • Parent records
+    It is NOT:
+        • a feed/news post
+        • an Update document
+        • the AgroStore itself
 
-Each animalFeeds item is an actual Dairy record representing
-stock/content stored inside this AgroStore.
+The page supplies `feed` as one actual inventory record.
 ==============================================================
 */
 
 
 /* ==========================================================
-   SAFE INVENTORY ARRAY
+   SAFE ITEM
 ========================================================== */
 
-const agroStoreInventory =
-    Array.isArray(animalFeeds)
-
-        ? animalFeeds
-
-        : (
-            Array.isArray(feeds)
-                ? feeds
-                : []
-        );
+const item =
+    feed || {};
 
 
 /* ==========================================================
-   DETERMINE WHETHER CURRENT RECORD IS AN AGROSTORE
+   AGROSTORE IDENTIFIER
 ========================================================== */
 
-const isAgroStore =
+const storageIdentifier =
+    storageId ||
+    agroStore?._id ||
+    "";
 
-    dairy &&
 
-    dairy.roomNumber !== null &&
+/* ==========================================================
+   INVENTORY ITEM IDENTIFIER
+========================================================== */
 
-    dairy.roomNumber !== undefined &&
+const feedIdentifier =
+    item._id ||
+    "";
 
-    Number(dairy.roomNumber) < 0;
+
+/* ==========================================================
+   ITEM IMAGE
+========================================================== */
+
+const itemImage =
+    item.displayImage ||
+    (
+        Array.isArray(
+            item.profileImages
+        ) &&
+        item.profileImages.length > 0
+
+            ? item.profileImages[0]
+
+            : item.profileImage
+    ) ||
+    "/images/h1.png";
+
+
+/* ==========================================================
+   ITEM NAME
+========================================================== */
+
+const itemName =
+    item.name ||
+    "Animal Feed";
+
+
+/* ==========================================================
+   ITEM DESCRIPTION
+========================================================== */
+
+const itemDescription =
+    item.description ||
+    "No description provided.";
+
+
+/* ==========================================================
+   ITEM QUANTITY
+========================================================== */
+
+const itemQuantity =
+    item.quantity !== null &&
+    item.quantity !== undefined
+
+        ? item.quantity
+
+        : 0;
+
+
+/* ==========================================================
+   ITEM UNIT
+========================================================== */
+
+const itemUnit =
+    item.unit ||
+    "";
+
+
+/* ==========================================================
+   LATEST STOCK UPDATE NOTE
+========================================================== */
+
+const updateNote =
+    item.stockUpdateNote ||
+    "";
+
+
+/* ==========================================================
+   LAST UPDATED TIME
+========================================================== */
+
+const updatedAt =
+    item.updatedAt ||
+    item.createdAt ||
+    null;
+
+
+/* ==========================================================
+   ITEM TYPE
+========================================================== */
+
+const normalizedType =
+    String(
+        item.type ||
+        ""
+    )
+    .trim()
+    .toLowerCase();
 
 %>
 
 
 
-<div class="dairy-page">
+<article
+
+    class="animal-feed-inventory-card"
+
+    data-feed-id="<%= feedIdentifier %>"
+
+    data-storage-id="<%= storageIdentifier %>"
+
+>
 
 
-    <!-- =====================================================
-         NORMAL UPDATE CARDS
-         
-         These remain part of the existing page logic.
-
-         They are NOT used to determine AgroStore inventory.
+    <!-- ======================================================
+         INVENTORY ITEM HEADER
     ====================================================== -->
 
-    <% if (user) { %>
-
-        <%- include("update/update-cards", {
-            user: user
-        }) %>
-
-    <% } %>
+    <header class="animal-feed-inventory-header">
 
 
+        <img
 
-    <!-- =====================================================
-         PROFILE
-    ====================================================== -->
+            class="animal-feed-inventory-system-image"
 
-    <% if (dairy && dairy.code != null) { %>
+            src="/images/h1.png"
 
-        <%- include("update/profile-card", {
-            dairy: dairy,
-            user: user
-        }) %>
+            alt="System"
 
-    <% } %>
-
-
-
-    <!-- =====================================================
-         AGROSTORE INVENTORY
-         
-         ONLY AgroStores receive this section.
-
-         IMPORTANT:
-
-         dairy = AgroStore
-
-         animalFeeds = actual contents of AgroStore
-
-         We DO NOT do:
-
-             feed: dairy
-
-         because dairy is the AgroStore itself.
-
-         Instead we loop through the actual inventory items.
-    ====================================================== -->
-
-    <% if (isAgroStore) { %>
-
-
-        <section
-            class="agrostore-inventory-section"
-            aria-label="AgroStore inventory"
         >
 
 
-            <!-- =============================================
-                 INVENTORY HEADER
-            ============================================== -->
-
-            <div class="agrostore-inventory-header">
+        <div class="animal-feed-inventory-header-content">
 
 
-                <div class="agrostore-inventory-heading">
+            <div class="animal-feed-inventory-system-name">
 
-                    <h2>
-                        AgroStore Inventory
-                    </h2>
+                System
 
-
-                    <p>
-                        Current animal feed and stock stored
-                        in this AgroStore.
-                    </p>
-
-                </div>
+            </div>
 
 
-                <div class="agrostore-inventory-count">
+            <div class="animal-feed-inventory-title">
 
-                    <%= agroStoreInventory.length %>
+                <%= itemName %>
 
-                    <span>
-                        item<%= agroStoreInventory.length === 1 ? "" : "s" %>
-                    </span>
+            </div>
+
+
+            <div class="animal-feed-inventory-subtitle">
+
+                <% if (
+                    normalizedType === "feeds" ||
+                    normalizedType === "feed"
+                ) { %>
+
+                    Animal Feed Inventory
+
+                <% } else if (
+                    normalizedType === "medicine" ||
+                    normalizedType === "medicines" ||
+                    normalizedType === "meds"
+                ) { %>
+
+                    Veterinary Medicine Inventory
+
+                <% } else { %>
+
+                    AgroStore Inventory
+
+                <% } %>
+
+            </div>
+
+
+            <% if (updatedAt) { %>
+
+                <time
+
+                    class="animal-feed-inventory-time"
+
+                    datetime="<%= new Date(updatedAt).toISOString() %>"
+
+                >
+
+                    <%= new Date(
+                        updatedAt
+                    ).toLocaleString(
+                        "en-KE",
+                        {
+                            dateStyle: "medium",
+                            timeStyle: "short"
+                        }
+                    ) %>
+
+                </time>
+
+            <% } %>
+
+
+        </div>
+
+
+    </header>
+
+
+
+    <!-- ======================================================
+         INVENTORY ITEM DETAILS
+    ====================================================== -->
+
+    <section class="animal-feed-inventory-item">
+
+
+        <!-- ==================================================
+             ITEM IMAGE
+        ================================================== -->
+
+        <div class="animal-feed-inventory-image-wrapper">
+
+
+            <img
+
+                class="animal-feed-inventory-item-image"
+
+                src="<%= itemImage %>"
+
+                alt="<%= itemName %>"
+
+                loading="lazy"
+
+                onerror="this.onerror=null;this.src='/images/h1.png';"
+
+            >
+
+
+        </div>
+
+
+
+        <!-- ==================================================
+             ITEM INFORMATION
+        ================================================== -->
+
+        <div class="animal-feed-inventory-information">
+
+
+            <!-- NAME -->
+
+            <div class="animal-feed-inventory-field">
+
+
+                <span class="animal-feed-inventory-label">
+
+                    Name
+
+                </span>
+
+
+                <span class="animal-feed-inventory-value">
+
+                    <%= itemName %>
+
+                </span>
+
+
+            </div>
+
+
+
+            <!-- DESCRIPTION -->
+
+            <div class="animal-feed-inventory-field">
+
+
+                <span class="animal-feed-inventory-label">
+
+                    Description
+
+                </span>
+
+
+                <span class="animal-feed-inventory-description">
+
+                    <%= itemDescription %>
+
+                </span>
+
+
+            </div>
+
+
+
+            <!-- QUANTITY -->
+
+            <div class="animal-feed-inventory-field">
+
+
+                <span class="animal-feed-inventory-label">
+
+                    Current quantity
+
+                </span>
+
+
+                <span
+                    class="animal-feed-inventory-current-quantity"
+                    data-current-quantity
+                >
+
+                    <%= itemQuantity %>
+
+                    <% if (itemUnit) { %>
+
+                        <%= itemUnit %>
+
+                    <% } %>
+
+                </span>
+
+
+            </div>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- ======================================================
+         LATEST UPDATE
+    ====================================================== -->
+
+    <% if (updateNote) { %>
+
+        <section class="animal-feed-inventory-note">
+
+
+            <div class="animal-feed-inventory-label">
+
+                Latest update
+
+            </div>
+
+
+            <div class="animal-feed-inventory-note-text">
+
+                <%= updateNote %>
+
+            </div>
+
+
+        </section>
+
+    <% } %>
+
+
+
+    <!-- ======================================================
+         UPDATE STOCK
+    ====================================================== -->
+
+    <section class="animal-feed-inventory-edit">
+
+
+        <form
+
+            class="animal-feed-inventory-form"
+
+            method="POST"
+
+            action="/dairy/<%= storageIdentifier %>/animal-feeds/<%= feedIdentifier %>/update"
+
+        >
+
+
+            <!-- =================================================
+                 QUANTITY
+            ================================================= -->
+
+            <div class="animal-feed-inventory-form-group">
+
+
+                <label
+                    for="animal-feed-quantity-<%= feedIdentifier %>"
+                >
+
+                    Current quantity
+
+                </label>
+
+
+                <div class="animal-feed-inventory-quantity-row">
+
+
+                    <input
+
+                        id="animal-feed-quantity-<%= feedIdentifier %>"
+
+                        type="number"
+
+                        name="quantity"
+
+                        min="0"
+
+                        step="any"
+
+                        value="<%= itemQuantity %>"
+
+                        required
+
+                    >
+
+
+                    <% if (itemUnit) { %>
+
+                        <span class="animal-feed-inventory-unit">
+
+                            <%= itemUnit %>
+
+                        </span>
+
+                    <% } %>
+
 
                 </div>
 
@@ -183,153 +496,186 @@ const isAgroStore =
 
 
 
-            <!-- =============================================
-                 INVENTORY ITEMS
-            ============================================== -->
+            <!-- =================================================
+                 ADDITIONAL INFORMATION
+            ================================================== -->
 
-            <% if (agroStoreInventory.length > 0) { %>
-
-
-                <div class="agrostore-inventory-list">
+            <div class="animal-feed-inventory-form-group">
 
 
-                    <% agroStoreInventory.forEach(
-                        function(feed) {
-                    %>
+                <label
+                    for="animal-feed-note-<%= feedIdentifier %>"
+                >
+
+                    Additional information
+
+                </label>
 
 
-                        <!-- =================================
-                             ONE ACTUAL STOCK ITEM
-                        ================================== -->
+                <textarea
 
-                        <%- include(
-                            "update/storage/animal-feed-updates",
-                            {
-                                feed: feed,
+                    id="animal-feed-note-<%= feedIdentifier %>"
 
-                                storageId:
-                                    dairy._id,
+                    name="stockUpdateNote"
 
-                                agroStore:
-                                    dairy
-                            }
-                        ) %>
+                    rows="4"
+
+                    maxlength="5000"
+
+                    placeholder="Enter any additional information about this stock..."
+
+                ><%= updateNote %></textarea>
 
 
-                    <% }); %>
+            </div>
 
 
-                </div>
+
+            <!-- =================================================
+                 SUBMIT
+            ================================================== -->
+
+            <button
+
+                type="submit"
+
+                class="animal-feed-inventory-update-button"
+
+            >
+
+                Update Stock
+
+            </button>
 
 
-            <% } else { %>
+        </form>
 
 
-                <!-- =========================================
-                     EMPTY INVENTORY
-                ========================================== -->
-
-                <div class="agrostore-empty-inventory">
+    </section>
 
 
-                    <div class="agrostore-empty-icon">
-                        📦
-                    </div>
-
-
-                    <strong>
-                        No stock in this AgroStore
-                    </strong>
-
-
-                    <p>
-                        There are currently no animal feed
-                        or stock items assigned to this
-                        AgroStore.
-                    </p>
-
-
-                </div>
-
-
-            <% } %>
-
-
-        </section>
-
-
-    <% } %>
-
-
-</div>
+</article>
 
 
 
 <style>
 
 /* ==========================================================
-   AGROSTORE INVENTORY SECTION
+   INVENTORY CARD
 ========================================================== */
 
-.agrostore-inventory-section {
+.animal-feed-inventory-card {
 
     width: 100%;
 
-    margin:
-        20px
-        0
-        24px;
+    max-width: 680px;
 
-    padding: 0;
+    margin:
+        0
+        auto;
+
+    background:
+        #ffffff;
+
+    border:
+        1px solid
+        #dfe7e1;
+
+    border-radius:
+        16px;
+
+    overflow:
+        hidden;
+
+    box-shadow:
+        0 4px 16px
+        rgba(0, 0, 0, .06);
+
+    color:
+        #26332a;
 
 }
 
 
 
 /* ==========================================================
-   INVENTORY HEADER
+   HEADER
 ========================================================== */
 
-.agrostore-inventory-header {
+.animal-feed-inventory-header {
 
-    width: 100%;
+    display:
+        flex;
 
-    display: flex;
+    align-items:
+        flex-start;
 
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 14px;
-
-    margin-bottom: 14px;
+    gap:
+        12px;
 
     padding:
-        0
-        2px;
+        14px
+        16px;
+
+    border-bottom:
+        1px solid
+        #edf1ee;
 
 }
 
 
-.agrostore-inventory-heading {
+.animal-feed-inventory-system-image {
 
-    min-width: 0;
+    width:
+        44px;
+
+    height:
+        44px;
+
+    flex:
+        0 0 44px;
+
+    border-radius:
+        50%;
+
+    object-fit:
+        cover;
 
 }
 
 
-.agrostore-inventory-heading h2 {
+.animal-feed-inventory-header-content {
 
-    margin:
-        0
-        0
-        4px;
+    min-width:
+        0;
 
-    color:
-        #202520;
+    flex:
+        1;
+
+}
+
+
+.animal-feed-inventory-system-name {
 
     font-size:
-        19px;
+        14px;
+
+    font-weight:
+        700;
+
+}
+
+
+.animal-feed-inventory-title {
+
+    margin-top:
+        3px;
+
+    color:
+        #3f654b;
+
+    font-size:
+        17px;
 
     font-weight:
         700;
@@ -340,50 +686,170 @@ const isAgroStore =
 }
 
 
-.agrostore-inventory-heading p {
+.animal-feed-inventory-subtitle {
 
-    margin: 0;
+    margin-top:
+        2px;
 
     color:
-        #748078;
+        #718077;
 
     font-size:
         12px;
 
-    line-height:
-        1.45;
+}
+
+
+.animal-feed-inventory-time {
+
+    display:
+        block;
+
+    margin-top:
+        6px;
+
+    color:
+        #8a958e;
+
+    font-size:
+        11px;
 
 }
 
 
 
 /* ==========================================================
-   INVENTORY COUNT
+   ITEM
 ========================================================== */
 
-.agrostore-inventory-count {
+.animal-feed-inventory-item {
 
-    flex:
-        0
-        0
-        auto;
+    display:
+        flex;
 
-    min-width:
-        44px;
+    gap:
+        16px;
 
     padding:
-        7px
-        10px;
+        16px;
 
-    border:
-        1px solid
-        #dfe7e1;
+}
+
+
+.animal-feed-inventory-image-wrapper {
+
+    width:
+        105px;
+
+    height:
+        105px;
+
+    flex:
+        0 0 105px;
+
+    overflow:
+        hidden;
 
     border-radius:
-        10px;
+        12px;
 
     background:
-        #f5f8f5;
+        #f0f4f1;
+
+}
+
+
+.animal-feed-inventory-item-image {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    display:
+        block;
+
+    object-fit:
+        cover;
+
+}
+
+
+.animal-feed-inventory-information {
+
+    min-width:
+        0;
+
+    flex:
+        1;
+
+}
+
+
+.animal-feed-inventory-field {
+
+    margin-bottom:
+        12px;
+
+}
+
+
+.animal-feed-inventory-label {
+
+    display:
+        block;
+
+    margin-bottom:
+        3px;
+
+    color:
+        #7a877f;
+
+    font-size:
+        11px;
+
+    font-weight:
+        700;
+
+    letter-spacing:
+        .04em;
+
+    text-transform:
+        uppercase;
+
+}
+
+
+.animal-feed-inventory-value {
+
+    font-size:
+        15px;
+
+    font-weight:
+        700;
+
+}
+
+
+.animal-feed-inventory-description {
+
+    display:
+        block;
+
+    color:
+        #4f5d54;
+
+    font-size:
+        14px;
+
+    line-height:
+        1.5;
+
+}
+
+
+.animal-feed-inventory-current-quantity {
 
     color:
         #355d43;
@@ -394,122 +860,254 @@ const isAgroStore =
     font-weight:
         700;
 
-    text-align:
-        center;
-
-}
-
-
-.agrostore-inventory-count span {
-
-    display: block;
-
-    margin-top: 1px;
-
-    color:
-        #7b847e;
-
-    font-size:
-        9px;
-
-    font-weight:
-        500;
-
 }
 
 
 
 /* ==========================================================
-   INVENTORY LIST
+   LATEST UPDATE
 ========================================================== */
 
-.agrostore-inventory-list {
+.animal-feed-inventory-note {
 
-    width: 100%;
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap:
+    margin:
+        0
+        16px
         16px;
 
+    padding:
+        12px;
+
+    border-left:
+        3px solid
+        #648b70;
+
+    border-radius:
+        10px;
+
+    background:
+        #f5f8f5;
+
+}
+
+
+.animal-feed-inventory-note-text {
+
+    color:
+        #46544b;
+
+    font-size:
+        14px;
+
+    line-height:
+        1.5;
+
+    white-space:
+        pre-wrap;
+
 }
 
 
 
 /* ==========================================================
-   EMPTY INVENTORY
+   EDIT SECTION
 ========================================================== */
 
-.agrostore-empty-inventory {
-
-    width: 100%;
-
-    box-sizing: border-box;
+.animal-feed-inventory-edit {
 
     padding:
-        28px
-        18px;
+        16px;
 
-    border:
+    border-top:
         1px solid
-        #e1e8e3;
-
-    border-radius:
-        15px;
+        #edf1ee;
 
     background:
         #fafcfb;
 
-    text-align:
-        center;
-
 }
 
 
-.agrostore-empty-icon {
+.animal-feed-inventory-form-group {
 
     margin-bottom:
-        8px;
-
-    font-size:
-        30px;
+        14px;
 
 }
 
 
-.agrostore-empty-inventory strong {
+.animal-feed-inventory-form-group label {
 
-    display: block;
+    display:
+        block;
+
+    margin-bottom:
+        6px;
 
     color:
-        #3d4c43;
+        #46544b;
+
+    font-size:
+        13px;
+
+    font-weight:
+        700;
+
+}
+
+
+.animal-feed-inventory-quantity-row {
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
+
+}
+
+
+.animal-feed-inventory-quantity-row input {
+
+    width:
+        150px;
+
+    padding:
+        10px
+        12px;
+
+    border:
+        1px solid
+        #cfd9d2;
+
+    border-radius:
+        9px;
+
+    background:
+        #ffffff;
 
     font-size:
         15px;
 
+    box-sizing:
+        border-box;
+
 }
 
 
-.agrostore-empty-inventory p {
-
-    max-width:
-        420px;
-
-    margin:
-        6px
-        auto
-        0;
+.animal-feed-inventory-unit {
 
     color:
-        #7a867f;
+        #657168;
 
     font-size:
+        13px;
+
+}
+
+
+.animal-feed-inventory-form-group textarea {
+
+    width:
+        100%;
+
+    box-sizing:
+        border-box;
+
+    resize:
+        vertical;
+
+    padding:
+        10px
         12px;
+
+    border:
+        1px solid
+        #cfd9d2;
+
+    border-radius:
+        9px;
+
+    background:
+        #ffffff;
+
+    font-family:
+        inherit;
+
+    font-size:
+        14px;
 
     line-height:
         1.5;
+
+}
+
+
+.animal-feed-inventory-form-group input:focus,
+
+.animal-feed-inventory-form-group textarea:focus {
+
+    outline:
+        none;
+
+    border-color:
+        #5f876b;
+
+    box-shadow:
+        0 0 0 2px
+        rgba(95, 135, 107, .12);
+
+}
+
+
+.animal-feed-inventory-update-button {
+
+    width:
+        100%;
+
+    padding:
+        11px
+        16px;
+
+    border:
+        0;
+
+    border-radius:
+        9px;
+
+    background:
+        #466f52;
+
+    color:
+        #ffffff;
+
+    font-size:
+        14px;
+
+    font-weight:
+        700;
+
+    cursor:
+        pointer;
+
+}
+
+
+.animal-feed-inventory-update-button:hover {
+
+    background:
+        #385d43;
+
+}
+
+
+.animal-feed-inventory-update-button:active {
+
+    transform:
+        scale(.98);
 
 }
 
@@ -519,46 +1117,58 @@ const isAgroStore =
    MOBILE
 ========================================================== */
 
-@media (max-width: 600px) {
+@media (max-width: 520px) {
 
-    .agrostore-inventory-section {
+    .animal-feed-inventory-item {
 
-        margin-top:
-            16px;
-
-        margin-bottom:
-            20px;
+        gap:
+            12px;
 
     }
 
 
-    .agrostore-inventory-heading h2 {
+    .animal-feed-inventory-image-wrapper {
 
-        font-size:
-            17px;
+        width:
+            82px;
 
-    }
+        height:
+            82px;
 
-
-    .agrostore-inventory-heading p {
-
-        font-size:
-            11px;
+        flex-basis:
+            82px;
 
     }
 
 
-    .agrostore-inventory-count {
-
-        min-width:
-            40px;
-
-        padding:
-            6px
-            8px;
+    .animal-feed-inventory-title {
 
         font-size:
             15px;
+
+    }
+
+
+    .animal-feed-inventory-description {
+
+        font-size:
+            13px;
+
+    }
+
+
+    .animal-feed-inventory-current-quantity {
+
+        font-size:
+            15px;
+
+    }
+
+
+    .animal-feed-inventory-quantity-row input {
+
+        width:
+            130px;
 
     }
 
