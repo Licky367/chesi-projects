@@ -190,7 +190,7 @@ function displayStorageName(item) {
 /* ============================================================
    ITEM CLASSIFICATION
    ONLY USED FOR DISPLAY.
-   
+
    THESE FUNCTIONS DO NOT CONTROL WHETHER AN ITEM APPEARS
    IN THE AGROSTORE.
 ============================================================ */
@@ -909,6 +909,24 @@ const addItemCount =
         background .16s ease;
 }
 
+
+/* ============================================================
+   CLICKABLE CONTENT CARD
+============================================================ */
+
+.content-card.clickable-content{
+    cursor:pointer;
+}
+
+.content-card.clickable-content:hover{
+    border-color:#c6d9ca;
+    box-shadow:0 5px 16px rgba(24,45,31,.07);
+}
+
+.content-card.clickable-content:active{
+    transform:translateY(1px);
+}
+
 .content-card.no-selection{
     grid-template-columns:44px minmax(0,1fr);
 }
@@ -923,8 +941,15 @@ const addItemCount =
     background:#fbfefb;
 }
 
+
+/* ============================================================
+   CONTENT CHECKBOX
+============================================================ */
+
 .content-checkbox{
     padding-top:4px;
+    position:relative;
+    z-index:3;
 }
 
 .content-checkbox input{
@@ -933,6 +958,11 @@ const addItemCount =
     margin:0;
     accent-color:#2d7a47;
 }
+
+
+/* ============================================================
+   CONTENT ICON
+============================================================ */
 
 .content-icon{
     width:44px;
@@ -1681,13 +1711,46 @@ const addItemCount =
 
                         const currentItemIsAgroStore =
                             itemIsAgroStore(item);
+
+
+                        /*
+                        ==================================================
+                        ITEM DETAILS URL
+
+                        ROOM:
+                            /dairy/<item._id>
+
+                        AGROSTORE:
+                            /storage/<farmId>/contents/<agroStoreId>/details/<item._id>
+
+                        dairy._id  = farm ID
+                        storage._id = current storage / agroStore ID
+                        item._id    = tapped content ID
+                        ==================================================
+                        */
+
+                        const currentItemUrl =
+                            isAgroStore
+                                ? "/storage/" +
+                                  dairy._id +
+                                  "/contents/" +
+                                  storage._id +
+                                  "/details/" +
+                                  item._id
+                                : "/dairy/" +
+                                  item._id;
                     %>
 
 
                     <article
-                        class="content-card <% if (isAgroStore) { %>no-selection<% } %>"
+                        class="content-card
+                            <% if (isAgroStore) { %>
+                                no-selection
+                            <% } %>
+                            clickable-content"
                         data-content-card
                         data-item-id="<%= item._id %>"
+                        data-item-url="<%= currentItemUrl %>"
                     >
 
 
@@ -2295,6 +2358,105 @@ document.addEventListener(
 
         const isAgroStore =
             <%= isAgroStore ? "true" : "false" %>;
+
+
+        /* ======================================================
+           CURRENT CONTENT ITEM NAVIGATION
+        ======================================================
+
+           ROOM:
+               /dairy/<item._id>
+
+           AGROSTORE:
+               /storage/<dairy._id>/contents/<storage._id>/details/<item._id>
+
+           IMPORTANT:
+
+           On a normal room, clicking the checkbox must NOT
+           navigate to the Dairy page.
+
+           The checkbox remains available for:
+               • Select
+               • Reshuffle
+               • Omit
+
+        ====================================================== */
+
+        const contentCards =
+            document.querySelectorAll(
+                "[data-content-card][data-item-url]"
+            );
+
+
+        contentCards.forEach(
+            function(card){
+
+                card.addEventListener(
+                    "click",
+                    function(event){
+
+                        /*
+                        --------------------------------------------------
+                        DO NOT NAVIGATE WHEN THE ROOM CHECKBOX IS CLICKED
+                        --------------------------------------------------
+                        */
+
+                        if (
+                            event.target &&
+                            (
+                                event.target.matches(
+                                    "input[type='checkbox']"
+                                ) ||
+                                event.target.closest(
+                                    ".content-checkbox"
+                                )
+                            )
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        /*
+                        --------------------------------------------------
+                        DO NOT NAVIGATE IF CLICK IS INSIDE A FORM CONTROL
+                        --------------------------------------------------
+                        */
+
+                        if (
+                            event.target &&
+                            event.target.closest(
+                                "button, input, select, textarea, label"
+                            )
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        const itemUrl =
+                            card.getAttribute(
+                                "data-item-url"
+                            );
+
+
+                        if (!itemUrl) {
+
+                            return;
+
+                        }
+
+
+                        window.location.href =
+                            itemUrl;
+
+                    }
+                );
+
+            }
+        );
 
 
         /* ======================================================
