@@ -25,7 +25,7 @@ async function update(
     try {
 
         // ======================================================
-        // PARAMETERS
+        // URL PARAMETERS
         // ======================================================
 
         const {
@@ -46,31 +46,24 @@ async function update(
 
 
         // ======================================================
-        // UPDATE STOCK
+        // UPDATE INVENTORY
         // ======================================================
         //
         // IMPORTANT:
         //
-        // roomNumber from the URL is the AgroStore's
-        // application-level ID.
+        // parentId  = Dairy Farm MongoDB _id
+        // roomNumber = AgroStore.roomNumber
+        // inventoryId = Inventory MongoDB _id
         //
-        // Therefore:
-        //
-        //     roomNumber
-        //          ↓
-        //     agroStoreId
-        //          ↓
-        //     AgroStore.roomNumber
-        //
-        // The storage service resolves the parent Dairy
-        // Farm through AgroStore.assetCode.
+        // No agroStoreId is invented or substituted.
         //
         // ======================================================
 
         await storageService.update({
 
-            agroStoreId:
-                roomNumber,
+            parentId,
+
+            roomNumber,
 
             inventoryId,
 
