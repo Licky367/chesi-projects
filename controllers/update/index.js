@@ -1,6 +1,5 @@
 // ==========================================================
 // controllers/update/index.js
-// UPDATE CONTROLLERS INDEX
 // ==========================================================
 
 module.exports = {
@@ -19,8 +18,6 @@ module.exports = {
 
     ...require("./maintenanceController"),
 
-    ...require("./storageController"),
-
-    ...require("./itemLinkController")
+    ...require("./storageController")
 
 };
