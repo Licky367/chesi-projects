@@ -1,468 +1,747 @@
-<% /*
-==========================================================
-ANIMAL FEED UPDATE CARDS
+<!-- =========================================================
+     views/update/storage/feed-update-cards.ejs
 
-FILE:
-    views/update/storage/feed-update-cards.ejs
+     PURPOSE:
+         Dynamic Animal Feed Update Cards
 
-PURPOSE:
-    Display every currently available item/feed inside the
-    selected AgroStore.
+     EXPECTED VARIABLES:
 
-CARD BEHAVIOUR:
-    Each individual card links directly to the details page:
+         dairy
+         dairyId
+         parentId
 
-    /dairy/:parentId/contents/:storageId/details/:itemId
+         storage
+         storageId
+         storageType
 
-IMPORTANT:
+         items
+         availableItems
+         feedUpdateItems
+         agroStoreItems
 
-    No feed names are hard-coded.
+     IMPORTANT:
 
-    The cards are generated dynamically from the items
-    supplied by the controller.
+         This file DOES NOT contain hardcoded feed data.
 
-EXPECTED VARIABLES:
+         The controller supplies the actual records from:
 
-    parentId
-        OR
-    dairyId
-        OR
-    dairy._id
+             services/storage/contents.js
 
-    storageId
-        OR
-    storage._id
+         Each card represents one actual feed record.
 
-    items
-        OR
-    availableItems
-        OR
-    availableFeeds
+     EXPECTED FEED RECORD FIELDS:
 
-OPTIONAL ITEM IMAGE FIELDS:
+         _id
+         name
+         type
+         quantity
+         unit
+         code
+         assetCode
+         dwellNumber
+         image / displayImage / profileImage
 
-    profileImage
-    displayImage
-    image
-    imageUrl
+========================================================= -->
 
-The template falls back to /images/h1.png when no image
-is available.
-==========================================================
-*/ %>
 
-
-<%
-/* ==========================================================
-   SAFE PARENT DAIRY ID
-========================================================== */
-
-const feedParentId =
-    typeof parentId !== "undefined" && parentId
-        ? parentId
-        : (
-            typeof dairyId !== "undefined" && dairyId
-                ? dairyId
-                : (
-                    typeof dairy !== "undefined" &&
-                    dairy &&
-                    dairy._id
-                        ? dairy._id
-                        : ""
-                )
-        );
-
-
-/* ==========================================================
-   SAFE STORAGE ID
-========================================================== */
-
-const feedStorageId =
-    typeof storageId !== "undefined" && storageId
-        ? storageId
-        : (
-            typeof storage !== "undefined" &&
-            storage &&
-            storage._id
-                ? storage._id
-                : ""
-        );
-
-
-/* ==========================================================
-   AVAILABLE AGROSTORE ITEMS
-========================================================== */
-
-let agroStoreItems = [];
-
-
-/*
-   Prefer the normal "items" variable.
-*/
-
-if (
-    typeof items !== "undefined" &&
-    Array.isArray(items)
-) {
-
-    agroStoreItems = items;
-
-
-/*
-   Otherwise use availableItems.
-*/
-
-} else if (
-    typeof availableItems !== "undefined" &&
-    Array.isArray(availableItems)
-) {
-
-    agroStoreItems = availableItems;
-
-
-/*
-   Otherwise use availableFeeds.
-*/
-
-} else if (
-    typeof availableFeeds !== "undefined" &&
-    Array.isArray(availableFeeds)
-) {
-
-    agroStoreItems = availableFeeds;
-
-}
-
-
-/* ==========================================================
-   HELPER
-========================================================== */
-
-function feedDisplayValue(value) {
-
-    return (
-        value !== null &&
-        value !== undefined &&
-        String(value).trim() !== ""
-    )
-        ? String(value)
-        : "";
-
-}
-
-
-/* ==========================================================
-   IMAGE HELPER
-========================================================== */
-
-function getFeedImage(item) {
-
-    if (!item) {
-
-        return "/images/h1.png";
-
-    }
-
-
-    const image =
-        item.profileImage ||
-        item.displayImage ||
-        item.image ||
-        item.imageUrl ||
-        "";
-
-
-    if (!image) {
-
-        return "/images/h1.png";
-
-    }
-
-
-    /*
-       If the backend already supplies a complete URL/path,
-       use it exactly as supplied.
-    */
-
-    return String(image);
-
-}
-
-
-/* ==========================================================
-   CARD TYPE
-========================================================== */
-
-function getFeedType(item) {
-
-    if (!item) {
-
-        return "Animal Feed";
-
-    }
-
-
-    const type =
-        feedDisplayValue(
-            item.recordType ||
-            item.type
-        );
-
-
-    if (!type) {
-
-        return "Animal Feed";
-
-    }
-
-
-    return type;
-
-}
-
-
-/* ==========================================================
-   CARD ICON
-========================================================== */
-
-function getFeedIcon(item) {
-
-    if (!item) {
-
-        return "🌾";
-
-    }
-
-
-    const type =
-        String(
-            item.recordType ||
-            item.type ||
-            ""
-        ).toLowerCase();
-
-
-    if (
-        type.includes("feed")
-    ) {
-
-        return "🌾";
-
-    }
-
-
-    if (
-        type.includes("silage")
-    ) {
-
-        return "🌱";
-
-    }
-
-
-    if (
-        type.includes("hay")
-    ) {
-
-        return "🌾";
-
-    }
-
-
-    if (
-        type.includes("mineral")
-    ) {
-
-        return "🧂";
-
-    }
-
-
-    return "🌾";
-
-}
-
-
-/* ==========================================================
-   DETAILS URL HELPER
-========================================================== */
-
-function getFeedDetailsUrl(item) {
-
-    if (
-        !item ||
-        !item._id ||
-        !feedParentId ||
-        !feedStorageId
-    ) {
-
-        return "#";
-
-    }
-
-
-    return (
-        "/dairy/" +
-        encodeURIComponent(
-            String(feedParentId)
-        ) +
-        "/contents/" +
-        encodeURIComponent(
-            String(feedStorageId)
-        ) +
-        "/details/" +
-        encodeURIComponent(
-            String(item._id)
-        )
-    );
-
-}
-
-%>
-
-
-
-<!-- ==========================================================
-     ANIMAL FEED UPDATE SECTION
-========================================================== -->
-
-<section
-    class="animal-feed-update-strip"
-    aria-label="Available Animal Feed Updates"
+<div
+    class="feed-update-cards"
+    id="feed-update-cards"
+    data-dairy-id="<%= dairyId || parentId || '' %>"
+    data-storage-id="<%= storageId || storage?._id || '' %>"
 >
 
 
-    <!-- ======================================================
-         SECTION HEADER
-    ======================================================= -->
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
-    <div class="animal-feed-update-strip-header">
+    <div class="feed-update-header mb-3">
 
-        <div class="animal-feed-update-strip-title">
+        <div>
 
-            <strong>
-                Give Any Updates About the Available Animal Feeds
-            </strong>
+            <h3 class="mb-1">
+                Animal Feeds
+            </h3>
+
+            <p class="text-muted mb-0">
+                Update the quantity of feeds currently stored
+                in this AgroStore.
+            </p>
 
         </div>
+
+
+        <% if (storage) { %>
+
+            <div class="small text-muted mt-2">
+
+                <strong>
+                    <%= storage.displayName ||
+                        storage.name ||
+                        'AgroStore' %>
+                </strong>
+
+                <% if (
+                    storage.roomNumber !== undefined &&
+                    storage.roomNumber !== null &&
+                    String(storage.roomNumber).trim() !== ''
+                ) { %>
+
+                    <span class="ms-1">
+                        · Room
+                        <%= storage.roomNumber %>
+                    </span>
+
+                <% } %>
+
+            </div>
+
+        <% } %>
 
     </div>
 
 
 
-    <!-- ======================================================
-         HORIZONTAL CARD SCROLLER
-    ======================================================= -->
+    <!-- =====================================================
+         STORAGE TYPE GUARD
+    ====================================================== -->
 
-    <div
-        class="animal-feed-update-scroll"
-        role="list"
-        aria-label="Available animal feeds"
-    >
+    <% if (
+        storageType &&
+        storageType !== 'agroStore'
+    ) { %>
 
+        <div class="alert alert-info">
 
-        <% if (agroStoreItems.length > 0) { %>
+            Animal feed quantity cards are available only
+            inside an AgroStore.
 
-
-            <% agroStoreItems.forEach(function(feed) { %>
-
-
-                <!-- ==========================================
-                     DYNAMIC AGROSTORE ITEM CARD
-                =========================================== -->
-
-                <a
-                    href="<%= getFeedDetailsUrl(feed) %>"
-                    class="animal-feed-update-card"
-                    role="listitem"
-                    aria-label="Give an update about <%= feedDisplayValue(feed.name) || 'this feed' %>"
-                >
+        </div>
 
 
-                    <!-- ======================================
-                         IMAGE
-                    ======================================= -->
+    <% } else { %>
 
-                    <div class="animal-feed-update-image-wrap">
 
-                        <img
-                            src="<%= getFeedImage(feed) %>"
-                            alt="<%= feedDisplayValue(feed.name) || 'Animal Feed' %>"
-                            class="animal-feed-update-image"
-                            loading="lazy"
-                            onerror="this.onerror=null;this.src='/images/h1.png';"
-                        >
 
+        <!-- =================================================
+             RESOLVE FEED ARRAY
+        ================================================== -->
+
+        <%
+            /*
+             * Prefer feedUpdateItems because the controller
+             * explicitly prepares this array for this view.
+             *
+             * The other names are fallbacks so this partial
+             * remains compatible with the variables supplied
+             * by the controller.
+             */
+
+            const feedItems =
+                Array.isArray(feedUpdateItems)
+                    ? feedUpdateItems
+                    : (
+                        Array.isArray(agroStoreItems)
+                            ? agroStoreItems
+                            : (
+                                Array.isArray(items)
+                                    ? items
+                                    : (
+                                        Array.isArray(
+                                            availableItems
+                                        )
+                                            ? availableItems
+                                            : []
+                                    )
+                            )
+                    );
+        %>
+
+
+
+        <!-- =================================================
+             NO FEEDS
+        ================================================== -->
+
+        <% if (feedItems.length === 0) { %>
+
+            <div
+                class="card shadow-sm border-0"
+                style="border-radius: 14px;"
+            >
+
+                <div class="card-body text-center py-5">
+
+                    <div
+                        class="mb-3"
+                        style="
+                            width:64px;
+                            height:64px;
+                            margin:0 auto;
+                            border-radius:50%;
+                            background:#f1f3f5;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            font-size:28px;
+                        "
+                    >
+                        🐄
                     </div>
 
 
-
-                    <!-- ======================================
-                         ITEM NAME
-                    ======================================= -->
-
-                    <div class="animal-feed-update-name">
-
-                        <%= feedDisplayValue(feed.name) || "Unnamed Feed" %>
-
-                    </div>
+                    <h5 class="mb-2">
+                        No animal feeds found
+                    </h5>
 
 
+                    <p class="text-muted mb-0">
 
-                    <!-- ======================================
-                         ITEM TYPE
-                    ======================================= -->
+                        There are currently no animal feed
+                        records with a quantity greater than
+                        zero in this AgroStore.
 
-                    <div class="animal-feed-update-type">
+                    </p>
 
-                        <span
-                            class="animal-feed-update-type-icon"
-                            aria-hidden="true"
-                        >
-                            <%= getFeedIcon(feed) %>
-                        </span>
+                </div>
 
-                        <span>
-                            <%= getFeedType(feed) %>
-                        </span>
+            </div>
 
-                    </div>
-
-
-                </a>
-
-
-            <% }); %>
 
 
         <% } else { %>
 
 
-            <!-- ==================================================
-                 NO AVAILABLE FEEDS
-            =================================================== -->
 
-            <div class="animal-feed-update-empty">
+            <!-- =================================================
+                 FEED CARDS
+            ================================================== -->
 
-                <div
-                    class="animal-feed-update-empty-icon"
-                    aria-hidden="true"
-                >
-                    🌾
-                </div>
+            <div class="row g-3">
 
-                <div class="animal-feed-update-empty-text">
 
-                    <strong>
-                        No available animal feeds
-                    </strong>
+                <% feedItems.forEach(function(feed, index) { %>
 
-                    <span>
-                        There are currently no available items
-                        in this AgroStore.
-                    </span>
 
-                </div>
+                    <%
+                        /*
+                         * -------------------------------------------------
+                         * FEED ID
+                         * -------------------------------------------------
+                         */
+
+                        const feedId =
+                            feed?._id
+                                ? String(feed._id)
+                                : '';
+
+
+                        /*
+                         * -------------------------------------------------
+                         * FEED NAME
+                         * -------------------------------------------------
+                         */
+
+                        const feedName =
+                            feed?.name ||
+                            feed?.feedName ||
+                            'Animal Feed';
+
+
+                        /*
+                         * -------------------------------------------------
+                         * QUANTITY
+                         * -------------------------------------------------
+                         */
+
+                        const feedQuantity =
+                            feed?.quantity !== undefined &&
+                            feed?.quantity !== null
+                                ? feed.quantity
+                                : 0;
+
+
+                        /*
+                         * -------------------------------------------------
+                         * UNIT
+                         * -------------------------------------------------
+                         */
+
+                        const feedUnit =
+                            feed?.unit ||
+                            'kg';
+
+
+                        /*
+                         * -------------------------------------------------
+                         * CODE
+                         * -------------------------------------------------
+                         */
+
+                        const feedCode =
+                            feed?.code !== undefined &&
+                            feed?.code !== null
+                                ? feed.code
+                                : '';
+
+
+                        /*
+                         * -------------------------------------------------
+                         * IMAGE
+                         * -------------------------------------------------
+                         *
+                         * Support the common image fields used by
+                         * the Dairy records.
+                         */
+
+                        const feedImage =
+                            feed?.displayImage ||
+                            feed?.image ||
+                            feed?.profileImage ||
+                            '';
+
+
+                        /*
+                         * -------------------------------------------------
+                         * IMAGE URL
+                         * -------------------------------------------------
+                         *
+                         * If the database already stores a complete
+                         * URL, use it directly.
+                         *
+                         * Otherwise treat it as a normal uploads
+                         * filename.
+                         */
+
+                        let imageUrl = '';
+
+                        if (feedImage) {
+
+                            const imageString =
+                                String(feedImage).trim();
+
+                            if (
+                                imageString.startsWith('/') ||
+                                imageString.startsWith('http://') ||
+                                imageString.startsWith('https://')
+                            ) {
+
+                                imageUrl =
+                                    imageString;
+
+                            } else {
+
+                                imageUrl =
+                                    `/uploads/${encodeURIComponent(
+                                        imageString
+                                    )}`;
+
+                            }
+
+                        }
+
+
+                        /*
+                         * -------------------------------------------------
+                         * FORM ACTION
+                         * -------------------------------------------------
+                         */
+
+                        const updateUrl =
+                            dairyId &&
+                            storageId &&
+                            feedId
+                                ? `/storage/${encodeURIComponent(
+                                      dairyId
+                                  )}/contents/${encodeURIComponent(
+                                      storageId
+                                  )}/quantity`
+                                : '';
+
+
+                        /*
+                         * -------------------------------------------------
+                         * DETAILS URL
+                         * -------------------------------------------------
+                         *
+                         * This matches the controller's requested
+                         * Dairy content-item route.
+                         */
+
+                        const detailsUrl =
+                            parentId &&
+                            storageId &&
+                            feedId
+                                ? `/dairy/${encodeURIComponent(
+                                      parentId
+                                  )}/contents/${encodeURIComponent(
+                                      storageId
+                                  )}/details/${encodeURIComponent(
+                                      feedId
+                                  )}`
+                                : '';
+                    %>
+
+
+
+                    <!-- =============================================
+                         CARD
+                    ============================================== -->
+
+                    <div class="col-12 col-md-6 col-xl-4">
+
+
+                        <div
+                            class="card h-100 shadow-sm border-0 feed-update-card"
+                            data-feed-id="<%= feedId %>"
+                            style="
+                                border-radius:16px;
+                                overflow:hidden;
+                            "
+                        >
+
+
+                            <!-- =====================================
+                                 IMAGE
+                            ====================================== -->
+
+                            <div
+                                class="feed-image-wrapper"
+                                style="
+                                    height:190px;
+                                    background:#f4f6f7;
+                                    display:flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    overflow:hidden;
+                                "
+                            >
+
+                                <% if (imageUrl) { %>
+
+                                    <img
+                                        src="<%= imageUrl %>"
+                                        alt="<%= feedName %>"
+                                        loading="lazy"
+                                        style="
+                                            width:100%;
+                                            height:100%;
+                                            object-fit:cover;
+                                        "
+                                        onerror="
+                                            this.style.display='none';
+                                            this.nextElementSibling.style.display='flex';
+                                        "
+                                    >
+
+
+                                    <div
+                                        style="
+                                            display:none;
+                                            width:100%;
+                                            height:100%;
+                                            align-items:center;
+                                            justify-content:center;
+                                            font-size:52px;
+                                        "
+                                    >
+                                        🌾
+                                    </div>
+
+
+                                <% } else { %>
+
+
+                                    <div
+                                        style="
+                                            width:100%;
+                                            height:100%;
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:center;
+                                            font-size:52px;
+                                        "
+                                    >
+                                        🌾
+                                    </div>
+
+
+                                <% } %>
+
+                            </div>
+
+
+
+                            <!-- =====================================
+                                 CARD BODY
+                            ====================================== -->
+
+                            <div class="card-body p-3">
+
+
+                                <!-- =================================
+                                     NAME
+                                ================================== -->
+
+                                <div
+                                    class="d-flex justify-content-between align-items-start mb-2"
+                                >
+
+                                    <div>
+
+                                        <h5
+                                            class="mb-1"
+                                            style="
+                                                font-weight:700;
+                                                color:#222;
+                                            "
+                                        >
+                                            <%= feedName %>
+                                        </h5>
+
+
+                                        <% if (feedCode !== '') { %>
+
+                                            <div
+                                                class="small text-muted"
+                                            >
+                                                Code:
+                                                <%= feedCode %>
+                                            </div>
+
+                                        <% } %>
+
+                                    </div>
+
+
+                                    <span
+                                        class="badge rounded-pill"
+                                        style="
+                                            background:#e8f5e9;
+                                            color:#0b5d1e;
+                                        "
+                                    >
+                                        Feed
+                                    </span>
+
+                                </div>
+
+
+
+                                <!-- =================================
+                                     CURRENT QUANTITY
+                                ================================== -->
+
+                                <div
+                                    class="mb-3"
+                                    style="
+                                        background:#f8f9fa;
+                                        border-radius:12px;
+                                        padding:12px;
+                                    "
+                                >
+
+                                    <div
+                                        class="small text-muted mb-1"
+                                    >
+                                        Current Quantity
+                                    </div>
+
+
+                                    <div
+                                        style="
+                                            font-size:24px;
+                                            font-weight:700;
+                                            color:#0b5d1e;
+                                        "
+                                    >
+
+                                        <span
+                                            class="current-feed-quantity"
+                                            data-feed-id="<%= feedId %>"
+                                        >
+                                            <%= feedQuantity %>
+                                        </span>
+
+
+                                        <span
+                                            class="small"
+                                            style="
+                                                font-weight:600;
+                                            "
+                                        >
+                                            <%= feedUnit %>
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <!-- =================================
+                                     UPDATE FORM
+                                ================================== -->
+
+                                <% if (updateUrl) { %>
+
+
+                                    <form
+                                        method="POST"
+                                        action="<%= updateUrl %>"
+                                        class="feed-update-form"
+                                        data-feed-id="<%= feedId %>"
+                                    >
+
+
+                                        <!-- =========================
+                                             ITEM ID
+                                        ========================== -->
+
+                                        <input
+                                            type="hidden"
+                                            name="itemId"
+                                            value="<%= feedId %>"
+                                        >
+
+
+
+                                        <!-- =========================
+                                             QUANTITY
+                                        ========================== -->
+
+                                        <div class="mb-3">
+
+                                            <label
+                                                class="form-label"
+                                                for="quantity-<%= feedId %>"
+                                            >
+                                                New Quantity
+                                            </label>
+
+
+                                            <div class="input-group">
+
+                                                <input
+                                                    id="quantity-<%= feedId %>"
+                                                    type="number"
+                                                    name="quantity"
+                                                    class="form-control feed-quantity-input"
+                                                    value="<%= feedQuantity %>"
+                                                    min="0"
+                                                    step="any"
+                                                    inputmode="decimal"
+                                                    required
+                                                >
+
+
+                                                <span
+                                                    class="input-group-text"
+                                                >
+                                                    <%= feedUnit %>
+                                                </span>
+
+                                            </div>
+
+                                            <div
+                                                class="form-text"
+                                            >
+                                                Set quantity to
+                                                <strong>0</strong>
+                                                to remove this feed
+                                                from the AgroStore.
+
+                                            </div>
+
+                                        </div>
+
+
+
+                                        <!-- =========================
+                                             UNIT
+                                        ========================== -->
+
+                                        <input
+                                            type="hidden"
+                                            name="unit"
+                                            value="<%= feedUnit %>"
+                                        >
+
+
+
+                                        <!-- =========================
+                                             ACTIONS
+                                        ========================== -->
+
+                                        <div
+                                            class="d-flex gap-2 flex-wrap"
+                                        >
+
+                                            <button
+                                                type="submit"
+                                                class="btn flex-grow-1"
+                                                style="
+                                                    background:#0b5d1e;
+                                                    color:#fff;
+                                                    border-radius:10px;
+                                                "
+                                            >
+                                                Update Quantity
+                                            </button>
+
+
+                                            <% if (detailsUrl) { %>
+
+                                                <a
+                                                    href="<%= detailsUrl %>"
+                                                    class="btn btn-outline-secondary"
+                                                    style="
+                                                        border-radius:10px;
+                                                    "
+                                                >
+                                                    Details
+                                                </a>
+
+                                            <% } %>
+
+                                        </div>
+
+
+                                    </form>
+
+
+                                <% } else { %>
+
+
+                                    <!-- =================================
+                                         MISSING ROUTE DATA
+                                    ================================== -->
+
+                                    <div
+                                        class="alert alert-warning mb-0"
+                                    >
+
+                                        Feed update information is
+                                        incomplete.
+
+                                    </div>
+
+
+                                <% } %>
+
+
+                            </div>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                <% }); %>
+
 
             </div>
 
@@ -470,624 +749,127 @@ function getFeedDetailsUrl(item) {
         <% } %>
 
 
-    </div>
+    <% } %>
 
-</section>
 
+</div>
 
 
-<style>
 
-/* ==========================================================
-   ANIMAL FEED UPDATE STRIP
-========================================================== */
+<!-- =========================================================
+     OPTIONAL CARD FEEDBACK / CLIENT-SIDE BEHAVIOUR
+========================================================= -->
 
-.animal-feed-update-strip {
+<script>
 
-    width: 100%;
+(function () {
 
-    margin:
-        0
-        0
-        16px;
+    "use strict";
 
-    padding: 0;
 
-    overflow: hidden;
+    /*
+     * Prevent accidental negative quantities.
+     */
 
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
+    const quantityInputs =
+        document.querySelectorAll(
+            "#feed-update-cards .feed-quantity-input"
+        );
 
-}
 
+    quantityInputs.forEach(
+        function (input) {
 
+            input.addEventListener(
+                "input",
+                function () {
 
-/* ==========================================================
-   HEADER
-========================================================== */
+                    const value =
+                        Number(
+                            input.value
+                        );
 
-.animal-feed-update-strip-header {
 
-    width: 100%;
+                    if (
+                        Number.isFinite(value) &&
+                        value < 0
+                    ) {
 
-    padding:
-        0
-        2px
-        10px;
+                        input.value = "0";
 
-}
+                    }
 
+                }
+            );
 
+        }
+    );
 
-/* ==========================================================
-   TITLE
-========================================================== */
 
-.animal-feed-update-strip-title {
 
-    width: 100%;
+    /*
+     * Confirmation when quantity is being changed to zero.
+     *
+     * The server remains authoritative.
+     */
 
-}
+    const forms =
+        document.querySelectorAll(
+            "#feed-update-cards .feed-update-form"
+        );
 
 
-.animal-feed-update-strip-title strong {
+    forms.forEach(
+        function (form) {
 
-    display: block;
+            form.addEventListener(
+                "submit",
+                function (event) {
 
-    color:
-        #202520;
+                    const quantityInput =
+                        form.querySelector(
+                            'input[name="quantity"]'
+                        );
 
-    font-size:
-        18px;
 
-    font-weight:
-        700;
+                    if (!quantityInput) {
 
-    line-height:
-        1.3;
+                        return;
 
-}
+                    }
 
 
+                    const quantity =
+                        Number(
+                            quantityInput.value
+                        );
 
-/* ==========================================================
-   HORIZONTAL SCROLL
-========================================================== */
 
-.animal-feed-update-scroll {
+                    if (
+                        Number.isFinite(quantity) &&
+                        quantity === 0
+                    ) {
 
-    width: 100%;
+                        const confirmed =
+                            window.confirm(
+                                "Set this feed quantity to zero and remove it from this AgroStore?"
+                            );
 
-    display: flex;
 
-    gap:
-        10px;
+                        if (!confirmed) {
 
-    overflow-x:
-        auto;
+                            event.preventDefault();
 
-    overflow-y:
-        hidden;
+                        }
 
-    padding:
-        2px
-        2px
-        8px;
+                    }
 
-    scroll-behavior:
-        smooth;
+                }
+            );
 
-    -webkit-overflow-scrolling:
-        touch;
+        }
+    );
 
-    scrollbar-width:
-        none;
+})();
 
-}
-
-
-.animal-feed-update-scroll::-webkit-scrollbar {
-
-    display:
-        none;
-
-}
-
-
-
-/* ==========================================================
-   CARD
-========================================================== */
-
-.animal-feed-update-card {
-
-    position:
-        relative;
-
-    flex:
-        0 0
-        116px;
-
-    width:
-        116px;
-
-    height:
-        178px;
-
-    display:
-        flex;
-
-    flex-direction:
-        column;
-
-    overflow:
-        hidden;
-
-    text-decoration:
-        none;
-
-    border:
-        1px solid
-        #e4e9e6;
-
-    border-radius:
-        15px;
-
-    background:
-        #ffffff;
-
-    box-shadow:
-        0 2px 8px
-        rgba(20, 40, 28, .06);
-
-    transition:
-        transform .16s ease,
-        box-shadow .16s ease;
-
-}
-
-
-
-/* ==========================================================
-   HOVER
-========================================================== */
-
-.animal-feed-update-card:hover {
-
-    transform:
-        translateY(-2px);
-
-    box-shadow:
-        0 5px 14px
-        rgba(20, 40, 28, .10);
-
-}
-
-
-
-/* ==========================================================
-   ACTIVE
-========================================================== */
-
-.animal-feed-update-card:active {
-
-    transform:
-        scale(.97);
-
-}
-
-
-
-/* ==========================================================
-   IMAGE WRAPPER
-========================================================== */
-
-.animal-feed-update-image-wrap {
-
-    position:
-        relative;
-
-    width:
-        100%;
-
-    height:
-        116px;
-
-    flex:
-        0 0
-        116px;
-
-    overflow:
-        hidden;
-
-    background:
-        #eef3ef;
-
-}
-
-
-
-/* ==========================================================
-   IMAGE
-========================================================== */
-
-.animal-feed-update-image {
-
-    width:
-        100%;
-
-    height:
-        100%;
-
-    display:
-        block;
-
-    object-fit:
-        cover;
-
-}
-
-
-
-/* ==========================================================
-   FEED NAME
-========================================================== */
-
-.animal-feed-update-name {
-
-    width:
-        100%;
-
-    padding:
-        8px
-        8px
-        2px;
-
-    box-sizing:
-        border-box;
-
-    color:
-        #202520;
-
-    font-size:
-        13px;
-
-    font-weight:
-        700;
-
-    line-height:
-        16px;
-
-    overflow:
-        hidden;
-
-    display:
-        -webkit-box;
-
-    -webkit-box-orient:
-        vertical;
-
-    -webkit-line-clamp:
-        2;
-
-}
-
-
-
-/* ==========================================================
-   FEED TYPE
-========================================================== */
-
-.animal-feed-update-type {
-
-    width:
-        100%;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        4px;
-
-    padding:
-        1px
-        8px
-        8px;
-
-    box-sizing:
-        border-box;
-
-    color:
-        #7b847e;
-
-    font-size:
-        10px;
-
-    line-height:
-        13px;
-
-    overflow:
-        hidden;
-
-}
-
-
-
-/* ==========================================================
-   TYPE ICON
-========================================================== */
-
-.animal-feed-update-type-icon {
-
-    flex:
-        0 0 auto;
-
-    font-size:
-        10px;
-
-}
-
-
-
-/* ==========================================================
-   TYPE TEXT
-========================================================== */
-
-.animal-feed-update-type span:last-child {
-
-    min-width:
-        0;
-
-    overflow:
-        hidden;
-
-    text-overflow:
-        ellipsis;
-
-    white-space:
-        nowrap;
-
-}
-
-
-
-/* ==========================================================
-   FOCUS
-========================================================== */
-
-.animal-feed-update-card:focus-visible {
-
-    outline:
-        2px solid
-        #198754;
-
-    outline-offset:
-        2px;
-
-}
-
-
-
-/* ==========================================================
-   EMPTY STATE
-========================================================== */
-
-.animal-feed-update-empty {
-
-    flex:
-        0 0
-        100%;
-
-    min-height:
-        86px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        12px;
-
-    padding:
-        14px;
-
-    box-sizing:
-        border-box;
-
-    border:
-        1px solid
-        #e4e9e6;
-
-    border-radius:
-        14px;
-
-    background:
-        #fafcfb;
-
-}
-
-
-.animal-feed-update-empty-icon {
-
-    flex:
-        0 0
-        42px;
-
-    width:
-        42px;
-
-    height:
-        42px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    border-radius:
-        11px;
-
-    background:
-        #edf5ef;
-
-    font-size:
-        20px;
-
-}
-
-
-.animal-feed-update-empty-text {
-
-    min-width:
-        0;
-
-    display:
-        flex;
-
-    flex-direction:
-        column;
-
-    gap:
-        3px;
-
-}
-
-
-.animal-feed-update-empty-text strong {
-
-    color:
-        #34483a;
-
-    font-size:
-        12px;
-
-    font-weight:
-        750;
-
-}
-
-
-.animal-feed-update-empty-text span {
-
-    color:
-        #7d8981;
-
-    font-size:
-        10px;
-
-    line-height:
-        1.45;
-
-}
-
-
-
-/* ==========================================================
-   MOBILE
-========================================================== */
-
-@media (max-width: 600px) {
-
-
-    .animal-feed-update-strip {
-
-        margin-bottom:
-            14px;
-
-    }
-
-
-    .animal-feed-update-strip-title strong {
-
-        font-size:
-            17px;
-
-    }
-
-
-    .animal-feed-update-card {
-
-        flex-basis:
-            112px;
-
-        width:
-            112px;
-
-        height:
-            174px;
-
-        border-radius:
-            14px;
-
-    }
-
-
-    .animal-feed-update-image-wrap {
-
-        height:
-            112px;
-
-        flex-basis:
-            112px;
-
-    }
-
-
-    .animal-feed-update-name {
-
-        padding:
-            7px
-            7px
-            2px;
-
-        font-size:
-            12px;
-
-        line-height:
-            15px;
-
-    }
-
-
-    .animal-feed-update-type {
-
-        padding:
-            1px
-            7px
-            7px;
-
-        font-size:
-            9px;
-
-    }
-
-
-    .animal-feed-update-type-icon {
-
-        font-size:
-            9px;
-
-    }
-
-
-    .animal-feed-update-empty {
-
-        min-height:
-            78px;
-
-    }
-
-}
-
-</style>
+</script>
