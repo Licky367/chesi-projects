@@ -36,7 +36,7 @@ const mongoose =
     require("mongoose");
 
 const Dairy =
-    require("../../../../models/dairy");
+    require("../../../models/dairy");
 
 
 // ==========================================================
