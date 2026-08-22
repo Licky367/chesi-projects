@@ -1,0 +1,921 @@
+<%
+/*
+==============================================================
+ANIMAL FEED / AGROSTORE STOCK UPDATE CARD
+==============================================================
+
+FILE:
+    views/update/storage/animal-feed-card.ejs
+
+PURPOSE:
+    Display one AgroStore stock/content item as a feed card.
+
+IMPORTANT IDENTIFIERS:
+
+    storageId
+        = AgroStore._id
+
+    feed._id
+        = individual stock item's _id
+
+    feed.dwellNumber
+        = AgroStore.roomNumber
+
+SYSTEM:
+
+    Name:
+        System
+
+    Image:
+        /images/h1.png
+
+CARD CONTENT:
+
+    • Name
+    • Description
+    • Quantity
+    • Unit
+    • Item profile image
+    • Latest stock update information
+    • Posted/updated time
+    • Editable quantity
+    • Editable additional information
+
+==============================================================
+*/
+
+const item =
+    feed || {};
+
+
+const storageIdentifier =
+    storageId ||
+    agroStore?._id ||
+    "";
+
+
+const feedIdentifier =
+    item._id ||
+    "";
+
+
+const itemImage =
+    item.displayImage ||
+    (
+        Array.isArray(item.profileImages) &&
+        item.profileImages.length
+            ? item.profileImages[0]
+            : item.profileImage
+    ) ||
+    "/images/h1.png";
+
+
+const itemName =
+    item.name ||
+    "Animal Feed";
+
+
+const itemDescription =
+    item.description ||
+    "No description provided.";
+
+
+const itemQuantity =
+    item.quantity !== null &&
+    item.quantity !== undefined
+        ? item.quantity
+        : 0;
+
+
+const itemUnit =
+    item.unit ||
+    "";
+
+
+const updateNote =
+    item.stockUpdateNote ||
+    "";
+
+
+const updatedAt =
+    item.updatedAt ||
+    item.createdAt ||
+    null;
+
+%>
+
+
+<article
+
+    class="animal-feed-card"
+
+    data-feed-id="<%= feedIdentifier %>"
+
+    data-storage-id="<%= storageIdentifier %>"
+
+>
+
+
+    <!-- ======================================================
+         CARD HEADER
+         ====================================================== -->
+
+    <header class="animal-feed-card-header">
+
+
+        <img
+
+            class="animal-feed-system-image"
+
+            src="/images/h1.png"
+
+            alt="System"
+
+        >
+
+
+        <div class="animal-feed-header-content">
+
+
+            <div class="animal-feed-system-name">
+
+                System
+
+            </div>
+
+
+            <div class="animal-feed-title">
+
+                New Stock Update
+
+            </div>
+
+
+            <div class="animal-feed-subtitle">
+
+                <%
+                    const normalizedType =
+                        String(
+                            item.type || ""
+                        )
+                        .trim()
+                        .toLowerCase();
+                %>
+
+
+                <% if (
+                    normalizedType === "feeds"
+                ) { %>
+
+                    Animal feeds available
+
+                <% } else { %>
+
+                    Stock available
+
+                <% } %>
+
+            </div>
+
+
+            <% if (updatedAt) { %>
+
+                <time
+
+                    class="animal-feed-time"
+
+                    datetime="<%= new Date(updatedAt).toISOString() %>"
+
+                >
+
+                    <%= new Date(updatedAt).toLocaleString(
+                        "en-KE",
+                        {
+                            dateStyle: "medium",
+                            timeStyle: "short"
+                        }
+                    ) %>
+
+                </time>
+
+            <% } %>
+
+
+        </div>
+
+
+    </header>
+
+
+
+    <!-- ======================================================
+         ITEM SECTION
+         ====================================================== -->
+
+    <section class="animal-feed-item">
+
+
+        <div class="animal-feed-image-wrapper">
+
+
+            <img
+
+                class="animal-feed-item-image"
+
+                src="<%= itemImage %>"
+
+                alt="<%= itemName %>"
+
+                loading="lazy"
+
+                onerror="this.onerror=null;this.src='/images/h1.png';"
+
+            >
+
+
+        </div>
+
+
+
+        <div class="animal-feed-information">
+
+
+            <!-- NAME -->
+
+            <div class="animal-feed-field">
+
+
+                <span class="animal-feed-label">
+
+                    Name:
+
+                </span>
+
+
+                <span class="animal-feed-value">
+
+                    <%= itemName %>
+
+                </span>
+
+
+            </div>
+
+
+
+            <!-- DESCRIPTION -->
+
+            <div class="animal-feed-field">
+
+
+                <span class="animal-feed-label">
+
+                    Description:
+
+                </span>
+
+
+                <span class="animal-feed-description">
+
+                    <%= itemDescription %>
+
+                </span>
+
+
+            </div>
+
+
+
+            <!-- CURRENT QUANTITY -->
+
+            <div class="animal-feed-field">
+
+
+                <span class="animal-feed-label">
+
+                    Current quantity:
+
+                </span>
+
+
+                <span
+
+                    class="animal-feed-current-quantity"
+
+                    data-current-quantity
+
+                >
+
+                    <%= itemQuantity %>
+
+                    <% if (itemUnit) { %>
+
+                        <%= itemUnit %>
+
+                    <% } %>
+
+                </span>
+
+
+            </div>
+
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ======================================================
+         LATEST ADDITIONAL INFORMATION
+         ====================================================== -->
+
+    <% if (updateNote) { %>
+
+        <section class="animal-feed-update-note">
+
+
+            <div class="animal-feed-label">
+
+                Latest update:
+
+            </div>
+
+
+            <div class="animal-feed-note-text">
+
+                <%= updateNote %>
+
+            </div>
+
+
+        </section>
+
+    <% } %>
+
+
+
+    <!-- ======================================================
+         UPDATE FORM
+         ====================================================== -->
+
+    <section class="animal-feed-edit-section">
+
+
+        <form
+
+            class="animal-feed-update-form"
+
+            method="POST"
+
+            action="/dairy/<%= storageIdentifier %>/animal-feeds/<%= feedIdentifier %>/update"
+
+        >
+
+
+            <!-- QUANTITY -->
+
+            <div class="animal-feed-form-group">
+
+
+                <label
+
+                    for="animal-feed-quantity-<%= feedIdentifier %>"
+
+                >
+
+                    Quantity
+
+                </label>
+
+
+                <div class="animal-feed-quantity-row">
+
+
+                    <input
+
+                        id="animal-feed-quantity-<%= feedIdentifier %>"
+
+                        type="number"
+
+                        name="quantity"
+
+                        min="0"
+
+                        step="any"
+
+                        value="<%= itemQuantity %>"
+
+                        required
+
+                    >
+
+
+                    <% if (itemUnit) { %>
+
+                        <span class="animal-feed-unit">
+
+                            <%= itemUnit %>
+
+                        </span>
+
+                    <% } %>
+
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- ADDITIONAL INFORMATION -->
+
+            <div class="animal-feed-form-group">
+
+
+                <label
+
+                    for="animal-feed-note-<%= feedIdentifier %>"
+
+                >
+
+                    Additional information
+
+                </label>
+
+
+                <textarea
+
+                    id="animal-feed-note-<%= feedIdentifier %>"
+
+                    name="stockUpdateNote"
+
+                    rows="4"
+
+                    maxlength="5000"
+
+                    placeholder="Enter any additional information about this stock update..."
+
+                ><%= updateNote %></textarea>
+
+
+            </div>
+
+
+
+            <!-- SUBMIT -->
+
+            <button
+
+                type="submit"
+
+                class="animal-feed-update-button"
+
+            >
+
+                Update Stock
+
+            </button>
+
+
+        </form>
+
+
+    </section>
+
+
+</article>
+
+
+
+<style>
+
+/* ==========================================================
+   ANIMAL FEED CARD
+   ========================================================== */
+
+.animal-feed-card {
+
+    width: 100%;
+
+    max-width: 680px;
+
+    margin: 0 auto 20px;
+
+    background: #ffffff;
+
+    border: 1px solid #dfe7e1;
+
+    border-radius: 16px;
+
+    overflow: hidden;
+
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+
+    color: #26332a;
+
+}
+
+
+/* ==========================================================
+   HEADER
+   ========================================================== */
+
+.animal-feed-card-header {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+    padding: 14px 16px;
+
+    border-bottom: 1px solid #edf1ee;
+
+}
+
+
+.animal-feed-system-image {
+
+    width: 44px;
+
+    height: 44px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    flex: 0 0 44px;
+
+}
+
+
+.animal-feed-header-content {
+
+    min-width: 0;
+
+    flex: 1;
+
+}
+
+
+.animal-feed-system-name {
+
+    font-weight: 700;
+
+    font-size: 14px;
+
+}
+
+
+.animal-feed-title {
+
+    margin-top: 3px;
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+    color: #3f654b;
+
+}
+
+
+.animal-feed-subtitle {
+
+    margin-top: 2px;
+
+    font-size: 12px;
+
+    color: #718077;
+
+}
+
+
+.animal-feed-time {
+
+    display: block;
+
+    margin-top: 6px;
+
+    font-size: 11px;
+
+    color: #8a958e;
+
+}
+
+
+/* ==========================================================
+   ITEM
+   ========================================================== */
+
+.animal-feed-item {
+
+    display: flex;
+
+    gap: 16px;
+
+    padding: 16px;
+
+}
+
+
+.animal-feed-image-wrapper {
+
+    width: 105px;
+
+    height: 105px;
+
+    flex: 0 0 105px;
+
+    overflow: hidden;
+
+    border-radius: 12px;
+
+    background: #f0f4f1;
+
+}
+
+
+.animal-feed-item-image {
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+}
+
+
+.animal-feed-information {
+
+    flex: 1;
+
+    min-width: 0;
+
+}
+
+
+.animal-feed-field {
+
+    margin-bottom: 12px;
+
+}
+
+
+.animal-feed-label {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.04em;
+
+    color: #7a877f;
+
+}
+
+
+.animal-feed-value {
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+}
+
+
+.animal-feed-description {
+
+    display: block;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+    color: #4f5d54;
+
+}
+
+
+.animal-feed-current-quantity {
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    color: #355d43;
+
+}
+
+
+/* ==========================================================
+   UPDATE NOTE
+   ========================================================== */
+
+.animal-feed-update-note {
+
+    margin: 0 16px 16px;
+
+    padding: 12px;
+
+    border-radius: 10px;
+
+    background: #f5f8f5;
+
+    border-left: 3px solid #648b70;
+
+}
+
+
+.animal-feed-note-text {
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+    white-space: pre-wrap;
+
+    color: #46544b;
+
+}
+
+
+/* ==========================================================
+   EDIT SECTION
+   ========================================================== */
+
+.animal-feed-edit-section {
+
+    padding: 16px;
+
+    background: #fafcfb;
+
+    border-top: 1px solid #edf1ee;
+
+}
+
+
+.animal-feed-form-group {
+
+    margin-bottom: 14px;
+
+}
+
+
+.animal-feed-form-group label {
+
+    display: block;
+
+    margin-bottom: 6px;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    color: #46544b;
+
+}
+
+
+.animal-feed-quantity-row {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+}
+
+
+.animal-feed-quantity-row input {
+
+    width: 150px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #cfd9d2;
+
+    border-radius: 9px;
+
+    background: #ffffff;
+
+    font-size: 15px;
+
+}
+
+
+.animal-feed-unit {
+
+    font-size: 13px;
+
+    color: #657168;
+
+}
+
+
+.animal-feed-form-group textarea {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    resize: vertical;
+
+    padding: 10px 12px;
+
+    border: 1px solid #cfd9d2;
+
+    border-radius: 9px;
+
+    background: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+}
+
+
+.animal-feed-form-group input:focus,
+
+.animal-feed-form-group textarea:focus {
+
+    outline: none;
+
+    border-color: #5f876b;
+
+    box-shadow: 0 0 0 2px rgba(95, 135, 107, 0.12);
+
+}
+
+
+.animal-feed-update-button {
+
+    width: 100%;
+
+    border: 0;
+
+    border-radius: 9px;
+
+    padding: 11px 16px;
+
+    background: #466f52;
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+}
+
+
+.animal-feed-update-button:hover {
+
+    background: #385d43;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 520px) {
+
+    .animal-feed-item {
+
+        align-items: flex-start;
+
+    }
+
+
+    .animal-feed-image-wrapper {
+
+        width: 82px;
+
+        height: 82px;
+
+        flex-basis: 82px;
+
+    }
+
+}
+
+
+</style>
