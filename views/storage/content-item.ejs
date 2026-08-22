@@ -8,8 +8,8 @@ FILE:
     views/storage/content-item.ejs
 
 PURPOSE:
-    Display detailed information about one item contained
-    inside an AgroStore.
+    Display a clean professional detail card for one item
+    contained inside an AgroStore or Room.
 
 ROUTE:
 
@@ -26,9 +26,19 @@ OPTIONAL:
     successMessage
     pageError
 
-The page intentionally uses the same data fields displayed
-inside storage/contents.ejs, but presents them in a more
-organized detail layout.
+DISPLAYED:
+
+    Header
+    Quantity & Value
+    Description
+
+REMOVED:
+
+    Basic Information
+    Storage Information
+    Navigation links
+    Item ID
+    Extra header staff/details
 ==============================================================
 */
 
@@ -48,56 +58,31 @@ const currentDairy =
 
 
 /* ============================================================
+   SAFE OPTIONAL MESSAGES
+============================================================ */
+
+const safeSuccessMessage =
+    typeof successMessage !== "undefined"
+        ? successMessage
+        : null;
+
+const safePageError =
+    typeof pageError !== "undefined"
+        ? pageError
+        : null;
+
+
+/* ============================================================
    STORAGE TYPE
 ============================================================ */
 
 const storageType =
     currentStorage &&
     currentStorage.type
-        ? String(currentStorage.type).trim()
+        ? String(
+            currentStorage.type
+        ).trim()
         : "";
-
-
-/* ============================================================
-   STORAGE NAME
-============================================================ */
-
-const storageName =
-    (
-        currentStorage &&
-        currentStorage.displayName
-    )
-        ||
-    (
-        currentStorage &&
-        currentStorage.name
-    )
-        ||
-    (
-        storageType === "agroStore"
-            ? "AgroStore"
-            : (
-                currentStorage &&
-                currentStorage.roomNumber !== null &&
-                currentStorage.roomNumber !== undefined
-                    ? "Room " + currentStorage.roomNumber
-                    : "Storage"
-            )
-    );
-
-
-/* ============================================================
-   STORAGE ROOM NUMBER
-============================================================ */
-
-const storageRoomNumber =
-    (
-        currentStorage &&
-        currentStorage.roomNumber !== null &&
-        currentStorage.roomNumber !== undefined
-    )
-        ? currentStorage.roomNumber
-        : "—";
 
 
 /* ============================================================
@@ -124,12 +109,6 @@ function displayValue(value) {
 const itemType =
     String(
         contentItem.type || ""
-    ).trim();
-
-
-const itemRecordType =
-    String(
-        contentItem.recordType || ""
     ).trim();
 
 
@@ -215,7 +194,9 @@ const hasQuantity =
 
 const quantityValue =
     hasQuantity
-        ? Number(contentItem.quantity || 0)
+        ? Number(
+            contentItem.quantity || 0
+        )
         : null;
 
 
@@ -230,18 +211,31 @@ const hasCurrentWorth =
 
 const currentWorthValue =
     hasCurrentWorth
-        ? Number(contentItem.currentWorth || 0)
+        ? Number(
+            contentItem.currentWorth || 0
+        )
         : null;
 
 
 /* ============================================================
-   FARM NAME
+   UNIT
 ============================================================ */
 
-const dairyName =
-    currentDairy.name ||
-    currentDairy.displayName ||
-    "Dairy Farm";
+const itemUnit =
+    contentItem.unit
+        ? String(
+            contentItem.unit
+        ).trim()
+        : "";
+
+
+/* ============================================================
+   ITEM NAME
+============================================================ */
+
+const itemName =
+    contentItem.name ||
+    "Unnamed Item";
 
 %>
 
@@ -254,52 +248,10 @@ const dairyName =
 
 .storage-content-item-page{
     width:100%;
-    max-width:1000px;
+    max-width:850px;
     margin:0 auto;
-    padding:20px 16px 65px;
+    padding:28px 16px 65px;
     box-sizing:border-box;
-}
-
-
-/* ============================================================
-   TOP NAVIGATION
-============================================================ */
-
-.content-item-navigation{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    margin-bottom:18px;
-}
-
-.content-item-back{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:7px;
-    min-height:38px;
-    padding:0 13px;
-    border:1px solid #dfe7e1;
-    border-radius:10px;
-    background:#fff;
-    color:#31533d;
-    font-size:12px;
-    font-weight:750;
-    text-decoration:none;
-    transition:.18s ease;
-}
-
-.content-item-back:hover{
-    border-color:#bdd2c2;
-    background:#f8fbf8;
-}
-
-.content-item-location{
-    color:#829087;
-    font-size:10px;
-    font-weight:700;
-    text-align:right;
 }
 
 
@@ -308,73 +260,103 @@ const dairyName =
 ============================================================ */
 
 .content-item-card{
+    width:100%;
     overflow:hidden;
-    background:#fff;
+    background:#ffffff;
     border:1px solid #e1e9e3;
-    border-radius:18px;
-    box-shadow:0 5px 22px rgba(24,45,31,.045);
+    border-radius:20px;
+    box-shadow:
+        0 10px 35px rgba(24,45,31,.07),
+        0 2px 8px rgba(24,45,31,.035);
 }
 
 
 /* ============================================================
-   HERO
+   HEADER
 ============================================================ */
 
 .content-item-hero{
     display:flex;
     align-items:center;
-    gap:16px;
-    padding:22px;
+    gap:18px;
+
+    padding:25px;
+
     background:
         linear-gradient(
             135deg,
-            #f7fbf8 0%,
-            #ffffff 70%
+            #f3f9f5 0%,
+            #ffffff 72%
         );
-    border-bottom:1px solid #e5ece7;
+
+    border-bottom:1px solid #e4ebe6;
 }
+
+
+/* ============================================================
+   ICON
+============================================================ */
 
 .content-item-icon{
     flex:none;
-    width:68px;
-    height:68px;
+
+    width:72px;
+    height:72px;
+
     display:flex;
     align-items:center;
     justify-content:center;
-    border-radius:18px;
-    background:#edf5ef;
-    font-size:32px;
+
+    border-radius:19px;
+
+    background:#e7f2ea;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(45,123,72,.06);
+
+    font-size:34px;
 }
+
+
+/* ============================================================
+   HEADER INFORMATION
+============================================================ */
 
 .content-item-hero-information{
     min-width:0;
     flex:1;
 }
 
+
 .content-item-eyebrow{
     margin:0 0 5px;
-    color:#7c8a82;
+
+    color:#7b8a81;
+
     font-size:9px;
+    line-height:1.2;
+
     font-weight:850;
-    letter-spacing:.11em;
+
+    letter-spacing:.12em;
+
     text-transform:uppercase;
 }
 
+
 .content-item-title{
     margin:0;
-    color:#203328;
-    font-size:25px;
-    line-height:1.2;
-    font-weight:850;
-    letter-spacing:-.035em;
-    word-break:break-word;
-}
 
-.content-item-id{
-    margin:7px 0 0;
-    color:#8a958e;
-    font-size:10px;
-    word-break:break-all;
+    color:#203328;
+
+    font-size:27px;
+    line-height:1.2;
+
+    font-weight:850;
+
+    letter-spacing:-.035em;
+
+    word-break:break-word;
 }
 
 
@@ -386,36 +368,52 @@ const dairyName =
     display:flex;
     align-items:center;
     flex-wrap:wrap;
+
     gap:7px;
-    margin-top:11px;
+
+    margin-top:12px;
 }
+
 
 .content-item-badge{
     display:inline-flex;
     align-items:center;
-    min-height:23px;
-    padding:0 9px;
+    justify-content:center;
+
+    min-height:24px;
+
+    padding:0 10px;
+
     border-radius:999px;
+
     font-size:9px;
+    line-height:1;
+
     font-weight:850;
+
     letter-spacing:.06em;
+
     text-transform:uppercase;
 }
+
 
 .animal-badge{
     background:#edf7ef;
     color:#347148;
 }
 
+
 .feed-badge{
-    background:#edf7ef;
+    background:#eaf6ed;
     color:#2d7243;
 }
+
 
 .asset-badge{
     background:#f1f3f3;
     color:#68746d;
 }
+
 
 .status-badge{
     background:#f4f7f5;
@@ -428,7 +426,7 @@ const dairyName =
 ============================================================ */
 
 .content-item-body{
-    padding:21px;
+    padding:25px;
 }
 
 
@@ -437,186 +435,136 @@ const dairyName =
 ============================================================ */
 
 .detail-section{
-    margin-bottom:23px;
+    margin:0;
 }
 
-.detail-section:last-child{
-    margin-bottom:0;
-}
 
 .detail-section-heading{
     display:flex;
     align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:11px;
+    gap:12px;
+
+    margin-bottom:14px;
 }
 
+
 .detail-section-title{
+    flex:none;
+
     margin:0;
-    color:#2a3d30;
-    font-size:14px;
+
+    color:#263a2c;
+
+    font-size:15px;
+    line-height:1.3;
+
     font-weight:850;
+
     letter-spacing:-.015em;
 }
 
+
 .detail-section-line{
     flex:1;
+
     height:1px;
-    background:#e9eeea;
+
+    background:#e6ece8;
 }
 
 
 /* ============================================================
-   DETAIL GRID
-============================================================ */
-
-.detail-grid{
-    display:grid;
-    grid-template-columns:
-        repeat(
-            2,
-            minmax(0,1fr)
-        );
-    gap:9px;
-}
-
-.detail-box{
-    min-width:0;
-    padding:12px 13px;
-    background:#fafcfb;
-    border:1px solid #e6ece8;
-    border-radius:11px;
-}
-
-.detail-label{
-    display:block;
-    margin-bottom:5px;
-    color:#89948d;
-    font-size:9px;
-    font-weight:800;
-    letter-spacing:.04em;
-    text-transform:uppercase;
-}
-
-.detail-value{
-    display:block;
-    color:#35483b;
-    font-size:12px;
-    line-height:1.45;
-    font-weight:750;
-    word-break:break-word;
-}
-
-.detail-value.muted{
-    color:#8a958e;
-    font-weight:600;
-}
-
-
-/* ============================================================
-   HIGHLIGHT GRID
+   QUANTITY / VALUE
 ============================================================ */
 
 .highlight-grid{
     display:grid;
+
     grid-template-columns:
         repeat(
             3,
             minmax(0,1fr)
         );
-    gap:10px;
+
+    gap:12px;
 }
 
+
 .highlight-box{
-    padding:14px;
-    background:#f7faf8;
+    position:relative;
+
+    min-width:0;
+
+    padding:17px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #f8fbf9 0%,
+            #f4f9f5 100%
+        );
+
     border:1px solid #dfe9e2;
-    border-radius:12px;
+
+    border-radius:14px;
+
+    transition:
+        transform .18s ease,
+        box-shadow .18s ease,
+        border-color .18s ease;
 }
+
+
+.highlight-box:hover{
+    transform:translateY(-1px);
+
+    border-color:#d2e1d6;
+
+    box-shadow:
+        0 5px 15px rgba(30,70,43,.05);
+}
+
 
 .highlight-label{
     display:block;
-    margin-bottom:6px;
+
+    margin-bottom:8px;
+
     color:#849188;
+
     font-size:9px;
+    line-height:1.2;
+
     font-weight:800;
+
     text-transform:uppercase;
-    letter-spacing:.05em;
+
+    letter-spacing:.06em;
 }
+
 
 .highlight-value{
     display:block;
+
     color:#294333;
-    font-size:17px;
-    line-height:1.2;
+
+    font-size:20px;
+    line-height:1.25;
+
     font-weight:850;
+
+    word-break:break-word;
 }
+
 
 .highlight-unit{
     margin-left:3px;
+
     color:#738078;
+
     font-size:10px;
+
     font-weight:700;
-}
-
-
-/* ============================================================
-   STORAGE BOX
-============================================================ */
-
-.storage-location-card{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:14px;
-    background:#f7faf8;
-    border:1px solid #dfe9e2;
-    border-radius:12px;
-}
-
-.storage-location-icon{
-    flex:none;
-    width:42px;
-    height:42px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:11px;
-    background:#eaf3ec;
-    font-size:20px;
-}
-
-.storage-location-information{
-    min-width:0;
-}
-
-.storage-location-name{
-    margin:0;
-    color:#2d4535;
-    font-size:13px;
-    font-weight:850;
-}
-
-.storage-location-meta{
-    margin:4px 0 0;
-    color:#7d8981;
-    font-size:10px;
-}
-
-
-/* ============================================================
-   ANIMAL SECTION
-============================================================ */
-
-.animal-detail-grid{
-    display:grid;
-    grid-template-columns:
-        repeat(
-            3,
-            minmax(0,1fr)
-        );
-    gap:9px;
 }
 
 
@@ -624,30 +572,50 @@ const dairyName =
    DESCRIPTION
 ============================================================ */
 
-.description-box{
-    padding:14px;
-    background:#fafcfb;
-    border:1px solid #e5ebe7;
-    border-radius:12px;
+.description-section{
+    margin-top:27px;
 }
+
+
+.description-box{
+    min-height:90px;
+
+    padding:17px;
+
+    background:#fafcfb;
+
+    border:1px solid #e4ebe6;
+
+    border-radius:14px;
+}
+
 
 .description-text{
     margin:0;
-    color:#59685f;
-    font-size:11px;
-    line-height:1.7;
+
+    color:#526259;
+
+    font-size:12px;
+
+    line-height:1.75;
+
+    font-weight:500;
+
     white-space:pre-wrap;
+
     word-break:break-word;
 }
 
 
-/* ============================================================
-   EMPTY DESCRIPTION
-============================================================ */
-
 .no-description{
-    color:#8b958f;
+    display:block;
+
+    color:#8a958e;
+
     font-size:11px;
+
+    line-height:1.6;
+
     font-style:italic;
 }
 
@@ -660,59 +628,41 @@ const dairyName =
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:12px;
-    padding:16px 21px;
+
+    gap:15px;
+
+    padding:16px 25px;
+
     background:#fafcfb;
+
     border-top:1px solid #e5ebe7;
 }
 
-.footer-farm{
-    min-width:0;
-}
 
-.footer-label{
-    display:block;
-    margin-bottom:3px;
-    color:#8a958e;
-    font-size:9px;
-    font-weight:800;
-    text-transform:uppercase;
-    letter-spacing:.05em;
-}
-
-.footer-farm-name{
-    color:#415449;
-    font-size:11px;
-    font-weight:750;
-    word-break:break-word;
-}
-
-
-/* ============================================================
-   BACK BUTTON
-============================================================ */
-
-.content-item-footer-button{
-    flex:none;
-    display:inline-flex;
+.footer-status{
+    display:flex;
     align-items:center;
-    justify-content:center;
-    min-height:36px;
-    padding:0 13px;
-    border:1px solid #286e41;
-    border-radius:9px;
-    background:#2d7b48;
-    color:#fff;
-    font-size:11px;
-    font-weight:800;
-    text-decoration:none;
-    transition:.18s ease;
+
+    gap:7px;
+
+    color:#758279;
+
+    font-size:10px;
+
+    font-weight:700;
 }
 
-.content-item-footer-button:hover{
-    background:#256b3d;
-    border-color:#256b3d;
-    color:#fff;
+
+.footer-status-dot{
+    width:7px;
+    height:7px;
+
+    border-radius:50%;
+
+    background:#3c8b55;
+
+    box-shadow:
+        0 0 0 3px #e8f4eb;
 }
 
 
@@ -723,23 +673,35 @@ const dairyName =
 .content-item-message{
     display:flex;
     align-items:center;
+
     gap:9px;
-    margin-bottom:16px;
+
+    margin-bottom:15px;
+
     padding:11px 13px;
+
     border-radius:10px;
+
     font-size:12px;
+
     font-weight:650;
 }
 
+
 .content-item-success{
     background:#f1f8f3;
+
     border:1px solid #d8e9dc;
+
     color:#28603a;
 }
 
+
 .content-item-error{
     background:#fff5f4;
+
     border:1px solid #efd9d6;
+
     color:#9a443b;
 }
 
@@ -751,41 +713,38 @@ const dairyName =
 @media (max-width:700px){
 
     .storage-content-item-page{
-        padding:13px 11px 45px;
+        padding:16px 11px 45px;
     }
 
-    .content-item-navigation{
-        align-items:flex-start;
-        flex-direction:column;
-    }
-
-    .content-item-location{
-        text-align:left;
-    }
 
     .content-item-hero{
         align-items:flex-start;
-        padding:17px;
+
+        gap:13px;
+
+        padding:18px;
     }
 
+
     .content-item-icon{
-        width:55px;
-        height:55px;
+        width:57px;
+        height:57px;
+
         border-radius:15px;
+
         font-size:27px;
     }
 
+
     .content-item-title{
-        font-size:21px;
+        font-size:22px;
     }
+
 
     .content-item-body{
-        padding:16px;
+        padding:18px;
     }
 
-    .detail-grid{
-        grid-template-columns:1fr;
-    }
 
     .highlight-grid{
         grid-template-columns:
@@ -795,53 +754,83 @@ const dairyName =
             );
     }
 
-    .animal-detail-grid{
-        grid-template-columns:
-            repeat(
-                2,
-                minmax(0,1fr)
-            );
-    }
 
     .content-item-footer{
-        align-items:stretch;
-        flex-direction:column;
-        padding:15px 16px;
-    }
-
-    .content-item-footer-button{
-        width:100%;
-        box-sizing:border-box;
+        padding:14px 18px;
     }
 
 }
 
 
-@media (max-width:430px){
+@media (max-width:470px){
 
     .content-item-hero{
         gap:11px;
+
+        padding:16px;
     }
 
+
     .content-item-icon{
-        width:48px;
-        height:48px;
+        width:49px;
+        height:49px;
+
+        border-radius:13px;
+
         font-size:23px;
     }
+
+
+    .content-item-eyebrow{
+        font-size:8px;
+    }
+
 
     .content-item-title{
         font-size:19px;
     }
 
+
+    .content-item-badge{
+        min-height:22px;
+
+        padding:0 8px;
+
+        font-size:8px;
+    }
+
+
+    .content-item-body{
+        padding:16px;
+    }
+
+
     .highlight-grid{
         grid-template-columns:1fr;
     }
 
-    .animal-detail-grid{
-        grid-template-columns:1fr;
+
+    .highlight-box{
+        padding:15px;
+    }
+
+
+    .highlight-value{
+        font-size:18px;
+    }
+
+
+    .description-section{
+        margin-top:23px;
+    }
+
+
+    .content-item-footer{
+        padding:13px 16px;
     }
 
 }
+
 </style>
 
 
@@ -849,44 +838,17 @@ const dairyName =
 
 
     <!-- ========================================================
-         NAVIGATION
+         SUCCESS MESSAGE
     ========================================================= -->
 
-    <div class="content-item-navigation">
-
-        <a
-            href="/storage/<%= currentDairy._id %>/contents/<%= currentStorage._id %>"
-            class="content-item-back"
-        >
-            ← Back to Contents
-        </a>
-
-
-        <div class="content-item-location">
-
-            <%= dairyName %>
-
-            &nbsp; / &nbsp;
-
-            <%= storageName %>
-
-        </div>
-
-    </div>
-
-
-    <!-- ========================================================
-         MESSAGES
-    ========================================================= -->
-
-    <% if (successMessage) { %>
+    <% if (safeSuccessMessage) { %>
 
         <div class="content-item-message content-item-success">
 
             <span>✓</span>
 
             <span>
-                <%= successMessage %>
+                <%= safeSuccessMessage %>
             </span>
 
         </div>
@@ -894,14 +856,18 @@ const dairyName =
     <% } %>
 
 
-    <% if (pageError) { %>
+    <!-- ========================================================
+         ERROR MESSAGE
+    ========================================================= -->
+
+    <% if (safePageError) { %>
 
         <div class="content-item-message content-item-error">
 
             <span>!</span>
 
             <span>
-                <%= pageError %>
+                <%= safePageError %>
             </span>
 
         </div>
@@ -917,11 +883,13 @@ const dairyName =
 
 
         <!-- ====================================================
-             HERO
+             HEADER
         ==================================================== -->
 
-        <div class="content-item-hero">
+        <header class="content-item-hero">
 
+
+            <!-- ITEM ICON -->
 
             <div class="content-item-icon">
 
@@ -930,7 +898,10 @@ const dairyName =
             </div>
 
 
+            <!-- ITEM INFORMATION -->
+
             <div class="content-item-hero-information">
+
 
                 <p class="content-item-eyebrow">
 
@@ -941,20 +912,15 @@ const dairyName =
 
                 <h1 class="content-item-title">
 
-                    <%= contentItem.name || "Unnamed Item" %>
+                    <%= itemName %>
 
                 </h1>
 
 
-                <p class="content-item-id">
-
-                    ID:
-                    <%= displayValue(contentItem._id) %>
-
-                </p>
-
+                <!-- CATEGORY / STATUS -->
 
                 <div class="content-item-badges">
+
 
                     <span
                         class="content-item-badge <%= itemCategoryClass %>"
@@ -977,11 +943,14 @@ const dairyName =
 
                     <% } %>
 
+
                 </div>
+
 
             </div>
 
-        </div>
+
+        </header>
 
 
         <!-- ====================================================
@@ -992,230 +961,20 @@ const dairyName =
 
 
             <!-- ==================================================
-                 BASIC INFORMATION
+                 QUANTITY & VALUE
             ================================================== -->
 
             <section class="detail-section">
 
-                <div class="detail-section-heading">
-
-                    <h2 class="detail-section-title">
-                        Basic Information
-                    </h2>
-
-                    <span class="detail-section-line"></span>
-
-                </div>
-
-
-                <div class="detail-grid">
-
-
-                    <div class="detail-box">
-
-                        <span class="detail-label">
-                            Name
-                        </span>
-
-                        <span class="detail-value">
-
-                            <%= displayValue(contentItem.name) %>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="detail-box">
-
-                        <span class="detail-label">
-                            Type
-                        </span>
-
-                        <span class="detail-value">
-
-                            <%= displayValue(contentItem.type) %>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="detail-box">
-
-                        <span class="detail-label">
-                            Record Type
-                        </span>
-
-                        <span class="detail-value">
-
-                            <%= displayValue(contentItem.recordType) %>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="detail-box">
-
-                        <span class="detail-label">
-                            Status
-                        </span>
-
-                        <span class="detail-value">
-
-                            <%= displayValue(contentItem.status) %>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="detail-box">
-
-                        <span class="detail-label">
-                            Code
-                        </span>
-
-                        <span class="detail-value">
-
-                            <%= displayValue(contentItem.code) %>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="detail-box">
-
-                        <span class="detail-label">
-                            Asset Code
-                        </span>
-
-                        <span class="detail-value">
-
-                            <%= displayValue(contentItem.assetCode) %>
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- ==================================================
-                 STORAGE INFORMATION
-            ================================================== -->
-
-            <section class="detail-section">
 
                 <div class="detail-section-heading">
 
                     <h2 class="detail-section-title">
-                        Storage Information
-                    </h2>
 
-                    <span class="detail-section-line"></span>
-
-                </div>
-
-
-                <div class="storage-location-card">
-
-
-                    <div class="storage-location-icon">
-
-                        <% if (storageType === "agroStore") { %>
-                            🌾
-                        <% } else { %>
-                            📦
-                        <% } %>
-
-                    </div>
-
-
-                    <div class="storage-location-information">
-
-                        <h3 class="storage-location-name">
-
-                            <%= storageName %>
-
-                        </h3>
-
-
-                        <p class="storage-location-meta">
-
-                            Storage Type:
-                            <strong>
-                                <%= displayValue(currentStorage.type) %>
-                            </strong>
-
-                            &nbsp;&nbsp;•&nbsp;&nbsp;
-
-                            Room / Dwell Number:
-                            <strong>
-                                <%= displayValue(storageRoomNumber) %>
-                            </strong>
-
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div
-                    class="detail-grid"
-                    style="margin-top:9px;"
-                >
-
-                    <div class="detail-box">
-
-                        <span class="detail-label">
-                            Item Dwell Number
-                        </span>
-
-                        <span class="detail-value">
-
-                            <%= displayValue(contentItem.dwellNumber) %>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="detail-box">
-
-                        <span class="detail-label">
-                            Storage ID
-                        </span>
-
-                        <span class="detail-value">
-
-                            <%= displayValue(currentStorage._id) %>
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- ==================================================
-                 QUANTITY / VALUE
-            ================================================== -->
-
-            <section class="detail-section">
-
-                <div class="detail-section-heading">
-
-                    <h2 class="detail-section-title">
                         Quantity & Value
+
                     </h2>
+
 
                     <span class="detail-section-line"></span>
 
@@ -1225,21 +984,38 @@ const dairyName =
                 <div class="highlight-grid">
 
 
+                    <!-- ==========================================
+                         QUANTITY
+                    =========================================== -->
+
                     <div class="highlight-box">
 
+
                         <span class="highlight-label">
+
                             Quantity
+
                         </span>
 
+
                         <span class="highlight-value">
+
 
                             <% if (hasQuantity) { %>
 
                                 <%= quantityValue.toLocaleString() %>
 
-                                <span class="highlight-unit">
-                                    <%= contentItem.unit || "unit" %>
-                                </span>
+
+                                <% if (itemUnit) { %>
+
+                                    <span class="highlight-unit">
+
+                                        <%= itemUnit %>
+
+                                    </span>
+
+                                <% } %>
+
 
                             <% } else { %>
 
@@ -1247,33 +1023,53 @@ const dairyName =
 
                             <% } %>
 
+
                         </span>
+
 
                     </div>
 
 
+                    <!-- ==========================================
+                         UNIT
+                    =========================================== -->
+
                     <div class="highlight-box">
 
+
                         <span class="highlight-label">
+
                             Unit
+
                         </span>
+
 
                         <span class="highlight-value">
 
-                            <%= contentItem.unit || "—" %>
+                            <%= itemUnit || "—" %>
 
                         </span>
+
 
                     </div>
 
 
+                    <!-- ==========================================
+                         CURRENT WORTH
+                    =========================================== -->
+
                     <div class="highlight-box">
 
+
                         <span class="highlight-label">
+
                             Current Worth
+
                         </span>
 
+
                         <span class="highlight-value">
+
 
                             <% if (hasCurrentWorth) { %>
 
@@ -1285,190 +1081,34 @@ const dairyName =
 
                             <% } %>
 
+
                         </span>
 
+
                     </div>
+
 
                 </div>
 
+
             </section>
-
-
-            <!-- ==================================================
-                 CONDITION
-            ================================================== -->
-
-            <% if (contentItem.condition) { %>
-
-                <section class="detail-section">
-
-                    <div class="detail-section-heading">
-
-                        <h2 class="detail-section-title">
-                            Condition
-                        </h2>
-
-                        <span class="detail-section-line"></span>
-
-                    </div>
-
-
-                    <div class="detail-box">
-
-                        <span class="detail-label">
-                            Current Condition
-                        </span>
-
-                        <span class="detail-value">
-
-                            <%= contentItem.condition %>
-
-                        </span>
-
-                    </div>
-
-                </section>
-
-            <% } %>
-
-
-            <!-- ==================================================
-                 ANIMAL INFORMATION
-            ================================================== -->
-
-            <% if (itemIsAnimal) { %>
-
-                <section class="detail-section">
-
-                    <div class="detail-section-heading">
-
-                        <h2 class="detail-section-title">
-                            Animal Information
-                        </h2>
-
-                        <span class="detail-section-line"></span>
-
-                    </div>
-
-
-                    <div class="animal-detail-grid">
-
-
-                        <div class="detail-box">
-
-                            <span class="detail-label">
-                                Gender
-                            </span>
-
-                            <span class="detail-value">
-
-                                <%= displayValue(contentItem.gender) %>
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="detail-box">
-
-                            <span class="detail-label">
-                                Age
-                            </span>
-
-                            <span class="detail-value">
-
-                                <%= displayValue(contentItem.ageText) %>
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="detail-box">
-
-                            <span class="detail-label">
-                                Milking
-                            </span>
-
-                            <span class="detail-value">
-
-                                <% if (contentItem.isMilking) { %>
-
-                                    Yes
-
-                                <% } else { %>
-
-                                    No
-
-                                <% } %>
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="detail-box">
-
-                            <span class="detail-label">
-                                Code
-                            </span>
-
-                            <span class="detail-value">
-
-                                <%= displayValue(contentItem.code) %>
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="detail-box">
-
-                            <span class="detail-label">
-                                Asset Code
-                            </span>
-
-                            <span class="detail-value">
-
-                                <%= displayValue(contentItem.assetCode) %>
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="detail-box">
-
-                            <span class="detail-label">
-                                Dwell Number
-                            </span>
-
-                            <span class="detail-value">
-
-                                <%= displayValue(contentItem.dwellNumber) %>
-
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                </section>
-
-            <% } %>
 
 
             <!-- ==================================================
                  DESCRIPTION
             ================================================== -->
 
-            <section class="detail-section">
+            <section class="detail-section description-section">
+
 
                 <div class="detail-section-heading">
 
                     <h2 class="detail-section-title">
+
                         Description
+
                     </h2>
+
 
                     <span class="detail-section-line"></span>
 
@@ -1477,7 +1117,14 @@ const dairyName =
 
                 <div class="description-box">
 
-                    <% if (contentItem.description) { %>
+
+                    <% if (
+                        contentItem.description &&
+                        String(
+                            contentItem.description
+                        ).trim() !== ""
+                    ) { %>
+
 
                         <p class="description-text">
 
@@ -1485,18 +1132,23 @@ const dairyName =
 
                         </p>
 
+
                     <% } else { %>
+
 
                         <span class="no-description">
 
-                            No description has been provided for
-                            this item.
+                            No description has been provided
+                            for this item.
 
                         </span>
 
+
                     <% } %>
 
+
                 </div>
+
 
             </section>
 
@@ -1511,28 +1163,15 @@ const dairyName =
         <footer class="content-item-footer">
 
 
-            <div class="footer-farm">
+            <div class="footer-status">
 
-                <span class="footer-label">
-                    Dairy Farm
-                </span>
+                <span class="footer-status-dot"></span>
 
-
-                <span class="footer-farm-name">
-
-                    <%= dairyName %>
-
+                <span>
+                    Item details
                 </span>
 
             </div>
-
-
-            <a
-                href="/storage/<%= currentDairy._id %>/contents/<%= currentStorage._id %>"
-                class="content-item-footer-button"
-            >
-                ← Back to <%= storageName %>
-            </a>
 
 
         </footer>
