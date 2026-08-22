@@ -392,12 +392,12 @@ try {
 //
 // ==========================================================
 
-let animalFeedsRoutes;
+let inventoryRoutes;
 
 try {
 
-  animalFeedsRoutes =
-    require("./routes/animal-feeds");
+  inventoryRoutes =
+    require("./inventory");
 
 } catch (err) {
 
@@ -1237,17 +1237,17 @@ if (storageRoutes) {
 //
 // NOT:
 //
-//     app.use("/animal-feeds", animalFeedsRoutes)
+//     app.use("/inventory", inventoryRoutes)
 //
 // ==========================================================
 
-if (animalFeedsRoutes) {
+if (inventoryRoutes) {
 
   app.use(
 
     "/dairy",
 
-    animalFeedsRoutes
+    inventoryRoutes
 
   );
 
