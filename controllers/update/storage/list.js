@@ -25,7 +25,7 @@ async function list(
     try {
 
         // ======================================================
-        // PARAMETERS
+        // URL PARAMETERS
         // ======================================================
 
         const {
@@ -35,32 +35,25 @@ async function list(
 
 
         // ======================================================
-        // GET AGROSTORE INVENTORY
+        // LOAD INVENTORY
         // ======================================================
         //
         // IMPORTANT:
         //
-        // roomNumber from the URL is the AgroStore's
-        // application-level ID.
+        // parentId remains the actual Dairy Farm MongoDB _id.
         //
-        // Therefore:
+        // roomNumber remains the AgroStore roomNumber.
         //
-        //     roomNumber
-        //          ↓
-        //     agroStoreId
-        //          ↓
-        //     AgroStore.roomNumber
-        //
-        // The storage service resolves the parent Dairy
-        // Farm through AgroStore.assetCode.
+        // There is NO agroStoreId substitution.
         //
         // ======================================================
 
         const result =
             await storageService.list({
 
-                agroStoreId:
-                    roomNumber
+                parentId,
+
+                roomNumber
 
             });
 
