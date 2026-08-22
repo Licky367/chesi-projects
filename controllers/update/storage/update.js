@@ -48,12 +48,29 @@ async function update(
         // ======================================================
         // UPDATE STOCK
         // ======================================================
+        //
+        // IMPORTANT:
+        //
+        // roomNumber from the URL is the AgroStore's
+        // application-level ID.
+        //
+        // Therefore:
+        //
+        //     roomNumber
+        //          ↓
+        //     agroStoreId
+        //          ↓
+        //     AgroStore.roomNumber
+        //
+        // The storage service resolves the parent Dairy
+        // Farm through AgroStore.assetCode.
+        //
+        // ======================================================
 
         await storageService.update({
 
-            parentId,
-
-            roomNumber,
+            agroStoreId:
+                roomNumber,
 
             inventoryId,
 
