@@ -423,6 +423,30 @@
         user: user
     }) %>
 
+
+
+    <!-- =================================================
+         ANIMAL FEED ITEM LINKS
+
+         Appears directly below h1.ejs.
+
+         The controller passes the generated item links
+         through:
+
+             itemLinks
+
+         The itemLink.ejs component renders the
+         horizontally scrollable cards.
+    ================================================== -->
+
+    <%- include("update/storage/itemLink", {
+        dairy: dairy,
+        user: user,
+        itemLinks: itemLinks || []
+    }) %>
+
+
+
     <!-- =================================================
          ASSET SIDEBAR
     ================================================== -->
@@ -436,7 +460,7 @@
 
     <!-- =================================================
          MAIN FEED
-    ================================================== -->
+    ================================================= -->
 
     <section
         id="feed"
