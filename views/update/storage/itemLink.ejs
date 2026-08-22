@@ -1,0 +1,895 @@
+<% /*
+==========================================================
+STORAGE ITEM LINK CARDS
+
+FILE:
+    views/update/storage/itemlink.ejs
+
+PURPOSE:
+    Display horizontally scrollable cards for Dairy items
+    currently allocated to storage.
+
+    Each card links directly to the generated item details
+    URL:
+
+        /storage/<parentId>/contents/<storageId>/details/<itemId>
+
+EXPECTED DATA:
+----------------------------------------------------------
+    storageItems
+
+Each storage item is expected to contain:
+
+    _id
+    name
+    displayImage / profileImage
+    detailsUrl
+
+    parentFarm
+        name
+        _id
+
+    storage
+        name
+        _id
+        type
+        roomNumber
+
+TITLE:
+----------------------------------------------------------
+
+    <user.name>,
+    Give any updates concerning the
+    <parentFarm.name>'s animal feeds.
+
+==========================================================
+*/ %>
+
+
+<%
+    /* ======================================================
+       SAFE STORAGE ITEM ARRAY
+    ====================================================== */
+
+    const items =
+        Array.isArray(storageItems)
+            ? storageItems
+            : [];
+
+
+    /* ======================================================
+       SAFE USER
+    ====================================================== */
+
+    const currentUser =
+        typeof user !== "undefined" && user
+            ? user
+            : null;
+
+
+    /* ======================================================
+       FIND PARENT FARM NAME
+    ====================================================== */
+
+    let parentFarmName = "";
+
+
+    if (
+        items.length &&
+        items[0] &&
+        items[0].parentFarm
+    ) {
+
+        parentFarmName =
+            items[0].parentFarm.name ||
+            "";
+
+    }
+
+
+    /* ======================================================
+       FALLBACK TO CURRENT DAIRY
+       IN CASE THE VIEW ALREADY HAS THE PARENT FARM
+       AS "dairy"
+    ====================================================== */
+
+    if (
+        !parentFarmName &&
+        typeof dairy !== "undefined" &&
+        dairy
+    ) {
+
+        parentFarmName =
+            dairy.name ||
+            "";
+
+    }
+
+
+    /* ======================================================
+       FALLBACK TEXT
+    ====================================================== */
+
+    if (!parentFarmName) {
+
+        parentFarmName =
+            "the dairy farm";
+
+    }
+
+
+    /* ======================================================
+       USER NAME
+    ====================================================== */
+
+    const userName =
+        currentUser &&
+        currentUser.name
+            ? currentUser.name
+            : "Give any updates";
+%>
+
+
+<% if (items.length) { %>
+
+<section
+    class="storage-item-link-strip"
+    aria-label="Animal feed storage updates"
+>
+
+
+    <!-- =====================================================
+         SECTION HEADER
+    ===================================================== -->
+
+    <div class="storage-item-link-header">
+
+        <div class="storage-item-link-title">
+
+            <strong>
+                <%= userName %>,
+            </strong>
+
+            <span>
+                Give any updates concerning the
+                <strong>
+                    <%= parentFarmName %>'s
+                </strong>
+                animal feeds.
+            </span>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         HORIZONTAL ITEM SCROLL
+    ===================================================== -->
+
+    <div
+        class="storage-item-link-scroll"
+        role="list"
+        aria-label="Animal feed storage items"
+    >
+
+
+        <% items.forEach(function (item) { %>
+
+            <%
+                /* =================================================
+                   SAFETY CHECK
+                ================================================= */
+
+                if (
+                    !item ||
+                    !item._id ||
+                    !item.detailsUrl
+                ) {
+
+                    return;
+
+                }
+
+
+                /* =================================================
+                   ITEM NAME
+                ================================================= */
+
+                const itemName =
+                    item.name ||
+                    "Unnamed Item";
+
+
+                /* =================================================
+                   STORAGE
+                ================================================= */
+
+                const storage =
+                    item.storage ||
+                    null;
+
+
+                /* =================================================
+                   AGROSTORE NAME
+
+                   Prefer the actual storage record name.
+
+                   If no name exists, identify it as an
+                   AgroStore using its roomNumber.
+                ================================================= */
+
+                let storageName =
+                    "";
+
+
+                if (
+                    storage &&
+                    storage.name
+                ) {
+
+                    storageName =
+                        storage.name;
+
+                } else if (
+                    storage &&
+                    storage.roomNumber !== null &&
+                    storage.roomNumber !== undefined
+                ) {
+
+                    storageName =
+                        `AgroStore ${storage.roomNumber}`;
+
+                } else {
+
+                    storageName =
+                        "AgroStore";
+
+                }
+
+
+                /* =================================================
+                   ITEM IMAGE
+                ================================================= */
+
+                const itemImage =
+                    item.displayImage ||
+                    item.profileImage ||
+                    (
+                        Array.isArray(
+                            item.profileImages
+                        ) &&
+                        item.profileImages.length
+                    )
+                        ? (
+                            Array.isArray(
+                                item.profileImages
+                            )
+                                ? item.profileImages[0]
+                                : null
+                        )
+                        : null;
+
+
+                /* =================================================
+                   FINAL IMAGE
+
+                   Avoid an empty image source.
+                ================================================= */
+
+                const imageSrc =
+                    itemImage ||
+                    (
+                        "https://ui-avatars.com/api/?name=" +
+                        encodeURIComponent(
+                            itemName
+                        ) +
+                        "&background=e8f5ee&color=198754"
+                    );
+            %>
+
+
+
+            <!-- =================================================
+                 ITEM CARD
+            ================================================== -->
+
+            <a
+                href="/<%= item.detailsUrl %>"
+                class="storage-item-link-card"
+                role="listitem"
+                aria-label="Update <%= itemName %> in <%= storageName %>"
+            >
+
+
+                <!-- =============================================
+                     ITEM IMAGE
+                ============================================== -->
+
+                <div class="storage-item-link-image-wrap">
+
+                    <img
+                        src="<%= imageSrc %>"
+                        alt="<%= itemName %>"
+                        class="storage-item-link-image"
+                        loading="lazy"
+                    >
+
+                </div>
+
+
+
+                <!-- =============================================
+                     ITEM NAME
+                ============================================== -->
+
+                <div class="storage-item-link-name">
+
+                    <%= itemName %>
+
+                </div>
+
+
+
+                <!-- =============================================
+                     AGROSTORE NAME
+                ============================================== -->
+
+                <div class="storage-item-link-storage">
+
+                    <span
+                        class="storage-item-link-storage-icon"
+                        aria-hidden="true"
+                    >
+                        ▪
+                    </span>
+
+                    <span>
+                        <%= storageName %>
+                    </span>
+
+                </div>
+
+
+            </a>
+
+
+        <% }); %>
+
+
+    </div>
+
+
+</section>
+
+
+
+<style>
+
+/* ==========================================================
+   STORAGE ITEM LINK STRIP
+========================================================== */
+
+.storage-item-link-strip {
+
+    width:
+        100%;
+
+    margin:
+        0
+        0
+        16px;
+
+    padding:
+        0;
+
+    overflow:
+        hidden;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+}
+
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.storage-item-link-header {
+
+    width:
+        100%;
+
+    padding:
+        0
+        2px
+        10px;
+
+}
+
+
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
+.storage-item-link-title {
+
+    max-width:
+        700px;
+
+    color:
+        #69736c;
+
+    font-size:
+        13px;
+
+    line-height:
+        1.45;
+
+}
+
+
+.storage-item-link-title strong {
+
+    color:
+        #26332a;
+
+    font-weight:
+        700;
+
+}
+
+
+
+/* ==========================================================
+   HORIZONTAL SCROLL
+========================================================== */
+
+.storage-item-link-scroll {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    gap:
+        10px;
+
+    overflow-x:
+        auto;
+
+    overflow-y:
+        hidden;
+
+    padding:
+        2px
+        2px
+        8px;
+
+    scroll-behavior:
+        smooth;
+
+    -webkit-overflow-scrolling:
+        touch;
+
+    scrollbar-width:
+        none;
+
+}
+
+
+.storage-item-link-scroll::-webkit-scrollbar {
+
+    display:
+        none;
+
+}
+
+
+
+/* ==========================================================
+   ITEM CARD
+========================================================== */
+
+.storage-item-link-card {
+
+    position:
+        relative;
+
+    flex:
+        0 0
+        116px;
+
+    width:
+        116px;
+
+    height:
+        174px;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    overflow:
+        hidden;
+
+    text-decoration:
+        none;
+
+    border:
+        1px solid
+        #e4e9e6;
+
+    border-radius:
+        15px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 2px 8px
+        rgba(
+            20,
+            40,
+            28,
+            .06
+        );
+
+    transition:
+        transform .16s ease,
+        box-shadow .16s ease;
+
+}
+
+
+
+/* ==========================================================
+   CARD HOVER
+========================================================== */
+
+.storage-item-link-card:hover {
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 5px 14px
+        rgba(
+            20,
+            40,
+            28,
+            .10
+        );
+
+}
+
+
+
+/* ==========================================================
+   CARD ACTIVE
+========================================================== */
+
+.storage-item-link-card:active {
+
+    transform:
+        scale(.97);
+
+}
+
+
+
+/* ==========================================================
+   IMAGE WRAPPER
+========================================================== */
+
+.storage-item-link-image-wrap {
+
+    position:
+        relative;
+
+    width:
+        100%;
+
+    height:
+        116px;
+
+    flex:
+        0 0
+        116px;
+
+    overflow:
+        hidden;
+
+    background:
+        #eef3ef;
+
+}
+
+
+
+/* ==========================================================
+   IMAGE
+========================================================== */
+
+.storage-item-link-image {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    display:
+        block;
+
+    object-fit:
+        cover;
+
+}
+
+
+
+/* ==========================================================
+   ITEM NAME
+========================================================== */
+
+.storage-item-link-name {
+
+    width:
+        100%;
+
+    padding:
+        8px
+        8px
+        2px;
+
+    color:
+        #202520;
+
+    font-size:
+        13px;
+
+    font-weight:
+        700;
+
+    line-height:
+        16px;
+
+    overflow:
+        hidden;
+
+    display:
+        -webkit-box;
+
+    -webkit-box-orient:
+        vertical;
+
+    -webkit-line-clamp:
+        2;
+
+}
+
+
+
+/* ==========================================================
+   STORAGE / AGROSTORE NAME
+========================================================== */
+
+.storage-item-link-storage {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        4px;
+
+    padding:
+        1px
+        8px
+        8px;
+
+    color:
+        #a2aaa5;
+
+    font-size:
+        9px;
+
+    font-weight:
+        400;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* ==========================================================
+   STORAGE ICON
+========================================================== */
+
+.storage-item-link-storage-icon {
+
+    flex:
+        0 0 auto;
+
+    color:
+        #b5bcb7;
+
+    font-size:
+        8px;
+
+}
+
+
+
+/* ==========================================================
+   STORAGE NAME TEXT
+========================================================== */
+
+.storage-item-link-storage span:last-child {
+
+    min-width:
+        0;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
+
+
+/* ==========================================================
+   FOCUS ACCESSIBILITY
+========================================================== */
+
+.storage-item-link-card:focus-visible {
+
+    outline:
+        2px solid
+        #198754;
+
+    outline-offset:
+        2px;
+
+}
+
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+
+    .storage-item-link-strip {
+
+        margin-bottom:
+            14px;
+
+    }
+
+
+
+    /* ==============================================
+       TITLE
+    ============================================== */
+
+    .storage-item-link-title {
+
+        font-size:
+            12px;
+
+        line-height:
+            1.4;
+
+    }
+
+
+
+    /* ==============================================
+       CARD
+    ============================================== */
+
+    .storage-item-link-card {
+
+        flex-basis:
+            112px;
+
+        width:
+            112px;
+
+        height:
+            170px;
+
+        border-radius:
+            14px;
+
+    }
+
+
+
+    /* ==============================================
+       IMAGE
+    ============================================== */
+
+    .storage-item-link-image-wrap {
+
+        height:
+            112px;
+
+        flex-basis:
+            112px;
+
+    }
+
+
+
+    /* ==============================================
+       ITEM NAME
+    ============================================== */
+
+    .storage-item-link-name {
+
+        padding:
+            7px
+            7px
+            2px;
+
+        font-size:
+            12px;
+
+        line-height:
+            15px;
+
+    }
+
+
+
+    /* ==============================================
+       STORAGE
+    ============================================== */
+
+    .storage-item-link-storage {
+
+        padding:
+            1px
+            7px
+            7px;
+
+        font-size:
+            9px;
+
+    }
+
+}
+
+</style>
+
+
+<% } %>
