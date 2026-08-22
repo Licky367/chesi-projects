@@ -88,7 +88,9 @@ if (isProduction) {
   if (missing.length) {
 
     console.error(
+
       `❌ Production startup failed: missing required environment variables: ${missing.join(", ")}`
+
     );
 
     process.exit(1);
@@ -111,9 +113,9 @@ const connectDB =
 // ==========================================================
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // INDEX
-// ==========================================================
+// ----------------------------------------------------------
 
 let indexRoutes;
 
@@ -132,9 +134,9 @@ try {
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // AUTH
-// ==========================================================
+// ----------------------------------------------------------
 
 let authRoutes;
 
@@ -153,9 +155,9 @@ try {
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // CREATE INVITE
-// ==========================================================
+// ----------------------------------------------------------
 
 let createRoutes;
 
@@ -174,9 +176,9 @@ try {
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // UPDATE
-// ==========================================================
+// ----------------------------------------------------------
 
 let updateRoutes;
 
@@ -195,9 +197,9 @@ try {
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // ADD DAIRY / ASSET
-// ==========================================================
+// ----------------------------------------------------------
 
 let addRoutes;
 
@@ -216,9 +218,9 @@ try {
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // PROFILE
-// ==========================================================
+// ----------------------------------------------------------
 
 let profileRoutes;
 
@@ -237,9 +239,9 @@ try {
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // MILK
-// ==========================================================
+// ----------------------------------------------------------
 
 let milkRoutes;
 
@@ -258,9 +260,9 @@ try {
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // ACCOUNTS
-// ==========================================================
+// ----------------------------------------------------------
 
 let accountsRoutes;
 
@@ -324,6 +326,22 @@ try {
 // ==========================================================
 // STORAGE
 // ==========================================================
+//
+// Rooms
+// AgroStores
+// Storage filtering
+//
+// Mounted at:
+//
+//     /storage
+//
+// Examples:
+//
+//     GET /storage
+//     GET /storage?type=room
+//     GET /storage?type=agroStore
+//
+// ==========================================================
 
 let storageRoutes;
 
@@ -343,24 +361,34 @@ try {
 
 
 // ==========================================================
-// ANIMAL FEEDS
+// ANIMAL FEEDS / AGROSTORE STOCK
 // ==========================================================
 //
-// Feed cards generated from AgroStore contents.
+// Animal-feed stock update routes.
 //
-// The AgroStore itself is identified by:
+// IMPORTANT:
 //
-//     dairy._id
+// The EJS card submits to:
 //
-// The mounted route base is:
+//     /dairy/:storageId/animal-feeds/:feedId/update
 //
-//     /animal-feeds
+// Therefore this router is mounted at:
 //
-// Example:
+//     /dairy
 //
-//     POST /animal-feeds/:agroStoreId/:itemId/quantity
+// The animal-feeds router itself must define:
 //
-//     POST /animal-feeds/:agroStoreId/:itemId/update
+//     POST /:storageId/animal-feeds/:feedId/update
+//
+// Resulting in:
+//
+//     POST /dairy/:storageId/animal-feeds/:feedId/update
+//
+// where:
+//
+//     storageId = AgroStore dairy._id
+//
+//     feedId    = individual stock item's _id
 //
 // ==========================================================
 
@@ -807,9 +835,11 @@ app.use(
       process.env.SESSION_SECRET ||
 
       (
+
         isProduction
           ? ""
           : "development-session-secret"
+
       ),
 
     store:
@@ -1164,6 +1194,18 @@ if (financialsRoutes) {
 // ==========================================================
 // STORAGE
 // ==========================================================
+//
+// Storage routes:
+//
+//     /storage
+//
+// Examples:
+//
+//     /storage
+//     /storage?type=room
+//     /storage?type=agroStore
+//
+// ==========================================================
 
 if (storageRoutes) {
 
@@ -1179,22 +1221,23 @@ if (storageRoutes) {
 
 
 // ==========================================================
-// ANIMAL FEEDS
+// ANIMAL FEEDS / AGROSTORE STOCK
 // ==========================================================
 //
-// IMPORTANT:
+// IMPORTANT ROUTING:
 //
-// The route is mounted independently from /storage.
+// The view uses:
 //
-// The AgroStore page remains:
+//     POST
+//     /dairy/<storageId>/animal-feeds/<feedId>/update
 //
-//     /dairy/:id
+// Therefore:
 //
-// where :id is:
+//     app.use("/dairy", animalFeedsRoutes)
 //
-//     agroStore._id
+// NOT:
 //
-// Animal-feed operations use that same AgroStore _id.
+//     app.use("/animal-feeds", animalFeedsRoutes)
 //
 // ==========================================================
 
@@ -1202,7 +1245,7 @@ if (animalFeedsRoutes) {
 
   app.use(
 
-    "/animal-feeds",
+    "/dairy",
 
     animalFeedsRoutes
 
@@ -1673,7 +1716,9 @@ const bootstrap = async () => {
     ) {
 
       console.error(
+
         "❌ Production startup failed: MongoDB is unavailable."
+
       );
 
       process.exit(1);
@@ -1683,7 +1728,9 @@ const bootstrap = async () => {
     else {
 
       console.warn(
+
         "⚠️ MongoDB is unavailable. Starting server without database initialization."
+
       );
 
     }
