@@ -1,991 +1,793 @@
 // ==========================================================
-// controllers/storage/contents.js
-// STORAGE CONTENTS CONTROLLER
+// services/storage/contents.js
+// STORAGE CONTENTS SERVICE
 // ==========================================================
 //
-// PURPOSE:
+// SINGLE SOURCE OF TRUTH:
 //
-//     Display and manage everything allocated inside an
-//     existing Room or AgroStore.
+//     models/dairy.js
 //
-// PAGES:
+// URL:
 //
 //     /storage/:dairyId/contents/:storageId
 //
-//     /storage/:dairyId/contents/:storageId/details/:itemId
-//
-//     /dairy/:parentId/contents/:storageId/details/:itemId
-//
-//     /update/storage/feed-update-cards
-//
-// STORAGE TYPES:
+// ----------------------------------------------------------
+// STORAGE TYPES
+// ----------------------------------------------------------
 //
 //     room
-//         - normal storage
-//         - add
-//         - omit
-//         - reshuffle
-//
 //     agroStore
-//         - feed storage
-//         - add feeds
-//         - update quantity
-//         - automatic omission when quantity = 0
-//         - no manual omit
-//         - no reshuffle
+//
+// ----------------------------------------------------------
+// RECORD TYPES
+// ----------------------------------------------------------
+//
+// STORAGE STRUCTURE:
+//
+//     recordType === "structure"
+//
+// NORMAL ROOM ITEM:
+//
+//     recordType !== "structure"
+//     type !== "feeds"
+//
+// AGROSTORE FEED:
+//
+//     recordType !== "structure"
+//     type === "feeds"
+//     dwellNumber === storage.roomNumber
+//     quantity > 0
 //
 // IMPORTANT:
 //
-//     The controller NEVER hardcodes feed information.
-//
-//     The service loads the actual Dairy records.
-//
-//     The feed-update-cards EJS receives those records.
+//     AgroStore contents are REAL Dairy records.
+//     Nothing is hardcoded.
 //
 // ==========================================================
 
-const storageContentsService =
-    require("../../services/storage");
+const mongoose = require("mongoose");
+
+const Dairy = require("../../models/dairy");
 
 
 // ==========================================================
-// STORAGE TYPES
+// CONSTANTS
 // ==========================================================
 
-const STORAGE_TYPES = {
+const STRUCTURE_RECORD_TYPE = "structure";
 
-    ROOM:
-        "room",
+const ROOM_TYPE = "room";
 
-    AGRO_STORE:
-        "agroStore"
+const AGROSTORE_TYPE = "agroStore";
 
-};
+const FEED_TYPE = "feeds";
+
+const ACTIVE_STATUS = "active";
 
 
 // ==========================================================
-// BODY HELPERS
+// ERROR HELPER
 // ==========================================================
 
-function getBodyValue(req, key) {
+function createError(message, statusCode = 400) {
 
-    if (
-        req.body &&
-        Object.prototype.hasOwnProperty.call(
-            req.body,
-            key
-        )
-    ) {
+    const error = new Error(message);
 
-        return req.body[key];
+    error.status = statusCode;
 
-    }
+    error.statusCode = statusCode;
 
-    return undefined;
-
+    return error;
 }
 
 
 // ==========================================================
-// GET ITEM IDS
+// OBJECT ID VALIDATION
 // ==========================================================
 
-function getItemIds(req) {
+function isValidObjectId(value) {
 
-    const value =
-        getBodyValue(
-            req,
-            "itemIds"
-        );
-
-
-    if (Array.isArray(value)) {
-
-        return value
-            .filter(Boolean)
-            .map(
-                value =>
-                    String(value).trim()
-            )
-            .filter(Boolean);
-
-    }
-
-
-    if (
-        value !== undefined &&
-        value !== null &&
-        String(value).trim() !== ""
-    ) {
-
-        return [
-            String(value).trim()
-        ];
-
-    }
-
-
-    return [];
-
+    return Boolean(
+        value &&
+        mongoose.Types.ObjectId.isValid(value)
+    );
 }
 
 
 // ==========================================================
-// CREATE COUNT MESSAGE
+// NORMALIZE IDS
 // ==========================================================
 
-function createCountMessage(
-    count,
-    singular,
-    plural
-) {
+function normalizeIdArray(value) {
 
-    const safeCount =
-        Number(count) || 0;
-
-
-    return `${safeCount} ${
-        safeCount === 1
-            ? singular
-            : plural
-    }`;
-
-}
-
-
-// ==========================================================
-// ROUTE IDS
-// ==========================================================
-
-function getRouteIds(req) {
-
-    return {
-
-        dairyId:
-            String(
-                req.params?.dairyId || ""
-            ).trim(),
-
-        storageId:
-            String(
-                req.params?.storageId || ""
-            ).trim()
-
-    };
-
-}
-
-
-// ==========================================================
-// CONTENT ITEM ROUTE IDS
-// ==========================================================
-
-function getContentItemRouteIds(req) {
-
-    return {
-
-        dairyId:
-            String(
-                req.params?.dairyId || ""
-            ).trim(),
-
-        storageId:
-            String(
-                req.params?.storageId || ""
-            ).trim(),
-
-        itemId:
-            String(
-                req.params?.itemId || ""
-            ).trim()
-
-    };
-
-}
-
-
-// ==========================================================
-// DAIRY CONTENT ITEM ROUTE IDS
-// ==========================================================
-
-function getDairyContentItemRouteIds(req) {
-
-    return {
-
-        parentId:
-            String(
-                req.params?.parentId || ""
-            ).trim(),
-
-        storageId:
-            String(
-                req.params?.storageId || ""
-            ).trim(),
-
-        itemId:
-            String(
-                req.params?.itemId || ""
-            ).trim()
-
-    };
-
-}
-
-
-// ==========================================================
-// CONTENTS URL
-// ==========================================================
-
-function getContentsUrl(
-    dairyId,
-    storageId,
-    query = {}
-) {
-
-    const baseUrl =
-        `/storage/${encodeURIComponent(
-            dairyId
-        )}/contents/${encodeURIComponent(
-            storageId
-        )}`;
-
-
-    const params =
-        new URLSearchParams();
-
-
-    Object.entries(query).forEach(
-        function ([key, value]) {
-
-            if (
+    const values =
+        Array.isArray(value)
+            ? value
+            : (
                 value !== undefined &&
                 value !== null &&
-                String(value) !== ""
-            ) {
+                String(value).trim() !== ""
+            )
+                ? [value]
+                : [];
 
-                params.set(
-                    key,
-                    String(value)
-                );
-
-            }
-
-        }
-    );
-
-
-    const queryString =
-        params.toString();
-
-
-    return queryString
-        ? `${baseUrl}?${queryString}`
-        : baseUrl;
-
+    return [
+        ...new Set(
+            values
+                .filter(
+                    value =>
+                        value !== null &&
+                        value !== undefined &&
+                        String(value).trim() !== ""
+                )
+                .map(
+                    value =>
+                        String(value).trim()
+                )
+        )
+    ];
 }
 
 
 // ==========================================================
-// CONTENT ITEM URL
+// VALIDATE ITEM IDS
 // ==========================================================
 
-function getContentItemUrl(
-    dairyId,
-    storageId,
-    itemId
-) {
+function validateItemIds(itemIds) {
 
-    return (
-        `/storage/${encodeURIComponent(
-            dairyId
-        )}` +
-        `/contents/${encodeURIComponent(
-            storageId
-        )}` +
-        `/details/${encodeURIComponent(
-            itemId
-        )}`
-    );
+    const ids =
+        normalizeIdArray(itemIds);
 
-}
+    if (ids.length === 0) {
 
-
-// ==========================================================
-// DAIRY CONTENT ITEM URL
-// ==========================================================
-
-function getDairyContentItemUrl(
-    parentId,
-    storageId,
-    itemId
-) {
-
-    return (
-        `/dairy/${encodeURIComponent(
-            parentId
-        )}` +
-        `/contents/${encodeURIComponent(
-            storageId
-        )}` +
-        `/details/${encodeURIComponent(
-            itemId
-        )}`
-    );
-
-}
-
-
-// ==========================================================
-// VALIDATE STORAGE TYPE
-// ==========================================================
-
-function validateStorageType(storage) {
-
-    const storageType =
-        storage?.type;
-
-
-    if (
-        storageType !==
-            STORAGE_TYPES.ROOM &&
-        storageType !==
-            STORAGE_TYPES.AGRO_STORE
-    ) {
-
-        const error =
-            new Error(
-                "Storage facility must be either room or agroStore."
-            );
-
-        error.status = 400;
-
-        throw error;
-
+        throw createError(
+            "No items were selected.",
+            400
+        );
     }
 
+    const invalidId =
+        ids.find(
+            id =>
+                !isValidObjectId(id)
+        );
 
-    return storageType;
+    if (invalidId) {
 
+        throw createError(
+            "One or more selected item IDs are invalid.",
+            400
+        );
+    }
+
+    return ids;
 }
 
 
 // ==========================================================
-// FIND ITEM INSIDE STORAGE
+// STORAGE TYPE
 // ==========================================================
 
-function findContentItem(
-    items,
-    itemId
+function getStorageType(storage) {
+
+    return typeof storage?.type === "string"
+        ? storage.type.trim()
+        : "";
+}
+
+
+// ==========================================================
+// VALID STORAGE TYPE
+// ==========================================================
+
+function isValidStorageType(storage) {
+
+    const type =
+        getStorageType(storage);
+
+    return (
+        type === ROOM_TYPE ||
+        type === AGROSTORE_TYPE
+    );
+}
+
+
+// ==========================================================
+// AGROSTORE CHECK
+// ==========================================================
+
+function isAgroStore(storage) {
+
+    return (
+        getStorageType(storage) ===
+        AGROSTORE_TYPE
+    );
+}
+
+
+// ==========================================================
+// NORMAL ROOM CHECK
+// ==========================================================
+
+function isNormalRoom(storage) {
+
+    return (
+        getStorageType(storage) ===
+        ROOM_TYPE
+    );
+}
+
+
+// ==========================================================
+// STORAGE STRUCTURE CHECK
+// ==========================================================
+
+function isStorageStructure(item) {
+
+    return Boolean(
+        item &&
+        String(item.recordType || "").trim() ===
+        STRUCTURE_RECORD_TYPE
+    );
+}
+
+
+// ==========================================================
+// FEED CHECK
+// ==========================================================
+//
+// Accept both:
+//
+//     feeds
+//     feed
+//
+// This keeps the service compatible with existing records.
+//
+// ==========================================================
+
+function isFeed(item) {
+
+    if (!item) {
+
+        return false;
+    }
+
+    const type =
+        String(item.type || "")
+            .trim()
+            .toLowerCase();
+
+    return (
+        type === "feeds" ||
+        type === "feed"
+    );
+}
+
+
+// ==========================================================
+// AGROSTORE ITEM CHECK
+// ==========================================================
+//
+// AgroStore content eligibility:
+//
+//     dwellNumber === storage.roomNumber
+//     quantity > 0
+//     recordType !== structure
+//     type === feeds/feed
+//
+// ==========================================================
+
+function isAgroStoreItem(
+    item,
+    roomNumber = null
 ) {
 
-    if (!Array.isArray(items)) {
+    if (!item) {
+
+        return false;
+    }
+
+    if (isStorageStructure(item)) {
+
+        return false;
+    }
+
+    if (!isFeed(item)) {
+
+        return false;
+    }
+
+    if (
+        roomNumber !== null &&
+        roomNumber !== undefined
+    ) {
+
+        if (
+            String(item.dwellNumber ?? "").trim() !==
+            String(roomNumber).trim()
+        ) {
+
+            return false;
+        }
+    }
+
+    const quantity =
+        Number(item.quantity);
+
+    return (
+        Number.isFinite(quantity) &&
+        quantity > 0
+    );
+}
+
+
+// ==========================================================
+// ACTIVE STORAGE CHECK
+// ==========================================================
+
+function isActiveStorage(storage) {
+
+    return (
+        typeof storage?.status === "string" &&
+        storage.status.trim() === ACTIVE_STATUS
+    );
+}
+
+
+// ==========================================================
+// STORAGE ROOM NUMBER
+// ==========================================================
+
+function getStorageRoomNumber(storage) {
+
+    if (!storage) {
 
         return null;
-
     }
-
-
-    return (
-        items.find(
-            function (item) {
-
-                if (
-                    !item ||
-                    item._id === undefined ||
-                    item._id === null
-                ) {
-
-                    return false;
-
-                }
-
-
-                return (
-                    String(item._id) ===
-                    String(itemId)
-                );
-
-            }
-        ) || null
-    );
-
-}
-
-
-// ==========================================================
-// GET AGROSTORE FEED ITEMS
-// ==========================================================
-//
-// IMPORTANT:
-//
-//     DO NOT use availableItems here.
-//
-//     result.items means:
-//
-//         CURRENTLY INSIDE THIS STORAGE
-//
-//     result.availableItems means:
-//
-//         NOT CURRENTLY ALLOCATED
-//
-//     For the feed update cards we need:
-//
-//         result.items
-//
-//     because these are the feeds that actually belong to
-//     the selected AgroStore.
-//
-// ==========================================================
-
-function getAgroStoreFeedItems(
-    result,
-    storageType
-) {
 
     if (
-        storageType !==
-        STORAGE_TYPES.AGRO_STORE
+        storage.roomNumber === null ||
+        storage.roomNumber === undefined
     ) {
 
-        return [];
-
+        return null;
     }
 
+    const value =
+        String(storage.roomNumber).trim();
 
-    if (!Array.isArray(result?.items)) {
-
-        return [];
-
-    }
-
-
-    return result.items.filter(
-        function (item) {
-
-            if (!item) {
-
-                return false;
-
-            }
-
-
-            const quantity =
-                Number(
-                    item.quantity
-                );
-
-
-            if (
-                !Number.isFinite(
-                    quantity
-                ) ||
-                quantity <= 0
-            ) {
-
-                return false;
-
-            }
-
-
-            const type =
-                String(
-                    item.type || ""
-                )
-                    .trim()
-                    .toLowerCase();
-
-
-            return (
-                type === "feeds" ||
-                type === "feed"
-            );
-
-        }
-    );
-
+    return value !== ""
+        ? value
+        : null;
 }
 
 
 // ==========================================================
-// NORMALIZE RENDER VARIABLES
+// FIND PARENT FARM
 // ==========================================================
 
-function getRenderMessages(
-    req,
-    options = {}
-) {
+async function findParentFarm(dairyId) {
 
-    const querySuccess =
-        req.query?.success;
+    if (!isValidObjectId(dairyId)) {
+
+        throw createError(
+            "Invalid Dairy Farm ID.",
+            400
+        );
+    }
+
+    const dairy =
+        await Dairy.findById(dairyId)
+            .lean();
+
+    if (!dairy) {
+
+        throw createError(
+            "Dairy Farm not found.",
+            404
+        );
+    }
+
+    const farmCode =
+        Number(dairy.code);
+
+    if (
+        !Number.isInteger(farmCode) ||
+        farmCode >= 0
+    ) {
+
+        throw createError(
+            "The selected Dairy record is not a Dairy Farm.",
+            400
+        );
+    }
+
+    return dairy;
+}
 
 
-    const successMessage =
-        options.successMessage !== undefined
-            ? options.successMessage
-            : (
-                querySuccess !== undefined
-                    ? String(querySuccess)
-                    : null
-            );
+// ==========================================================
+// GET STORAGE ID
+// ==========================================================
+
+function getStorageId(options = {}) {
+
+    const value =
+        options.storageId ||
+        options.itemId;
+
+    return String(value || "").trim();
+}
 
 
-    const pageError =
-        options.pageError !== undefined
-            ? options.pageError
-            : null;
+// ==========================================================
+// FIND STORAGE FOR FARM
+// ==========================================================
 
+async function findStorageForFarm({
+    dairy,
+    storageId,
+    itemId
+}) {
+
+    const resolvedStorageId =
+        getStorageId({
+            storageId,
+            itemId
+        });
+
+    if (!isValidObjectId(resolvedStorageId)) {
+
+        throw createError(
+            "Invalid storage facility ID.",
+            400
+        );
+    }
+
+    const storage =
+        await Dairy.findOne({
+
+            _id:
+                resolvedStorageId,
+
+            recordType:
+                STRUCTURE_RECORD_TYPE,
+
+            assetCode:
+                dairy.code,
+
+            type: {
+                $in: [
+                    ROOM_TYPE,
+                    AGROSTORE_TYPE
+                ]
+            }
+
+        })
+        .lean();
+
+    if (!storage) {
+
+        throw createError(
+            "Storage facility not found for this Dairy Farm.",
+            404
+        );
+    }
+
+    if (!isStorageStructure(storage)) {
+
+        throw createError(
+            "The selected storage facility is not a structure.",
+            400
+        );
+    }
+
+    if (!isValidStorageType(storage)) {
+
+        throw createError(
+            "Storage type must be either room or agroStore.",
+            400
+        );
+    }
+
+    const roomNumber =
+        getStorageRoomNumber(storage);
+
+    if (roomNumber === null) {
+
+        throw createError(
+            "The selected storage facility does not have a valid Room Number.",
+            400
+        );
+    }
+
+    return storage;
+}
+
+
+// ==========================================================
+// FARM ITEM FILTER
+// ==========================================================
+
+function farmItemFilter(dairy) {
 
     return {
 
-        successMessage,
+        assetCode:
+            dairy.code
 
-        pageError
+    };
+}
+
+
+// ==========================================================
+// NORMAL ROOM ITEM FILTER
+// ==========================================================
+
+function normalRoomItemFilter() {
+
+    return {
+
+        type: {
+            $ne:
+                FEED_TYPE
+        },
+
+        recordType: {
+            $ne:
+                STRUCTURE_RECORD_TYPE
+        }
+
+    };
+}
+
+
+// ==========================================================
+// AGROSTORE ITEM FILTER
+// ==========================================================
+//
+// THIS IS THE IMPORTANT FIX.
+//
+// AgroStore contents MUST explicitly select feed records.
+//
+//     dwellNumber === roomNumber
+//     quantity > 0
+//     type === feeds
+//     recordType !== structure
+//
+// ==========================================================
+
+function agroStoreItemFilter(roomNumber) {
+
+    return {
+
+        dwellNumber:
+            roomNumber,
+
+        quantity: {
+            $gt:
+                0
+        },
+
+        type: {
+            $in: [
+                "feeds",
+                "feed"
+            ]
+        },
+
+        recordType: {
+            $ne:
+                STRUCTURE_RECORD_TYPE
+        }
+
+    };
+}
+
+
+// ==========================================================
+// AGROSTORE CONTENT FILTER
+// ==========================================================
+
+function agroStoreContentFilter(roomNumber) {
+
+    return agroStoreItemFilter(
+        roomNumber
+    );
+}
+
+
+// ==========================================================
+// STORAGE CONTENT TYPE FILTER
+// ==========================================================
+
+function storageItemTypeFilter(storage) {
+
+    if (isAgroStore(storage)) {
+
+        const roomNumber =
+            getStorageRoomNumber(storage);
+
+        return agroStoreContentFilter(
+            roomNumber
+        );
+    }
+
+    if (isNormalRoom(storage)) {
+
+        return normalRoomItemFilter();
+    }
+
+    throw createError(
+        "Storage type must be either room or agroStore.",
+        400
+    );
+}
+
+
+// ==========================================================
+// CURRENT CONTENT FILTER
+// ==========================================================
+
+function currentContentFilter({
+    dairy,
+    storage
+}) {
+
+    const roomNumber =
+        getStorageRoomNumber(storage);
+
+    if (roomNumber === null) {
+
+        throw createError(
+            "Storage Room Number is missing.",
+            400
+        );
+    }
+
+    return {
+
+        ...farmItemFilter(dairy),
+
+        ...storageItemTypeFilter(storage)
+
+    };
+}
+
+
+// ==========================================================
+// AVAILABLE ITEM FILTER
+// ==========================================================
+//
+// Items which are not currently allocated.
+//
+// For AgroStore this remains the available pool from which
+// feeds can be selected.
+//
+// ==========================================================
+
+function availableItemFilter({
+    dairy,
+    storage
+}) {
+
+    const filter = {
+
+        ...farmItemFilter(dairy),
+
+        $or: [
+
+            {
+                dwellNumber: {
+                    $exists:
+                        false
+                }
+            },
+
+            {
+                dwellNumber:
+                    null
+            },
+
+            {
+                dwellNumber:
+                    ""
+            }
+
+        ]
 
     };
 
-}
+    if (isAgroStore(storage)) {
 
-
-// ==========================================================
-// RENDER STORAGE CONTENTS
-// ==========================================================
-
-async function renderContents(
-    req,
-    res,
-    options = {}
-) {
-
-    const {
-        dairyId,
-        storageId
-    } =
-        getRouteIds(req);
-
-
-    if (!dairyId) {
-
-        const error =
-            new Error(
-                "Dairy ID is required."
-            );
-
-        error.status = 400;
-
-        throw error;
-
-    }
-
-
-    if (!storageId) {
-
-        const error =
-            new Error(
-                "Storage ID is required."
-            );
-
-        error.status = 400;
-
-        throw error;
-
-    }
-
-
-    const result =
-        await storageContentsService
-            .getStorageContents({
-
-                dairyId,
-
-                storageId
-
-            });
-
-
-    if (
-        !result ||
-        !result.storage
-    ) {
-
-        const error =
-            new Error(
-                "Storage facility not found."
-            );
-
-        error.status = 404;
-
-        throw error;
-
-    }
-
-
-    const storageType =
-        validateStorageType(
-            result.storage
-        );
-
-
-    const activeTab =
-        options.activeTab ||
-        req.query?.tab ||
-        "view";
-
-
-    const {
-        successMessage,
-        pageError
-    } =
-        getRenderMessages(
-            req,
-            options
-        );
-
-
-    // ======================================================
-    // ACTUAL FEEDS CURRENTLY IN AGROSTORE
-    // ======================================================
-
-    const feedUpdateItems =
-        getAgroStoreFeedItems(
-            result,
-            storageType
-        );
-
-
-    // ======================================================
-    // RENDER
-    // ======================================================
-
-    return res.render(
-        "storage/contents",
-        {
-
-            title:
-                result.storage.displayName ||
-                result.storage.name ||
-                "Storage Contents",
-
-
-            dairy:
-                result.dairy || null,
-
-
-            dairyId,
-
-
-            parentId:
-                dairyId,
-
-
-            storage:
-                result.storage,
-
-
-            storageId,
-
-
-            storageType,
-
-
-            isRoom:
-                storageType ===
-                STORAGE_TYPES.ROOM,
-
-
-            isAgroStore:
-                storageType ===
-                STORAGE_TYPES.AGRO_STORE,
-
-
-            items:
-                Array.isArray(result.items)
-                    ? result.items
-                    : [],
-
-
-            itemCount:
-                Number(result.itemCount) || 0,
-
-
-            availableItems:
-                Array.isArray(
-                    result.availableItems
-                )
-                    ? result.availableItems
-                    : [],
-
-
-            // =================================================
-            // DYNAMIC FEED CARD DATA
-            // =================================================
-
-            feedUpdateItems,
-
-
-            agroStoreItems:
-                feedUpdateItems,
-
-
-            targetStorages:
-                Array.isArray(
-                    result.targetStorages
-                )
-                    ? result.targetStorages
-                    : [],
-
-
-            activeTab,
-
-
-            // =================================================
-            // ALWAYS DEFINED
-            // =================================================
-
-            successMessage,
-
-            pageError
-
-        }
-    );
-
-}
-
-
-// ==========================================================
-// GET CONTENT ITEM DETAILS
-// ==========================================================
-
-async function contentItem(req, res) {
-
-    try {
-
-        const {
-            dairyId,
-            storageId,
-            itemId
-        } =
-            getContentItemRouteIds(req);
-
-
-        if (!dairyId) {
-
-            const error =
-                new Error(
-                    "Dairy ID is required."
-                );
-
-            error.status = 400;
-
-            throw error;
-
-        }
-
-
-        if (!storageId) {
-
-            const error =
-                new Error(
-                    "Storage ID is required."
-                );
-
-            error.status = 400;
-
-            throw error;
-
-        }
-
-
-        if (!itemId) {
-
-            const error =
-                new Error(
-                    "Content item ID is required."
-                );
-
-            error.status = 400;
-
-            throw error;
-
-        }
-
-
-        const result =
-            await storageContentsService
-                .getStorageContents({
-
-                    dairyId,
-
-                    storageId
-
-                });
-
-
-        if (!result) {
-
-            const error =
-                new Error(
-                    "Storage contents could not be loaded."
-                );
-
-            error.status = 404;
-
-            throw error;
-
-        }
-
-
-        if (!result.storage) {
-
-            const error =
-                new Error(
-                    "Storage facility not found."
-                );
-
-            error.status = 404;
-
-            throw error;
-
-        }
-
-
-        const storageType =
-            validateStorageType(
-                result.storage
-            );
-
-
-        const item =
-            findContentItem(
-                result.items || [],
-                itemId
-            );
-
-
-        if (!item) {
-
-            const error =
-                new Error(
-                    "Content item was not found in this storage facility."
-                );
-
-            error.status = 404;
-
-            throw error;
-
-        }
-
-
-        const {
-            successMessage,
-            pageError
-        } =
-            getRenderMessages(
-                req
-            );
-
-
-        const contentsUrl =
-            getContentsUrl(
-                dairyId,
-                storageId
-            );
-
-
-        const contentItemUrl =
-            getContentItemUrl(
-                dairyId,
-                storageId,
-                itemId
-            );
-
-
-        const dairyContentItemUrl =
-            getDairyContentItemUrl(
-                dairyId,
-                storageId,
-                itemId
-            );
-
-
-        return res.render(
-            "storage/content-item",
+        Object.assign(
+            filter,
             {
+                type: {
+                    $in: [
+                        "feeds",
+                        "feed"
+                    ]
+                },
 
-                title:
-                    item.name ||
-                    "Content Item",
-
-
-                dairy:
-                    result.dairy || null,
-
-
-                dairyId,
-
-
-                parentId:
-                    dairyId,
-
-
-                storage:
-                    result.storage,
-
-
-                storageId,
-
-
-                item,
-
-
-                itemId,
-
-
-                storageType,
-
-
-                isRoom:
-                    storageType ===
-                    STORAGE_TYPES.ROOM,
-
-
-                isAgroStore:
-                    storageType ===
-                    STORAGE_TYPES.AGRO_STORE,
-
-
-                contentsUrl,
-
-
-                contentItemUrl,
-
-
-                dairyContentItemUrl,
-
-
-                successMessage,
-
-
-                pageError
-
+                recordType: {
+                    $ne:
+                        STRUCTURE_RECORD_TYPE
+                }
             }
         );
 
-    } catch (error) {
-
-        console.error(
-            "Storage content item error:",
-            error
-        );
-
-
-        return sendError(
-            res,
-            error,
-            "Unable to load content item."
-        );
-
+        return filter;
     }
 
+    if (isNormalRoom(storage)) {
+
+        Object.assign(
+            filter,
+            normalRoomItemFilter()
+        );
+
+        return filter;
+    }
+
+    throw createError(
+        "Storage type must be either room or agroStore.",
+        400
+    );
+}
+
+
+// ==========================================================
+// GET TARGET STORAGES
+// ==========================================================
+
+async function getTargetStorages({
+    dairy,
+    storage
+}) {
+
+    const storageType =
+        getStorageType(storage);
+
+    if (
+        storageType !== ROOM_TYPE &&
+        storageType !== AGROSTORE_TYPE
+    ) {
+
+        throw createError(
+            "Storage type must be either room or agroStore.",
+            400
+        );
+    }
+
+    const targetStorages =
+        await Dairy.find({
+
+            recordType:
+                STRUCTURE_RECORD_TYPE,
+
+            assetCode:
+                dairy.code,
+
+            type:
+                storageType,
+
+            status:
+                ACTIVE_STATUS,
+
+            _id: {
+                $ne:
+                    storage._id
+            }
+
+        })
+        .sort({
+            roomNumber:
+                1
+        })
+        .lean();
+
+    return targetStorages;
 }
 
 
@@ -993,220 +795,255 @@ async function contentItem(req, res) {
 // GET STORAGE CONTENTS
 // ==========================================================
 
-async function contents(req, res) {
+async function getStorageContents({
+    dairyId,
+    storageId,
+    itemId
+}) {
 
-    try {
-
-        return await renderContents(
-            req,
-            res
+    const dairy =
+        await findParentFarm(
+            dairyId
         );
 
-    } catch (error) {
+    const storage =
+        await findStorageForFarm({
 
-        console.error(
-            "Storage contents error:",
-            error
-        );
+            dairy,
+
+            storageId,
+
+            itemId
+
+        });
+
+    const items =
+        await Dairy.find(
+            currentContentFilter({
+
+                dairy,
+
+                storage
+
+            })
+        )
+        .sort({
+
+            code:
+                1,
+
+            name:
+                1
+
+        })
+        .lean();
 
 
-        return sendError(
-            res,
-            error,
-            "Unable to load storage contents."
-        );
+    // ------------------------------------------------------
+    // SAFETY FILTER
+    // ------------------------------------------------------
+    //
+    // The database query already filters these records.
+    // This additional check guarantees that the returned
+    // AgroStore list contains only genuine positive-quantity
+    // feeds.
+    //
+    // ------------------------------------------------------
 
-    }
+    const finalItems =
+        isAgroStore(storage)
 
+            ? items.filter(
+                item =>
+                    isAgroStoreItem(
+                        item,
+                        getStorageRoomNumber(storage)
+                    )
+            )
+
+            : items;
+
+
+    const availableItems =
+        await Dairy.find(
+            availableItemFilter({
+
+                dairy,
+
+                storage
+
+            })
+        )
+        .sort({
+
+            code:
+                1,
+
+            name:
+                1
+
+        })
+        .lean();
+
+
+    const targetStorages =
+        await getTargetStorages({
+
+            dairy,
+
+            storage
+
+        });
+
+
+    return {
+
+        dairy,
+
+        storage,
+
+        items:
+            finalItems,
+
+        itemCount:
+            finalItems.length,
+
+        availableItems,
+
+        targetStorages
+
+    };
 }
 
 
 // ==========================================================
-// RENDER FEED UPDATE CARDS
-// ==========================================================
-//
-// GET:
-//
-// /update/storage/feed-update-cards
-//
-// QUERY:
-//
-// ?dairyId=:dairyId&storageId=:storageId
-//
-// IMPORTANT:
-//
-//     This endpoint renders the EJS card independently.
-//
-//     It does NOT require the card to be included inside
-//     contents.ejs.
-//
+// GET SINGLE CONTENT ITEM DETAILS
 // ==========================================================
 
-async function feedUpdateCards(req, res) {
+async function getContentItemDetails({
+    dairyId,
+    storageId,
+    itemId
+}) {
 
-    try {
+    if (!isValidObjectId(itemId)) {
 
-        const dairyId =
-            String(
-                req.query?.dairyId ||
-                req.params?.dairyId ||
-                ""
-            ).trim();
-
-
-        const storageId =
-            String(
-                req.query?.storageId ||
-                req.params?.storageId ||
-                ""
-            ).trim();
-
-
-        if (!dairyId) {
-
-            const error =
-                new Error(
-                    "Dairy ID is required."
-                );
-
-            error.status = 400;
-
-            throw error;
-
-        }
-
-
-        if (!storageId) {
-
-            const error =
-                new Error(
-                    "Storage ID is required."
-                );
-
-            error.status = 400;
-
-            throw error;
-
-        }
-
-
-        const result =
-            await storageContentsService
-                .getStorageContents({
-
-                    dairyId,
-
-                    storageId
-
-                });
-
-
-        if (
-            !result ||
-            !result.storage
-        ) {
-
-            const error =
-                new Error(
-                    "Storage facility not found."
-                );
-
-            error.status = 404;
-
-            throw error;
-
-        }
-
-
-        const storageType =
-            validateStorageType(
-                result.storage
-            );
-
-
-        // ==================================================
-        // IMPORTANT
-        // ==================================================
-        //
-        // Get the feeds CURRENTLY IN THE SELECTED AGROSTORE.
-        //
-        // NOT availableItems.
-        //
-        // ==================================================
-
-        const feedUpdateItems =
-            getAgroStoreFeedItems(
-                result,
-                storageType
-            );
-
-
-        return res.render(
-            "update/storage/feed-update-cards",
-            {
-
-                title:
-                    "Available Animal Feeds",
-
-
-                dairy:
-                    result.dairy || null,
-
-
-                dairyId,
-
-
-                parentId:
-                    dairyId,
-
-
-                storage:
-                    result.storage,
-
-
-                storageId,
-
-
-                storageType,
-
-
-                // =================================================
-                // DYNAMIC ITEMS
-                // =================================================
-
-                items:
-                    feedUpdateItems,
-
-
-                availableItems:
-                    feedUpdateItems,
-
-
-                feedUpdateItems,
-
-
-                agroStoreItems:
-                    feedUpdateItems
-
-            }
+        throw createError(
+            "Invalid content item ID.",
+            400
         );
-
-    } catch (error) {
-
-        console.error(
-            "Feed update cards error:",
-            error
-        );
-
-
-        return sendError(
-            res,
-            error,
-            "Unable to load available animal feeds."
-        );
-
     }
 
+    const dairy =
+        await findParentFarm(
+            dairyId
+        );
+
+    const storage =
+        await findStorageForFarm({
+
+            dairy,
+
+            storageId
+
+        });
+
+    const contentFilter =
+        currentContentFilter({
+
+            dairy,
+
+            storage
+
+        });
+
+    const item =
+        await Dairy.findOne({
+
+            _id:
+                itemId,
+
+            ...contentFilter
+
+        })
+        .lean();
+
+    if (!item) {
+
+        throw createError(
+            "The selected item was not found in this storage facility.",
+            404
+        );
+    }
+
+    return {
+
+        dairy,
+
+        storage,
+
+        item
+
+    };
+}
+
+
+// ==========================================================
+// GET AVAILABLE ITEMS
+// ==========================================================
+
+async function getAvailableItems({
+    dairyId,
+    storageId,
+    itemId
+}) {
+
+    const dairy =
+        await findParentFarm(
+            dairyId
+        );
+
+    const storage =
+        await findStorageForFarm({
+
+            dairy,
+
+            storageId,
+
+            itemId
+
+        });
+
+    const items =
+        await Dairy.find(
+            availableItemFilter({
+
+                dairy,
+
+                storage
+
+            })
+        )
+        .sort({
+
+            code:
+                1,
+
+            name:
+                1
+
+        })
+        .lean();
+
+    return {
+
+        dairy,
+
+        storage,
+
+        items
+
+    };
 }
 
 
@@ -1214,279 +1051,261 @@ async function feedUpdateCards(req, res) {
 // ADD ITEMS TO STORAGE
 // ==========================================================
 
-async function addItems(req, res) {
+async function addItemsToStorage({
+    dairyId,
+    storageId,
+    itemId,
+    itemIds
+}) {
 
-    try {
-
-        const {
-            dairyId,
-            storageId
-        } =
-            getRouteIds(req);
-
-
-        const itemIds =
-            getItemIds(req);
-
-
-        const result =
-            await storageContentsService
-                .addItemsToStorage({
-
-                    dairyId,
-
-                    storageId,
-
-                    itemIds
-
-                });
-
-
-        const message =
-            `${createCountMessage(
-                result?.modifiedCount,
-                "item",
-                "items"
-            )} added to ${
-                result?.storage?.displayName ||
-                result?.storage?.name ||
-                "storage"
-            }.`;
-
-
-        return res.redirect(
-            getContentsUrl(
-                dairyId,
-                storageId,
-                {
-
-                    tab:
-                        "add",
-
-                    success:
-                        message
-
-                }
-            )
+    const ids =
+        validateItemIds(
+            itemIds
         );
 
-    } catch (error) {
-
-        console.error(
-            "Storage add items error:",
-            error
+    const dairy =
+        await findParentFarm(
+            dairyId
         );
 
+    const storage =
+        await findStorageForFarm({
 
-        return handleMutationError(
-            req,
-            res,
-            error,
-            "add"
+            dairy,
+
+            storageId,
+
+            itemId
+
+        });
+
+    if (!isActiveStorage(storage)) {
+
+        throw createError(
+            "Items cannot be added to an inactive storage facility.",
+            400
         );
-
     }
 
-}
+    const roomNumber =
+        getStorageRoomNumber(storage);
 
+    const items =
+        await Dairy.find({
 
-// ==========================================================
-// UPDATE AGROSTORE QUANTITY
-// ==========================================================
+            _id: {
+                $in:
+                    ids
+            },
 
-async function updateQuantity(req, res) {
+            ...availableItemFilter({
 
-    try {
+                dairy,
 
-        const {
-            dairyId,
-            storageId
-        } =
-            getRouteIds(req);
+                storage
 
+            })
 
-        const itemId =
-            getBodyValue(
-                req,
-                "itemId"
+        })
+        .lean();
+
+    if (items.length !== ids.length) {
+
+        if (isAgroStore(storage)) {
+
+            throw createError(
+                "One or more selected items do not belong to this Dairy Farm, are not feeds, or are already allocated.",
+                400
             );
-
-
-        const quantity =
-            getBodyValue(
-                req,
-                "quantity"
-            );
-
-
-        const unit =
-            getBodyValue(
-                req,
-                "unit"
-            );
-
-
-        const result =
-            await storageContentsService
-                .updateFeedQuantity({
-
-                    dairyId,
-
-                    storageId,
-
-                    itemId,
-
-                    quantity,
-
-                    unit
-
-                });
-
-
-        let message;
-
-
-        if (
-            result?.omitted === true
-        ) {
-
-            message =
-                `${
-                    result.item?.name ||
-                    "Feed item"
-                } has been automatically omitted because its quantity reached zero.`;
-
-        } else {
-
-            message =
-                `${
-                    result?.item?.name ||
-                    "Feed item"
-                } quantity updated to ${
-                    result?.item?.quantity ??
-                    quantity
-                } ${
-                    result?.item?.unit ||
-                    unit ||
-                    ""
-                }.`.trim();
-
         }
 
-
-        return res.redirect(
-            getContentsUrl(
-                dairyId,
-                storageId,
-                {
-
-                    tab:
-                        "view",
-
-                    success:
-                        message
-
-                }
-            )
+        throw createError(
+            "One or more selected items do not belong to this Dairy Farm, are already allocated, are feeds, or are storage structures.",
+            400
         );
-
-    } catch (error) {
-
-        console.error(
-            "Storage quantity update error:",
-            error
-        );
-
-
-        return handleMutationError(
-            req,
-            res,
-            error,
-            "view"
-        );
-
     }
 
+    const result =
+        await Dairy.updateMany(
+
+            {
+
+                _id: {
+                    $in:
+                        ids
+                },
+
+                ...availableItemFilter({
+
+                    dairy,
+
+                    storage
+
+                })
+
+            },
+
+            {
+
+                $set: {
+
+                    dwellNumber:
+                        roomNumber
+
+                }
+
+            }
+
+        );
+
+    return {
+
+        modifiedCount:
+            result.modifiedCount,
+
+        dairy,
+
+        storage,
+
+        items
+
+    };
 }
 
 
 // ==========================================================
-// OMIT ITEMS
+// OMIT ITEMS FROM STORAGE
 // ==========================================================
 
-async function omitItems(req, res) {
+async function omitItemsFromStorage({
+    dairyId,
+    storageId,
+    itemId,
+    itemIds
+}) {
 
-    try {
-
-        const {
-            dairyId,
-            storageId
-        } =
-            getRouteIds(req);
-
-
-        const itemIds =
-            getItemIds(req);
-
-
-        const result =
-            await storageContentsService
-                .omitItemsFromStorage({
-
-                    dairyId,
-
-                    storageId,
-
-                    itemIds
-
-                });
-
-
-        const message =
-            `${createCountMessage(
-                result?.modifiedCount,
-                "item",
-                "items"
-            )} omitted from ${
-                result?.storage?.displayName ||
-                result?.storage?.name ||
-                "storage"
-            }.`;
-
-
-        return res.redirect(
-            getContentsUrl(
-                dairyId,
-                storageId,
-                {
-
-                    tab:
-                        "view",
-
-                    success:
-                        message
-
-                }
-            )
+    const ids =
+        validateItemIds(
+            itemIds
         );
 
-    } catch (error) {
-
-        console.error(
-            "Storage omit items error:",
-            error
+    const dairy =
+        await findParentFarm(
+            dairyId
         );
 
+    const storage =
+        await findStorageForFarm({
 
-        return handleMutationError(
-            req,
-            res,
-            error,
-            "view"
+            dairy,
+
+            storageId,
+
+            itemId
+
+        });
+
+    if (isAgroStore(storage)) {
+
+        throw createError(
+            "Feeds cannot be manually omitted from an AgroStore. Set the quantity to zero instead.",
+            400
         );
-
     }
 
+    if (!isNormalRoom(storage)) {
+
+        throw createError(
+            "Storage type must be either room or agroStore.",
+            400
+        );
+    }
+
+    if (!isActiveStorage(storage)) {
+
+        throw createError(
+            "Items cannot be omitted from an inactive storage facility.",
+            400
+        );
+    }
+
+    const roomNumber =
+        getStorageRoomNumber(storage);
+
+    const items =
+        await Dairy.find({
+
+            _id: {
+                $in:
+                    ids
+            },
+
+            ...farmItemFilter(
+                dairy
+            ),
+
+            dwellNumber:
+                roomNumber,
+
+            ...normalRoomItemFilter()
+
+        })
+        .lean();
+
+    if (items.length !== ids.length) {
+
+        throw createError(
+            "One or more selected items are not currently in this storage facility.",
+            400
+        );
+    }
+
+    const result =
+        await Dairy.updateMany(
+
+            {
+
+                _id: {
+                    $in:
+                        ids
+                },
+
+                ...farmItemFilter(
+                    dairy
+                ),
+
+                dwellNumber:
+                    roomNumber,
+
+                ...normalRoomItemFilter()
+
+            },
+
+            {
+
+                $set: {
+
+                    dwellNumber:
+                        null
+
+                }
+
+            }
+
+        );
+
+    return {
+
+        modifiedCount:
+            result.modifiedCount,
+
+        dairy,
+
+        storage,
+
+        items
+
+    };
 }
 
 
@@ -1494,191 +1313,481 @@ async function omitItems(req, res) {
 // RESHUFFLE ITEMS
 // ==========================================================
 
-async function reshuffleItems(req, res) {
+async function reshuffleItems({
+    dairyId,
+    storageId,
+    itemId,
+    targetStorageId,
+    itemIds
+}) {
 
-    try {
+    const ids =
+        validateItemIds(
+            itemIds
+        );
 
-        const {
-            dairyId,
-            storageId
-        } =
-            getRouteIds(req);
+    if (!isValidObjectId(targetStorageId)) {
 
+        throw createError(
+            "Invalid target storage facility ID.",
+            400
+        );
+    }
 
-        const itemIds =
-            getItemIds(req);
+    const dairy =
+        await findParentFarm(
+            dairyId
+        );
 
+    const storage =
+        await findStorageForFarm({
 
-        const targetStorageId =
-            getBodyValue(
-                req,
-                "targetStorageId"
-            );
+            dairy,
 
+            storageId,
 
-        const result =
-            await storageContentsService
-                .reshuffleItems({
+            itemId
 
-                    dairyId,
+        });
 
-                    storageId,
+    const targetStorage =
+        await findStorageForFarm({
 
-                    targetStorageId,
+            dairy,
 
-                    itemIds
+            storageId:
+                targetStorageId
 
-                });
+        });
 
+    const currentType =
+        getStorageType(storage);
 
-        const message =
-            `${createCountMessage(
-                result?.modifiedCount,
-                "item",
-                "items"
-            )} reshuffled to ${
-                result?.targetStorage?.displayName ||
-                result?.targetStorage?.name ||
-                "the selected storage"
-            }.`;
+    const targetType =
+        getStorageType(targetStorage);
 
+    if (
+        currentType !== ROOM_TYPE &&
+        currentType !== AGROSTORE_TYPE
+    ) {
 
-        return res.redirect(
-            getContentsUrl(
-                dairyId,
-                storageId,
-                {
+        throw createError(
+            "Storage type must be either room or agroStore.",
+            400
+        );
+    }
 
-                    tab:
-                        "view",
+    if (
+        targetType !== ROOM_TYPE &&
+        targetType !== AGROSTORE_TYPE
+    ) {
 
-                    success:
-                        message
+        throw createError(
+            "Storage type must be either room or agroStore.",
+            400
+        );
+    }
 
-                }
+    if (currentType !== targetType) {
+
+        throw createError(
+            "Items can only be reshuffled into a storage facility of the same type.",
+            400
+        );
+    }
+
+    if (!isActiveStorage(storage)) {
+
+        throw createError(
+            "The current storage facility is inactive.",
+            400
+        );
+    }
+
+    if (!isActiveStorage(targetStorage)) {
+
+        throw createError(
+            "The target storage facility is inactive.",
+            400
+        );
+    }
+
+    if (
+        String(targetStorage._id) ===
+        String(storage._id)
+    ) {
+
+        throw createError(
+            "The target storage facility must be different from the current storage.",
+            400
+        );
+    }
+
+    const currentRoomNumber =
+        getStorageRoomNumber(storage);
+
+    const targetRoomNumber =
+        getStorageRoomNumber(targetStorage);
+
+    if (
+        currentRoomNumber === null ||
+        targetRoomNumber === null
+    ) {
+
+        throw createError(
+            "Both storage facilities must have valid Room Numbers.",
+            400
+        );
+    }
+
+    const items =
+        await Dairy.find({
+
+            _id: {
+                $in:
+                    ids
+            },
+
+            ...farmItemFilter(
+                dairy
+            ),
+
+            ...storageItemTypeFilter(
+                storage
             )
+
+        })
+        .lean();
+
+    if (items.length !== ids.length) {
+
+        if (isAgroStore(storage)) {
+
+            throw createError(
+                "One or more selected items are not valid feeds currently stored in this AgroStore.",
+                400
+            );
+        }
+
+        throw createError(
+            "One or more selected items are not currently in this storage room.",
+            400
         );
-
-    } catch (error) {
-
-        console.error(
-            "Storage reshuffle error:",
-            error
-        );
-
-
-        return handleMutationError(
-            req,
-            res,
-            error,
-            "view"
-        );
-
     }
 
-}
+    const result =
+        await Dairy.updateMany(
 
-
-// ==========================================================
-// HANDLE MUTATION ERROR
-// ==========================================================
-
-async function handleMutationError(
-    req,
-    res,
-    error,
-    activeTab
-) {
-
-    const statusCode =
-        Number(
-            error?.status ||
-            error?.statusCode ||
-            500
-        );
-
-
-    if (statusCode >= 500) {
-
-        return sendError(
-            res,
-            error,
-            "Unable to update storage contents."
-        );
-
-    }
-
-
-    try {
-
-        return await renderContents(
-            req,
-            res,
             {
 
-                activeTab,
+                _id: {
+                    $in:
+                        ids
+                },
 
-                successMessage:
-                    null,
+                ...farmItemFilter(
+                    dairy
+                ),
 
-                pageError:
-                    error?.message ||
-                    "Unable to update storage contents."
+                ...storageItemTypeFilter(
+                    storage
+                )
+
+            },
+
+            {
+
+                $set: {
+
+                    dwellNumber:
+                        targetRoomNumber
+
+                }
 
             }
+
         );
 
-    } catch (renderError) {
+    return {
 
-        console.error(
-            "Storage contents render error:",
-            renderError
-        );
+        modifiedCount:
+            result.modifiedCount,
 
+        dairy,
 
-        return sendError(
-            res,
-            renderError,
-            "Unable to update storage contents."
-        );
+        storage,
 
-    }
+        targetStorage,
 
+        items
+
+    };
 }
 
 
 // ==========================================================
-// SEND ERROR
+// UPDATE SINGLE FEED QUANTITY
 // ==========================================================
 
-function sendError(
-    res,
-    error,
-    fallbackMessage
-) {
+async function updateFeedQuantity({
+    dairyId,
+    storageId,
+    itemId,
+    quantity,
+    unit
+}) {
 
-    const statusCode =
-        Number(
-            error?.status ||
-            error?.statusCode ||
-            500
+    if (!isValidObjectId(itemId)) {
+
+        throw createError(
+            "Invalid feed item ID.",
+            400
+        );
+    }
+
+    const numericQuantity =
+        Number(quantity);
+
+    if (!Number.isFinite(numericQuantity)) {
+
+        throw createError(
+            "Quantity must be a valid number.",
+            400
+        );
+    }
+
+    if (numericQuantity < 0) {
+
+        throw createError(
+            "Quantity cannot be negative.",
+            400
+        );
+    }
+
+    const dairy =
+        await findParentFarm(
+            dairyId
         );
 
+    const storage =
+        await findStorageForFarm({
 
-    const safeStatus =
-        statusCode >= 400 &&
-        statusCode < 600
-            ? statusCode
-            : 500;
+            dairy,
 
+            storageId
 
-    return res
-        .status(safeStatus)
-        .send(
-            error?.message ||
-            fallbackMessage
+        });
+
+    if (!isAgroStore(storage)) {
+
+        throw createError(
+            "Feed quantity can only be updated for an AgroStore.",
+            400
         );
+    }
 
+    if (!isActiveStorage(storage)) {
+
+        throw createError(
+            "Feed quantity cannot be updated in an inactive AgroStore.",
+            400
+        );
+    }
+
+    const roomNumber =
+        getStorageRoomNumber(storage);
+
+    const feed =
+        await Dairy.findOne({
+
+            _id:
+                itemId,
+
+            ...farmItemFilter(
+                dairy
+            ),
+
+            dwellNumber:
+                roomNumber,
+
+            type: {
+                $in: [
+                    "feeds",
+                    "feed"
+                ]
+            },
+
+            recordType: {
+                $ne:
+                    STRUCTURE_RECORD_TYPE
+            }
+
+        });
+
+    if (!feed) {
+
+        throw createError(
+            "The selected feed was not found in this AgroStore.",
+            404
+        );
+    }
+
+    const update = {
+
+        $set: {
+
+            quantity:
+                numericQuantity
+
+        }
+
+    };
+
+    if (
+        unit !== undefined &&
+        unit !== null &&
+        String(unit).trim() !== ""
+    ) {
+
+        update.$set.unit =
+            String(unit).trim();
+    }
+
+    if (numericQuantity === 0) {
+
+        update.$set.dwellNumber =
+            null;
+    }
+
+    const updatedFeed =
+        await Dairy.findOneAndUpdate(
+
+            {
+
+                _id:
+                    itemId,
+
+                ...farmItemFilter(
+                    dairy
+                ),
+
+                dwellNumber:
+                    roomNumber,
+
+                type: {
+                    $in: [
+                        "feeds",
+                        "feed"
+                    ]
+                },
+
+                recordType: {
+                    $ne:
+                        STRUCTURE_RECORD_TYPE
+                }
+
+            },
+
+            update,
+
+            {
+                new:
+                    true
+            }
+
+        )
+        .lean();
+
+    if (!updatedFeed) {
+
+        throw createError(
+            "The feed could not be updated because its storage allocation changed.",
+            409
+        );
+    }
+
+    return {
+
+        dairy,
+
+        storage,
+
+        item:
+            updatedFeed,
+
+        quantity:
+            numericQuantity,
+
+        omitted:
+            numericQuantity === 0
+
+    };
+}
+
+
+// ==========================================================
+// UPDATE MULTIPLE FEED QUANTITIES
+// ==========================================================
+
+async function updateFeedQuantities({
+    dairyId,
+    storageId,
+    records
+}) {
+
+    if (
+        !Array.isArray(records) ||
+        records.length === 0
+    ) {
+
+        throw createError(
+            "No feed quantities were supplied.",
+            400
+        );
+    }
+
+    const results = [];
+
+    for (const record of records) {
+
+        if (!record) {
+
+            throw createError(
+                "One or more feed quantity records are invalid.",
+                400
+            );
+        }
+
+        const result =
+            await updateFeedQuantity({
+
+                dairyId,
+
+                storageId,
+
+                itemId:
+                    record.itemId,
+
+                quantity:
+                    record.quantity,
+
+                unit:
+                    record.unit
+
+            });
+
+        results.push(result);
+    }
+
+    return {
+
+        dairyId,
+
+        storageId,
+
+        results
+
+    };
 }
 
 
@@ -1688,18 +1797,20 @@ function sendError(
 
 module.exports = {
 
-    contents,
+    getStorageContents,
 
-    contentItem,
+    getContentItemDetails,
 
-    feedUpdateCards,
+    getAvailableItems,
 
-    addItems,
+    addItemsToStorage,
 
-    omitItems,
+    omitItemsFromStorage,
 
     reshuffleItems,
 
-    updateQuantity
+    updateFeedQuantity,
+
+    updateFeedQuantities
 
 };
