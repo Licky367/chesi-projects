@@ -1,5 +1,6 @@
-// =============================.=============================
+// ==========================================================
 // services/update/index.js
+// UPDATE SERVICES INDEX
 // ==========================================================
 
 module.exports = {
@@ -16,6 +17,8 @@ module.exports = {
 
     ...require("./medicalService"),
 
-    ...require("./maintenanceService")
+    ...require("./maintenanceService"),
+
+    ...require("./itemLink")
 
 };
