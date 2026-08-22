@@ -2,6 +2,47 @@
 // controllers/storage/contents.js
 // STORAGE CONTENTS CONTROLLER
 // ==========================================================
+//
+// PURPOSE:
+//
+//     Display and manage everything allocated inside an
+//     existing Room or AgroStore.
+//
+// PAGES:
+//
+//     /storage/:dairyId/contents/:storageId
+//
+//     /storage/:dairyId/contents/:storageId/details/:itemId
+//
+//     /dairy/:parentId/contents/:storageId/details/:itemId
+//
+//     /update/storage/feed-update-cards
+//
+// STORAGE TYPES:
+//
+//     room
+//         - normal storage
+//         - add
+//         - omit
+//         - reshuffle
+//
+//     agroStore
+//         - feed storage
+//         - add feeds
+//         - update quantity
+//         - automatic omission when quantity = 0
+//         - no manual omit
+//         - no reshuffle
+//
+// IMPORTANT:
+//
+//     The controller NEVER hardcodes feed information.
+//
+//     The service loads the actual Dairy records.
+//
+//     The feed-update-cards EJS receives those records.
+//
+// ==========================================================
 
 const storageContentsService =
     require("../../services/storage");
@@ -13,9 +54,11 @@ const storageContentsService =
 
 const STORAGE_TYPES = {
 
-    ROOM: "room",
+    ROOM:
+        "room",
 
-    AGRO_STORE: "agroStore"
+    AGRO_STORE:
+        "agroStore"
 
 };
 
@@ -88,7 +131,7 @@ function getItemIds(req) {
 
 
 // ==========================================================
-// COUNT MESSAGE
+// CREATE COUNT MESSAGE
 // ==========================================================
 
 function createCountMessage(
@@ -162,6 +205,34 @@ function getContentItemRouteIds(req) {
 
 
 // ==========================================================
+// DAIRY CONTENT ITEM ROUTE IDS
+// ==========================================================
+
+function getDairyContentItemRouteIds(req) {
+
+    return {
+
+        parentId:
+            String(
+                req.params?.parentId || ""
+            ).trim(),
+
+        storageId:
+            String(
+                req.params?.storageId || ""
+            ).trim(),
+
+        itemId:
+            String(
+                req.params?.itemId || ""
+            ).trim()
+
+    };
+
+}
+
+
+// ==========================================================
 // CONTENTS URL
 // ==========================================================
 
@@ -184,7 +255,7 @@ function getContentsUrl(
 
 
     Object.entries(query).forEach(
-        ([key, value]) => {
+        function ([key, value]) {
 
             if (
                 value !== undefined &&
@@ -271,14 +342,14 @@ function getDairyContentItemUrl(
 function validateStorageType(storage) {
 
     const storageType =
-        String(
-            storage?.type || ""
-        ).trim();
+        storage?.type;
 
 
     if (
-        storageType !== STORAGE_TYPES.ROOM &&
-        storageType !== STORAGE_TYPES.AGRO_STORE
+        storageType !==
+            STORAGE_TYPES.ROOM &&
+        storageType !==
+            STORAGE_TYPES.AGRO_STORE
     ) {
 
         const error =
@@ -299,7 +370,7 @@ function validateStorageType(storage) {
 
 
 // ==========================================================
-// FIND CONTENT ITEM
+// FIND ITEM INSIDE STORAGE
 // ==========================================================
 
 function findContentItem(
@@ -316,12 +387,25 @@ function findContentItem(
 
     return (
         items.find(
-            item =>
-                item &&
-                item._id !== undefined &&
-                item._id !== null &&
-                String(item._id) ===
+            function (item) {
+
+                if (
+                    !item ||
+                    item._id === undefined ||
+                    item._id === null
+                ) {
+
+                    return false;
+
+                }
+
+
+                return (
+                    String(item._id) ===
                     String(itemId)
+                );
+
+            }
         ) || null
     );
 
@@ -329,37 +413,54 @@ function findContentItem(
 
 
 // ==========================================================
-// GET AGROSTORE FEEDS
+// GET AGROSTORE FEED ITEMS
 // ==========================================================
 //
 // IMPORTANT:
 //
-// result.items comes from:
+//     DO NOT use availableItems here.
 //
-//     getStorageContents()
+//     result.items means:
 //
-// For an AgroStore, those are the records currently
-// allocated to:
+//         CURRENTLY INSIDE THIS STORAGE
 //
-//     dwellNumber === storage.roomNumber
+//     result.availableItems means:
 //
-// Therefore this is the correct source for the feed cards.
+//         NOT CURRENTLY ALLOCATED
 //
-// We do NOT use availableItems here because those records
-// are NOT currently inside the AgroStore.
+//     For the feed update cards we need:
+//
+//         result.items
+//
+//     because these are the feeds that actually belong to
+//     the selected AgroStore.
 //
 // ==========================================================
 
-function getAgroStoreFeedItems(result) {
+function getAgroStoreFeedItems(
+    result,
+    storageType
+) {
 
-    const items =
-        Array.isArray(result?.items)
-            ? result.items
-            : [];
+    if (
+        storageType !==
+        STORAGE_TYPES.AGRO_STORE
+    ) {
+
+        return [];
+
+    }
 
 
-    return items.filter(
-        item => {
+    if (!Array.isArray(result?.items)) {
+
+        return [];
+
+    }
+
+
+    return result.items.filter(
+        function (item) {
 
             if (!item) {
 
@@ -368,10 +469,6 @@ function getAgroStoreFeedItems(result) {
             }
 
 
-            // ------------------------------------------------
-            // Quantity must be greater than zero.
-            // ------------------------------------------------
-
             const quantity =
                 Number(
                     item.quantity
@@ -379,7 +476,9 @@ function getAgroStoreFeedItems(result) {
 
 
             if (
-                !Number.isFinite(quantity) ||
+                !Number.isFinite(
+                    quantity
+                ) ||
                 quantity <= 0
             ) {
 
@@ -387,21 +486,6 @@ function getAgroStoreFeedItems(result) {
 
             }
 
-
-            // ------------------------------------------------
-            // Animal feed.
-            //
-            // Normal value:
-            //
-            //     "feeds"
-            //
-            // Also tolerate:
-            //
-            //     "feed"
-            //     "Feeds"
-            //     "FEEDS"
-            //
-            // ------------------------------------------------
 
             const type =
                 String(
@@ -423,7 +507,7 @@ function getAgroStoreFeedItems(result) {
 
 
 // ==========================================================
-// RENDER MESSAGES
+// NORMALIZE RENDER VARIABLES
 // ==========================================================
 
 function getRenderMessages(
@@ -507,15 +591,14 @@ async function renderContents(
     }
 
 
-    // ------------------------------------------------------
-    // LOAD REAL STORAGE DATA
-    // ------------------------------------------------------
-
     const result =
         await storageContentsService
             .getStorageContents({
+
                 dairyId,
+
                 storageId
+
             });
 
 
@@ -558,15 +641,20 @@ async function renderContents(
         );
 
 
-    // ------------------------------------------------------
-    // ACTUAL FEEDS INSIDE AGROSTORE
-    // ------------------------------------------------------
+    // ======================================================
+    // ACTUAL FEEDS CURRENTLY IN AGROSTORE
+    // ======================================================
 
     const feedUpdateItems =
-        storageType === STORAGE_TYPES.AGRO_STORE
-            ? getAgroStoreFeedItems(result)
-            : [];
+        getAgroStoreFeedItems(
+            result,
+            storageType
+        );
 
+
+    // ======================================================
+    // RENDER
+    // ======================================================
 
     return res.render(
         "storage/contents",
@@ -578,27 +666,23 @@ async function renderContents(
                 "Storage Contents",
 
 
-            // ------------------------------------------------
-            // DAIRY
-            // ------------------------------------------------
-
             dairy:
                 result.dairy || null,
 
+
             dairyId,
+
 
             parentId:
                 dairyId,
 
 
-            // ------------------------------------------------
-            // STORAGE
-            // ------------------------------------------------
-
             storage:
                 result.storage,
 
+
             storageId,
+
 
             storageType,
 
@@ -613,10 +697,6 @@ async function renderContents(
                 STORAGE_TYPES.AGRO_STORE,
 
 
-            // ------------------------------------------------
-            // CURRENT STORAGE CONTENTS
-            // ------------------------------------------------
-
             items:
                 Array.isArray(result.items)
                     ? result.items
@@ -624,14 +704,8 @@ async function renderContents(
 
 
             itemCount:
-                Number(
-                    result.itemCount
-                ) || 0,
+                Number(result.itemCount) || 0,
 
-
-            // ------------------------------------------------
-            // ITEMS NOT YET ALLOCATED
-            // ------------------------------------------------
 
             availableItems:
                 Array.isArray(
@@ -641,31 +715,16 @@ async function renderContents(
                     : [],
 
 
-            // ------------------------------------------------
-            // AGROSTORE FEEDS
-            // ------------------------------------------------
-            //
-            // These are dynamic database records.
-            //
-            // Nothing is hardcoded.
-            //
-            // ------------------------------------------------
+            // =================================================
+            // DYNAMIC FEED CARD DATA
+            // =================================================
 
             feedUpdateItems,
 
-            animalFeeds:
-                feedUpdateItems,
-
-            feedItems:
-                feedUpdateItems,
 
             agroStoreItems:
                 feedUpdateItems,
 
-
-            // ------------------------------------------------
-            // TARGET STORAGE FACILITIES
-            // ------------------------------------------------
 
             targetStorages:
                 Array.isArray(
@@ -675,16 +734,12 @@ async function renderContents(
                     : [],
 
 
-            // ------------------------------------------------
-            // UI
-            // ------------------------------------------------
-
             activeTab,
 
 
-            // ------------------------------------------------
+            // =================================================
             // ALWAYS DEFINED
-            // ------------------------------------------------
+            // =================================================
 
             successMessage,
 
@@ -697,7 +752,7 @@ async function renderContents(
 
 
 // ==========================================================
-// CONTENT ITEM DETAILS
+// GET CONTENT ITEM DETAILS
 // ==========================================================
 
 async function contentItem(req, res) {
@@ -757,12 +812,29 @@ async function contentItem(req, res) {
         const result =
             await storageContentsService
                 .getStorageContents({
+
                     dairyId,
+
                     storageId
+
                 });
 
 
-        if (!result?.storage) {
+        if (!result) {
+
+            const error =
+                new Error(
+                    "Storage contents could not be loaded."
+                );
+
+            error.status = 404;
+
+            throw error;
+
+        }
+
+
+        if (!result.storage) {
 
             const error =
                 new Error(
@@ -807,7 +879,32 @@ async function contentItem(req, res) {
             successMessage,
             pageError
         } =
-            getRenderMessages(req);
+            getRenderMessages(
+                req
+            );
+
+
+        const contentsUrl =
+            getContentsUrl(
+                dairyId,
+                storageId
+            );
+
+
+        const contentItemUrl =
+            getContentItemUrl(
+                dairyId,
+                storageId,
+                itemId
+            );
+
+
+        const dairyContentItemUrl =
+            getDairyContentItemUrl(
+                dairyId,
+                storageId,
+                itemId
+            );
 
 
         return res.render(
@@ -822,7 +919,9 @@ async function contentItem(req, res) {
                 dairy:
                     result.dairy || null,
 
+
                 dairyId,
+
 
                 parentId:
                     dairyId,
@@ -831,10 +930,12 @@ async function contentItem(req, res) {
                 storage:
                     result.storage,
 
+
                 storageId,
 
 
                 item,
+
 
                 itemId,
 
@@ -852,30 +953,17 @@ async function contentItem(req, res) {
                     STORAGE_TYPES.AGRO_STORE,
 
 
-                contentsUrl:
-                    getContentsUrl(
-                        dairyId,
-                        storageId
-                    ),
+                contentsUrl,
 
 
-                contentItemUrl:
-                    getContentItemUrl(
-                        dairyId,
-                        storageId,
-                        itemId
-                    ),
+                contentItemUrl,
 
 
-                dairyContentItemUrl:
-                    getDairyContentItemUrl(
-                        dairyId,
-                        storageId,
-                        itemId
-                    ),
+                dairyContentItemUrl,
 
 
                 successMessage,
+
 
                 pageError
 
@@ -902,7 +990,7 @@ async function contentItem(req, res) {
 
 
 // ==========================================================
-// STORAGE CONTENTS PAGE
+// GET STORAGE CONTENTS
 // ==========================================================
 
 async function contents(req, res) {
@@ -934,7 +1022,7 @@ async function contents(req, res) {
 
 
 // ==========================================================
-// FEED UPDATE CARDS
+// RENDER FEED UPDATE CARDS
 // ==========================================================
 //
 // GET:
@@ -947,12 +1035,10 @@ async function contents(req, res) {
 //
 // IMPORTANT:
 //
-// This route renders ONLY:
+//     This endpoint renders the EJS card independently.
 //
-//     views/update/storage/feed-update-cards.ejs
-//
-// It does NOT require the card to be included inside
-// contents.ejs.
+//     It does NOT require the card to be included inside
+//     contents.ejs.
 //
 // ==========================================================
 
@@ -1004,19 +1090,21 @@ async function feedUpdateCards(req, res) {
         }
 
 
-        // ----------------------------------------------------
-        // LOAD THE REAL STORAGE CONTENTS
-        // ----------------------------------------------------
-
         const result =
             await storageContentsService
                 .getStorageContents({
+
                     dairyId,
+
                     storageId
+
                 });
 
 
-        if (!result?.storage) {
+        if (
+            !result ||
+            !result.storage
+        ) {
 
             const error =
                 new Error(
@@ -1036,68 +1124,22 @@ async function feedUpdateCards(req, res) {
             );
 
 
-        // ----------------------------------------------------
-        // AGROSTORE ONLY
-        // ----------------------------------------------------
-
-        if (
-            storageType !==
-            STORAGE_TYPES.AGRO_STORE
-        ) {
-
-            return res.render(
-                "update/storage/feed-update-cards",
-                {
-
-                    title:
-                        "Available Animal Feeds",
-
-                    dairy:
-                        result.dairy || null,
-
-                    dairyId,
-
-                    parentId:
-                        dairyId,
-
-                    storage:
-                        result.storage,
-
-                    storageId,
-
-                    storageType,
-
-                    items: [],
-
-                    availableItems: [],
-
-                    feedUpdateItems: [],
-
-                    animalFeeds: [],
-
-                    feedItems: [],
-
-                    agroStoreItems: []
-
-                }
-            );
-
-        }
-
-
-        // ----------------------------------------------------
-        // GET ACTUAL FEEDS CURRENTLY IN AGROSTORE
-        // ----------------------------------------------------
+        // ==================================================
+        // IMPORTANT
+        // ==================================================
+        //
+        // Get the feeds CURRENTLY IN THE SELECTED AGROSTORE.
+        //
+        // NOT availableItems.
+        //
+        // ==================================================
 
         const feedUpdateItems =
             getAgroStoreFeedItems(
-                result
+                result,
+                storageType
             );
 
-
-        // ----------------------------------------------------
-        // RENDER THE EJS CARD
-        // ----------------------------------------------------
 
         return res.render(
             "update/storage/feed-update-cards",
@@ -1107,48 +1149,41 @@ async function feedUpdateCards(req, res) {
                     "Available Animal Feeds",
 
 
-                // ------------------------------------------------
-                // DAIRY
-                // ------------------------------------------------
-
                 dairy:
                     result.dairy || null,
 
+
                 dairyId,
+
 
                 parentId:
                     dairyId,
 
 
-                // ------------------------------------------------
-                // STORAGE
-                // ------------------------------------------------
-
                 storage:
                     result.storage,
 
+
                 storageId,
+
 
                 storageType,
 
 
-                // ------------------------------------------------
-                // REAL FEED RECORDS
-                // ------------------------------------------------
+                // =================================================
+                // DYNAMIC ITEMS
+                // =================================================
 
                 items:
                     feedUpdateItems,
 
+
                 availableItems:
                     feedUpdateItems,
 
+
                 feedUpdateItems,
 
-                animalFeeds:
-                    feedUpdateItems,
-
-                feedItems:
-                    feedUpdateItems,
 
                 agroStoreItems:
                     feedUpdateItems
@@ -1176,7 +1211,7 @@ async function feedUpdateCards(req, res) {
 
 
 // ==========================================================
-// ADD ITEMS
+// ADD ITEMS TO STORAGE
 // ==========================================================
 
 async function addItems(req, res) {
@@ -1197,9 +1232,13 @@ async function addItems(req, res) {
         const result =
             await storageContentsService
                 .addItemsToStorage({
+
                     dairyId,
+
                     storageId,
+
                     itemIds
+
                 });
 
 
@@ -1220,8 +1259,13 @@ async function addItems(req, res) {
                 dairyId,
                 storageId,
                 {
-                    tab: "add",
-                    success: message
+
+                    tab:
+                        "add",
+
+                    success:
+                        message
+
                 }
             )
         );
@@ -1247,7 +1291,7 @@ async function addItems(req, res) {
 
 
 // ==========================================================
-// UPDATE FEED QUANTITY
+// UPDATE AGROSTORE QUANTITY
 // ==========================================================
 
 async function updateQuantity(req, res) {
@@ -1335,8 +1379,13 @@ async function updateQuantity(req, res) {
                 dairyId,
                 storageId,
                 {
-                    tab: "view",
-                    success: message
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
                 }
             )
         );
@@ -1410,8 +1459,13 @@ async function omitItems(req, res) {
                 dairyId,
                 storageId,
                 {
-                    tab: "view",
-                    success: message
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
                 }
             )
         );
@@ -1494,8 +1548,13 @@ async function reshuffleItems(req, res) {
                 dairyId,
                 storageId,
                 {
-                    tab: "view",
-                    success: message
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
                 }
             )
         );
