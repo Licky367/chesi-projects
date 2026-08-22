@@ -3,19 +3,22 @@
 // ==========================================================
 //
 // PURPOSE:
+// ----------------------------------------------------------
 //
-// Generates the animal-feed item links that are displayed
-// on:
+// Generates the animal-feed item links displayed by:
 //
 //     views/update/storage/itemLink.ejs
 //
 // CONTRACT:
+// ----------------------------------------------------------
 //
-//     Input:
-//         dairy
+// Input:
 //
-//     Output:
-//         Array of itemLinks
+//     dairyId
+//
+// Output:
+//
+//     Array of itemLinks
 //
 // Every returned itemLink represents an animal-feed item
 // belonging to an AgroStore associated with the current
@@ -47,7 +50,7 @@ async function (dairyId) {
 
 
     // ======================================================
-    // CURRENT DAIRY
+    // CURRENT DAIRY FARM
     // ======================================================
 
     const dairy =
@@ -65,13 +68,15 @@ async function (dairyId) {
 
 
     // ======================================================
-    // ONLY DAIRY FARM
+    // ONLY DAIRY FARMS
     //
     // Dairy Farms use negative codes.
     // ======================================================
 
     const dairyCode =
-        Number(dairy.code);
+        Number(
+            dairy.code
+        );
 
 
     if (
@@ -87,10 +92,13 @@ async function (dairyId) {
     // ======================================================
     // FIND AGROSTORES
     //
-    // AgroStores are structures whose roomNumber is
-    // negative.
+    // AgroStores are structures whose roomNumber
+    // is negative.
     //
-    // The parent farm is identified through farmCode.
+    // The parent Dairy Farm is identified by:
+    //
+    //     farmCode === dairy.code
+    //
     // ======================================================
 
     const agroStores =
@@ -110,7 +118,11 @@ async function (dairyId) {
         .lean();
 
 
-    if (!Array.isArray(agroStores)) {
+    if (
+        !Array.isArray(
+            agroStores
+        )
+    ) {
 
         return [];
 
@@ -127,6 +139,10 @@ async function (dairyId) {
     agroStores.forEach(
         function (agroStore) {
 
+            // ==================================================
+            // SAFETY
+            // ==================================================
+
             if (
                 !agroStore ||
                 !agroStore._id
@@ -138,13 +154,12 @@ async function (dairyId) {
 
 
             // ==================================================
-            // INVENTORY
+            // ANIMAL FEED INVENTORY
             //
-            // Animal feeds associated with this AgroStore
-            // use:
+            // Animal feeds belonging to this AgroStore
+            // are stored in:
             //
-            //     Dairy.dwellNumber ===
-            //     AgroStore.roomNumber
+            //     agroStore.animalFeeds
             //
             // ==================================================
 
@@ -157,11 +172,15 @@ async function (dairyId) {
 
 
             // ==================================================
-            // CREATE LINK FOR EACH ITEM
+            // CREATE LINK FOR EACH ANIMAL FEED ITEM
             // ==================================================
 
             items.forEach(
                 function (item) {
+
+                    // ==========================================
+                    // SAFETY
+                    // ==========================================
 
                     if (!item) {
 
@@ -169,6 +188,10 @@ async function (dairyId) {
 
                     }
 
+
+                    // ==========================================
+                    // ITEM ID
+                    // ==========================================
 
                     const itemId =
                         item._id ||
@@ -182,6 +205,10 @@ async function (dairyId) {
                     }
 
 
+                    // ==========================================
+                    // ITEM NAME
+                    // ==========================================
+
                     const itemName =
                         item.name ||
                         item.feedName ||
@@ -189,6 +216,21 @@ async function (dairyId) {
                         item.title ||
                         "Animal Feed";
 
+
+                    // ==========================================
+                    // AGROSTORE NAME
+                    // ==========================================
+
+                    const agroStoreName =
+                        agroStore.name ||
+                        agroStore.roomName ||
+                        agroStore.roomNumber ||
+                        "AgroStore";
+
+
+                    // ==========================================
+                    // ADD ITEM LINK
+                    // ==========================================
 
                     itemLinks.push({
 
@@ -202,10 +244,7 @@ async function (dairyId) {
                             agroStore._id,
 
                         agroStoreName:
-                            agroStore.name ||
-                            agroStore.roomName ||
-                            agroStore.roomNumber ||
-                            "AgroStore",
+                            agroStoreName,
 
                         href:
                             `/dairy/${itemId}`
@@ -220,7 +259,7 @@ async function (dairyId) {
 
 
     // ======================================================
-    // RETURN
+    // RETURN ITEM LINKS
     // ======================================================
 
     return itemLinks;
