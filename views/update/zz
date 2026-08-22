@@ -1,797 +1,722 @@
-<!-- ==========================================================
-     POST CARD
-     ==========================================================
-     Supports:
-     - User profile
-     - Dairy subject
-     - Delete post
-     - Title
-     - Message
-     - Multi-image grid
-     - Fullscreen image viewer
-     - Image navigation
-     - Long-message expansion
-     - Likes
-     - Comments
-========================================================== -->
+<% /*
+==========================================================
+DAIRY ASSET HORIZONTAL CARDS
+
+FILE:
+    views/update/asset-cards.ejs
+
+PURPOSE:
+    Compact WhatsApp-style horizontal dairy asset navigator.
+
+    The section:
+        - Introduces the dairy's assets
+        - Shows assets in horizontally scrollable cards
+        - Shows the asset profile image
+        - Shows the asset name
+        - Shows whether it is an Animal or Structure / Tool
+        - Links directly to /dairy/:id
+
+EXPECTED DATA:
+    assetDairies
+
+TYPE RULES:
+----------------------------------------------------------
+    code > 0
+        Animal
+
+    code === null
+    code === undefined
+    code === ""
+        Structure / Facility / Tool
+
+    code < 0
+        Not displayed
+
+IMPORTANT:
+    Cards DO NOT open the post modal.
+
+    Clicking an asset takes the user directly to:
+
+        /dairy/:id
+==========================================================
+*/ %>
+
 
 <%
-    /* ========================================================
-       NORMALIZE POST IMAGES
-    ======================================================== */
+    /* ======================================================
+       SAFE ASSET ARRAY
+    ====================================================== */
 
-    let postImages = [];
-
-    if (
-        Array.isArray(item.images) &&
-        item.images.length
-    ) {
-        postImages = item.images.filter(Boolean);
-    }
-    else if (item.image) {
-        postImages = [item.image];
-    }
-
-    const visibleImages = postImages.slice(0, 4);
-
-    const remainingImages = Math.max(
-        0,
-        postImages.length - 4
-    );
-
-
-    /* ========================================================
-       POST TEXT
-    ======================================================== */
-
-    const postText =
-        item.text ||
-        item.comment ||
-        "";
-
-    const isLongPost =
-        postText.length > 100;
-
-    const shortPostText =
-        isLongPost
-            ? postText.substring(0, 100).trim()
-            : postText;
+    const assets =
+        Array.isArray(assetDairies)
+            ? assetDairies
+            : [];
 %>
 
 
-<!-- ==========================================================
-     POST CARD
-========================================================== -->
+<% if (assets.length) { %>
 
-<article
-    class="feed-card post-card"
-    data-id="<%= item._id %>"
-    data-type="post"
-    data-images="<%= JSON.stringify(postImages).replace(/"/g, '&quot;') %>"
+<section
+    class="dairy-asset-strip"
+    aria-label="Dairy Farm Assets"
 >
 
-    <!-- ======================================================
-         HEADER
-    ======================================================= -->
 
-    <div class="feed-header">
+    <!-- =====================================================
+         SECTION HEADER
+    ====================================================== -->
 
-        <div class="feed-user">
+    <div class="dairy-asset-strip-header">
 
-            <img
-                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
-                class="avatar-sm"
-                alt="<%= item.userName || 'User' %>"
+        <div class="dairy-asset-strip-title">
+
+            <strong>
+                View the dairy assets
+            </strong>
+
+        </div>
+
+
+        <div class="dairy-asset-strip-description">
+
+            Explore the animals, structures, facilities, and
+            tools that make up
+            <strong><%= dairy.name %></strong>.
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         HORIZONTAL SCROLL AREA
+    ====================================================== -->
+
+    <div
+        class="dairy-asset-scroll"
+        role="list"
+        aria-label="Dairy assets"
+    >
+
+
+        <% assets.forEach(function (asset) { %>
+
+            <%
+                /* =================================================
+                   SAFETY CHECK
+                ================================================= */
+
+                if (!asset || !asset._id) {
+                    return;
+                }
+
+
+                /* =================================================
+                   RAW CODE
+                ================================================= */
+
+                const assetCode =
+                    asset.code;
+
+
+                /* =================================================
+                   NORMALIZE CODE
+                ================================================= */
+
+                const numericCode =
+                    (
+                        assetCode !== null &&
+                        assetCode !== undefined &&
+                        assetCode !== ""
+                    )
+                        ? Number(assetCode)
+                        : null;
+
+
+
+                /* =================================================
+                   NEVER DISPLAY NEGATIVE-CODE RECORDS
+                ================================================= */
+
+                if (
+                    numericCode !== null &&
+                    Number.isFinite(numericCode) &&
+                    numericCode < 0
+                ) {
+                    return;
+                }
+
+
+
+                /* =================================================
+                   DETERMINE ASSET TYPE
+
+                   code > 0
+                       Animal
+
+                   no code
+                       Structure / Facility / Tool
+                ================================================= */
+
+                const isAnimal =
+                    numericCode !== null &&
+                    Number.isFinite(numericCode) &&
+                    numericCode > 0;
+
+
+                const assetType =
+                    isAnimal
+                        ? "Animal"
+                        : "Structure / Tool";
+
+
+
+                /* =================================================
+                   IMAGE
+
+                   Prefer:
+                       profileImage
+                       displayImage
+
+                   Otherwise generate a simple avatar.
+                ================================================= */
+
+                const assetImage =
+                    asset.profileImage ||
+                    asset.displayImage ||
+                    (
+                        "https://ui-avatars.com/api/?name=" +
+                        encodeURIComponent(
+                            asset.name || "Asset"
+                        ) +
+                        "&background=e8f5ee&color=198754"
+                    );
+            %>
+
+
+
+            <!-- =================================================
+                 ASSET CARD
+            ================================================== -->
+
+            <a
+                href="/dairy/<%= asset._id %>"
+                class="dairy-asset-card"
+                role="listitem"
+                aria-label="View <%= asset.name || 'Asset' %>"
             >
 
-            <div class="feed-user-info">
 
-                <div class="post-meta-line">
+                <!-- =============================================
+                     IMAGE
+                ============================================== -->
 
-                    <strong class="post-user-name">
-                        <%= item.userName || "User" %>
-                    </strong>
+                <div class="dairy-asset-image-wrap">
 
-                    <% if (
-                        item.dairyName &&
-                        item.dairyId
-                    ) { %>
-
-                        <span class="post-meta-action">
-                            about
-                        </span>
-
-                        <a
-                            href="/dairy/<%= item.dairyId %>"
-                            class="post-subject"
-                        >
-                            <%= item.dairyName %>
-                        </a>
-
-                    <% } %>
+                    <img
+                        src="<%= assetImage %>"
+                        alt="<%= asset.name || 'Asset' %>"
+                        class="dairy-asset-image"
+                        loading="lazy"
+                    >
 
                 </div>
 
-                <small class="post-time">
-                    <%= item.dateText || "" %>
-                </small>
-
-            </div>
-
-        </div>
 
 
-        <!-- ==================================================
-             DELETE
-        =================================================== -->
+                <!-- =============================================
+                     ASSET NAME
+                ============================================== -->
 
-        <% if (
-            user &&
-            (
-                user.role === "admin" ||
-                (
-                    user._id &&
-                    item.userId &&
-                    user._id.toString() ===
-                    item.userId.toString()
-                )
-            )
-        ) { %>
+                <div class="dairy-asset-name">
 
-            <button
-                class="delete-post"
-                data-id="<%= item._id %>"
-                data-type="post"
-                title="Delete Post"
-                aria-label="Delete Post"
-                type="button"
-            >
-                <i
-                    class="bi bi-trash3-fill"
-                    aria-hidden="true"
-                ></i>
-            </button>
+                    <%= asset.name || "Unnamed Asset" %>
 
-        <% } %>
-
-    </div>
+                </div>
 
 
-    <!-- ======================================================
-         BODY
-    ======================================================= -->
 
-    <div class="feed-body post-body">
+                <!-- =============================================
+                     ASSET TYPE
+                ============================================== -->
 
-        <!-- ==================================================
-             TITLE
-        =================================================== -->
-
-        <% if (item.title) { %>
-
-            <h3 class="post-title">
-                <%= item.title %>
-            </h3>
-
-        <% } %>
+                <div class="dairy-asset-type">
 
 
-        <!-- ==================================================
-             MESSAGE
-        =================================================== -->
+                    <% if (isAnimal) { %>
 
-        <% if (postText) { %>
-
-            <div
-                class="post-message"
-                data-long="<%= isLongPost ? 'true' : 'false' %>"
-            >
-
-                <% if (isLongPost) { %>
-
-                    <span class="post-message-short">
-                        <%= shortPostText %>...
-                    </span>
-
-                    <span
-                        class="post-message-full"
-                        hidden
-                    >
-                        <%= postText %>
-                    </span>
-
-                    <button
-                        type="button"
-                        class="see-more-post"
-                        aria-expanded="false"
-                    >
-                        See more
-                    </button>
-
-                <% } else { %>
-
-                    <span class="post-message-full">
-                        <%= postText %>
-                    </span>
-
-                <% } %>
-
-            </div>
-
-        <% } %>
-
-
-        <!-- ==================================================
-             IMAGE GRID
-        =================================================== -->
-
-        <% if (visibleImages.length) { %>
-
-            <div
-                class="
-                    post-image-grid
-                    post-image-count-<%= visibleImages.length %>
-                    <%= remainingImages > 0
-                        ? 'has-more-images'
-                        : '' %>
-                "
-            >
-
-                <% visibleImages.forEach((image, index) => { %>
-
-                    <button
-                        type="button"
-                        class="
-                            post-image-item
-                            <%= index === 3 &&
-                                remainingImages > 0
-                                ? 'has-image-overlay'
-                                : '' %>
-                        "
-                        data-image-index="<%= index %>"
-                        aria-label="View image <%= index + 1 %>"
-                    >
-
-                        <img
-                            src="<%= image %>"
-                            alt="Post image <%= index + 1 %>"
-                            loading="lazy"
+                        <span
+                            class="dairy-asset-type-icon"
+                            aria-hidden="true"
                         >
+                            🐄
+                        </span>
 
-                        <% if (
-                            index === 3 &&
-                            remainingImages > 0
-                        ) { %>
+                        <span>
+                            <%= assetType %>
+                        </span>
 
-                            <span class="post-more-images">
-                                +<%= remainingImages %>
-                            </span>
 
-                        <% } %>
+                    <% } else { %>
 
-                    </button>
+                        <span
+                            class="dairy-asset-type-icon"
+                            aria-hidden="true"
+                        >
+                            🏗️
+                        </span>
 
-                <% }) %>
+                        <span>
+                            <%= assetType %>
+                        </span>
 
-            </div>
+                    <% } %>
 
-        <% } %>
+
+                </div>
+
+
+            </a>
+
+
+        <% }); %>
+
 
     </div>
 
 
-    <!-- ======================================================
-         ACTIONS
-    ======================================================= -->
-
-    <%- include("partials/feed-actions", {
-        item,
-        type: "post"
-    }) %>
+</section>
 
 
-    <!-- ======================================================
-         COMMENTS
-    ======================================================= -->
-
-    <%- include("comment-section", {
-        item,
-        user,
-        type: "post"
-    }) %>
-
-</article>
-
-
-
-<!-- ==========================================================
-     FULLSCREEN IMAGE VIEWER
-========================================================== -->
-
-<div
-    class="post-image-viewer"
-    aria-hidden="true"
->
-
-    <button
-        type="button"
-        class="post-viewer-close"
-        aria-label="Close image viewer"
-    >
-        <i class="bi bi-x-lg"></i>
-    </button>
-
-
-    <button
-        type="button"
-        class="post-viewer-prev"
-        aria-label="Previous image"
-    >
-        <i class="bi bi-chevron-left"></i>
-    </button>
-
-
-    <div class="post-viewer-content">
-
-        <img
-            class="post-viewer-image"
-            src=""
-            alt="Post image"
-        >
-
-        <div class="post-viewer-counter">
-
-            <span class="post-viewer-current">
-                1
-            </span>
-
-            /
-
-            <span class="post-viewer-total">
-                <%= postImages.length %>
-            </span>
-
-        </div>
-
-    </div>
-
-
-    <button
-        type="button"
-        class="post-viewer-next"
-        aria-label="Next image"
-    >
-        <i class="bi bi-chevron-right"></i>
-    </button>
-
-</div>
-
-
-
-<!-- ==========================================================
-     POST CARD STYLES
-========================================================== -->
 
 <style>
 
 /* ==========================================================
-   POST BODY
+   DAIRY ASSET STRIP
+
+   Namespaced specifically for this component.
 ========================================================== */
 
-.post-card .post-body {
+.dairy-asset-strip {
+
     width: 100%;
+
+    margin:
+        0
+        0
+        16px;
+
+    padding: 0;
+
+    overflow: hidden;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
 }
+
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.dairy-asset-strip-header {
+
+    width: 100%;
+
+    padding:
+        0
+        2px
+        10px;
+
+}
+
 
 
 /* ==========================================================
    TITLE
 ========================================================== */
 
-.post-card .post-title {
-    margin: 0 0 7px;
-    font-size: 18px;
-    line-height: 1.35;
-    font-weight: 700;
-    color: #111827;
-}
-
-
-/* ==========================================================
-   MESSAGE
-========================================================== */
-
-.post-message {
-    font-size: 14px;
-    line-height: 1.55;
-    color: #374151;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-
-.post-message-short,
-.post-message-full {
-    white-space: pre-wrap;
-}
-
-
-/* ==========================================================
-   SEE MORE
-========================================================== */
-
-.see-more-post {
-    border: 0;
-    padding: 0;
-    margin-left: 4px;
-
-    background: transparent;
-
-    color: #166534;
-
-    font-weight: 700;
-    font-size: inherit;
-
-    cursor: pointer;
-}
-
-
-/* ==========================================================
-   IMAGE GRID
-========================================================== */
-
-.post-image-grid {
-
-    display: grid;
-
-    gap: 3px;
+.dairy-asset-strip-title {
 
     width: 100%;
 
-    margin-top: 12px;
-
-    overflow: hidden;
-
-    border-radius: 9px;
 }
 
 
-/* ==========================================================
-   ONE IMAGE
-========================================================== */
-
-.post-image-count-1 {
-    grid-template-columns: 1fr;
-}
-
-
-/* ==========================================================
-   TWO IMAGES
-========================================================== */
-
-.post-image-count-2 {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-
-/* ==========================================================
-   THREE IMAGES
-========================================================== */
-
-.post-image-count-3 {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-.post-image-count-3
-.post-image-item:first-child {
-    grid-row: span 2;
-}
-
-
-/* ==========================================================
-   FOUR IMAGES
-========================================================== */
-
-.post-image-count-4 {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-
-/* ==========================================================
-   IMAGE BUTTON
-========================================================== */
-
-.post-image-item {
-
-    position: relative;
+.dairy-asset-strip-title strong {
 
     display: block;
 
-    width: 100%;
-    min-width: 0;
+    color:
+        #202520;
 
-    padding: 0;
+    font-size:
+        18px;
 
-    border: 0;
+    font-weight:
+        700;
 
-    background: #f3f4f6;
+    line-height:
+        1.3;
 
-    overflow: hidden;
-
-    cursor: pointer;
 }
 
 
-/* ==========================================================
-   IMAGES
 
-   Reduced from 180px minimum.
+/* ==========================================================
+   DESCRIPTION
 ========================================================== */
 
-.post-image-item img {
+.dairy-asset-strip-description {
 
-    display: block;
+    max-width:
+        620px;
+
+    margin-top:
+        3px;
+
+    color:
+        #7b847e;
+
+    font-size:
+        12px;
+
+    line-height:
+        1.45;
+
+}
+
+
+.dairy-asset-strip-description strong {
+
+    color:
+        #4e5952;
+
+    font-weight:
+        600;
+
+}
+
+
+
+/* ==========================================================
+   HORIZONTAL SCROLL
+========================================================== */
+
+.dairy-asset-scroll {
 
     width: 100%;
-    height: 100%;
 
-    min-height: 135px;
+    display: flex;
 
-    object-fit: cover;
+    gap:
+        10px;
+
+    overflow-x:
+        auto;
+
+    overflow-y:
+        hidden;
+
+    padding:
+        2px
+        2px
+        8px;
+
+    scroll-behavior:
+        smooth;
+
+    -webkit-overflow-scrolling:
+        touch;
+
+    scrollbar-width:
+        none;
+
+}
+
+
+.dairy-asset-scroll::-webkit-scrollbar {
+
+    display:
+        none;
+
+}
+
+
+
+/* ==========================================================
+   ASSET CARD
+========================================================== */
+
+.dairy-asset-card {
+
+    position:
+        relative;
+
+    flex:
+        0 0
+        116px;
+
+    width:
+        116px;
+
+    height:
+        178px;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    overflow:
+        hidden;
+
+    text-decoration:
+        none;
+
+    border:
+        1px solid
+        #e4e9e6;
+
+    border-radius:
+        15px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 2px 8px
+        rgba(20, 40, 28, .06);
 
     transition:
-        transform .2s ease;
+        transform .16s ease,
+        box-shadow .16s ease;
+
 }
 
-
-.post-image-item:hover img {
-    transform: scale(1.02);
-}
 
 
 /* ==========================================================
-   SINGLE IMAGE
-
-   Keeps single photos from becoming enormous.
+   CARD HOVER
 ========================================================== */
 
-.post-image-count-1
-.post-image-item img {
-
-    height: auto;
-
-    max-height: 400px;
-
-    min-height: 0;
-
-    object-fit: contain;
-
-    background: #f3f4f6;
-}
-
-
-/* ==========================================================
-   THREE IMAGE LAYOUT
-========================================================== */
-
-.post-image-count-3
-.post-image-item:first-child img {
-
-    min-height: 273px;
-}
-
-
-/* ==========================================================
-   MORE IMAGES OVERLAY
-========================================================== */
-
-.has-image-overlay::after {
-
-    content: "";
-
-    position: absolute;
-
-    inset: 0;
-
-    background:
-        rgba(0, 0, 0, .35);
-}
-
-
-.post-more-images {
-
-    position: absolute;
-
-    inset: 0;
-
-    z-index: 2;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    color: #fff;
-
-    font-size: 24px;
-
-    font-weight: 800;
-
-    pointer-events: none;
-}
-
-
-/* ==========================================================
-   FULLSCREEN VIEWER
-========================================================== */
-
-.post-image-viewer {
-
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 99999;
-
-    display: none;
-
-    align-items: center;
-
-    justify-content: center;
-
-    background:
-        rgba(0, 0, 0, .94);
-
-    touch-action: none;
-}
-
-
-.post-image-viewer.active {
-    display: flex;
-}
-
-
-/* ==========================================================
-   VIEWER CONTENT
-========================================================== */
-
-.post-viewer-content {
-
-    position: relative;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    width: 100%;
-    height: 100%;
-
-    padding: 55px 65px;
-}
-
-
-/* ==========================================================
-   VIEWER IMAGE
-========================================================== */
-
-.post-viewer-image {
-
-    display: block;
-
-    max-width: 100%;
-    max-height: 100%;
-
-    width: auto;
-    height: auto;
-
-    object-fit: contain;
-
-    user-select: none;
-
-    -webkit-user-drag: none;
-}
-
-
-/* ==========================================================
-   VIEWER BUTTONS
-========================================================== */
-
-.post-viewer-close,
-.post-viewer-prev,
-.post-viewer-next {
-
-    position: absolute;
-
-    z-index: 5;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    width: 42px;
-    height: 42px;
-
-    border: 0;
-
-    border-radius: 50%;
-
-    background:
-        rgba(255, 255, 255, .14);
-
-    color: #fff;
-
-    cursor: pointer;
-
-    backdrop-filter: blur(5px);
-}
-
-
-.post-viewer-close {
-    top: 16px;
-    right: 16px;
-}
-
-
-.post-viewer-prev {
-
-    left: 16px;
-
-    top: 50%;
+.dairy-asset-card:hover {
 
     transform:
-        translateY(-50%);
+        translateY(-2px);
+
+    box-shadow:
+        0 5px 14px
+        rgba(20, 40, 28, .10);
+
 }
 
-
-.post-viewer-next {
-
-    right: 16px;
-
-    top: 50%;
-
-    transform:
-        translateY(-50%);
-}
-
-
-.post-viewer-close:hover,
-.post-viewer-prev:hover,
-.post-viewer-next:hover {
-
-    background:
-        rgba(255, 255, 255, .25);
-}
 
 
 /* ==========================================================
-   VIEWER COUNTER
+   CARD ACTIVE
 ========================================================== */
 
-.post-viewer-counter {
-
-    position: absolute;
-
-    left: 50%;
-    bottom: 16px;
+.dairy-asset-card:active {
 
     transform:
-        translateX(-50%);
+        scale(.97);
 
-    color: #fff;
+}
 
-    font-size: 13px;
 
-    font-weight: 600;
 
-    padding: 5px 11px;
+/* ==========================================================
+   IMAGE WRAPPER
+========================================================== */
 
-    border-radius: 20px;
+.dairy-asset-image-wrap {
+
+    position:
+        relative;
+
+    width:
+        100%;
+
+    height:
+        116px;
+
+    flex:
+        0 0
+        116px;
+
+    overflow:
+        hidden;
 
     background:
-        rgba(0, 0, 0, .45);
+        #eef3ef;
+
 }
+
+
+
+/* ==========================================================
+   IMAGE
+========================================================== */
+
+.dairy-asset-image {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    display:
+        block;
+
+    object-fit:
+        cover;
+
+}
+
+
+
+/* ==========================================================
+   ASSET NAME
+========================================================== */
+
+.dairy-asset-name {
+
+    width:
+        100%;
+
+    padding:
+        8px
+        8px
+        2px;
+
+    color:
+        #202520;
+
+    font-size:
+        13px;
+
+    font-weight:
+        700;
+
+    line-height:
+        16px;
+
+    overflow:
+        hidden;
+
+    display:
+        -webkit-box;
+
+    -webkit-box-orient:
+        vertical;
+
+    -webkit-line-clamp:
+        2;
+
+}
+
+
+
+/* ==========================================================
+   ASSET TYPE
+========================================================== */
+
+.dairy-asset-type {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        4px;
+
+    padding:
+        1px
+        8px
+        8px;
+
+    color:
+        #7b847e;
+
+    font-size:
+        10px;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* ==========================================================
+   TYPE ICON
+========================================================== */
+
+.dairy-asset-type-icon {
+
+    flex:
+        0 0 auto;
+
+    font-size:
+        10px;
+
+}
+
+
+
+/* ==========================================================
+   TYPE TEXT
+========================================================== */
+
+.dairy-asset-type span:last-child {
+
+    min-width:
+        0;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
+
+
+/* ==========================================================
+   FOCUS ACCESSIBILITY
+========================================================== */
+
+.dairy-asset-card:focus-visible {
+
+    outline:
+        2px solid
+        #198754;
+
+    outline-offset:
+        2px;
+
+}
+
 
 
 /* ==========================================================
@@ -800,59 +725,127 @@
 
 @media (max-width: 600px) {
 
-    .post-card .post-title {
-        font-size: 17px;
+
+    .dairy-asset-strip {
+
+        margin-bottom:
+            14px;
+
     }
 
 
-    .post-message {
-        font-size: 14px;
+
+    /* ==============================================
+       TITLE
+    ============================================== */
+
+    .dairy-asset-strip-title strong {
+
+        font-size:
+            17px;
+
     }
 
 
-    .post-image-grid {
-        margin-top: 10px;
+
+    /* ==============================================
+       DESCRIPTION
+    ============================================== */
+
+    .dairy-asset-strip-description {
+
+        font-size:
+            11px;
+
+        line-height:
+            1.4;
+
     }
 
 
-    .post-image-item img {
-        min-height: 105px;
+
+    /* ==============================================
+       CARD
+    ============================================== */
+
+    .dairy-asset-card {
+
+        flex-basis:
+            112px;
+
+        width:
+            112px;
+
+        height:
+            174px;
+
+        border-radius:
+            14px;
+
     }
 
 
-    .post-image-count-1
-    .post-image-item img {
 
-        max-height: 320px;
+    /* ==============================================
+       IMAGE
+    ============================================== */
 
-        min-height: 0;
+    .dairy-asset-image-wrap {
+
+        height:
+            112px;
+
+        flex-basis:
+            112px;
+
     }
 
 
-    .post-image-count-3
-    .post-image-item:first-child img {
-        min-height: 213px;
+
+    /* ==============================================
+       NAME
+    ============================================== */
+
+    .dairy-asset-name {
+
+        padding:
+            7px
+            7px
+            2px;
+
+        font-size:
+            12px;
+
+        line-height:
+            15px;
+
     }
 
 
-    .post-viewer-content {
-        padding: 50px 40px;
+
+    /* ==============================================
+       TYPE
+    ============================================== */
+
+    .dairy-asset-type {
+
+        padding:
+            1px
+            7px
+            7px;
+
+        font-size:
+            9px;
+
     }
 
 
-    .post-viewer-prev {
-        left: 7px;
-    }
 
+    .dairy-asset-type-icon {
 
-    .post-viewer-next {
-        right: 7px;
-    }
+        font-size:
+            9px;
 
-
-    .post-viewer-close {
-        top: 10px;
-        right: 10px;
     }
 
 }
@@ -860,662 +853,4 @@
 </style>
 
 
-
-<!-- ==========================================================
-     POST CARD JAVASCRIPT
-========================================================== -->
-
-<script>
-
-(function () {
-
-    /* ========================================================
-       PREVENT MULTIPLE INITIALIZATION
-    ======================================================== */
-
-    if (window.__postCardInitialized) {
-        return;
-    }
-
-    window.__postCardInitialized = true;
-
-
-    /* ========================================================
-       SEE MORE / SEE LESS
-    ======================================================== */
-
-    document.addEventListener(
-        "click",
-        event => {
-
-            const button =
-                event.target.closest(
-                    ".see-more-post"
-                );
-
-            if (!button) {
-                return;
-            }
-
-            event.preventDefault();
-
-            const message =
-                button.closest(
-                    ".post-message"
-                );
-
-            if (!message) {
-                return;
-            }
-
-            const shortText =
-                message.querySelector(
-                    ".post-message-short"
-                );
-
-            const fullText =
-                message.querySelector(
-                    ".post-message-full"
-                );
-
-            if (!shortText || !fullText) {
-                return;
-            }
-
-            const expanded =
-                button.getAttribute(
-                    "aria-expanded"
-                ) === "true";
-
-
-            if (expanded) {
-
-                fullText.hidden = true;
-
-                shortText.hidden = false;
-
-                button.textContent =
-                    "See more";
-
-                button.setAttribute(
-                    "aria-expanded",
-                    "false"
-                );
-
-            }
-            else {
-
-                shortText.hidden = true;
-
-                fullText.hidden = false;
-
-                button.textContent =
-                    "See less";
-
-                button.setAttribute(
-                    "aria-expanded",
-                    "true"
-                );
-
-            }
-
-        }
-    );
-
-
-    /* ========================================================
-       VIEWER STATE
-    ======================================================== */
-
-    let viewerImages = [];
-
-    let viewerIndex = 0;
-
-    let activeViewer = null;
-
-
-    /* ========================================================
-       OPEN VIEWER
-    ======================================================== */
-
-    function openPostImageViewer(
-        card,
-        index
-    ) {
-
-        if (!card) {
-            return;
-        }
-
-
-        /* ----------------------------------------------------
-           READ FULL IMAGE ARRAY FROM CARD
-        ---------------------------------------------------- */
-
-        try {
-
-            const encodedImages =
-                card.dataset.images;
-
-            if (encodedImages) {
-
-                const parsed =
-                    JSON.parse(
-                        encodedImages
-                    );
-
-                if (
-                    Array.isArray(parsed) &&
-                    parsed.length
-                ) {
-
-                    viewerImages = parsed;
-
-                }
-
-            }
-
-        }
-        catch (error) {
-
-            console.warn(
-                "POST IMAGE VIEWER: Unable to read image list.",
-                error
-            );
-
-        }
-
-
-        /* ----------------------------------------------------
-           FALLBACK TO VISIBLE GRID IMAGES
-        ---------------------------------------------------- */
-
-        if (!viewerImages.length) {
-
-            const imageElements =
-                card.querySelectorAll(
-                    ".post-image-item img"
-                );
-
-            viewerImages =
-                Array.from(
-                    imageElements
-                ).map(
-                    image =>
-                        image.currentSrc ||
-                        image.src
-                );
-
-        }
-
-
-        if (!viewerImages.length) {
-            return;
-        }
-
-
-        viewerIndex =
-            Math.max(
-                0,
-                Math.min(
-                    index,
-                    viewerImages.length - 1
-                )
-            );
-
-
-        activeViewer =
-            document.querySelector(
-                ".post-image-viewer"
-            );
-
-
-        if (!activeViewer) {
-            return;
-        }
-
-
-        activeViewer.classList.add(
-            "active"
-        );
-
-
-        activeViewer.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-
-        document.body.style.overflow =
-            "hidden";
-
-
-        updatePostViewer();
-
-    }
-
-
-    /* ========================================================
-       UPDATE VIEWER
-    ======================================================== */
-
-    function updatePostViewer() {
-
-        if (
-            !activeViewer ||
-            !viewerImages.length
-        ) {
-            return;
-        }
-
-
-        const image =
-            activeViewer.querySelector(
-                ".post-viewer-image"
-            );
-
-        const current =
-            activeViewer.querySelector(
-                ".post-viewer-current"
-            );
-
-        const total =
-            activeViewer.querySelector(
-                ".post-viewer-total"
-            );
-
-
-        if (image) {
-
-            image.src =
-                viewerImages[
-                    viewerIndex
-                ];
-
-        }
-
-
-        if (current) {
-
-            current.textContent =
-                viewerIndex + 1;
-
-        }
-
-
-        if (total) {
-
-            total.textContent =
-                viewerImages.length;
-
-        }
-
-
-        const previous =
-            activeViewer.querySelector(
-                ".post-viewer-prev"
-            );
-
-        const next =
-            activeViewer.querySelector(
-                ".post-viewer-next"
-            );
-
-
-        const multiple =
-            viewerImages.length > 1;
-
-
-        if (previous) {
-            previous.style.display =
-                multiple
-                    ? "flex"
-                    : "none";
-        }
-
-
-        if (next) {
-            next.style.display =
-                multiple
-                    ? "flex"
-                    : "none";
-        }
-
-    }
-
-
-    /* ========================================================
-       CLOSE VIEWER
-    ======================================================== */
-
-    function closePostImageViewer() {
-
-        if (!activeViewer) {
-            return;
-        }
-
-
-        activeViewer.classList.remove(
-            "active"
-        );
-
-
-        activeViewer.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-
-        document.body.style.overflow =
-            "";
-
-
-        activeViewer = null;
-
-        viewerImages = [];
-
-        viewerIndex = 0;
-
-    }
-
-
-    /* ========================================================
-       PREVIOUS
-    ======================================================== */
-
-    function previousPostImage() {
-
-        if (!viewerImages.length) {
-            return;
-        }
-
-
-        viewerIndex =
-            viewerIndex <= 0
-                ? viewerImages.length - 1
-                : viewerIndex - 1;
-
-
-        updatePostViewer();
-
-    }
-
-
-    /* ========================================================
-       NEXT
-    ======================================================== */
-
-    function nextPostImage() {
-
-        if (!viewerImages.length) {
-            return;
-        }
-
-
-        viewerIndex =
-            viewerIndex >=
-                viewerImages.length - 1
-                ? 0
-                : viewerIndex + 1;
-
-
-        updatePostViewer();
-
-    }
-
-
-    /* ========================================================
-       IMAGE CLICK
-    ======================================================== */
-
-    document.addEventListener(
-        "click",
-        event => {
-
-            const imageButton =
-                event.target.closest(
-                    ".post-image-item"
-                );
-
-            if (!imageButton) {
-                return;
-            }
-
-
-            event.preventDefault();
-
-
-            const card =
-                imageButton.closest(
-                    ".post-card"
-                );
-
-
-            if (!card) {
-                return;
-            }
-
-
-            const index =
-                Number(
-                    imageButton.dataset.imageIndex
-                );
-
-
-            openPostImageViewer(
-                card,
-                index
-            );
-
-        }
-    );
-
-
-    /* ========================================================
-       VIEWER CONTROLS
-    ======================================================== */
-
-    document.addEventListener(
-        "click",
-        event => {
-
-            if (
-                event.target.closest(
-                    ".post-viewer-close"
-                )
-            ) {
-
-                closePostImageViewer();
-
-                return;
-
-            }
-
-
-            if (
-                event.target.closest(
-                    ".post-viewer-prev"
-                )
-            ) {
-
-                previousPostImage();
-
-                return;
-
-            }
-
-
-            if (
-                event.target.closest(
-                    ".post-viewer-next"
-                )
-            ) {
-
-                nextPostImage();
-
-                return;
-
-            }
-
-
-            const viewer =
-                event.target.closest(
-                    ".post-image-viewer"
-                );
-
-
-            if (
-                viewer &&
-                event.target === viewer
-            ) {
-
-                closePostImageViewer();
-
-            }
-
-        }
-    );
-
-
-    /* ========================================================
-       KEYBOARD NAVIGATION
-    ======================================================== */
-
-    document.addEventListener(
-        "keydown",
-        event => {
-
-            if (!activeViewer) {
-                return;
-            }
-
-
-            if (event.key === "Escape") {
-
-                closePostImageViewer();
-
-                return;
-
-            }
-
-
-            if (event.key === "ArrowLeft") {
-
-                previousPostImage();
-
-                return;
-
-            }
-
-
-            if (event.key === "ArrowRight") {
-
-                nextPostImage();
-
-                return;
-
-            }
-
-        }
-    );
-
-
-    /* ========================================================
-       TOUCH SWIPE
-    ======================================================== */
-
-    let touchStartX = 0;
-
-    let touchStartY = 0;
-
-
-    document.addEventListener(
-        "touchstart",
-        event => {
-
-            if (!activeViewer) {
-                return;
-            }
-
-
-            if (
-                !event.touches ||
-                !event.touches.length
-            ) {
-                return;
-            }
-
-
-            touchStartX =
-                event.touches[0].clientX;
-
-            touchStartY =
-                event.touches[0].clientY;
-
-        },
-        {
-            passive: true
-        }
-    );
-
-
-    document.addEventListener(
-        "touchend",
-        event => {
-
-            if (!activeViewer) {
-                return;
-            }
-
-
-            if (
-                !event.changedTouches ||
-                !event.changedTouches.length
-            ) {
-                return;
-            }
-
-
-            const endX =
-                event.changedTouches[0].clientX;
-
-            const endY =
-                event.changedTouches[0].clientY;
-
-
-            const deltaX =
-                endX - touchStartX;
-
-            const deltaY =
-                endY - touchStartY;
-
-
-            if (
-                Math.abs(deltaX) < 50 ||
-                Math.abs(deltaX) <
-                Math.abs(deltaY)
-            ) {
-                return;
-            }
-
-
-            if (deltaX > 0) {
-
-                previousPostImage();
-
-            }
-            else {
-
-                nextPostImage();
-
-            }
-
-        },
-        {
-            passive: true
-        }
-    );
-
-})();
-
-</script>
+<% } %>
