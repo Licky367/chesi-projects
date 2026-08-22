@@ -14,6 +14,10 @@
 //
 //     /storage/:dairyId/contents/:storageId/details/:itemId
 //
+//     /dairy/:parentId/contents/:storageId/details/:itemId
+//
+//     /update/storage/feed-update-cards
+//
 // STORAGE TYPES:
 //
 //     room
@@ -38,10 +42,15 @@
 //         successMessage
 //         pageError
 //
-//     This prevents:
+//     The feed-update-cards view receives:
 //
-//         ReferenceError:
-//         successMessage is not defined
+//         dairy
+//         dairyId
+//         parentId
+//         storage
+//         storageId
+//         items
+//         availableItems
 //
 // ==========================================================
 
@@ -204,6 +213,40 @@ function getContentItemRouteIds(req) {
 
 
 // ==========================================================
+// DAIRY CONTENT ITEM ROUTE IDS
+// ==========================================================
+//
+// Supports:
+//
+// /dairy/:parentId/contents/:storageId/details/:itemId
+//
+// ==========================================================
+
+function getDairyContentItemRouteIds(req) {
+
+    return {
+
+        parentId:
+            String(
+                req.params?.parentId || ""
+            ).trim(),
+
+        storageId:
+            String(
+                req.params?.storageId || ""
+            ).trim(),
+
+        itemId:
+            String(
+                req.params?.itemId || ""
+            ).trim()
+
+    };
+
+}
+
+
+// ==========================================================
 // CONTENTS URL
 // ==========================================================
 
@@ -269,6 +312,39 @@ function getContentItemUrl(
     return (
         `/storage/${encodeURIComponent(
             dairyId
+        )}` +
+        `/contents/${encodeURIComponent(
+            storageId
+        )}` +
+        `/details/${encodeURIComponent(
+            itemId
+        )}`
+    );
+
+}
+
+
+// ==========================================================
+// DAIRY CONTENT ITEM URL
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This is the URL requested for the feed cards:
+//
+// /dairy/:parentId/contents/:storageId/details/:itemId
+//
+// ==========================================================
+
+function getDairyContentItemUrl(
+    parentId,
+    storageId,
+    itemId
+) {
+
+    return (
+        `/dairy/${encodeURIComponent(
+            parentId
         )}` +
         `/contents/${encodeURIComponent(
             storageId
@@ -357,6 +433,119 @@ function findContentItem(
 
 
 // ==========================================================
+// GET AVAILABLE AGROSTORE ITEMS
+// ==========================================================
+//
+// The feed update cards should display every item currently
+// available inside the AgroStore.
+//
+// We deliberately keep this helper tolerant of the service
+// response because different service versions may expose:
+//
+//     result.items
+//
+// or:
+//
+//     result.availableItems
+//
+// or both.
+//
+// ==========================================================
+
+function getAgroStoreFeedItems(
+    result,
+    storageType
+) {
+
+    if (
+        storageType !==
+        STORAGE_TYPES.AGRO_STORE
+    ) {
+
+        return [];
+
+    }
+
+
+    const sourceItems =
+        Array.isArray(result?.items)
+            ? result.items
+            : (
+                Array.isArray(
+                    result?.availableItems
+                )
+                    ? result.availableItems
+                    : []
+            );
+
+
+    return sourceItems.filter(
+        function (item) {
+
+            if (!item) {
+
+                return false;
+
+            }
+
+
+            // ----------------------------------------------
+            // Do not display items with zero quantity.
+            // ----------------------------------------------
+
+            if (
+                item.quantity !== undefined &&
+                item.quantity !== null
+            ) {
+
+                const quantity =
+                    Number(
+                        item.quantity
+                    );
+
+
+                if (
+                    !Number.isNaN(quantity) &&
+                    quantity <= 0
+                ) {
+
+                    return false;
+
+                }
+
+            }
+
+
+            // ----------------------------------------------
+            // Feed records.
+            //
+            // The normal feed classification is:
+            //
+            // type === "feeds"
+            //
+            // We also tolerate "feed".
+            // ----------------------------------------------
+
+            const type =
+                String(
+                    item.type || ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            return (
+                type === "feeds" ||
+                type === "feed"
+            );
+
+        }
+    );
+
+}
+
+
+// ==========================================================
 // NORMALIZE RENDER VARIABLES
 // ==========================================================
 //
@@ -373,8 +562,6 @@ function findContentItem(
 //
 //     successMessage
 //     pageError
-//
-// even when their value is null.
 //
 // ==========================================================
 
@@ -539,6 +726,32 @@ async function renderContents(
 
 
     // ------------------------------------------------------
+    // FEED UPDATE ITEMS
+    // ------------------------------------------------------
+    //
+    // These are the actual available feed items inside the
+    // AgroStore.
+    //
+    // They are passed to the parent view so that:
+    //
+    //     <%-
+    //       include(
+    //         "../update/storage/feed-update-cards"
+    //       )
+    //     %>
+    //
+    // can render them.
+    //
+    // ------------------------------------------------------
+
+    const feedUpdateItems =
+        getAgroStoreFeedItems(
+            result,
+            storageType
+        );
+
+
+    // ------------------------------------------------------
     // RENDER
     // ------------------------------------------------------
 
@@ -565,6 +778,18 @@ async function renderContents(
 
 
             dairyId,
+
+
+            // =================================================
+            // PARENT ID
+            // =================================================
+            //
+            // Used by the update feed cards.
+            //
+            // =================================================
+
+            parentId:
+                dairyId,
 
 
             // =================================================
@@ -617,6 +842,28 @@ async function renderContents(
                     : [],
 
 
+            // =================================================
+            // FEED UPDATE CARDS
+            // =================================================
+            //
+            // ALL AVAILABLE FEED ITEMS IN THE AGROSTORE.
+            //
+            // =================================================
+
+            feedUpdateItems,
+
+
+            // Alias provided as well so the partial can use
+            // either name if required.
+
+            agroStoreItems:
+                feedUpdateItems,
+
+
+            // =================================================
+            // TARGET STORAGES
+            // =================================================
+
             targetStorages:
                 Array.isArray(
                     result.targetStorages
@@ -632,13 +879,14 @@ async function renderContents(
             activeTab,
 
 
+            // =================================================
             // IMPORTANT:
             // ALWAYS DEFINED
+            // =================================================
+
             successMessage,
 
 
-            // IMPORTANT:
-            // ALWAYS DEFINED
             pageError
 
         }
@@ -817,14 +1065,6 @@ async function contentItem(req, res) {
         // ----------------------------------------------------
         // MESSAGES
         // ----------------------------------------------------
-        //
-        // THIS IS THE FIX FOR:
-        //
-        //     successMessage is not defined
-        //
-        // We explicitly provide BOTH variables to EJS.
-        //
-        // ----------------------------------------------------
 
         const {
             successMessage,
@@ -859,6 +1099,18 @@ async function contentItem(req, res) {
 
 
         // ----------------------------------------------------
+        // DAIRY ITEM URL
+        // ----------------------------------------------------
+
+        const dairyContentItemUrl =
+            getDairyContentItemUrl(
+                dairyId,
+                storageId,
+                itemId
+            );
+
+
+        // ----------------------------------------------------
         // RENDER
         // ----------------------------------------------------
 
@@ -884,6 +1136,10 @@ async function contentItem(req, res) {
 
 
                 dairyId,
+
+
+                parentId:
+                    dairyId,
 
 
                 // =================================================
@@ -932,13 +1188,11 @@ async function contentItem(req, res) {
 
                 contentItemUrl,
 
+                dairyContentItemUrl,
+
 
                 // =================================================
                 // IMPORTANT EJS VARIABLES
-                // =================================================
-                //
-                // These MUST exist even when null.
-                //
                 // =================================================
 
                 successMessage,
@@ -992,6 +1246,232 @@ async function contents(req, res) {
             res,
             error,
             "Unable to load storage contents."
+        );
+
+    }
+
+}
+
+
+// ==========================================================
+// RENDER FEED UPDATE CARDS
+// ==========================================================
+//
+// GET:
+//
+// /update/storage/feed-update-cards
+//
+// QUERY:
+//
+// ?dairyId=:dairyId&storageId=:storageId
+//
+// PURPOSE:
+//
+//     Render:
+//
+//         views/update/storage/feed-update-cards.ejs
+//
+//     using the actual available feed items in an AgroStore.
+//
+// IMPORTANT:
+//
+//     This is a partial-style view. It receives all data
+//     required by the EJS.
+//
+// ==========================================================
+
+async function feedUpdateCards(req, res) {
+
+    try {
+
+        // ----------------------------------------------------
+        // GET IDS
+        // ----------------------------------------------------
+
+        const dairyId =
+            String(
+                req.query?.dairyId ||
+                req.params?.dairyId ||
+                ""
+            ).trim();
+
+
+        const storageId =
+            String(
+                req.query?.storageId ||
+                req.params?.storageId ||
+                ""
+            ).trim();
+
+
+        // ----------------------------------------------------
+        // VALIDATE DAIRY ID
+        // ----------------------------------------------------
+
+        if (!dairyId) {
+
+            const error =
+                new Error(
+                    "Dairy ID is required."
+                );
+
+            error.status = 400;
+
+            throw error;
+
+        }
+
+
+        // ----------------------------------------------------
+        // VALIDATE STORAGE ID
+        // ----------------------------------------------------
+
+        if (!storageId) {
+
+            const error =
+                new Error(
+                    "Storage ID is required."
+                );
+
+            error.status = 400;
+
+            throw error;
+
+        }
+
+
+        // ----------------------------------------------------
+        // LOAD STORAGE CONTENTS
+        // ----------------------------------------------------
+
+        const result =
+            await storageContentsService
+                .getStorageContents({
+                    dairyId,
+                    storageId
+                });
+
+
+        // ----------------------------------------------------
+        // REQUIRE STORAGE
+        // ----------------------------------------------------
+
+        if (
+            !result ||
+            !result.storage
+        ) {
+
+            const error =
+                new Error(
+                    "Storage facility not found."
+                );
+
+            error.status = 404;
+
+            throw error;
+
+        }
+
+
+        // ----------------------------------------------------
+        // VALIDATE STORAGE
+        // ----------------------------------------------------
+
+        const storageType =
+            validateStorageType(
+                result.storage
+            );
+
+
+        // ----------------------------------------------------
+        // FEED ITEMS
+        // ----------------------------------------------------
+
+        const feedUpdateItems =
+            getAgroStoreFeedItems(
+                result,
+                storageType
+            );
+
+
+        // ----------------------------------------------------
+        // RENDER
+        // ----------------------------------------------------
+
+        return res.render(
+            "update/storage/feed-update-cards",
+            {
+
+                // =================================================
+                // PAGE
+                // =================================================
+
+                title:
+                    "Available Animal Feeds",
+
+
+                // =================================================
+                // DAIRY
+                // =================================================
+
+                dairy:
+                    result.dairy || null,
+
+
+                dairyId,
+
+
+                parentId:
+                    dairyId,
+
+
+                // =================================================
+                // STORAGE
+                // =================================================
+
+                storage:
+                    result.storage,
+
+
+                storageId,
+
+
+                storageType,
+
+
+                // =================================================
+                // ITEMS
+                // =================================================
+
+                items:
+                    feedUpdateItems,
+
+
+                availableItems:
+                    feedUpdateItems,
+
+
+                feedUpdateItems,
+
+
+                agroStoreItems:
+                    feedUpdateItems
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Feed update cards error:",
+            error
+        );
+
+
+        return sendError(
+            res,
+            error,
+            "Unable to load available animal feeds."
         );
 
     }
@@ -1480,6 +1960,8 @@ module.exports = {
     contents,
 
     contentItem,
+
+    feedUpdateCards,
 
 
     // ------------------------------------------------------
