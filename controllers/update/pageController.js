@@ -1,6 +1,29 @@
 // ==========================================================
 // controllers/update/pageController.js
-// ======================================================
+// DAIRY UPDATE PAGE CONTROLLER
+// ==========================================================
+//
+// PURPOSE
+// ----------------------------------------------------------
+//
+// Loads the complete Dairy update page and passes all
+// required variables to the appropriate EJS view.
+//
+// VARIABLE CONTRACT
+// ----------------------------------------------------------
+//
+// The animal-feed item-link component uses:
+//
+//     itemLinks
+//
+// `itemLinks` is ALWAYS passed to the view as an ARRAY.
+//
+// This matches:
+//
+//     views/update/storage/itemLink.ejs
+//
+// ==========================================================
+
 
 const updateService =
     require("../../services/update");
@@ -14,6 +37,10 @@ exports.viewPage =
 async (req, res) => {
 
     try {
+
+        // ==================================================
+        // DAIRY ID
+        // ==================================================
 
         const {
             id
@@ -47,19 +74,40 @@ async (req, res) => {
 
         // ==================================================
         // GET ITEM LINKS
+        // ==================================================
         //
-        // IMPORTANT:
+        // The item-link service resolves the animal-feed
+        // items belonging to the current Dairy Farm.
         //
-        // itemLink.js is exposed through:
+        // The result is passed to the view using the SAME
+        // variable name used by itemLink.ejs:
         //
-        //     services/update/index.js
+        //     itemLinks
+        //
+        // ==================================================
+
+        const resolvedItemLinks =
+            await updateService.getItemLinks(
+                id
+            );
+
+
+        // ==================================================
+        // SAFE ITEM-LINK ARRAY
+        // ==================================================
+        //
+        // Never allow itemLinks to become undefined.
+        //
+        // itemLink.ejs expects an array and performs:
+        //
+        //     itemLinks.forEach(...)
         //
         // ==================================================
 
         const itemLinks =
-            await updateService.getItemLinks(
-                id
-            );
+            Array.isArray(resolvedItemLinks)
+                ? resolvedItemLinks
+                : [];
 
 
         // ==================================================
@@ -154,6 +202,10 @@ async (req, res) => {
 
                 // ------------------------------------------
                 // CURRENT FARM ASSETS
+                //
+                // These are the animals, structures,
+                // machines and tools belonging to the
+                // currently viewed Dairy Farm.
                 // ------------------------------------------
 
                 assetDairies:
@@ -162,6 +214,8 @@ async (req, res) => {
 
                 // ------------------------------------------
                 // ASSIGNED FARMS
+                //
+                // Used by the farm-switching components.
                 // ------------------------------------------
 
                 assignedFarms:
@@ -170,6 +224,9 @@ async (req, res) => {
 
                 // ------------------------------------------
                 // AGROSTORE INVENTORY
+                //
+                // Populated when the current Dairy record
+                // is an AgroStore.
                 // ------------------------------------------
 
                 animalFeeds:
@@ -177,20 +234,24 @@ async (req, res) => {
 
 
                 // ------------------------------------------
-                // ITEM LINKS
+                // ANIMAL FEED ITEM LINKS
                 //
                 // IMPORTANT:
-                //
-                // This variable is ALWAYS defined.
                 //
                 // The view receives:
                 //
                 //     itemLinks
                 //
+                // This is the SAME variable name expected
+                // by:
+                //
+                //     update/storage/itemLink.ejs
+                //
+                // It is ALWAYS an array.
                 // ------------------------------------------
 
                 itemLinks:
-                    itemLinks || [],
+                    itemLinks,
 
 
                 // ------------------------------------------
@@ -228,6 +289,10 @@ async (req, res) => {
 // POST:
 //
 //     /dairy/:id/toggle-milking
+//
+// The actual database operation is handled by:
+//
+//     updateService.toggleMilking()
 //
 // ==========================================================
 
@@ -388,6 +453,9 @@ async (req, res) => {
 //
 //     /dairy/:id/switch
 //
+// The requested farm must belong to the logged-in
+// dairyWorker.
+//
 // ==========================================================
 
 exports.switchDairy =
@@ -485,6 +553,10 @@ async (req, res) => {
 
         // ==================================================
         // SWITCH
+        //
+        // The selected farm becomes the farm currently
+        // being viewed.
+        //
         // ==================================================
 
         return res.redirect(
