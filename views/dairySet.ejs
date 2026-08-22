@@ -1,47 +1,3 @@
-<!-- =====================================================
-     DAIRY SET PAGE
-
-     FILE:
-         views/dairy/dairySet.ejs
-
-     ROUTE:
-         /dairy/assets/<%= dairy._id %>
-
-     PROFILE CARD:
-     -----------------------------------------------------
-     profile-card.ejs is displayed ONLY when dairy has
-     a defined code.
-
-     Valid:
-         0
-         1
-         2
-         -1
-         -2
-         etc.
-
-     Hidden:
-         null
-         undefined
-===================================================== -->
-
-
-<!-- =====================================================
-     UPDATE PAGE ASSETS
-===================================================== -->
-
-<link
-    rel="stylesheet"
-    href="/css/update/update.css"
->
-
-<script src="/socket.io/socket.io.js"></script>
-
-
-<!-- =====================================================
-     UPDATE PAGE
-===================================================== -->
-
 <div class="dairy-page">
 
 
@@ -60,12 +16,6 @@
 
     <!-- =================================================
          PROFILE
-         
-         Show profile-card ONLY when dairy.code exists.
-         
-         IMPORTANT:
-         != null checks BOTH null and undefined while
-         still allowing valid values such as 0.
     ================================================== -->
 
     <% if (dairy && dairy.code != null) { %>
@@ -78,14 +28,28 @@
     <% } %>
 
 
+    <!-- =================================================
+         AGROSTORE ANIMAL FEED CARD
+         
+         ONLY DISPLAY WHEN THIS DAIRY RECORD HAS A
+         NEGATIVE roomNumber.
+         
+         Negative roomNumber identifies an AgroStore.
+    ================================================== -->
+
+    <% if (
+        dairy &&
+        dairy.roomNumber != null &&
+        Number(dairy.roomNumber) < 0
+    ) { %>
+
+        <%- include("update/storage/animal-feed-card", {
+            feed: dairy,
+            storageId: dairy._id,
+            agroStore: dairy
+        }) %>
+
+    <% } %>
+
+
 </div>
-
-
-<!-- =====================================================
-     UPDATE PAGE JAVASCRIPT
-===================================================== -->
-
-<script
-    src="/js/update/index.js"
-    defer
-></script>
