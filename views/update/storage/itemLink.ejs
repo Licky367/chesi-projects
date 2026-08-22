@@ -29,18 +29,23 @@ Each card displays:
 
 Cards are horizontally scrollable.
 
+IMPORTANT:
+----------------------------------------------------------
+The variable passed into this view is ALWAYS:
+
+    itemLinks
+
+No other collection variable is used.
+
 ==========================================================
 */ %>
 
 
-<%
-    const links = Array.isArray(itemLinks)
-        ? itemLinks
-        : [];
-%>
+<% if (
+    Array.isArray(itemLinks) &&
+    itemLinks.length > 0
+) { %>
 
-
-<% if (links.length > 0) { %>
 
 <section
     class="animal-feed-item-links"
@@ -91,10 +96,16 @@ Cards are horizontally scrollable.
     >
 
 
-        <% links.forEach(function (itemLink) { %>
+        <% itemLinks.forEach(function (itemLink) { %>
 
 
             <%
+                /*
+                ==================================================
+                SAFETY CHECK
+                ==================================================
+                */
+
                 if (
                     !itemLink ||
                     !itemLink._id
@@ -102,6 +113,12 @@ Cards are horizontally scrollable.
                     return;
                 }
 
+
+                /*
+                ==================================================
+                ITEM NAME
+                ==================================================
+                */
 
                 const itemName =
                     itemLink.name ||
@@ -111,12 +128,24 @@ Cards are horizontally scrollable.
                     "Animal Feed";
 
 
+                /*
+                ==================================================
+                AGROSTORE NAME
+                ==================================================
+                */
+
                 const agroStoreName =
                     itemLink.agroStoreName ||
                     itemLink.storageName ||
                     itemLink.storeName ||
                     "AgroStore";
 
+
+                /*
+                ==================================================
+                ITEM LINK
+                ==================================================
+                */
 
                 const itemHref =
                     itemLink.href ||
@@ -157,12 +186,21 @@ Cards are horizontally scrollable.
                 <div class="animal-feed-item-link-content">
 
 
+                    <!-- =========================================
+                         ITEM NAME
+                    ========================================== -->
+
                     <div class="animal-feed-item-link-name">
 
                         <%= itemName %>
 
                     </div>
 
+
+
+                    <!-- =========================================
+                         AGROSTORE NAME
+                    ========================================== -->
 
                     <div class="animal-feed-item-link-store">
 
@@ -340,9 +378,11 @@ Cards are horizontally scrollable.
         4px
         8px;
 
-    scroll-behavior: smooth;
+    scroll-behavior:
+        smooth;
 
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling:
+        touch;
 
     scrollbar-width: none;
 
@@ -400,7 +440,8 @@ Cards are horizontally scrollable.
 
     border-radius: 14px;
 
-    background: #ffffff;
+    background:
+        #ffffff;
 
     box-shadow:
         0 2px 8px
@@ -586,7 +627,8 @@ Cards are horizontally scrollable.
         2px solid
         #198754;
 
-    outline-offset: 2px;
+    outline-offset:
+        2px;
 
 }
 
@@ -600,64 +642,81 @@ Cards are horizontally scrollable.
 
     .animal-feed-item-links {
 
-        margin-bottom: 15px;
+        margin-bottom:
+            15px;
 
     }
 
 
     .animal-feed-item-links-title {
 
-        font-size: 13px;
+        font-size:
+            13px;
 
-        line-height: 1.4;
+        line-height:
+            1.4;
 
     }
 
 
     .animal-feed-item-link-card {
 
-        flex-basis: 138px;
+        flex-basis:
+            138px;
 
-        width: 138px;
+        width:
+            138px;
 
-        min-width: 138px;
+        min-width:
+            138px;
 
-        height: 106px;
+        height:
+            106px;
 
-        padding: 10px;
+        padding:
+            10px;
 
-        border-radius: 13px;
+        border-radius:
+            13px;
 
     }
 
 
     .animal-feed-item-link-icon {
 
-        width: 26px;
+        width:
+            26px;
 
-        height: 26px;
+        height:
+            26px;
 
-        margin-bottom: 6px;
+        margin-bottom:
+            6px;
 
-        font-size: 14px;
+        font-size:
+            14px;
 
     }
 
 
     .animal-feed-item-link-name {
 
-        font-size: 12px;
+        font-size:
+            12px;
 
-        line-height: 15px;
+        line-height:
+            15px;
 
     }
 
 
     .animal-feed-item-link-store {
 
-        font-size: 8px;
+        font-size:
+            8px;
 
-        line-height: 11px;
+        line-height:
+            11px;
 
     }
 
