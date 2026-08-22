@@ -25,7 +25,7 @@
 
 
 const Dairy =
-    require("../../models/Dairy");
+    require("../../models/dairy");
 
 
 // ==========================================================
