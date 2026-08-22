@@ -2,6 +2,42 @@
 // services/update/storage/list.js
 // AGROSTORE INVENTORY LIST SERVICE
 // ==========================================================
+//
+// OWNERSHIP CONTRACT
+// ----------------------------------------------------------
+//
+// Dairy Farm:
+//
+//     recordType = "farm"
+//     code       = negative farm code
+//     assetCode  = null
+//
+// AgroStore:
+//
+//     recordType = "structure"
+//     type       = "agroStore"
+//     assetCode  = negative code of parent Dairy Farm
+//     roomNumber = negative AgroStore number
+//
+// Inventory:
+//
+//     assetCode   = parent Dairy Farm code
+//     dwellNumber = AgroStore roomNumber
+//
+// IMPORTANT:
+//
+// The parent Dairy Farm is NOT supplied as parentId.
+//
+// It is determined from:
+//
+//     AgroStore.assetCode
+//
+// The AgroStore roomNumber is NOT supplied separately.
+//
+// The authoritative roomNumber comes from the AgroStore document.
+//
+// ==========================================================
+
 
 const mongoose =
     require("mongoose");
@@ -27,48 +63,42 @@ function isValidObjectId(value) {
 // LIST AGROSTORE INVENTORY
 // ==========================================================
 //
-// parentId
-//     = _id of parent Dairy Farm
+// INPUT:
 //
-// roomNumber
-//     = roomNumber of AgroStore
+//     agroStoreId
 //
-// Relationship:
+// PROCESS:
 //
-// Parent Farm
-//     _id
-//     code
+//     1. Find AgroStore by _id
+//     2. Read AgroStore.assetCode
+//     3. Find parent Dairy Farm by code
+//     4. Read AgroStore.roomNumber
+//     5. Find inventory using:
 //
-//        ↓
-//
-// AgroStore
-//     assetCode = parentFarm.code
-//     roomNumber = requested roomNumber
-//
-//        ↓
-//
-// Inventory
-//     assetCode = parentFarm.code
-//     dwellNumber = AgroStore.roomNumber
+//            assetCode
+//            dwellNumber
 //
 // ==========================================================
 
 async function list({
-    parentId,
-    roomNumber
+
+    agroStoreId
+
 }) {
 
     // ======================================================
-    // VALIDATE PARENT ID
+    // VALIDATE AGROSTORE ID
     // ======================================================
 
     if (
-        !isValidObjectId(parentId)
+        !isValidObjectId(
+            agroStoreId
+        )
     ) {
 
         const error =
             new Error(
-                "Invalid parent Dairy Farm ID."
+                "Invalid AgroStore ID."
             );
 
         error.status = 400;
@@ -79,25 +109,65 @@ async function list({
 
 
     // ======================================================
-    // NORMALIZE ROOM NUMBER
+    // FIND AGROSTORE
+    // ======================================================
+    //
+    // The AgroStore is the starting point.
+    //
     // ======================================================
 
-    const storeNumber =
-        Number(roomNumber);
+    const agroStore =
+        await Dairy.findOne({
+
+            _id: agroStoreId,
+
+            recordType: "structure",
+
+            type: "agroStore",
+
+            status: "active"
+
+        });
+
+
+    if (!agroStore) {
+
+        const error =
+            new Error(
+                "The requested AgroStore was not found."
+            );
+
+        error.status = 404;
+
+        throw error;
+
+    }
 
 
     // ======================================================
-    // AGROSTORE MUST HAVE NEGATIVE ROOM NUMBER
+    // GET PARENT FARM CODE
     // ======================================================
+    //
+    // According to dairy.js:
+    //
+    //     assetCode = negative parent Dairy Farm code
+    //
+    // ======================================================
+
+    const farmCode =
+        Number(
+            agroStore.assetCode
+        );
+
 
     if (
-        !Number.isInteger(storeNumber) ||
-        storeNumber >= 0
+        !Number.isInteger(farmCode) ||
+        farmCode >= 0
     ) {
 
         const error =
             new Error(
-                "Invalid AgroStore roomNumber."
+                "The AgroStore has an invalid parent Dairy Farm code."
             );
 
         error.status = 400;
@@ -110,13 +180,23 @@ async function list({
     // ======================================================
     // FIND PARENT DAIRY FARM
     // ======================================================
+    //
+    // This is where the correct parent _id is determined.
+    //
+    //     agroStore.assetCode
+    //             ↓
+    //        parentDairy.code
+    //             ↓
+    //        parentDairy._id
+    //
+    // ======================================================
 
     const parentDairy =
         await Dairy.findOne({
 
-            _id: parentId,
-
             recordType: "farm",
+
+            code: farmCode,
 
             status: "active"
 
@@ -127,7 +207,7 @@ async function list({
 
         const error =
             new Error(
-                "Parent Dairy Farm was not found."
+                "The parent Dairy Farm associated with this AgroStore was not found."
             );
 
         error.status = 404;
@@ -138,16 +218,14 @@ async function list({
 
 
     // ======================================================
-    // PARENT FARM CODE
+    // VERIFY PARENT FARM CODE
     // ======================================================
 
-    const farmCode =
-        Number(parentDairy.code);
-
-
     if (
-        !Number.isInteger(farmCode) ||
-        farmCode >= 0
+        !Number.isInteger(
+            Number(parentDairy.code)
+        ) ||
+        Number(parentDairy.code) >= 0
     ) {
 
         const error =
@@ -163,42 +241,53 @@ async function list({
 
 
     // ======================================================
-    // FIND AGROSTORE
-    // ======================================================
-    //
-    // The AgroStore MUST:
-    //
-    // 1. Be a structure
-    // 2. Be type agroStore
-    // 3. Belong to this farm
-    // 4. Have the requested roomNumber
-    //
+    // VERIFY AGROSTORE OWNERSHIP
     // ======================================================
 
-    const agroStore =
-        await Dairy.findOne({
-
-            recordType: "structure",
-
-            type: "agroStore",
-
-            assetCode: farmCode,
-
-            roomNumber: storeNumber,
-
-            status: "active"
-
-        });
-
-
-    if (!agroStore) {
+    if (
+        Number(parentDairy.code) !==
+        Number(agroStore.assetCode)
+    ) {
 
         const error =
             new Error(
-                "The requested AgroStore was not found in this Dairy Farm."
+                "The AgroStore does not belong to the resolved parent Dairy Farm."
             );
 
-        error.status = 404;
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // GET AGROSTORE NUMBER
+    // ======================================================
+    //
+    // roomNumber belongs to the AgroStore.
+    //
+    // We do NOT accept it independently from the caller.
+    //
+    // ======================================================
+
+    const storeNumber =
+        Number(
+            agroStore.roomNumber
+        );
+
+
+    if (
+        !Number.isInteger(storeNumber) ||
+        storeNumber >= 0
+    ) {
+
+        const error =
+            new Error(
+                "The AgroStore has an invalid roomNumber."
+            );
+
+        error.status = 400;
 
         throw error;
 
@@ -209,25 +298,28 @@ async function list({
     // FIND INVENTORY
     // ======================================================
     //
-    // THIS IS THE IMPORTANT PART.
-    //
-    // We do NOT search by the AgroStore _id.
-    //
-    // Inventory is identified by:
+    // Inventory belongs to this AgroStore through:
     //
     //     assetCode
-    //         +
+    //         =
+    //     parent Dairy Farm code
+    //
+    // AND
+    //
     //     dwellNumber
+    //         =
+    //     AgroStore.roomNumber
     //
     // ======================================================
 
     const inventory =
         await Dairy.find({
 
+            recordType: "structure",
+
             assetCode: farmCode,
 
-            dwellNumber:
-                agroStore.roomNumber,
+            dwellNumber: storeNumber,
 
             status: "active"
 
