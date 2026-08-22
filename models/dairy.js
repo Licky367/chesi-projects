@@ -131,6 +131,27 @@
 // They are NOT the same field.
 //
 // ==========================================================
+//
+// AGROSTORE STOCK UPDATE
+// ----------------------------------------------------------
+//
+// quantity
+//     = current quantity of the stock item
+//
+// unit
+//     = unit of measurement
+//
+// stockUpdateNote
+//     = latest additional information entered when the
+//       AgroStore stock quantity is updated.
+//
+// description
+//     = permanent/general description of the stock item.
+//
+// stockUpdateNote
+//     = changing/latest update information.
+//
+// ==========================================================
 
 
 const mongoose =
@@ -301,15 +322,6 @@ function isNegativeIntegerOrNull(value) {
 // ==========================================================
 // HELPER: VALID ROOM NUMBER
 // ==========================================================
-//
-// Normal rooms:
-//
-//     1
-//     2
-//     3
-//     ...
-//
-// ==========================================================
 
 function isValidRoomNumber(value) {
 
@@ -325,15 +337,6 @@ function isValidRoomNumber(value) {
 
 // ==========================================================
 // HELPER: VALID AGROSTORE NUMBER
-// ==========================================================
-//
-// AgroStores:
-//
-//     -1
-//     -2
-//     -3
-//     ...
-//
 // ==========================================================
 
 function isValidAgroStoreNumber(value) {
@@ -474,12 +477,6 @@ const dairySchema =
             // ==================================================
             // CODE
             // ==================================================
-            //
-            // NEGATIVE = FARM
-            // POSITIVE = ANIMAL
-            // NULL     = STRUCTURE
-            //
-            // ==================================================
 
             code: {
 
@@ -596,22 +593,6 @@ const dairySchema =
             // ==================================================
             // ROOM NUMBER
             // ==================================================
-            //
-            // THIS IDENTIFIES A STORAGE FACILITY.
-            //
-            // room:
-            //
-            //     1, 2, 3, ...
-            //
-            // agroStore:
-            //
-            //     -1, -2, -3, ...
-            //
-            // The service generates this value.
-            //
-            // The model validates it.
-            //
-            // ==================================================
 
             roomNumber: {
 
@@ -623,10 +604,6 @@ const dairySchema =
 
                     validator:
                         function (value) {
-
-                            // ----------------------------------
-                            // Non-storage records
-                            // ----------------------------------
 
                             if (
                                 this.type !== "room" &&
@@ -641,10 +618,6 @@ const dairySchema =
                             }
 
 
-                            // ----------------------------------
-                            // Normal room
-                            // ----------------------------------
-
                             if (
                                 this.type === "room"
                             ) {
@@ -655,10 +628,6 @@ const dairySchema =
 
                             }
 
-
-                            // ----------------------------------
-                            // AgroStore
-                            // ----------------------------------
 
                             if (
                                 this.type === "agroStore"
@@ -714,12 +683,6 @@ const dairySchema =
             // ==================================================
             // DWELL NUMBER
             // ==================================================
-            //
-            // This is for CONTENT allocation.
-            //
-            // It is NOT the storage facility number.
-            //
-            // ==================================================
 
             dwellNumber: {
 
@@ -774,6 +737,41 @@ const dairySchema =
                 default: null,
 
                 maxlength: 50
+
+            },
+
+
+            // ==================================================
+            // STOCK UPDATE NOTE
+            // ==========================================================
+            //
+            // This is the additional information entered by the
+            // user when updating AgroStore stock.
+            //
+            // It is intentionally separate from "description".
+            //
+            // description:
+            //     General / original description of the stock.
+            //
+            // stockUpdateNote:
+            //     Latest information supplied during a stock
+            //     quantity update.
+            //
+            // The EJS update form submits:
+            //
+            //     name="stockUpdateNote"
+            //
+            // ==========================================================
+
+            stockUpdateNote: {
+
+                type: String,
+
+                trim: true,
+
+                default: "",
+
+                maxlength: 5000
 
             },
 
@@ -2028,6 +2026,27 @@ dairySchema.pre(
 
 
         // ======================================================
+        // NORMALIZE STOCK UPDATE NOTE
+        // ======================================================
+
+        if (
+            this.stockUpdateNote === null ||
+            this.stockUpdateNote === undefined
+        ) {
+
+            this.stockUpdateNote = "";
+
+        } else {
+
+            this.stockUpdateNote =
+                String(
+                    this.stockUpdateNote
+                ).trim();
+
+        }
+
+
+        // ======================================================
         // DETERMINE RECORD TYPE
         // ======================================================
 
@@ -2145,19 +2164,6 @@ dairySchema.pre(
 
         // ======================================================
         // STORAGE ROOM NUMBER
-        // ======================================================
-        //
-        // This is the critical protection.
-        //
-        // The service MUST generate roomNumber.
-        //
-        // The model refuses to save:
-        //
-        //     room       without positive roomNumber
-        //     agroStore  without negative roomNumber
-        //
-        // The model does NOT generate the number.
-        //
         // ======================================================
 
         if (
@@ -2332,11 +2338,23 @@ dairySchema.pre(
 
             }
 
+
+            // ----------------------------------------------
+            // STOCK UPDATE NOTE
+            // ----------------------------------------------
+
+            this.stockUpdateNote =
+                String(
+                    this.stockUpdateNote || ""
+                ).trim();
+
         } else {
 
             this.quantity = null;
 
             this.unit = null;
+
+            this.stockUpdateNote = "";
 
         }
 
@@ -2364,6 +2382,8 @@ dairySchema.pre(
             this.quantity = null;
 
             this.unit = null;
+
+            this.stockUpdateNote = "";
 
 
             if (
@@ -2440,6 +2460,8 @@ dairySchema.pre(
             this.quantity = null;
 
             this.unit = null;
+
+            this.stockUpdateNote = "";
 
             this.roomNumber = null;
 
@@ -2686,6 +2708,27 @@ dairySchema.pre(
 
 
         // ======================================================
+        // NORMALIZE STOCK UPDATE NOTE
+        // ======================================================
+
+        if (
+            this.stockUpdateNote === null ||
+            this.stockUpdateNote === undefined
+        ) {
+
+            this.stockUpdateNote = "";
+
+        } else {
+
+            this.stockUpdateNote =
+                String(
+                    this.stockUpdateNote
+                ).trim();
+
+        }
+
+
+        // ======================================================
         // DAIRY FARM NORMALIZATION
         // ======================================================
 
@@ -2709,6 +2752,8 @@ dairySchema.pre(
 
             this.unit = null;
 
+            this.stockUpdateNote = "";
+
         }
 
 
@@ -2721,6 +2766,8 @@ dairySchema.pre(
         ) {
 
             this.roomNumber = null;
+
+            this.stockUpdateNote = "";
 
         }
 
@@ -2808,6 +2855,8 @@ dairySchema.pre(
 
             this.unit = null;
 
+            this.stockUpdateNote = "";
+
         }
 
 
@@ -2864,6 +2913,16 @@ dairySchema.pre(
                 }
 
             }
+
+
+            // ----------------------------------------------
+            // FINAL STOCK UPDATE NOTE NORMALIZATION
+            // ----------------------------------------------
+
+            this.stockUpdateNote =
+                String(
+                    this.stockUpdateNote || ""
+                ).trim();
 
         }
 
@@ -2967,25 +3026,6 @@ dairySchema.index({
 
 // ==========================================================
 // STORAGE NUMBER INDEX
-// ==========================================================
-//
-// roomNumber is unique within a parent farm + storage type.
-//
-// This prevents:
-//
-//     Farm -7 / room 1
-//     Farm -7 / room 1
-//
-// while allowing:
-//
-//     Farm -7 / room 1
-//     Farm -8 / room 1
-//
-// and:
-//
-//     Farm -7 / room 1
-//     Farm -7 / agroStore -1
-//
 // ==========================================================
 
 dairySchema.index({
