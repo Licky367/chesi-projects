@@ -1,3 +1,43 @@
+<% /*
+==========================================================
+DAIRY SET PAGE
+
+FILE:
+    views/dairySet.ejs
+
+PURPOSE:
+    Display the profile page for a Dairy asset or
+    structure.
+
+    When the current Dairy record is an AgroStore,
+    its inventory is displayed using:
+
+        update/storage/animal-feed-updates.ejs
+
+IMPORTANT AGROSTORE LOGIC:
+
+    /dairy/:id
+        |
+        | id = AgroStore._id
+        v
+    AgroStore
+        |
+        | roomNumber
+        v
+    Dairy.dwellNumber
+        |
+        v
+    animalFeeds
+
+The AgroStore itself is NOT an inventory item.
+
+The normal `feed` variable remains the normal Update feed
+for the current Dairy record and is not used as AgroStore
+inventory.
+==========================================================
+*/ %>
+
+
 <div class="dairy-page">
 
 
@@ -14,6 +54,7 @@
     <% } %>
 
 
+
     <!-- =================================================
          PROFILE
     ================================================== -->
@@ -28,13 +69,24 @@
     <% } %>
 
 
+
     <!-- =================================================
-         AGROSTORE ANIMAL FEED CARD
+         AGROSTORE INVENTORY
          
-         ONLY DISPLAY WHEN THIS DAIRY RECORD HAS A
-         NEGATIVE roomNumber.
+         An AgroStore is identified by its negative
+         roomNumber.
+
+         The backend of /dairy/:id supplies:
+
+             animalFeeds
+
+         These are the Dairy records whose:
+
+             dwellNumber === dairy.roomNumber
+
+         `dairy` is the AgroStore itself.
          
-         Negative roomNumber identifies an AgroStore.
+         `animalFeeds` contains its inventory.
     ================================================== -->
 
     <% if (
@@ -43,13 +95,23 @@
         Number(dairy.roomNumber) < 0
     ) { %>
 
-        <%- include("update/storage/animal-feed-card", {
-            feed: dairy,
-            storageId: dairy._id,
-            agroStore: dairy
+
+        <%- include("update/storage/animal-feed-updates", {
+
+            agroStore:
+                dairy,
+
+            storageId:
+                dairy._id,
+
+            animalFeeds:
+                animalFeeds || []
+
         }) %>
 
+
     <% } %>
+
 
 
 </div>
