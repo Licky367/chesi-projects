@@ -20,6 +20,8 @@ module.exports = {
 
     ...require("./storageController"),
 
-    ...require("./stockUpdateController")
+    ...require("./stockUpdateController"),
+
+    ...require("./contentItemController")
 
 };
