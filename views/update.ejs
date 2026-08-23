@@ -57,7 +57,29 @@
 
          item
 
+     EXCEPTION:
+     -----------------------------------------------------
+     stock-update.ejs deliberately expects:
+
+         update
+
+     Therefore animalFeed items are passed as:
+
+         update: item
+
      stock.ejs is deliberately NOT rendered here.
+
+     ASSET CARDS:
+     -----------------------------------------------------
+     asset-cards.ejs is a FIXED PAGE COMPONENT.
+
+     It appears immediately below:
+
+         h1.ejs
+
+     It does NOT depend on feed position.
+
+     It is NOT inserted inside the feed loop.
 
      ANIMAL FEED UPDATE CARDS:
      -----------------------------------------------------
@@ -423,10 +445,48 @@
         user: user
     }) %>
 
+
+
+    <!-- =================================================
+         FIXED ASSET CARDS
+
+         ALWAYS DIRECTLY BELOW H1
+
+         IMPORTANT:
+         -------------------------------------------------
+         asset-cards.ejs is NOT part of the feed loop.
+
+         It is rendered exactly once here.
+
+         Therefore its position is always:
+
+             create-post
+                    ↓
+                 h1.ejs
+                    ↓
+             asset-cards.ejs
+                    ↓
+              itemLink.ejs
+                    ↓
+                assetBar
+                    ↓
+                  feed
+    ================================================== -->
+
+    <%- include(
+        "update/asset-cards",
+        {
+            dairy: dairy,
+            assetDairies: assetDairies || []
+        }
+    ) %>
+
+
+
     <!-- =================================================
          ANIMAL FEED ITEM LINKS
 
-         Appears directly below h1.ejs.
+         Appears directly below asset-cards.ejs.
 
          The controller passes the generated item links
          through:
@@ -473,78 +533,24 @@
         <% if (Array.isArray(feed) && feed.length > 0) { %>
 
 
-            <%
-                /*
-                ==================================================
-                RECURRING INSERTION POSITIONS
-                ==================================================
-
-                These positions only control where the
-                recurring UI cards appear.
-
-                They NEVER alter the actual feed array.
-
-                Every real feed document is still rendered
-                exactly once.
-
-                ==================================================
-                */
-
-                const insertionPattern = [
-                    5,
-                    12,
-                    20,
-                    28,
-                    37
-                ];
-
-
-                const hasAssetCards =
-                    Array.isArray(assetDairies) &&
-                    assetDairies.length > 0;
-            %>
-
-
-
             <!-- =================================================
                  FEED LOOP
-            ================================================= -->
+
+                 IMPORTANT:
+                 -------------------------------------------------
+                 Only actual feed documents are rendered here.
+
+                 asset-cards.ejs is deliberately NOT rendered
+                 inside this loop.
+
+                 create-post.ejs is also deliberately NOT
+                 rendered inside this loop.
+
+                 This keeps the fixed page components separate
+                 from the feed data.
+            ================================================== -->
 
             <% feed.forEach(function(item, index) { %>
-
-
-                <%
-                    /*
-                    ==================================================
-                    CURRENT FEED POSITION
-                    ==================================================
-                    */
-
-                    const feedPosition =
-                        index + 1;
-
-
-                    const insertionNumber =
-                        insertionPattern.indexOf(
-                            feedPosition
-                        );
-
-
-                    const shouldInsertHere =
-                        insertionNumber !== -1;
-
-
-                    let insertAsset =
-                        insertionNumber % 2 === 0;
-
-
-                    if (!hasAssetCards) {
-
-                        insertAsset = false;
-
-                    }
-                %>
-
 
 
                 <!-- =================================================
@@ -683,24 +689,33 @@
 
                 <% } %>
 
-<!-- =================================================
-     STOCK UPDATE
 
-     CONTRACT:
-         update: item
 
-     stock-update.ejs expects:
-         update
-================================================= -->
+                <!-- =================================================
+                     STOCK UPDATE
 
-<% if (item.type === "animalFeed") { %>
+                     CONTRACT:
+                         update: item
 
-    <%- include("update/stock-update", {
-        update: item,
-        user: user
-    }) %>
+                     stock-update.ejs expects:
 
-<% } %>
+                         update
+
+                     This is the intentional exception to the
+                     normal feed-card contract.
+                ================================================== -->
+
+                <% if (item.type === "animalFeed") { %>
+
+                    <%- include(
+                        "update/stock-update",
+                        {
+                            update: item,
+                            user: user
+                        }
+                    ) %>
+
+                <% } %>
 
 
 
@@ -720,56 +735,6 @@
                             user: user
                         }
                     ) %>
-
-                <% } %>
-
-
-
-                <!-- =================================================
-                     RECURRING INSERTION
-
-                     These are NOT feed documents.
-
-                     They do not use item.
-                ================================================== -->
-
-                <% if (shouldInsertHere) { %>
-
-
-                    <!-- =============================================
-                         ASSET CARDS
-                    ============================================== -->
-
-                    <% if (insertAsset) { %>
-
-                        <%- include(
-                            "update/asset-cards",
-                            {
-                                dairy: dairy,
-                                assetDairies:
-                                    assetDairies || []
-                            }
-                        ) %>
-
-
-                    <!-- =============================================
-                         CREATE POST
-                    ============================================== -->
-
-                    <% } else { %>
-
-                        <%- include(
-                            "update/create-post",
-                            {
-                                dairy: dairy,
-                                user: user,
-                                assetDairies:
-                                    assetDairies || []
-                            }
-                        ) %>
-
-                    <% } %>
-
 
                 <% } %>
 
