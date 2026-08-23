@@ -1,0 +1,251 @@
+<% /*
+==============================================================
+ADMIN DAIRY DASHBOARD
+
+FILE:
+    views/admin.ejs
+
+ROUTE:
+    /dashboard/dairy
+
+PURPOSE:
+    Main Admin Dairy Dashboard.
+
+    Includes:
+
+        views/admin/dairies.ejs
+            → Horizontally scrollable Dairy Farm cards
+
+        views/admin/standalone.ejs
+            → Horizontally scrollable Standalone Asset cards
+
+IMPORTANT:
+    Both files are PARTIALS.
+
+    They are rendered inside this view and are NOT
+    standalone pages.
+
+EXPECTED DATA:
+
+    dairies
+        → Dairy Farm records
+
+    standaloneAssets
+        → Standalone Dairy assets
+
+    user
+        → Logged-in user
+==============================================================
+*/ %>
+
+
+<style>
+
+/* ==========================================================
+   ADMIN DAIRY DASHBOARD
+   ========================================================== */
+
+.admin-dashboard {
+
+    width: 100%;
+
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    padding: 20px;
+
+    box-sizing: border-box;
+
+    color: #f1f5f2;
+
+}
+
+
+/* ==========================================================
+   DASHBOARD HEADER
+   ========================================================== */
+
+.admin-dashboard-header {
+
+    margin-bottom: 26px;
+
+}
+
+
+.admin-dashboard-header h1 {
+
+    margin: 0;
+
+    font-size: 28px;
+
+    line-height: 1.2;
+
+    font-weight: 700;
+
+    color: #ffffff;
+
+}
+
+
+.admin-dashboard-header p {
+
+    margin: 6px 0 0;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+    color: #8f9994;
+
+}
+
+
+/* ==========================================================
+   DASHBOARD CONTENT
+   ========================================================== */
+
+.admin-dashboard-content {
+
+    width: 100%;
+
+}
+
+
+/* ==========================================================
+   DASHBOARD SECTION
+   ========================================================== */
+
+.admin-dashboard-section {
+
+    width: 100%;
+
+    margin: 0 0 28px;
+
+}
+
+
+/* ==========================================================
+   REMOVE EXTRA BOTTOM SPACE FROM LAST SECTION
+   ========================================================== */
+
+.admin-dashboard-section:last-child {
+
+    margin-bottom: 0;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 600px) {
+
+    .admin-dashboard {
+
+        padding: 16px;
+
+    }
+
+
+    .admin-dashboard-header {
+
+        margin-bottom: 22px;
+
+    }
+
+
+    .admin-dashboard-header h1 {
+
+        font-size: 24px;
+
+    }
+
+
+    .admin-dashboard-header p {
+
+        font-size: 13px;
+
+    }
+
+}
+
+</style>
+
+
+<main class="admin-dashboard">
+
+
+    <!-- ======================================================
+         DASHBOARD HEADER
+    ======================================================= -->
+
+    <header class="admin-dashboard-header">
+
+        <h1>
+            Admin Dashboard
+        </h1>
+
+        <p>
+            Manage your dairy farms and standalone assets.
+        </p>
+
+    </header>
+
+
+    <!-- ======================================================
+         DASHBOARD CONTENT
+    ======================================================= -->
+
+    <div class="admin-dashboard-content">
+
+
+        <!-- ==================================================
+             DAIRY FARMS
+
+             PARTIAL:
+                 views/admin/dairies.ejs
+
+             DATA:
+                 dairies
+
+             DASHBOARD ROUTE:
+                 /dashboard/dairy
+        ================================================== -->
+
+        <section class="admin-dashboard-section">
+
+            <%- include("admin/dairies", {
+                dairies: dairies
+            }) %>
+
+        </section>
+
+
+        <!-- ==================================================
+             STANDALONE ASSETS
+
+             PARTIAL:
+                 views/admin/standalone.ejs
+
+             DATA:
+                 standaloneAssets
+
+             DASHBOARD ROUTE:
+                 /dashboard/dairy
+        ================================================== -->
+
+        <section class="admin-dashboard-section">
+
+            <%- include("admin/standalone", {
+                standaloneAssets: standaloneAssets
+            }) %>
+
+        </section>
+
+
+    </div>
+
+
+</main>
