@@ -1,0 +1,2232 @@
+<%
+/*
+==============================================================
+STORAGE CONTENT ITEM CARD
+==============================================================
+
+FILE:
+    views/update/content-item.ejs
+
+PURPOSE:
+    Display one storage content item inside dairySet.ejs.
+
+CONTROLLER:
+    controllers/update/contentItemController.js
+
+EXPECTED VARIABLES:
+
+    dairy
+    storage
+    item
+
+OPTIONAL:
+
+    user
+    successMessage
+    pageError
+    latestStockUpdate
+    contentItemUpdateAction
+
+IMPORTANT:
+
+    This view does NOT create or assume a route.
+
+    The update form action is supplied by:
+
+        contentItemUpdateAction
+
+    The database update itself is handled by:
+
+        contentItemController.js
+
+==============================================================
+*/
+
+
+/* ============================================================
+   SAFE DATA
+============================================================ */
+
+const contentItem =
+    item || {};
+
+const currentStorage =
+    storage || {};
+
+const currentDairy =
+    dairy || {};
+
+
+/* ============================================================
+   SAFE MESSAGES
+============================================================ */
+
+const safeSuccessMessage =
+    typeof successMessage !== "undefined"
+        ? successMessage
+        : null;
+
+const safePageError =
+    typeof pageError !== "undefined"
+        ? pageError
+        : null;
+
+
+/* ============================================================
+   UPDATE ACTION
+============================================================ */
+
+const stockUpdateAction =
+    typeof contentItemUpdateAction !== "undefined" &&
+    contentItemUpdateAction
+        ? String(
+            contentItemUpdateAction
+        )
+        : null;
+
+
+/* ============================================================
+   LATEST STOCK UPDATE
+============================================================ */
+
+let safeLatestStockUpdate =
+    null;
+
+
+/*
+--------------------------------------------------------------
+Prefer the controller supplied update.
+--------------------------------------------------------------
+*/
+
+if (
+    typeof latestStockUpdate !== "undefined" &&
+    latestStockUpdate
+) {
+
+    safeLatestStockUpdate =
+        latestStockUpdate;
+
+}
+
+
+/*
+--------------------------------------------------------------
+Fallback to the latest stockUpdates record.
+--------------------------------------------------------------
+*/
+
+if (
+    !safeLatestStockUpdate &&
+    Array.isArray(
+        contentItem.stockUpdates
+    ) &&
+    contentItem.stockUpdates.length > 0
+) {
+
+    safeLatestStockUpdate =
+        contentItem.stockUpdates[
+            contentItem.stockUpdates.length - 1
+        ];
+
+}
+
+
+/* ============================================================
+   STORAGE TYPE
+============================================================ */
+
+const storageType =
+    currentStorage &&
+    currentStorage.type
+        ? String(
+            currentStorage.type
+        ).trim()
+        : "";
+
+
+/* ============================================================
+   ITEM TYPE
+============================================================ */
+
+const itemType =
+    String(
+        contentItem.type || ""
+    ).trim()
+    .toLowerCase();
+
+
+/* ============================================================
+   ITEM CODE
+============================================================ */
+
+const hasItemCode =
+    contentItem.code !== null &&
+    contentItem.code !== undefined;
+
+
+/* ============================================================
+   ANIMAL
+============================================================ */
+
+const itemCode =
+    Number(
+        contentItem.code
+    );
+
+
+const itemIsAnimal =
+    hasItemCode &&
+    !Number.isNaN(
+        itemCode
+    ) &&
+    itemCode > 0;
+
+
+/* ============================================================
+   FEED
+============================================================ */
+
+const itemIsFeed =
+    itemType === "feeds";
+
+
+/* ============================================================
+   AGROSTORE
+============================================================ */
+
+const itemIsAgroStore =
+    itemType === "agrostore";
+
+
+/* ============================================================
+   CATEGORY
+============================================================ */
+
+let itemCategory =
+    "Asset";
+
+let itemIcon =
+    "📦";
+
+let itemCategoryClass =
+    "asset-badge";
+
+
+if (
+    itemIsFeed
+) {
+
+    itemCategory =
+        "Feed";
+
+    itemIcon =
+        "🌾";
+
+    itemCategoryClass =
+        "feed-badge";
+
+}
+else if (
+    itemIsAnimal
+) {
+
+    itemCategory =
+        "Animal";
+
+    itemIcon =
+        "🐄";
+
+    itemCategoryClass =
+        "animal-badge";
+
+}
+else if (
+    itemIsAgroStore
+) {
+
+    itemCategory =
+        "AgroStore";
+
+    itemIcon =
+        "🌾";
+
+    itemCategoryClass =
+        "feed-badge";
+
+}
+
+
+/* ============================================================
+   QUANTITY
+============================================================ */
+
+const hasQuantity =
+    contentItem.quantity !== null &&
+    contentItem.quantity !== undefined;
+
+
+const quantityValue =
+    hasQuantity
+        ? Number(
+            contentItem.quantity || 0
+        )
+        : null;
+
+
+/* ============================================================
+   CURRENT WORTH
+============================================================ */
+
+const hasCurrentWorth =
+    contentItem.currentWorth !== null &&
+    contentItem.currentWorth !== undefined;
+
+
+const currentWorthValue =
+    hasCurrentWorth
+        ? Number(
+            contentItem.currentWorth || 0
+        )
+        : null;
+
+
+/* ============================================================
+   UNIT
+============================================================ */
+
+const itemUnit =
+    contentItem.unit
+        ? String(
+            contentItem.unit
+        ).trim()
+        : "";
+
+
+/* ============================================================
+   NAME
+============================================================ */
+
+const itemName =
+    contentItem.name ||
+    "Unnamed Item";
+
+
+/* ============================================================
+   LAST UPDATE TIME
+============================================================ */
+
+const lastUpdateTime =
+    safeLatestStockUpdate &&
+    safeLatestStockUpdate.recordedAt
+        ? safeLatestStockUpdate.recordedAt
+        : null;
+
+
+/* ============================================================
+   LAST UPDATED USER
+============================================================ */
+
+const lastUpdatedUser =
+    safeLatestStockUpdate &&
+    safeLatestStockUpdate.recordedBy
+        ? safeLatestStockUpdate.recordedBy
+        : null;
+
+
+/* ============================================================
+   UPDATED USER NAME
+============================================================ */
+
+let updatedByName =
+    "Unknown user";
+
+
+if (
+    lastUpdatedUser
+) {
+
+    if (
+        typeof lastUpdatedUser === "object" &&
+        lastUpdatedUser.name
+    ) {
+
+        updatedByName =
+            String(
+                lastUpdatedUser.name
+            );
+
+    }
+    else if (
+        typeof lastUpdatedUser === "object" &&
+        lastUpdatedUser.email
+    ) {
+
+        updatedByName =
+            String(
+                lastUpdatedUser.email
+            );
+
+    }
+    else {
+
+        updatedByName =
+            String(
+                lastUpdatedUser
+            );
+
+    }
+
+}
+
+
+/* ============================================================
+   UPDATED TIME
+============================================================ */
+
+let updatedAtText =
+    "Not updated yet";
+
+
+if (
+    lastUpdateTime
+) {
+
+    const updatedDate =
+        new Date(
+            lastUpdateTime
+        );
+
+
+    if (
+        !Number.isNaN(
+            updatedDate.getTime()
+        )
+    ) {
+
+        updatedAtText =
+            updatedDate.toLocaleString(
+                undefined,
+                {
+                    year:
+                        "numeric",
+
+                    month:
+                        "short",
+
+                    day:
+                        "numeric",
+
+                    hour:
+                        "numeric",
+
+                    minute:
+                        "2-digit"
+                }
+            );
+
+    }
+
+}
+
+
+/* ============================================================
+   STOCK UPDATE NOTE
+============================================================ */
+
+const stockUpdateNote =
+    safeLatestStockUpdate &&
+    safeLatestStockUpdate.stockUpdateNote
+        ? String(
+            safeLatestStockUpdate.stockUpdateNote
+        ).trim()
+        : "";
+
+
+/* ============================================================
+   STOCK UPDATE IMAGES
+============================================================ */
+
+const stockUpdateImages =
+    safeLatestStockUpdate &&
+    Array.isArray(
+        safeLatestStockUpdate.images
+    )
+        ? safeLatestStockUpdate.images
+        : [];
+
+%>
+
+
+<style>
+
+/* ============================================================
+   PAGE
+============================================================ */
+
+.storage-content-item-page{
+
+    width:100%;
+    max-width:850px;
+
+    margin:0 auto;
+
+    padding:28px 16px 65px;
+
+    box-sizing:border-box;
+
+}
+
+
+/* ============================================================
+   MAIN CARD
+============================================================ */
+
+.content-item-card{
+
+    width:100%;
+
+    overflow:hidden;
+
+    background:#ffffff;
+
+    border:1px solid #e1e9e3;
+
+    border-radius:20px;
+
+    box-shadow:
+        0 10px 35px rgba(24,45,31,.07),
+        0 2px 8px rgba(24,45,31,.035);
+
+}
+
+
+/* ============================================================
+   HEADER
+============================================================ */
+
+.content-item-hero{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+    padding:25px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f3f9f5 0%,
+            #ffffff 72%
+        );
+
+    border-bottom:1px solid #e4ebe6;
+
+}
+
+
+/* ============================================================
+   ICON
+============================================================ */
+
+.content-item-icon{
+
+    flex:none;
+
+    width:72px;
+    height:72px;
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    border-radius:19px;
+
+    background:#e7f2ea;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(45,123,72,.06);
+
+    font-size:34px;
+
+}
+
+
+/* ============================================================
+   HEADER INFORMATION
+============================================================ */
+
+.content-item-hero-information{
+
+    min-width:0;
+
+    flex:1;
+
+}
+
+
+.content-item-eyebrow{
+
+    margin:0 0 5px;
+
+    color:#7b8a81;
+
+    font-size:9px;
+
+    line-height:1.2;
+
+    font-weight:850;
+
+    letter-spacing:.12em;
+
+    text-transform:uppercase;
+
+}
+
+
+.content-item-title{
+
+    margin:0;
+
+    color:#203328;
+
+    font-size:27px;
+
+    line-height:1.2;
+
+    font-weight:850;
+
+    letter-spacing:-.035em;
+
+    word-break:break-word;
+
+}
+
+
+/* ============================================================
+   BADGES
+============================================================ */
+
+.content-item-badges{
+
+    display:flex;
+
+    align-items:center;
+
+    flex-wrap:wrap;
+
+    gap:7px;
+
+    margin-top:12px;
+
+}
+
+
+.content-item-badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    min-height:24px;
+
+    padding:0 10px;
+
+    border-radius:999px;
+
+    font-size:9px;
+
+    line-height:1;
+
+    font-weight:850;
+
+    letter-spacing:.06em;
+
+    text-transform:uppercase;
+
+}
+
+
+.animal-badge{
+
+    background:#edf7ef;
+
+    color:#347148;
+
+}
+
+
+.feed-badge{
+
+    background:#eaf6ed;
+
+    color:#2d7243;
+
+}
+
+
+.asset-badge{
+
+    background:#f1f3f3;
+
+    color:#68746d;
+
+}
+
+
+.status-badge{
+
+    background:#f4f7f5;
+
+    color:#536359;
+
+}
+
+
+/* ============================================================
+   BODY
+============================================================ */
+
+.content-item-body{
+
+    padding:25px;
+
+}
+
+
+/* ============================================================
+   SECTION
+============================================================ */
+
+.detail-section{
+
+    margin:0;
+
+}
+
+
+.detail-section-heading{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    margin-bottom:14px;
+
+}
+
+
+.detail-section-title{
+
+    flex:none;
+
+    margin:0;
+
+    color:#263a2c;
+
+    font-size:15px;
+
+    line-height:1.3;
+
+    font-weight:850;
+
+    letter-spacing:-.015em;
+
+}
+
+
+.detail-section-line{
+
+    flex:1;
+
+    height:1px;
+
+    background:#e6ece8;
+
+}
+
+
+/* ============================================================
+   HIGHLIGHTS
+============================================================ */
+
+.highlight-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0,1fr)
+        );
+
+    gap:12px;
+
+}
+
+
+.highlight-box{
+
+    position:relative;
+
+    min-width:0;
+
+    padding:17px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #f8fbf9 0%,
+            #f4f9f5 100%
+        );
+
+    border:1px solid #dfe9e2;
+
+    border-radius:14px;
+
+}
+
+
+.highlight-label{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    color:#849188;
+
+    font-size:9px;
+
+    line-height:1.2;
+
+    font-weight:800;
+
+    text-transform:uppercase;
+
+    letter-spacing:.06em;
+
+}
+
+
+.highlight-value{
+
+    display:block;
+
+    color:#294333;
+
+    font-size:20px;
+
+    line-height:1.25;
+
+    font-weight:850;
+
+    word-break:break-word;
+
+}
+
+
+.highlight-unit{
+
+    margin-left:3px;
+
+    color:#738078;
+
+    font-size:10px;
+
+    font-weight:700;
+
+}
+
+
+/* ============================================================
+   DESCRIPTION
+============================================================ */
+
+.description-section{
+
+    margin-top:27px;
+
+}
+
+
+.description-box{
+
+    min-height:90px;
+
+    padding:17px;
+
+    background:#fafcfb;
+
+    border:1px solid #e4ebe6;
+
+    border-radius:14px;
+
+}
+
+
+.description-text{
+
+    margin:0;
+
+    color:#526259;
+
+    font-size:12px;
+
+    line-height:1.75;
+
+    font-weight:500;
+
+    white-space:pre-wrap;
+
+    word-break:break-word;
+
+}
+
+
+.no-description{
+
+    display:block;
+
+    color:#8a958e;
+
+    font-size:11px;
+
+    line-height:1.6;
+
+    font-style:italic;
+
+}
+
+
+/* ============================================================
+   STOCK NOTE
+============================================================ */
+
+.stock-note-section{
+
+    margin-top:27px;
+
+}
+
+
+.stock-note-box{
+
+    padding:17px;
+
+    background:#f8fbf9;
+
+    border:1px solid #e1e9e3;
+
+    border-radius:14px;
+
+}
+
+
+.stock-note-text{
+
+    margin:0;
+
+    color:#526259;
+
+    font-size:12px;
+
+    line-height:1.75;
+
+    font-weight:500;
+
+    white-space:pre-wrap;
+
+    word-break:break-word;
+
+}
+
+
+/* ============================================================
+   STOCK IMAGES
+============================================================ */
+
+.stock-images-section{
+
+    margin-top:27px;
+
+}
+
+
+.stock-images-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0,1fr)
+        );
+
+    gap:10px;
+
+}
+
+
+.stock-image{
+
+    width:100%;
+
+    height:150px;
+
+    display:block;
+
+    object-fit:cover;
+
+    border-radius:13px;
+
+    border:1px solid #e1e9e3;
+
+    background:#f2f5f3;
+
+}
+
+
+/* ============================================================
+   STOCK UPDATE
+============================================================ */
+
+.stock-update-section{
+
+    margin-top:27px;
+
+}
+
+
+.stock-update-form{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:14px;
+
+    padding:17px;
+
+    background:#f8fbf9;
+
+    border:1px solid #e1e9e3;
+
+    border-radius:14px;
+
+}
+
+
+.stock-update-field{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:7px;
+
+}
+
+
+.stock-update-label{
+
+    color:#536359;
+
+    font-size:10px;
+
+    font-weight:800;
+
+    letter-spacing:.05em;
+
+    text-transform:uppercase;
+
+}
+
+
+.stock-update-input,
+.stock-update-textarea{
+
+    width:100%;
+
+    box-sizing:border-box;
+
+    padding:11px 12px;
+
+    color:#263a2c;
+
+    background:#ffffff;
+
+    border:1px solid #dbe5de;
+
+    border-radius:10px;
+
+    outline:none;
+
+    font-family:inherit;
+
+    font-size:12px;
+
+}
+
+
+.stock-update-input:focus,
+.stock-update-textarea:focus{
+
+    border-color:#4c9663;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(76,150,99,.10);
+
+}
+
+
+.stock-update-textarea{
+
+    min-height:95px;
+
+    resize:vertical;
+
+    line-height:1.6;
+
+}
+
+
+.stock-update-images{
+
+    width:100%;
+
+    font-size:11px;
+
+    color:#69766e;
+
+}
+
+
+.stock-update-button{
+
+    align-self:flex-start;
+
+    padding:10px 17px;
+
+    border:0;
+
+    border-radius:10px;
+
+    background:#2f7c48;
+
+    color:#ffffff;
+
+    cursor:pointer;
+
+    font-size:11px;
+
+    font-weight:800;
+
+}
+
+
+.stock-update-button:active{
+
+    transform:scale(.97);
+
+}
+
+
+/* ============================================================
+   DISABLED UPDATE MESSAGE
+============================================================ */
+
+.stock-update-unavailable{
+
+    padding:14px;
+
+    background:#f5f7f6;
+
+    border:1px solid #e1e6e3;
+
+    border-radius:12px;
+
+    color:#748078;
+
+    font-size:11px;
+
+    line-height:1.6;
+
+}
+
+
+/* ============================================================
+   FOOTER
+============================================================ */
+
+.content-item-footer{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:15px;
+
+    padding:16px 25px;
+
+    background:#fafcfb;
+
+    border-top:1px solid #e5ebe7;
+
+}
+
+
+.footer-status{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:7px;
+
+    color:#758279;
+
+    font-size:10px;
+
+    font-weight:700;
+
+}
+
+
+.footer-status-dot{
+
+    width:7px;
+    height:7px;
+
+    flex:none;
+
+    border-radius:50%;
+
+    background:#3c8b55;
+
+    box-shadow:
+        0 0 0 3px #e8f4eb;
+
+}
+
+
+.footer-updated{
+
+    min-width:0;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:flex-end;
+
+    justify-content:center;
+
+    gap:3px;
+
+    text-align:right;
+
+}
+
+
+.footer-updated-label{
+
+    color:#9aa49e;
+
+    font-size:8px;
+
+    line-height:1.2;
+
+    font-weight:800;
+
+    letter-spacing:.08em;
+
+    text-transform:uppercase;
+
+}
+
+
+.footer-updated-user{
+
+    max-width:220px;
+
+    color:#526259;
+
+    font-size:10px;
+
+    line-height:1.3;
+
+    font-weight:750;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+
+}
+
+
+.footer-updated-time{
+
+    color:#7a867e;
+
+    font-size:9px;
+
+    line-height:1.3;
+
+    font-weight:600;
+
+}
+
+
+/* ============================================================
+   MESSAGES
+============================================================ */
+
+.content-item-message{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:9px;
+
+    margin-bottom:15px;
+
+    padding:11px 13px;
+
+    border-radius:10px;
+
+    font-size:12px;
+
+    font-weight:650;
+
+}
+
+
+.content-item-success{
+
+    background:#f1f8f3;
+
+    border:1px solid #d8e9dc;
+
+    color:#28603a;
+
+}
+
+
+.content-item-error{
+
+    background:#fff5f4;
+
+    border:1px solid #efd9d6;
+
+    color:#9a443b;
+
+}
+
+
+/* ============================================================
+   MOBILE
+============================================================ */
+
+@media (max-width:700px){
+
+    .storage-content-item-page{
+
+        padding:16px 11px 45px;
+
+    }
+
+
+    .content-item-hero{
+
+        align-items:flex-start;
+
+        gap:13px;
+
+        padding:18px;
+
+    }
+
+
+    .content-item-icon{
+
+        width:57px;
+
+        height:57px;
+
+        border-radius:15px;
+
+        font-size:27px;
+
+    }
+
+
+    .content-item-title{
+
+        font-size:22px;
+
+    }
+
+
+    .content-item-body{
+
+        padding:18px;
+
+    }
+
+
+    .highlight-grid{
+
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0,1fr)
+            );
+
+    }
+
+
+    .stock-images-grid{
+
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0,1fr)
+            );
+
+    }
+
+
+    .stock-image{
+
+        height:130px;
+
+    }
+
+
+    .content-item-footer{
+
+        align-items:flex-end;
+
+        padding:14px 18px;
+
+    }
+
+
+    .footer-updated{
+
+        max-width:55%;
+
+    }
+
+}
+
+
+@media (max-width:470px){
+
+    .content-item-hero{
+
+        gap:11px;
+
+        padding:16px;
+
+    }
+
+
+    .content-item-icon{
+
+        width:49px;
+
+        height:49px;
+
+        border-radius:13px;
+
+        font-size:23px;
+
+    }
+
+
+    .content-item-eyebrow{
+
+        font-size:8px;
+
+    }
+
+
+    .content-item-title{
+
+        font-size:19px;
+
+    }
+
+
+    .content-item-badge{
+
+        min-height:22px;
+
+        padding:0 8px;
+
+        font-size:8px;
+
+    }
+
+
+    .content-item-body{
+
+        padding:16px;
+
+    }
+
+
+    .highlight-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+
+    .highlight-box{
+
+        padding:15px;
+
+    }
+
+
+    .highlight-value{
+
+        font-size:18px;
+
+    }
+
+
+    .description-section,
+    .stock-note-section,
+    .stock-images-section,
+    .stock-update-section{
+
+        margin-top:23px;
+
+    }
+
+
+    .stock-images-grid{
+
+        grid-template-columns:1fr 1fr;
+
+    }
+
+
+    .stock-image{
+
+        height:115px;
+
+    }
+
+
+    .content-item-footer{
+
+        align-items:flex-end;
+
+        gap:10px;
+
+        padding:13px 16px;
+
+    }
+
+
+    .footer-status{
+
+        font-size:9px;
+
+    }
+
+
+    .footer-updated{
+
+        max-width:60%;
+
+    }
+
+
+    .footer-updated-user{
+
+        max-width:150px;
+
+    }
+
+}
+
+</style>
+
+
+<div class="storage-content-item-page">
+
+
+    <!-- ========================================================
+         SUCCESS MESSAGE
+    ========================================================= -->
+
+    <% if (safeSuccessMessage) { %>
+
+        <div
+            class="content-item-message content-item-success"
+        >
+
+            <span>✓</span>
+
+            <span>
+                <%= safeSuccessMessage %>
+            </span>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- ========================================================
+         ERROR MESSAGE
+    ========================================================= -->
+
+    <% if (safePageError) { %>
+
+        <div
+            class="content-item-message content-item-error"
+        >
+
+            <span>!</span>
+
+            <span>
+                <%= safePageError %>
+            </span>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- ========================================================
+         MAIN CARD
+    ========================================================= -->
+
+    <article class="content-item-card">
+
+
+        <!-- ====================================================
+             HEADER
+        ==================================================== -->
+
+        <header class="content-item-hero">
+
+
+            <div class="content-item-icon">
+
+                <%= itemIcon %>
+
+            </div>
+
+
+            <div class="content-item-hero-information">
+
+
+                <p class="content-item-eyebrow">
+
+                    Storage Content
+
+                </p>
+
+
+                <h1 class="content-item-title">
+
+                    <%= itemName %>
+
+                </h1>
+
+
+                <div class="content-item-badges">
+
+
+                    <span
+                        class="content-item-badge <%= itemCategoryClass %>"
+                    >
+
+                        <%= itemCategory %>
+
+                    </span>
+
+
+                    <% if (contentItem.status) { %>
+
+                        <span
+                            class="content-item-badge status-badge"
+                        >
+
+                            <%= contentItem.status %>
+
+                        </span>
+
+                    <% } %>
+
+
+                </div>
+
+
+            </div>
+
+
+        </header>
+
+
+        <!-- ====================================================
+             BODY
+        ==================================================== -->
+
+        <div class="content-item-body">
+
+
+            <!-- ==================================================
+                 QUANTITY / UNIT / VALUE
+            ================================================== -->
+
+            <section class="detail-section">
+
+
+                <div class="detail-section-heading">
+
+                    <h2 class="detail-section-title">
+
+                        Quantity & Value
+
+                    </h2>
+
+
+                    <span class="detail-section-line"></span>
+
+                </div>
+
+
+                <div class="highlight-grid">
+
+
+                    <div class="highlight-box">
+
+                        <span class="highlight-label">
+
+                            Quantity
+
+                        </span>
+
+
+                        <span class="highlight-value">
+
+
+                            <% if (hasQuantity) { %>
+
+                                <%= quantityValue.toLocaleString() %>
+
+
+                                <% if (itemUnit) { %>
+
+                                    <span class="highlight-unit">
+
+                                        <%= itemUnit %>
+
+                                    </span>
+
+                                <% } %>
+
+                            <% } else { %>
+
+                                —
+
+                            <% } %>
+
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="highlight-box">
+
+                        <span class="highlight-label">
+
+                            Unit
+
+                        </span>
+
+
+                        <span class="highlight-value">
+
+                            <%= itemUnit || "—" %>
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="highlight-box">
+
+                        <span class="highlight-label">
+
+                            Current Worth
+
+                        </span>
+
+
+                        <span class="highlight-value">
+
+
+                            <% if (hasCurrentWorth) { %>
+
+                                <%= currentWorthValue.toLocaleString() %>
+
+                            <% } else { %>
+
+                                —
+
+                            <% } %>
+
+
+                        </span>
+
+                    </div>
+
+
+                </div>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 DESCRIPTION
+            ================================================== -->
+
+            <section
+                class="detail-section description-section"
+            >
+
+
+                <div class="detail-section-heading">
+
+                    <h2 class="detail-section-title">
+
+                        Description
+
+                    </h2>
+
+
+                    <span class="detail-section-line"></span>
+
+                </div>
+
+
+                <div class="description-box">
+
+
+                    <% if (
+                        contentItem.description &&
+                        String(
+                            contentItem.description
+                        ).trim() !== ""
+                    ) { %>
+
+                        <p class="description-text">
+
+                            <%= contentItem.description %>
+
+                        </p>
+
+                    <% } else { %>
+
+                        <span class="no-description">
+
+                            No description has been provided
+                            for this item.
+
+                        </span>
+
+                    <% } %>
+
+
+                </div>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 LATEST STOCK NOTE
+            ================================================== -->
+
+            <% if (stockUpdateNote) { %>
+
+                <section
+                    class="detail-section stock-note-section"
+                >
+
+
+                    <div class="detail-section-heading">
+
+                        <h2 class="detail-section-title">
+
+                            Latest Stock Update Note
+
+                        </h2>
+
+
+                        <span class="detail-section-line"></span>
+
+                    </div>
+
+
+                    <div class="stock-note-box">
+
+                        <p class="stock-note-text">
+
+                            <%= stockUpdateNote %>
+
+                        </p>
+
+                    </div>
+
+
+                </section>
+
+            <% } %>
+
+
+            <!-- ==================================================
+                 LATEST STOCK IMAGES
+            ================================================== -->
+
+            <% if (
+                stockUpdateImages.length > 0
+            ) { %>
+
+                <section
+                    class="detail-section stock-images-section"
+                >
+
+
+                    <div class="detail-section-heading">
+
+                        <h2 class="detail-section-title">
+
+                            Latest Stock Update Images
+
+                        </h2>
+
+
+                        <span class="detail-section-line"></span>
+
+                    </div>
+
+
+                    <div class="stock-images-grid">
+
+
+                        <% stockUpdateImages.forEach(
+                            function(image)
+                        { %>
+
+
+                            <%
+                                const imageUrl =
+                                    typeof image === "string"
+                                        ? image
+                                        : image &&
+                                          (
+                                              image.url ||
+                                              image.path ||
+                                              image.location
+                                          );
+                            %>
+
+
+                            <% if (imageUrl) { %>
+
+                                <img
+                                    src="<%= imageUrl %>"
+                                    alt="Stock update image"
+                                    class="stock-image"
+                                    loading="lazy"
+                                >
+
+                            <% } %>
+
+
+                        <% }); %>
+
+
+                    </div>
+
+
+                </section>
+
+            <% } %>
+
+
+            <!-- ==================================================
+                 UPDATE STOCK
+            ================================================== -->
+
+            <% if (
+                itemIsFeed &&
+                storageType.toLowerCase() === "agrostore"
+            ) { %>
+
+
+                <section
+                    class="detail-section stock-update-section"
+                >
+
+
+                    <div class="detail-section-heading">
+
+                        <h2 class="detail-section-title">
+
+                            Update Stock
+
+                        </h2>
+
+
+                        <span class="detail-section-line"></span>
+
+                    </div>
+
+
+                    <% if (stockUpdateAction) { %>
+
+
+                        <form
+                            class="stock-update-form"
+
+                            action="<%= stockUpdateAction %>"
+
+                            method="POST"
+
+                            enctype="multipart/form-data"
+                        >
+
+
+                            <!-- ==================================
+                                 QUANTITY
+                            =================================== -->
+
+                            <div class="stock-update-field">
+
+                                <label
+                                    for="stockQuantity"
+                                    class="stock-update-label"
+                                >
+
+                                    Quantity
+
+                                </label>
+
+
+                                <input
+                                    type="number"
+                                    id="stockQuantity"
+                                    name="quantity"
+                                    class="stock-update-input"
+                                    value="<%= hasQuantity ? quantityValue : "" %>"
+                                    step="any"
+                                    min="0"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- ==================================
+                                 UNIT
+                            =================================== -->
+
+                            <div class="stock-update-field">
+
+                                <label
+                                    for="stockUnit"
+                                    class="stock-update-label"
+                                >
+
+                                    Unit
+
+                                </label>
+
+
+                                <input
+                                    type="text"
+                                    id="stockUnit"
+                                    name="unit"
+                                    class="stock-update-input"
+                                    value="<%= itemUnit %>"
+                                    maxlength="50"
+                                    placeholder="e.g. kg, bags, litres"
+                                >
+
+                            </div>
+
+
+                            <!-- ==================================
+                                 STOCK UPDATE NOTE
+                            =================================== -->
+
+                            <div class="stock-update-field">
+
+                                <label
+                                    for="stockUpdateNote"
+                                    class="stock-update-label"
+                                >
+
+                                    Stock Update Note
+
+                                </label>
+
+
+                                <textarea
+                                    id="stockUpdateNote"
+                                    name="stockUpdateNote"
+                                    class="stock-update-textarea"
+                                    maxlength="5000"
+                                    placeholder="Describe what changed..."
+                                ></textarea>
+
+                            </div>
+
+
+                            <!-- ==================================
+                                 IMAGES
+                            =================================== -->
+
+                            <div class="stock-update-field">
+
+                                <label
+                                    for="stockUpdateImages"
+                                    class="stock-update-label"
+                                >
+
+                                    Images
+
+                                </label>
+
+
+                                <input
+                                    type="file"
+                                    id="stockUpdateImages"
+                                    name="images"
+                                    class="stock-update-images"
+                                    accept="image/*"
+                                    multiple
+                                >
+
+                            </div>
+
+
+                            <!-- ==================================
+                                 SUBMIT
+                            =================================== -->
+
+                            <button
+                                type="submit"
+                                class="stock-update-button"
+                            >
+
+                                Save Stock Update
+
+                            </button>
+
+
+                        </form>
+
+
+                    <% } else { %>
+
+
+                        <div
+                            class="stock-update-unavailable"
+                        >
+
+                            Stock updating is currently
+                            unavailable for this item.
+
+                        </div>
+
+
+                    <% } %>
+
+
+                </section>
+
+            <% } %>
+
+
+        </div>
+
+
+        <!-- ====================================================
+             FOOTER
+        ==================================================== -->
+
+        <footer class="content-item-footer">
+
+
+            <div class="footer-status">
+
+                <span class="footer-status-dot"></span>
+
+                <span>
+                    Item details
+                </span>
+
+            </div>
+
+
+            <div
+                class="footer-updated"
+                aria-label="Last updated information"
+            >
+
+                <span class="footer-updated-label">
+
+                    Last updated
+
+                </span>
+
+
+                <span class="footer-updated-user">
+
+                    <%= updatedByName %>
+
+                </span>
+
+
+                <span class="footer-updated-time">
+
+                    <%= updatedAtText %>
+
+                </span>
+
+            </div>
+
+
+        </footer>
+
+
+    </article>
+
+
+</div>
