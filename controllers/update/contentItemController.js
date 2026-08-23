@@ -7,13 +7,25 @@
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Receives updates submitted directly from the content-item
-// card and passes them to:
+// Handles updates submitted by the storage content-item card.
+//
+// The controller receives:
+//
+//     dairyId
+//     storageId
+//     itemId
+//
+// and passes the stock-update data to:
 //
 //     services/update/contentItemService.js
 //
-// The service remains responsible for validating and updating
-// the Dairy document.
+// The service is responsible for:
+//
+//     • locating the storage
+//     • locating the content item
+//     • validating the update
+//     • updating the database
+//     • recording stock-update history
 //
 // ==========================================================
 
@@ -25,39 +37,21 @@ const contentItemService =
 // UPDATE CONTENT ITEM FROM CARD
 // ==========================================================
 //
-// ROUTE EXAMPLE:
+// The route used by this controller should provide:
 //
-//     PUT /dairy/:id/content-item
+//     req.params.dairyId
+//     req.params.storageId
+//     req.params.itemId
 //
-// or:
+// Expected body:
 //
-//     PUT /dairy/:id/card
+//     quantity
+//     unit
+//     stockUpdateNote
 //
-// The actual route can be attached to this controller by the
-// update route file.
+// Uploaded files:
 //
-// Expected request body:
-//
-// {
-//     name,
-//     type,
-//     description,
-//     condition,
-//     location,
-//     buyingPrice,
-//     sellingPrice,
-//     currentWorth,
-//     revenue,
-//     acquisitionDate,
-//     valuationDate,
-//     status,
-//     dwellNumber,
-//
-//     // animal fields
-//     dateOfBirth,
-//     mass,
-//     isMilking
-// }
+//     req.files
 //
 // ==========================================================
 
@@ -67,20 +61,32 @@ exports.updateContentItem =
         try {
 
             // ==================================================
-            // DAIRY ID
+            // IDS
             // ==================================================
 
             const dairyId =
-                req.params.id;
+                req.params.dairyId;
 
+            const storageId =
+                req.params.storageId;
+
+            const itemId =
+                req.params.itemId;
+
+
+            // ==================================================
+            // VALIDATE IDS
+            // ==================================================
 
             if (
-                !dairyId
+                !dairyId ||
+                !storageId ||
+                !itemId
             ) {
 
                 const error =
                     new Error(
-                        "Dairy ID is required."
+                        "Dairy ID, storage ID and content item ID are required."
                     );
 
                 error.status = 400;
@@ -91,24 +97,35 @@ exports.updateContentItem =
 
 
             // ==================================================
-            // REQUEST BODY
+            // REQUEST DATA
             // ==================================================
 
-            const data =
-                req.body || {};
+            const data = {
+
+                quantity:
+                    req.body &&
+                    req.body.quantity !== undefined
+                        ? req.body.quantity
+                        : null,
+
+                unit:
+                    req.body &&
+                    req.body.unit !== undefined
+                        ? req.body.unit
+                        : "",
+
+                stockUpdateNote:
+                    req.body &&
+                    req.body.stockUpdateNote !== undefined
+                        ? req.body.stockUpdateNote
+                        : ""
+
+            };
 
 
             // ==================================================
             // CURRENT USER
             // ==================================================
-            //
-            // The service does not use userId to determine what
-            // fields may be changed.
-            //
-            // It is passed through so the service can use it
-            // later if audit/history functionality is added.
-            //
-            // ==================================================
 
             const userId =
                 req.user
@@ -116,121 +133,82 @@ exports.updateContentItem =
                     : null;
 
 
+            const userName =
+                req.user
+                    ? (
+                        req.user.name ||
+                        req.user.email ||
+                        "Unknown user"
+                    )
+                    : "Unknown user";
+
+
             // ==================================================
-            // UPDATE
+            // UPLOADED IMAGES
             // ==================================================
 
-            const dairy =
+            const images =
+                Array.isArray(req.files)
+                    ? req.files
+                    : [];
+
+
+            // ==================================================
+            // SERVICE UPDATE
+            // ==================================================
+
+            const result =
                 await contentItemService.updateContentItem({
 
                     dairyId,
 
+                    storageId,
+
+                    itemId,
+
                     data,
 
-                    userId
+                    images,
+
+                    userId,
+
+                    userName
 
                 });
 
 
             // ==================================================
-            // JSON RESPONSE
+            // RESPONSE
             // ==================================================
-
-            return res.status(200).json({
-
-                success: true,
-
-                message:
-                    "Content item updated successfully.",
-
-                dairy
-
-            });
-
-        }
-
-        catch (error) {
-
+            //
+            // If the service returns a redirect target,
+            // use it.
+            //
+            // Otherwise return JSON.
+            //
             // ==================================================
-            // PASS TO EXPRESS ERROR HANDLER
-            // ==================================================
-
-            return next(error);
-
-        }
-
-    };
-
-
-// ==========================================================
-// UPDATE FROM CARD
-// ==========================================================
-//
-// Alias.
-//
-// This allows the route to use:
-//
-//     controller.updateFromCard
-//
-// while both methods use exactly the same service operation.
-//
-// ==========================================================
-
-exports.updateFromCard =
-    async function (req, res, next) {
-
-        try {
-
-            const dairyId =
-                req.params.id;
-
 
             if (
-                !dairyId
+                result &&
+                result.redirect
             ) {
 
-                const error =
-                    new Error(
-                        "Dairy ID is required."
-                    );
-
-                error.status = 400;
-
-                throw error;
+                return res.redirect(
+                    result.redirect
+                );
 
             }
 
 
-            const data =
-                req.body || {};
-
-
-            const userId =
-                req.user
-                    ? req.user._id
-                    : null;
-
-
-            const dairy =
-                await contentItemService.updateFromCard({
-
-                    dairyId,
-
-                    data,
-
-                    userId
-
-                });
-
-
             return res.status(200).json({
 
-                success: true,
+                success:
+                    true,
 
                 message:
-                    "Card updated successfully.",
+                    "Stock updated successfully.",
 
-                dairy
+                result
 
             });
 
@@ -249,11 +227,13 @@ exports.updateFromCard =
 // GET CONTENT ITEM
 // ==========================================================
 //
-// Optional endpoint for loading the current card data.
+// Used when the controller needs to load a content item.
 //
-// ROUTE:
+// Params:
 //
-//     GET /dairy/:id/content-item
+//     dairyId
+//     storageId
+//     itemId
 //
 // ==========================================================
 
@@ -263,16 +243,28 @@ exports.getContentItem =
         try {
 
             const dairyId =
-                req.params.id;
+                req.params.dairyId;
 
+            const storageId =
+                req.params.storageId;
+
+            const itemId =
+                req.params.itemId;
+
+
+            // ==================================================
+            // VALIDATE IDS
+            // ==================================================
 
             if (
-                !dairyId
+                !dairyId ||
+                !storageId ||
+                !itemId
             ) {
 
                 const error =
                     new Error(
-                        "Dairy ID is required."
+                        "Dairy ID, storage ID and content item ID are required."
                     );
 
                 error.status = 400;
@@ -282,17 +274,98 @@ exports.getContentItem =
             }
 
 
-            const dairy =
-                await contentItemService.getContentItem(
-                    dairyId
-                );
+            // ==================================================
+            // LOAD ITEM
+            // ==================================================
+
+            const result =
+                await contentItemService.getContentItem({
+
+                    dairyId,
+
+                    storageId,
+
+                    itemId
+
+                });
+
+
+            // ==================================================
+            // RESPONSE
+            // ==================================================
+
+            return res.status(200).json({
+
+                success:
+                    true,
+
+                result
+
+            });
+
+        }
+
+        catch (error) {
+
+            return next(error);
+
+        }
+
+    };
+
+
+// ==========================================================
+// BUILD CARD UPDATE ACTION
+// ==========================================================
+//
+// This is useful when dairySet.ejs needs the action supplied
+// by the controller rather than constructing a route itself.
+//
+// ==========================================================
+
+exports.getContentItemUpdateAction =
+    function (req, res, next) {
+
+        try {
+
+            const dairyId =
+                req.params.dairyId;
+
+            const storageId =
+                req.params.storageId;
+
+            const itemId =
+                req.params.itemId;
+
+
+            if (
+                !dairyId ||
+                !storageId ||
+                !itemId
+            ) {
+
+                const error =
+                    new Error(
+                        "Dairy ID, storage ID and content item ID are required."
+                    );
+
+                error.status = 400;
+
+                throw error;
+
+            }
+
+
+            const action =
+                `/storage/${dairyId}/contents/${storageId}/update/${itemId}`;
 
 
             return res.status(200).json({
 
-                success: true,
+                success:
+                    true,
 
-                dairy
+                action
 
             });
 
@@ -311,13 +384,16 @@ exports.getContentItem =
 // EXPORTS
 // ==========================================================
 
-module.exports.updateContentItem =
-    exports.updateContentItem;
+module.exports =
+    {
 
+        updateContentItem:
+            exports.updateContentItem,
 
-module.exports.updateFromCard =
-    exports.updateFromCard;
+        getContentItem:
+            exports.getContentItem,
 
+        getContentItemUpdateAction:
+            exports.getContentItemUpdateAction
 
-module.exports.getContentItem =
-    exports.getContentItem;
+    };
