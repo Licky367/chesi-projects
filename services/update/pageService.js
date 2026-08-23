@@ -1,964 +1,1253 @@
 // ==========================================================
-// services/update/pageService.js
+// services/update/helpers.js
 // ==========================================================
 //
-// DAIRY PAGE SERVICE
+// UPDATE / FEED HELPERS
 //
-// ENTITY IDENTITY
-// ----------------------------------------------------------
+// RESPONSIBILITIES:
 //
-// Dairy.code < 0
-//     = DAIRY FARM
-//
-// Dairy.code > 0
-//     = ANIMAL / ASSET
-//
-// Dairy.code === null
-//     = FACILITY / ASSET
-//
-// AgroStore.roomNumber < 0
-//     = AGROSTORE
-//
-// AgroStore.roomNumber
-//     ↕
-// Dairy.dwellNumber
-//     = identifies AgroStore contents
-//
-// ==========================================================
-//
-// RESPONSIBILITIES
-// ----------------------------------------------------------
-//
-// • Load current Dairy / Asset
-// • Determine whether current record is a Dairy Farm
-// • Determine whether current record is an AgroStore
-// • Load farm assets
-// • Load normal updates
-// • Load weekly milk feeds
-// • Count comments
-// • Load assigned farms for dairy workers
-// • Load AgroStore animal-feed inventory
-// • Toggle milking status
-// • Validate assigned-farm access
-//
-// ==========================================================
+// • Date formatting
+// • Week calculations
+// • Comment formatting
+// • Normal Update feed formatting
+// • Animal-feed / stock-update feed-card formatting
+// • Weekly milk feed generation
 //
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// AgroStore inventory is completely separate from the normal
-// Update feed.
+// `animalFeeds` is CURRENT AGROSTORE INVENTORY.
 //
-// The AgroStore itself is NOT an animal-feed item.
+// `feed` is HISTORICAL ACTIVITY.
 //
-// If the current record is an AgroStore:
+// An animal-feed stock update is represented by:
 //
-//     AgroStore._id
-//          ↓
-//     AgroStore.roomNumber
-//          ↓
-//     Dairy.dwellNumber
+//     Update.type
+//         = "animalFeed"
 //
-// animalFeeds contains only the Dairy records belonging to
-// that AgroStore.
+//     Update.dairy
+//         = stock Dairy._id
+//
+//     Update.animalFeed.storageId
+//         = AgroStore._id
+//
+// Therefore:
+//
+//     stock-update.ejs
+//         = FEED CARD
+//
+// It is NOT the AgroStore inventory view.
 //
 // ==========================================================
+
+
+const Milk =
+    require("../../models/milk");
 
 
 const Dairy =
     require("../../models/dairy");
 
 
-const Update =
-    require("../../models/Update");
+// ==========================================================
+// CONSTANTS
+// ==========================================================
 
-
-const ProjectUser =
-    require("../../models/projectUser");
-
-
-const {
-    formatFeed,
-    buildWeeklyMilkFeeds
-} = require("./helpers");
-
-
-const animalFeedsService =
-    require("./storage/animalFeedsService");
+const NAIROBI_TIMEZONE =
+    "Africa/Nairobi";
 
 
 // ==========================================================
-// GET COMPLETE DAIRY PAGE
-// ==========================================================
-//
-// For a Dairy Farm:
-//
-//     code < 0
-//
-// The normal feed contains:
-//
-//     • Farm updates
-//     • Updates from all assets belonging to that farm
-//     • Farm weekly milk feeds
-//     • Asset weekly milk feeds
-//
-// For an Animal / Asset:
-//
-//     code > 0
-//
-// Only that specific Dairy record supplies the feed.
-//
-// For a Facility / Asset:
-//
-//     code === null
-//
-// Only that specific Dairy record supplies the feed.
-//
-// For an AgroStore:
-//
-//     roomNumber < 0
-//
-// animalFeeds is populated separately.
-//
+// DATE HELPERS
 // ==========================================================
 
-exports.getDairyPage = async (
-    id,
-    userId
-) => {
+function formatDate(date) {
 
-    // ======================================================
-    // VALIDATE DAIRY ID
-    // ======================================================
+    if (!date) {
 
-    if (!id) {
-
-        throw new Error(
-            "Dairy ID is required."
-        );
+        return "";
 
     }
 
 
-    // ======================================================
-    // GET CURRENT DAIRY / ASSET
-    // ======================================================
-
-    const dairy =
-        await Dairy.findById(
-            id
-        );
+    const parsedDate =
+        new Date(date);
 
 
-    if (!dairy) {
+    if (
+        Number.isNaN(
+            parsedDate.getTime()
+        )
+    ) {
 
-        throw new Error(
-            "Dairy profile not found."
-        );
+        return "";
 
     }
 
 
+    return new Intl.DateTimeFormat(
+        "en-KE",
+        {
+            timeZone:
+                NAIROBI_TIMEZONE,
+
+            year:
+                "numeric",
+
+            month:
+                "short",
+
+            day:
+                "numeric",
+
+            hour:
+                "2-digit",
+
+            minute:
+                "2-digit",
+
+            hour12:
+                false
+        }
+    ).format(
+        parsedDate
+    );
+
+}
+
+
+// ==========================================================
+// WEEK START DATE FORMATTER
+// ==========================================================
+
+function formatWeekStart(date) {
+
+    if (!date) {
+
+        return "";
+
+    }
+
+
+    const parsedDate =
+        new Date(date);
+
+
+    if (
+        Number.isNaN(
+            parsedDate.getTime()
+        )
+    ) {
+
+        return "";
+
+    }
+
+
+    return new Intl.DateTimeFormat(
+        "en-KE",
+        {
+            timeZone:
+                NAIROBI_TIMEZONE,
+
+            year:
+                "numeric",
+
+            month:
+                "short",
+
+            day:
+                "numeric"
+        }
+    ).format(
+        parsedDate
+    );
+
+}
+
+
+// ==========================================================
+// DAY KEY
+// ==========================================================
+//
+// Returns:
+//
+//     YYYY-MM-DD
+//
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// The application uses Africa/Nairobi time.
+// Therefore the day key should also represent the Nairobi
+// calendar day instead of relying on UTC.
+//
+// ==========================================================
+
+function getDayKey(
+    date = new Date()
+) {
+
+    const parsedDate =
+        new Date(date);
+
+
+    if (
+        Number.isNaN(
+            parsedDate.getTime()
+        )
+    ) {
+
+        return "";
+
+    }
+
+
+    const parts =
+        new Intl.DateTimeFormat(
+            "en-CA",
+            {
+                timeZone:
+                    NAIROBI_TIMEZONE,
+
+                year:
+                    "numeric",
+
+                month:
+                    "2-digit",
+
+                day:
+                    "2-digit"
+            }
+        ).formatToParts(
+            parsedDate
+        );
+
+
+    const values = {};
+
+
+    for (
+        const part of parts
+    ) {
+
+        if (
+            part.type !== "literal"
+        ) {
+
+            values[part.type] =
+                part.value;
+
+        }
+
+    }
+
+
+    return [
+
+        values.year,
+
+        values.month,
+
+        values.day
+
+    ].join("-");
+
+}
+
+
+// ==========================================================
+// MONTH KEY
+// ==========================================================
+//
+// Returns:
+//
+//     YYYY-MM
+//
+// ==========================================================
+
+function getMonthKey(
+    date = new Date()
+) {
+
+    const dayKey =
+        getDayKey(
+            date
+        );
+
+
+    if (!dayKey) {
+
+        return "";
+
+    }
+
+
+    return dayKey.slice(
+        0,
+        7
+    );
+
+}
+
+
+// ==========================================================
+// WEEK RANGE
+// ==========================================================
+//
+// Returns the Monday → Sunday range containing the supplied
+// date.
+//
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// The returned Date objects represent the local calendar
+// calculation. This is suitable for grouping historical
+// records by week.
+//
+// ==========================================================
+
+function getWeekRange(
+    date = new Date()
+) {
+
+    const current =
+        new Date(date);
+
+
+    if (
+        Number.isNaN(
+            current.getTime()
+        )
+    ) {
+
+        return {
+
+            start:
+                new Date(NaN),
+
+            end:
+                new Date(NaN)
+
+        };
+
+    }
+
+
+    const day =
+        current.getDay();
+
+
+    const diff =
+        current.getDate() -
+        day +
+        (
+            day === 0
+                ? -6
+                : 1
+        );
+
+
+    const monday =
+        new Date(
+            current
+        );
+
+
+    monday.setDate(
+        diff
+    );
+
+
+    monday.setHours(
+        0,
+        0,
+        0,
+        0
+    );
+
+
+    const sunday =
+        new Date(
+            monday
+        );
+
+
+    sunday.setDate(
+        monday.getDate() + 6
+    );
+
+
+    sunday.setHours(
+        23,
+        59,
+        59,
+        999
+    );
+
+
+    return {
+
+        start:
+            monday,
+
+        end:
+            sunday
+
+    };
+
+}
+
+
+// ==========================================================
+// COMMENT FORMATTER
+// ==========================================================
+
+function formatComment(
+    comment
+) {
+
+    if (!comment) {
+
+        return null;
+
+    }
+
+
+    return {
+
+        _id:
+            comment._id || null,
+
+        userId:
+            comment.userId || null,
+
+        userName:
+            comment.userName || "User",
+
+        userImage:
+            comment.userImage || "",
+
+        text:
+            comment.text || "",
+
+        createdAt:
+            comment.createdAt || null,
+
+        dateText:
+            formatDate(
+                comment.createdAt
+            )
+
+    };
+
+}
+
+
+// ==========================================================
+// NUMBER HELPER
+// ==========================================================
+
+function toNumber(
+    value,
+    fallback = 0
+) {
+
+    const number =
+        Number(value);
+
+
+    return Number.isFinite(
+        number
+    )
+
+        ? number
+
+        : fallback;
+
+}
+
+
+// ==========================================================
+// FORMAT ANIMAL FEED / STOCK UPDATE
+// ==========================================================
+//
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// This function formats the HISTORICAL stock update stored
+// inside:
+//
+//     Update.animalFeed
+//
+// It is specifically intended for:
+//
+//     stock-update.ejs
+//
+// It does NOT load current stock.
+//
+// It does NOT modify animalFeeds.
+//
+// It does NOT use AgroStore as Update.dairy.
+//
+// ==========================================================
+
+function formatAnimalFeed(
+    item
+) {
+
+    if (
+        !item.animalFeed
+    ) {
+
+        return item;
+
+    }
+
+
+    const stock =
+        item.animalFeed;
+
+
     // ======================================================
-    // DETERMINE RECORD TYPE
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // code < 0
-    //     = Dairy Farm
-    //
-    // code > 0
-    //     = Animal / Asset
-    //
-    // code === null
-    //     = Facility / Asset
-    //
+    // QUANTITIES
     // ======================================================
 
-    const hasCode =
-        dairy.code !== null &&
-        dairy.code !== undefined;
+    const previousQuantity =
+        toNumber(
+            stock.previousQuantity
+        );
 
 
-    const numericCode =
-        hasCode
-            ? Number(dairy.code)
+    const quantity =
+        toNumber(
+            stock.quantity
+        );
+
+
+    const quantityChange =
+        quantity -
+        previousQuantity;
+
+
+    // ======================================================
+    // STOCK ID
+    // ======================================================
+
+    item.feedId =
+        stock.feedId || null;
+
+
+    // ======================================================
+    // STORAGE / AGROSTORE
+    // ======================================================
+
+    item.storageId =
+        stock.storageId || null;
+
+
+    item.storageName =
+        stock.storageName || "";
+
+
+    // ======================================================
+    // STOCK INFORMATION
+    // ======================================================
+
+    item.feedName =
+        stock.feedName || "";
+
+
+    item.feedType =
+        stock.feedType || "";
+
+
+    item.roomNumber =
+        stock.roomNumber !== null &&
+        stock.roomNumber !== undefined
+
+            ? toNumber(
+                stock.roomNumber,
+                null
+            )
+
             : null;
 
 
-    const isDairyFarm =
-        hasCode &&
-        numericCode < 0;
+    // ======================================================
+    // QUANTITY INFORMATION
+    // ======================================================
+
+    item.previousQuantity =
+        previousQuantity;
 
 
-    const isAnimalOrAsset =
-        hasCode &&
-        numericCode > 0;
+    item.quantity =
+        quantity;
 
 
-    const isFacilityOrAsset =
-        dairy.code === null ||
-        dairy.code === undefined;
+    item.quantityChange =
+        quantityChange;
+
+
+    item.unit =
+        stock.unit || "";
 
 
     // ======================================================
-    // DETERMINE WHETHER CURRENT RECORD IS AN AGROSTORE
-    // ======================================================
-    //
-    // AgroStore identity is determined by:
-    //
-    //     roomNumber < 0
-    //
-    // NOT by Dairy.code.
-    //
-    // Therefore a record may be:
-    //
-    //     code > 0
-    //     AND
-    //     roomNumber < 0
-    //
-    // depending on the application's data model.
-    //
+    // NOTE
     // ======================================================
 
-    const hasRoomNumber =
-        dairy.roomNumber !== null &&
-        dairy.roomNumber !== undefined;
-
-
-    const isAgroStore =
-        hasRoomNumber &&
-        Number(
-            dairy.roomNumber
-        ) < 0;
+    item.stockUpdateNote =
+        stock.stockUpdateNote || "";
 
 
     // ======================================================
-    // AGROSTORE ANIMAL FEEDS
-    // ======================================================
-    //
-    // This remains completely separate from `feed`.
-    //
-    // animalFeedsService receives the AgroStore _id.
-    //
-    // It is responsible for resolving:
-    //
-    //     AgroStore._id
-    //          ↓
-    //     AgroStore.roomNumber
-    //          ↓
-    //     Dairy.dwellNumber
-    //
+    // IMAGES
     // ======================================================
 
-    let animalFeeds = [];
+    item.stockUpdateImages =
 
+        Array.isArray(
+            stock.images
+        )
 
-    if (isAgroStore) {
-
-        const result =
-            await animalFeedsService.getAnimalFeeds(
-                dairy._id
-            );
-
-
-        if (
-            result &&
-            Array.isArray(
-                result.feeds
-            )
-        ) {
-
-            animalFeeds =
-                result.feeds;
-
-        }
-
-    }
-
-
-    // ======================================================
-    // GET ASSETS BELONGING TO CURRENT DAIRY FARM
-    // ======================================================
-    //
-    // ONLY a record whose:
-    //
-    //     code < 0
-    //
-    // is treated as a Dairy Farm.
-    //
-    // Its assets are identified by:
-    //
-    //     assetCode === farm.code
-    //
-    // ======================================================
-
-    let assetDairies = [];
-
-
-    if (isDairyFarm) {
-
-        assetDairies =
-            await Dairy.find({
-
-                assetCode:
-                    numericCode
-
-            })
-            .sort({
-
-                code: 1,
-
-                name: 1
-
-            });
-
-    }
-
-
-    // ======================================================
-    // GET ASSIGNED FARMS
-    // ======================================================
-    //
-    // Only dairyWorker users need assigned farms.
-    //
-    // ======================================================
-
-    let assignedFarms = [];
-
-
-    let workerUser = null;
-
-
-    if (userId) {
-
-        workerUser =
-            await ProjectUser
-                .findById(
-                    userId
+            ? stock.images
+                .filter(Boolean)
+                .map(
+                    image =>
+                        String(
+                            image
+                        ).trim()
                 )
-                .select(
-                    "role assignedFarm"
-                );
+                .filter(Boolean)
 
-
-        if (
-            workerUser &&
-            workerUser.role ===
-                "dairyWorker" &&
-            Array.isArray(
-                workerUser.assignedFarm
-            ) &&
-            workerUser.assignedFarm.length > 0
-        ) {
-
-            assignedFarms =
-                await Dairy.find({
-
-                    _id: {
-
-                        $in:
-                            workerUser.assignedFarm
-
-                    }
-
-                });
-
-        }
-
-    }
+            : [];
 
 
     // ======================================================
-    // PRESERVE ASSIGNED FARM ORDER
+    // RECORDER
     // ======================================================
     //
-    // MongoDB does not guarantee that $in results will be
-    // returned in the same order as assignedFarm.
+    // These are snapshots stored at the time the stock update
+    // occurred.
     //
-    // Therefore rebuild the result using assignedFarm order.
+    // Do NOT depend on the current User document for the
+    // historical display.
+    //
+    // ======================================================
+
+    item.recordedBy =
+        stock.recordedBy || null;
+
+
+    item.recordedByName =
+        stock.recordedByName ||
+        item.userName ||
+        "User";
+
+
+    item.recordedByImage =
+        stock.recordedByImage ||
+        item.userImage ||
+        "";
+
+
+    item.recordedAt =
+        stock.recordedAt ||
+        item.createdAt ||
+        null;
+
+
+    item.recordedAtText =
+        formatDate(
+            item.recordedAt
+        );
+
+
+    // ======================================================
+    // MOVEMENT
+    // ======================================================
+    //
+    // Positive:
+    //     stock increased
+    //
+    // Negative:
+    //     stock decreased
+    //
+    // Zero:
+    //     unchanged
     //
     // ======================================================
 
     if (
-        workerUser &&
-        workerUser.role ===
-            "dairyWorker" &&
-        Array.isArray(
-            workerUser.assignedFarm
-        )
+        quantityChange > 0
     ) {
 
-        const farmMap =
-            new Map(
+        item.stockMovement =
+            "increase";
 
-                assignedFarms.map(
-                    farm => [
+    }
 
-                        farm._id.toString(),
+    else if (
+        quantityChange < 0
+    ) {
 
-                        farm
+        item.stockMovement =
+            "decrease";
 
-                    ]
-                )
+    }
 
-            );
+    else {
+
+        item.stockMovement =
+            "unchanged";
+
+    }
 
 
-        assignedFarms =
-            workerUser.assignedFarm
+    // ======================================================
+    // HUMAN-READABLE MOVEMENT
+    // ======================================================
 
+    item.stockMovementAmount =
+        Math.abs(
+            quantityChange
+        );
+
+
+    // ======================================================
+    // FEED-CARD TITLE
+    // ======================================================
+
+    item.title =
+        item.title ||
+        "Stock Updated";
+
+
+    // ======================================================
+    // FEED-CARD DESCRIPTION
+    // ======================================================
+
+    item.description =
+        item.stockUpdateNote;
+
+
+    // ======================================================
+    // FEED-CARD USER
+    // ======================================================
+    //
+    // The feed card should display the person who actually
+    // recorded the stock update.
+    //
+    // ======================================================
+
+    item.userName =
+        item.recordedByName ||
+        item.userName ||
+        "User";
+
+
+    item.userImage =
+        item.recordedByImage ||
+        item.userImage ||
+        "";
+
+
+    item.userId =
+        item.recordedBy ||
+        item.userId ||
+        null;
+
+
+    return item;
+
+}
+
+
+// ==========================================================
+// FEED FORMATTER
+// ==========================================================
+//
+// Converts Update documents into the common object used by
+// the feed EJS files.
+//
+// Supported feed types:
+//
+//     post
+//     comment
+//     image
+//     medical
+//     maintenance
+//     assetAdd
+//     animalFeed
+//
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// `animalFeed` is a HISTORICAL FEED CARD.
+//
+// It is not the current AgroStore inventory.
+//
+// ==========================================================
+
+function formatFeed(
+    update
+) {
+
+    if (!update) {
+
+        return null;
+
+    }
+
+
+    const item =
+
+        typeof update.toObject === "function"
+
+            ? update.toObject()
+
+            : {
+
+                ...update
+
+            };
+
+
+    // ======================================================
+    // USER
+    // ======================================================
+
+    item.userId =
+        item.user || null;
+
+
+    item.userName =
+        item.userName ||
+        "User";
+
+
+    item.userImage =
+        item.userImage ||
+        "";
+
+
+    // ======================================================
+    // AUTHOR ROLE
+    // ======================================================
+
+    item.authorRole =
+        item.authorRole ||
+        "";
+
+
+    // ======================================================
+    // DATE
+    // ======================================================
+
+    item.dateText =
+        formatDate(
+            item.createdAt
+        );
+
+
+    // ======================================================
+    // DAIRY / ASSET SUBJECT
+    // ======================================================
+    //
+    // pageService.js populates item.dairy with:
+    //
+    //     name
+    //     code
+    //     assetCode
+    //     profileImage
+    //
+    // ======================================================
+
+    if (
+        item.dairy
+    ) {
+
+        item.dairyId =
+            item.dairy._id ||
+            null;
+
+
+        item.dairyName =
+            item.dairy.name ||
+            "";
+
+
+        item.dairyCode =
+
+            item.dairy.code !==
+            undefined
+
+                ? item.dairy.code
+
+                : null;
+
+
+        item.dairyAssetCode =
+
+            item.dairy.assetCode !==
+            undefined
+
+                ? item.dairy.assetCode
+
+                : null;
+
+
+        item.dairyImage =
+            item.dairy.profileImage ||
+            "";
+
+    }
+
+    else {
+
+        item.dairyId =
+            null;
+
+        item.dairyName =
+            "";
+
+        item.dairyCode =
+            null;
+
+        item.dairyAssetCode =
+            null;
+
+        item.dairyImage =
+            "";
+
+    }
+
+
+    // ======================================================
+    // LIKES
+    // ======================================================
+
+    item.likes =
+        Array.isArray(
+            item.likes
+        )
+
+            ? item.likes.length
+
+            : 0;
+
+
+    // ======================================================
+    // COMMENTS
+    // ======================================================
+
+    item.comments =
+
+        Array.isArray(
+            item.comments
+        )
+
+            ? item.comments
                 .map(
-                    farmId =>
+                    formatComment
+                )
+                .filter(Boolean)
 
-                        farmMap.get(
-                            farmId.toString()
-                        )
+            : [];
+
+
+    // ======================================================
+    // NORMAL POST
+    // ======================================================
+
+    if (
+        item.type === "post"
+    ) {
+
+        item.title =
+            item.title || "";
+
+    }
+
+
+    // ======================================================
+    // IMAGE UPDATE
+    // ======================================================
+
+    if (
+        item.type === "image"
+    ) {
+
+        item.title =
+            item.title ||
+            "Image Update";
+
+    }
+
+
+    // ======================================================
+    // COMMENT UPDATE
+    // ======================================================
+
+    if (
+        item.type === "comment"
+    ) {
+
+        item.title =
+            item.title ||
+            "Comment";
+
+    }
+
+
+    // ======================================================
+    // MEDICAL
+    // ======================================================
+
+    if (
+        item.type === "medical" &&
+        item.medical
+    ) {
+
+        item.status =
+            item.medical.status ||
+            "";
+
+
+        item.title =
+            item.medical.type ||
+            "Medical Update";
+
+
+        item.details =
+            item.medical.details ||
+            "";
+
+
+        item.description =
+
+            item.medical.status ===
+            "cleared"
+
+                ? (
+                    item.medical.clearDescription ||
+                    ""
                 )
 
-                .filter(
-                    Boolean
+                : (
+                    item.medical.details ||
+                    ""
                 );
 
-    }
 
-
-    // ======================================================
-    // DETERMINE WHICH DAIRY RECORDS SUPPLY NORMAL FEED
-    // ======================================================
-    //
-    // FARM:
-    //
-    //     code < 0
-    //
-    //     Current farm
-    //          +
-    //     all assets where
-    //
-    //         assetCode === farm.code
-    //
-    //
-    // ANIMAL / ASSET:
-    //
-    //     code > 0
-    //
-    //     Current record only.
-    //
-    //
-    // FACILITY / ASSET:
-    //
-    //     code === null
-    //
-    //     Current record only.
-    //
-    // AgroStore animal feeds are NEVER added here.
-    //
-    // ======================================================
-
-    let updateDairyIds = [
-
-        dairy._id
-
-    ];
-
-
-    // ======================================================
-    // DAIRY FARM LOGIC
-    // ======================================================
-    //
-    // THIS IS THE IMPORTANT NEGATIVE-CODE LOGIC.
-    //
-    // A Dairy Farm is identified by:
-    //
-    //     code < 0
-    //
-    // All records having:
-    //
-    //     assetCode === farm.code
-    //
-    // belong to that farm's normal feed.
-    //
-    // ======================================================
-
-    if (isDairyFarm) {
-
-        const farmAssets =
-            await Dairy.find({
-
-                assetCode:
-                    numericCode
-
-            })
-            .select(
-                "_id code name assetCode"
+        item.charges =
+            toNumber(
+                item.medical.charges
             );
 
-
-        updateDairyIds.push(
-
-            ...farmAssets.map(
-                asset =>
-                    asset._id
-            )
-
-        );
-
     }
 
 
     // ======================================================
-    // POSITIVE-CODE ANIMAL / ASSET LOGIC
-    // ======================================================
-    //
-    // A positive code means:
-    //
-    //     code > 0
-    //
-    // Such a record is an animal / asset and DOES NOT
-    // automatically include its parent farm feed.
-    //
-    // The current record remains the only feed source.
-    //
-    // updateDairyIds already contains dairy._id.
-    //
+    // MAINTENANCE
     // ======================================================
 
-    if (isAnimalOrAsset) {
+    if (
+        item.type === "maintenance" &&
+        item.maintenance
+    ) {
 
-        // Current animal / asset only.
-        //
-        // No farm expansion occurs here.
-
-    }
-
-
-    // ======================================================
-    // NULL-CODE FACILITY / ASSET LOGIC
-    // ======================================================
-    //
-    // code === null
-    //
-    // This record is treated as an individual facility /
-    // asset for normal feed purposes.
-    //
-    // It does NOT inherit a farm's feed.
-    //
-    // ======================================================
-
-    if (isFacilityOrAsset) {
-
-        // Current facility / asset only.
-        //
-        // No farm expansion occurs here.
-
-    }
+        item.status =
+            item.maintenance.status ||
+            "";
 
 
-    // ======================================================
-    // REMOVE DUPLICATE DAIRY IDS
-    // ======================================================
+        item.maintenanceType =
+            item.maintenance.type ||
+            "";
 
-    updateDairyIds =
-        Array.from(
 
-            new Map(
+        item.description =
 
-                updateDairyIds.map(
-                    dairyId => [
+            item.maintenance.status ===
+            "cleared"
 
-                        dairyId.toString(),
-
-                        dairyId
-
-                    ]
+                ? (
+                    item.maintenance.clearDescription ||
+                    ""
                 )
 
-            ).values()
+                : (
+                    item.maintenance.description ||
+                    ""
+                );
 
-        );
 
+        item.charges =
+            toNumber(
+                item.maintenance.charges
+            );
 
-    // ======================================================
-    // GET NORMAL UPDATES
-    // ======================================================
-    //
-    // This query is completely independent of AgroStore
-    // inventory.
-    //
-    // ======================================================
-
-    const updates =
-        await Update.find({
-
-            dairy: {
-
-                $in:
-                    updateDairyIds
-
-            }
-
-        })
-        .populate({
-
-            path:
-                "dairy",
-
-            select:
-                "name code assetCode profileImage"
-
-        })
-        .sort({
-
-            createdAt: -1
-
-        });
+    }
 
 
     // ======================================================
-    // FORMAT NORMAL UPDATE FEED
-    // ======================================================
-
-    const feed =
-        updates.map(
-            formatFeed
-        );
-
-
-    // ======================================================
-    // GET DAIRY INFORMATION FOR MILK FEEDS
-    // ======================================================
-
-    const milkDairies =
-        await Dairy.find({
-
-            _id: {
-
-                $in:
-                    updateDairyIds
-
-            }
-
-        })
-        .select(
-            "_id name code assetCode profileImage"
-        );
-
-
-    // ======================================================
-    // CREATE DAIRY LOOKUP MAP
-    // ======================================================
-
-    const milkDairyMap =
-        new Map(
-
-            milkDairies.map(
-                dairyRecord => [
-
-                    dairyRecord._id.toString(),
-
-                    dairyRecord
-
-                ]
-            )
-
-        );
-
-
-    // ======================================================
-    // BUILD WEEKLY MILK FEEDS
+    // ASSET ADDED
     // ======================================================
     //
-    // Every Dairy record supplying the normal feed gets
-    // its own weekly milk feeds.
+    // Update type:
     //
-    // For a farm:
+    //     assetAdd
     //
-    //     farm milk
-    //     +
-    //     asset milk
+    // NOT:
     //
-    // For an animal / asset:
-    //
-    //     current record milk only
+    //     asset
     //
     // ======================================================
 
-    let weeklyFeeds = [];
-
-
-    for (
-        const dairyId of updateDairyIds
+    if (
+        item.type === "assetAdd"
     ) {
 
-        const dairyKey =
-            dairyId.toString();
+        const asset =
+            item.asset ||
+            {};
 
 
-        const dairyRecord =
-            milkDairyMap.get(
-                dairyKey
+        item.assetId =
+            asset.assetId ||
+            null;
+
+
+        item.assetName =
+            asset.name ||
+            item.dairyName ||
+            "New Asset";
+
+
+        item.assetType =
+            asset.type ||
+            "";
+
+
+        item.buyingPrice =
+            toNumber(
+                asset.buyingPrice
             );
 
 
-        if (!dairyRecord) {
-
-            continue;
-
-        }
-
-
-        const dairyWeeklyFeeds =
-            await buildWeeklyMilkFeeds(
-                dairyId
+        item.currentWorth =
+            toNumber(
+                asset.currentWorth
             );
 
 
-        // ==================================================
-        // ATTACH DAIRY INFORMATION
-        // ==================================================
-
-        dairyWeeklyFeeds.forEach(
-            milkFeed => {
-
-                milkFeed.dairyId =
-                    dairyRecord._id;
+        item.description =
+            asset.description ||
+            "";
 
 
-                milkFeed.dairyName =
-                    dairyRecord.name ||
-                    "";
+        item.condition =
+            asset.condition ||
+            "";
 
 
-                milkFeed.dairyCode =
-                    dairyRecord.code !==
-                    undefined
-
-                        ? dairyRecord.code
-
-                        : null;
+        item.location =
+            asset.location ||
+            "";
 
 
-                milkFeed.dairyAssetCode =
-                    dairyRecord.assetCode !==
-                    undefined
-
-                        ? dairyRecord.assetCode
-
-                        : null;
+        item.assetStatus =
+            asset.status ||
+            "active";
 
 
-                milkFeed.dairyImage =
-                    dairyRecord.profileImage ||
-                    "";
+        item.assetCode =
+            asset.assetCode !== null &&
+            asset.assetCode !== undefined
 
-            }
-        );
+                ? asset.assetCode
+
+                : null;
 
 
-        // ==================================================
-        // ADD TO WEEKLY FEEDS
-        // ==================================================
+        item.parentDairyId =
+            asset.parentDairyId ||
+            null;
 
-        weeklyFeeds.push(
-            ...dairyWeeklyFeeds
+
+        item.parentDairyName =
+            asset.parentDairyName ||
+            "";
+
+
+        item.parentDairyCode =
+
+            asset.parentDairyCode !==
+            null &&
+
+            asset.parentDairyCode !==
+            undefined
+
+                ? asset.parentDairyCode
+
+                : null;
+
+
+        item.title =
+            item.title ||
+            "New Asset Added";
+
+    }
+
+
+    // ======================================================
+    // ANIMAL FEED / STOCK UPDATE
+    // ======================================================
+    //
+    // THIS IS THE IMPORTANT STOCK FEED-CARD HANDLING.
+    //
+    // stock-update.ejs receives the formatted fields from
+    // formatAnimalFeed().
+    //
+    // The current inventory is NOT loaded here.
+    //
+    // ======================================================
+
+    if (
+        item.type === "animalFeed"
+    ) {
+
+        formatAnimalFeed(
+            item
         );
 
     }
 
 
     // ======================================================
-    // ADD WEEKLY MILK FEEDS TO NORMAL FEED
+    // RETURN FORMATTED FEED ITEM
     // ======================================================
 
-    feed.push(
-        ...weeklyFeeds
-    );
+    return item;
 
-
-    // ======================================================
-    // SORT COMPLETE NORMAL FEED
-    // ======================================================
-    //
-    // Contains:
-    //
-    // • Posts
-    // • Images
-    // • Medical updates
-    // • Maintenance updates
-    // • Weekly milk feeds
-    //
-    // DOES NOT contain AgroStore animalFeeds.
-    //
-    // ======================================================
-
-    feed.sort(
-
-        (a, b) =>
-
-            new Date(
-                b.createdAt
-            ) -
-
-            new Date(
-                a.createdAt
-            )
-
-    );
-
-
-    // ======================================================
-    // COUNT COMMENTS
-    // ======================================================
-
-    let commentCount = 0;
-
-
-    for (
-        const item of feed
-    ) {
-
-        if (
-            Array.isArray(
-                item.comments
-            )
-        ) {
-
-            commentCount +=
-                item.comments.length;
-
-        }
-
-    }
-
-
-    // ======================================================
-    // RETURN COMPLETE PAGE DATA
-    // ======================================================
-
-    return {
-
-        // ==================================================
-        // CURRENT RECORD
-        // ==================================================
-
-        dairy,
-
-
-        // ==================================================
-        // RECORD TYPE FLAGS
-        // ==================================================
-        //
-        // These make the identity explicit for the
-        // controller / view if required.
-        //
-        // ==================================================
-
-        isDairyFarm,
-
-        isAnimalOrAsset,
-
-        isFacilityOrAsset,
-
-        isAgroStore,
-
-
-        // ==================================================
-        // NORMAL FEED
-        // ==================================================
-
-        feed,
-
-
-        // ==================================================
-        // WEEKLY MILK FEEDS
-        // ==================================================
-
-        weeklyFeeds,
-
-
-        // ==================================================
-        // COMMENT COUNT
-        // ==================================================
-
-        commentCount,
-
-
-        // ==================================================
-        // ASSETS BELONGING TO CURRENT FARM
-        // ==================================================
-
-        assetDairies,
-
-
-        // ==================================================
-        // ASSIGNED FARMS
-        // ==================================================
-
-        assignedFarms,
-
-
-        // ==================================================
-        // AGROSTORE INVENTORY
-        // ==================================================
-        //
-        // Populated ONLY when:
-        //
-        //     roomNumber < 0
-        //
-        // It is deliberately NOT merged into `feed`.
-        //
-        // ==================================================
-
-        animalFeeds
-
-    };
-
-};
+}
 
 
 // ==========================================================
-// TOGGLE MILKING STATUS
+// WEEKLY MILK FEED
 // ==========================================================
 //
-// Toggles ONLY:
+// Creates a historical weekly production feed item.
 //
-//     isMilking
-//
-// false → true
-// true  → false
-//
-// Does NOT:
-//
-// • create milk records
-// • delete milk records
-// • modify milk history
-// • modify milk totals
-// • modify name
-// • modify code
-// • modify mass
-// • modify dateOfBirth
-// • modify any other Dairy field
+// This is separate from Update documents.
 //
 // ==========================================================
 
-exports.toggleMilking =
-async (
+async function buildWeeklyMilkFeeds(
     dairyId
-) => {
-
-    // ======================================================
-    // VALIDATE ID
-    // ======================================================
-
-    if (!dairyId) {
-
-        throw new Error(
-            "Dairy ID is required."
-        );
-
-    }
-
+) {
 
     // ======================================================
     // GET DAIRY
@@ -967,173 +1256,324 @@ async (
     const dairy =
         await Dairy.findById(
             dairyId
-        );
+        )
+        .select(
+            "_id name code assetCode profileImage"
+        )
+        .lean();
 
+
+    // ======================================================
+    // DAIRY NOT FOUND
+    // ======================================================
 
     if (!dairy) {
 
-        throw new Error(
-            "Dairy asset not found."
-        );
+        return [];
 
     }
 
 
     // ======================================================
-    // TOGGLE MILKING STATUS
+    // GET MILK RECORDS
     // ======================================================
 
-    dairy.isMilking =
-        !dairy.isMilking;
+    const records =
+        await Milk.find({
+
+            dairy:
+                dairyId
+
+        })
+        .sort({
+
+            date:
+                1
+
+        })
+        .lean();
 
 
     // ======================================================
-    // SAVE
-    // ======================================================
-
-    await dairy.save();
-
-
-    // ======================================================
-    // RETURN UPDATED DAIRY
-    // ======================================================
-
-    return dairy;
-
-};
-
-
-// ==========================================================
-// GET ASSIGNED FARM FOR USER
-// ==========================================================
-//
-// Used when a dairyWorker switches between farms.
-//
-// SECURITY:
-//
-// The requested farm MUST exist inside:
-//
-//     user.assignedFarm
-//
-// A dairyWorker cannot request an arbitrary farm ID.
-//
-// ==========================================================
-
-exports.getAssignedFarmForUser =
-async (
-    userId,
-    farmId
-) => {
-
-    // ======================================================
-    // VALIDATE INPUT
+    // NO RECORDS
     // ======================================================
 
     if (
-        !userId ||
-        !farmId
+        !records.length
     ) {
 
-        return null;
+        return [];
 
     }
 
 
+    const weeks = {};
+
+
     // ======================================================
-    // FIND USER
+    // GROUP RECORDS INTO WEEKS
     // ======================================================
 
-    const user =
-        await ProjectUser
-            .findById(
-                userId
-            )
-            .select(
-                "role assignedFarm"
+    for (
+        const record of records
+    ) {
+
+        const week =
+            getWeekRange(
+                record.date
             );
 
 
-    if (!user) {
+        const weekKey =
+            getDayKey(
+                week.start
+            );
 
-        return null;
+
+        if (
+            !weeks[weekKey]
+        ) {
+
+            weeks[weekKey] = {
+
+                start:
+                    week.start,
+
+                end:
+                    week.end,
+
+                days:
+                    {}
+
+            };
+
+        }
+
+
+        const dayKey =
+
+            record.day ||
+
+            getDayKey(
+                record.date
+            );
+
+
+        weeks[weekKey]
+            .days[dayKey] =
+
+            (
+                weeks[weekKey]
+                    .days[dayKey] ||
+                0
+            ) +
+
+            toNumber(
+                record.liters
+            );
 
     }
 
 
     // ======================================================
-    // ROLE CHECK
+    // BUILD WEEKLY FEED ITEMS
     // ======================================================
 
-    if (
-        user.role !==
-        "dairyWorker"
-    ) {
-
-        return null;
-
-    }
-
-
-    // ======================================================
-    // GET ASSIGNED FARM IDS
-    // ======================================================
-
-    const assignedFarmIds =
-        Array.isArray(
-            user.assignedFarm
+    return Object
+        .values(
+            weeks
         )
+        .map(
+            week => {
 
-            ? user.assignedFarm
+                // ==========================================
+                // DAILY TOTALS
+                // ==========================================
 
-            : [];
+                const days =
+
+                    Object.keys(
+                        week.days
+                    )
+
+                    .sort()
+
+                    .map(
+                        day => ({
+
+                            day,
+
+                            total:
+                                Number(
+                                    toNumber(
+                                        week.days[day]
+                                    )
+                                    .toFixed(2)
+                                )
+
+                        })
+                    );
 
 
-    // ======================================================
-    // CHECK WHETHER REQUESTED FARM IS ASSIGNED
-    // ======================================================
+                // ==========================================
+                // WEEK TOTAL
+                // ==========================================
 
-    const isAssigned =
-        assignedFarmIds.some(
+                const total =
+                    days.reduce(
 
-            assignedId =>
+                        (
+                            sum,
+                            day
+                        ) =>
 
-                assignedId
-                    .toString() ===
+                            sum +
+                            day.total,
 
-                farmId
-                    .toString()
+                        0
 
+                    );
+
+
+                // ==========================================
+                // DAILY AVERAGE
+                // ==========================================
+
+                const average =
+
+                    days.length
+
+                        ? Number(
+                            (
+                                total /
+                                days.length
+                            ).toFixed(2)
+                        )
+
+                        : 0;
+
+
+                // ==========================================
+                // RETURN WEEKLY FEED
+                // ==========================================
+
+                return {
+
+                    _id:
+                        `weekly-${dairy._id}-${getDayKey(
+                            week.start
+                        )}`,
+
+                    type:
+                        "milk",
+
+                    dairyId:
+                        dairy._id,
+
+                    dairyName:
+                        dairy.name ||
+                        "",
+
+                    dairyCode:
+
+                        dairy.code !==
+                        undefined
+
+                            ? dairy.code
+
+                            : null,
+
+                    dairyAssetCode:
+
+                        dairy.assetCode !==
+                        undefined
+
+                            ? dairy.assetCode
+
+                            : null,
+
+                    dairyImage:
+                        dairy.profileImage ||
+                        "",
+
+                    userId:
+                        null,
+
+                    userName:
+                        "System",
+
+                    userImage:
+                        "",
+
+                    authorRole:
+                        "system",
+
+                    createdAt:
+                        week.start,
+
+                    dateText:
+                        formatWeekStart(
+                            week.start
+                        ),
+
+                    title:
+                        "Weekly Production Summary",
+
+                    weekStart:
+                        getDayKey(
+                            week.start
+                        ),
+
+                    weekEnd:
+                        getDayKey(
+                            week.end
+                        ),
+
+                    days,
+
+                    total:
+                        Number(
+                            total.toFixed(2)
+                        ),
+
+                    average,
+
+                    likes:
+                        0,
+
+                    comments:
+                        []
+
+                };
+
+            }
         );
 
-
-    if (!isAssigned) {
-
-        return null;
-
-    }
+}
 
 
-    // ======================================================
-    // GET FARM
-    // ======================================================
+// ==========================================================
+// EXPORTS
+// ==========================================================
 
-    const farm =
-        await Dairy.findById(
-            farmId
-        );
+module.exports = {
 
+    formatDate,
 
-    if (!farm) {
+    formatWeekStart,
 
-        return null;
+    getDayKey,
 
-    }
+    getMonthKey,
 
+    getWeekRange,
 
-    // ======================================================
-    // RETURN FARM
-    // ======================================================
+    formatComment,
 
-    return farm;
+    formatAnimalFeed,
+
+    formatFeed,
+
+    buildWeeklyMilkFeeds
 
 };
