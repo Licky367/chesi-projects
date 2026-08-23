@@ -2,151 +2,91 @@
 // services/update/booleanService.js
 // ==========================================================
 //
-// BOOLEAN UPDATE SERVICE
+// BOOLEAN ANIMAL SERVICE
 //
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Handles boolean fields belonging to Dairy animal records.
+// Supplies female / eligible animal records to:
 //
-// DISPLAY RULE
-// ----------------------------------------------------------
+//     views/update/boolean.ejs
 //
-// An animal is eligible for the Boolean page when:
+// ELIGIBLE ANIMAL:
 //
-//     1. code is a positive EVEN integer
+//     1. Positive EVEN code
+//        OR
 //
-// OR
+//     2. gender === "female"
 //
-//     2. gender is female
+// BOOLEAN FIELDS:
 //
-// Therefore:
+//     Boolean fields are discovered directly from the
+//     Dairy Mongoose schema.
 //
-//     code > 0 && code % 2 === 0
+// The include displays those fields as toggle controls.
 //
-// OR
+// DATABASE TOGGLE:
 //
-//     gender === "female"
-//
-// IMPORTANT
-// ----------------------------------------------------------
-//
-// This service does NOT decide which boolean fields exist.
-//
-// Boolean fields are taken from the Dairy schema/model.
-//
-// The service is responsible for:
-//     - locating eligible animals
-//     - exposing their boolean values
-//     - safely updating a boolean field
-//
+//     Only actual Boolean schema paths may be toggled.
 // ==========================================================
+
 
 const Dairy =
     require("../../models/dairy");
 
 
+// ==========================================================
+// GET BOOLEAN ANIMALS
+// ==========================================================
+//
+// Returns Dairy records where:
+//
+//     (code > 0 AND code % 2 === 0)
+//
+// OR:
+//
+//     gender === "female"
+//
+// ==========================================================
 
-/* ==========================================================
-   BOOLEAN FIELD DISCOVERY
-========================================================== */
+exports.getBooleanAnimals =
+async function () {
 
-/**
- * Return boolean paths defined by the Dairy schema.
- *
- * Nested boolean paths are supported.
- *
- * Example:
- *
- *     isMilking
- *     needsMaintenance
- *     medicalAttention.required
- *
- * Only actual Boolean schema paths are returned.
- */
-function getBooleanFields() {
-
-    const schemaPaths =
-        Dairy.schema.paths || {};
-
-    return Object.keys(
-        schemaPaths
-    ).filter(function (path) {
-
-        const schemaType =
-            schemaPaths[path];
-
-        return (
-            schemaType &&
-            schemaType.instance === "Boolean"
-        );
-
-    });
-
-}
-
-
-
-/* ==========================================================
-   FEMALE / ELIGIBLE ANIMAL RULE
-========================================================== */
-
-/**
- * Determines whether a Dairy record belongs
- * in the Boolean management cards.
- */
-function isEligibleAnimal(dairy) {
-
-    if (!dairy) {
-
-        return false;
-
-    }
-
-
-    const code =
-        Number(dairy.code);
-
-
-    const positiveEvenCode =
-        Number.isInteger(code) &&
-        code > 0 &&
-        code % 2 === 0;
-
-
-    const gender =
-        String(
-            dairy.gender || ""
-        )
-        .trim()
-        .toLowerCase();
-
-
-    const femaleAnimal =
-        gender === "female";
-
-
-    return (
-        positiveEvenCode ||
-        femaleAnimal
-    );
-
-}
-
-
-
-/* ==========================================================
-   GET BOOLEAN ANIMALS
-========================================================== */
-
-/**
- * Get all Dairy records eligible for
- * Boolean management.
- */
-async function getBooleanAnimals() {
+    // ======================================================
+    // LOAD RECORDS
+    // ======================================================
 
     const records =
-        await Dairy.find({})
+        await Dairy
+            .find({
+
+                $or: [
+
+                    {
+                        code: {
+                            $gt: 0,
+                            $mod: [
+                                2,
+                                0
+                            ]
+                        }
+                    },
+
+                    {
+                        gender: "female"
+                    },
+
+                    {
+                        gender: "Female"
+                    },
+
+                    {
+                        gender: "FEMALE"
+                    }
+
+                ]
+
+            })
             .sort({
                 code: 1,
                 name: 1
@@ -154,252 +94,281 @@ async function getBooleanAnimals() {
             .lean();
 
 
-    return records.filter(
-        isEligibleAnimal
+    return Array.isArray(records)
+        ? records
+        : [];
+
+};
+
+
+// ==========================================================
+// GET BOOLEAN FIELDS
+// ==========================================================
+//
+// Discovers fields whose Mongoose schema type is Boolean.
+//
+// This means the EJS does NOT need a hard-coded list of
+// boolean properties.
+//
+// ==========================================================
+
+exports.getBooleanFields =
+function () {
+
+    const fields = [];
+
+
+    const paths =
+        Dairy.schema.paths;
+
+
+    Object.keys(paths).forEach(
+        function (fieldName) {
+
+            const schemaPath =
+                paths[fieldName];
+
+
+            if (
+                schemaPath &&
+                schemaPath.instance === "Boolean"
+            ) {
+
+                fields.push(
+                    fieldName
+                );
+
+            }
+
+        }
     );
 
-}
+
+    return fields;
+
+};
 
 
+// ==========================================================
+// GET BOOLEAN DATA
+// ==========================================================
+//
+// Convenience method used by pageController.
+//
+// ==========================================================
 
-/* ==========================================================
-   GET BOOLEAN PAGE DATA
-========================================================== */
+exports.getBooleanData =
+async function () {
 
-/**
- * Returns everything required by
- * views/update/boolean.ejs
- */
-async function getBooleanPageData() {
+    const [
+        animals,
+        fields
+    ] =
+        await Promise.all([
 
-    const animals =
-        await getBooleanAnimals();
+            exports.getBooleanAnimals(),
 
+            Promise.resolve(
+                exports.getBooleanFields()
+            )
 
-    const booleanFields =
-        getBooleanFields();
+        ]);
 
 
     return {
 
         animals,
 
-        booleanFields
+        fields
 
     };
 
-}
+};
 
 
+// ==========================================================
+// TOGGLE BOOLEAN
+// ==========================================================
+//
+// PARAMS:
+//
+//     dairyId
+//     field
+//
+// The field MUST be an actual Boolean field defined in the
+// Dairy schema.
+//
+// ==========================================================
 
-/* ==========================================================
-   GET ONE ANIMAL
-========================================================== */
-
-/**
- * Find one eligible Dairy animal.
- */
-async function getBooleanAnimalById(
-    animalId
-) {
-
-    const animal =
-        await Dairy.findById(
-            animalId
-        );
-
-
-    if (!animal) {
-
-        return null;
-
-    }
-
-
-    if (
-        !isEligibleAnimal(
-            animal
-        )
-    ) {
-
-        return null;
-
-    }
-
-
-    return animal;
-
-}
-
-
-
-/* ==========================================================
-   READ BOOLEAN VALUE
-========================================================== */
-
-/**
- * Safely read a boolean field,
- * including nested paths.
- */
-function getBooleanValue(
-    document,
+exports.toggleBoolean =
+async function (
+    dairyId,
     field
 ) {
 
-    if (
-        !document ||
-        !field
-    ) {
+    // ======================================================
+    // VALIDATE ID
+    // ======================================================
 
-        return undefined;
+    if (!dairyId) {
 
-    }
+        const error =
+            new Error(
+                "Dairy ID is required."
+            );
 
+        error.status = 400;
 
-    const parts =
-        String(field)
-            .split(".");
-
-
-    let current =
-        document;
-
-
-    for (
-        let i = 0;
-        i < parts.length;
-        i++
-    ) {
-
-        if (
-            current === null ||
-            current === undefined
-        ) {
-
-            return undefined;
-
-        }
-
-
-        current =
-            current[
-                parts[i]
-            ];
+        throw error;
 
     }
 
 
-    return current;
-
-}
-
-
-
-/* ==========================================================
-   UPDATE BOOLEAN
-========================================================== */
-
-/**
- * Update one Boolean field on one
- * eligible Dairy animal.
- *
- * The value MUST be a real boolean.
- */
-async function updateBoolean(
-    animalId,
-    field,
-    value
-) {
+    // ======================================================
+    // VALIDATE FIELD
+    // ======================================================
 
     if (
-        typeof value !==
-        "boolean"
+        !field ||
+        typeof field !== "string"
     ) {
 
-        throw new Error(
-            "Boolean value is required."
-        );
+        const error =
+            new Error(
+                "Boolean field is required."
+            );
+
+        error.status = 400;
+
+        throw error;
 
     }
 
 
-    const booleanFields =
-        getBooleanFields();
+    // ======================================================
+    // VERIFY FIELD IS A BOOLEAN SCHEMA PATH
+    // ======================================================
 
-
-    if (
-        !booleanFields.includes(
+    const schemaPath =
+        Dairy.schema.path(
             field
-        )
+        );
+
+
+    if (
+        !schemaPath ||
+        schemaPath.instance !== "Boolean"
     ) {
 
-        throw new Error(
-            "Invalid boolean field."
-        );
+        const error =
+            new Error(
+                "Invalid boolean field."
+            );
+
+        error.status = 400;
+
+        throw error;
 
     }
 
 
-    const animal =
-        await getBooleanAnimalById(
-            animalId
+    // ======================================================
+    // FIND ANIMAL
+    // ======================================================
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
         );
 
 
-    if (!animal) {
+    if (!dairy) {
 
-        throw new Error(
-            "Eligible animal not found."
-        );
+        const error =
+            new Error(
+                "Dairy animal not found."
+            );
+
+        error.status = 404;
+
+        throw error;
 
     }
 
 
-    const update =
-        {};
+    // ======================================================
+    // VERIFY ELIGIBILITY
+    // ======================================================
 
-
-    update[field] =
-        value;
-
-
-    const updated =
-        await Dairy.findByIdAndUpdate(
-            animalId,
-            {
-                $set: update
-            },
-            {
-                new: true,
-                runValidators: true
-            }
+    const numericCode =
+        Number(
+            dairy.code
         );
 
 
-    return updated;
+    const evenPositiveCode =
+        Number.isInteger(
+            numericCode
+        ) &&
+        numericCode > 0 &&
+        numericCode % 2 === 0;
 
-}
+
+    const female =
+        String(
+            dairy.gender || ""
+        ).toLowerCase() === "female";
 
 
+    if (
+        !evenPositiveCode &&
+        !female
+    ) {
 
-/* ==========================================================
-   EXPORTS
-========================================================== */
+        const error =
+            new Error(
+                "This Dairy animal is not eligible for boolean updates."
+            );
 
-module.exports = {
+        error.status = 403;
 
-    getBooleanFields,
+        throw error;
 
-    isEligibleAnimal,
+    }
 
-    getBooleanAnimals,
 
-    getBooleanPageData,
+    // ======================================================
+    // TOGGLE
+    // ======================================================
 
-    getBooleanAnimalById,
+    dairy[field] =
+        !Boolean(
+            dairy[field]
+        );
 
-    getBooleanValue,
 
-    updateBoolean
+    // ======================================================
+    // SAVE
+    // ======================================================
+
+    await dairy.save();
+
+
+    // ======================================================
+    // RESPONSE DATA
+    // ======================================================
+
+    return {
+
+        dairy,
+
+        field,
+
+        value:
+            Boolean(
+                dairy[field]
+            )
+
+    };
 
 };
