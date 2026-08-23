@@ -6,36 +6,46 @@
 //
 // PURPOSE:
 // ----------------------------------------------------------
-// Handles stock updates for animal-feed / agro-store items.
+// Handles stock updates for animal-feed / agro-store stock.
 //
 // RESPONSIBILITIES:
 //
 //     • Locate the stock Dairy record
 //     • Locate the AgroStore
-//     • Validate the relationship between them
+//     • Validate the stock/storage relationship
 //     • Read the previous stock quantity
-//     • Update the stock quantity
+//     • Calculate the quantity change
+//     • Update the current stock quantity
 //     • Update the stock unit
-//     • Create a stockUpdates history record
+//     • Store stock-update history
 //     • Create an Update feed item
-//     • Store updater name and profile image
+//     • Store complete historical snapshots
 //     • Store stock-update images
+//     • Keep stock + feed history atomic using a transaction
 //
 // IMPORTANT RELATIONSHIP:
 //
 //     AgroStore._id
-//         = storageId
+//         = animalFeed.storageId
 //
 //     AgroStore.roomNumber
 //         = Stock.dwellNumber
 //
-// The feed Update belongs to:
+// Therefore:
 //
-//     Update.dairy = stockDairy._id
+//     stockItem.dwellNumber
+//         ===
+//     agroStore.roomNumber
+//
+// IMPORTANT:
+//
+//     Update.dairy
+//         = stockItem._id
 //
 // NOT:
 //
-//     Update.dairy = agroStore._id
+//     Update.dairy
+//         = agroStore._id
 //
 // ==========================================================
 
@@ -55,8 +65,415 @@ const Update =
 // ==========================================================
 // MAXIMUM STOCK UPDATE IMAGES
 // ==========================================================
+//
+// Update.js is the source of truth.
+//
+// Fallback to 10 in case the static property is unavailable.
+// ==========================================================
 
-const MAX_STOCK_UPDATE_IMAGES = 10;
+const MAX_STOCK_UPDATE_IMAGES =
+
+    Number.isFinite(
+        Number(
+            Update.MAX_STOCK_UPDATE_IMAGES
+        )
+    )
+
+        ? Number(
+            Update.MAX_STOCK_UPDATE_IMAGES
+        )
+
+        : 10;
+
+
+// ==========================================================
+// HELPERS
+// ==========================================================
+
+
+/* ==========================================================
+   OBJECT ID VALIDATION
+========================================================== */
+
+function isValidObjectId(value) {
+
+    return mongoose.Types.ObjectId.isValid(
+        value
+    );
+
+}
+
+
+/* ==========================================================
+   SAFE STRING
+========================================================== */
+
+function safeString(
+    value
+) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+
+        return "";
+
+    }
+
+    return String(
+        value
+    ).trim();
+
+}
+
+
+/* ==========================================================
+   SAFE NUMBER
+========================================================== */
+
+function toFiniteNumber(
+    value,
+    fallback = 0
+) {
+
+    const number =
+        Number(
+            value
+        );
+
+
+    return Number.isFinite(
+        number
+    )
+
+        ? number
+
+        : fallback;
+
+}
+
+
+/* ==========================================================
+   USER ID
+========================================================== */
+
+function getUserId(
+    user
+) {
+
+    if (
+        !user
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        user._id &&
+        isValidObjectId(
+            user._id
+        )
+    ) {
+
+        return user._id;
+
+    }
+
+
+    if (
+        user.id &&
+        isValidObjectId(
+            user.id
+        )
+    ) {
+
+        return user.id;
+
+    }
+
+
+    return null;
+
+}
+
+
+/* ==========================================================
+   USER NAME
+========================================================== */
+
+function getUserName(
+    user
+) {
+
+    if (
+        !user
+    ) {
+
+        return "";
+
+    }
+
+
+    const name =
+        safeString(
+            user.name
+        );
+
+
+    if (
+        name
+    ) {
+
+        return name;
+
+    }
+
+
+    return safeString(
+        user.email
+    );
+
+}
+
+
+/* ==========================================================
+   USER IMAGE
+========================================================== */
+
+function getUserImage(
+    user
+) {
+
+    if (
+        !user
+    ) {
+
+        return "";
+
+    }
+
+
+    return safeString(
+        user.profileImage
+    );
+
+}
+
+
+/* ==========================================================
+   USER ROLE
+========================================================== */
+
+function getAuthorRole(
+    user
+) {
+
+    if (
+        !user
+    ) {
+
+        return "";
+
+    }
+
+
+    const role =
+        safeString(
+            user.role
+        );
+
+
+    // ------------------------------------------------------
+    // Update.js only permits:
+    //
+    // admin
+    // dairyWorker
+    // system
+    // ""
+    // ------------------------------------------------------
+
+    if (
+        role === "admin" ||
+        role === "dairyWorker" ||
+        role === "system"
+    ) {
+
+        return role;
+
+    }
+
+
+    return "";
+
+}
+
+
+/* ==========================================================
+   NORMALIZE IMAGES
+========================================================== */
+
+function normalizeImages(
+    images
+) {
+
+    if (
+        !Array.isArray(
+            images
+        )
+    ) {
+
+        return [];
+
+    }
+
+
+    const result = [];
+
+
+    for (
+        const image of images
+    ) {
+
+        if (
+            !image
+        ) {
+
+            continue;
+
+        }
+
+
+        let value =
+            "";
+
+
+        // --------------------------------------------------
+        // Plain string
+        // --------------------------------------------------
+
+        if (
+            typeof image === "string"
+        ) {
+
+            value =
+                image;
+
+        }
+
+
+        // --------------------------------------------------
+        // Upload object
+        // --------------------------------------------------
+
+        else if (
+            typeof image === "object"
+        ) {
+
+            if (
+                image.url
+            ) {
+
+                value =
+                    image.url;
+
+            }
+
+            else if (
+                image.path
+            ) {
+
+                value =
+                    image.path;
+
+            }
+
+            else if (
+                image.location
+            ) {
+
+                value =
+                    image.location;
+
+            }
+
+            else if (
+                image.secure_url
+            ) {
+
+                value =
+                    image.secure_url;
+
+            }
+
+        }
+
+
+        value =
+            safeString(
+                value
+            );
+
+
+        if (
+            value
+        ) {
+
+            result.push(
+                value
+            );
+
+        }
+
+
+        if (
+            result.length >=
+            MAX_STOCK_UPDATE_IMAGES
+        ) {
+
+            break;
+
+        }
+
+    }
+
+
+    return result;
+
+}
+
+
+/* ==========================================================
+   GET EFFECTIVE UNIT
+========================================================== */
+
+function getEffectiveUnit(
+    requestedUnit,
+    currentUnit
+) {
+
+    const newUnit =
+        safeString(
+            requestedUnit
+        );
+
+
+    if (
+        newUnit
+    ) {
+
+        return newUnit;
+
+    }
+
+
+    return safeString(
+        currentUnit
+    );
+
+}
 
 
 // ==========================================================
@@ -64,8 +481,18 @@ const MAX_STOCK_UPDATE_IMAGES = 10;
 // ==========================================================
 
 exports.createStockUpdate =
+
 async function({
 
+    // ------------------------------------------------------
+    // dairyId
+    // ------------------------------------------------------
+    //
+    // Kept in the function signature for compatibility with
+    // existing controllers.
+    //
+    // The actual stock record is identified by itemId.
+    //
     dairyId,
 
     storageId,
@@ -84,35 +511,6 @@ async function({
 
 }) {
 
-    // ======================================================
-    // VALIDATE IDs
-    // ======================================================
-
-    if (
-        !mongoose.Types.ObjectId.isValid(
-            itemId
-        )
-    ) {
-
-        throw new Error(
-            "Invalid stock item."
-        );
-
-    }
-
-
-    if (
-        !mongoose.Types.ObjectId.isValid(
-            storageId
-        )
-    ) {
-
-        throw new Error(
-            "Invalid storage."
-        );
-
-    }
-
 
     // ======================================================
     // VALIDATE USER
@@ -124,6 +522,57 @@ async function({
 
         throw new Error(
             "You must be logged in to update stock."
+        );
+
+    }
+
+
+    const userId =
+        getUserId(
+            user
+        );
+
+
+    if (
+        !userId
+    ) {
+
+        throw new Error(
+            "Invalid user."
+        );
+
+    }
+
+
+    // ======================================================
+    // VALIDATE STOCK ITEM ID
+    // ======================================================
+
+    if (
+        !isValidObjectId(
+            itemId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid stock item."
+        );
+
+    }
+
+
+    // ======================================================
+    // VALIDATE STORAGE ID
+    // ======================================================
+
+    if (
+        !isValidObjectId(
+            storageId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid storage."
         );
 
     }
@@ -167,20 +616,14 @@ async function({
     // UNIT
     // ======================================================
 
-    const safeUnit =
-
-        unit !== null &&
-        unit !== undefined
-
-            ? String(
-                unit
-            ).trim()
-
-            : "";
+    const requestedUnit =
+        safeString(
+            unit
+        );
 
 
     if (
-        safeUnit.length > 50
+        requestedUnit.length > 50
     ) {
 
         throw new Error(
@@ -191,19 +634,13 @@ async function({
 
 
     // ======================================================
-    // STOCK UPDATE NOTE
+    // NOTE
     // ======================================================
 
     const safeNote =
-
-        stockUpdateNote !== null &&
-        stockUpdateNote !== undefined
-
-            ? String(
-                stockUpdateNote
-            ).trim()
-
-            : "";
+        safeString(
+            stockUpdateNote
+        );
 
 
     if (
@@ -218,575 +655,566 @@ async function({
 
 
     // ======================================================
-    // FIND STOCK ITEM
-    // ======================================================
-    //
-    // The item being updated is a Dairy document.
-    //
-    // itemId is therefore:
-    //
-    //     Dairy._id
-    //
-    // ======================================================
-
-    const stockItem =
-        await Dairy.findById(
-            itemId
-        );
-
-
-    if (
-        !stockItem
-    ) {
-
-        throw new Error(
-            "Stock item was not found."
-        );
-
-    }
-
-
-    // ======================================================
-    // FIND AGROSTORE
-    // ======================================================
-    //
-    // AgroStore is also represented by Dairy.
-    //
-    // storageId therefore points to:
-    //
-    //     Dairy._id
-    //
-    // ======================================================
-
-    const agroStore =
-        await Dairy.findById(
-            storageId
-        );
-
-
-    if (
-        !agroStore
-    ) {
-
-        throw new Error(
-            "AgroStore was not found."
-        );
-
-    }
-
-
-    // ======================================================
-    // VERIFY AGROSTORE
-    // ======================================================
-
-    const storageType =
-
-        agroStore.type
-            ? String(
-                agroStore.type
-            ).trim()
-
-            : "";
-
-
-    if (
-        storageType !== "agroStore"
-    ) {
-
-        throw new Error(
-            "The selected storage is not an AgroStore."
-        );
-
-    }
-
-
-    // ======================================================
-    // VERIFY STOCK LOCATION
-    // ======================================================
-    //
-    // The stock item must belong to this AgroStore.
-    //
-    // Relationship:
-    //
-    //     stockItem.dwellNumber
-    //          ===
-    //     agroStore.roomNumber
-    //
-    // ======================================================
-
-    if (
-
-        stockItem.dwellNumber !== null &&
-        stockItem.dwellNumber !== undefined &&
-
-        agroStore.roomNumber !== null &&
-        agroStore.roomNumber !== undefined
-
-    ) {
-
-        if (
-
-            Number(
-                stockItem.dwellNumber
-            ) !==
-
-            Number(
-                agroStore.roomNumber
-            )
-
-        ) {
-
-            throw new Error(
-                "This stock item does not belong to the selected AgroStore."
-            );
-
-        }
-
-    }
-
-
-    // ======================================================
-    // PREVIOUS QUANTITY
-    // ======================================================
-
-    const previousQuantity =
-
-        stockItem.quantity !== null &&
-        stockItem.quantity !== undefined
-
-            ? Number(
-                stockItem.quantity
-            )
-
-            : 0;
-
-
-    // ======================================================
-    // NORMALIZE PREVIOUS QUANTITY
-    // ======================================================
-
-    const safePreviousQuantity =
-
-        Number.isFinite(
-            previousQuantity
-        )
-
-            ? previousQuantity
-
-            : 0;
-
-
-    // ======================================================
-    // STOCK DIFFERENCE
-    // ======================================================
-
-    const quantityDifference =
-
-        newQuantity -
-        safePreviousQuantity;
-
-
-    // ======================================================
     // IMAGES
     // ======================================================
-    //
-    // The controller passes req.files.
-    //
-    // Depending on the upload middleware, an image may expose:
-    //
-    //     path
-    //     url
-    //     location
-    //
-    // We normalize those into strings.
-    //
-    // ======================================================
-
-    const stockImages = [];
-
-
-    if (
-        Array.isArray(
-            images
-        )
-    ) {
-
-        for (
-            const image of
-            images
-        ) {
-
-            if (
-                !image
-            ) {
-
-                continue;
-
-            }
-
-
-            let imageValue =
-                "";
-
-
-            if (
-                typeof image ===
-                "string"
-            ) {
-
-                imageValue =
-                    image;
-
-            } else if (
-                image.url
-            ) {
-
-                imageValue =
-                    image.url;
-
-            } else if (
-                image.path
-            ) {
-
-                imageValue =
-                    image.path;
-
-            } else if (
-                image.location
-            ) {
-
-                imageValue =
-                    image.location;
-
-            }
-
-
-            imageValue =
-                String(
-                    imageValue
-                ).trim();
-
-
-            if (
-                imageValue
-            ) {
-
-                stockImages.push(
-                    imageValue
-                );
-
-            }
-
-        }
-
-    }
-
 
     const limitedImages =
-        stockImages.slice(
-            0,
-            MAX_STOCK_UPDATE_IMAGES
+        normalizeImages(
+            images
         );
 
 
     // ======================================================
-    // USER NAME
+    // USER SNAPSHOT
     // ======================================================
 
-    let userName =
-        "";
+    const userName =
+        getUserName(
+            user
+        );
 
 
-    if (
-        user.name
-    ) {
+    const userImage =
+        getUserImage(
+            user
+        );
 
-        userName =
-            String(
-                user.name
-            ).trim();
 
-    } else if (
-        user.email
-    ) {
-
-        userName =
-            String(
-                user.email
-            ).trim();
-
-    }
+    const authorRole =
+        getAuthorRole(
+            user
+        );
 
 
     // ======================================================
-    // USER PROFILE IMAGE
+    // START TRANSACTION
     // ======================================================
 
-    let userImage =
-        "";
+    const session =
+        await mongoose.startSession();
 
 
-    if (
-        user.profileImage
-    ) {
+    try {
 
-        userImage =
-            String(
-                user.profileImage
-            ).trim();
+        await session.withTransaction(
+            async function() {
 
-    }
+                // ==========================================
+                // FIND STOCK ITEM
+                // ==========================================
 
+                const stockItem =
+                    await Dairy.findById(
+                        itemId
+                    ).session(
+                        session
+                    );
 
-    // ======================================================
-    // USER ROLE
-    // ======================================================
 
-    let authorRole =
-        "";
+                if (
+                    !stockItem
+                ) {
 
+                    throw new Error(
+                        "Stock item was not found."
+                    );
 
-    if (
-        user.role
-    ) {
+                }
 
-        authorRole =
-            String(
-                user.role
-            ).trim();
 
-    }
+                // ==========================================
+                // FIND AGROSTORE
+                // ==========================================
 
+                const agroStore =
+                    await Dairy.findById(
+                        storageId
+                    ).session(
+                        session
+                    );
 
-    // ======================================================
-    // STOCK ITEM NAME
-    // ======================================================
 
-    const feedName =
+                if (
+                    !agroStore
+                ) {
 
-        stockItem.name
+                    throw new Error(
+                        "AgroStore was not found."
+                    );
 
-            ? String(
-                stockItem.name
-            ).trim()
+                }
 
-            : "Unnamed Stock";
 
+                // ==========================================
+                // VERIFY AGROSTORE
+                // ==========================================
 
-    // ======================================================
-    // STOCK TYPE
-    // ======================================================
+                const storageType =
+                    safeString(
+                        agroStore.type
+                    );
 
-    const feedType =
 
-        stockItem.type
+                if (
+                    storageType !==
+                    "agroStore"
+                ) {
 
-            ? String(
-                stockItem.type
-            ).trim()
+                    throw new Error(
+                        "The selected storage is not an AgroStore."
+                    );
 
-            : "";
+                }
 
 
-    // ======================================================
-    // ROOM NUMBER
-    // ======================================================
+                // ==========================================
+                // VERIFY STOCK LOCATION
+                // ==========================================
+                //
+                // Both values must exist.
+                //
+                // The relationship is mandatory:
+                //
+                // stock.dwellNumber
+                //        ===
+                // agroStore.roomNumber
+                //
+                // ==========================================
 
-    const roomNumber =
+                const stockDwellNumber =
+                    Number(
+                        stockItem.dwellNumber
+                    );
 
-        agroStore.roomNumber !== null &&
-        agroStore.roomNumber !== undefined
 
-            ? Number(
-                agroStore.roomNumber
-            )
+                const storageRoomNumber =
+                    Number(
+                        agroStore.roomNumber
+                    );
 
-            : null;
 
+                if (
+                    !Number.isFinite(
+                        stockDwellNumber
+                    )
+                ) {
 
-    // ======================================================
-    // STORAGE UPDATE HISTORY
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // This service expects stockItem.stockUpdates[] to exist
-    // in the Dairy model.
-    //
-    // The history record stores the NEW quantity.
-    //
-    // ======================================================
+                    throw new Error(
+                        "The stock item does not have a valid dwell number."
+                    );
 
-    if (
-        !Array.isArray(
-            stockItem.stockUpdates
-        )
-    ) {
+                }
 
-        stockItem.stockUpdates =
-            [];
 
-    }
+                if (
+                    !Number.isFinite(
+                        storageRoomNumber
+                    )
+                ) {
 
+                    throw new Error(
+                        "The AgroStore does not have a valid room number."
+                    );
 
-    stockItem.stockUpdates.push({
+                }
 
-        quantity:
-            newQuantity,
 
-        stockUpdateNote:
-            safeNote,
+                if (
+                    stockDwellNumber !==
+                    storageRoomNumber
+                ) {
 
-        images:
-            limitedImages,
+                    throw new Error(
+                        "This stock item does not belong to the selected AgroStore."
+                    );
 
-        recordedBy:
-            user._id ||
-            user.id ||
-            null,
+                }
 
-        recordedAt:
-            new Date()
 
-    });
+                // ==========================================
+                // PREVIOUS QUANTITY
+                // ==========================================
 
+                const previousQuantity =
+                    toFiniteNumber(
+                        stockItem.quantity,
+                        0
+                    );
 
-    // ======================================================
-    // UPDATE CURRENT STOCK
-    // ======================================================
 
-    stockItem.quantity =
-        newQuantity;
+                if (
+                    previousQuantity < 0
+                ) {
 
+                    throw new Error(
+                        "The current stock quantity is invalid."
+                    );
 
-    // ======================================================
-    // UPDATE UNIT
-    // ======================================================
+                }
 
-    if (
-        safeUnit
-    ) {
 
-        stockItem.unit =
-            safeUnit;
+                // ==========================================
+                // QUANTITY CHANGE
+                // ==========================================
 
-    }
+                const quantityChange =
+                    newQuantity -
+                    previousQuantity;
 
 
-    // ======================================================
-    // SAVE STOCK
-    // ======================================================
+                // ==========================================
+                // EFFECTIVE UNIT
+                // ==========================================
 
-    await stockItem.save();
+                const effectiveUnit =
+                    getEffectiveUnit(
+                        requestedUnit,
+                        stockItem.unit
+                    );
 
 
-    // ======================================================
-    // CREATE FEED UPDATE
-    // ======================================================
-    //
-    // Update.dairy MUST point to the stock Dairy.
-    //
-    // ======================================================
+                // ==========================================
+                // STORAGE NAME SNAPSHOT
+                // ==========================================
 
-    const stockUpdate =
-        new Update({
+                const storageName =
 
-            dairy:
-                stockItem._id,
+                    safeString(
+                        agroStore.name
+                    ) ||
 
-            user:
-                user._id ||
-                user.id ||
-                null,
+                    safeString(
+                        agroStore.title
+                    ) ||
 
-            userName:
-                userName,
+                    "AgroStore";
 
-            userImage:
-                userImage,
 
-            authorRole:
-                authorRole,
+                // ==========================================
+                // STOCK NAME SNAPSHOT
+                // ==========================================
 
-            type:
-                "animalFeed",
+                const feedName =
 
-            title:
-                "Stock Updated",
+                    safeString(
+                        stockItem.name
+                    ) ||
 
-            text:
-                safeNote,
+                    "Unnamed Stock";
 
-            images:
-                limitedImages,
 
-            animalFeed: {
+                // ==========================================
+                // STOCK TYPE SNAPSHOT
+                // ==========================================
 
-                feedId:
-                    stockItem._id,
+                const feedType =
+                    safeString(
+                        stockItem.type
+                    );
 
-                storageId:
-                    agroStore._id,
 
-                feedName:
-                    feedName,
+                // ==========================================
+                // ROOM NUMBER SNAPSHOT
+                // ==========================================
 
-                feedType:
-                    feedType,
+                const roomNumber =
+                    storageRoomNumber;
 
-                roomNumber:
-                    roomNumber,
 
-                quantity:
-                    newQuantity,
+                // ==========================================
+                // SINGLE OPERATION TIMESTAMP
+                // ==========================================
+                //
+                // The exact same timestamp is used for:
+                //
+                //     stock history
+                //     feed history
+                //
+                // ==========================================
 
-                unit:
-                    safeUnit ||
-                    stockItem.unit ||
-                    "",
+                const recordedAt =
+                    new Date();
 
-                stockUpdateNote:
-                    safeNote
+
+                // ==========================================
+                // ENSURE STOCK HISTORY ARRAY
+                // ==========================================
+
+                if (
+                    !Array.isArray(
+                        stockItem.stockUpdates
+                    )
+                ) {
+
+                    stockItem.stockUpdates =
+                        [];
+
+                }
+
+
+                // ==========================================
+                // CREATE STOCK HISTORY RECORD
+                // ==========================================
+                //
+                // IMPORTANT:
+                //
+                // This history represents exactly what happened
+                // to the actual stock record.
+                //
+                // ==========================================
+
+                stockItem.stockUpdates.push({
+
+                    previousQuantity:
+                        previousQuantity,
+
+                    quantity:
+                        newQuantity,
+
+                    quantityChange:
+                        quantityChange,
+
+                    unit:
+                        effectiveUnit,
+
+                    stockUpdateNote:
+                        safeNote,
+
+                    images:
+                        limitedImages,
+
+                    recordedBy:
+                        userId,
+
+                    recordedByName:
+                        userName,
+
+                    recordedByImage:
+                        userImage,
+
+                    recordedAt:
+                        recordedAt
+
+                });
+
+
+                // ==========================================
+                // UPDATE CURRENT STOCK QUANTITY
+                // ==========================================
+
+                stockItem.quantity =
+                    newQuantity;
+
+
+                // ==========================================
+                // UPDATE CURRENT STOCK UNIT
+                // ==========================================
+
+                if (
+                    effectiveUnit
+                ) {
+
+                    stockItem.unit =
+                        effectiveUnit;
+
+                }
+
+
+                // ==========================================
+                // SAVE STOCK
+                // ==========================================
+
+                await stockItem.save({
+                    session
+                });
+
+
+                // ==========================================
+                // CREATE UPDATE FEED RECORD
+                // ==========================================
+                //
+                // IMPORTANT:
+                //
+                // Update.dairy = STOCK DAIRY
+                //
+                // NOT AgroStore.
+                //
+                // ==========================================
+
+                const stockUpdate =
+                    new Update({
+
+                        dairy:
+                            stockItem._id,
+
+                        user:
+                            userId,
+
+                        userName:
+                            userName,
+
+                        userImage:
+                            userImage,
+
+                        authorRole:
+                            authorRole,
+
+                        type:
+                            "animalFeed",
+
+                        title:
+                            "Stock Updated",
+
+                        text:
+                            safeNote,
+
+                        images:
+                            limitedImages,
+
+                        animalFeed: {
+
+                            // ----------------------------------
+                            // STOCK
+                            // ----------------------------------
+
+                            feedId:
+                                stockItem._id,
+
+                            // ----------------------------------
+                            // STORAGE
+                            // ----------------------------------
+
+                            storageId:
+                                agroStore._id,
+
+                            storageName:
+                                storageName,
+
+                            // ----------------------------------
+                            // STOCK SNAPSHOT
+                            // ----------------------------------
+
+                            feedName:
+                                feedName,
+
+                            feedType:
+                                feedType,
+
+                            roomNumber:
+                                roomNumber,
+
+                            // ----------------------------------
+                            // QUANTITY SNAPSHOT
+                            // ----------------------------------
+
+                            previousQuantity:
+                                previousQuantity,
+
+                            quantity:
+                                newQuantity,
+
+                            quantityChange:
+                                quantityChange,
+
+                            unit:
+                                effectiveUnit,
+
+                            // ----------------------------------
+                            // NOTE
+                            // ----------------------------------
+
+                            stockUpdateNote:
+                                safeNote,
+
+                            // ----------------------------------
+                            // IMAGES
+                            // ----------------------------------
+
+                            images:
+                                limitedImages,
+
+                            // ----------------------------------
+                            // USER SNAPSHOT
+                            // ----------------------------------
+
+                            recordedBy:
+                                userId,
+
+                            recordedByName:
+                                userName,
+
+                            recordedByImage:
+                                userImage,
+
+                            recordedAt:
+                                recordedAt
+
+                        }
+
+                    });
+
+
+                // ==========================================
+                // SAVE FEED UPDATE
+                // ==========================================
+
+                await stockUpdate.save({
+                    session
+                });
+
+
+                // ==========================================
+                // STORE RESULT ON FUNCTION SCOPE
+                // ==========================================
+
+                result =
+                    {
+
+                        success:
+                            true,
+
+                        message:
+                            "Stock updated successfully.",
+
+                        update:
+                            stockUpdate,
+
+                        stock:
+                            stockItem,
+
+                        previousQuantity:
+                            previousQuantity,
+
+                        quantity:
+                            newQuantity,
+
+                        quantityChange:
+                            quantityChange,
+
+                        quantityDifference:
+                            quantityChange
+
+                    };
 
             }
-
-        });
-
-
-    // ======================================================
-    // SAVE FEED UPDATE
-    // ======================================================
-
-    await stockUpdate.save();
+        );
 
 
-    // ======================================================
-    // RESULT
-    // ======================================================
+        // ==================================================
+        // RETURN SUCCESS
+        // ==================================================
 
-    return {
+        return result;
 
-        success:
-            true,
 
-        message:
-            "Stock updated successfully.",
+    } finally {
 
-        update:
-            stockUpdate,
+        // ==================================================
+        // ALWAYS CLOSE SESSION
+        // ==================================================
 
-        stock:
-            stockItem,
+        await session.endSession();
 
-        previousQuantity:
-            safePreviousQuantity,
-
-        quantity:
-            newQuantity,
-
-        quantityDifference:
-            quantityDifference
-
-    };
+    }
 
 };
