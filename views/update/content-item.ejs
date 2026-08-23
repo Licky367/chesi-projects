@@ -8,15 +8,21 @@ FILE:
     views/storage/content-item.ejs
 
 PURPOSE:
-    Reusable card for displaying details for one item
-    contained inside a Room or AgroStore.
+    Reusable CARD for one content item belonging to a
+    Room or AgroStore.
 
 IMPORTANT:
+
+    THIS IS NOT A PAGE.
+
+    THIS IS NOT A FEED ITEM.
+
     THIS FILE IS AN INCLUDE.
 
-    It is NOT a standalone page.
+    The card may display ANY storage content item.
 
-    It must be included inside another EJS page.
+    Feed classification is used only where necessary for
+    storage-stock behavior.
 
 EXPECTED VARIABLES:
 
@@ -30,6 +36,7 @@ OPTIONAL:
     pageError
     latestStockUpdate
 
+
 STOCK UPDATE ARCHITECTURE:
 
     item.stockUpdates[]
@@ -42,23 +49,21 @@ Each update contains:
     recordedBy
     recordedAt
 
-IMPORTANT:
 
-    Current stock quantity:
+CURRENT STOCK:
 
-        item.quantity
+    item.quantity
 
-    Latest updater:
 
-        latestStockUpdate.recordedBy
+LATEST STOCK UPDATE:
 
-    Latest update timestamp:
+    latestStockUpdate.recordedBy
+    latestStockUpdate.recordedAt
 
-        latestStockUpdate.recordedAt
 
 STOCK UPDATE POST:
 
-    /dairy/:dairyId/:itemId
+    POST /dairy/:dairyId/:contentItemId
 
 ==============================================================
 */
@@ -177,7 +182,7 @@ function displayValue(
 
 
 /* ============================================================
-   ITEM CLASSIFICATION
+   CONTENT ITEM CLASSIFICATION
 ============================================================ */
 
 const itemType =
@@ -191,6 +196,15 @@ const itemCode =
         contentItem.code
     );
 
+
+/*
+--------------------------------------------------------------
+The item itself remains a STORAGE CONTENT ITEM.
+
+These flags describe the content item.
+They do NOT turn this EJS into a feed item.
+--------------------------------------------------------------
+*/
 
 const itemIsAnimal =
     contentItem.code !== null &&
@@ -468,6 +482,10 @@ const stockUpdateImages =
 
 /* ============================================================
    CARD CONTAINER
+
+   IMPORTANT:
+   No page-level max-width or page padding.
+   This file is an INCLUDE.
 ============================================================ */
 
 .storage-content-item-page{
@@ -1565,9 +1583,9 @@ const stockUpdateImages =
 
 
 <!-- ============================================================
-     REUSABLE CARD
-     
-     This is an INCLUDE, not a standalone page.
+     STORAGE CONTENT ITEM CARD
+
+     This is an INCLUDE.
 ============================================================= -->
 
 <div class="storage-content-item-page">
@@ -1814,7 +1832,9 @@ const stockUpdateImages =
                  DESCRIPTION
             ================================================== -->
 
-            <section class="detail-section description-section">
+            <section
+                class="detail-section description-section"
+            >
 
 
                 <div class="detail-section-heading">
@@ -1960,8 +1980,11 @@ const stockUpdateImages =
 
                                 <img
                                     src="<%= imageUrl %>"
+
                                     alt="Stock update image"
+
                                     class="stock-image"
+
                                     loading="lazy"
                                 >
 
@@ -1980,10 +2003,22 @@ const stockUpdateImages =
 
 
             <!-- ==================================================
-                 STOCK UPDATE FORM
+                 UPDATE STOCK
+
+                 THE FORM IS PRESERVED.
+
+                 This is a STORAGE CONTENT ITEM CARD.
+
+                 If the current storage content item is a feed
+                 inside an AgroStore, the stock-update form is
+                 displayed for that item.
             ================================================== -->
 
-            <% if (itemIsFeed && storageType === "agroStore") { %>
+            <% if (
+                itemIsFeed &&
+                storageType === "agroStore"
+            ) { %>
+
 
                 <section
                     class="detail-section stock-update-section"
@@ -2009,11 +2044,7 @@ const stockUpdateImages =
 
                          POST:
 
-                         /dairy/:dairyId/:itemId
-
-                         Example:
-
-                         /dairy/ABC123/XYZ789
+                         /dairy/:dairyId/:contentItemId
                     =========================================== -->
 
                     <form
@@ -2169,6 +2200,7 @@ const stockUpdateImages =
 
                         <button
                             type="submit"
+
                             class="stock-update-button"
                         >
 
@@ -2181,6 +2213,7 @@ const stockUpdateImages =
 
 
                 </section>
+
 
             <% } %>
 
@@ -2200,18 +2233,21 @@ const stockUpdateImages =
                 <span class="footer-status-dot"></span>
 
                 <span>
+
                     Item details
+
                 </span>
 
             </div>
 
 
-            <!-- ================================================
+            <!-- ==================================================
                  LAST UPDATED
-            ================================================= -->
+            ================================================== -->
 
             <div
                 class="footer-updated"
+
                 aria-label="Last updated information"
             >
 
