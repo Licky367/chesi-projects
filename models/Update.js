@@ -24,12 +24,6 @@
 //
 //     Dairy
 //
-// Specifically:
-//
-//     Dairy.dwellNumber
-//     Dairy.quantity
-//     Dairy.stockUpdateNote
-//
 // The Update model stores the HISTORY / FEED CARD generated
 // when an animal-feed stock record is updated.
 //
@@ -56,12 +50,6 @@
 //
 //     Update.dairy = agroStore._id
 //
-// This allows the AgroStore page to:
-//
-//     1. Find its contents using roomNumber/dwellNumber.
-//     2. Find updates belonging to those contents.
-//     3. Display those updates as feed cards.
-//
 // ==========================================================
 
 
@@ -74,6 +62,8 @@ const mongoose =
 // ==========================================================
 
 const MAX_POST_IMAGES = 10;
+
+const MAX_STOCK_UPDATE_IMAGES = 10;
 
 
 // ==========================================================
@@ -579,8 +569,9 @@ const assetAddSchema =
 // ANIMAL FEED / STOCK UPDATE SUBDOCUMENT
 // ==========================================================
 //
-// This describes an UPDATE to an existing animal-feed,
-// fodder, hay, silage or veterinary-stock Dairy record.
+// This describes one historical UPDATE to an existing
+// animal-feed / fodder / hay / silage / veterinary-stock
+// Dairy record.
 //
 // IMPORTANT:
 //
@@ -594,9 +585,25 @@ const assetAddSchema =
 //         = AgroStore.roomNumber
 //         = stock.dwellNumber
 //
-// The actual owner of the Update remains:
+//     previousQuantity
+//         = quantity BEFORE this stock update
 //
-//     Update.dairy = feedId
+//     quantity
+//         = quantity AFTER this stock update
+//
+//     quantityChange
+//         = quantity - previousQuantity
+//
+// The Update model also stores a snapshot of the person who
+// performed the stock update:
+//
+//     recordedBy
+//     recordedByName
+//     recordedByImage
+//     recordedAt
+//
+// This means the feed card can display the updater directly
+// without depending on a future User record change.
 //
 // ==========================================================
 
@@ -649,6 +656,28 @@ const animalFeedSchema =
                 ref: "Dairy",
 
                 default: null
+
+            },
+
+
+            // ==================================================
+            // AGROSTORE NAME
+            // ==================================================
+            //
+            // Snapshot of the storage name at the time the
+            // feed update was generated.
+            //
+            // ==================================================
+
+            storageName: {
+
+                type: String,
+
+                default: "",
+
+                trim: true,
+
+                maxlength: 200
 
             },
 
@@ -712,10 +741,29 @@ const animalFeedSchema =
 
 
             // ==================================================
-            // QUANTITY
+            // PREVIOUS QUANTITY
             // ==================================================
             //
-            // Quantity remaining AFTER the update.
+            // Quantity immediately BEFORE this update.
+            //
+            // ==================================================
+
+            previousQuantity: {
+
+                type: Number,
+
+                default: 0,
+
+                min: 0
+
+            },
+
+
+            // ==================================================
+            // CURRENT QUANTITY
+            // ==================================================
+            //
+            // Quantity remaining AFTER this update.
             //
             // ==================================================
 
@@ -726,6 +774,38 @@ const animalFeedSchema =
                 default: 0,
 
                 min: 0
+
+            },
+
+
+            // ==================================================
+            // QUANTITY CHANGE
+            // ==================================================
+            //
+            // Difference produced by this stock update.
+            //
+            //     quantityChange =
+            //         quantity - previousQuantity
+            //
+            // Positive:
+            //
+            //     stock increased
+            //
+            // Negative:
+            //
+            //     stock decreased
+            //
+            // Zero:
+            //
+            //     stock quantity unchanged
+            //
+            // ==================================================
+
+            quantityChange: {
+
+                type: Number,
+
+                default: 0
 
             },
 
@@ -759,7 +839,146 @@ const animalFeedSchema =
 
                 trim: true,
 
-                maxlength: 2000
+                maxlength: 5000
+
+            },
+
+
+            // ==================================================
+            // STOCK UPDATE IMAGES
+            // ==================================================
+            //
+            // These are the images attached to the specific
+            // stock update.
+            //
+            // They are copied from the stockUpdateSchema so
+            // the feed card has everything it needs without
+            // querying the current stock history.
+            //
+            // ==================================================
+
+            images: {
+
+                type: [
+
+                    {
+
+                        type: String,
+
+                        trim: true
+
+                    }
+
+                ],
+
+                default: [],
+
+                validate: {
+
+                    validator:
+                        function(images) {
+
+                            return (
+
+                                Array.isArray(images) &&
+
+                                images.length <=
+                                    MAX_STOCK_UPDATE_IMAGES
+
+                            );
+
+                        },
+
+                    message:
+                        `A maximum of ${MAX_STOCK_UPDATE_IMAGES} images is allowed per stock update.`
+
+                }
+
+            },
+
+
+            // ==================================================
+            // RECORDED BY
+            // ==================================================
+            //
+            // The User who performed this stock update.
+            //
+            // ==================================================
+
+            recordedBy: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref: "User",
+
+                default: null
+
+            },
+
+
+            // ==================================================
+            // RECORDED BY NAME
+            // ==================================================
+            //
+            // Snapshot of the user's name.
+            //
+            // This is intentionally stored so historical feed
+            // cards remain correct even if the User changes
+            // their name later.
+            //
+            // ==================================================
+
+            recordedByName: {
+
+                type: String,
+
+                default: "",
+
+                trim: true,
+
+                maxlength: 150
+
+            },
+
+
+            // ==================================================
+            // RECORDED BY IMAGE
+            // ==================================================
+            //
+            // Snapshot of the user's profile image.
+            //
+            // This is what the feed header uses for the updater
+            // avatar.
+            //
+            // ==================================================
+
+            recordedByImage: {
+
+                type: String,
+
+                default: "",
+
+                trim: true,
+
+                maxlength: 1000
+
+            },
+
+
+            // ==================================================
+            // RECORDED AT
+            // ==================================================
+            //
+            // Exact time at which the stock update was made.
+            //
+            // ==================================================
+
+            recordedAt: {
+
+                type: Date,
+
+                default: Date.now
 
             }
 
@@ -853,7 +1072,9 @@ const updateSchema =
 
                 default: "",
 
-                trim: true
+                trim: true,
+
+                maxlength: 1000
 
             },
 
@@ -1109,6 +1330,31 @@ const updateSchema =
             // ==================================================
             // ANIMAL FEED / STOCK UPDATE
             // ==================================================
+            //
+            // This contains the complete historical snapshot
+            // required to render a STOCK UPDATED feed card.
+            //
+            // The card can therefore display:
+            //
+            //     🌾 STOCK UPDATED
+            //
+            //     Dairy Meal
+            //     Main AgroStore
+            //
+            //     120 kg → 175 kg
+            //
+            //     +55 kg
+            //
+            //     Received new delivery...
+            //
+            //     [images]
+            //
+            //     John
+            //     [profile image]
+            //
+            //     23 Aug 2026, 7:42 AM
+            //
+            // ==================================================
 
             animalFeed: {
 
@@ -1187,6 +1433,15 @@ updateSchema.index({
 updateSchema.index({
 
     "animalFeed.roomNumber": 1,
+
+    createdAt: -1
+
+});
+
+
+updateSchema.index({
+
+    "animalFeed.recordedBy": 1,
 
     createdAt: -1
 
@@ -1527,12 +1782,16 @@ updateSchema.pre(
 
 
         // ==================================================
-        // NORMALIZE ANIMAL FEED UPDATE
+        // NORMALIZE ANIMAL FEED / STOCK UPDATE
         // ==================================================
 
         if (
             this.animalFeed
         ) {
+
+            // ==================================================
+            // STOCK NAME
+            // ==================================================
 
             if (
                 this.animalFeed.feedName
@@ -1546,6 +1805,10 @@ updateSchema.pre(
             }
 
 
+            // ==================================================
+            // STOCK TYPE
+            // ==================================================
+
             if (
                 this.animalFeed.feedType
             ) {
@@ -1558,6 +1821,26 @@ updateSchema.pre(
             }
 
 
+            // ==================================================
+            // STORAGE NAME
+            // ==================================================
+
+            if (
+                this.animalFeed.storageName
+            ) {
+
+                this.animalFeed.storageName =
+                    String(
+                        this.animalFeed.storageName
+                    ).trim();
+
+            }
+
+
+            // ==================================================
+            // UNIT
+            // ==================================================
+
             if (
                 this.animalFeed.unit
             ) {
@@ -1569,6 +1852,10 @@ updateSchema.pre(
 
             }
 
+
+            // ==================================================
+            // STOCK UPDATE NOTE
+            // ==================================================
 
             if (
                 this.animalFeed.stockUpdateNote
@@ -1583,7 +1870,103 @@ updateSchema.pre(
 
 
             // ==================================================
-            // KEEP QUANTITY VALID
+            // RECORDED BY NAME
+            // ==================================================
+
+            if (
+                this.animalFeed.recordedByName
+            ) {
+
+                this.animalFeed.recordedByName =
+                    String(
+                        this.animalFeed.recordedByName
+                    ).trim();
+
+            }
+
+
+            // ==================================================
+            // RECORDED BY IMAGE
+            // ==================================================
+
+            if (
+                this.animalFeed.recordedByImage
+            ) {
+
+                this.animalFeed.recordedByImage =
+                    String(
+                        this.animalFeed.recordedByImage
+                    ).trim();
+
+            }
+
+
+            // ==================================================
+            // NORMALIZE STOCK UPDATE IMAGES
+            // ==================================================
+
+            if (
+                !Array.isArray(
+                    this.animalFeed.images
+                )
+            ) {
+
+                this.animalFeed.images = [];
+
+            }
+
+
+            this.animalFeed.images =
+
+                this.animalFeed.images
+
+                    .filter(Boolean)
+
+                    .map(
+                        image =>
+                            String(image).trim()
+                    )
+
+                    .filter(Boolean)
+
+                    .slice(
+                        0,
+                        MAX_STOCK_UPDATE_IMAGES
+                    );
+
+
+            // ==================================================
+            // KEEP PREVIOUS QUANTITY VALID
+            // ==================================================
+
+            if (
+                this.animalFeed.previousQuantity !== null &&
+                this.animalFeed.previousQuantity !== undefined
+            ) {
+
+                const previousQuantity =
+                    Number(
+                        this.animalFeed.previousQuantity
+                    );
+
+
+                if (
+                    Number.isFinite(
+                        previousQuantity
+                    ) &&
+                    previousQuantity >= 0
+                ) {
+
+                    this.animalFeed.previousQuantity =
+                        previousQuantity;
+
+                }
+
+            }
+
+
+            // ==================================================
+            // KEEP CURRENT QUANTITY VALID
             // ==================================================
 
             if (
@@ -1611,8 +1994,69 @@ updateSchema.pre(
 
             }
 
+
+            // ==================================================
+            // CALCULATE QUANTITY CHANGE
+            // ==================================================
+            //
+            // Always derive this from the two quantities.
+            //
+            // This prevents the feed card from displaying an
+            // incorrect difference.
+            //
+            // ==================================================
+
+            const previousQuantity =
+                Number(
+                    this.animalFeed.previousQuantity
+                );
+
+
+            const quantity =
+                Number(
+                    this.animalFeed.quantity
+                );
+
+
+            if (
+
+                Number.isFinite(
+                    previousQuantity
+                ) &&
+
+                Number.isFinite(
+                    quantity
+                )
+
+            ) {
+
+                this.animalFeed.quantityChange =
+                    quantity -
+                    previousQuantity;
+
+            }
+
+
+            // ==================================================
+            // RECORDED AT
+            // ==================================================
+
+            if (
+                !this.animalFeed.recordedAt
+            ) {
+
+                this.animalFeed.recordedAt =
+                    this.createdAt ||
+                    new Date();
+
+            }
+
         }
 
+
+        // ==================================================
+        // NEXT
+        // ==================================================
 
         next();
 
@@ -1634,6 +2078,18 @@ function() {
 
 
 // ==========================================================
+// STATIC: MAX STOCK UPDATE IMAGES
+// ==========================================================
+
+updateSchema.statics.getMaxStockUpdateImages =
+function() {
+
+    return MAX_STOCK_UPDATE_IMAGES;
+
+};
+
+
+// ==========================================================
 // MODEL
 // ==========================================================
 
@@ -1648,11 +2104,15 @@ const Update =
 
 
 // ==========================================================
-// CONSTANT EXPORT
+// CONSTANT EXPORTS
 // ==========================================================
 
 Update.MAX_POST_IMAGES =
     MAX_POST_IMAGES;
+
+
+Update.MAX_STOCK_UPDATE_IMAGES =
+    MAX_STOCK_UPDATE_IMAGES;
 
 
 // ==========================================================
