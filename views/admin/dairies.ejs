@@ -1,13 +1,15 @@
 <% /*
 ==============================================================
 DAIRY FARM HORIZONTAL STATUS CARDS
+==============================================================
 
 FILE:
     views/admin/dairies.ejs
 
 PURPOSE:
     Reusable EJS partial displaying Dairy Farms in a
-    WhatsApp Status-style horizontal scrollable row.
+    WhatsApp / Facebook / Instagram Stories-style
+    horizontal scrollable card row.
 
 CARD ORDER:
 
@@ -31,424 +33,1226 @@ PROFILE IMAGE:
 
     1. profileImage
     2. profileImages[0]
-    3. Generated avatar when no image exists.
+    3. Generated avatar
+
+DESIGN:
+
+    • Greenish theme
+    • Story-style vertical cards
+    • Mobile card:
+          108px × 150px
+    • Horizontal scrolling
+    • Touch-friendly
+    • Scroll snapping
+    • No visible scrollbar
+    • Responsive laptop sizing
+    • Very-small-screen adjustment
 
 IMPORTANT:
 
     This is a PARTIAL.
+
     It is intended to be included inside another view.
 
 ==============================================================
 */ %>
 
 
+<%
+/* ==========================================================
+   SAFE DAIRY ARRAY
+========================================================== */
+
+const dairyFarmSource =
+    Array.isArray(dairies)
+        ? dairies
+        : [];
+
+
+/* ==========================================================
+   FILTER DAIRY FARMS
+
+   Dairy Farm:
+       code < 0
+========================================================== */
+
+const dairyFarms =
+    dairyFarmSource.filter(
+        function (dairy) {
+
+            if (!dairy) {
+
+                return false;
+
+            }
+
+
+            if (
+                dairy.code === null ||
+                dairy.code === undefined
+            ) {
+
+                return false;
+
+            }
+
+
+            return (
+                Number(dairy.code) < 0
+            );
+
+        }
+    );
+
+%>
+
+
 <style>
 
 /* ==========================================================
-   DAIRY FARM SECTION
-   ========================================================== */
+   DAIRY FARM STATUS SECTION
+========================================================== */
 
 .dairy-farms-section {
 
-    width: 100%;
+    width:
+        100%;
 
-    margin: 0;
+    margin:
+        0;
 
-    padding: 0 0 24px;
+    padding:
+        0 0 20px;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
 }
 
 
 /* ==========================================================
    SECTION HEADER
-   ========================================================== */
+========================================================== */
 
 .dairy-farms-section-header {
 
-    display: flex;
+    width:
+        100%;
 
-    align-items: center;
+    display:
+        flex;
 
-    justify-content: space-between;
+    align-items:
+        flex-start;
 
-    margin: 0 0 14px;
+    justify-content:
+        space-between;
 
-    padding: 0 2px;
+    gap:
+        12px;
 
-}
+    margin:
+        0 0 12px;
 
+    padding:
+        0 2px;
 
-.dairy-farms-section-header h2 {
-
-    margin: 0;
-
-    color: #eef3ef;
-
-    font-size: 21px;
-
-    font-weight: 700;
-
-    line-height: 1.2;
-
-    letter-spacing: -0.3px;
+    box-sizing:
+        border-box;
 
 }
 
 
-.dairy-farms-section-header p {
+.dairy-farms-section-heading {
 
-    margin: 5px 0 0;
+    min-width:
+        0;
 
-    color: #89948e;
+    flex:
+        1;
 
-    font-size: 13px;
+}
 
-    line-height: 1.4;
+
+.dairy-farms-section-title {
+
+    margin:
+        0;
+
+    color:
+        #26352c;
+
+    font-size:
+        19px;
+
+    font-weight:
+        800;
+
+    line-height:
+        1.3;
+
+    letter-spacing:
+        -.02em;
+
+}
+
+
+.dairy-farms-section-description {
+
+    margin:
+        4px 0 0;
+
+    color:
+        #7b877f;
+
+    font-size:
+        11px;
+
+    line-height:
+        1.45;
 
 }
 
 
 /* ==========================================================
-   HORIZONTAL SCROLLER
-   ========================================================== */
+   STATUS LABEL
+========================================================== */
+
+.dairy-farms-status-label {
+
+    flex:
+        0 0 auto;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        5px;
+
+    padding:
+        6px 9px;
+
+    border:
+        1px solid
+        #dcebdd;
+
+    border-radius:
+        999px;
+
+    background:
+        #f2f9f3;
+
+    color:
+        #39734a;
+
+    font-size:
+        9px;
+
+    font-weight:
+        800;
+
+    line-height:
+        1;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        .04em;
+
+}
+
+
+.dairy-farms-status-dot {
+
+    width:
+        6px;
+
+    height:
+        6px;
+
+    flex:
+        0 0 6px;
+
+    border-radius:
+        50%;
+
+    background:
+        #39a65a;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(57,166,90,.10);
+
+}
+
+
+/* ==========================================================
+   HORIZONTAL STORY SCROLLER
+========================================================== */
 
 .dairy-farms-scroller {
 
-    display: flex;
+    width:
+        100%;
 
-    flex-direction: row;
+    display:
+        flex;
 
-    flex-wrap: nowrap;
+    flex-direction:
+        row;
 
-    align-items: stretch;
+    flex-wrap:
+        nowrap;
 
-    gap: 12px;
+    align-items:
+        stretch;
 
-    width: 100%;
+    gap:
+        10px;
 
-    overflow-x: auto;
+    overflow-x:
+        auto;
 
-    overflow-y: hidden;
+    overflow-y:
+        hidden;
 
-    padding: 2px 4px 10px;
+    padding:
+        4px 3px 10px;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
 
-    scroll-snap-type: x proximity;
+    scroll-snap-type:
+        x proximity;
 
-    -webkit-overflow-scrolling: touch;
+    scroll-behavior:
+        smooth;
 
-    scrollbar-width: none;
+    -webkit-overflow-scrolling:
+        touch;
 
-    overscroll-behavior-x: contain;
+    scrollbar-width:
+        none;
+
+    overscroll-behavior-x:
+        contain;
+
+    touch-action:
+        pan-x;
 
 }
 
 
 .dairy-farms-scroller::-webkit-scrollbar {
 
-    display: none;
+    display:
+        none;
 
 }
 
 
 /* ==========================================================
-   ALL FARM CARDS
-   ========================================================== */
+   BASE STORY CARD
+
+   DEFAULT:
+       Laptop / Desktop
+
+   Mobile overrides appear below.
+========================================================== */
 
 .dairy-farm-card {
 
-    position: relative;
+    position:
+        relative;
 
-    flex: 0 0 120px;
+    flex:
+        0 0 118px;
 
-    width: 120px;
+    width:
+        118px;
 
-    height: 174px;
+    min-width:
+        118px;
 
-    min-width: 120px;
+    height:
+        164px;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
-    display: flex;
+    display:
+        flex;
 
-    flex-direction: column;
+    flex-direction:
+        column;
 
-    justify-content: flex-end;
+    justify-content:
+        flex-end;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
 
-    border-radius: 17px;
+    border:
+        1px solid
+        #dfe8e1;
 
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius:
+        17px;
 
-    background: #151b18;
+    background:
+        #edf3ee;
 
-    text-decoration: none;
+    text-decoration:
+        none;
 
-    scroll-snap-align: start;
+    scroll-snap-align:
+        start;
 
     box-shadow:
-        0 5px 18px rgba(0, 0, 0, 0.20);
+        0 3px 10px
+        rgba(28,57,37,.08);
 
     transition:
-        transform 0.16s ease,
-        box-shadow 0.16s ease;
+        transform .16s ease,
+        box-shadow .16s ease;
 
 }
 
+
+/* ==========================================================
+   CARD HOVER
+========================================================== */
 
 .dairy-farm-card:hover {
 
-    transform: translateY(-2px);
+    transform:
+        translateY(-2px);
 
     box-shadow:
-        0 8px 22px rgba(0, 0, 0, 0.28);
+        0 7px 17px
+        rgba(28,57,37,.13);
 
 }
 
 
+/* ==========================================================
+   CARD PRESS
+========================================================== */
+
 .dairy-farm-card:active {
 
-    transform: scale(0.96);
+    transform:
+        scale(.96);
+
+}
+
+
+/* ==========================================================
+   CARD FOCUS
+========================================================== */
+
+.dairy-farm-card:focus-visible {
+
+    outline:
+        2px solid
+        #3d9655;
+
+    outline-offset:
+        3px;
 
 }
 
 
 /* ==========================================================
    FARM IMAGE
-   ========================================================== */
+========================================================== */
 
 .dairy-farm-card-image {
 
-    position: absolute;
+    position:
+        absolute;
 
-    inset: 0;
+    inset:
+        0;
 
-    width: 100%;
+    width:
+        100%;
 
-    height: 100%;
+    height:
+        100%;
 
-    display: block;
+    display:
+        block;
 
-    object-fit: cover;
+    object-fit:
+        cover;
 
-    object-position: center;
+    object-position:
+        center;
 
 }
 
 
 /* ==========================================================
-   IMAGE GRADIENT
-   ========================================================== */
+   IMAGE OVERLAY
+========================================================== */
 
 .dairy-farm-card-overlay {
 
-    position: absolute;
+    position:
+        absolute;
 
-    inset: 0;
+    inset:
+        0;
 
-    z-index: 1;
+    z-index:
+        1;
+
+    pointer-events:
+        none;
 
     background:
 
         linear-gradient(
             to bottom,
-            rgba(0, 0, 0, 0.02) 0%,
-            rgba(0, 0, 0, 0.04) 35%,
-            rgba(0, 0, 0, 0.30) 58%,
-            rgba(0, 0, 0, 0.88) 100%
+            rgba(15,35,22,.02) 0%,
+            rgba(15,35,22,.04) 38%,
+            rgba(15,35,22,.22) 56%,
+            rgba(10,27,16,.84) 100%
         );
 
-    pointer-events: none;
+}
+
+
+/* ==========================================================
+   GREEN STORY RING
+========================================================== */
+
+.dairy-farm-card-status {
+
+    position:
+        absolute;
+
+    top:
+        8px;
+
+    left:
+        8px;
+
+    z-index:
+        3;
+
+    width:
+        36px;
+
+    height:
+        36px;
+
+    padding:
+        2px;
+
+    box-sizing:
+        border-box;
+
+    border:
+        2px solid
+        #39a65a;
+
+    border-radius:
+        50%;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 2px 7px
+        rgba(0,0,0,.16);
+
+}
+
+
+.dairy-farm-card-status-inner {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    overflow:
+        hidden;
+
+    border-radius:
+        50%;
+
+    background:
+        #e8f2e9;
+
+}
+
+
+.dairy-farm-card-status-inner img {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    display:
+        block;
+
+    object-fit:
+        cover;
 
 }
 
 
 /* ==========================================================
    FARM NAME
-   ========================================================== */
+========================================================== */
 
 .dairy-farm-card-name {
 
-    position: relative;
+    position:
+        relative;
 
-    z-index: 2;
+    z-index:
+        2;
 
-    display: -webkit-box;
+    display:
+        -webkit-box;
 
-    width: 100%;
+    width:
+        100%;
 
-    padding: 10px 10px 11px;
+    padding:
+        9px
+        8px
+        10px;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: 14px;
+    font-size:
+        12px;
 
-    font-weight: 700;
+    font-weight:
+        800;
 
-    line-height: 1.25;
+    line-height:
+        1.25;
 
-    text-align: left;
+    text-align:
+        left;
 
     text-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.55);
+        0 1px 4px
+        rgba(0,0,0,.55);
 
-    -webkit-box-orient: vertical;
+    -webkit-box-orient:
+        vertical;
 
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp:
+        2;
 
 }
 
 
 /* ==========================================================
-   ADD CARD
-   ========================================================== */
+   ADD FARM CARD
+========================================================== */
 
 .dairy-farm-add-card {
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    padding: 12px;
+    padding:
+        10px;
 
     background:
 
         linear-gradient(
             145deg,
-            #18211d,
-            #111613
+            #f2faf4 0%,
+            #e6f3e8 100%
         );
 
-    border-color:
-        rgba(48, 205, 105, 0.22);
+    border:
+        1px solid
+        #cfe5d3;
+
+}
+
+
+/* ==========================================================
+   ADD CARD STATUS DOT
+========================================================== */
+
+.dairy-farm-add-card::before {
+
+    content:
+        "";
+
+    position:
+        absolute;
+
+    top:
+        8px;
+
+    left:
+        8px;
+
+    width:
+        7px;
+
+    height:
+        7px;
+
+    border-radius:
+        50%;
+
+    background:
+        #39a65a;
+
+    box-shadow:
+        0 0 0 4px
+        rgba(57,166,90,.10);
 
 }
 
 
 /* ==========================================================
    ADD ICON
-   ========================================================== */
+========================================================== */
 
 .dairy-farm-add-icon {
 
-    width: 66px;
+    width:
+        58px;
 
-    height: 66px;
+    height:
+        58px;
 
-    margin-bottom: 13px;
+    margin:
+        0 0 11px;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
 
-    border-radius: 50%;
+    border:
+        2px solid
+        #43a45a;
 
-    background: #202c26;
+    border-radius:
+        50%;
 
-    border: 2px solid #25d366;
+    background:
+        #ffffff;
 
-    color: #25d366;
+    color:
+        #398b4d;
 
-    font-size: 38px;
+    font-size:
+        34px;
 
-    font-weight: 300;
+    font-weight:
+        300;
 
-    line-height: 1;
+    line-height:
+        1;
 
     box-shadow:
-        0 0 0 5px rgba(37, 211, 102, 0.07);
+        0 0 0 5px
+        rgba(67,164,90,.08);
 
 }
 
 
+/* ==========================================================
+   ADD LABEL
+========================================================== */
+
 .dairy-farm-add-label {
 
-    color: #f2f5f3;
+    color:
+        #315b3c;
 
-    font-size: 15px;
+    font-size:
+        13px;
 
-    font-weight: 700;
+    font-weight:
+        800;
 
-    line-height: 1.2;
+    line-height:
+        1.2;
+
+    text-align:
+        center;
+
+}
+
+
+/* ==========================================================
+   ADD DESCRIPTION
+========================================================== */
+
+.dairy-farm-add-description {
+
+    margin-top:
+        4px;
+
+    color:
+        #7a8c80;
+
+    font-size:
+        8px;
+
+    line-height:
+        1.35;
+
+    text-align:
+        center;
 
 }
 
 
 /* ==========================================================
    EMPTY STATE
-   ========================================================== */
+========================================================== */
 
 .dairy-farms-empty {
 
-    flex: 0 0 auto;
+    flex:
+        0 0 210px;
 
-    min-width: 220px;
+    width:
+        210px;
 
-    min-height: 174px;
+    min-width:
+        210px;
 
-    display: flex;
+    height:
+        164px;
 
-    align-items: center;
+    display:
+        flex;
 
-    justify-content: center;
+    flex-direction:
+        column;
 
-    padding: 18px;
+    align-items:
+        center;
 
-    box-sizing: border-box;
+    justify-content:
+        center;
 
-    border-radius: 17px;
+    padding:
+        18px;
 
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-sizing:
+        border-box;
 
-    background: #151b18;
+    border:
+        1px dashed
+        #cddbd0;
 
-    color: #89948e;
+    border-radius:
+        17px;
 
-    font-size: 14px;
+    background:
+        #f7faf8;
 
-    text-align: center;
+    color:
+        #7d8981;
+
+    font-size:
+        11px;
+
+    line-height:
+        1.5;
+
+    text-align:
+        center;
+
+}
+
+
+/* ==========================================================
+   EMPTY ICON
+========================================================== */
+
+.dairy-farms-empty-icon {
+
+    width:
+        36px;
+
+    height:
+        36px;
+
+    margin-bottom:
+        8px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border:
+        1px solid
+        #d4e3d7;
+
+    border-radius:
+        50%;
+
+    background:
+        #edf6ef;
+
+    color:
+        #579167;
+
+    font-size:
+        17px;
 
 }
 
 
 /* ==========================================================
    MOBILE
-   ========================================================== */
+   ----------------------------------------------------------
+   REQUIRED SIZE:
 
-@media (max-width: 480px) {
+       108px × 150px
+========================================================== */
+
+@media (max-width:600px) {
+
+    .dairy-farms-section {
+
+        padding-bottom:
+            16px;
+
+    }
+
+
+    .dairy-farms-section-title {
+
+        font-size:
+            18px;
+
+    }
+
+
+    .dairy-farms-section-description {
+
+        font-size:
+            10px;
+
+    }
+
+
+    .dairy-farms-status-label {
+
+        padding:
+            6px 8px;
+
+        font-size:
+            8px;
+
+    }
+
+
+    /* ==============================================
+       MOBILE CARD SIZE
+       ============================================== */
 
     .dairy-farm-card {
 
-        flex-basis: 116px;
+        flex:
+            0 0 108px;
 
-        width: 116px;
+        width:
+            108px;
 
-        min-width: 116px;
+        min-width:
+            108px;
 
-        height: 170px;
+        height:
+            150px;
+
+        border-radius:
+            15px;
 
     }
 
 
     .dairy-farms-scroller {
 
-        gap: 10px;
+        gap:
+            9px;
 
-        padding-left: 2px;
+        padding-left:
+            2px;
 
-        padding-right: 2px;
+        padding-right:
+            2px;
+
+    }
+
+
+    .dairy-farm-card-status {
+
+        width:
+            34px;
+
+        height:
+            34px;
+
+        top:
+            7px;
+
+        left:
+            7px;
+
+    }
+
+
+    .dairy-farm-card-name {
+
+        padding:
+            8px
+            7px
+            9px;
+
+        font-size:
+            11px;
+
+    }
+
+
+    .dairy-farm-add-icon {
+
+        width:
+            56px;
+
+        height:
+            56px;
+
+        font-size:
+            32px;
+
+    }
+
+
+    .dairy-farm-add-label {
+
+        font-size:
+            12px;
+
+    }
+
+
+    .dairy-farm-add-description {
+
+        font-size:
+            7px;
+
+    }
+
+
+    .dairy-farms-empty {
+
+        width:
+            200px;
+
+        min-width:
+            200px;
+
+        height:
+            150px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL SCREENS
+   ----------------------------------------------------------
+   Keeps the cards comfortable on narrow phones.
+========================================================== */
+
+@media (max-width:380px) {
+
+    .dairy-farm-card {
+
+        flex:
+            0 0 102px;
+
+        width:
+            102px;
+
+        min-width:
+            102px;
+
+        height:
+            145px;
+
+        border-radius:
+            14px;
+
+    }
+
+
+    .dairy-farms-scroller {
+
+        gap:
+            8px;
+
+    }
+
+
+    .dairy-farm-card-status {
+
+        width:
+            32px;
+
+        height:
+            32px;
+
+        top:
+            6px;
+
+        left:
+            6px;
+
+    }
+
+
+    .dairy-farm-card-name {
+
+        padding:
+            7px
+            6px
+            8px;
+
+        font-size:
+            10px;
+
+    }
+
+
+    .dairy-farm-add-icon {
+
+        width:
+            52px;
+
+        height:
+            52px;
+
+        font-size:
+            30px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   LARGE LAPTOPS / DESKTOP
+========================================================== */
+
+@media (min-width:1200px) {
+
+    .dairy-farm-card {
+
+        flex:
+            0 0 126px;
+
+        width:
+            126px;
+
+        min-width:
+            126px;
+
+        height:
+            176px;
+
+        border-radius:
+            18px;
+
+    }
+
+
+    .dairy-farms-scroller {
+
+        gap:
+            12px;
+
+    }
+
+
+    .dairy-farm-card-status {
+
+        width:
+            40px;
+
+        height:
+            40px;
+
+    }
+
+
+    .dairy-farm-card-name {
+
+        font-size:
+            13px;
+
+    }
+
+
+    .dairy-farm-add-icon {
+
+        width:
+            64px;
+
+        height:
+            64px;
+
+        font-size:
+            36px;
 
     }
 
@@ -457,20 +1261,22 @@ IMPORTANT:
 
 /* ==========================================================
    REDUCED MOTION
-   ========================================================== */
+========================================================== */
 
 @media (prefers-reduced-motion: reduce) {
 
     .dairy-farms-scroller {
 
-        scroll-behavior: auto;
+        scroll-behavior:
+            auto;
 
     }
 
 
     .dairy-farm-card {
 
-        transition: none;
+        transition:
+            none;
 
     }
 
@@ -479,64 +1285,94 @@ IMPORTANT:
 </style>
 
 
-<%
-/* ==========================================================
-   FILTER DAIRY FARMS
-   ========================================================== */
+<!-- ==========================================================
+     DAIRY FARMS SECTION
+========================================================== -->
 
-const dairyFarms =
-    Array.isArray(dairies)
-
-        ? dairies.filter(function (dairy) {
-
-            return (
-
-                dairy &&
-
-                dairy.code !== null &&
-
-                dairy.code !== undefined &&
-
-                Number(dairy.code) < 0
-
-            );
-
-        })
-
-        : [];
-
-%>
-
-
-<section class="dairy-farms-section">
+<section
+    class="dairy-farms-section"
+    aria-label="Dairy farms"
+>
 
 
     <!-- ======================================================
-         SECTION HEADER
+         HEADER
     ======================================================= -->
 
-    <div class="dairy-farms-section-header">
+    <header
+        class="dairy-farms-section-header"
+    >
 
-        <div>
 
-            <h2>
+        <div
+            class="dairy-farms-section-heading"
+        >
+
+
+            <h2
+                class="dairy-farms-section-title"
+            >
+
                 Dairy Farms
+
             </h2>
 
-            <p>
+
+            <p
+                class="dairy-farms-section-description"
+            >
+
                 Your dairy farms
+
             </p>
+
 
         </div>
 
-    </div>
+
+        <span
+            class="dairy-farms-status-label"
+        >
+
+            <span
+                class="dairy-farms-status-dot"
+                aria-hidden="true"
+            ></span>
+
+            Farms
+
+        </span>
+
+
+    </header>
+
 
 
     <!-- ======================================================
-         HORIZONTAL CARD ROW
+         HORIZONTAL STORIES ROW
+
+         Cards remain in ONE horizontal row.
+
+         They NEVER wrap.
+
+         Mobile:
+             108px × 150px
+
+         Very small screens:
+             102px × 145px
+
+         Laptop:
+             118px × 164px
+
+         Large desktop:
+             126px × 176px
     ======================================================= -->
 
-    <div class="dairy-farms-scroller">
+    <div
+        class="dairy-farms-scroller"
+        role="list"
+        aria-label="Dairy farms"
+    >
 
 
         <!-- ==================================================
@@ -546,46 +1382,82 @@ const dairyFarms =
         <a
             href="/add"
             class="dairy-farm-card dairy-farm-add-card"
+            role="listitem"
             aria-label="Add Dairy Farm"
         >
+
 
             <span
                 class="dairy-farm-add-icon"
                 aria-hidden="true"
             >
+
                 +
+
             </span>
 
-            <span class="dairy-farm-add-label">
-                Add
+
+            <span
+                class="dairy-farm-add-label"
+            >
+
+                Add Farm
+
             </span>
+
+
+            <span
+                class="dairy-farm-add-description"
+            >
+
+                Create a new dairy farm
+
+            </span>
+
 
         </a>
+
 
 
         <!-- ==================================================
              EXISTING DAIRY FARMS
         ================================================== -->
 
-        <% dairyFarms.forEach(function (dairy) { %>
+        <% dairyFarms.forEach(
+            function (dairy) {
 
-            <%
+                if (
+                    !dairy ||
+                    !dairy._id
+                ) {
 
-                /*
-                 * Select the best available image.
-                 *
-                 * Priority:
-                 *
-                 *     1. profileImage
-                 *     2. profileImages[0]
-                 *     3. Generated avatar
-                 */
+                    return;
 
-                let farmImage = "";
+                }
+
+
+                /* ==============================================
+                   FARM NAME
+                =============================================== */
+
+                const farmName =
+                    dairy.name ||
+                    "Dairy Farm";
+
+
+                /* ==============================================
+                   FARM IMAGE
+                =============================================== */
+
+                let farmImage =
+                    "";
+
 
                 if (
                     dairy.profileImage &&
-                    String(dairy.profileImage).trim()
+                    String(
+                        dairy.profileImage
+                    ).trim()
                 ) {
 
                     farmImage =
@@ -593,56 +1465,82 @@ const dairyFarms =
                             dairy.profileImage
                         ).trim();
 
-                } else if (
+                }
+
+
+                /* ==============================================
+                   FALLBACK IMAGE
+                =============================================== */
+
+                if (
+                    !farmImage &&
                     Array.isArray(
                         dairy.profileImages
                     ) &&
-                    dairy.profileImages.length > 0 &&
-                    dairy.profileImages[0]
+                    dairy.profileImages.length
                 ) {
 
-                    farmImage =
+                    const firstImage =
+                        dairy.profileImages[0];
+
+
+                    if (
+                        firstImage &&
                         String(
-                            dairy.profileImages[0]
-                        ).trim();
+                            firstImage
+                        ).trim()
+                    ) {
+
+                        farmImage =
+                            String(
+                                firstImage
+                            ).trim();
+
+                    }
 
                 }
 
+
+                /* ==============================================
+                   GENERATED FALLBACK
+                =============================================== */
 
                 if (!farmImage) {
 
                     farmImage =
-                        "https://ui-avatars.com/api/?name=" +
+                        "https://ui-avatars.com/api/?" +
+                        "name=" +
                         encodeURIComponent(
-                            dairy.name || "Dairy Farm"
+                            farmName
                         ) +
-                        "&background=25322b" +
-                        "&color=ffffff" +
+                        "&background=e5f2e7" +
+                        "&color=39734a" +
                         "&size=256";
 
                 }
 
-            %>
+        %>
 
 
             <!-- ==============================================
-                 DAIRY FARM CARD
+                 FARM STORY CARD
             =============================================== -->
 
             <a
                 href="/dairy/<%= dairy._id %>"
                 class="dairy-farm-card"
-                aria-label="<%= dairy.name || 'Dairy Farm' %>"
+                role="listitem"
+                aria-label="Open <%= farmName %>"
             >
 
 
                 <!-- ==========================================
-                     PROFILE IMAGE
+                     MAIN IMAGE
                 =========================================== -->
 
                 <img
                     src="<%= farmImage %>"
-                    alt="<%= dairy.name || 'Dairy Farm' %>"
+                    alt="<%= farmName %>"
                     class="dairy-farm-card-image"
                     loading="lazy"
                 >
@@ -659,12 +1557,37 @@ const dairyFarms =
 
 
                 <!-- ==========================================
+                     STORY-STYLE PROFILE RING
+                =========================================== -->
+
+                <span
+                    class="dairy-farm-card-status"
+                    aria-hidden="true"
+                >
+
+                    <span
+                        class="dairy-farm-card-status-inner"
+                    >
+
+                        <img
+                            src="<%= farmImage %>"
+                            alt=""
+                        >
+
+                    </span>
+
+                </span>
+
+
+                <!-- ==========================================
                      FARM NAME
                 =========================================== -->
 
-                <span class="dairy-farm-card-name">
+                <span
+                    class="dairy-farm-card-name"
+                >
 
-                    <%= dairy.name || "Dairy Farm" %>
+                    <%= farmName %>
 
                 </span>
 
@@ -675,21 +1598,46 @@ const dairyFarms =
         <% }); %>
 
 
+
         <!-- ==================================================
              EMPTY STATE
         =================================================== -->
 
-        <% if (dairyFarms.length === 0) { %>
+        <% if (
+            dairyFarms.length === 0
+        ) { %>
 
-            <div class="dairy-farms-empty">
 
-                No Dairy Farms found.
+            <div
+                class="dairy-farms-empty"
+                role="status"
+            >
+
+
+                <span
+                    class="dairy-farms-empty-icon"
+                    aria-hidden="true"
+                >
+
+                    +
+
+                </span>
+
+
+                <span>
+
+                    No Dairy Farms found.
+
+                </span>
+
 
             </div>
+
 
         <% } %>
 
 
     </div>
+
 
 </section>
