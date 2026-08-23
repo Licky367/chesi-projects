@@ -11,8 +11,66 @@ PURPOSE:
 
     The content-item card is displayed ONLY when the
     current dairy has a dwellNumber.
+
+    DATABASE UPDATE:
+
+        contentItemController.js
+            ↓
+        contentItemService.js
+            ↓
+        Dairy
 ==========================================================
 */ %>
+
+
+<%
+/* =========================================================
+   SAFE CONTENT ITEM
+========================================================= */
+
+const safeContentItem =
+    typeof contentItem !== "undefined" &&
+    contentItem
+        ? contentItem
+        : dairy;
+
+
+/* =========================================================
+   SAFE STORAGE
+========================================================= */
+
+const safeStorage =
+    typeof storage !== "undefined"
+        ? storage
+        : null;
+
+
+/* =========================================================
+   SAFE MESSAGES
+========================================================= */
+
+const safeSuccessMessage =
+    typeof successMessage !== "undefined"
+        ? successMessage
+        : null;
+
+
+const safePageError =
+    typeof pageError !== "undefined"
+        ? pageError
+        : null;
+
+
+/* =========================================================
+   SAFE LATEST STOCK UPDATE
+========================================================= */
+
+const safeLatestStockUpdate =
+    typeof latestStockUpdate !== "undefined"
+        ? latestStockUpdate
+        : null;
+
+%>
 
 
 <div class="dairy-page">
@@ -51,61 +109,66 @@ PURPOSE:
 
 
     <!-- =================================================
-         STORAGE CONTENT ITEM
+         CONTENT ITEM CARD
     ==================================================
 
-         The content-item card is displayed ONLY when
-         the dairy has a dwellNumber.
+         IMPORTANT:
 
-         The card uses contentsItemController.js for
-         database updates.
+         The ONLY condition for displaying this card
+         is that the current Dairy has a dwellNumber.
 
-         No storage update route is invented here.
+         We do NOT require:
+
+             contentItem
+             storage
+             storage._id
+             contentItem._id
+
+         here.
+
+         The card is part of dairySet.ejs.
+
+         Database updates are handled by:
+
+             contentItemController.js
     ================================================== -->
 
     <% if (
         dairy &&
         dairy.dwellNumber != null &&
-        String(dairy.dwellNumber).trim() !== "" &&
-        typeof contentItem !== "undefined" &&
-        contentItem
+        String(
+            dairy.dwellNumber
+        ).trim() !== ""
     ) { %>
 
 
         <%- include("update/content-item", {
 
-            dairy: dairy,
+            dairy:
+                dairy,
 
             storage:
-                typeof storage !== "undefined"
-                    ? storage
-                    : null,
+                safeStorage,
 
             item:
-                contentItem,
+                safeContentItem,
 
             user:
                 user,
 
             successMessage:
-                typeof successMessage !== "undefined"
-                    ? successMessage
-                    : null,
+                safeSuccessMessage,
 
             pageError:
-                typeof pageError !== "undefined"
-                    ? pageError
-                    : null,
+                safePageError,
 
             latestStockUpdate:
-                typeof latestStockUpdate !== "undefined"
-                    ? latestStockUpdate
-                    : null,
+                safeLatestStockUpdate,
 
             contentItemUpdateAction:
                 typeof contentItemUpdateAction !== "undefined"
                     ? contentItemUpdateAction
-                    : null
+                    : "/dairy/" + dairy._id + "/content-item"
 
         }) %>
 
