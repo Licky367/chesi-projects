@@ -686,24 +686,20 @@
                 <% } %>
 
 <!-- =================================================
-                 STOCK UPDATE
+     STOCK UPDATE
 
-                     CONTRACT:
-                         item: item
-                ================================================== -->
+     CONTRACT:
+         update: item
 
-<% if (
-    item.type === "animalFeed"
-) { %>
+     stock-update.ejs expects:
+         update
+================================================= -->
+
+<% if (item.type === "animalFeed") { %>
 
     <%- include("update/stock-update", {
-
-        item: item,
-
-        user: user,
-
-        type: "animalFeed"
-
+        update: item,
+        user: user
     }) %>
 
 <% } %>
