@@ -7,20 +7,32 @@
 // ----------------------------------------------------------
 //
 // Loads the complete Dairy update page and passes all
-// required variables to the appropriate EJS view.
+// required variables to views/update.ejs.
 //
-// VARIABLE CONTRACT
+// IMPORTANT
 // ----------------------------------------------------------
 //
-// The animal-feed item-link component uses:
+// views/update/boolean.ejs is NOT a standalone page.
 //
-//     itemLinks
+// It is an INCLUDE rendered by:
 //
-// `itemLinks` is ALWAYS passed to the view as an ARRAY.
+//     views/update.ejs
 //
-// This matches:
+// Therefore boolean data is loaded here and passed to
+// update.ejs.
 //
-//     views/update/storage/itemLink.ejs
+// BOOLEAN ANIMAL ELIGIBILITY
+// ----------------------------------------------------------
+//
+// An animal is displayed by boolean.ejs when:
+//
+//     1. code is a positive EVEN number
+//
+// OR
+//
+//     2. gender is female
+//
+// The boolean include itself is rendered by update.ejs.
 //
 // ==========================================================
 
@@ -75,16 +87,6 @@ async (req, res) => {
         // ==================================================
         // GET ITEM LINKS
         // ==================================================
-        //
-        // The item-link service resolves the animal-feed
-        // items belonging to the current Dairy Farm.
-        //
-        // The result is passed to the view using the SAME
-        // variable name used by itemLink.ejs:
-        //
-        //     itemLinks
-        //
-        // ==================================================
 
         const resolvedItemLinks =
             await updateService.getItemLinks(
@@ -95,18 +97,53 @@ async (req, res) => {
         // ==================================================
         // SAFE ITEM-LINK ARRAY
         // ==================================================
+
+        const itemLinks =
+            Array.isArray(
+                resolvedItemLinks
+            )
+                ? resolvedItemLinks
+                : [];
+
+
+        // ==================================================
+        // GET BOOLEAN DATA
+        // ==================================================
         //
-        // Never allow itemLinks to become undefined.
+        // boolean.ejs is an INCLUDE inside update.ejs.
         //
-        // itemLink.ejs expects an array and performs:
-        //
-        //     itemLinks.forEach(...)
+        // It therefore receives its data through the parent
+        // update.ejs render.
         //
         // ==================================================
 
-        const itemLinks =
-            Array.isArray(resolvedItemLinks)
-                ? resolvedItemLinks
+        const booleanData =
+            await updateService.getBooleanData();
+
+
+        // ==================================================
+        // SAFE BOOLEAN ANIMAL ARRAY
+        // ==================================================
+
+        const booleanAnimals =
+            Array.isArray(
+                booleanData &&
+                booleanData.animals
+            )
+                ? booleanData.animals
+                : [];
+
+
+        // ==================================================
+        // SAFE BOOLEAN FIELD ARRAY
+        // ==================================================
+
+        const booleanFields =
+            Array.isArray(
+                booleanData &&
+                booleanData.fields
+            )
+                ? booleanData.fields
                 : [];
 
 
@@ -116,17 +153,17 @@ async (req, res) => {
         // NEGATIVE CODE:
         //
         //     Dairy Farm
-        //     → update.ejs
+        //     -> update.ejs
         //
         // POSITIVE CODE:
         //
         //     Animal
-        //     → dairySet.ejs
+        //     -> dairySet.ejs
         //
         // NULL / UNDEFINED:
         //
         //     Structure / Machine / Tool
-        //     → dairySet.ejs
+        //     -> dairySet.ejs
         //
         // ==================================================
 
@@ -153,7 +190,15 @@ async (req, res) => {
 
 
         // ==================================================
-        // RENDER PAGE
+        // RENDER
+        // ==================================================
+        //
+        // BOOLEAN DATA IS PASSED TO update.ejs.
+        //
+        // update.ejs is responsible for including:
+        //
+        //     update/boolean.ejs
+        //
         // ==================================================
 
         return res.render(
@@ -202,10 +247,6 @@ async (req, res) => {
 
                 // ------------------------------------------
                 // CURRENT FARM ASSETS
-                //
-                // These are the animals, structures,
-                // machines and tools belonging to the
-                // currently viewed Dairy Farm.
                 // ------------------------------------------
 
                 assetDairies:
@@ -214,8 +255,6 @@ async (req, res) => {
 
                 // ------------------------------------------
                 // ASSIGNED FARMS
-                //
-                // Used by the farm-switching components.
                 // ------------------------------------------
 
                 assignedFarms:
@@ -224,9 +263,6 @@ async (req, res) => {
 
                 // ------------------------------------------
                 // AGROSTORE INVENTORY
-                //
-                // Populated when the current Dairy record
-                // is an AgroStore.
                 // ------------------------------------------
 
                 animalFeeds:
@@ -235,23 +271,36 @@ async (req, res) => {
 
                 // ------------------------------------------
                 // ANIMAL FEED ITEM LINKS
-                //
-                // IMPORTANT:
-                //
-                // The view receives:
-                //
-                //     itemLinks
-                //
-                // This is the SAME variable name expected
-                // by:
-                //
-                //     update/storage/itemLink.ejs
-                //
-                // It is ALWAYS an array.
                 // ------------------------------------------
 
                 itemLinks:
                     itemLinks,
+
+
+                // ------------------------------------------
+                // BOOLEAN ANIMALS
+                //
+                // Used by:
+                //
+                //     views/update/boolean.ejs
+                //
+                // boolean.ejs is an INCLUDE inside
+                // views/update.ejs.
+                // ------------------------------------------
+
+                booleanAnimals:
+                    booleanAnimals,
+
+
+                // ------------------------------------------
+                // BOOLEAN FIELDS
+                //
+                // Boolean fields discovered from the
+                // Dairy schema.
+                // ------------------------------------------
+
+                booleanFields:
+                    booleanFields,
 
 
                 // ------------------------------------------
@@ -290,10 +339,6 @@ async (req, res) => {
 //
 //     /dairy/:id/toggle-milking
 //
-// The actual database operation is handled by:
-//
-//     updateService.toggleMilking()
-//
 // ==========================================================
 
 exports.toggleMilking =
@@ -313,7 +358,8 @@ async (req, res) => {
                 .status(401)
                 .json({
 
-                    success: false,
+                    success:
+                        false,
 
                     message:
                         "Unauthorized"
@@ -337,7 +383,8 @@ async (req, res) => {
                 .status(400)
                 .json({
 
-                    success: false,
+                    success:
+                        false,
 
                     message:
                         "Dairy ID is required."
@@ -365,7 +412,8 @@ async (req, res) => {
             .status(200)
             .json({
 
-                success: true,
+                success:
+                    true,
 
                 isMilking:
                     dairy.isMilking
@@ -393,7 +441,8 @@ async (req, res) => {
                 .status(404)
                 .json({
 
-                    success: false,
+                    success:
+                        false,
 
                     message:
                         err.message
@@ -416,7 +465,8 @@ async (req, res) => {
                 .status(400)
                 .json({
 
-                    success: false,
+                    success:
+                        false,
 
                     message:
                         err.message
@@ -434,7 +484,8 @@ async (req, res) => {
             .status(500)
             .json({
 
-                success: false,
+                success:
+                    false,
 
                 message:
                     "Failed to toggle milking status."
@@ -452,9 +503,6 @@ async (req, res) => {
 // GET:
 //
 //     /dairy/:id/switch
-//
-// The requested farm must belong to the logged-in
-// dairyWorker.
 //
 // ==========================================================
 
@@ -553,10 +601,6 @@ async (req, res) => {
 
         // ==================================================
         // SWITCH
-        //
-        // The selected farm becomes the farm currently
-        // being viewed.
-        //
         // ==================================================
 
         return res.redirect(
