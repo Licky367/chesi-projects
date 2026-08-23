@@ -1,171 +1,419 @@
 <% /*
 ==============================================================
-ADMIN DAIRY DASHBOARD
+ADMIN DASHBOARD
+==============================================================
 
 FILE:
     views/admin.ejs
 
-ROUTE:
-    /dashboard/dairy
-
 PURPOSE:
-    Main Admin Dairy Dashboard.
+    Main Admin dashboard view.
 
-    Includes:
+    This page combines:
 
-        views/admin/dairies.ejs
-            → Horizontally scrollable Dairy Farm cards
+        1. Dairy Farms
+           views/admin/dairies.ejs
 
-        views/admin/standalone.ejs
-            → Horizontally scrollable Standalone Asset cards
+        2. Standalone Assets
+           views/admin/standalone.ejs
+
+LAYOUT:
+
+    Admin Dashboard
+        |
+        ├── Dairy Farms
+        |      └── Horizontal story cards
+        |
+        └── Standalone Assets
+               └── Horizontal story cards
 
 IMPORTANT:
-    Both files are PARTIALS.
 
-    They are rendered inside this view and are NOT
-    standalone pages.
+    The individual sections remain separate partials.
+
+    This file only provides the Admin page structure
+    and includes the two components.
 
 EXPECTED DATA:
 
     dairies
-        → Dairy Farm records
+        = Dairy Farm records
 
     standaloneAssets
-        → Standalone Dairy assets
+        = Standalone asset records
 
-    user
-        → Logged-in user
 ==============================================================
 */ %>
+
+
+<%
+/* ==========================================================
+   SAFE DATA
+========================================================== */
+
+const safeDairies =
+    Array.isArray(dairies)
+        ? dairies
+        : [];
+
+
+const safeStandaloneAssets =
+    Array.isArray(standaloneAssets)
+        ? standaloneAssets
+        : [];
+
+%>
 
 
 <style>
 
 /* ==========================================================
-   ADMIN DAIRY DASHBOARD
-   ========================================================== */
+   ADMIN PAGE
+========================================================== */
 
-.admin-dashboard {
+.admin-page {
 
-    width: 100%;
+    width:
+        100%;
 
-    max-width: 1200px;
+    min-height:
+        100vh;
 
-    margin: 0 auto;
+    margin:
+        0;
 
-    padding: 20px;
+    padding:
+        18px 14px 30px;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
 
-    color: #f1f5f2;
+    background:
+        #f5f9f6;
 
-}
+    color:
+        #26352c;
 
-
-/* ==========================================================
-   DASHBOARD HEADER
-   ========================================================== */
-
-.admin-dashboard-header {
-
-    margin-bottom: 26px;
-
-}
-
-
-.admin-dashboard-header h1 {
-
-    margin: 0;
-
-    font-size: 28px;
-
-    line-height: 1.2;
-
-    font-weight: 700;
-
-    color: #ffffff;
-
-}
-
-
-.admin-dashboard-header p {
-
-    margin: 6px 0 0;
-
-    font-size: 14px;
-
-    line-height: 1.5;
-
-    color: #8f9994;
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
 }
 
 
 /* ==========================================================
-   DASHBOARD CONTENT
-   ========================================================== */
+   ADMIN CONTENT
+========================================================== */
 
-.admin-dashboard-content {
+.admin-page-content {
 
-    width: 100%;
+    width:
+        100%;
 
-}
+    max-width:
+        1200px;
 
-
-/* ==========================================================
-   DASHBOARD SECTION
-   ========================================================== */
-
-.admin-dashboard-section {
-
-    width: 100%;
-
-    margin: 0 0 28px;
+    margin:
+        0 auto;
 
 }
 
 
 /* ==========================================================
-   REMOVE EXTRA BOTTOM SPACE FROM LAST SECTION
-   ========================================================== */
+   ADMIN HEADER
+========================================================== */
 
-.admin-dashboard-section:last-child {
+.admin-page-header {
 
-    margin-bottom: 0;
+    display:
+        flex;
+
+    align-items:
+        flex-start;
+
+    justify-content:
+        space-between;
+
+    gap:
+        14px;
+
+    margin:
+        0 0 20px;
+
+    padding:
+        0 2px;
+
+}
+
+
+.admin-page-heading {
+
+    min-width:
+        0;
+
+    flex:
+        1;
+
+}
+
+
+.admin-page-title {
+
+    margin:
+        0;
+
+    color:
+        #24372b;
+
+    font-size:
+        24px;
+
+    font-weight:
+        850;
+
+    line-height:
+        1.2;
+
+    letter-spacing:
+        -.025em;
+
+}
+
+
+.admin-page-description {
+
+    margin:
+        5px 0 0;
+
+    color:
+        #7b877f;
+
+    font-size:
+        12px;
+
+    line-height:
+        1.5;
+
+}
+
+
+/* ==========================================================
+   ADMIN STATUS
+========================================================== */
+
+.admin-page-status {
+
+    flex:
+        0 0 auto;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        6px;
+
+    padding:
+        7px 10px;
+
+    border:
+        1px solid
+        #d7e8da;
+
+    border-radius:
+        999px;
+
+    background:
+        #edf7ef;
+
+    color:
+        #39734a;
+
+    font-size:
+        9px;
+
+    font-weight:
+        800;
+
+    line-height:
+        1;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        .04em;
+
+}
+
+
+.admin-page-status-dot {
+
+    width:
+        6px;
+
+    height:
+        6px;
+
+    flex:
+        0 0 6px;
+
+    border-radius:
+        50%;
+
+    background:
+        #39a65a;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(57,166,90,.10);
+
+}
+
+
+/* ==========================================================
+   ADMIN SECTIONS
+========================================================== */
+
+.admin-page-section {
+
+    width:
+        100%;
+
+    margin:
+        0;
+
+    padding:
+        0;
+
+}
+
+
+/* ==========================================================
+   SEPARATOR
+========================================================== */
+
+.admin-page-separator {
+
+    width:
+        100%;
+
+    height:
+        1px;
+
+    margin:
+        2px 0 20px;
+
+    background:
+        #e1ebe3;
 
 }
 
 
 /* ==========================================================
    MOBILE
-   ========================================================== */
+========================================================== */
 
-@media (max-width: 600px) {
+@media (max-width:600px) {
 
-    .admin-dashboard {
+    .admin-page {
 
-        padding: 16px;
-
-    }
-
-
-    .admin-dashboard-header {
-
-        margin-bottom: 22px;
+        padding:
+            15px 10px 24px;
 
     }
 
 
-    .admin-dashboard-header h1 {
+    .admin-page-header {
 
-        font-size: 24px;
+        margin-bottom:
+            16px;
 
     }
 
 
-    .admin-dashboard-header p {
+    .admin-page-title {
 
-        font-size: 13px;
+        font-size:
+            21px;
+
+    }
+
+
+    .admin-page-description {
+
+        font-size:
+            10px;
+
+    }
+
+
+    .admin-page-status {
+
+        padding:
+            6px 8px;
+
+        font-size:
+            8px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL SCREENS
+========================================================== */
+
+@media (max-width:380px) {
+
+    .admin-page {
+
+        padding:
+            13px 8px 22px;
+
+    }
+
+
+    .admin-page-header {
+
+        gap:
+            8px;
+
+    }
+
+
+    .admin-page-title {
+
+        font-size:
+            19px;
+
+    }
+
+
+    .admin-page-status {
+
+        display:
+            none;
+
+    }
+
+}
+
+
+/* ==========================================================
+   REDUCED MOTION
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .admin-page {
+
+        scroll-behavior:
+            auto;
 
     }
 
@@ -174,75 +422,123 @@ EXPECTED DATA:
 </style>
 
 
-<main class="admin-dashboard">
+<!-- ==========================================================
+     ADMIN PAGE
+========================================================== -->
+
+<main
+    class="admin-page"
+>
 
 
-    <!-- ======================================================
-         DASHBOARD HEADER
-    ======================================================= -->
-
-    <header class="admin-dashboard-header">
-
-        <h1>
-            Admin Dashboard
-        </h1>
-
-        <p>
-            Manage your dairy farms and standalone assets.
-        </p>
-
-    </header>
+    <div
+        class="admin-page-content"
+    >
 
 
-    <!-- ======================================================
-         DASHBOARD CONTENT
-    ======================================================= -->
+        <!-- ==================================================
+             ADMIN HEADER
+        =================================================== -->
 
-    <div class="admin-dashboard-content">
+        <header
+            class="admin-page-header"
+        >
+
+
+            <div
+                class="admin-page-heading"
+            >
+
+
+                <h1
+                    class="admin-page-title"
+                >
+
+                    Admin Dashboard
+
+                </h1>
+
+
+                <p
+                    class="admin-page-description"
+                >
+
+                    Manage your dairy farms and standalone assets.
+
+                </p>
+
+
+            </div>
+
+
+            <span
+                class="admin-page-status"
+            >
+
+
+                <span
+                    class="admin-page-status-dot"
+                    aria-hidden="true"
+                ></span>
+
+
+                Admin
+
+
+            </span>
+
+
+        </header>
+
 
 
         <!-- ==================================================
              DAIRY FARMS
+        =================================================== -->
 
-             PARTIAL:
-                 views/admin/dairies.ejs
+        <section
+            class="admin-page-section"
+            aria-label="Dairy farms"
+        >
 
-             DATA:
-                 dairies
-
-             DASHBOARD ROUTE:
-                 /dashboard/dairy
-        ================================================== -->
-
-        <section class="admin-dashboard-section">
 
             <%- include("admin/dairies", {
-                dairies: dairies
+                dairies: safeDairies
             }) %>
+
 
         </section>
 
 
+
+        <!-- ==================================================
+             SECTION SEPARATOR
+        =================================================== -->
+
+        <div
+            class="admin-page-separator"
+            aria-hidden="true"
+        ></div>
+
+
+
         <!-- ==================================================
              STANDALONE ASSETS
+        =================================================== -->
 
-             PARTIAL:
-                 views/admin/standalone.ejs
+        <section
+            class="admin-page-section"
+            aria-label="Standalone assets"
+        >
 
-             DATA:
-                 standaloneAssets
 
-             DASHBOARD ROUTE:
-                 /dashboard/dairy
-        ================================================== -->
+            <%- include("admin/standalone", {
+                standaloneAssets:
+                    safeStandaloneAssets
+            }) %>
 
-        <section>
-<%- include("admin/standalone", {
-    standaloneAssets: typeof standaloneAssets !== "undefined"
-        ? standaloneAssets
-        : []
-}) %>
-</section>
+
+        </section>
 
 
     </div>
