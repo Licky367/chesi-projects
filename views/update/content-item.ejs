@@ -5,25 +5,16 @@ STORAGE CONTENT ITEM CARD
 ==============================================================
 
 FILE:
-    views/update/content-item.ejs
+    views/storage/content-item.ejs
 
 PURPOSE:
-    Display one storage content item as an INCLUDED CARD
-    inside another page such as:
-
-        views/dairySet.ejs
+    Reusable card component for displaying one item contained
+    inside a Room or AgroStore.
 
 IMPORTANT:
-    This file is a PARTIAL.
+    THIS FILE IS AN INCLUDEABLE CARD.
 
     It is NOT a standalone page.
-
-    It must NOT create:
-
-        - a page wrapper
-        - page-level padding
-        - a standalone storage page
-        - a separate details route
 
 EXPECTED VARIABLES:
 
@@ -33,40 +24,35 @@ EXPECTED VARIABLES:
 
 OPTIONAL:
 
-    user
     successMessage
     pageError
     latestStockUpdate
-    contentItemUpdateAction
 
-CONTENT ITEM UPDATE:
+STOCK UPDATE ARCHITECTURE:
 
-    PUT:
-
-        /dairy/:id/content-item
-
-    Controller:
-
-        controllers/update/contentItemController.js
-
-    Service:
-
-        services/update/contentItemService.js
-
-STOCK DATA:
-
-    item.quantity
-    item.unit
-    item.currentWorth
-    item.description
     item.stockUpdates[]
 
-LATEST STOCK UPDATE:
+Each update contains:
 
-    latestStockUpdate.recordedBy
-    latestStockUpdate.recordedAt
-    latestStockUpdate.stockUpdateNote
-    latestStockUpdate.images
+    quantity
+    stockUpdateNote
+    images
+    recordedBy
+    recordedAt
+
+IMPORTANT:
+
+    The current stock quantity is taken from:
+
+        item.quantity
+
+    The latest updater is taken from:
+
+        latestStockUpdate.recordedBy
+
+    The latest update timestamp is taken from:
+
+        latestStockUpdate.recordedAt
 
 ==============================================================
 */
@@ -102,24 +88,6 @@ const safePageError =
 
 
 /* ============================================================
-   UPDATE ENDPOINT
-============================================================ */
-
-const contentItemUpdateEndpoint =
-    typeof contentItemUpdateAction !== "undefined" &&
-    contentItemUpdateAction
-        ? String(
-            contentItemUpdateAction
-        )
-        : (
-            currentDairy &&
-            currentDairy._id
-                ? `/dairy/${currentDairy._id}/content-item`
-                : null
-        );
-
-
-/* ============================================================
    SAFE LATEST STOCK UPDATE
 ============================================================ */
 
@@ -129,7 +97,7 @@ let safeLatestStockUpdate =
 
 /*
 --------------------------------------------------------------
-Prefer the controller/service supplied update.
+Prefer the controller/service supplied latestStockUpdate.
 --------------------------------------------------------------
 */
 
@@ -146,7 +114,7 @@ if (
 
 /*
 --------------------------------------------------------------
-Fallback to latest item.stockUpdates record.
+Fallback to the latest item.stockUpdates record.
 --------------------------------------------------------------
 */
 
@@ -176,7 +144,6 @@ const storageType =
         ? String(
             currentStorage.type
         ).trim()
-        .toLowerCase()
         : "";
 
 
@@ -210,9 +177,7 @@ function displayValue(
 const itemType =
     String(
         contentItem.type || ""
-    )
-    .trim()
-    .toLowerCase();
+    ).trim();
 
 
 const itemCode =
@@ -220,16 +185,6 @@ const itemCode =
         contentItem.code
     );
 
-
-/*
---------------------------------------------------------------
-Animal:
-
-    positive code
-
-The code itself is what establishes that this is an animal.
---------------------------------------------------------------
-*/
 
 const itemIsAnimal =
     contentItem.code !== null &&
@@ -240,24 +195,12 @@ const itemIsAnimal =
     itemCode > 0;
 
 
-/*
---------------------------------------------------------------
-Feed
---------------------------------------------------------------
-*/
-
 const itemIsFeed =
     itemType === "feeds";
 
 
-/*
---------------------------------------------------------------
-AgroStore
---------------------------------------------------------------
-*/
-
 const itemIsAgroStore =
-    itemType === "agrostore";
+    itemType === "agroStore";
 
 
 /* ============================================================
@@ -287,8 +230,7 @@ if (
     itemCategoryClass =
         "feed-badge";
 
-}
-else if (
+} else if (
     itemIsAnimal
 ) {
 
@@ -301,8 +243,7 @@ else if (
     itemCategoryClass =
         "animal-badge";
 
-}
-else if (
+} else if (
     itemIsAgroStore
 ) {
 
@@ -374,7 +315,7 @@ const itemName =
 
 
 /* ============================================================
-   LAST UPDATE TIME
+   LAST STOCK UPDATE
 ============================================================ */
 
 const lastUpdateTime =
@@ -417,8 +358,7 @@ if (
                 lastUpdatedUser.name
             );
 
-    }
-    else if (
+    } else if (
         typeof lastUpdatedUser === "object" &&
         lastUpdatedUser.email
     ) {
@@ -428,8 +368,7 @@ if (
                 lastUpdatedUser.email
             );
 
-    }
-    else {
+    } else {
 
         updatedByName =
             String(
@@ -522,16 +461,16 @@ const stockUpdateImages =
 <style>
 
 /* ============================================================
-   CONTENT ITEM CARD
+   MAIN CARD
 ============================================================ */
 
 .content-item-card{
 
     width:100%;
 
-    box-sizing:border-box;
-
     overflow:hidden;
+
+    box-sizing:border-box;
 
     background:#ffffff;
 
@@ -572,6 +511,10 @@ const stockUpdateImages =
 }
 
 
+/* ============================================================
+   ICON
+============================================================ */
+
 .content-item-icon{
 
     flex:none;
@@ -597,6 +540,10 @@ const stockUpdateImages =
 
 }
 
+
+/* ============================================================
+   HEADER INFORMATION
+============================================================ */
 
 .content-item-hero-information{
 
@@ -945,7 +892,7 @@ const stockUpdateImages =
 
 
 /* ============================================================
-   STOCK NOTE
+   STOCK UPDATE NOTE
 ============================================================ */
 
 .stock-note-section{
@@ -983,6 +930,17 @@ const stockUpdateImages =
     white-space:pre-wrap;
 
     word-break:break-word;
+
+}
+
+
+.no-stock-note{
+
+    color:#8a958e;
+
+    font-size:11px;
+
+    font-style:italic;
 
 }
 
@@ -1033,7 +991,7 @@ const stockUpdateImages =
 
 
 /* ============================================================
-   STOCK UPDATE
+   UPDATE FORM
 ============================================================ */
 
 .stock-update-section{
@@ -1178,62 +1136,6 @@ const stockUpdateImages =
 }
 
 
-.stock-update-button:disabled{
-
-    opacity:.65;
-
-    cursor:not-allowed;
-
-}
-
-
-/* ============================================================
-   MESSAGES
-============================================================ */
-
-.content-item-message{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:9px;
-
-    margin-bottom:15px;
-
-    padding:11px 13px;
-
-    border-radius:10px;
-
-    font-size:12px;
-
-    font-weight:650;
-
-}
-
-
-.content-item-success{
-
-    background:#f1f8f3;
-
-    border:1px solid #d8e9dc;
-
-    color:#28603a;
-
-}
-
-
-.content-item-error{
-
-    background:#fff5f4;
-
-    border:1px solid #efd9d6;
-
-    color:#9a443b;
-
-}
-
-
 /* ============================================================
    FOOTER
 ============================================================ */
@@ -1256,6 +1158,10 @@ const stockUpdateImages =
 
 }
 
+
+/* ============================================================
+   FOOTER STATUS
+============================================================ */
 
 .footer-status{
 
@@ -1291,6 +1197,10 @@ const stockUpdateImages =
 
 }
 
+
+/* ============================================================
+   LAST UPDATED
+============================================================ */
 
 .footer-updated{
 
@@ -1358,6 +1268,53 @@ const stockUpdateImages =
     line-height:1.3;
 
     font-weight:600;
+
+}
+
+
+/* ============================================================
+   MESSAGES
+============================================================ */
+
+.content-item-message{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:9px;
+
+    margin-bottom:15px;
+
+    padding:11px 13px;
+
+    border-radius:10px;
+
+    font-size:12px;
+
+    font-weight:650;
+
+}
+
+
+.content-item-success{
+
+    background:#f1f8f3;
+
+    border:1px solid #d8e9dc;
+
+    color:#28603a;
+
+}
+
+
+.content-item-error{
+
+    background:#fff5f4;
+
+    border:1px solid #efd9d6;
+
+    color:#9a443b;
 
 }
 
@@ -1542,8 +1499,7 @@ const stockUpdateImages =
 
     .stock-images-grid{
 
-        grid-template-columns:
-            1fr 1fr;
+        grid-template-columns:1fr 1fr;
 
     }
 
@@ -1591,62 +1547,61 @@ const stockUpdateImages =
 </style>
 
 
-<!-- ==========================================================
-     OPTIONAL SUCCESS MESSAGE
-=========================================================== -->
+<!-- ============================================================
+     INCLUDEABLE CARD
+     
+     This is intentionally NOT a page wrapper.
+     It can be inserted into another EJS page.
+============================================================ -->
 
-<% if (safeSuccessMessage) { %>
-
-    <div
-        class="content-item-message content-item-success"
-    >
-
-        <span>
-            ✓
-        </span>
-
-        <span>
-            <%= safeSuccessMessage %>
-        </span>
-
-    </div>
-
-<% } %>
+<div class="content-item-card">
 
 
-<!-- ==========================================================
-     OPTIONAL ERROR MESSAGE
-=========================================================== -->
+    <!-- ========================================================
+         SUCCESS MESSAGE
+    ========================================================= -->
 
-<% if (safePageError) { %>
+    <% if (safeSuccessMessage) { %>
 
-    <div
-        class="content-item-message content-item-error"
-    >
+        <div class="content-item-message content-item-success">
 
-        <span>
-            !
-        </span>
+            <span>
+                ✓
+            </span>
 
-        <span>
-            <%= safePageError %>
-        </span>
+            <span>
+                <%= safeSuccessMessage %>
+            </span>
 
-    </div>
+        </div>
 
-<% } %>
+    <% } %>
 
 
-<!-- ==========================================================
-     MAIN CONTENT ITEM CARD
-=========================================================== -->
+    <!-- ========================================================
+         ERROR MESSAGE
+    ========================================================= -->
 
-<article class="content-item-card">
+    <% if (safePageError) { %>
+
+        <div class="content-item-message content-item-error">
+
+            <span>
+                !
+            </span>
+
+            <span>
+                <%= safePageError %>
+            </span>
+
+        </div>
+
+    <% } %>
 
 
-    <!-- ======================================================
+    <!-- ========================================================
          HEADER
-    ======================================================= -->
+    ========================================================= -->
 
     <header class="content-item-hero">
 
@@ -1668,11 +1623,11 @@ const stockUpdateImages =
             </p>
 
 
-            <h2 class="content-item-title">
+            <h1 class="content-item-title">
 
                 <%= itemName %>
 
-            </h2>
+            </h1>
 
 
             <div class="content-item-badges">
@@ -1709,27 +1664,27 @@ const stockUpdateImages =
     </header>
 
 
-    <!-- ======================================================
+    <!-- ========================================================
          BODY
-    ======================================================= -->
+    ========================================================= -->
 
     <div class="content-item-body">
 
 
-        <!-- ==================================================
+        <!-- ======================================================
              QUANTITY & VALUE
-        ================================================== -->
+        ====================================================== -->
 
         <section class="detail-section">
 
 
             <div class="detail-section-heading">
 
-                <h3 class="detail-section-title">
+                <h2 class="detail-section-title">
 
                     Quantity & Value
 
-                </h3>
+                </h2>
 
 
                 <span class="detail-section-line"></span>
@@ -1749,10 +1704,8 @@ const stockUpdateImages =
                     </span>
 
 
-                    <span
-                        class="highlight-value"
-                        id="contentItemQuantityDisplay"
-                    >
+                    <span class="highlight-value">
+
 
                         <% if (hasQuantity) { %>
 
@@ -1776,6 +1729,7 @@ const stockUpdateImages =
 
                         <% } %>
 
+
                     </span>
 
                 </div>
@@ -1790,10 +1744,7 @@ const stockUpdateImages =
                     </span>
 
 
-                    <span
-                        class="highlight-value"
-                        id="contentItemUnitDisplay"
-                    >
+                    <span class="highlight-value">
 
                         <%= itemUnit || "—" %>
 
@@ -1813,6 +1764,7 @@ const stockUpdateImages =
 
                     <span class="highlight-value">
 
+
                         <% if (hasCurrentWorth) { %>
 
                             <%= currentWorthValue.toLocaleString() %>
@@ -1822,6 +1774,7 @@ const stockUpdateImages =
                             —
 
                         <% } %>
+
 
                     </span>
 
@@ -1834,22 +1787,20 @@ const stockUpdateImages =
         </section>
 
 
-        <!-- ==================================================
+        <!-- ======================================================
              DESCRIPTION
-        ================================================== -->
+        ====================================================== -->
 
-        <section
-            class="detail-section description-section"
-        >
+        <section class="detail-section description-section">
 
 
             <div class="detail-section-heading">
 
-                <h3 class="detail-section-title">
+                <h2 class="detail-section-title">
 
                     Description
 
-                </h3>
+                </h2>
 
 
                 <span class="detail-section-line"></span>
@@ -1895,9 +1846,9 @@ const stockUpdateImages =
         </section>
 
 
-        <!-- ==================================================
+        <!-- ======================================================
              LATEST STOCK UPDATE NOTE
-        ================================================== -->
+        ====================================================== -->
 
         <% if (stockUpdateNote) { %>
 
@@ -1908,11 +1859,11 @@ const stockUpdateImages =
 
                 <div class="detail-section-heading">
 
-                    <h3 class="detail-section-title">
+                    <h2 class="detail-section-title">
 
                         Latest Stock Update Note
 
-                    </h3>
+                    </h2>
 
 
                     <span class="detail-section-line"></span>
@@ -1936,13 +1887,11 @@ const stockUpdateImages =
         <% } %>
 
 
-        <!-- ==================================================
+        <!-- ======================================================
              LATEST STOCK UPDATE IMAGES
-        ================================================== -->
+        ====================================================== -->
 
-        <% if (
-            stockUpdateImages.length > 0
-        ) { %>
+        <% if (stockUpdateImages.length) { %>
 
             <section
                 class="detail-section stock-images-section"
@@ -1951,11 +1900,11 @@ const stockUpdateImages =
 
                 <div class="detail-section-heading">
 
-                    <h3 class="detail-section-title">
+                    <h2 class="detail-section-title">
 
                         Latest Stock Update Images
 
-                    </h3>
+                    </h2>
 
 
                     <span class="detail-section-line"></span>
@@ -2007,15 +1956,16 @@ const stockUpdateImages =
         <% } %>
 
 
-        <!-- ==================================================
-             UPDATE STOCK
-        ================================================== -->
+        <!-- ======================================================
+             STOCK UPDATE FORM
 
-        <% if (
-            itemIsFeed &&
-            storageType === "agrostore"
-        ) { %>
+             PRESERVED IN FULL.
 
+             This is the part that allows the user to update
+             the stock of a feed in an AgroStore.
+        ====================================================== -->
+
+        <% if (itemIsFeed && storageType === "agroStore") { %>
 
             <section
                 class="detail-section stock-update-section"
@@ -2024,11 +1974,11 @@ const stockUpdateImages =
 
                 <div class="detail-section-heading">
 
-                    <h3 class="detail-section-title">
+                    <h2 class="detail-section-title">
 
                         Update Stock
 
-                    </h3>
+                    </h2>
 
 
                     <span class="detail-section-line"></span>
@@ -2036,170 +1986,161 @@ const stockUpdateImages =
                 </div>
 
 
-                <% if (contentItemUpdateEndpoint) { %>
+                <!-- ==============================================
+                     IMPORTANT:
+
+                     Route is:
+
+                     /update/:itemId
+
+                     NOT:
+
+                     /details/:itemId/update
+                =============================================== -->
+
+                <form
+                    class="stock-update-form"
+
+                    action="/storage/<%= currentDairy._id %>/contents/<%= currentStorage._id %>/update/<%= contentItem._id %>"
+
+                    method="POST"
+
+                    enctype="multipart/form-data"
+                >
 
 
-                    <form
-                        class="stock-update-form"
-                        id="contentItemUpdateForm"
-                    >
+                    <!-- ==========================================
+                         QUANTITY
+                    =========================================== -->
 
+                    <div class="stock-update-field">
 
-                        <!-- ==================================
-                             QUANTITY
-                        =================================== -->
-
-                        <div class="stock-update-field">
-
-                            <label
-                                for="stockQuantity"
-                                class="stock-update-label"
-                            >
-
-                                Quantity
-
-                            </label>
-
-
-                            <input
-                                type="number"
-                                id="stockQuantity"
-                                name="quantity"
-                                class="stock-update-input"
-                                value="<%= hasQuantity ? quantityValue : "" %>"
-                                step="any"
-                                min="0"
-                                required
-                            >
-
-                        </div>
-
-
-                        <!-- ==================================
-                             UNIT
-                        =================================== -->
-
-                        <div class="stock-update-field">
-
-                            <label
-                                for="stockUnit"
-                                class="stock-update-label"
-                            >
-
-                                Unit
-
-                            </label>
-
-
-                            <input
-                                type="text"
-                                id="stockUnit"
-                                name="unit"
-                                class="stock-update-input"
-                                value="<%= itemUnit %>"
-                                maxlength="50"
-                                placeholder="e.g. kg, bags, litres"
-                            >
-
-                        </div>
-
-
-                        <!-- ==================================
-                             STOCK UPDATE NOTE
-                        =================================== -->
-
-                        <div class="stock-update-field">
-
-                            <label
-                                for="stockUpdateNote"
-                                class="stock-update-label"
-                            >
-
-                                Stock Update Note
-
-                            </label>
-
-
-                            <textarea
-                                id="stockUpdateNote"
-                                name="stockUpdateNote"
-                                class="stock-update-textarea"
-                                maxlength="5000"
-                                placeholder="Describe what changed..."
-                            ></textarea>
-
-                        </div>
-
-
-                        <!-- ==================================
-                             IMAGES
-                        =================================== -->
-
-                        <div class="stock-update-field">
-
-                            <label
-                                for="stockUpdateImages"
-                                class="stock-update-label"
-                            >
-
-                                Images
-
-                            </label>
-
-
-                            <input
-                                type="file"
-                                id="stockUpdateImages"
-                                name="images"
-                                class="stock-update-images"
-                                accept="image/*"
-                                multiple
-                            >
-
-                        </div>
-
-
-                        <!-- ==================================
-                             SUBMIT
-                        =================================== -->
-
-                        <button
-                            type="submit"
-                            class="stock-update-button"
+                        <label
+                            for="stockQuantity"
+                            class="stock-update-label"
                         >
 
-                            Save Stock Update
+                            Quantity
 
-                        </button>
-
-
-                    </form>
+                        </label>
 
 
-                <% } else { %>
-
-
-                    <div
-                        class="content-item-message content-item-error"
-                    >
-
-                        <span>
-                            !
-                        </span>
-
-                        <span>
-                            Content item update is currently
-                            unavailable.
-                        </span>
+                        <input
+                            type="number"
+                            id="stockQuantity"
+                            name="quantity"
+                            class="stock-update-input"
+                            value="<%= hasQuantity ? quantityValue : "" %>"
+                            step="any"
+                            min="0"
+                            required
+                        >
 
                     </div>
 
 
-                <% } %>
+                    <!-- ==========================================
+                         UNIT
+                    =========================================== -->
+
+                    <div class="stock-update-field">
+
+                        <label
+                            for="stockUnit"
+                            class="stock-update-label"
+                        >
+
+                            Unit
+
+                        </label>
+
+
+                        <input
+                            type="text"
+                            id="stockUnit"
+                            name="unit"
+                            class="stock-update-input"
+                            value="<%= itemUnit %>"
+                            maxlength="50"
+                            placeholder="e.g. kg, bags, litres"
+                        >
+
+                    </div>
+
+
+                    <!-- ==========================================
+                         STOCK UPDATE NOTE
+                    =========================================== -->
+
+                    <div class="stock-update-field">
+
+                        <label
+                            for="stockUpdateNote"
+                            class="stock-update-label"
+                        >
+
+                            Stock Update Note
+
+                        </label>
+
+
+                        <textarea
+                            id="stockUpdateNote"
+                            name="stockUpdateNote"
+                            class="stock-update-textarea"
+                            maxlength="5000"
+                            placeholder="Describe what changed..."
+                        ></textarea>
+
+                    </div>
+
+
+                    <!-- ==========================================
+                         IMAGES
+                    =========================================== -->
+
+                    <div class="stock-update-field">
+
+                        <label
+                            for="stockUpdateImages"
+                            class="stock-update-label"
+                        >
+
+                            Images
+
+                        </label>
+
+
+                        <input
+                            type="file"
+                            id="stockUpdateImages"
+                            name="images"
+                            class="stock-update-images"
+                            accept="image/*"
+                            multiple
+                        >
+
+                    </div>
+
+
+                    <!-- ==========================================
+                         SUBMIT
+                    =========================================== -->
+
+                    <button
+                        type="submit"
+                        class="stock-update-button"
+                    >
+
+                        Save Stock Update
+
+                    </button>
+
+
+                </form>
 
 
             </section>
-
 
         <% } %>
 
@@ -2207,9 +2148,9 @@ const stockUpdateImages =
     </div>
 
 
-    <!-- ======================================================
+    <!-- ========================================================
          FOOTER
-    ======================================================= -->
+    ========================================================= -->
 
     <footer class="content-item-footer">
 
@@ -2224,6 +2165,10 @@ const stockUpdateImages =
 
         </div>
 
+
+        <!-- ====================================================
+             LAST UPDATED
+        ==================================================== -->
 
         <div
             class="footer-updated"
@@ -2258,390 +2203,4 @@ const stockUpdateImages =
     </footer>
 
 
-</article>
-
-
-<!-- ==========================================================
-     CONTENT ITEM UPDATE SCRIPT
-=========================================================== -->
-
-<script>
-
-(function(){
-
-    const form =
-        document.getElementById(
-            "contentItemUpdateForm"
-        );
-
-
-    if (
-        !form
-    ) {
-
-        return;
-
-    }
-
-
-    /*
-    ----------------------------------------------------------
-    Prevent duplicate listeners when this partial is rendered
-    more than once.
-    ----------------------------------------------------------
-    */
-
-    if (
-        form.dataset.bound === "true"
-    ) {
-
-        return;
-
-    }
-
-
-    form.dataset.bound =
-        "true";
-
-
-    form.addEventListener(
-        "submit",
-        async function(event){
-
-            event.preventDefault();
-
-
-            const button =
-                form.querySelector(
-                    ".stock-update-button"
-                );
-
-
-            const quantityInput =
-                document.getElementById(
-                    "stockQuantity"
-                );
-
-
-            const unitInput =
-                document.getElementById(
-                    "stockUnit"
-                );
-
-
-            const noteInput =
-                document.getElementById(
-                    "stockUpdateNote"
-                );
-
-
-            const imagesInput =
-                document.getElementById(
-                    "stockUpdateImages"
-                );
-
-
-            const quantity =
-                Number(
-                    quantityInput.value
-                );
-
-
-            if (
-                Number.isNaN(
-                    quantity
-                ) ||
-                quantity < 0
-            ) {
-
-                alert(
-                    "Please enter a valid quantity."
-                );
-
-                return;
-
-            }
-
-
-            /*
-            --------------------------------------------------
-            Build the data sent to:
-
-                PUT /dairy/:id/content-item
-
-            --------------------------------------------------
-            */
-
-            const data = {
-
-                quantity:
-
-                    quantity,
-
-                unit:
-
-                    unitInput.value.trim(),
-
-                stockUpdateNote:
-
-                    noteInput.value.trim()
-
-            };
-
-
-            /*
-            --------------------------------------------------
-            Preserve selected images in the request when
-            available.
-
-            --------------------------------------------------
-            */
-
-            if (
-                imagesInput &&
-                imagesInput.files &&
-                imagesInput.files.length > 0
-            ) {
-
-                data.images =
-                    Array.from(
-                        imagesInput.files
-                    );
-
-            }
-
-
-            button.disabled =
-                true;
-
-
-            button.textContent =
-                "Saving...";
-
-
-            try {
-
-                const response =
-                    await fetch(
-                        "<%= contentItemUpdateEndpoint %>",
-                        {
-
-                            method:
-                                "PUT",
-
-                            headers: {
-
-                                "Content-Type":
-                                    "application/json",
-
-                                "Accept":
-                                    "application/json"
-
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    data
-                                )
-
-                        }
-                    );
-
-
-                const result =
-                    await response.json()
-                        .catch(
-                            function(){
-
-                                return {};
-
-                            }
-                        );
-
-
-                if (
-                    !response.ok
-                ) {
-
-                    throw new Error(
-
-                        result.message ||
-                        "Unable to update content item."
-
-                    );
-
-                }
-
-
-                /*
-                ------------------------------------------------
-                Update the visible card immediately.
-                ------------------------------------------------
-                */
-
-                const returnedDairy =
-                    result.dairy;
-
-
-                if (
-                    returnedDairy
-                ) {
-
-                    /*
-                    --------------------------------------------
-                    Find the updated item where possible.
-                    --------------------------------------------
-                    */
-
-                    let updatedItem =
-                        null;
-
-
-                    if (
-                        Array.isArray(
-                            returnedDairy.contents
-                        )
-                    ) {
-
-                        updatedItem =
-                            returnedDairy.contents.find(
-                                function(candidate){
-
-                                    return (
-                                        candidate &&
-                                        String(
-                                            candidate._id
-                                        ) ===
-                                        String(
-                                            "<%= contentItem._id %>"
-                                        )
-                                    );
-
-                                }
-                            );
-
-                    }
-
-
-                    if (
-                        updatedItem &&
-                        updatedItem.quantity !==
-                            undefined
-                    ) {
-
-                        const display =
-                            document.getElementById(
-                                "contentItemQuantityDisplay"
-                            );
-
-
-                        if (
-                            display
-                        ) {
-
-                            display.textContent =
-                                Number(
-                                    updatedItem.quantity
-                                ).toLocaleString();
-
-
-                            if (
-                                updatedItem.unit
-                            ) {
-
-                                const unit =
-                                    document.createElement(
-                                        "span"
-                                    );
-
-
-                                unit.className =
-                                    "highlight-unit";
-
-
-                                unit.textContent =
-                                    " " +
-                                    updatedItem.unit;
-
-
-                                display.appendChild(
-                                    unit
-                                );
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-
-                /*
-                ------------------------------------------------
-                Clear the update-only fields.
-                ------------------------------------------------
-                */
-
-                noteInput.value =
-                    "";
-
-
-                if (
-                    imagesInput
-                ) {
-
-                    imagesInput.value =
-                        "";
-
-                }
-
-
-                button.textContent =
-                    "Saved";
-
-
-                setTimeout(
-                    function(){
-
-                        button.textContent =
-                            "Save Stock Update";
-
-                        button.disabled =
-                            false;
-
-                    },
-                    1200
-                );
-
-
-            }
-            catch (error) {
-
-                console.error(
-                    "Content item update error:",
-                    error
-                );
-
-
-                alert(
-                    error.message ||
-                    "Unable to update content item."
-                );
-
-
-                button.textContent =
-                    "Save Stock Update";
-
-
-                button.disabled =
-                    false;
-
-            }
-
-        }
-    );
-
-})();
-
-</script>
+</div>
