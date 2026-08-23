@@ -13,12 +13,23 @@ PURPOSE:
 
 IDENTIFICATION:
 
-    assetCode === null
+    dairy.assetCode === null
         = Standalone asset
 
-    assetCode !== null
+    dairy.assetCode === undefined
+        = Standalone asset
+
+    dairy.assetCode !== null
+    AND
+    dairy.assetCode !== undefined
         = Assigned asset
         = NOT displayed here
+
+IMPORTANT:
+
+    Standalone status is determined ONLY by assetCode.
+
+    dairy.code is NOT used to determine standalone status.
 
 STANDALONE ASSETS MAY BE:
 
@@ -27,7 +38,7 @@ STANDALONE ASSETS MAY BE:
     • Facilities
     • Equipment
 
-IMPORTANT:
+FINANCIAL INFORMATION:
 
     This partial contains NO financial information.
 
@@ -37,9 +48,12 @@ IMPORTANT:
         assetWorth
         value
         price
+        netWorth
 
-    The card displays only the asset identity,
-    image and name.
+    The cards display only:
+
+        • Image
+        • Asset name
 
 LINK:
 
@@ -82,16 +96,49 @@ IMPORTANT:
 <%
 /* ==========================================================
    SAFE ASSET ARRAY
+==========================================================
+
+   typeof is important here.
+
+   If the controller does not provide standaloneAssets,
+   EJS will NOT throw:
+
+       standaloneAssets is not defined
+
+   Instead, an empty array is used.
 ========================================================== */
 
 const standaloneAssetSource =
+    typeof standaloneAssets !== "undefined" &&
     Array.isArray(standaloneAssets)
+
         ? standaloneAssets
+
         : [];
 
 
 /* ==========================================================
    FILTER STANDALONE ASSETS
+==========================================================
+
+   STANDALONE DEFINITION:
+
+       assetCode === null
+       OR
+       assetCode === undefined
+
+   IMPORTANT:
+
+       dairy.code is deliberately NOT checked.
+
+   Therefore an asset may have:
+
+       code > 0
+       code < 0
+       code === 0
+
+   and STILL be standalone if assetCode
+   is missing.
 ========================================================== */
 
 const standaloneAssetList =
@@ -104,13 +151,6 @@ const standaloneAssetList =
 
             }
 
-
-            /*
-            --------------------------------------------------
-            assetCode === null / undefined
-                = standalone asset
-            --------------------------------------------------
-            */
 
             return (
                 dairy.assetCode === null ||
@@ -674,6 +714,45 @@ const standaloneAssetList =
 
 
 /* ==========================================================
+   STATUS AVATAR
+========================================================== */
+
+.standalone-asset-status-avatar {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    box-sizing:
+        border-box;
+
+    background:
+        #e6f3e8;
+
+    color:
+        #39734a;
+
+    font-size:
+        13px;
+
+    font-weight:
+        800;
+
+}
+
+
+/* ==========================================================
    ASSET INFORMATION
 ========================================================== */
 
@@ -1033,6 +1112,14 @@ const standaloneAssetList =
 
     }
 
+
+    .standalone-asset-status-avatar {
+
+        font-size:
+            11px;
+
+    }
+
 }
 
 
@@ -1099,7 +1186,7 @@ const standaloneAssetList =
                 class="standalone-assets-description"
             >
 
-                Assets not assigned to a Dairy Farm
+                Assets not assigned to another asset
 
             </p>
 
@@ -1329,14 +1416,7 @@ const standaloneAssetList =
 
 
                                 <span
-                                    class="standalone-asset-avatar"
-                                    style="
-                                        position:relative;
-                                        inset:auto;
-                                        width:100%;
-                                        height:100%;
-                                        font-size:14px;
-                                    "
+                                    class="standalone-asset-status-avatar"
                                 >
 
                                     <%= avatarLetter %>
@@ -1356,6 +1436,8 @@ const standaloneAssetList =
 
                     <!-- ======================================
                          ASSET INFORMATION
+
+                         ONLY ASSET NAME IS DISPLAYED.
                     ======================================= -->
 
                     <span
