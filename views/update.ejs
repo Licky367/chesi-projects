@@ -7,86 +7,26 @@
      PURPOSE:
          Dairy update/feed page.
 
-     STORAGE:
+     BOOLEAN MANAGEMENT:
      -----------------------------------------------------
-     Feed Store opens the storage facilities belonging
-     to the current dairy.
+     boolean.ejs is an INCLUDE.
 
-     Route:
+     It is rendered directly below asset-cards.ejs.
 
-         /storage/:id
+     It is NOT a standalone page.
 
-     where:
+     Boolean data expected from controller:
 
-         :id = dairy._id
+         booleanFields
+         booleanAnimals
 
-     The storage service/controller will use the Dairy
-     document to resolve:
+     The Boolean component allows the user to:
 
-         dairy.code === storage.farmCode
-
-     FEED CONTRACT:
-     -----------------------------------------------------
-     Every document inside `feed` is called `item`.
-
-     Every feed-card partial receives:
-
-         item: item
-
-     This applies to:
-
-         post.ejs
-         milk.ejs
-         medical-marked.ejs
-         medical-cleared.ejs
-         maintenance-marked.ejs
-         maintenance-cleared.ejs
-         addAsset.ejs
-
-     IMPORTANT:
-     -----------------------------------------------------
-     No feed card receives:
-
-         update: item
-
-     No feed card expects a variable named:
-
-         update
-
-     The single naming convention is:
-
-         item
-
-     EXCEPTION:
-     -----------------------------------------------------
-     stock-update.ejs deliberately expects:
-
-         update
-
-     Therefore animalFeed items are passed as:
-
-         update: item
-
-     stock.ejs is deliberately NOT rendered here.
-
-     ASSET CARDS:
-     -----------------------------------------------------
-     asset-cards.ejs is a FIXED PAGE COMPONENT.
-
-     It appears immediately below:
-
-         h1.ejs
-
-     It does NOT depend on feed position.
-
-     It is NOT inserted inside the feed loop.
-
-     ANIMAL FEED UPDATE CARDS:
-     -----------------------------------------------------
-     feed-update-cards.ejs is an independent navigation
-     component.
-
-     It does NOT require feed data from the backend.
+         1. Tap the first card.
+         2. Open the Boolean-field dropdown.
+         3. Select a Boolean field.
+         4. View eligible female animals.
+         5. Toggle the selected Boolean value.
 
 ===================================================== -->
 
@@ -188,16 +128,6 @@
 
         <!-- =============================================
              FEED STORE
-
-             CURRENT DAIRY STORAGE
-
-             Route:
-
-                 /storage/:id
-
-             ID:
-
-                 dairy._id
         ============================================== -->
 
         <a
@@ -226,9 +156,6 @@
 
     <!-- =================================================
          TOP ACTION LAYOUT
-
-         Keeps all three spaces equal without changing
-         the surrounding page layout.
     ================================================== -->
 
     <style>
@@ -330,10 +257,6 @@
         }
 
 
-        /* =================================================
-           MOBILE
-        ================================================== */
-
         @media (max-width: 600px) {
 
             .dairy-page-actions {
@@ -377,10 +300,6 @@
 
         }
 
-
-        /* =================================================
-           VERY SMALL SCREENS
-        ================================================== */
 
         @media (max-width: 380px) {
 
@@ -426,11 +345,14 @@
          ALWAYS FIRST
     ================================================== -->
 
-    <%- include("update/create-post", {
-        dairy: dairy,
-        user: user,
-        assetDairies: assetDairies || []
-    }) %>
+    <%- include(
+        "update/create-post",
+        {
+            dairy: dairy,
+            user: user,
+            assetDairies: assetDairies || []
+        }
+    ) %>
 
 
 
@@ -440,10 +362,13 @@
          ALWAYS SECOND
     ================================================== -->
 
-    <%- include("update/h1", {
-        dairy: dairy,
-        user: user
-    }) %>
+    <%- include(
+        "update/h1",
+        {
+            dairy: dairy,
+            user: user
+        }
+    ) %>
 
 
 
@@ -454,23 +379,9 @@
 
          IMPORTANT:
          -------------------------------------------------
-         asset-cards.ejs is NOT part of the feed loop.
+         asset-cards.ejs is rendered exactly once.
 
-         It is rendered exactly once here.
-
-         Therefore its position is always:
-
-             create-post
-                    ↓
-                 h1.ejs
-                    ↓
-             asset-cards.ejs
-                    ↓
-              itemLink.ejs
-                    ↓
-                assetBar
-                    ↓
-                  feed
+         It is NOT inside the feed loop.
     ================================================== -->
 
     <%- include(
@@ -484,24 +395,61 @@
 
 
     <!-- =================================================
-         ANIMAL FEED ITEM LINKS
+         BOOLEAN MANAGEMENT
 
-         Appears directly below asset-cards.ejs.
+         FILE:
+             views/update/boolean.ejs
 
-         The controller passes the generated item links
-         through:
+         IMPORTANT:
+         -------------------------------------------------
+         boolean.ejs is an INCLUDE.
 
-             itemLinks
+         It is NOT a standalone page.
 
-         The itemLink.ejs component renders the
-         horizontally scrollable cards.
+         It is rendered exactly once here.
+
+         The controller supplies:
+
+             booleanFields
+             booleanAnimals
+
+         The Boolean component is responsible for:
+
+             - first expandable Boolean card
+             - Boolean-field dropdown
+             - eligible animal cards
+             - Boolean toggle requests
     ================================================== -->
 
-    <%- include("update/storage/itemLink", {
-        dairy: dairy,
-        user: user,
-        itemLinks: itemLinks || []
-    }) %>
+    <%- include(
+        "update/boolean",
+        {
+            dairy: dairy,
+            assetDairies: assetDairies || [],
+            booleanFields: booleanFields || [],
+            booleanAnimals: booleanAnimals || [],
+            user: user
+        }
+    ) %>
+
+
+
+    <!-- =================================================
+         ANIMAL FEED ITEM LINKS
+
+         Appears directly below boolean.ejs.
+
+         itemLinks is always supplied as an array.
+    ================================================== -->
+
+    <%- include(
+        "update/storage/itemLink",
+        {
+            dairy: dairy,
+            user: user,
+            itemLinks: itemLinks || []
+        }
+    ) %>
 
 
 
@@ -509,16 +457,19 @@
          ASSET SIDEBAR
     ================================================== -->
 
-    <%- include("dairy/assetBar", {
-        dairy: dairy,
-        assetDairies: assetDairies || []
-    }) %>
+    <%- include(
+        "dairy/assetBar",
+        {
+            dairy: dairy,
+            assetDairies: assetDairies || []
+        }
+    ) %>
 
 
 
     <!-- =================================================
          MAIN FEED
-    ================================================= -->
+    ================================================== -->
 
     <section
         id="feed"
@@ -530,7 +481,10 @@
              FEED EXISTS
         ================================================== -->
 
-        <% if (Array.isArray(feed) && feed.length > 0) { %>
+        <% if (
+            Array.isArray(feed) &&
+            feed.length > 0
+        ) { %>
 
 
             <!-- =================================================
@@ -538,29 +492,23 @@
 
                  IMPORTANT:
                  -------------------------------------------------
-                 Only actual feed documents are rendered here.
+                 Fixed components are NOT rendered here.
 
-                 asset-cards.ejs is deliberately NOT rendered
-                 inside this loop.
-
-                 create-post.ejs is also deliberately NOT
-                 rendered inside this loop.
-
-                 This keeps the fixed page components separate
-                 from the feed data.
+                 This loop renders feed documents only.
             ================================================== -->
 
-            <% feed.forEach(function(item, index) { %>
+            <% feed.forEach(
+                function(item, index)
+            { %>
 
 
-                <!-- =================================================
+                <!-- =============================================
                      NORMAL POST
+                ============================================== -->
 
-                     CONTRACT:
-                         item: item
-                ================================================== -->
-
-                <% if (item.type === "post") { %>
+                <% if (
+                    item.type === "post"
+                ) { %>
 
                     <%- include(
                         "update/post",
@@ -574,14 +522,13 @@
 
 
 
-                <!-- =================================================
+                <!-- =============================================
                      WEEKLY MILK REPORT
+                ============================================== -->
 
-                     CONTRACT:
-                         item: item
-                ================================================== -->
-
-                <% if (item.type === "milk") { %>
+                <% if (
+                    item.type === "milk"
+                ) { %>
 
                     <%- include(
                         "update/milk",
@@ -595,12 +542,9 @@
 
 
 
-                <!-- =================================================
+                <!-- =============================================
                      MEDICAL — MARKED
-
-                     CONTRACT:
-                         item: item
-                ================================================== -->
+                ============================================== -->
 
                 <% if (
                     item.type === "medical" &&
@@ -619,12 +563,9 @@
 
 
 
-                <!-- =================================================
+                <!-- =============================================
                      MEDICAL — CLEARED
-
-                     CONTRACT:
-                         item: item
-                ================================================== -->
+                ============================================== -->
 
                 <% if (
                     item.type === "medical" &&
@@ -643,12 +584,9 @@
 
 
 
-                <!-- =================================================
+                <!-- =============================================
                      MAINTENANCE — MARKED
-
-                     CONTRACT:
-                         item: item
-                ================================================== -->
+                ============================================== -->
 
                 <% if (
                     item.type === "maintenance" &&
@@ -667,12 +605,9 @@
 
 
 
-                <!-- =================================================
+                <!-- =============================================
                      MAINTENANCE — CLEARED
-
-                     CONTRACT:
-                         item: item
-                ================================================== -->
+                ============================================== -->
 
                 <% if (
                     item.type === "maintenance" &&
@@ -691,21 +626,23 @@
 
 
 
-                <!-- =================================================
+                <!-- =============================================
                      STOCK UPDATE
 
-                     CONTRACT:
+                     EXCEPTION:
+
+                         stock-update.ejs expects:
+
+                             update
+
+                     Therefore this intentionally receives:
+
                          update: item
+                ============================================== -->
 
-                     stock-update.ejs expects:
-
-                         update
-
-                     This is the intentional exception to the
-                     normal feed-card contract.
-                ================================================== -->
-
-                <% if (item.type === "animalFeed") { %>
+                <% if (
+                    item.type === "animalFeed"
+                ) { %>
 
                     <%- include(
                         "update/stock-update",
@@ -719,14 +656,13 @@
 
 
 
-                <!-- =================================================
+                <!-- =============================================
                      ASSET ADDED
+                ============================================== -->
 
-                     CONTRACT:
-                         item: item
-                ================================================== -->
-
-                <% if (item.type === "assetAdd") { %>
+                <% if (
+                    item.type === "assetAdd"
+                ) { %>
 
                     <%- include(
                         "update/addAsset",
