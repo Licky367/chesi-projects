@@ -542,33 +542,24 @@ const hasAssetCards =
 
 
 
-            <!-- =================================================
-                 STOCK / ANIMAL FEED UPDATED
-            ================================================= -->
+<!-- =================================================
+     STOCK UPDATE
 
-            <% if (
-                item.type === "animalFeed"
-            ) { %>
+     CONTRACT:
+         update: item
 
+     stock-update.ejs expects:
+         update
+================================================= -->
 
-                <%- include("stock-update", {
+<% if (item.type === "animalFeed") { %>
 
-                    item: item,
+    <%- include("stock-update", {
+        update: item,
+        user: user
+    }) %>
 
-                    user: user,
-
-                    type: "animalFeed"
-
-                }) %>
-
-
-            <% } %>
-
-
-        <% }); %>
-
-
-    <% } %>
+<% } %>
 
 
 
