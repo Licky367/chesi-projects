@@ -1,0 +1,567 @@
+<%
+/*
+==============================================================
+STORAGE CONTENT ITEM UPDATE
+==============================================================
+
+FILE:
+    views/storage/content-item-update.ejs
+
+PURPOSE:
+    Reusable UPDATE FORM for a storage content item.
+
+IMPORTANT:
+
+    THIS IS NOT A PAGE.
+
+    THIS IS NOT A FEED ITEM.
+
+    THIS IS AN INCLUDE.
+
+    It is included by:
+
+        content-item.ejs
+
+
+POST ROUTE:
+
+    POST /dairy/:dairyId/:contentItemId
+
+
+EXPECTED VARIABLES:
+
+    dairy
+    storage
+    item
+
+FIELDS:
+
+    quantity
+    unit
+    stockUpdateNote
+    images
+
+==============================================================
+*/
+
+
+/* ============================================================
+   SAFE DATA
+============================================================ */
+
+const updateItem =
+    item || {};
+
+const updateDairy =
+    dairy || {};
+
+const updateStorage =
+    storage || {};
+
+
+/* ============================================================
+   CURRENT VALUES
+============================================================ */
+
+const updateHasQuantity =
+    updateItem.quantity !== null &&
+    updateItem.quantity !== undefined;
+
+
+const updateQuantity =
+    updateHasQuantity
+        ? Number(
+            updateItem.quantity || 0
+        )
+        : null;
+
+
+const updateUnit =
+    updateItem.unit
+        ? String(
+            updateItem.unit
+        ).trim()
+        : "";
+
+%>
+
+
+<style>
+
+/* ============================================================
+   UPDATE FORM SECTION
+============================================================ */
+
+.stock-update-section{
+
+    margin-top:27px;
+
+}
+
+
+/* ============================================================
+   SECTION HEADING
+============================================================ */
+
+.stock-update-heading{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    margin-bottom:14px;
+
+}
+
+
+.stock-update-title{
+
+    flex:none;
+
+    margin:0;
+
+    color:#263a2c;
+
+    font-size:15px;
+
+    line-height:1.3;
+
+    font-weight:850;
+
+    letter-spacing:-.015em;
+
+}
+
+
+.stock-update-line{
+
+    flex:1;
+
+    height:1px;
+
+    background:#e6ece8;
+
+}
+
+
+/* ============================================================
+   FORM
+============================================================ */
+
+.stock-update-form{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:14px;
+
+    padding:17px;
+
+    background:#f8fbf9;
+
+    border:1px solid #e1e9e3;
+
+    border-radius:14px;
+
+}
+
+
+/* ============================================================
+   FIELD
+============================================================ */
+
+.stock-update-field{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:7px;
+
+}
+
+
+/* ============================================================
+   LABEL
+============================================================ */
+
+.stock-update-label{
+
+    color:#536359;
+
+    font-size:10px;
+
+    font-weight:800;
+
+    letter-spacing:.05em;
+
+    text-transform:uppercase;
+
+}
+
+
+/* ============================================================
+   INPUT / TEXTAREA
+============================================================ */
+
+.stock-update-input,
+.stock-update-textarea{
+
+    width:100%;
+
+    box-sizing:border-box;
+
+    padding:11px 12px;
+
+    color:#263a2c;
+
+    background:#ffffff;
+
+    border:1px solid #dbe5de;
+
+    border-radius:10px;
+
+    outline:none;
+
+    font-family:inherit;
+
+    font-size:12px;
+
+}
+
+
+.stock-update-input:focus,
+.stock-update-textarea:focus{
+
+    border-color:#4c9663;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(76,150,99,.10);
+
+}
+
+
+/* ============================================================
+   TEXTAREA
+============================================================ */
+
+.stock-update-textarea{
+
+    min-height:95px;
+
+    resize:vertical;
+
+    line-height:1.6;
+
+}
+
+
+/* ============================================================
+   IMAGES
+============================================================ */
+
+.stock-update-images{
+
+    width:100%;
+
+    font-size:11px;
+
+    color:#69766e;
+
+}
+
+
+/* ============================================================
+   SUBMIT BUTTON
+============================================================ */
+
+.stock-update-button{
+
+    align-self:flex-start;
+
+    padding:10px 17px;
+
+    border:0;
+
+    border-radius:10px;
+
+    background:#2f7c48;
+
+    color:#ffffff;
+
+    cursor:pointer;
+
+    font-size:11px;
+
+    font-weight:800;
+
+}
+
+
+.stock-update-button:hover{
+
+    background:#286b3d;
+
+}
+
+
+.stock-update-button:active{
+
+    transform:scale(.97);
+
+}
+
+
+/* ============================================================
+   MOBILE
+============================================================ */
+
+@media (max-width:470px){
+
+    .stock-update-section{
+
+        margin-top:23px;
+
+    }
+
+
+    .stock-update-form{
+
+        padding:15px;
+
+    }
+
+
+    .stock-update-button{
+
+        width:100%;
+
+        align-self:stretch;
+
+    }
+
+}
+
+</style>
+
+
+<!-- ============================================================
+     STORAGE CONTENT ITEM UPDATE
+
+     THIS IS AN INCLUDE.
+
+     THERE IS INTENTIONALLY NO CONDITION HERE
+     THAT HIDES THE FORM.
+============================================================= -->
+
+<section
+    class="detail-section stock-update-section"
+>
+
+
+    <!-- ========================================================
+         SECTION HEADING
+    ========================================================= -->
+
+    <div class="stock-update-heading">
+
+
+        <h2 class="stock-update-title">
+
+            Update Stock
+
+        </h2>
+
+
+        <span class="stock-update-line"></span>
+
+
+    </div>
+
+
+    <!-- ========================================================
+         UPDATE FORM
+
+         POST:
+
+         /dairy/:dairyId/:contentItemId
+    ========================================================= -->
+
+    <form
+        class="stock-update-form"
+
+        action="/dairy/<%= updateDairy._id %>/<%= updateItem._id %>"
+
+        method="POST"
+
+        enctype="multipart/form-data"
+    >
+
+
+        <!-- ====================================================
+             QUANTITY
+        ===================================================== -->
+
+        <div class="stock-update-field">
+
+
+            <label
+                for="stockQuantity"
+                class="stock-update-label"
+            >
+
+                Quantity
+
+            </label>
+
+
+            <input
+                type="number"
+
+                id="stockQuantity"
+
+                name="quantity"
+
+                class="stock-update-input"
+
+                value="<%= updateHasQuantity ? updateQuantity : "" %>"
+
+                step="any"
+
+                min="0"
+
+                required
+            >
+
+
+        </div>
+
+
+        <!-- ====================================================
+             UNIT
+        ===================================================== -->
+
+        <div class="stock-update-field">
+
+
+            <label
+                for="stockUnit"
+                class="stock-update-label"
+            >
+
+                Unit
+
+            </label>
+
+
+            <input
+                type="text"
+
+                id="stockUnit"
+
+                name="unit"
+
+                class="stock-update-input"
+
+                value="<%= updateUnit %>"
+
+                maxlength="50"
+
+                placeholder="e.g. kg, bags, litres"
+            >
+
+
+        </div>
+
+
+        <!-- ====================================================
+             STOCK UPDATE NOTE
+        ===================================================== -->
+
+        <div class="stock-update-field">
+
+
+            <label
+                for="stockUpdateNote"
+                class="stock-update-label"
+            >
+
+                Stock Update Note
+
+            </label>
+
+
+            <textarea
+                id="stockUpdateNote"
+
+                name="stockUpdateNote"
+
+                class="stock-update-textarea"
+
+                maxlength="5000"
+
+                placeholder="Describe what changed..."
+            ></textarea>
+
+
+        </div>
+
+
+        <!-- ====================================================
+             IMAGES
+        ===================================================== -->
+
+        <div class="stock-update-field">
+
+
+            <label
+                for="stockUpdateImages"
+                class="stock-update-label"
+            >
+
+                Images
+
+            </label>
+
+
+            <input
+                type="file"
+
+                id="stockUpdateImages"
+
+                name="images"
+
+                class="stock-update-images"
+
+                accept="image/*"
+
+                multiple
+            >
+
+
+        </div>
+
+
+        <!-- ====================================================
+             SUBMIT
+        ===================================================== -->
+
+        <button
+            type="submit"
+
+            class="stock-update-button"
+        >
+
+            Save Stock Update
+
+        </button>
+
+
+    </form>
+
+
+</section>
