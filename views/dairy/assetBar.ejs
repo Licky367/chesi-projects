@@ -34,11 +34,6 @@ Animals:
     OR
     recordType === "animal"
 
-    IMPORTANT:
-    recordType === "animal" alone is NOT enough.
-    The asset must have a POSITIVE code OR an
-    animal recordType.
-
 Cow Shades:
     roomNumber > 0
 
@@ -51,6 +46,21 @@ Tools:
     roomNumber is missing
     AND
     dwellNumber is missing
+
+IMPORTANT:
+----------------------------------------------------------
+Animals are NOT classified by recordType alone.
+
+An asset is an animal when:
+
+    Number(asset.code) > 0
+
+OR:
+
+    asset.recordType === "animal"
+
+The animal's CODE is NOT displayed in the Animals
+section. Gender is displayed instead.
 
 LAYOUT SAFETY:
 ----------------------------------------------------------
@@ -99,44 +109,75 @@ function isMissing(value) {
 
 
 /* ==========================================================
+   HELPER:
+   CHECK POSITIVE CODE
+========================================================== */
+
+function hasPositiveCode(asset) {
+
+    if (!asset) {
+
+        return false;
+
+    }
+
+    if (isMissing(asset.code)) {
+
+        return false;
+
+    }
+
+    return Number(asset.code) > 0;
+
+}
+
+
+/* ==========================================================
+   HELPER:
+   CHECK ANIMAL RECORD TYPE
+========================================================== */
+
+function hasAnimalRecordType(asset) {
+
+    if (!asset) {
+
+        return false;
+
+    }
+
+    return (
+        typeof asset.recordType === "string" &&
+        asset.recordType.toLowerCase() === "animal"
+    );
+
+}
+
+
+/* ==========================================================
    ANIMALS
 
-   An animal is identified by:
+   An asset is an animal when EITHER:
 
-       code > 0
+       1. code > 0
 
-   OR
+   OR:
 
-       recordType === "animal"
-
-   IMPORTANT:
-   ----------------------------------------------------------
-   recordType === "animal" alone is NOT sufficient.
-
-   The asset must satisfy at least one of:
-
-       1. Positive code
        2. recordType === "animal"
 
-   The recordType comparison is case-insensitive.
+   recordType is therefore an additional merit,
+   NOT the only classification criterion.
+
+   IMPORTANT:
+   The animal CODE is intentionally NOT displayed.
+   Gender is displayed instead.
 ========================================================== */
 
 const animalDairies =
     availableAssets.filter(asset => {
 
-        const hasPositiveCode =
-            !isMissing(asset.code) &&
-            Number(asset.code) > 0;
-
-
-        const hasAnimalRecordType =
-            typeof asset.recordType === "string" &&
-            asset.recordType.toLowerCase() === "animal";
-
-
         return (
-            hasPositiveCode ||
-            hasAnimalRecordType
+            hasPositiveCode(asset) ||
+            hasAnimalRecordType(asset)
         );
 
     });
@@ -146,6 +187,8 @@ const animalDairies =
    COW SHADES
 
    Cow shades have a POSITIVE roomNumber.
+
+   Animals are already classified independently above.
 ========================================================== */
 
 const cowShadeDairies =
@@ -717,12 +760,12 @@ const isCurrentFarm =
                                 </span>
 
 
-                                <% if (!isMissing(animal.code)) { %>
+                                <% if (animal.gender) { %>
 
                                     <span
                                         class="asset-bar-component__item-code"
                                     >
-                                        Animal #<%= animal.code %>
+                                        <%= animal.gender %>
                                     </span>
 
                                 <% } %>
@@ -734,17 +777,6 @@ const isCurrentFarm =
                                         class="asset-bar-component__item-meta"
                                     >
                                         <%= animal.type %>
-                                    </span>
-
-                                <% } %>
-
-
-                                <% if (animal.gender) { %>
-
-                                    <span
-                                        class="asset-bar-component__item-meta"
-                                    >
-                                        <%= animal.gender %>
                                     </span>
 
                                 <% } %>
@@ -2471,8 +2503,6 @@ html.asset-bar-component--open {
 
 /* ==========================================================
    CATEGORY TABS
-
-   Four equal tabs.
 ========================================================== */
 
 .asset-bar-component__tabs {
