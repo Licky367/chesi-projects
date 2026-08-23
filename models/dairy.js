@@ -21,10 +21,10 @@
 //
 //     recordType MUST NOT be confused with type.
 //
-// ----------------------------------------------------------
+// -------------------------------------------------------
 //
 // type
-// ----------------------------------------------------------
+// -------------------------------------------------------
 //
 //     farm
 //         = ranch / zeroGrazing / etc.
@@ -129,6 +129,36 @@
 //
 // description
 //     = permanent/general description
+//
+// ==========================================================
+//
+// STOCK UPDATE HISTORY
+// ----------------------------------------------------------
+//
+// item.stockUpdates[]
+//
+// Every stock update contains:
+//
+//     quantity
+//     stockUpdateNote
+//     images
+//     recordedBy
+//     recordedAt
+//
+// recordedBy:
+//     User ObjectId
+//
+// recordedAt:
+//     Date
+//
+// This allows:
+//
+//     .populate("stockUpdates.recordedBy")
+//
+// and therefore:
+//
+//     latestStockUpdate.recordedBy.name
+//     latestStockUpdate.recordedBy.email
 //
 // ==========================================================
 
@@ -403,6 +433,172 @@ function normalizeProfileImage(
 
 
 // ==========================================================
+// STOCK UPDATE IMAGE SCHEMA
+// ==========================================================
+//
+// The view supports images stored as:
+//
+//     "https://example.com/image.jpg"
+//
+// OR:
+//
+//     {
+//         url: "..."
+//     }
+//
+// OR:
+//
+//     {
+//         path: "..."
+//     }
+//
+// OR:
+//
+//     {
+//         location: "..."
+//     }
+//
+// Therefore Mixed is deliberately used here so the existing
+// image storage format is not broken.
+//
+// ==========================================================
+
+const stockUpdateImageSchema =
+    new mongoose.Schema(
+
+        {},
+
+        {
+
+            _id: false,
+
+            strict: false
+
+        }
+
+    );
+
+
+// ==========================================================
+// STOCK UPDATE SCHEMA
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This is the field that fixes the error:
+//
+//     Cannot populate path
+//     'stockUpdates.recordedBy'
+//     because it is not in your schema.
+//
+// recordedBy is explicitly defined as a User reference.
+//
+// ==========================================================
+
+const stockUpdateSchema =
+    new mongoose.Schema(
+
+        {
+
+            // ==================================================
+            // STOCK QUANTITY AT TIME OF UPDATE
+            // ==================================================
+
+            quantity: {
+
+                type: Number,
+
+                min: 0,
+
+                required: true
+
+            },
+
+
+            // ==================================================
+            // STOCK UPDATE NOTE
+            // ==================================================
+
+            stockUpdateNote: {
+
+                type: String,
+
+                trim: true,
+
+                default: "",
+
+                maxlength: 5000
+
+            },
+
+
+            // ==================================================
+            // STOCK UPDATE IMAGES
+            // ==================================================
+
+            images: {
+
+                type: [
+
+                    mongoose.Schema.Types.Mixed
+
+                ],
+
+                default: []
+
+            },
+
+
+            // ==================================================
+            // USER WHO RECORDED THE UPDATE
+            // ==================================================
+            //
+            // THIS IS THE FIELD REQUIRED BY:
+            //
+            //     .populate("stockUpdates.recordedBy")
+            //
+            // ==================================================
+
+            recordedBy: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref: "User",
+
+                default: null
+
+            },
+
+
+            // ==================================================
+            // DATE / TIME OF UPDATE
+            // ==================================================
+
+            recordedAt: {
+
+                type: Date,
+
+                default: Date.now
+
+            }
+
+        },
+
+        {
+
+            _id: true,
+
+            timestamps: false,
+
+            minimize: false
+
+        }
+
+    );
+
+
+// ==========================================================
 // MAIN DAIRY SCHEMA
 // ==========================================================
 
@@ -437,8 +633,11 @@ const dairySchema =
                 type: [
 
                     {
+
                         type: String,
+
                         trim: true
+
                     }
 
                 ],
@@ -602,21 +801,6 @@ const dairySchema =
             // ==================================================
             // STORAGE FACILITY NUMBER
             // ==================================================
-            //
-            // Only storage facilities use this field.
-            //
-            // room:
-            //     positive
-            //
-            // agroStore:
-            //     negative
-            //
-            // Content records NEVER use roomNumber to identify
-            // where they are stored.
-            //
-            // They use dwellNumber.
-            //
-            // ==================================================
 
             roomNumber: {
 
@@ -710,19 +894,6 @@ const dairySchema =
             // ==================================================
             // STORAGE DWELL NUMBER
             // ==================================================
-            //
-            // This field belongs to CONTENT records.
-            //
-            // null:
-            //     not currently stored
-            //
-            // >= 0:
-            //     normal room
-            //
-            // < 0:
-            //     AgroStore
-            //
-            // ==================================================
 
             dwellNumber: {
 
@@ -782,7 +953,7 @@ const dairySchema =
 
 
             // ==================================================
-            // STOCK UPDATE NOTE
+            // CURRENT STOCK UPDATE NOTE
             // ==================================================
 
             stockUpdateNote: {
@@ -794,6 +965,41 @@ const dairySchema =
                 default: "",
 
                 maxlength: 5000
+
+            },
+
+
+            // ==================================================
+            // STOCK UPDATE HISTORY
+            // ==================================================
+            //
+            // REQUIRED BY:
+            //
+            //     views/storage/content-item.ejs
+            //
+            // The view expects:
+            //
+            //     item.stockUpdates[]
+            //
+            // Each update contains:
+            //
+            //     quantity
+            //     stockUpdateNote
+            //     images
+            //     recordedBy
+            //     recordedAt
+            //
+            // ==================================================
+
+            stockUpdates: {
+
+                type: [
+
+                    stockUpdateSchema
+
+                ],
+
+                default: []
 
             },
 
@@ -2106,6 +2312,72 @@ dairySchema.pre(
 
 
         // ======================================================
+        // NORMALIZE STOCK UPDATE HISTORY
+        // ======================================================
+
+        if (
+            !Array.isArray(
+                this.stockUpdates
+            )
+        ) {
+
+            this.stockUpdates = [];
+
+        }
+
+
+        this.stockUpdates.forEach(
+            update => {
+
+                if (
+                    update.quantity === null ||
+                    update.quantity === undefined
+                ) {
+
+                    update.quantity = 0;
+
+                }
+
+
+                update.quantity =
+                    Number(
+                        update.quantity
+                    );
+
+
+                if (
+                    !Number.isFinite(
+                        update.quantity
+                    ) ||
+                    update.quantity < 0
+                ) {
+
+                    update.quantity = 0;
+
+                }
+
+
+                update.stockUpdateNote =
+                    String(
+                        update.stockUpdateNote ||
+                        ""
+                    ).trim();
+
+
+                if (
+                    !update.recordedAt
+                ) {
+
+                    update.recordedAt =
+                        new Date();
+
+                }
+
+            }
+        );
+
+
+        // ======================================================
         // DETERMINE RECORD TYPE
         // ======================================================
 
@@ -2211,10 +2483,6 @@ dairySchema.pre(
             }
 
 
-            // ----------------------------------------------
-            // Farm cannot be owned by another farm.
-            // ----------------------------------------------
-
             this.assetCode = null;
 
             this.roomNumber = null;
@@ -2232,6 +2500,8 @@ dairySchema.pre(
             this.unit = null;
 
             this.stockUpdateNote = "";
+
+            this.stockUpdates = [];
 
         }
 
@@ -2322,6 +2592,7 @@ dairySchema.pre(
 
             this.roomNumber = null;
 
+
             // ----------------------------------------------
             // Feed fields do not belong to animals.
             // ----------------------------------------------
@@ -2331,6 +2602,8 @@ dairySchema.pre(
             this.unit = null;
 
             this.stockUpdateNote = "";
+
+            this.stockUpdates = [];
 
         }
 
@@ -2449,11 +2722,6 @@ dairySchema.pre(
                 }
 
 
-                // ----------------------------------------------
-                // A storage facility cannot itself be inside
-                // another storage facility.
-                // ----------------------------------------------
-
                 this.dwellNumber = null;
 
             }
@@ -2480,11 +2748,6 @@ dairySchema.pre(
 
                 }
 
-
-                // ----------------------------------------------
-                // A storage facility cannot itself be inside
-                // another storage facility.
-                // ----------------------------------------------
 
                 this.dwellNumber = null;
 
@@ -2532,17 +2795,6 @@ dairySchema.pre(
 
         // ======================================================
         // STORAGE DIRECTION VALIDATION
-        // ======================================================
-        //
-        // Positive dwell:
-        //     normal Room
-        //
-        // Negative dwell:
-        //     AgroStore
-        //
-        // Storage facility itself:
-        //     dwellNumber = null
-        //
         // ======================================================
 
         if (
@@ -2678,7 +2930,7 @@ dairySchema.pre(
 
                 const error =
                     new Error(
-                        "Feed records must have recordType set to \"structure\"."
+                        'Feed records must have recordType set to "structure".'
                     );
 
                 error.status = 400;
@@ -2776,6 +3028,8 @@ dairySchema.pre(
 
             this.stockUpdateNote = "";
 
+            this.stockUpdates = [];
+
         }
 
 
@@ -2836,6 +3090,62 @@ dairySchema.pre(
 
 
         // ======================================================
+        // STOCK UPDATE HISTORY NORMALIZATION
+        // ======================================================
+
+        if (
+            !Array.isArray(
+                this.stockUpdates
+            )
+        ) {
+
+            this.stockUpdates = [];
+
+        }
+
+
+        this.stockUpdates.forEach(
+            update => {
+
+                update.quantity =
+                    Number(
+                        update.quantity
+                    );
+
+
+                if (
+                    !Number.isFinite(
+                        update.quantity
+                    ) ||
+                    update.quantity < 0
+                ) {
+
+                    update.quantity = 0;
+
+                }
+
+
+                update.stockUpdateNote =
+                    String(
+                        update.stockUpdateNote ||
+                        ""
+                    ).trim();
+
+
+                if (
+                    !update.recordedAt
+                ) {
+
+                    update.recordedAt =
+                        new Date();
+
+                }
+
+            }
+        );
+
+
+        // ======================================================
         // FARM NORMALIZATION
         // ======================================================
 
@@ -2861,6 +3171,8 @@ dairySchema.pre(
 
             this.stockUpdateNote = "";
 
+            this.stockUpdates = [];
+
         }
 
 
@@ -2879,6 +3191,8 @@ dairySchema.pre(
             this.unit = null;
 
             this.stockUpdateNote = "";
+
+            this.stockUpdates = [];
 
         }
 
@@ -2994,6 +3308,8 @@ dairySchema.pre(
             this.unit = null;
 
             this.stockUpdateNote = "";
+
+            this.stockUpdates = [];
 
         }
 
@@ -3163,20 +3479,6 @@ dairySchema.index({
 // ==========================================================
 // STORAGE FACILITY INDEX
 // ==========================================================
-//
-// One Room number / AgroStore number per farm.
-//
-// Room:
-//
-//     farm -5
-//     room  1
-//
-// AgroStore:
-//
-//     farm -5
-//     store -1
-//
-// ==========================================================
 
 dairySchema.index(
 
@@ -3222,6 +3524,24 @@ dairySchema.index({
     dwellNumber: 1,
     quantity: 1,
     status: 1
+
+});
+
+
+// ==========================================================
+// STOCK UPDATE INDEX
+// ==========================================================
+
+dairySchema.index({
+
+    "stockUpdates.recordedBy": 1
+
+});
+
+
+dairySchema.index({
+
+    "stockUpdates.recordedAt": -1
 
 });
 
@@ -3672,15 +3992,6 @@ dairySchema.statics.getFarmFeeds =
 
 // ==========================================================
 // STATIC: GET AVAILABLE FARM FEEDS
-// ==========================================================
-//
-// Available feed:
-//
-//     belongs to farm
-//     is feed
-//     is not currently allocated
-//     quantity > 0
-//
 // ==========================================================
 
 dairySchema.statics.getAvailableFarmFeeds =
