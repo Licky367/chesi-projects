@@ -236,13 +236,13 @@ EXPECTED DATA:
                  /dashboard/dairy
         ================================================== -->
 
-        <section class="admin-dashboard-section">
-
-            <%- include("admin/standalone", {
-                standaloneAssets: standaloneAssets
-            }) %>
-
-        </section>
+        <section>
+<%- include("admin/standalone", {
+    standaloneAssets: typeof standaloneAssets !== "undefined"
+        ? standaloneAssets
+        : []
+}) %>
+</section>
 
 
     </div>
