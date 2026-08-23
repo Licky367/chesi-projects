@@ -4,77 +4,66 @@
 //
 // STORAGE CONTENT CARD SERVICE
 //
-// PURPOSE
+// ROUTE
 // ----------------------------------------------------------
 //
-// Retrieves the complete data required by:
-//
-//     views/update/content-item.ejs
-//
-// and allows the same prepared data to be used inside:
-//
-//     views/dairySet.ejs
-//
-// ==========================================================
-//
-// STORAGE RELATIONSHIP
-// ----------------------------------------------------------
-//
-// Dairy Farm:
-//
-//     dairy._id
-//     dairy.code
-//
-// AgroStore:
-//
-//     recordType = "structure"
-//     type       = "agroStore"
-//     assetCode  = dairy.code
-//     roomNumber = storage identifier
-//
-// Content Item:
-//
-//     assetCode   = dairy.code
-//     dwellNumber = agroStore.roomNumber
-//
-// Therefore:
-//
-//     agroStore.assetCode
-//         ===
-//     dairy.code
-//
-// AND:
-//
-//     contentItem.dwellNumber
-//         ===
-//     agroStore.roomNumber
+//     /dairy/:contentItemId/:dwellNumber
 //
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// The contentItemId in:
+// contentItemId
+//     = MongoDB _id of the storage CONTENT ITEM
 //
-//     /dairy/:dairyId/:contentItemId
+// dwellNumber
+//     = storage location identifier
 //
-// is the _id of the ACTUAL CONTENT ITEM.
+// The service determines the Dairy Farm and Storage Facility
+// from the content item's ownership relationship.
 //
-// It is NOT the AgroStore _id.
-//
-// The AgroStore is discovered from:
-//
-//     dairy.code
-//         +
-//     contentItem.dwellNumber
-//
-// ==========================================================
-//
-// DATA PROVIDED
+// RELATIONSHIP
 // ----------------------------------------------------------
 //
-//     dairy
-//     storage
-//     item
-//     latestStockUpdate
+//     CONTENT ITEM
+//         |
+//         | assetCode
+//         v
+//     DAIRY FARM.code
+//         |
+//         | assetCode
+//         v
+//     STORAGE FACILITY
+//         |
+//         | roomNumber
+//         v
+//     CONTENT ITEM.dwellNumber
+//
+// EXAMPLE
+// ----------------------------------------------------------
+//
+// Farm:
+//
+//     code = -100
+//
+// AgroStore:
+//
+//     assetCode = -100
+//     roomNumber = -5
+//
+// Feed:
+//
+//     assetCode = -100
+//     dwellNumber = -5
+//
+// Therefore:
+//
+//     /dairy/<feedId>/-5
+//
+// resolves to:
+//
+//     feed
+//         -> farm -100
+//         -> AgroStore roomNumber -5
 //
 // ==========================================================
 
@@ -87,7 +76,7 @@ const Dairy =
 
 
 // ==========================================================
-// HELPER: VALID OBJECT ID
+// HELPER
 // ==========================================================
 
 function isValidObjectId(
@@ -102,34 +91,10 @@ function isValidObjectId(
 
 
 // ==========================================================
-// HELPER: CREATE ERROR
-// ==========================================================
-
-function createError(
-    message,
-    status
-) {
-
-    const error =
-        new Error(
-            message
-        );
-
-    error.status =
-        status;
-
-    return error;
-
-}
-
-
-// ==========================================================
-// HELPER: LATEST STOCK UPDATE
+// HELPER
 // ==========================================================
 //
-// Determines the latest update using recordedAt.
-//
-// It does NOT depend on the physical array position.
+// Safely determine the latest stock update.
 //
 // ==========================================================
 
@@ -156,7 +121,6 @@ function getLatestStockUpdate(
                 update =>
                     update
             )
-            .slice()
             .sort(
                 (a, b) => {
 
@@ -190,11 +154,18 @@ function getLatestStockUpdate(
 
 
 // ==========================================================
-// HELPER: PREPARE CONTENT ITEM
+// HELPER
 // ==========================================================
 //
-// Converts a Mongoose document / lean object into the
-// object expected by the views.
+// Prepare a storage item.
+//
+// Works with both:
+//
+//     Mongoose document
+//
+// and:
+//
+//     lean object
 //
 // ==========================================================
 
@@ -215,19 +186,19 @@ function prepareContentItem(
         );
 
 
-    const prepared =
-        item.toObject
+    const object =
+        typeof item.toObject === "function"
+
             ? item.toObject({
                 virtuals: true
             })
-            : {
-                ...item
-            };
+
+            : item;
 
 
     return {
 
-        ...prepared,
+        ...object,
 
         latestStockUpdate
 
@@ -237,89 +208,21 @@ function prepareContentItem(
 
 
 // ==========================================================
-// HELPER: GET FARM
+// HELPER
 // ==========================================================
-//
-// dairyId ALWAYS identifies the Dairy Farm.
-//
-// We deliberately require:
-//
-//     recordType = "farm"
-//
-// This prevents an animal, AgroStore, room, or other
-// structure from being accidentally accepted as the farm.
-//
+// Parse dwellNumber safely.
 // ==========================================================
 
-async function getFarm(
-    dairyId
+function parseDwellNumber(
+    value
 ) {
 
-    const dairy =
-        await Dairy.findOne({
+    const number =
+        Number(value);
 
-            _id:
-                dairyId,
-
-            recordType:
-                "farm",
-
-            status:
-                "active"
-
-        })
-        .lean({
-            virtuals: true
-        });
-
-
-    if (!dairy) {
-
-        throw createError(
-            "Dairy farm not found.",
-            404
-        );
-
-    }
-
-
-    return dairy;
-
-}
-
-
-// ==========================================================
-// HELPER: GET STORAGE FROM CONTENT ITEM
-// ==========================================================
-//
-// This is the important relationship.
-//
-// The content item tells us WHERE it lives:
-//
-//     contentItem.dwellNumber
-//
-// The farm tells us WHICH farm it belongs to:
-//
-//     dairy.code
-//
-// We then find the storage facility whose:
-//
-//     assetCode  = dairy.code
-//
-// AND:
-//
-//     roomNumber = contentItem.dwellNumber
-//
-// ==========================================================
-
-async function getStorageForItem(
-    dairy,
-    item
-) {
 
     if (
-        !dairy ||
-        !item
+        !Number.isInteger(number)
     ) {
 
         return null;
@@ -327,96 +230,7 @@ async function getStorageForItem(
     }
 
 
-    if (
-        item.dwellNumber === null ||
-        item.dwellNumber === undefined
-    ) {
-
-        return null;
-
-    }
-
-
-    // ======================================================
-    // DETERMINE STORAGE TYPE FROM DWELL NUMBER
-    // ======================================================
-    //
-    // Negative dwell:
-    //
-    //     AgroStore
-    //
-    // Non-negative dwell:
-    //
-    //     Normal Room
-    //
-    // ======================================================
-
-    const dwellNumber =
-        Number(
-            item.dwellNumber
-        );
-
-
-    if (
-        !Number.isInteger(
-            dwellNumber
-        )
-    ) {
-
-        return null;
-
-    }
-
-
-    const storageType =
-        dwellNumber < 0
-            ? "agroStore"
-            : "room";
-
-
-    // ======================================================
-    // FIND STORAGE
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // We DO NOT use an AgroStore ID supplied by the URL.
-    //
-    // We derive the storage facility from:
-    //
-    //     dairy.code
-    //     item.dwellNumber
-    //
-    // ======================================================
-
-    const storage =
-        await Dairy.findOne({
-
-            recordType:
-                "structure",
-
-            type:
-                storageType,
-
-            assetCode:
-                dairy.code,
-
-            roomNumber:
-                dwellNumber,
-
-            dwellNumber:
-                null,
-
-            status:
-                "active"
-
-        })
-        .lean({
-            virtuals: true
-        });
-
-
-    return storage;
+    return number;
 
 }
 
@@ -425,49 +239,36 @@ async function getStorageForItem(
 // GET CONTENT ITEM
 // ==========================================================
 //
-// ROUTE:
+// ROUTE PARAMETERS
+// ----------------------------------------------------------
 //
-//     /dairy/:dairyId/:contentItemId
+//     contentItemId
+//     dwellNumber
 //
-// PARAMETERS:
+// IMPORTANT
+// ----------------------------------------------------------
 //
-//     dairyId
-//         = Dairy Farm._id
+// The farm is NOT supplied by the route.
 //
-//     itemId
-//         = actual content item's _id
+// The farm is found from:
 //
-// storageId is intentionally NOT required.
+//     contentItem.assetCode
 //
-// The storage facility is derived from:
+// The storage facility is then found from:
 //
-//     item.dwellNumber
+//     storage.assetCode === farm.code
+//
+// and:
+//
+//     storage.roomNumber === contentItem.dwellNumber
 //
 // ==========================================================
 
 exports.getContentItem =
     async function ({
-        dairyId,
-        itemId
+        contentItemId,
+        dwellNumber
     }) {
-
-
-        // ==================================================
-        // VALIDATE FARM ID
-        // ==================================================
-
-        if (
-            !isValidObjectId(
-                dairyId
-            )
-        ) {
-
-            throw createError(
-                "Invalid Dairy ID.",
-                400
-            );
-
-        }
 
 
         // ==================================================
@@ -476,41 +277,57 @@ exports.getContentItem =
 
         if (
             !isValidObjectId(
-                itemId
+                contentItemId
             )
         ) {
 
-            throw createError(
-                "Invalid content item ID.",
-                400
-            );
+            const error =
+                new Error(
+                    "Invalid content item ID."
+                );
+
+            error.status = 400;
+
+            throw error;
 
         }
 
 
         // ==================================================
-        // GET FARM
+        // VALIDATE DWELL NUMBER
         // ==================================================
 
-        const dairy =
-            await getFarm(
-                dairyId
+        const requestedDwellNumber =
+            parseDwellNumber(
+                dwellNumber
             );
+
+
+        if (
+            requestedDwellNumber === null
+        ) {
+
+            const error =
+                new Error(
+                    "Invalid dwell number."
+                );
+
+            error.status = 400;
+
+            throw error;
+
+        }
 
 
         // ==================================================
         // GET CONTENT ITEM
         // ==================================================
         //
-        // IMPORTANT:
+        // The content item is the FIRST route identifier.
         //
-        // itemId identifies the ACTUAL ITEM.
+        // /dairy/:contentItemId/:dwellNumber
         //
-        // We verify:
-        //
-        //     item._id       = itemId
-        //     item.assetCode = dairy.code
-        //     item.dwellNumber != null
+        // Therefore we start here.
         //
         // ==================================================
 
@@ -518,19 +335,13 @@ exports.getContentItem =
             await Dairy.findOne({
 
                 _id:
-                    itemId,
+                    contentItemId,
 
                 recordType:
                     "structure",
 
-                assetCode:
-                    dairy.code,
-
                 dwellNumber:
-                    {
-                        $ne:
-                            null
-                    },
+                    requestedDwellNumber,
 
                 status:
                     "active"
@@ -555,41 +366,237 @@ exports.getContentItem =
 
         if (!item) {
 
-            throw createError(
-                "Storage content item not found for this Dairy Farm.",
-                404
-            );
+            const error =
+                new Error(
+                    "Storage content item not found."
+                );
+
+            error.status = 404;
+
+            throw error;
 
         }
 
 
         // ==================================================
-        // GET STORAGE
+        // CONTENT ITEM MUST BELONG TO A FARM
         // ==================================================
         //
-        // Storage is determined from:
+        // An assigned content item has:
         //
-        //     item.dwellNumber
+        //     assetCode = negative farm code
         //
-        // NOT from itemId.
+        // ==================================================
+
+        if (
+            item.assetCode === null ||
+            item.assetCode === undefined
+        ) {
+
+            const error =
+                new Error(
+                    "Storage content item does not belong to a Dairy Farm."
+                );
+
+            error.status = 404;
+
+            throw error;
+
+        }
+
+
+        const farmCode =
+            Number(
+                item.assetCode
+            );
+
+
+        if (
+            !Number.isInteger(
+                farmCode
+            ) ||
+            farmCode >= 0
+        ) {
+
+            const error =
+                new Error(
+                    "Storage content item has an invalid parent Dairy Farm code."
+                );
+
+            error.status = 400;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // GET DAIRY FARM
+        // ==================================================
         //
-        // NOT from an AgroStore ID.
+        // IMPORTANT:
+        //
+        // We DO NOT use contentItemId as the farm ID.
+        //
+        // We use:
+        //
+        //     item.assetCode
+        //
+        // to find:
+        //
+        //     farm.code
+        //
+        // ==================================================
+
+        const dairy =
+            await Dairy.findOne({
+
+                recordType:
+                    "farm",
+
+                code:
+                    farmCode,
+
+                status:
+                    "active"
+
+            })
+            .lean({
+
+                virtuals:
+                    true
+
+            });
+
+
+        if (!dairy) {
+
+            const error =
+                new Error(
+                    "Dairy farm belonging to this content item was not found."
+                );
+
+            error.status = 404;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // VERIFY FARM RELATIONSHIP
+        // ==================================================
+        //
+        // The content item must point to this farm.
+        //
+        // ==================================================
+
+        if (
+            Number(item.assetCode) !==
+            Number(dairy.code)
+        ) {
+
+            const error =
+                new Error(
+                    "Content item does not belong to the resolved Dairy Farm."
+                );
+
+            error.status = 409;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // GET STORAGE FACILITY
+        // ==================================================
+        //
+        // THIS IS THE IMPORTANT RELATIONSHIP.
+        //
+        // A storage facility belongs to the farm when:
+        //
+        //     storage.assetCode === farm.code
+        //
+        // A content item belongs to that storage facility when:
+        //
+        //     contentItem.dwellNumber === storage.roomNumber
         //
         // ==================================================
 
         const storage =
-            await getStorageForItem(
-                dairy,
-                item
-            );
+            await Dairy.findOne({
+
+                recordType:
+                    "structure",
+
+                type: {
+                    $in: [
+                        "room",
+                        "agroStore"
+                    ]
+                },
+
+                assetCode:
+                    dairy.code,
+
+                roomNumber:
+                    requestedDwellNumber,
+
+                dwellNumber:
+                    null,
+
+                status:
+                    "active"
+
+            })
+            .lean({
+
+                virtuals:
+                    true
+
+            });
 
 
         if (!storage) {
 
-            throw createError(
-                "Storage facility for this content item was not found.",
-                404
-            );
+            const error =
+                new Error(
+                    "Storage facility for this content item was not found."
+                );
+
+            error.status = 404;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // VERIFY CONTENT -> STORAGE RELATIONSHIP
+        // ==================================================
+        //
+        // This check makes the relationship explicit:
+        //
+        //     item.dwellNumber
+        //         ===
+        //     storage.roomNumber
+        //
+        // ==================================================
+
+        if (
+            Number(item.dwellNumber) !==
+            Number(storage.roomNumber)
+        ) {
+
+            const error =
+                new Error(
+                    "Content item does not belong to the resolved storage facility."
+                );
+
+            error.status = 409;
+
+            throw error;
 
         }
 
@@ -631,17 +638,13 @@ exports.getContentItem =
 // GET CONTENT ITEMS FOR A STORAGE FACILITY
 // ==========================================================
 //
-// This method accepts storageId because the caller is
-// explicitly asking for the contents of a known storage
-// facility.
+// Parameters:
 //
-// The storage is still validated against the farm:
+//     dairyId
+//     storageId
 //
-//     storage.assetCode === dairy.code
-//
-// Content belongs to the storage when:
-//
-//     item.dwellNumber === storage.roomNumber
+// This method remains useful internally for pages that already
+// know the farm and storage facility.
 //
 // ==========================================================
 
@@ -653,7 +656,7 @@ exports.getStorageContentItems =
 
 
         // ==================================================
-        // VALIDATE FARM ID
+        // VALIDATE DAIRY ID
         // ==================================================
 
         if (
@@ -662,10 +665,14 @@ exports.getStorageContentItems =
             )
         ) {
 
-            throw createError(
-                "Invalid Dairy ID.",
-                400
-            );
+            const error =
+                new Error(
+                    "Invalid Dairy ID."
+                );
+
+            error.status = 400;
+
+            throw error;
 
         }
 
@@ -680,10 +687,14 @@ exports.getStorageContentItems =
             )
         ) {
 
-            throw createError(
-                "Invalid storage ID.",
-                400
-            );
+            const error =
+                new Error(
+                    "Invalid storage ID."
+                );
+
+            error.status = 400;
+
+            throw error;
 
         }
 
@@ -693,9 +704,38 @@ exports.getStorageContentItems =
         // ==================================================
 
         const dairy =
-            await getFarm(
-                dairyId
-            );
+            await Dairy.findOne({
+
+                _id:
+                    dairyId,
+
+                recordType:
+                    "farm",
+
+                status:
+                    "active"
+
+            })
+            .lean({
+
+                virtuals:
+                    true
+
+            });
+
+
+        if (!dairy) {
+
+            const error =
+                new Error(
+                    "Dairy farm not found."
+                );
+
+            error.status = 404;
+
+            throw error;
+
+        }
 
 
         // ==================================================
@@ -721,12 +761,6 @@ exports.getStorageContentItems =
                 assetCode:
                     dairy.code,
 
-                roomNumber:
-                    {
-                        $ne:
-                            null
-                    },
-
                 dwellNumber:
                     null,
 
@@ -744,24 +778,20 @@ exports.getStorageContentItems =
 
         if (!storage) {
 
-            throw createError(
-                "Storage facility not found for this Dairy Farm.",
-                404
-            );
+            const error =
+                new Error(
+                    "Storage facility not found."
+                );
+
+            error.status = 404;
+
+            throw error;
 
         }
 
 
         // ==================================================
         // GET CONTENT
-        // ==================================================
-        //
-        // The content belongs to the storage when:
-        //
-        //     contentItem.dwellNumber
-        //         ===
-        //     storage.roomNumber
-        //
         // ==================================================
 
         const items =
@@ -832,16 +862,8 @@ exports.getStorageContentItems =
 // GET ALL FARM STORAGE CONTENT
 // ==========================================================
 //
-// Retrieves all active content belonging to storage facilities
-// of the specified Dairy Farm.
-//
-// Farm relationship:
-//
-//     item.assetCode === dairy.code
-//
-// Storage relationship:
-//
-//     item.dwellNumber === storage.roomNumber
+// Gets all active content belonging to the farm's storage
+// facilities.
 //
 // ==========================================================
 
@@ -852,7 +874,7 @@ exports.getFarmStorageContent =
 
 
         // ==================================================
-        // VALIDATE FARM ID
+        // VALIDATE ID
         // ==================================================
 
         if (
@@ -861,10 +883,14 @@ exports.getFarmStorageContent =
             )
         ) {
 
-            throw createError(
-                "Invalid Dairy ID.",
-                400
-            );
+            const error =
+                new Error(
+                    "Invalid Dairy ID."
+                );
+
+            error.status = 400;
+
+            throw error;
 
         }
 
@@ -874,13 +900,42 @@ exports.getFarmStorageContent =
         // ==================================================
 
         const dairy =
-            await getFarm(
-                dairyId
-            );
+            await Dairy.findOne({
+
+                _id:
+                    dairyId,
+
+                recordType:
+                    "farm",
+
+                status:
+                    "active"
+
+            })
+            .lean({
+
+                virtuals:
+                    true
+
+            });
+
+
+        if (!dairy) {
+
+            const error =
+                new Error(
+                    "Dairy farm not found."
+                );
+
+            error.status = 404;
+
+            throw error;
+
+        }
 
 
         // ==================================================
-        // GET CONTENT
+        // GET ALL STORAGE CONTENT
         // ==================================================
 
         const items =
@@ -892,11 +947,10 @@ exports.getFarmStorageContent =
                 assetCode:
                     dairy.code,
 
-                dwellNumber:
-                    {
-                        $ne:
-                            null
-                    },
+                dwellNumber: {
+                    $ne:
+                        null
+                },
 
                 status:
                     "active"
@@ -954,8 +1008,6 @@ exports.getFarmStorageContent =
 //
 // Convenience method.
 //
-// This method only needs the content item's _id.
-//
 // ==========================================================
 
 exports.getLatestStockUpdate =
@@ -974,10 +1026,14 @@ exports.getLatestStockUpdate =
             )
         ) {
 
-            throw createError(
-                "Invalid content item ID.",
-                400
-            );
+            const error =
+                new Error(
+                    "Invalid content item ID."
+                );
+
+            error.status = 400;
+
+            throw error;
 
         }
 
@@ -1007,10 +1063,14 @@ exports.getLatestStockUpdate =
 
         if (!item) {
 
-            throw createError(
-                "Content item not found.",
-                404
-            );
+            const error =
+                new Error(
+                    "Content item not found."
+                );
+
+            error.status = 404;
+
+            throw error;
 
         }
 
@@ -1024,14 +1084,3 @@ exports.getLatestStockUpdate =
         );
 
     };
-
-
-// ==========================================================
-// EXPORT HELPERS
-// ==========================================================
-
-exports.getLatestStockUpdateFromItem =
-    getLatestStockUpdate;
-
-exports.prepareContentItem =
-    prepareContentItem;
