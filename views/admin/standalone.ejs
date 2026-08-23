@@ -27,15 +27,23 @@ STANDALONE ASSETS MAY BE:
     • Facilities
     • Equipment
 
-CURRENT WORTH:
+IMPORTANT:
 
-    currentWorth
-        =
-    Current estimated value of the asset.
+    This partial contains NO financial information.
+
+    It does NOT use:
+
+        currentWorth
+        assetWorth
+        value
+        price
+
+    The card displays only the asset identity,
+    image and name.
 
 LINK:
 
-    /networth/asset/:id
+    /dairy/:id
 
 DESIGN:
 
@@ -371,7 +379,9 @@ const standaloneAssetList =
 /* ==========================================================
    BASE ASSET STORY CARD
 
-   LAPTOP / DESKTOP SIZE
+   LAPTOP / DESKTOP
+
+       116px × 164px
 ========================================================== */
 
 .standalone-asset-card {
@@ -733,46 +743,6 @@ const standaloneAssetList =
 
 
 /* ==========================================================
-   CURRENT WORTH
-========================================================== */
-
-.standalone-asset-worth {
-
-    display:
-        block;
-
-    margin:
-        3px 0 0;
-
-    color:
-        #b9efc6;
-
-    font-size:
-        10px;
-
-    font-weight:
-        800;
-
-    line-height:
-        1.2;
-
-    white-space:
-        nowrap;
-
-    overflow:
-        hidden;
-
-    text-overflow:
-        ellipsis;
-
-    text-shadow:
-        0 1px 3px
-        rgba(0,0,0,.55);
-
-}
-
-
-/* ==========================================================
    EMPTY STATE
 ========================================================== */
 
@@ -881,6 +851,8 @@ const standaloneAssetList =
 
 /* ==========================================================
    MOBILE
+
+       108px × 150px
 ========================================================== */
 
 @media (max-width:600px) {
@@ -919,14 +891,6 @@ const standaloneAssetList =
 
     }
 
-
-    /*
-    ----------------------------------------------------------
-    REQUIRED MOBILE SIZE
-
-        108px × 150px
-    ----------------------------------------------------------
-    */
 
     .standalone-asset-card {
 
@@ -987,14 +951,6 @@ const standaloneAssetList =
     }
 
 
-    .standalone-asset-worth {
-
-        font-size:
-            9px;
-
-    }
-
-
     .standalone-asset-info {
 
         padding:
@@ -1009,6 +965,8 @@ const standaloneAssetList =
 
 /* ==========================================================
    VERY SMALL SCREENS
+
+       102px × 144px
 ========================================================== */
 
 @media (max-width:380px) {
@@ -1062,14 +1020,6 @@ const standaloneAssetList =
 
         font-size:
             10px;
-
-    }
-
-
-    .standalone-asset-worth {
-
-        font-size:
-            8px;
 
     }
 
@@ -1293,26 +1243,6 @@ const standaloneAssetList =
                             .toUpperCase() ||
                         "A";
 
-
-                    /* ==========================================
-                       CURRENT WORTH
-                    =========================================== */
-
-                    const numericWorth =
-                        Number(
-                            dairy.currentWorth || 0
-                        );
-
-
-                    const assetWorth =
-                        Number.isFinite(
-                            numericWorth
-                        )
-                            ? numericWorth.toLocaleString(
-                                "en-KE"
-                            )
-                            : "0";
-
             %>
 
 
@@ -1321,7 +1251,7 @@ const standaloneAssetList =
                 =========================================== -->
 
                 <a
-                    href="/networth/asset/<%= dairy._id %>"
+                    href="/dairy/<%= dairy._id %>"
                     class="standalone-asset-card"
                     role="listitem"
                     aria-label="Open <%= assetName %>"
@@ -1438,15 +1368,6 @@ const standaloneAssetList =
                         >
 
                             <%= assetName %>
-
-                        </span>
-
-
-                        <span
-                            class="standalone-asset-worth"
-                        >
-
-                            KSh <%= assetWorth %>
 
                         </span>
 
