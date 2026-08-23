@@ -1099,13 +1099,6 @@ async function getContentItemDetails({
     // ======================================================
     // LATEST STOCK UPDATE
     // ======================================================
-    //
-    // The EJS uses this object to display:
-    //
-    //     last updated time
-    //     user who updated it
-    //
-    // ======================================================
 
     let latestStockUpdate =
         null;
@@ -2160,15 +2153,6 @@ async function updateFeedQuantity({
     // ======================================================
     // STOCK UPDATE RECORD
     // ======================================================
-    //
-    // This is deliberately created by the service.
-    //
-    // The browser does NOT provide:
-    //
-    //     recordedBy
-    //     recordedAt
-    //
-    // ======================================================
 
     const stockUpdate = {
 
@@ -2341,6 +2325,59 @@ async function updateFeedQuantity({
 
 
 // ==========================================================
+// UPDATE CONTENT ITEM
+// ==========================================================
+//
+// Compatibility service method used by:
+//
+//     controllers/storage/contents.js
+//
+// The controller calls:
+//
+//     storageContentsService.updateContentItem()
+//
+// The actual AgroStore feed update logic remains centralized
+// inside:
+//
+//     updateFeedQuantity()
+//
+// ==========================================================
+
+async function updateContentItem({
+    dairyId,
+    storageId,
+    itemId,
+    quantity,
+    unit,
+    stockUpdateNote,
+    images,
+    user
+}) {
+
+    return await updateFeedQuantity({
+
+        dairyId,
+
+        storageId,
+
+        itemId,
+
+        quantity,
+
+        unit,
+
+        stockUpdateNote,
+
+        images,
+
+        user
+
+    });
+
+}
+
+
+// ==========================================================
 // UPDATE MULTIPLE FEED QUANTITIES
 // ==========================================================
 //
@@ -2484,6 +2521,8 @@ module.exports = {
 
     updateFeedQuantity,
 
-    updateFeedQuantities
+    updateFeedQuantities,
+
+    updateContentItem
 
 };
