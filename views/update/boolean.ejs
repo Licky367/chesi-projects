@@ -1,119 +1,125 @@
 <%
-/* =========================================================.
-   FEMALE ANIMAL CARDS
+/* ==========================================================
+   FEMALE ANIMAL BOOLEAN CARDS
 
    FILE:
        views/update/boolean.ejs
 
    PURPOSE:
-       Display eligible Dairy animal records as horizontal,
-       left/right scrollable cards.
+       INCLUDE COMPONENT.
 
-   ANIMAL RULE:
+       This file is NOT rendered independently.
+
+       Parent:
+           views/update.ejs
+
+   DISPLAY:
    ----------------------------------------------------------
-       An animal must have:
+       FIRST CARD:
+           Boolean selector.
 
-           code > 0
+           Tapping it opens a dropdown containing all
+           Boolean fields supplied by the controller.
 
-       AND:
+       REMAINING CARDS:
+           Eligible female animals.
 
-           code is EVEN
-           OR
-           gender === "female"
-
-   FIRST CARD:
+   ELIGIBILITY:
    ----------------------------------------------------------
-       Filter / boolean control card.
+       Positive EVEN code
 
-       Tapping the first card opens a dropdown containing:
+       OR
 
-           All
-           Female
-           Not Female
+       gender === "female"
 
-   ANIMAL TOGGLE:
+   TOGGLE ROUTE:
    ----------------------------------------------------------
-       Every animal card contains a toggle controlling:
+       PUT /dairy/:animalId/boolean
 
-           female = true / false
+   BODY:
+       {
+           field: "...",
+           value: true
+       }
 
-   IMPORTANT:
-   ----------------------------------------------------------
-       The frontend does NOT infer female from the code.
-
-       The `female` boolean is authoritative.
 ========================================================== */
 
 
 /* ==========================================================
-   SOURCE DATA
+   SAFE DATA
 ========================================================== */
 
-const sourceAnimals =
-    Array.isArray(dairies)
-        ? dairies
+const booleanAnimals =
+    Array.isArray(animals)
+        ? animals
         : (
-            Array.isArray(animals)
-                ? animals
+            Array.isArray(booleanAnimalsData)
+                ? booleanAnimalsData
+                : []
+        );
+
+
+const booleanFields =
+    Array.isArray(fields)
+        ? fields
+        : (
+            Array.isArray(booleanFieldsData)
+                ? booleanFieldsData
                 : []
         );
 
 
 /* ==========================================================
-   ELIGIBLE ANIMALS
+   FILTER ELIGIBLE ANIMALS
 ========================================================== */
 
-const animalRecords =
-    sourceAnimals.filter(function (item) {
+const eligibleAnimals =
+    booleanAnimals.filter(
+        function (animal) {
 
-        if (!item) {
+            if (!animal) {
 
-            return false;
+                return false;
+
+            }
+
+
+            const numericCode =
+                Number(
+                    animal.code
+                );
+
+
+            const positiveEvenCode =
+                Number.isInteger(
+                    numericCode
+                ) &&
+                numericCode > 0 &&
+                numericCode % 2 === 0;
+
+
+            const isFemale =
+                String(
+                    animal.gender || ""
+                )
+                .trim()
+                .toLowerCase() === "female";
+
+
+            return (
+                positiveEvenCode ||
+                isFemale
+            );
 
         }
-
-
-        if (!item._id) {
-
-            return false;
-
-        }
-
-
-        const code =
-            Number(item.code);
-
-
-        if (
-            !Number.isInteger(code) ||
-            code <= 0
-        ) {
-
-            return false;
-
-        }
-
-
-        const gender =
-            String(
-                item.gender ||
-                ""
-            ).trim().toLowerCase();
-
-
-        return (
-            code % 2 === 0 ||
-            gender === "female"
-        );
-
-    });
+    );
 
 %>
 
 
 <section
-    class="admin-animal-strip"
-    aria-label="Female animal management"
+    class="boolean-animal-strip"
+    aria-label="Female animal boolean management"
 >
 
 
@@ -121,11 +127,11 @@ const animalRecords =
          HEADER
     ======================================================= -->
 
-    <div class="admin-animal-strip-header">
+    <div class="boolean-animal-header">
 
-        <div class="admin-animal-heading">
+        <div class="boolean-animal-heading">
 
-            <span class="admin-animal-kicker">
+            <span class="boolean-animal-kicker">
                 ANIMAL MANAGEMENT
             </span>
 
@@ -136,9 +142,9 @@ const animalRecords =
         </div>
 
 
-        <div class="admin-animal-description">
+        <div class="boolean-animal-description">
 
-            Manage the female status of eligible dairy animals.
+            Select a property, then tap an animal to update it.
 
         </div>
 
@@ -147,205 +153,113 @@ const animalRecords =
 
 
     <!-- ======================================================
-         HORIZONTAL CARD SCROLL
+         HORIZONTAL CARD STRIP
     ======================================================= -->
 
     <div
-        class="admin-animal-scroll"
+        class="boolean-animal-scroll"
         role="list"
-        aria-label="Dairy animals"
+        aria-label="Female animals"
     >
 
 
         <!-- ==================================================
-             FIRST CARD — FILTER / BOOLEAN CONTROL
+             BOOLEAN SELECTOR CARD
         =================================================== -->
 
         <div
-            class="admin-animal-card admin-animal-filter-card"
+            class="boolean-animal-card boolean-selector-card"
             role="listitem"
         >
 
+            <div class="boolean-card-accent"></div>
 
-            <!-- ACCENT -->
-
-            <div
-                class="admin-animal-filter-accent"
-                aria-hidden="true"
-            ></div>
-
-
-
-            <!-- FILTER HEADER -->
 
             <button
                 type="button"
-                class="admin-animal-filter-trigger"
+                class="boolean-selector-button"
+                id="booleanSelectorButton"
                 aria-expanded="false"
-                aria-controls="female-filter-menu"
+                aria-controls="booleanFieldDropdown"
             >
 
+                <span class="boolean-selector-icon">
 
-                <div class="admin-animal-filter-icon">
+                    <i class="fas fa-sliders"></i>
 
-                    <i class="fas fa-venus"></i>
-
-                </div>
-
-
-                <div class="admin-animal-filter-heading">
-
-                    <span class="admin-animal-filter-kicker">
-                        FILTER
-                    </span>
-
-                    <strong>
-                        Female
-                    </strong>
-
-                </div>
+                </span>
 
 
-                <div class="admin-animal-filter-chevron">
+                <span class="boolean-selector-title">
+                    Boolean
+                </span>
 
+
+                <span class="boolean-selector-subtitle">
+                    Select property
+                </span>
+
+
+                <span class="boolean-selector-arrow">
                     <i class="fas fa-chevron-down"></i>
-
-                </div>
+                </span>
 
             </button>
 
 
-
-            <!-- CURRENT FILTER -->
-
-            <div class="admin-animal-filter-current">
-
-                <span
-                    class="admin-animal-filter-status-dot"
-                    aria-hidden="true"
-                ></span>
-
-                <span
-                    id="female-filter-label"
-                >
-                    All Animals
-                </span>
-
-            </div>
-
-
-
-            <!-- ==================================================
+            <!-- ==============================================
                  DROPDOWN
-            =================================================== -->
+            =============================================== -->
 
             <div
-                id="female-filter-menu"
-                class="admin-animal-filter-menu"
+                id="booleanFieldDropdown"
+                class="boolean-field-dropdown"
                 hidden
             >
 
-
-                <button
-                    type="button"
-                    class="admin-animal-filter-option active"
-                    data-filter="all"
-                >
-
-                    <span class="admin-animal-option-icon">
-
-                        <i class="fas fa-layer-group"></i>
-
-                    </span>
-
-                    <span class="admin-animal-option-text">
-
-                        <strong>
-                            All
-                        </strong>
-
-                        <small>
-                            Show all eligible animals
-                        </small>
-
-                    </span>
-
-                    <span class="admin-animal-option-check">
-
-                        <i class="fas fa-check"></i>
-
-                    </span>
-
-                </button>
+                <div class="boolean-dropdown-title">
+                    Boolean Fields
+                </div>
 
 
+                <% if (booleanFields.length > 0) { %>
 
-                <button
-                    type="button"
-                    class="admin-animal-filter-option"
-                    data-filter="female"
-                >
+                    <div class="boolean-field-list">
 
-                    <span class="admin-animal-option-icon">
+                        <% booleanFields.forEach(
+                            function (field) {
+                        %>
 
-                        <i class="fas fa-venus"></i>
+                            <button
+                                type="button"
+                                class="boolean-field-option"
+                                data-field="<%= field %>"
+                            >
 
-                    </span>
+                                <span>
+                                    <%= field %>
+                                </span>
 
-                    <span class="admin-animal-option-text">
+                                <i
+                                    class="fas fa-check"
+                                    aria-hidden="true"
+                                ></i>
 
-                        <strong>
-                            Female
-                        </strong>
+                            </button>
 
-                        <small>
-                            Show female animals
-                        </small>
+                        <% }); %>
 
-                    </span>
+                    </div>
 
-                    <span class="admin-animal-option-check">
+                <% } else { %>
 
-                        <i class="fas fa-check"></i>
+                    <div class="boolean-no-fields">
 
-                    </span>
+                        No Boolean fields available.
 
-                </button>
+                    </div>
 
-
-
-                <button
-                    type="button"
-                    class="admin-animal-filter-option"
-                    data-filter="not-female"
-                >
-
-                    <span class="admin-animal-option-icon">
-
-                        <i class="fas fa-venus-mars"></i>
-
-                    </span>
-
-                    <span class="admin-animal-option-text">
-
-                        <strong>
-                            Not Female
-                        </strong>
-
-                        <small>
-                            Show animals not marked female
-                        </small>
-
-                    </span>
-
-                    <span class="admin-animal-option-check">
-
-                        <i class="fas fa-check"></i>
-
-                    </span>
-
-                </button>
-
+                <% } %>
 
             </div>
 
@@ -354,17 +268,20 @@ const animalRecords =
 
 
         <!-- ==================================================
-             ANIMAL CARDS
+             ELIGIBLE ANIMAL CARDS
         =================================================== -->
 
-        <% animalRecords.forEach(function (animal) { %>
+        <% eligibleAnimals.forEach(
+            function (animal) {
 
-            <%
+                if (
+                    !animal ||
+                    !animal._id
+                ) {
 
-                const animalId =
-                    String(
-                        animal._id
-                    );
+                    return;
+
+                }
 
 
                 const animalName =
@@ -373,35 +290,6 @@ const animalRecords =
                         "Unnamed Animal"
                     );
 
-
-                const animalCode =
-                    Number(
-                        animal.code
-                    );
-
-
-                const animalGender =
-                    String(
-                        animal.gender ||
-                        ""
-                    )
-                    .trim()
-                    .toLowerCase();
-
-
-                /*
-                 * FEMALE BOOLEAN
-                 *
-                 * The actual boolean is authoritative.
-                 */
-
-                const isFemale =
-                    animal.female === true;
-
-
-                /*
-                 * IMAGE
-                 */
 
                 const animalImage =
                     animal.displayImage ||
@@ -415,82 +303,62 @@ const animalRecords =
                     );
 
 
-                /*
-                 * DISPLAY TYPE
-                 */
+                const animalCode =
+                    Number(
+                        animal.code
+                    );
 
-                const animalType =
-                    animal.type
+
+                const animalGender =
+                    animal.gender
                         ? String(
-                            animal.type
+                            animal.gender
                         )
-                        : "Dairy Animal";
+                        : "Female";
 
             %>
 
 
-            <article
-                class="
-                    admin-animal-card
-                    admin-animal-record-card
-                "
+            <!-- ==============================================
+                 ANIMAL CARD
+            =============================================== -->
+
+            <div
+                class="boolean-animal-card animal-boolean-card"
                 role="listitem"
-                data-animal-id="<%= animalId %>"
-                data-female="<%= isFemale ? 'true' : 'false' %>"
+                data-animal-id="<%= animal._id %>"
             >
 
-
-                <!-- ==================================================
-                     LEFT ACCENT
-                =================================================== -->
-
-                <div
-                    class="admin-animal-card-accent"
-                    aria-hidden="true"
-                ></div>
+                <div class="boolean-card-accent"></div>
 
 
-
-                <!-- ==================================================
+                <!-- ==========================================
                      IMAGE
-                =================================================== -->
+                =========================================== -->
 
-                <div class="admin-animal-image-wrap">
+                <div class="boolean-animal-image-wrap">
 
                     <img
                         src="<%= animalImage %>"
                         alt="<%= animalName %>"
-                        class="admin-animal-image"
+                        class="boolean-animal-image"
                         loading="lazy"
                     >
 
 
                     <div
-                        class="admin-animal-image-overlay"
+                        class="boolean-animal-image-overlay"
                         aria-hidden="true"
                     ></div>
 
 
+                    <div class="boolean-animal-badge">
 
-                    <!-- ANIMAL BADGE -->
-
-                    <div class="admin-animal-badge">
-
-                        <i class="fas fa-cow"></i>
+                        <i class="fas fa-venus"></i>
 
                         <span>
-                            ANIMAL
+                            FEMALE
                         </span>
-
-                    </div>
-
-
-
-                    <!-- CODE -->
-
-                    <div class="admin-animal-code-badge">
-
-                        #<%= animalCode %>
 
                     </div>
 
@@ -498,124 +366,74 @@ const animalRecords =
 
 
 
-                <!-- ==================================================
+                <!-- ==========================================
                      CONTENT
-                =================================================== -->
+                =========================================== -->
 
-                <div class="admin-animal-content">
+                <div class="boolean-animal-content">
 
 
-                    <!-- NAME -->
-
-                    <div class="admin-animal-name">
+                    <div class="boolean-animal-name">
 
                         <%= animalName %>
 
                     </div>
 
 
-
-                    <!-- TYPE -->
-
-                    <div class="admin-animal-type">
-
-                        <span class="admin-animal-type-icon">
-
-                            <i class="fas fa-cow"></i>
-
-                        </span>
+                    <div class="boolean-animal-meta">
 
                         <span>
-                            <%= animalType %>
+                            <i class="fas fa-hashtag"></i>
+                            <%= animalCode %>
+                        </span>
+
+
+                        <span>
+                            <i class="fas fa-venus"></i>
+                            <%= animalGender %>
                         </span>
 
                     </div>
 
 
+                    <!-- ======================================
+                         BOOLEAN VALUE
 
-                    <!-- ==================================================
-                         FEMALE TOGGLE
-                    =================================================== -->
+                         Initially disabled until a Boolean
+                         field is selected.
+                    ======================================= -->
 
-                    <div class="admin-animal-female-row">
-
-
-                        <div class="admin-animal-female-label">
-
-                            <span class="admin-animal-female-icon">
-
-                                <i class="fas fa-venus"></i>
-
-                            </span>
-
-
-                            <span>
-                                Female
-                            </span>
-
-                        </div>
-
-
-
-                        <label
-                            class="admin-animal-switch"
-                            title="Toggle female status"
-                        >
-
-                            <input
-                                type="checkbox"
-                                class="female-toggle"
-                                data-animal-id="<%= animalId %>"
-                                <%= isFemale ? "checked" : "" %>
-                            >
-
-                            <span
-                                class="admin-animal-slider"
-                            ></span>
-
-                        </label>
-
-
-                    </div>
-
-
-
-                    <!-- STATUS -->
-
-                    <div
-                        class="admin-animal-female-status
-                        <%= isFemale
-                            ? 'is-female'
-                            : 'is-not-female'
-                        %>"
+                    <button
+                        type="button"
+                        class="boolean-toggle"
+                        disabled
+                        data-animal-id="<%= animal._id %>"
+                        aria-pressed="false"
                     >
 
-                        <span class="admin-animal-status-dot"></span>
+                        <span class="boolean-toggle-label">
+                            Select property
+                        </span>
 
-                        <span class="female-status-text">
 
-                            <%= isFemale
-                                ? "Marked Female"
-                                : "Not Female"
-                            %>
+                        <span class="boolean-toggle-switch">
+
+                            <span class="boolean-toggle-knob"></span>
 
                         </span>
 
-                    </div>
-
+                    </button>
 
                 </div>
 
 
-
-                <!-- BOTTOM LINE -->
-
                 <div
-                    class="admin-animal-bottom-line"
+                    class="boolean-card-bottom-line"
                     aria-hidden="true"
                 ></div>
 
-            </article>
+            </div>
+
 
         <% }); %>
 
@@ -629,10 +447,10 @@ const animalRecords =
 <style>
 
 /* ==========================================================
-   ANIMAL STRIP
+   STRIP
 ========================================================== */
 
-.admin-animal-strip {
+.boolean-animal-strip {
 
     width: 100%;
 
@@ -640,8 +458,6 @@ const animalRecords =
         0
         0
         22px;
-
-    padding: 0;
 
     overflow: hidden;
 
@@ -657,9 +473,7 @@ const animalRecords =
    HEADER
 ========================================================== */
 
-.admin-animal-strip-header {
-
-    width: 100%;
+.boolean-animal-header {
 
     padding:
         0
@@ -669,20 +483,16 @@ const animalRecords =
 }
 
 
-.admin-animal-heading {
+.boolean-animal-heading {
 
     display: flex;
 
     flex-direction: column;
 
-    align-items: flex-start;
-
 }
 
 
-.admin-animal-kicker {
-
-    display: inline-block;
+.boolean-animal-kicker {
 
     margin-bottom: 2px;
 
@@ -695,12 +505,12 @@ const animalRecords =
 
     letter-spacing: 2px;
 
-    line-height: 1;
+    text-transform: uppercase;
 
 }
 
 
-.admin-animal-heading strong {
+.boolean-animal-heading strong {
 
     color:
         #26382d;
@@ -709,14 +519,10 @@ const animalRecords =
 
     font-weight: 750;
 
-    line-height: 1.3;
-
 }
 
 
-.admin-animal-description {
-
-    max-width: 620px;
+.boolean-animal-description {
 
     margin-top: 4px;
 
@@ -734,7 +540,7 @@ const animalRecords =
    SCROLL
 ========================================================== */
 
-.admin-animal-scroll {
+.boolean-animal-scroll {
 
     width: 100%;
 
@@ -744,16 +550,14 @@ const animalRecords =
 
     overflow-x: auto;
 
-    overflow-y: hidden;
+    overflow-y: visible;
 
     padding:
         4px
         5px
-        11px;
+        12px;
 
     box-sizing: border-box;
-
-    scroll-behavior: smooth;
 
     -webkit-overflow-scrolling: touch;
 
@@ -762,7 +566,7 @@ const animalRecords =
 }
 
 
-.admin-animal-scroll::-webkit-scrollbar {
+.boolean-animal-scroll::-webkit-scrollbar {
 
     display: none;
 
@@ -773,7 +577,7 @@ const animalRecords =
    CARD
 ========================================================== */
 
-.admin-animal-card {
+.boolean-animal-card {
 
     position: relative;
 
@@ -787,11 +591,7 @@ const animalRecords =
 
     flex-shrink: 0;
 
-    display: flex;
-
-    flex-direction: column;
-
-    overflow: hidden;
+    overflow: visible;
 
     box-sizing: border-box;
 
@@ -804,25 +604,25 @@ const animalRecords =
     background:
         linear-gradient(
             145deg,
-            #ffffff 0%,
+            #ffffff,
             #fffdfa 58%,
-            #f3f7f0 100%
+            #f3f7f0
         );
 
     box-shadow:
         0 3px 9px
-        rgba(39, 55, 42, .065),
+        rgba(39,55,42,.065),
         0 10px 20px
-        rgba(74, 86, 47, .035);
+        rgba(74,86,47,.035);
 
 }
 
 
 /* ==========================================================
-   ANIMAL CARD ACCENT
+   ACCENT
 ========================================================== */
 
-.admin-animal-card-accent {
+.boolean-card-accent {
 
     position: absolute;
 
@@ -832,15 +632,279 @@ const animalRecords =
 
     width: 4px;
 
-    z-index: 8;
+    z-index: 10;
+
+    border-radius:
+        18px
+        0
+        0
+        18px;
 
     background:
         linear-gradient(
             to bottom,
-            #c86f29 0%,
-            #9a8740 48%,
-            #39764c 100%
+            #c86f29,
+            #9a8740,
+            #39764c
         );
+
+}
+
+
+/* ==========================================================
+   SELECTOR CARD
+========================================================== */
+
+.boolean-selector-card {
+
+    overflow: visible;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fffdf9,
+            #f7f8ed 55%,
+            #edf5ed
+        );
+
+}
+
+
+.boolean-selector-button {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 13px;
+
+    border: 0;
+
+    border-radius: 18px;
+
+    background: transparent;
+
+    color: #26382d;
+
+    cursor: pointer;
+
+}
+
+
+.boolean-selector-icon {
+
+    width: 44px;
+
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 10px;
+
+    border:
+        1px solid
+        #e7d7c2;
+
+    border-radius: 14px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fff1df,
+            #eef4e9
+        );
+
+    color:
+        #b96825;
+
+    font-size: 17px;
+
+}
+
+
+.boolean-selector-title {
+
+    font-size: 13px;
+
+    font-weight: 750;
+
+}
+
+
+.boolean-selector-subtitle {
+
+    margin-top: 5px;
+
+    color:
+        #7c847d;
+
+    font-size: 9px;
+
+}
+
+
+.boolean-selector-arrow {
+
+    margin-top: 11px;
+
+    color:
+        #b96825;
+
+    font-size: 9px;
+
+}
+
+
+/* ==========================================================
+   DROPDOWN
+========================================================== */
+
+.boolean-field-dropdown {
+
+    position: absolute;
+
+    top: calc(100% + 7px);
+
+    left: 0;
+
+    width: 190px;
+
+    max-height: 230px;
+
+    overflow-y: auto;
+
+    z-index: 100;
+
+    padding: 8px;
+
+    border:
+        1px solid
+        #dce4d8;
+
+    border-radius: 14px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 10px 28px
+        rgba(25,45,30,.18);
+
+}
+
+
+.boolean-dropdown-title {
+
+    padding:
+        5px
+        7px
+        8px;
+
+    color:
+        #788178;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+
+}
+
+
+.boolean-field-option {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 8px;
+
+    padding:
+        9px
+        8px;
+
+    border: 0;
+
+    border-radius: 9px;
+
+    background: transparent;
+
+    color:
+        #354239;
+
+    font-size: 10px;
+
+    text-align: left;
+
+    cursor: pointer;
+
+}
+
+
+.boolean-field-option:hover {
+
+    background:
+        #eef4e9;
+
+}
+
+
+.boolean-field-option i {
+
+    display: none;
+
+    color:
+        #4e784f;
+
+    font-size: 9px;
+
+}
+
+
+.boolean-field-option.selected {
+
+    background:
+        #eef4e9;
+
+    font-weight: 700;
+
+}
+
+
+.boolean-field-option.selected i {
+
+    display: block;
+
+}
+
+
+.boolean-no-fields {
+
+    padding: 10px 7px;
+
+    color:
+        #8a918b;
+
+    font-size: 9px;
 
 }
 
@@ -849,27 +913,26 @@ const animalRecords =
    IMAGE
 ========================================================== */
 
-.admin-animal-image-wrap {
+.boolean-animal-image-wrap {
 
     position: relative;
 
     width: 100%;
 
-    height: 105px;
-
-    flex:
-        0 0
-        105px;
+    height: 119px;
 
     overflow: hidden;
 
-    background:
-        #e8eee5;
+    border-radius:
+        17px
+        17px
+        0
+        0;
 
 }
 
 
-.admin-animal-image {
+.boolean-animal-image {
 
     width: 100%;
 
@@ -879,48 +942,31 @@ const animalRecords =
 
     object-fit: cover;
 
-    transition:
-        transform .35s ease;
-
 }
 
 
-.admin-animal-record-card:hover
-.admin-animal-image {
-
-    transform:
-        scale(1.055);
-
-}
-
-
-.admin-animal-image-overlay {
+.boolean-animal-image-overlay {
 
     position: absolute;
 
     inset: 0;
 
-    pointer-events: none;
-
     background:
         linear-gradient(
             to top,
-            rgba(25, 49, 32, .43),
-            rgba(25, 49, 32, .04) 60%
+            rgba(25,49,32,.42),
+            rgba(25,49,32,.04)
         );
 
 }
 
 
-/* ==========================================================
-   ANIMAL BADGE
-========================================================== */
-
-.admin-animal-badge {
+.boolean-animal-badge {
 
     position: absolute;
 
     top: 8px;
+
     left: 9px;
 
     display: inline-flex;
@@ -936,7 +982,7 @@ const animalRecords =
     border-radius: 999px;
 
     background:
-        rgba(255, 255, 255, .88);
+        rgba(255,255,255,.88);
 
     color:
         #45613d;
@@ -945,56 +991,7 @@ const animalRecords =
 
     font-weight: 800;
 
-    letter-spacing: .7px;
-
-    box-shadow:
-        0 2px 7px
-        rgba(25, 45, 30, .12);
-
-    backdrop-filter:
-        blur(5px);
-
-}
-
-
-.admin-animal-badge i {
-
-    color:
-        #b96a27;
-
-}
-
-
-/* ==========================================================
-   CODE BADGE
-========================================================== */
-
-.admin-animal-code-badge {
-
-    position: absolute;
-
-    right: 8px;
-    bottom: 8px;
-
-    padding:
-        4px
-        7px;
-
-    border-radius: 999px;
-
-    background:
-        rgba(255, 255, 255, .9);
-
-    color:
-        #47724a;
-
-    font-size: 8px;
-
-    font-weight: 800;
-
-    box-shadow:
-        0 2px 7px
-        rgba(20, 45, 27, .13);
+    letter-spacing: .8px;
 
 }
 
@@ -1003,176 +1000,64 @@ const animalRecords =
    CONTENT
 ========================================================== */
 
-.admin-animal-content {
+.boolean-animal-content {
 
-    width: 100%;
-
-    min-width: 0;
-
-    display: flex;
-
-    flex-direction: column;
-
-    flex: 1;
-
-    box-sizing: border-box;
+    height: 78px;
 
     padding:
-        7px
         8px
-        6px
+        9px
+        7px
         11px;
+
+    box-sizing: border-box;
 
 }
 
 
-/* ==========================================================
-   NAME
-========================================================== */
+.boolean-animal-name {
 
-.admin-animal-name {
-
-    width: 100%;
-
-    min-width: 0;
+    overflow: hidden;
 
     color:
         #26352b;
 
-    font-size: 12.5px;
+    font-size: 13px;
 
     font-weight: 750;
 
-    line-height: 15px;
+    line-height: 16px;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+.boolean-animal-meta {
+
+    display: flex;
+
+    gap: 7px;
+
+    margin-top: 4px;
+
+    color:
+        #818981;
+
+    font-size: 8px;
+
+}
+
+
+.boolean-animal-meta span {
 
     overflow: hidden;
 
-    display: -webkit-box;
+    white-space: nowrap;
 
-    -webkit-box-orient: vertical;
-
-    -webkit-line-clamp: 2;
-
-}
-
-
-/* ==========================================================
-   TYPE
-========================================================== */
-
-.admin-animal-type {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 5px;
-
-    margin-top: 3px;
-
-    color:
-        #7b847c;
-
-    font-size: 8.5px;
-
-}
-
-
-.admin-animal-type-icon {
-
-    width: 17px;
-
-    height: 17px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex:
-        0 0
-        17px;
-
-    border-radius: 6px;
-
-    background:
-        #eef3e7;
-
-    color:
-        #5e793f;
-
-    font-size: 8px;
-
-}
-
-
-/* ==========================================================
-   FEMALE ROW
-========================================================== */
-
-.admin-animal-female-row {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 5px;
-
-    margin-top: auto;
-
-    padding-top: 6px;
-
-    border-top:
-        1px solid
-        #edf0e9;
-
-}
-
-
-.admin-animal-female-label {
-
-    min-width: 0;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 4px;
-
-    color:
-        #59665b;
-
-    font-size: 8.5px;
-
-    font-weight: 700;
-
-}
-
-
-.admin-animal-female-icon {
-
-    width: 18px;
-
-    height: 18px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 6px;
-
-    background:
-        #f5eaf0;
-
-    color:
-        #a04f76;
-
-    font-size: 8px;
+    text-overflow: ellipsis;
 
 }
 
@@ -1181,43 +1066,67 @@ const animalRecords =
    TOGGLE
 ========================================================== */
 
-.admin-animal-switch {
+.boolean-toggle {
 
-    position: relative;
+    width: 100%;
 
-    display: inline-block;
+    display: flex;
 
-    width: 30px;
+    align-items: center;
 
-    height: 17px;
+    justify-content: space-between;
 
-    flex:
-        0 0
-        30px;
+    margin-top: 7px;
+
+    padding: 0;
+
+    border: 0;
+
+    background: transparent;
 
     cursor: pointer;
 
 }
 
 
-.admin-animal-switch input {
+.boolean-toggle:disabled {
 
-    position: absolute;
+    cursor: not-allowed;
 
-    opacity: 0;
-
-    width: 0;
-
-    height: 0;
+    opacity: .55;
 
 }
 
 
-.admin-animal-slider {
+.boolean-toggle-label {
 
-    position: absolute;
+    max-width: 75px;
 
-    inset: 0;
+    overflow: hidden;
+
+    color:
+        #5d695f;
+
+    font-size: 8px;
+
+    text-align: left;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+.boolean-toggle-switch {
+
+    position: relative;
+
+    width: 29px;
+
+    height: 16px;
+
+    flex: 0 0 29px;
 
     border-radius: 999px;
 
@@ -1225,24 +1134,22 @@ const animalRecords =
         #d6ddd5;
 
     transition:
-        .2s ease;
+        background .18s ease;
 
 }
 
 
-.admin-animal-slider::before {
-
-    content: "";
+.boolean-toggle-knob {
 
     position: absolute;
 
-    width: 13px;
+    top: 3px;
 
-    height: 13px;
+    left: 3px;
 
-    left: 2px;
+    width: 10px;
 
-    top: 2px;
+    height: 10px;
 
     border-radius: 50%;
 
@@ -1251,25 +1158,25 @@ const animalRecords =
 
     box-shadow:
         0 1px 3px
-        rgba(0, 0, 0, .2);
+        rgba(0,0,0,.18);
 
     transition:
-        .2s ease;
+        transform .18s ease;
 
 }
 
 
-.admin-animal-switch input:checked
-+ .admin-animal-slider {
+.boolean-toggle[aria-pressed="true"]
+.boolean-toggle-switch {
 
     background:
-        #a6537d;
+        #4d8050;
 
 }
 
 
-.admin-animal-switch input:checked
-+ .admin-animal-slider::before {
+.boolean-toggle[aria-pressed="true"]
+.boolean-toggle-knob {
 
     transform:
         translateX(13px);
@@ -1278,77 +1185,24 @@ const animalRecords =
 
 
 /* ==========================================================
-   STATUS
-========================================================== */
-
-.admin-animal-female-status {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 4px;
-
-    margin-top: 4px;
-
-    color:
-        #929992;
-
-    font-size: 7.5px;
-
-    font-weight: 600;
-
-}
-
-
-.admin-animal-status-dot {
-
-    width: 5px;
-
-    height: 5px;
-
-    flex:
-        0 0
-        5px;
-
-    border-radius: 50%;
-
-    background:
-        #b7beb8;
-
-}
-
-
-.admin-animal-female-status.is-female {
-
-    color:
-        #8b4c70;
-
-}
-
-
-.admin-animal-female-status.is-female
-.admin-animal-status-dot {
-
-    background:
-        #a6537d;
-
-}
-
-
-/* ==========================================================
    BOTTOM LINE
 ========================================================== */
 
-.admin-animal-bottom-line {
+.boolean-card-bottom-line {
 
-    width: 100%;
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
 
     height: 3px;
 
-    flex:
-        0 0
-        3px;
+    border-radius:
+        0
+        0
+        18px
+        18px;
 
     background:
         linear-gradient(
@@ -1357,436 +1211,6 @@ const animalRecords =
             #a7823c 45%,
             #39764c
         );
-
-    opacity:
-        .8;
-
-}
-
-
-/* ==========================================================
-   FILTER CARD
-========================================================== */
-
-.admin-animal-filter-card {
-
-    overflow: visible;
-
-    z-index: 20;
-
-    background:
-        linear-gradient(
-            145deg,
-            #fffdf9,
-            #f7f8ed 55%,
-            #edf5ed
-        );
-
-}
-
-
-.admin-animal-filter-accent {
-
-    position: absolute;
-
-    top: 0;
-    left: 0;
-    bottom: 0;
-
-    width: 4px;
-
-    border-radius:
-        18px
-        0
-        0
-        18px;
-
-    background:
-        linear-gradient(
-            to bottom,
-            #c86f29,
-            #a7823c,
-            #39764c
-        );
-
-}
-
-
-/* ==========================================================
-   FILTER TRIGGER
-========================================================== */
-
-.admin-animal-filter-trigger {
-
-    width: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    padding:
-        13px
-        9px
-        8px
-        12px;
-
-    border: 0;
-
-    background: transparent;
-
-    color: inherit;
-
-    text-align: left;
-
-    cursor: pointer;
-
-}
-
-
-.admin-animal-filter-icon {
-
-    width: 37px;
-
-    height: 37px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex:
-        0 0
-        37px;
-
-    border:
-        1px solid
-        #ead8df;
-
-    border-radius: 12px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #fff0f6,
-            #f0f4ea
-        );
-
-    color:
-        #a6537d;
-
-    font-size: 15px;
-
-}
-
-
-.admin-animal-filter-heading {
-
-    min-width: 0;
-
-    flex: 1;
-
-    display: flex;
-
-    flex-direction: column;
-
-}
-
-
-.admin-animal-filter-kicker {
-
-    color:
-        #9a9f99;
-
-    font-size: 6.5px;
-
-    font-weight: 800;
-
-    letter-spacing: 1.2px;
-
-}
-
-
-.admin-animal-filter-heading strong {
-
-    margin-top: 2px;
-
-    color:
-        #29382d;
-
-    font-size: 13px;
-
-    line-height: 15px;
-
-}
-
-
-.admin-animal-filter-chevron {
-
-    color:
-        #788177;
-
-    font-size: 8px;
-
-    transition:
-        transform .2s ease;
-
-}
-
-
-.admin-animal-filter-card.is-open
-.admin-animal-filter-chevron {
-
-    transform:
-        rotate(180deg);
-
-}
-
-
-/* ==========================================================
-   CURRENT FILTER
-========================================================== */
-
-.admin-animal-filter-current {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 5px;
-
-    margin:
-        4px
-        10px
-        0
-        12px;
-
-    padding:
-        7px
-        8px;
-
-    border-radius: 9px;
-
-    background:
-        rgba(255, 255, 255, .72);
-
-    color:
-        #637064;
-
-    font-size: 8px;
-
-    font-weight: 700;
-
-}
-
-
-.admin-animal-filter-status-dot {
-
-    width: 6px;
-
-    height: 6px;
-
-    flex:
-        0 0
-        6px;
-
-    border-radius: 50%;
-
-    background:
-        #527b55;
-
-}
-
-
-/* ==========================================================
-   FILTER MENU
-========================================================== */
-
-.admin-animal-filter-menu {
-
-    position: absolute;
-
-    left: 5px;
-
-    right: 5px;
-
-    top:
-        calc(100% + 7px);
-
-    padding: 5px;
-
-    border:
-        1px solid
-        #dfe5dc;
-
-    border-radius: 13px;
-
-    background:
-        #ffffff;
-
-    box-shadow:
-        0 8px 24px
-        rgba(39, 55, 42, .16);
-
-    z-index: 100;
-
-}
-
-
-.admin-animal-filter-option {
-
-    width: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    padding:
-        7px;
-
-    border: 0;
-
-    border-radius: 9px;
-
-    background:
-        transparent;
-
-    text-align: left;
-
-    cursor: pointer;
-
-}
-
-
-.admin-animal-filter-option:hover {
-
-    background:
-        #f3f6f0;
-
-}
-
-
-.admin-animal-option-icon {
-
-    width: 23px;
-
-    height: 23px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex:
-        0 0
-        23px;
-
-    border-radius: 7px;
-
-    background:
-        #eef3e7;
-
-    color:
-        #5e793f;
-
-    font-size: 8px;
-
-}
-
-
-.admin-animal-option-text {
-
-    min-width: 0;
-
-    flex: 1;
-
-    display: flex;
-
-    flex-direction: column;
-
-}
-
-
-.admin-animal-option-text strong {
-
-    color:
-        #334137;
-
-    font-size: 8.5px;
-
-}
-
-
-.admin-animal-option-text small {
-
-    margin-top: 1px;
-
-    color:
-        #8a918b;
-
-    font-size: 6.5px;
-
-}
-
-
-.admin-animal-option-check {
-
-    color:
-        #47724a;
-
-    font-size: 8px;
-
-    opacity: 0;
-
-}
-
-
-.admin-animal-filter-option.active {
-
-    background:
-        #f1f6ee;
-
-}
-
-
-.admin-animal-filter-option.active
-.admin-animal-option-check {
-
-    opacity: 1;
-
-}
-
-
-/* ==========================================================
-   HIDDEN FILTERED CARDS
-========================================================== */
-
-.admin-animal-record-card.is-filtered-out {
-
-    display: none;
-
-}
-
-
-/* ==========================================================
-   FOCUS
-========================================================== */
-
-.admin-animal-filter-trigger:focus-visible,
-.admin-animal-filter-option:focus-visible,
-.admin-animal-switch input:focus-visible
-+ .admin-animal-slider {
-
-    outline:
-        2px solid
-        #71874c;
-
-    outline-offset: 2px;
 
 }
 
@@ -1797,68 +1221,29 @@ const animalRecords =
 
 @media (max-width: 600px) {
 
-    .admin-animal-strip {
+    .boolean-animal-card {
 
-        margin-bottom: 19px;
+        flex-basis: 116px;
 
-    }
+        width: 116px;
 
+        height: 187px;
 
-    .admin-animal-heading strong {
-
-        font-size: 17px;
-
-    }
-
-
-    .admin-animal-description {
-
-        font-size: 11px;
+        border-radius: 16px;
 
     }
 
 
-    .admin-animal-scroll {
+    .boolean-animal-image-wrap {
 
-        gap: 9px;
-
-        padding:
-            3px
-            4px
-            9px;
+        height: 112px;
 
     }
 
 
-    .admin-animal-card {
+    .boolean-animal-content {
 
-        flex-basis:
-            116px;
-
-        width:
-            116px;
-
-        height:
-            187px;
-
-        border-radius:
-            16px;
-
-    }
-
-
-    .admin-animal-image-wrap {
-
-        height:
-            100px;
-
-        flex-basis:
-            100px;
-
-    }
-
-
-    .admin-animal-content {
+        height: 72px;
 
         padding:
             7px
@@ -1869,27 +1254,16 @@ const animalRecords =
     }
 
 
-    .admin-animal-name {
+    .boolean-animal-name {
 
-        font-size:
-            12px;
-
-        line-height:
-            15px;
+        font-size: 12px;
 
     }
 
 
-    .admin-animal-filter-icon {
+    .boolean-field-dropdown {
 
-        width:
-            34px;
-
-        height:
-            34px;
-
-        flex-basis:
-            34px;
+        width: 175px;
 
     }
 
@@ -1902,38 +1276,27 @@ const animalRecords =
 
 @media (max-width: 380px) {
 
-    .admin-animal-card {
+    .boolean-animal-card {
 
-        flex-basis:
-            110px;
+        flex-basis: 110px;
 
-        width:
-            110px;
+        width: 110px;
 
-        height:
-            181px;
+        height: 181px;
 
     }
 
 
-    .admin-animal-image-wrap {
+    .boolean-animal-image-wrap {
 
-        height:
-            96px;
-
-        flex-basis:
-            96px;
+        height: 106px;
 
     }
 
 
-    .admin-animal-name {
+    .boolean-animal-name {
 
-        font-size:
-            11.5px;
-
-        line-height:
-            14px;
+        font-size: 11.5px;
 
     }
 
@@ -1945,10 +1308,6 @@ const animalRecords =
 
 <script>
 
-/* ==========================================================
-   FEMALE ANIMAL CARD CONTROLS
-========================================================== */
-
 (function () {
 
     "use strict";
@@ -1958,194 +1317,314 @@ const animalRecords =
        ELEMENTS
     ====================================================== */
 
-    const filterCard =
-        document.querySelector(
-            ".admin-animal-filter-card"
+    const selectorButton =
+        document.getElementById(
+            "booleanSelectorButton"
         );
 
 
-    const filterTrigger =
-        document.querySelector(
-            ".admin-animal-filter-trigger"
+    const dropdown =
+        document.getElementById(
+            "booleanFieldDropdown"
         );
 
 
-    const filterMenu =
-        document.querySelector(
-            "#female-filter-menu"
-        );
-
-
-    const filterLabel =
-        document.querySelector(
-            "#female-filter-label"
-        );
-
-
-    const filterOptions =
+    const fieldOptions =
         document.querySelectorAll(
-            ".admin-animal-filter-option"
+            ".boolean-field-option"
         );
 
 
-    const animalCards =
+    const toggleButtons =
         document.querySelectorAll(
-            ".admin-animal-record-card"
+            ".boolean-toggle"
         );
 
 
-    /* ======================================================
-       FILTER LABELS
-    ====================================================== */
+    if (
+        !selectorButton ||
+        !dropdown
+    ) {
 
-    const filterLabels = {
-
-        "all":
-            "All Animals",
-
-        "female":
-            "Female Animals",
-
-        "not-female":
-            "Not Female"
-
-    };
-
-
-    /* ======================================================
-       OPEN / CLOSE FILTER
-    ====================================================== */
-
-    function openFilter() {
-
-        filterCard.classList.add(
-            "is-open"
-        );
-
-        filterTrigger.setAttribute(
-            "aria-expanded",
-            "true"
-        );
-
-        filterMenu.hidden = false;
+        return;
 
     }
 
 
-    function closeFilter() {
-
-        filterCard.classList.remove(
-            "is-open"
-        );
-
-        filterTrigger.setAttribute(
-            "aria-expanded",
-            "false"
-        );
-
-        filterMenu.hidden = true;
-
-    }
+    let selectedField =
+        null;
 
 
-    filterTrigger.addEventListener(
+    /* ======================================================
+       OPEN / CLOSE DROPDOWN
+    ====================================================== */
+
+    selectorButton.addEventListener(
         "click",
-        function (event) {
+        function () {
 
-            event.stopPropagation();
+            const isOpen =
+                selectorButton.getAttribute(
+                    "aria-expanded"
+                ) === "true";
 
 
-            if (filterMenu.hidden) {
+            selectorButton.setAttribute(
+                "aria-expanded",
+                String(!isOpen)
+            );
 
-                openFilter();
 
-            } else {
-
-                closeFilter();
-
-            }
+            dropdown.hidden =
+                isOpen;
 
         }
     );
 
 
     /* ======================================================
-       APPLY FILTER
+       FIELD SELECTION
     ====================================================== */
 
-    function applyFilter(filter) {
-
-        animalCards.forEach(
-            function (card) {
-
-                const isFemale =
-                    card.dataset.female === "true";
-
-
-                let visible = true;
-
-
-                if (filter === "female") {
-
-                    visible =
-                        isFemale;
-
-                }
-
-
-                if (filter === "not-female") {
-
-                    visible =
-                        !isFemale;
-
-                }
-
-
-                card.classList.toggle(
-                    "is-filtered-out",
-                    !visible
-                );
-
-            }
-        );
-
-
-        filterLabel.textContent =
-            filterLabels[filter] ||
-            "All Animals";
-
-
-        filterOptions.forEach(
-            function (option) {
-
-                option.classList.toggle(
-                    "active",
-                    option.dataset.filter === filter
-                );
-
-            }
-        );
-
-
-        closeFilter();
-
-    }
-
-
-    /* ======================================================
-       FILTER OPTIONS
-    ====================================================== */
-
-    filterOptions.forEach(
+    fieldOptions.forEach(
         function (option) {
 
             option.addEventListener(
                 "click",
                 function () {
 
-                    applyFilter(
-                        option.dataset.filter
+                    selectedField =
+                        option.dataset.field;
+
+
+                    fieldOptions.forEach(
+                        function (item) {
+
+                            item.classList.remove(
+                                "selected"
+                            );
+
+                        }
                     );
+
+
+                    option.classList.add(
+                        "selected"
+                    );
+
+
+                    selectorButton.querySelector(
+                        ".boolean-selector-subtitle"
+                    ).textContent =
+                        selectedField;
+
+
+                    toggleButtons.forEach(
+                        function (button) {
+
+                            button.disabled =
+                                false;
+
+                            button.querySelector(
+                                ".boolean-toggle-label"
+                            ).textContent =
+                                selectedField;
+
+                        }
+                    );
+
+
+                    selectorButton.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+
+                    dropdown.hidden =
+                        true;
+
+
+                    /*
+                     * Update the visible toggle state
+                     * using the selected field.
+                     */
+
+                    toggleButtons.forEach(
+                        function (button) {
+
+                            const animalId =
+                                button.dataset.animalId;
+
+
+                            const animal =
+                                document.querySelector(
+                                    '[data-animal-id="' +
+                                    animalId +
+                                    '"]'
+                                );
+
+
+                            if (!animal) {
+
+                                return;
+
+                            }
+
+
+                            /*
+                             * The actual initial value is
+                             * supplied below through the
+                             * animal's data attributes.
+                             */
+
+                            const value =
+                                animal.dataset[
+                                    "boolean-" +
+                                    selectedField
+                                ];
+
+
+                            const isTrue =
+                                value === "true";
+
+
+                            button.setAttribute(
+                                "aria-pressed",
+                                String(isTrue)
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       TOGGLE
+    ====================================================== */
+
+    toggleButtons.forEach(
+        function (button) {
+
+            button.addEventListener(
+                "click",
+                async function () {
+
+                    if (
+                        button.disabled ||
+                        !selectedField
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const animalId =
+                        button.dataset.animalId;
+
+
+                    const currentlyOn =
+                        button.getAttribute(
+                            "aria-pressed"
+                        ) === "true";
+
+
+                    const newValue =
+                        !currentlyOn;
+
+
+                    button.disabled =
+                        true;
+
+
+                    try {
+
+                        const response =
+                            await fetch(
+                                "/dairy/" +
+                                encodeURIComponent(
+                                    animalId
+                                ) +
+                                "/boolean",
+                                {
+
+                                    method:
+                                        "PUT",
+
+                                    headers: {
+
+                                        "Content-Type":
+                                            "application/json",
+
+                                        "Accept":
+                                            "application/json"
+
+                                    },
+
+                                    body:
+                                        JSON.stringify({
+
+                                            field:
+                                                selectedField,
+
+                                            value:
+                                                newValue
+
+                                        })
+
+                                }
+                            );
+
+
+                        const result =
+                            await response.json();
+
+
+                        if (
+                            !response.ok ||
+                            !result.success
+                        ) {
+
+                            throw new Error(
+                                result.message ||
+                                "Failed to update boolean."
+                            );
+
+                        }
+
+
+                        button.setAttribute(
+                            "aria-pressed",
+                            String(
+                                result.value
+                            )
+                        );
+
+
+                    } catch (error) {
+
+                        console.error(
+                            "BOOLEAN UPDATE ERROR:",
+                            error
+                        );
+
+
+                        alert(
+                            error.message ||
+                            "Failed to update boolean."
+                        );
+
+                    } finally {
+
+                        button.disabled =
+                            false;
+
+                    }
 
                 }
             );
@@ -2163,196 +1642,24 @@ const animalRecords =
         function (event) {
 
             if (
-                filterCard &&
-                !filterCard.contains(event.target)
+                !event.target.closest(
+                    ".boolean-selector-card"
+                )
             ) {
 
-                closeFilter();
+                selectorButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+
+                dropdown.hidden =
+                    true;
 
             }
 
         }
     );
-
-
-    /* ======================================================
-       FEMALE TOGGLE
-    ====================================================== */
-
-    document
-        .querySelectorAll(".female-toggle")
-        .forEach(
-            function (toggle) {
-
-
-                toggle.addEventListener(
-                    "change",
-                    async function () {
-
-                        const animalId =
-                            toggle.dataset.animalId;
-
-
-                        const newValue =
-                            toggle.checked;
-
-
-                        const card =
-                            toggle.closest(
-                                ".admin-animal-record-card"
-                            );
-
-
-                        const status =
-                            card.querySelector(
-                                ".admin-animal-female-status"
-                            );
-
-
-                        const statusText =
-                            card.querySelector(
-                                ".female-status-text"
-                            );
-
-
-                        /*
-                         * Prevent duplicate requests
-                         */
-
-                        toggle.disabled = true;
-
-
-                        try {
-
-
-                            /*
-                             * ==================================================
-                             * BACKEND UPDATE
-                             *
-                             * Change this endpoint if your actual
-                             * controller uses another route.
-                             * ==================================================
-                             */
-
-                            const response =
-                                await fetch(
-                                    "/dairy/" +
-                                    encodeURIComponent(
-                                        animalId
-                                    ) +
-                                    "/female",
-                                    {
-
-                                        method:
-                                            "PATCH",
-
-                                        headers: {
-
-                                            "Content-Type":
-                                                "application/json",
-
-                                            "Accept":
-                                                "application/json"
-
-                                        },
-
-                                        body:
-                                            JSON.stringify({
-
-                                                female:
-                                                    newValue
-
-                                            })
-
-                                    }
-                                );
-
-
-                            if (!response.ok) {
-
-                                throw new Error(
-                                    "Failed to update female status."
-                                );
-
-                            }
-
-
-                            /*
-                             * Update card state
-                             */
-
-                            card.dataset.female =
-                                newValue
-                                    ? "true"
-                                    : "false";
-
-
-                            status.classList.toggle(
-                                "is-female",
-                                newValue
-                            );
-
-
-                            status.classList.toggle(
-                                "is-not-female",
-                                !newValue
-                            );
-
-
-                            statusText.textContent =
-                                newValue
-                                    ? "Marked Female"
-                                    : "Not Female";
-
-
-                            /*
-                             * If current filter is active,
-                             * immediately hide cards that no
-                             * longer belong to it.
-                             */
-
-                            const activeFilter =
-                                document.querySelector(
-                                    ".admin-animal-filter-option.active"
-                                );
-
-
-                            if (activeFilter) {
-
-                                applyFilter(
-                                    activeFilter.dataset.filter
-                                );
-
-                            }
-
-
-                        } catch (error) {
-
-                            /*
-                             * Revert toggle when backend fails.
-                             */
-
-                            toggle.checked =
-                                !newValue;
-
-
-                            alert(
-                                "Failed to update female status. Please try again."
-                            );
-
-                        } finally {
-
-                            toggle.disabled =
-                                false;
-
-                        }
-
-                    }
-                );
-
-            }
-        );
-
 
 })();
 
