@@ -22,11 +22,11 @@ exports.getDairyDashboard =
 
 
             return res.render(
-                "dairyDashboard",
+                "admin",
                 {
 
                     title:
-                        "Dairy Dashboard",
+                        "Admin Dashboard",
 
                     user:
                         req.user,
