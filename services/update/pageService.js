@@ -6,52 +6,100 @@
 //
 // Responsibilities:
 //
-// - Current Dairy Farm / Asset
-// - Farm assets
-// - Updates
-// - Weekly milk feeds
-// - Comment count
-// - Assigned farms for dairy workers
-// - AgroStore animal-feed contents
+//   • Load current Dairy / Animal / Structure / Asset
+//   • Load farm assets
+//   • Load normal updates
+//   • Build weekly milk feeds
+//   • Count comments
+//   • Load assigned farms for dairy workers
+//   • Load AgroStore inventory
+//   • Toggle animal milking status
+//   • Verify assigned farms
 //
 // ==========================================================
 //
-// AGROSTORE ANIMAL FEED LOGIC
+// IMPORTANT MODEL RULES
+// ==========================================================
 //
-// When /dairy/:id points to an AgroStore:
+// recordType:
 //
-//     id
-//       ↓
-//     AgroStore._id
-//       ↓
-//     AgroStore.roomNumber
-//       ↓
-//     Dairy.dwellNumber
+//   "farm"
+//       = Dairy Farm
+//
+//   "animal"
+//       = Animal
+//
+//   "structure"
+//       = Structure / Facility / Asset
+//
+// code:
+//
+//   < 0
+//       = Dairy Farm
+//
+//   > 0
+//       = Animal
+//
+//   null
+//       = Structure / Asset
+//
+// assetCode:
+//
+//   null
+//       = Farm / Standalone Structure
+//
+//   negative farm code
+//       = Animal / Structure belongs to that farm
+//
+// ==========================================================
+//
+// STORAGE RULES
+// ==========================================================
+//
+// Storage facility:
+//
+//   recordType = "structure"
+//   type       = "room"
+//   roomNumber > 0
+//
+// OR:
+//
+//   recordType = "structure"
+//   type       = "agroStore"
+//   roomNumber < 0
+//
+// Storage content:
+//
+//   dwellNumber === storage roomNumber
 //
 // Therefore:
 //
-//     AgroStore._id
-//         identifies the AgroStore
-//
-//     AgroStore.roomNumber
-//         identifies its contents
-//
-//     Dairy.dwellNumber
-//         identifies which AgroStore a stock item belongs to
+//   AgroStore.roomNumber
+//          ↓
+//   matching Dairy.dwellNumber
 //
 // IMPORTANT:
 //
-// An AgroStore is identified by:
+// The AgroStore itself is NOT an inventory item.
 //
-//     roomNumber < 0
+// ==========================================================
 //
-// The AgroStore itself is NOT an animal-feed item.
+// NORMAL FEED vs AGROSTORE INVENTORY
+// ==========================================================
 //
-// Animal feeds are Dairy records whose:
+// `feed`:
 //
-//     dwellNumber === AgroStore.roomNumber
+//   • normal posts
+//   • medical updates
+//   • maintenance updates
+//   • image updates
+//   • weekly milk feeds
 //
-// The normal Update feed remains completely separate.
+// `animalFeeds`:
+//
+//   • AgroStore inventory only
+//
+// AgroStore inventory is NEVER pushed into `feed`.
 // ==========================================================
 
 
@@ -73,67 +121,244 @@ const {
 } = require("./helpers");
 
 
-// ==========================================================
-// AGROSTORE ANIMAL FEED SERVICE
-// ==========================================================
-//
-// Used ONLY for obtaining the inventory contents of an
-// AgroStore.
-//
-// It does NOT replace the normal Update feed.
-//
-// ==========================================================
-
 const animalFeedsService =
     require("./storage/animalFeedsService");
 
 
 // ==========================================================
-// GET COMPLETE DAIRY PAGE
+// HELPER: VALID OBJECT ID
+// ==========================================================
+
+function isValidObjectId(id) {
+
+    return (
+        id &&
+        Dairy.base &&
+        Dairy.base.Types &&
+        Dairy.base.Types.ObjectId &&
+        Dairy.base.Types.ObjectId.isValid(id)
+    );
+
+}
+
+
+// ==========================================================
+// HELPER: SAFE ID STRING
+// ==========================================================
+
+function idString(id) {
+
+    if (!id) {
+
+        return null;
+
+    }
+
+
+    return id.toString();
+
+}
+
+
+// ==========================================================
+// HELPER: UNIQUE OBJECT IDS
 // ==========================================================
 //
-// Loads:
+// Prevents duplicate Dairy IDs from entering:
 //
-// - Current Dairy Farm / Asset
-// - Farm assets
-// - Updates
-// - Weekly milk feeds
-// - Comment count
-// - Assigned farms for the logged-in dairy worker
-// - AgroStore animal-feed contents
+//   • Update query
+//   • Milk query
+//   • weekly milk feed loop
 //
-// FARM FEED:
+// ==========================================================
+
+function uniqueIds(ids) {
+
+    const map =
+        new Map();
+
+
+    for (
+        const id of ids
+    ) {
+
+        if (!id) {
+
+            continue;
+
+        }
+
+
+        const key =
+            idString(id);
+
+
+        if (!map.has(key)) {
+
+            map.set(
+                key,
+                id
+            );
+
+        }
+
+    }
+
+
+    return Array.from(
+        map.values()
+    );
+
+}
+
+
+// ==========================================================
+// HELPER: IS DAIRY FARM
+// ==========================================================
 //
-// When the current Dairy is a Dairy Farm:
+// Prefer recordType because it is now the single source
+// of truth.
 //
-//     code < 0
+// The negative code rule is retained as a fallback for
+// compatibility with older records.
 //
-// the feed includes:
+// ==========================================================
+
+function isDairyFarm(dairy) {
+
+    if (!dairy) {
+
+        return false;
+
+    }
+
+
+    if (
+        dairy.recordType === "farm"
+    ) {
+
+        return true;
+
+    }
+
+
+    return (
+
+        dairy.recordType == null &&
+
+        Number.isInteger(
+            dairy.code
+        ) &&
+
+        dairy.code < 0
+
+    );
+
+}
+
+
+// ==========================================================
+// HELPER: IS AGROSTORE
+// ==========================================================
 //
-//     1. Updates posted directly on the Dairy Farm.
-//     2. Updates posted on every asset whose
-//        assetCode === Dairy Farm code.
-//     3. Weekly milk feeds belonging to the Dairy Farm.
-//     4. Weekly milk feeds belonging to every asset
-//        belonging to the Dairy Farm.
+// An AgroStore is:
 //
-// ASSET FEED:
+//   recordType = "structure"
+//   type       = "agroStore"
+//   roomNumber < 0
 //
-// When the current Dairy is an animal, structure, machine,
-// tool, or other asset:
+// We deliberately DO NOT identify it merely by:
 //
-//     Only updates belonging to that specific asset.
-//     Only weekly milk feeds belonging to that asset.
+//   roomNumber < 0
 //
-// AGROSTORE INVENTORY:
+// because the model defines `roomNumber` according to the
+// structure type.
 //
-// When the current Dairy is an AgroStore:
+// ==========================================================
+
+function isAgroStore(dairy) {
+
+    if (!dairy) {
+
+        return false;
+
+    }
+
+
+    return (
+
+        dairy.recordType === "structure" &&
+
+        dairy.type === "agroStore" &&
+
+        Number.isInteger(
+            Number(
+                dairy.roomNumber
+            )
+        ) &&
+
+        Number(
+            dairy.roomNumber
+        ) < 0
+
+    );
+
+}
+
+
+// ==========================================================
+// HELPER: GET FARM CODE
+// ==========================================================
 //
-//     animalFeeds contains ONLY Dairy records whose:
+// For a farm:
 //
-//         dwellNumber === AgroStore.roomNumber
+//   farm.code
 //
-// The AgroStore itself is NOT included in animalFeeds.
+// For an animal / assigned structure:
+//
+//   assetCode
+//
+// ==========================================================
+
+function getFarmCode(dairy) {
+
+    if (!dairy) {
+
+        return null;
+
+    }
+
+
+    if (
+        isDairyFarm(dairy)
+    ) {
+
+        return Number(
+            dairy.code
+        );
+
+    }
+
+
+    if (
+        dairy.assetCode !== null &&
+        dairy.assetCode !== undefined
+    ) {
+
+        return Number(
+            dairy.assetCode
+        );
+
+    }
+
+
+    return null;
+
+}
+
+
+// ==========================================================
+// GET COMPLETE DAIRY PAGE
 // ==========================================================
 
 exports.getDairyPage =
@@ -143,7 +368,36 @@ async (
 ) => {
 
     // ======================================================
-    // GET CURRENT DAIRY / ASSET
+    // VALIDATE DAIRY ID
+    // ======================================================
+
+    if (!id) {
+
+        throw new Error(
+            "Dairy ID is required."
+        );
+
+    }
+
+
+    if (
+        !isValidObjectId(id)
+    ) {
+
+        const error =
+            new Error(
+                "Invalid Dairy ID."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // LOAD CURRENT DAIRY
     // ======================================================
 
     const dairy =
@@ -154,108 +408,132 @@ async (
 
     if (!dairy) {
 
-        throw new Error(
-            "Dairy profile not found."
-        );
+        const error =
+            new Error(
+                "Dairy profile not found."
+            );
+
+        error.status = 404;
+
+        throw error;
 
     }
 
 
     // ======================================================
-    // AGROSTORE ANIMAL FEEDS
+    // BASIC IDENTIFICATION
+    // ======================================================
+
+    const farm =
+        isDairyFarm(
+            dairy
+        );
+
+
+    const agroStore =
+        isAgroStore(
+            dairy
+        );
+
+
+    // ======================================================
+    // AGROSTORE INVENTORY
     // ======================================================
     //
-    // THE FORMULA:
+    // IMPORTANT:
     //
-    //     /dairy/:id
-    //          ↓
-    //     AgroStore._id
-    //          ↓
-    //     AgroStore.roomNumber
-    //          ↓
-    //     Dairy.dwellNumber
+    // The AgroStore itself remains separate from its contents.
     //
-    // An AgroStore MUST have:
+    // Example:
     //
-    //     roomNumber < 0
+    // AgroStore:
     //
-    // The matching Dairy records are its contents.
+    //   roomNumber = -3
     //
-    // We deliberately keep these records separate from
-    // the normal Update feed.
+    // Content:
+    //
+    //   dwellNumber = -3
+    //
+    // animalFeedsService is responsible for resolving this
+    // relationship.
+    //
     // ======================================================
 
     let animalFeeds = [];
 
 
-    const isAgroStore =
+    if (agroStore) {
 
-        dairy.roomNumber !== null &&
+        try {
 
-        dairy.roomNumber !== undefined &&
-
-        Number(
-            dairy.roomNumber
-        ) < 0;
-
-
-    if (isAgroStore) {
-
-        const animalFeedResult =
-            await animalFeedsService.getAnimalFeeds(
-                dairy._id
-            );
+            const result =
+                await animalFeedsService
+                    .getAnimalFeeds(
+                        dairy._id
+                    );
 
 
-        animalFeeds =
-            animalFeedResult &&
-            Array.isArray(
-                animalFeedResult.feeds
-            )
+            if (
+                result &&
+                Array.isArray(
+                    result.feeds
+                )
+            ) {
 
-                ? animalFeedResult.feeds
+                animalFeeds =
+                    result.feeds;
 
-                : [];
+            }
+
+        } catch (error) {
+
+            // ----------------------------------------------
+            // Preserve service error.
+            // ----------------------------------------------
+
+            throw error;
+
+        }
 
     }
 
 
     // ======================================================
-    // DETERMINE WHETHER CURRENT RECORD IS A DAIRY FARM
-    //
-    // Negative code = Dairy Farm
-    // ======================================================
-
-    const isDairyFarm =
-
-        dairy.code !== null &&
-
-        dairy.code !== undefined &&
-
-        Number(
-            dairy.code
-        ) < 0;
-
-
-    // ======================================================
-    // GET ASSETS BELONGING TO THIS DAIRY FARM
+    // GET FARM ASSETS
     // ======================================================
 
     let assetDairies = [];
 
 
-    if (isDairyFarm) {
+    if (farm) {
+
+        const farmCode =
+            Number(
+                dairy.code
+            );
+
 
         assetDairies =
             await Dairy.find({
 
                 assetCode:
-                    Number(
-                        dairy.code
-                    )
+                    farmCode,
+
+                recordType: {
+
+                    $in: [
+
+                        "animal",
+                        "structure"
+
+                    ]
+
+                }
 
             })
             .sort({
+
+                recordType: 1,
 
                 code: 1,
 
@@ -268,8 +546,13 @@ async (
 
     // ======================================================
     // GET ASSIGNED FARMS
+    // ======================================================
     //
-    // Only dairyWorkers need this.
+    // Only dairyWorker users receive assigned farms.
+    //
+    // We retrieve the user ONCE and preserve the exact order
+    // stored in assignedFarm.
+    //
     // ======================================================
 
     let assignedFarms = [];
@@ -284,128 +567,115 @@ async (
                 )
                 .select(
                     "role assignedFarm"
-                );
+                )
+                .lean();
 
 
         if (
-
             user &&
-
-            user.role ===
-                "dairyWorker" &&
-
+            user.role === "dairyWorker" &&
             Array.isArray(
                 user.assignedFarm
             ) &&
-
             user.assignedFarm.length > 0
-
         ) {
 
-            assignedFarms =
-                await Dairy.find({
-
-                    _id: {
-
-                        $in:
-                            user.assignedFarm
-
-                    }
-
-                });
-
-        }
-
-    }
-
-
-    // ======================================================
-    // PRESERVE ASSIGNED FARM ORDER
-    // ======================================================
-
-    if (
-        assignedFarms.length > 1 &&
-        userId
-    ) {
-
-        const user =
-            await ProjectUser
-                .findById(
-                    userId
-                )
-                .select(
-                    "assignedFarm"
-                );
-
-
-        if (
-
-            user &&
-
-            Array.isArray(
+            const farmIds =
                 user.assignedFarm
-            )
-
-        ) {
-
-            const farmMap =
-                new Map(
-
-                    assignedFarms.map(
-                        farm => [
-
-                            farm._id.toString(),
-
-                            farm
-
-                        ]
-                    )
-
-                );
-
-
-            assignedFarms =
-                user.assignedFarm
-
-                    .map(
-                        farmId =>
-
-                            farmMap.get(
-                                farmId.toString()
-                            )
-                    )
-
                     .filter(
-                        Boolean
+                        farmId =>
+                            isValidObjectId(
+                                farmId
+                            )
                     );
 
+
+            if (
+                farmIds.length > 0
+            ) {
+
+                const farms =
+                    await Dairy.find({
+
+                        _id: {
+
+                            $in:
+                                farmIds
+
+                        },
+
+                        recordType: "farm",
+
+                        status: "active"
+
+                    });
+
+
+                // ------------------------------------------
+                // Preserve assignedFarm order.
+                // ------------------------------------------
+
+                const farmMap =
+                    new Map(
+
+                        farms.map(
+                            farmRecord => [
+
+                                idString(
+                                    farmRecord._id
+                                ),
+
+                                farmRecord
+
+                            ]
+                        )
+
+                    );
+
+
+                assignedFarms =
+                    farmIds
+
+                        .map(
+                            farmId =>
+
+                                farmMap.get(
+                                    idString(
+                                        farmId
+                                    )
+                                )
+                        )
+
+                        .filter(
+                            Boolean
+                        );
+
+            }
+
         }
 
     }
 
 
     // ======================================================
-    // DETERMINE WHICH DAIRY RECORDS SUPPLY THE FEED
+    // DETERMINE RECORDS THAT SUPPLY NORMAL FEED
     // ======================================================
     //
-    // For a Dairy Farm:
+    // Farm:
     //
-    //     Farm itself
-    //     +
-    //     every asset belonging to that farm
+    //   Farm itself
+    //   +
+    //   every animal / structure assigned to the farm
     //
-    // For an asset:
+    // Asset:
     //
-    //     Current asset only.
+    //   Current asset only
     //
-    // The SAME list is used for:
+    // AgroStore:
     //
-    //     - normal posts
-    //     - medical updates
-    //     - maintenance updates
-    //     - weekly milk feeds
+    //   Current AgroStore only
     //
-    // AgroStore inventory is NOT added to this list.
+    // Its inventory does NOT become part of the normal feed.
     // ======================================================
 
     let updateDairyIds = [
@@ -415,33 +685,37 @@ async (
     ];
 
 
-    // ======================================================
-    // CURRENT RECORD IS A DAIRY FARM
-    // ======================================================
+    if (farm) {
 
-    if (isDairyFarm) {
+        const farmCode =
+            Number(
+                dairy.code
+            );
 
-        // ==================================================
-        // FIND ALL ASSETS BELONGING TO THIS FARM
-        // ==================================================
 
         const farmAssets =
             await Dairy.find({
 
                 assetCode:
-                    Number(
-                        dairy.code
-                    )
+                    farmCode,
+
+                recordType: {
+
+                    $in: [
+
+                        "animal",
+                        "structure"
+
+                    ]
+
+                }
 
             })
             .select(
                 "_id"
-            );
+            )
+            .lean();
 
-
-        // ==================================================
-        // ADD ALL ASSET IDS
-        // ==================================================
 
         updateDairyIds.push(
 
@@ -460,34 +734,22 @@ async (
     // ======================================================
 
     updateDairyIds =
-        Array.from(
-
-            new Map(
-
-                updateDairyIds.map(
-                    dairyId => [
-
-                        dairyId.toString(),
-
-                        dairyId
-
-                    ]
-                )
-
-            ).values()
-
+        uniqueIds(
+            updateDairyIds
         );
 
 
     // ======================================================
-    // GET UPDATES
+    // LOAD NORMAL UPDATES
     // ======================================================
-    //
-    // This query remains completely independent of
-    // AgroStore animalFeeds.
-    //
-    // AgroStore inventory does NOT enter the Update feed.
-    // ======================================================
+//
+// IMPORTANT:
+//
+// This query NEVER searches using dwellNumber.
+//
+// AgroStore inventory is not an Update.
+//
+// ======================================================
 
     const updates =
         await Update.find({
@@ -506,7 +768,14 @@ async (
                 "dairy",
 
             select:
-                "name code assetCode profileImage"
+                [
+                    "name",
+                    "code",
+                    "recordType",
+                    "assetCode",
+                    "profileImage",
+                    "profileImages"
+                ].join(" ")
 
         })
         .sort({
@@ -527,7 +796,7 @@ async (
 
 
     // ======================================================
-    // GET DAIRY INFORMATION FOR MILK FEEDS
+    // LOAD DAIRY INFORMATION FOR MILK FEEDS
     // ======================================================
 
     const milkDairies =
@@ -542,12 +811,21 @@ async (
 
         })
         .select(
-            "_id name code assetCode profileImage"
-        );
+            [
+                "_id",
+                "name",
+                "code",
+                "recordType",
+                "assetCode",
+                "profileImage",
+                "profileImages"
+            ].join(" ")
+        )
+        .lean();
 
 
     // ======================================================
-    // CREATE QUICK DAIRY LOOKUP MAP
+    // CREATE MILK DAIRY MAP
     // ======================================================
 
     const milkDairyMap =
@@ -556,7 +834,9 @@ async (
             milkDairies.map(
                 dairyRecord => [
 
-                    dairyRecord._id.toString(),
+                    idString(
+                        dairyRecord._id
+                    ),
 
                     dairyRecord
 
@@ -569,21 +849,33 @@ async (
     // ======================================================
     // BUILD WEEKLY MILK FEEDS
     // ======================================================
+//
+// We intentionally build feeds per Dairy record.
+//
+// This allows a farm page to display milk reports belonging
+// to:
+//
+//   • the farm
+//   • animals
+//   • other milk-producing assets
+//
+// while an individual asset page displays only its own milk.
+//
+// ======================================================
 
     let weeklyFeeds = [];
 
 
     for (
-        const dairyId of updateDairyIds
+        const dairyId
+        of updateDairyIds
     ) {
-
-        const dairyKey =
-            dairyId.toString();
-
 
         const dairyRecord =
             milkDairyMap.get(
-                dairyKey
+                idString(
+                    dairyId
+                )
             );
 
 
@@ -594,18 +886,25 @@ async (
         }
 
 
-        // ==================================================
-        // BUILD WEEKLY MILK FEEDS FOR THIS DAIRY
-        // ==================================================
-
         const dairyWeeklyFeeds =
             await buildWeeklyMilkFeeds(
                 dairyId
             );
 
 
+        if (
+            !Array.isArray(
+                dairyWeeklyFeeds
+            )
+        ) {
+
+            continue;
+
+        }
+
+
         // ==================================================
-        // ATTACH DAIRY INFORMATION TO EACH MILK FEED
+        // ATTACH SOURCE DAIRY INFORMATION
         // ==================================================
 
         dairyWeeklyFeeds.forEach(
@@ -621,7 +920,6 @@ async (
 
 
                 milkFeed.dairyCode =
-
                     dairyRecord.code !==
                     undefined
 
@@ -630,8 +928,12 @@ async (
                         : null;
 
 
-                milkFeed.dairyAssetCode =
+                milkFeed.dairyRecordType =
+                    dairyRecord.recordType ||
+                    null;
 
+
+                milkFeed.dairyAssetCode =
                     dairyRecord.assetCode !==
                     undefined
 
@@ -642,15 +944,18 @@ async (
 
                 milkFeed.dairyImage =
                     dairyRecord.profileImage ||
-                    "";
+                    (
+                        Array.isArray(
+                            dairyRecord.profileImages
+                        ) &&
+                        dairyRecord.profileImages.length
+                            ? dairyRecord.profileImages[0]
+                            : ""
+                    );
 
             }
         );
 
-
-        // ==================================================
-        // ADD THIS DAIRY'S MILK FEEDS
-        // ==================================================
 
         weeklyFeeds.push(
             ...dairyWeeklyFeeds
@@ -660,7 +965,7 @@ async (
 
 
     // ======================================================
-    // ADD WEEKLY MILK FEEDS TO COMPLETE FEED
+    // ADD WEEKLY MILK FEEDS TO NORMAL FEED
     // ======================================================
 
     feed.push(
@@ -669,31 +974,31 @@ async (
 
 
     // ======================================================
-    // SORT COMPLETE FEED
-    //
-    // Everything here remains the normal dairy feed:
-    //
-    // - Normal posts
-    // - Image posts
-    // - Medical updates
-    // - Maintenance updates
-    // - Weekly milk reports
-    //
-    // AgroStore inventory is NOT included here.
+    // SORT COMPLETE NORMAL FEED
     // ======================================================
 
     feed.sort(
+        (a, b) => {
 
-        (a, b) =>
+            const dateA =
+                new Date(
+                    a.createdAt ||
+                    a.date ||
+                    0
+                ).getTime();
 
-            new Date(
-                b.createdAt
-            ) -
 
-            new Date(
-                a.createdAt
-            )
+            const dateB =
+                new Date(
+                    b.createdAt ||
+                    b.date ||
+                    0
+                ).getTime();
 
+
+            return dateB - dateA;
+
+        }
     );
 
 
@@ -705,7 +1010,8 @@ async (
 
 
     for (
-        const item of feed
+        const item
+        of feed
     ) {
 
         if (
@@ -729,14 +1035,25 @@ async (
     return {
 
         // --------------------------------------------------
-        // CURRENT DAIRY / ASSET
+        // CURRENT RECORD
         // --------------------------------------------------
 
         dairy,
 
 
         // --------------------------------------------------
-        // NORMAL UPDATE FEED
+        // RECORD FLAGS
+        // --------------------------------------------------
+
+        isDairyFarm:
+            farm,
+
+        isAgroStore:
+            agroStore,
+
+
+        // --------------------------------------------------
+        // NORMAL FEED
         // --------------------------------------------------
 
         feed,
@@ -757,7 +1074,7 @@ async (
 
 
         // --------------------------------------------------
-        // CURRENT FARM ASSETS
+        // FARM ASSETS
         // --------------------------------------------------
 
         assetDairies,
@@ -772,21 +1089,14 @@ async (
 
         // --------------------------------------------------
         // AGROSTORE INVENTORY
+        // --------------------------------------------------
         //
-        // Populated ONLY when:
+        // IMPORTANT:
         //
-        //     dairy.roomNumber < 0
+        // Only populated for an AgroStore.
         //
-        // The animalFeeds service resolves:
+        // These records are NOT part of `feed`.
         //
-        //     AgroStore._id
-        //          ↓
-        //     AgroStore.roomNumber
-        //          ↓
-        //     Dairy.dwellNumber
-        //
-        // These records are deliberately separate from
-        // `feed`.
         // --------------------------------------------------
 
         animalFeeds
@@ -798,21 +1108,26 @@ async (
 
 // ==========================================================
 // TOGGLE MILKING STATUS
+// ==========================================================
 //
-// Toggles only the isMilking field.
+// Toggles:
 //
-//     false -> true
-//     true  -> false
+//     false → true
+//     true  → false
 //
-// Does NOT:
+// This operation modifies ONLY isMilking.
+//
+// It does NOT:
 //
 //     • create milk records
 //     • delete milk records
-//     • modify milk history
-//     • modify milk totals
-//     • modify any other Dairy fields
+//     • alter milk history
+//     • alter milk totals
+//     • alter animal code
+//     • alter animal ownership
 //
-// Returns the updated Dairy document.
+// The Dairy model itself will enforce its normal validation.
+//
 // ==========================================================
 
 exports.toggleMilking =
@@ -826,15 +1141,38 @@ async (
 
     if (!dairyId) {
 
-        throw new Error(
-            "Dairy ID is required."
-        );
+        const error =
+            new Error(
+                "Dairy ID is required."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    if (
+        !isValidObjectId(
+            dairyId
+        )
+    ) {
+
+        const error =
+            new Error(
+                "Invalid Dairy ID."
+            );
+
+        error.status = 400;
+
+        throw error;
 
     }
 
 
     // ======================================================
-    // GET DAIRY
+    // LOAD DAIRY
     // ======================================================
 
     const dairy =
@@ -843,29 +1181,52 @@ async (
         );
 
 
-    // ======================================================
-    // DAIRY NOT FOUND
-    // ======================================================
-
     if (!dairy) {
 
-        throw new Error(
-            "Dairy asset not found."
-        );
+        const error =
+            new Error(
+                "Dairy asset not found."
+            );
+
+        error.status = 404;
+
+        throw error;
 
     }
 
 
     // ======================================================
-    // TOGGLE isMilking
+    // ONLY ANIMALS CAN BE MILKING
+    // ======================================================
+
+    if (
+        dairy.recordType !== "animal"
+    ) {
+
+        const error =
+            new Error(
+                "Only animal records can have their milking status changed."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // TOGGLE
     // ======================================================
 
     dairy.isMilking =
-        !dairy.isMilking;
+        !Boolean(
+            dairy.isMilking
+        );
 
 
     // ======================================================
-    // SAVE ONLY THE TOGGLED DOCUMENT
+    // SAVE
     // ======================================================
 
     await dairy.save();
@@ -882,13 +1243,19 @@ async (
 
 // ==========================================================
 // GET ASSIGNED FARM FOR USER
+// ==========================================================
 //
-// Used when a dairyWorker switches farms.
+// Used by dairyWorker farm switching.
 //
 // Security:
 //
-// The requested farm MUST exist inside the logged-in
-// user's assignedFarm array.
+// The requested farm MUST:
+//
+//   1. belong to the requested user
+//   2. user role must be dairyWorker
+//   3. farm must exist
+//   4. farm must actually be a farm record
+//
 // ==========================================================
 
 exports.getAssignedFarmForUser =
@@ -896,6 +1263,34 @@ async (
     userId,
     farmId
 ) => {
+
+    // ======================================================
+    // VALIDATE IDs
+    // ======================================================
+
+    if (
+        !userId ||
+        !farmId
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        !isValidObjectId(
+            userId
+        ) ||
+        !isValidObjectId(
+            farmId
+        )
+    ) {
+
+        return null;
+
+    }
+
 
     // ======================================================
     // FIND USER
@@ -908,7 +1303,8 @@ async (
             )
             .select(
                 "role assignedFarm"
-            );
+            )
+            .lean();
 
 
     if (!user) {
@@ -933,7 +1329,7 @@ async (
 
 
     // ======================================================
-    // ASSIGNED FARM IDS
+    // ASSIGNED FARM LIST
     // ======================================================
 
     const assignedFarmIds =
@@ -947,19 +1343,20 @@ async (
 
 
     // ======================================================
-    // CHECK ASSIGNMENT
+    // CHECK WHETHER FARM IS ASSIGNED
     // ======================================================
+
+    const requestedFarmId =
+        farmId.toString();
+
 
     const isAssigned =
         assignedFarmIds.some(
-
             assignedId =>
 
-                assignedId
-                    .toString() ===
-
-                farmId
-                    .toString()
+                assignedId &&
+                assignedId.toString() ===
+                    requestedFarmId
 
         );
 
@@ -972,13 +1369,22 @@ async (
 
 
     // ======================================================
-    // FIND FARM
+    // LOAD FARM
     // ======================================================
 
     const farm =
-        await Dairy.findById(
-            farmId
-        );
+        await Dairy.findOne({
+
+            _id:
+                farmId,
+
+            recordType:
+                "farm",
+
+            status:
+                "active"
+
+        });
 
 
     if (!farm) {
@@ -995,3 +1401,209 @@ async (
     return farm;
 
 };
+
+
+// ==========================================================
+// OPTIONAL HELPER:
+// GET FARM ASSETS
+// ==========================================================
+//
+// Kept here so controllers can use the page service without
+// duplicating the farm-asset query.
+//
+// ==========================================================
+
+exports.getFarmAssets =
+async (
+    farmCode
+) => {
+
+    const code =
+        Number(
+            farmCode
+        );
+
+
+    if (
+        !Number.isInteger(code) ||
+        code >= 0
+    ) {
+
+        return [];
+
+    }
+
+
+    return Dairy.find({
+
+        assetCode:
+            code,
+
+        recordType: {
+
+            $in: [
+
+                "animal",
+                "structure"
+
+            ]
+
+        },
+
+        status:
+            "active"
+
+    })
+    .sort({
+
+        recordType: 1,
+
+        code: 1,
+
+        name: 1
+
+    });
+
+};
+
+
+// ==========================================================
+// OPTIONAL HELPER:
+// GET AGROSTORE CONTENT
+// ==========================================================
+//
+// This provides a direct page-service method for controllers
+// that need AgroStore contents without loading the entire
+// Dairy page.
+//
+// ==========================================================
+
+exports.getAgroStoreContent =
+async (
+    agroStoreId
+) => {
+
+    // ======================================================
+    // VALIDATE ID
+    // ======================================================
+
+    if (
+        !agroStoreId ||
+        !isValidObjectId(
+            agroStoreId
+        )
+    ) {
+
+        const error =
+            new Error(
+                "Invalid AgroStore ID."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // LOAD AGROSTORE
+    // ======================================================
+
+    const agroStore =
+        await Dairy.findById(
+            agroStoreId
+        );
+
+
+    if (!agroStore) {
+
+        const error =
+            new Error(
+                "AgroStore not found."
+            );
+
+        error.status = 404;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // VERIFY AGROSTORE
+    // ======================================================
+
+    if (
+        !isAgroStore(
+            agroStore
+        )
+    ) {
+
+        const error =
+            new Error(
+                "The selected record is not an AgroStore."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // LOAD CONTENT
+    // ======================================================
+
+    const result =
+        await animalFeedsService
+            .getAnimalFeeds(
+                agroStore._id
+            );
+
+
+    if (
+        result &&
+        Array.isArray(
+            result.feeds
+        )
+    ) {
+
+        return {
+
+            agroStore,
+
+            feeds:
+                result.feeds
+
+        };
+
+    }
+
+
+    return {
+
+        agroStore,
+
+        feeds: []
+
+    };
+
+};
+
+
+// ==========================================================
+// EXPORT HELPERS FOR TESTING / OTHER SERVICES
+// ==========================================================
+
+exports.isDairyFarm =
+    isDairyFarm;
+
+
+exports.isAgroStore =
+    isAgroStore;
+
+
+exports.getFarmCode =
+    getFarmCode;
