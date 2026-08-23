@@ -11,11 +11,39 @@ PURPOSE:
   viewed dairy farm.
 • Allows a dairyWorker with multiple assigned farms
   to switch between those farms.
-• Provides Animals and Structures/Machines/Tools tabs.
+• Provides four asset categories:
+
+      1. Animals
+      2. Cow Shades
+      3. Animal Feeds
+      4. Tools
+
 • Every asset opens:
+
       /dairy/<asset._id>
+
 • Farm switching opens:
+
       /dairy/<farm._id>
+
+CLASSIFICATION:
+----------------------------------------------------------
+
+Animals:
+    recordType === "animal"
+
+Cow Shades:
+    roomNumber > 0
+
+Animal Feeds:
+    roomNumber < 0
+
+Tools:
+    code is missing
+    AND
+    roomNumber is missing
+    AND
+    dwellNumber is missing
 
 LAYOUT SAFETY:
 ----------------------------------------------------------
@@ -48,35 +76,99 @@ const availableAssets =
 
 
 /* ==========================================================
+   HELPER:
+   CHECK WHETHER A VALUE IS MISSING
+========================================================== */
+
+function isMissing(value) {
+
+    return (
+        value === null ||
+        value === undefined ||
+        value === ""
+    );
+
+}
+
+
+/* ==========================================================
    ANIMALS
 
-   Animals use a positive numeric code.
+   An animal is identified by:
+
+       recordType === "animal"
+
+   The comparison is made case-insensitively.
 ========================================================== */
 
 const animalDairies =
     availableAssets.filter(asset => {
 
         return (
-            asset.code !== null &&
-            asset.code !== undefined &&
-            Number(asset.code) > 0
+            typeof asset.recordType === "string" &&
+            asset.recordType.toLowerCase() === "animal"
         );
 
     });
 
 
 /* ==========================================================
-   STRUCTURES / MACHINES / TOOLS
+   COW SHADES
 
-   These have no animal code.
+   Cow shades have a POSITIVE roomNumber.
 ========================================================== */
 
-const structureDairies =
+const cowShadeDairies =
     availableAssets.filter(asset => {
 
         return (
-            asset.code === null ||
-            asset.code === undefined
+            asset.roomNumber !== null &&
+            asset.roomNumber !== undefined &&
+            asset.roomNumber !== "" &&
+            Number(asset.roomNumber) > 0
+        );
+
+    });
+
+
+/* ==========================================================
+   ANIMAL FEEDS
+
+   Animal feed facilities have a NEGATIVE roomNumber.
+========================================================== */
+
+const animalFeedDairies =
+    availableAssets.filter(asset => {
+
+        return (
+            asset.roomNumber !== null &&
+            asset.roomNumber !== undefined &&
+            asset.roomNumber !== "" &&
+            Number(asset.roomNumber) < 0
+        );
+
+    });
+
+
+/* ==========================================================
+   TOOLS
+
+   Tools have:
+
+       no code
+       AND
+       no roomNumber
+       AND
+       no dwellNumber
+========================================================== */
+
+const toolDairies =
+    availableAssets.filter(asset => {
+
+        return (
+            isMissing(asset.code) &&
+            isMissing(asset.roomNumber) &&
+            isMissing(asset.dwellNumber)
         );
 
     });
@@ -121,8 +213,6 @@ const isCurrentFarm =
 
 <!-- ==========================================================
      ASSET BAR OVERLAY
-     ----------------------------------------------------------
-     Starts below the existing header/top-menu area.
 ========================================================== -->
 
 <div
@@ -244,7 +334,6 @@ const isCurrentFarm =
                         aria-controls="assignedFarmList"
                     >
 
-
                         <span
                             class="asset-bar-component__switch-icon"
                             aria-hidden="true"
@@ -252,11 +341,9 @@ const isCurrentFarm =
                             ⇄
                         </span>
 
-
                         <span>
                             Switch Farm
                         </span>
-
 
                     </button>
 
@@ -414,49 +501,88 @@ const isCurrentFarm =
             aria-controls="assetAnimals"
         >
 
-
             <span class="asset-bar-component__tab-title">
                 Animals
             </span>
-
 
             <span class="asset-bar-component__tab-count">
                 <%= animalDairies.length %>
             </span>
 
+        </button>
+
+
+        <!-- ==================================================
+             COW SHADES TAB
+        =================================================== -->
+
+        <button
+            type="button"
+            id="assetCowShadesTab"
+            class="asset-bar-component__tab"
+            data-asset-category="cow-shades"
+            role="tab"
+            aria-selected="false"
+            aria-controls="assetCowShades"
+        >
+
+            <span class="asset-bar-component__tab-title">
+                Cow Shades
+            </span>
+
+            <span class="asset-bar-component__tab-count">
+                <%= cowShadeDairies.length %>
+            </span>
 
         </button>
 
 
         <!-- ==================================================
-             STRUCTURES TAB
+             ANIMAL FEEDS TAB
         =================================================== -->
 
         <button
             type="button"
-            id="assetStructuresTab"
+            id="assetAnimalFeedsTab"
             class="asset-bar-component__tab"
-            data-asset-category="structures"
+            data-asset-category="animal-feeds"
             role="tab"
             aria-selected="false"
-            aria-controls="assetStructures"
+            aria-controls="assetAnimalFeeds"
         >
 
-
             <span class="asset-bar-component__tab-title">
-                Structures
+                Animal Feeds
             </span>
-
-
-            <span class="asset-bar-component__tab-subtitle">
-                Machines &amp; Tools
-            </span>
-
 
             <span class="asset-bar-component__tab-count">
-                <%= structureDairies.length %>
+                <%= animalFeedDairies.length %>
             </span>
 
+        </button>
+
+
+        <!-- ==================================================
+             TOOLS TAB
+        =================================================== -->
+
+        <button
+            type="button"
+            id="assetToolsTab"
+            class="asset-bar-component__tab"
+            data-asset-category="tools"
+            role="tab"
+            aria-selected="false"
+            aria-controls="assetTools"
+        >
+
+            <span class="asset-bar-component__tab-title">
+                Tools
+            </span>
+
+            <span class="asset-bar-component__tab-count">
+                <%= toolDairies.length %>
+            </span>
 
         </button>
 
@@ -486,7 +612,6 @@ const isCurrentFarm =
 
             <div class="asset-bar-component__section-header">
 
-
                 <div>
 
                     <span class="asset-bar-component__section-label">
@@ -499,11 +624,9 @@ const isCurrentFarm =
 
                 </div>
 
-
                 <span class="asset-bar-component__section-count">
                     <%= animalDairies.length %>
                 </span>
-
 
             </div>
 
@@ -521,8 +644,8 @@ const isCurrentFarm =
                             href="/dairy/<%= animal._id %>"
                             class="asset-bar-component__item"
                             data-asset-id="<%= animal._id %>"
-                            data-asset-code="<%= animal.code %>"
-                            data-asset-parent-code="<%= animal.assetCode || '' %>"
+                            data-asset-code="<%= animal.code || '' %>"
+                            data-asset-room-number="<%= animal.roomNumber || '' %>"
                             data-asset-type="animal"
                         >
 
@@ -531,9 +654,7 @@ const isCurrentFarm =
                                 class="asset-bar-component__item-image"
                             >
 
-
                                 <% if (animal.displayImage) { %>
-
 
                                     <img
                                         src="<%= animal.displayImage %>"
@@ -541,9 +662,7 @@ const isCurrentFarm =
                                         loading="lazy"
                                     >
 
-
                                 <% } else { %>
-
 
                                     <span
                                         class="asset-bar-component__image-placeholder"
@@ -552,9 +671,7 @@ const isCurrentFarm =
                                         🐄
                                     </span>
 
-
                                 <% } %>
-
 
                             </span>
 
@@ -563,7 +680,6 @@ const isCurrentFarm =
                                 class="asset-bar-component__item-details"
                             >
 
-
                                 <span
                                     class="asset-bar-component__item-name"
                                 >
@@ -571,15 +687,18 @@ const isCurrentFarm =
                                 </span>
 
 
-                                <span
-                                    class="asset-bar-component__item-code"
-                                >
-                                    Animal #<%= animal.code %>
-                                </span>
+                                <% if (!isMissing(animal.code)) { %>
+
+                                    <span
+                                        class="asset-bar-component__item-code"
+                                    >
+                                        Animal #<%= animal.code %>
+                                    </span>
+
+                                <% } %>
 
 
                                 <% if (animal.type) { %>
-
 
                                     <span
                                         class="asset-bar-component__item-meta"
@@ -587,19 +706,16 @@ const isCurrentFarm =
                                         <%= animal.type %>
                                     </span>
 
-
                                 <% } %>
 
 
                                 <% if (animal.gender) { %>
-
 
                                     <span
                                         class="asset-bar-component__item-meta"
                                     >
                                         <%= animal.gender %>
                                     </span>
-
 
                                 <% } %>
 
@@ -626,7 +742,6 @@ const isCurrentFarm =
 
                     <div class="asset-bar-component__empty">
 
-
                         <span
                             class="asset-bar-component__empty-icon"
                             aria-hidden="true"
@@ -634,11 +749,9 @@ const isCurrentFarm =
                             🐄
                         </span>
 
-
                         <span>
                             No animals found for this dairy farm.
                         </span>
-
 
                     </div>
 
@@ -653,39 +766,36 @@ const isCurrentFarm =
 
 
         <!-- ==================================================
-             STRUCTURES / MACHINES / TOOLS
+             COW SHADES
         =================================================== -->
 
         <section
-            id="assetStructures"
+            id="assetCowShades"
             class="asset-bar-component__section"
-            data-asset-section="structures"
+            data-asset-section="cow-shades"
             role="tabpanel"
-            aria-labelledby="assetStructuresTab"
+            aria-labelledby="assetCowShadesTab"
             hidden
         >
 
 
             <div class="asset-bar-component__section-header">
 
-
                 <div>
 
                     <span class="asset-bar-component__section-label">
-                        FARM PROPERTY
+                        FARM FACILITIES
                     </span>
 
                     <h3>
-                        Structures &amp; Equipment
+                        Cow Shades
                     </h3>
 
                 </div>
 
-
                 <span class="asset-bar-component__section-count">
-                    <%= structureDairies.length %>
+                    <%= cowShadeDairies.length %>
                 </span>
-
 
             </div>
 
@@ -693,18 +803,18 @@ const isCurrentFarm =
             <div class="asset-bar-component__list">
 
 
-                <% if (structureDairies.length > 0) { %>
+                <% if (cowShadeDairies.length > 0) { %>
 
 
-                    <% structureDairies.forEach(asset => { %>
+                    <% cowShadeDairies.forEach(shade => { %>
 
 
                         <a
-                            href="/dairy/<%= asset._id %>"
+                            href="/dairy/<%= shade._id %>"
                             class="asset-bar-component__item"
-                            data-asset-id="<%= asset._id %>"
-                            data-asset-parent-code="<%= asset.assetCode || '' %>"
-                            data-asset-type="structure"
+                            data-asset-id="<%= shade._id %>"
+                            data-asset-room-number="<%= shade.roomNumber %>"
+                            data-asset-type="cow-shade"
                         >
 
 
@@ -712,19 +822,15 @@ const isCurrentFarm =
                                 class="asset-bar-component__item-image"
                             >
 
-
-                                <% if (asset.displayImage) { %>
-
+                                <% if (shade.displayImage) { %>
 
                                     <img
-                                        src="<%= asset.displayImage %>"
-                                        alt="<%= asset.name %>"
+                                        src="<%= shade.displayImage %>"
+                                        alt="<%= shade.name %>"
                                         loading="lazy"
                                     >
 
-
                                 <% } else { %>
-
 
                                     <span
                                         class="asset-bar-component__image-placeholder"
@@ -733,9 +839,7 @@ const isCurrentFarm =
                                         🏠
                                     </span>
 
-
                                 <% } %>
-
 
                             </span>
 
@@ -744,36 +848,38 @@ const isCurrentFarm =
                                 class="asset-bar-component__item-details"
                             >
 
-
                                 <span
                                     class="asset-bar-component__item-name"
                                 >
-                                    <%= asset.name %>
+                                    <%= shade.name %>
                                 </span>
 
 
-                                <% if (asset.type) { %>
+                                <span
+                                    class="asset-bar-component__item-code"
+                                >
+                                    Shade #<%= shade.roomNumber %>
+                                </span>
 
+
+                                <% if (shade.type) { %>
 
                                     <span
                                         class="asset-bar-component__item-meta"
                                     >
-                                        <%= asset.type %>
+                                        <%= shade.type %>
                                     </span>
-
 
                                 <% } %>
 
 
-                                <% if (asset.location) { %>
-
+                                <% if (shade.location) { %>
 
                                     <span
                                         class="asset-bar-component__item-meta"
                                     >
-                                        <%= asset.location %>
+                                        <%= shade.location %>
                                     </span>
-
 
                                 <% } %>
 
@@ -800,7 +906,6 @@ const isCurrentFarm =
 
                     <div class="asset-bar-component__empty">
 
-
                         <span
                             class="asset-bar-component__empty-icon"
                             aria-hidden="true"
@@ -808,12 +913,330 @@ const isCurrentFarm =
                             🏠
                         </span>
 
-
                         <span>
-                            No structures, machines or tools
-                            found for this dairy farm.
+                            No cow shades found for this dairy farm.
                         </span>
 
+                    </div>
+
+
+                <% } %>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==================================================
+             ANIMAL FEEDS
+        =================================================== -->
+
+        <section
+            id="assetAnimalFeeds"
+            class="asset-bar-component__section"
+            data-asset-section="animal-feeds"
+            role="tabpanel"
+            aria-labelledby="assetAnimalFeedsTab"
+            hidden
+        >
+
+
+            <div class="asset-bar-component__section-header">
+
+                <div>
+
+                    <span class="asset-bar-component__section-label">
+                        FEED FACILITIES
+                    </span>
+
+                    <h3>
+                        Animal Feeds
+                    </h3>
+
+                </div>
+
+                <span class="asset-bar-component__section-count">
+                    <%= animalFeedDairies.length %>
+                </span>
+
+            </div>
+
+
+            <div class="asset-bar-component__list">
+
+
+                <% if (animalFeedDairies.length > 0) { %>
+
+
+                    <% animalFeedDairies.forEach(feed => { %>
+
+
+                        <a
+                            href="/dairy/<%= feed._id %>"
+                            class="asset-bar-component__item"
+                            data-asset-id="<%= feed._id %>"
+                            data-asset-room-number="<%= feed.roomNumber %>"
+                            data-asset-type="animal-feed"
+                        >
+
+
+                            <span
+                                class="asset-bar-component__item-image"
+                            >
+
+                                <% if (feed.displayImage) { %>
+
+                                    <img
+                                        src="<%= feed.displayImage %>"
+                                        alt="<%= feed.name %>"
+                                        loading="lazy"
+                                    >
+
+                                <% } else { %>
+
+                                    <span
+                                        class="asset-bar-component__image-placeholder"
+                                        aria-hidden="true"
+                                    >
+                                        🌾
+                                    </span>
+
+                                <% } %>
+
+                            </span>
+
+
+                            <span
+                                class="asset-bar-component__item-details"
+                            >
+
+                                <span
+                                    class="asset-bar-component__item-name"
+                                >
+                                    <%= feed.name %>
+                                </span>
+
+
+                                <span
+                                    class="asset-bar-component__item-code"
+                                >
+                                    Feed #<%= feed.roomNumber %>
+                                </span>
+
+
+                                <% if (feed.type) { %>
+
+                                    <span
+                                        class="asset-bar-component__item-meta"
+                                    >
+                                        <%= feed.type %>
+                                    </span>
+
+                                <% } %>
+
+
+                                <% if (feed.location) { %>
+
+                                    <span
+                                        class="asset-bar-component__item-meta"
+                                    >
+                                        <%= feed.location %>
+                                    </span>
+
+                                <% } %>
+
+
+                            </span>
+
+
+                            <span
+                                class="asset-bar-component__item-arrow"
+                                aria-hidden="true"
+                            >
+                                ›
+                            </span>
+
+
+                        </a>
+
+
+                    <% }); %>
+
+
+                <% } else { %>
+
+
+                    <div class="asset-bar-component__empty">
+
+                        <span
+                            class="asset-bar-component__empty-icon"
+                            aria-hidden="true"
+                        >
+                            🌾
+                        </span>
+
+                        <span>
+                            No animal feed facilities found
+                            for this dairy farm.
+                        </span>
+
+                    </div>
+
+
+                <% } %>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==================================================
+             TOOLS
+        =================================================== -->
+
+        <section
+            id="assetTools"
+            class="asset-bar-component__section"
+            data-asset-section="tools"
+            role="tabpanel"
+            aria-labelledby="assetToolsTab"
+            hidden
+        >
+
+
+            <div class="asset-bar-component__section-header">
+
+                <div>
+
+                    <span class="asset-bar-component__section-label">
+                        FARM EQUIPMENT
+                    </span>
+
+                    <h3>
+                        Tools
+                    </h3>
+
+                </div>
+
+                <span class="asset-bar-component__section-count">
+                    <%= toolDairies.length %>
+                </span>
+
+            </div>
+
+
+            <div class="asset-bar-component__list">
+
+
+                <% if (toolDairies.length > 0) { %>
+
+
+                    <% toolDairies.forEach(tool => { %>
+
+
+                        <a
+                            href="/dairy/<%= tool._id %>"
+                            class="asset-bar-component__item"
+                            data-asset-id="<%= tool._id %>"
+                            data-asset-type="tool"
+                        >
+
+
+                            <span
+                                class="asset-bar-component__item-image"
+                            >
+
+                                <% if (tool.displayImage) { %>
+
+                                    <img
+                                        src="<%= tool.displayImage %>"
+                                        alt="<%= tool.name %>"
+                                        loading="lazy"
+                                    >
+
+                                <% } else { %>
+
+                                    <span
+                                        class="asset-bar-component__image-placeholder"
+                                        aria-hidden="true"
+                                    >
+                                        🔧
+                                    </span>
+
+                                <% } %>
+
+                            </span>
+
+
+                            <span
+                                class="asset-bar-component__item-details"
+                            >
+
+                                <span
+                                    class="asset-bar-component__item-name"
+                                >
+                                    <%= tool.name %>
+                                </span>
+
+
+                                <% if (tool.type) { %>
+
+                                    <span
+                                        class="asset-bar-component__item-meta"
+                                    >
+                                        <%= tool.type %>
+                                    </span>
+
+                                <% } %>
+
+
+                                <% if (tool.location) { %>
+
+                                    <span
+                                        class="asset-bar-component__item-meta"
+                                    >
+                                        <%= tool.location %>
+                                    </span>
+
+                                <% } %>
+
+
+                            </span>
+
+
+                            <span
+                                class="asset-bar-component__item-arrow"
+                                aria-hidden="true"
+                            >
+                                ›
+                            </span>
+
+
+                        </a>
+
+
+                    <% }); %>
+
+
+                <% } else { %>
+
+
+                    <div class="asset-bar-component__empty">
+
+                        <span
+                            class="asset-bar-component__empty-icon"
+                            aria-hidden="true"
+                        >
+                            🔧
+                        </span>
+
+                        <span>
+                            No tools found for this dairy farm.
+                        </span>
 
                     </div>
 
@@ -914,6 +1337,70 @@ const isCurrentFarm =
 
 
         /* ==================================================
+           CATEGORY SWITCHING
+        =================================================== */
+
+        function setCategory(category) {
+
+
+            if (!category) {
+
+                return;
+
+            }
+
+
+            tabs.forEach(
+                function (tab) {
+
+
+                    const isActive =
+                        tab.dataset.assetCategory ===
+                        category;
+
+
+                    tab.classList.toggle(
+                        "is-active",
+                        isActive
+                    );
+
+
+                    tab.setAttribute(
+                        "aria-selected",
+                        String(isActive)
+                    );
+
+
+                }
+            );
+
+
+            sections.forEach(
+                function (section) {
+
+
+                    const isActive =
+                        section.dataset.assetSection ===
+                        category;
+
+
+                    section.classList.toggle(
+                        "is-active",
+                        isActive
+                    );
+
+
+                    section.hidden =
+                        !isActive;
+
+
+                }
+            );
+
+        }
+
+
+        /* ==================================================
            OPEN ASSET BAR
         =================================================== */
 
@@ -924,7 +1411,9 @@ const isCurrentFarm =
              * Always begin on Animals.
              */
 
-            setCategory("animals");
+            setCategory(
+                "animals"
+            );
 
 
             /*
@@ -994,8 +1483,7 @@ const isCurrentFarm =
 
 
             /*
-             * Prevent background page scrolling while
-             * the asset bar is open.
+             * Prevent background page scrolling.
              */
 
             document.documentElement.classList.add(
@@ -1076,70 +1564,6 @@ const isCurrentFarm =
 
             document.documentElement.classList.remove(
                 "asset-bar-component--open"
-            );
-
-        }
-
-
-        /* ==================================================
-           CATEGORY SWITCHING
-        =================================================== */
-
-        function setCategory(category) {
-
-
-            if (!category) {
-
-                return;
-
-            }
-
-
-            tabs.forEach(
-                function (tab) {
-
-
-                    const isActive =
-                        tab.dataset.assetCategory ===
-                        category;
-
-
-                    tab.classList.toggle(
-                        "is-active",
-                        isActive
-                    );
-
-
-                    tab.setAttribute(
-                        "aria-selected",
-                        String(isActive)
-                    );
-
-
-                }
-            );
-
-
-            sections.forEach(
-                function (section) {
-
-
-                    const isActive =
-                        section.dataset.assetSection ===
-                        category;
-
-
-                    section.classList.toggle(
-                        "is-active",
-                        isActive
-                    );
-
-
-                    section.hidden =
-                        !isActive;
-
-
-                }
             );
 
         }
@@ -1394,18 +1818,12 @@ const isCurrentFarm =
 
 <!-- ==========================================================
      ASSET BAR CSS
-
-     IMPORTANT:
-     All classes are component-scoped to prevent this partial
-     from interfering with layout.ejs or other pages.
 ========================================================== -->
 
 <style>
 
 /* ==========================================================
    ASSET BAR VARIABLES
-   ----------------------------------------------------------
-   These are component-local values.
 ========================================================== */
 
 .asset-bar-component,
@@ -1427,8 +1845,6 @@ const isCurrentFarm =
 
 /* ==========================================================
    ROOT SCROLL LOCK
-   ----------------------------------------------------------
-   Does not change page layout dimensions.
 ========================================================== */
 
 html.asset-bar-component--open {
@@ -1440,12 +1856,6 @@ html.asset-bar-component--open {
 
 /* ==========================================================
    OVERLAY
-   ----------------------------------------------------------
-   Existing layout:
-   Header + top menu = 120px
-   Footer/bottom area = 50px
-
-   Therefore the overlay does not cover those areas.
 ========================================================== */
 
 .asset-bar-component__overlay {
@@ -1495,10 +1905,10 @@ html.asset-bar-component--open {
     right:0;
     bottom:50px;
 
-    width:380px;
+    width:430px;
 
     max-width:
-        min(380px, calc(100vw - 64px));
+        min(430px, calc(100vw - 64px));
 
     box-sizing:border-box;
 
@@ -1534,10 +1944,6 @@ html.asset-bar-component--open {
 
 }
 
-
-/* ==========================================================
-   OPEN STATE
-========================================================== */
 
 .asset-bar-component.is-open {
 
@@ -1585,10 +1991,6 @@ html.asset-bar-component--open {
 
 }
 
-
-/* ==========================================================
-   HEADING
-========================================================== */
 
 .asset-bar-component__heading {
 
@@ -1723,10 +2125,6 @@ html.asset-bar-component--open {
 }
 
 
-/* ==========================================================
-   CURRENT FARM
-========================================================== */
-
 .asset-bar-component__farm-label {
 
     display:block;
@@ -1848,17 +2246,6 @@ html.asset-bar-component--open {
 }
 
 
-.asset-bar-component__switch-button:focus-visible {
-
-    outline:
-        3px solid
-        rgba(11,93,30,.2);
-
-    outline-offset:2px;
-
-}
-
-
 .asset-bar-component__switch-icon {
 
     font-size:17px;
@@ -1867,10 +2254,6 @@ html.asset-bar-component--open {
 
 }
 
-
-/* ==========================================================
-   ASSIGNED FARM LIST
-========================================================== */
 
 .asset-bar-component__farm-list {
 
@@ -2078,6 +2461,8 @@ html.asset-bar-component--open {
 
 /* ==========================================================
    CATEGORY TABS
+
+   Four equal tabs.
 ========================================================== */
 
 .asset-bar-component__tabs {
@@ -2088,12 +2473,12 @@ html.asset-bar-component--open {
     display:grid;
 
     grid-template-columns:
-        1fr 1fr;
+        repeat(4, minmax(0, 1fr));
 
-    gap:6px;
+    gap:5px;
 
     padding:
-        9px 11px;
+        9px 10px;
 
     background:#fff;
 
@@ -2107,12 +2492,14 @@ html.asset-bar-component--open {
 
     position:relative;
 
-    min-height:47px;
+    min-width:0;
+
+    min-height:52px;
 
     box-sizing:border-box;
 
     padding:
-        8px 35px 8px 10px;
+        8px 25px 8px 8px;
 
     border:
         1px solid #dfe6e1;
@@ -2162,22 +2549,15 @@ html.asset-bar-component--open {
 
     display:block;
 
-    font-size:12px;
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+
+    font-size:10px;
 
     font-weight:750;
-
-}
-
-
-.asset-bar-component__tab-subtitle {
-
-    display:block;
-
-    margin-top:2px;
-
-    font-size:8px;
-
-    opacity:.78;
 
 }
 
@@ -2186,20 +2566,17 @@ html.asset-bar-component--open {
 
     position:absolute;
 
-    top:50%;
-    right:8px;
+    top:6px;
+    right:5px;
 
-    min-width:21px;
-    height:21px;
+    min-width:18px;
+    height:18px;
 
     box-sizing:border-box;
 
-    padding:0 5px;
+    padding:0 4px;
 
-    transform:
-        translateY(-50%);
-
-    border-radius:11px;
+    border-radius:10px;
 
     display:flex;
 
@@ -2210,7 +2587,7 @@ html.asset-bar-component--open {
 
     color:#34453a;
 
-    font-size:9px;
+    font-size:8px;
 
     font-weight:800;
 
@@ -2620,7 +2997,7 @@ html.asset-bar-component--open {
     .asset-bar-component {
 
         width:
-            min(350px, calc(100vw - 60px));
+            min(390px, calc(100vw - 60px));
 
         max-width:
             calc(100vw - 60px);
@@ -2647,8 +3024,40 @@ html.asset-bar-component--open {
 
     .asset-bar-component__tabs {
 
+        gap:4px;
+
         padding:
-            8px 9px;
+            8px 8px;
+
+    }
+
+
+    .asset-bar-component__tab {
+
+        min-height:48px;
+
+        padding:
+            7px 21px 7px 6px;
+
+    }
+
+
+    .asset-bar-component__tab-title {
+
+        font-size:9px;
+
+    }
+
+
+    .asset-bar-component__tab-count {
+
+        top:5px;
+        right:4px;
+
+        min-width:17px;
+        height:17px;
+
+        font-size:7px;
 
     }
 
@@ -2691,6 +3100,48 @@ html.asset-bar-component--open {
 
         padding:
             9px 11px;
+
+    }
+
+
+    .asset-bar-component__tabs {
+
+        gap:3px;
+
+        padding:
+            7px 6px;
+
+    }
+
+
+    .asset-bar-component__tab {
+
+        min-height:45px;
+
+        padding:
+            7px 18px 7px 5px;
+
+        border-radius:7px;
+
+    }
+
+
+    .asset-bar-component__tab-title {
+
+        font-size:8px;
+
+    }
+
+
+    .asset-bar-component__tab-count {
+
+        min-width:15px;
+        height:15px;
+
+        top:4px;
+        right:3px;
+
+        font-size:7px;
 
     }
 
