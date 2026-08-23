@@ -9,38 +9,24 @@ FILE:
 PURPOSE:
     Main Admin dashboard view.
 
-    This page combines:
+INCLUDES:
 
-        1. Dairy Farms
-           views/admin/dairies.ejs
-
-        2. Standalone Assets
-           views/admin/standalone.ejs
-
-LAYOUT:
-
-    Admin Dashboard
-        |
-        ├── Dairy Farms
-        |      └── Horizontal story cards
-        |
-        └── Standalone Assets
-               └── Horizontal story cards
+    views/admin/dairies.ejs
+    views/admin/standalone.ejs
 
 IMPORTANT:
 
-    The individual sections remain separate partials.
+    Both partials are optional-safe.
 
-    This file only provides the Admin page structure
-    and includes the two components.
+    If the controller does not provide:
 
-EXPECTED DATA:
+        dairies
 
-    dairies
-        = Dairy Farm records
+    or:
 
-    standaloneAssets
-        = Standalone asset records
+        standaloneAssets
+
+    the page will NOT crash.
 
 ==============================================================
 */ %>
@@ -48,18 +34,28 @@ EXPECTED DATA:
 
 <%
 /* ==========================================================
-   SAFE DATA
+   SAFE DAIRIES
 ========================================================== */
 
 const safeDairies =
+    typeof dairies !== "undefined" &&
     Array.isArray(dairies)
+
         ? dairies
+
         : [];
 
 
+/* ==========================================================
+   SAFE STANDALONE ASSETS
+========================================================== */
+
 const safeStandaloneAssets =
+    typeof standaloneAssets !== "undefined" &&
     Array.isArray(standaloneAssets)
+
         ? standaloneAssets
+
         : [];
 
 %>
@@ -275,7 +271,7 @@ const safeStandaloneAssets =
 
 
 /* ==========================================================
-   ADMIN SECTIONS
+   ADMIN SECTION
 ========================================================== */
 
 .admin-page-section {
@@ -293,7 +289,7 @@ const safeStandaloneAssets =
 
 
 /* ==========================================================
-   SEPARATOR
+   SECTION SEPARATOR
 ========================================================== */
 
 .admin-page-separator {
@@ -447,7 +443,7 @@ const safeStandaloneAssets =
 
             <div
                 class="admin-page-heading"
-            >
+        >
 
 
                 <h1
@@ -502,9 +498,13 @@ const safeStandaloneAssets =
         >
 
 
-            <%- include("admin/dairies", {
-                dairies: safeDairies
-            }) %>
+            <%- include(
+                "admin/dairies",
+                {
+                    dairies:
+                        safeDairies
+                }
+            ) %>
 
 
         </section>
@@ -532,10 +532,13 @@ const safeStandaloneAssets =
         >
 
 
-            <%- include("admin/standalone", {
-                standaloneAssets:
-                    safeStandaloneAssets
-            }) %>
+            <%- include(
+                "admin/standalone",
+                {
+                    standaloneAssets:
+                        safeStandaloneAssets
+                }
+            ) %>
 
 
         </section>
