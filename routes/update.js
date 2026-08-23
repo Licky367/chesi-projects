@@ -230,6 +230,40 @@ router.put(
 
 
 // ==========================================================
+// UPDATE CONTENT ITEM CARD
+// ==========================================================
+//
+// PUT:
+//
+//     /dairy/:id/content-item
+//
+// PURPOSE:
+//
+//     The content-item card uses this endpoint to update
+//     the Dairy record represented by the card.
+//
+// FLOW:
+//
+//     Card
+//        ↓
+//     PUT /dairy/:id/content-item
+//        ↓
+//     contentItemController.updateContentItem
+//        ↓
+//     contentItemService.updateContentItem
+//        ↓
+//     Dairy.save()
+//
+// ==========================================================
+
+router.put(
+    "/dairy/:id/content-item",
+    isAuth,
+    controller.updateContentItem
+);
+
+
+// ==========================================================
 // CREATE GENERAL DAIRY POST
 // ==========================================================
 //
