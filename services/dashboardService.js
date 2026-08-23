@@ -6,23 +6,27 @@
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Supplies dashboard data to the dashboard controllers.
+// Supplies dashboard data to dashboard controllers.
 //
-// For the Dairy Dashboard:
+// DAIRY DASHBOARD DATA
+// ----------------------------------------------------------
 //
-//     Dairy documents are retrieved from MongoDB.
+// 1. dairies
+//      = active Dairy Farm records
 //
-// The complete MongoDB _id is preserved so that the frontend
-// can directly use:
+// 2. standaloneAssets
+//      = active standalone structures/assets
 //
-//     dairy._id
+// Standalone assets are identified by:
 //
-// No attempt is made to construct an ID from:
+//      recordType = "structure"
+//      code       = null
+//      assetCode  = null
 //
-//     code
-//     assetCode
-//     roomNumber
-//     dwellNumber
+// MongoDB _id is preserved for every record so the EJS views
+// can safely create links such as:
+//
+//      /dairy/:id
 //
 // ==========================================================
 
@@ -35,21 +39,16 @@ const Dairy =
 // GET DAIRIES FOR DAIRY DASHBOARD
 // ==========================================================
 //
-// Returns Dairy records for the dashboard.
+// Returns active Dairy Farm records.
 //
 // IMPORTANT:
 //
-// .lean() preserves the MongoDB _id:
+// This specifically retrieves:
 //
-//     {
-//         _id: "...",
-//         name: "...",
-//         ...
-//     }
+//      recordType = "farm"
 //
-// The frontend can therefore use:
-//
-//     dairy._id
+// It does NOT mix animals or structures into the main
+// Dairy Farms list.
 //
 // ==========================================================
 
@@ -57,19 +56,144 @@ exports.getDairiesForDashboard =
     async function () {
 
         const dairies =
-            await Dairy.find({
+            await Dairy
+                .find({
 
-                status: "active"
+                    recordType: "farm",
 
-            })
-            .sort({
+                    status: "active"
 
-                name: 1
+                })
+                .sort({
 
-            })
-            .lean();
+                    name: 1
+
+                })
+                .lean();
 
 
         return dairies;
+
+    };
+
+
+// ==========================================================
+// GET STANDALONE ASSETS
+// ==========================================================
+//
+// Returns standalone structures/assets.
+//
+// CANONICAL DEFINITION
+// ----------------------------------------------------------
+//
+// Standalone asset:
+//
+//      recordType = "structure"
+//      code       = null
+//      assetCode  = null
+//
+// Examples may include:
+//
+//      machine
+//      equipment
+//      tool
+//      building
+//      cowshed
+//      milkingParlour
+//      hayShed
+//      waterSystem
+//      fencing
+//      vehicle
+//      generator
+//      solarSystem
+//      feedStore
+//      feeds
+//      room
+//      agroStore
+//      other
+//
+// IMPORTANT:
+//
+// _id is preserved because the frontend uses it for:
+//
+//      /dairy/:id
+//
+// ==========================================================
+
+exports.getStandaloneAssets =
+    async function () {
+
+        const standaloneAssets =
+            await Dairy
+                .find({
+
+                    recordType: "structure",
+
+                    code: null,
+
+                    assetCode: null,
+
+                    status: "active"
+
+                })
+                .sort({
+
+                    name: 1
+
+                })
+                .lean();
+
+
+        return standaloneAssets;
+
+    };
+
+
+// ==========================================================
+// GET DAIRY DASHBOARD DATA
+// ==========================================================
+//
+// Convenience method.
+//
+// Retrieves everything required by:
+//
+//      views/admin.ejs
+//
+// This keeps the controller clean.
+//
+// Returned object:
+//
+//      {
+//          dairies,
+//          standaloneAssets
+//      }
+//
+// ==========================================================
+
+exports.getDairyDashboardData =
+    async function () {
+
+        const [
+
+            dairies,
+
+            standaloneAssets
+
+        ] = await Promise.all([
+
+            exports.getDairiesForDashboard(),
+
+            exports.getStandaloneAssets()
+
+        ]);
+
+
+        return {
+
+            dairies,
+
+            standaloneAssets
+
+        };
 
     };
