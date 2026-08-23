@@ -1,0 +1,537 @@
+<% /*
+==============================================================
+STANDALONE DAIRY ASSETS
+
+FILE:
+    views/admin/standalone.ejs
+
+PURPOSE:
+    Displays standalone Dairy assets as compact,
+    horizontally scrollable WhatsApp-style cards.
+
+IDENTIFICATION:
+
+    assetCode === null
+        = Standalone asset
+
+    assetCode !== null
+        = Assigned asset
+        = NOT displayed here
+
+IMPORTANT:
+
+    Standalone assets may be:
+        • Animals
+        • Structures
+        • Facilities
+        • Equipment
+
+    currentWorth
+        = Current estimated value of the asset.
+
+LINK:
+
+    /networth/asset/:id
+
+This is a PARTIAL and is intended to be included
+inside another view. It is NOT a standalone page.
+==============================================================
+*/ %>
+
+
+<style>
+
+/* ==========================================================
+   STANDALONE ASSETS SECTION
+   ========================================================== */
+
+.standalone-assets-section {
+    width: 100%;
+    margin: 0;
+    padding: 0 0 24px;
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   SECTION HEADER
+   ========================================================== */
+
+.standalone-assets-header {
+    margin-bottom: 14px;
+    padding: 0 2px;
+}
+
+.standalone-assets-header h2 {
+    margin: 0;
+    color: #f1f5f2;
+    font-size: 22px;
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.standalone-assets-header p {
+    margin: 5px 0 0;
+    color: #8f9994;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+
+/* ==========================================================
+   HORIZONTAL SCROLLER
+   ========================================================== */
+
+.standalone-assets-scroller {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 12px;
+
+    width: 100%;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    padding: 2px 4px 10px;
+
+    box-sizing: border-box;
+
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+
+    scrollbar-width: none;
+}
+
+.standalone-assets-scroller::-webkit-scrollbar {
+    display: none;
+}
+
+
+/* ==========================================================
+   ASSET CARD
+   ========================================================== */
+
+.standalone-asset-card {
+    position: relative;
+
+    flex: 0 0 116px;
+    width: 116px;
+    height: 168px;
+
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    border-radius: 16px;
+    border: 1px solid #29312d;
+
+    background: #171d1a;
+
+    text-decoration: none;
+
+    box-sizing: border-box;
+
+    scroll-snap-align: start;
+
+    transition:
+        transform 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.standalone-asset-card:active {
+    transform: scale(0.97);
+}
+
+
+/* ==========================================================
+   ASSET IMAGE
+   ========================================================== */
+
+.standalone-asset-image {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+
+/* ==========================================================
+   IMAGE FALLBACK
+   ========================================================== */
+
+.standalone-asset-avatar {
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        linear-gradient(
+            145deg,
+            #27312c,
+            #151a18
+        );
+
+    color: #dce6df;
+
+    font-size: 42px;
+    font-weight: 700;
+}
+
+
+/* ==========================================================
+   IMAGE OVERLAY
+   ========================================================== */
+
+.standalone-asset-overlay {
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.02) 20%,
+            rgba(0, 0, 0, 0.20) 45%,
+            rgba(0, 0, 0, 0.88) 100%
+        );
+
+    pointer-events: none;
+}
+
+
+/* ==========================================================
+   ASSET INFORMATION
+   ========================================================== */
+
+.standalone-asset-info {
+    position: relative;
+
+    z-index: 2;
+
+    width: 100%;
+
+    padding: 9px 9px 10px;
+
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   ASSET NAME
+   ========================================================== */
+
+.standalone-asset-name {
+    display: -webkit-box;
+
+    width: 100%;
+
+    overflow: hidden;
+
+    color: #ffffff;
+
+    font-size: 14px;
+    line-height: 1.25;
+    font-weight: 700;
+
+    text-align: left;
+
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+
+/* ==========================================================
+   CURRENT WORTH
+   ========================================================== */
+
+.standalone-asset-worth {
+    display: block;
+
+    margin-top: 4px;
+
+    color: #31c76a;
+
+    font-size: 12px;
+    line-height: 1.2;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* ==========================================================
+   EMPTY STATE
+   ========================================================== */
+
+.standalone-assets-empty {
+    flex: 0 0 auto;
+
+    min-width: 220px;
+
+    padding: 20px;
+
+    box-sizing: border-box;
+
+    text-align: center;
+
+    color: #8f9994;
+
+    background: #151a18;
+
+    border: 1px solid #29312d;
+
+    border-radius: 14px;
+
+    font-size: 14px;
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 480px) {
+
+    .standalone-asset-card {
+        flex-basis: 112px;
+        width: 112px;
+        height: 164px;
+    }
+
+    .standalone-asset-name {
+        font-size: 13px;
+    }
+
+    .standalone-asset-worth {
+        font-size: 11px;
+    }
+
+}
+
+</style>
+
+
+<%
+/*
+==============================================================
+PREPARE STANDALONE ASSETS
+==============================================================
+*/
+
+const assets =
+    Array.isArray(standaloneAssets)
+
+        ? standaloneAssets.filter(function (dairy) {
+
+            return (
+                dairy &&
+                (
+                    dairy.assetCode === null ||
+                    dairy.assetCode === undefined
+                )
+            );
+
+        })
+
+        : [];
+%>
+
+
+<section class="standalone-assets-section">
+
+
+    <!-- ======================================================
+         SECTION HEADER
+    ======================================================= -->
+
+    <div class="standalone-assets-header">
+
+        <h2>
+            Standalone Assets
+        </h2>
+
+        <p>
+            Assets not assigned to a Dairy Farm
+        </p>
+
+    </div>
+
+
+    <!-- ======================================================
+         HORIZONTAL ASSET SCROLLER
+    ======================================================= -->
+
+    <div class="standalone-assets-scroller">
+
+
+        <% if (assets.length > 0) { %>
+
+
+            <% assets.forEach(function(dairy) { %>
+
+
+                <%
+                /*
+                ==================================================
+                DETERMINE IMAGE
+                ==================================================
+
+                Priority:
+
+                    1. profileImage
+                    2. profileImages[0]
+                    3. Generated avatar
+                */
+
+                const assetName =
+                    dairy.name || "Unnamed Asset";
+
+                const assetImage =
+                    dairy.profileImage ||
+                    (
+                        Array.isArray(dairy.profileImages) &&
+                        dairy.profileImages.length > 0
+                    )
+                        ? (
+                            dairy.profileImage ||
+                            dairy.profileImages[0]
+                        )
+                        : null;
+
+                /*
+                ==================================================
+                AVATAR LETTER
+                ==================================================
+                */
+
+                const avatarLetter =
+                    assetName
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase() || "A";
+
+                /*
+                ==================================================
+                CURRENT WORTH
+                ==================================================
+                */
+
+                const assetWorth =
+                    Number(dairy.currentWorth || 0)
+                        .toLocaleString("en-KE");
+                %>
+
+
+                <!-- ==================================================
+                     ASSET CARD
+                ================================================== -->
+
+                <a
+                    href="/networth/asset/<%= dairy._id %>"
+                    class="standalone-asset-card"
+                    aria-label="<%= assetName %>"
+                >
+
+
+                    <!-- ==============================================
+                         IMAGE / AVATAR
+                    =============================================== -->
+
+                    <% if (assetImage) { %>
+
+                        <img
+                            src="<%= assetImage %>"
+                            alt="<%= assetName %>"
+                            class="standalone-asset-image"
+                            loading="lazy"
+                        >
+
+                    <% } else { %>
+
+                        <span
+                            class="standalone-asset-avatar"
+                            aria-hidden="true"
+                        >
+                            <%= avatarLetter %>
+                        </span>
+
+                    <% } %>
+
+
+                    <!-- ==============================================
+                         DARK GRADIENT
+                    =============================================== -->
+
+                    <span
+                        class="standalone-asset-overlay"
+                        aria-hidden="true"
+                    ></span>
+
+
+                    <!-- ==============================================
+                         ASSET INFORMATION
+                    =============================================== -->
+
+                    <span class="standalone-asset-info">
+
+
+                        <span class="standalone-asset-name">
+                            <%= assetName %>
+                        </span>
+
+
+                        <span class="standalone-asset-worth">
+
+                            KSh <%= assetWorth %>
+
+                        </span>
+
+
+                    </span>
+
+
+                </a>
+
+
+            <% }); %>
+
+
+        <% } else { %>
+
+
+            <!-- ==================================================
+                 EMPTY STATE
+            ================================================== -->
+
+            <div class="standalone-assets-empty">
+
+                No standalone assets found.
+
+            </div>
+
+
+        <% } %>
+
+
+    </div>
+
+
+</section>
