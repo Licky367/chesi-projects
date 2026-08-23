@@ -8,44 +8,35 @@
 // ----------------------------------------------------------
 // Handles stock updates for animal-feed / agro-store stock.
 //
-// RESPONSIBILITIES:
+// ONE STOCK EVENT → THREE FEED VISIBILITIES
+// ----------------------------------------------------------
 //
-//     • Locate the stock Dairy record
-//     • Locate the AgroStore
-//     • Validate the stock/storage relationship
-//     • Read the previous stock quantity
-//     • Calculate the quantity change
-//     • Update the current stock quantity
-//     • Update the stock unit
-//     • Store stock-update history
-//     • Create an Update feed item
-//     • Store complete historical snapshots
-//     • Store stock-update images
-//     • Keep stock + feed history atomic using a transaction
+// Every successful stock update creates:
 //
-// IMPORTANT RELATIONSHIP:
+//     1. STOCK ITEM UPDATE
+//        Update.dairy = stockItem._id
 //
-//     AgroStore._id
-//         = animalFeed.storageId
+//     2. AGROSTORE UPDATE
+//        Update.dairy = agroStore._id
 //
-//     AgroStore.roomNumber
-//         = Stock.dwellNumber
+//     3. PARENT FARM UPDATE
+//        Update.dairy = parentFarm._id
 //
-// Therefore:
+// All three Update documents contain the SAME historical
+// animalFeed snapshot and the SAME recordedAt timestamp.
 //
-//     stockItem.dwellNumber
-//         ===
-//     agroStore.roomNumber
+// Therefore the same stock event can appear on:
+//
+//     • AgroStore page
+//     • Stock/item page
+//     • Parent farm page
 //
 // IMPORTANT:
 //
-//     Update.dairy
-//         = stockItem._id
+// The actual stock quantity is changed ONLY ONCE.
 //
-// NOT:
-//
-//     Update.dairy
-//         = agroStore._id
+// The three Update records are feed/history representations
+// of that same stock event.
 //
 // ==========================================================
 
@@ -64,11 +55,6 @@ const Update =
 
 // ==========================================================
 // MAXIMUM STOCK UPDATE IMAGES
-// ==========================================================
-//
-// Update.js is the source of truth.
-//
-// Fallback to 10 in case the static property is unavailable.
 // ==========================================================
 
 const MAX_STOCK_UPDATE_IMAGES =
@@ -92,7 +78,7 @@ const MAX_STOCK_UPDATE_IMAGES =
 
 
 /* ==========================================================
-   OBJECT ID VALIDATION
+   OBJECT ID
 ========================================================== */
 
 function isValidObjectId(value) {
@@ -108,9 +94,7 @@ function isValidObjectId(value) {
    SAFE STRING
 ========================================================== */
 
-function safeString(
-    value
-) {
+function safeString(value) {
 
     if (
         value === null ||
@@ -158,9 +142,7 @@ function toFiniteNumber(
    USER ID
 ========================================================== */
 
-function getUserId(
-    user
-) {
+function getUserId(user) {
 
     if (
         !user
@@ -204,9 +186,7 @@ function getUserId(
    USER NAME
 ========================================================== */
 
-function getUserName(
-    user
-) {
+function getUserName(user) {
 
     if (
         !user
@@ -243,9 +223,7 @@ function getUserName(
    USER IMAGE
 ========================================================== */
 
-function getUserImage(
-    user
-) {
+function getUserImage(user) {
 
     if (
         !user
@@ -267,9 +245,7 @@ function getUserImage(
    USER ROLE
 ========================================================== */
 
-function getAuthorRole(
-    user
-) {
+function getAuthorRole(user) {
 
     if (
         !user
@@ -285,15 +261,6 @@ function getAuthorRole(
             user.role
         );
 
-
-    // ------------------------------------------------------
-    // Update.js only permits:
-    //
-    // admin
-    // dairyWorker
-    // system
-    // ""
-    // ------------------------------------------------------
 
     if (
         role === "admin" ||
@@ -315,9 +282,7 @@ function getAuthorRole(
    NORMALIZE IMAGES
 ========================================================== */
 
-function normalizeImages(
-    images
-) {
+function normalizeImages(images) {
 
     if (
         !Array.isArray(
@@ -446,7 +411,7 @@ function normalizeImages(
 
 
 /* ==========================================================
-   GET EFFECTIVE UNIT
+   EFFECTIVE UNIT
 ========================================================== */
 
 function getEffectiveUnit(
@@ -476,6 +441,68 @@ function getEffectiveUnit(
 }
 
 
+/* ==========================================================
+   FIND PARENT FARM ID
+==========================================================
+//
+// Priority:
+//
+//     1. Explicit dairyId supplied by controller
+//     2. stockItem.parentDairyId
+//     3. stockItem.parentFarmId
+//     4. stockItem.parentDairy
+//     5. stockItem.farmId
+//
+// ========================================================== */
+
+function getParentFarmId(
+    dairyId,
+    stockItem
+) {
+
+    const candidates = [
+
+        dairyId,
+
+        stockItem &&
+        stockItem.parentDairyId,
+
+        stockItem &&
+        stockItem.parentFarmId,
+
+        stockItem &&
+        stockItem.parentDairy,
+
+        stockItem &&
+        stockItem.farmId
+
+    ];
+
+
+    for (
+        const candidate of
+        candidates
+    ) {
+
+        if (
+            candidate &&
+            isValidObjectId(
+                candidate
+            )
+        ) {
+
+            return candidate;
+
+        }
+
+    }
+
+
+    return null;
+
+}
+
+
 // ==========================================================
 // CREATE STOCK UPDATE
 // ==========================================================
@@ -484,15 +511,6 @@ exports.createStockUpdate =
 
 async function({
 
-    // ------------------------------------------------------
-    // dairyId
-    // ------------------------------------------------------
-    //
-    // Kept in the function signature for compatibility with
-    // existing controllers.
-    //
-    // The actual stock record is identified by itemId.
-    //
     dairyId,
 
     storageId,
@@ -545,7 +563,7 @@ async function({
 
 
     // ======================================================
-    // VALIDATE STOCK ITEM ID
+    // VALIDATE STOCK ITEM
     // ======================================================
 
     if (
@@ -562,7 +580,7 @@ async function({
 
 
     // ======================================================
-    // VALIDATE STORAGE ID
+    // VALIDATE STORAGE
     // ======================================================
 
     if (
@@ -579,7 +597,7 @@ async function({
 
 
     // ======================================================
-    // QUANTITY
+    // VALIDATE QUANTITY
     // ======================================================
 
     const newQuantity =
@@ -687,26 +705,32 @@ async function({
 
 
     // ======================================================
-    // START TRANSACTION
+    // START MONGODB TRANSACTION
     // ======================================================
 
     const session =
         await mongoose.startSession();
 
 
+    let result;
+
+
     try {
 
         await session.withTransaction(
+
             async function() {
 
+
                 // ==========================================
-                // FIND STOCK ITEM
+                // FIND STOCK
                 // ==========================================
 
                 const stockItem =
                     await Dairy.findById(
                         itemId
-                    ).session(
+                    )
+                    .session(
                         session
                     );
 
@@ -729,7 +753,8 @@ async function({
                 const agroStore =
                     await Dairy.findById(
                         storageId
-                    ).session(
+                    )
+                    .session(
                         session
                     );
 
@@ -768,17 +793,7 @@ async function({
 
 
                 // ==========================================
-                // VERIFY STOCK LOCATION
-                // ==========================================
-                //
-                // Both values must exist.
-                //
-                // The relationship is mandatory:
-                //
-                // stock.dwellNumber
-                //        ===
-                // agroStore.roomNumber
-                //
+                // VERIFY STOCK / STORAGE RELATIONSHIP
                 // ==========================================
 
                 const stockDwellNumber =
@@ -832,6 +847,67 @@ async function({
 
 
                 // ==========================================
+                // FIND PARENT FARM
+                // ==========================================
+
+                const parentFarmId =
+                    getParentFarmId(
+                        dairyId,
+                        stockItem
+                    );
+
+
+                if (
+                    !parentFarmId
+                ) {
+
+                    throw new Error(
+                        "The parent farm for this stock item could not be determined."
+                    );
+
+                }
+
+
+                // ==========================================
+                // FIND PARENT FARM
+                // ==========================================
+
+                const parentFarm =
+                    await Dairy.findById(
+                        parentFarmId
+                    )
+                    .session(
+                        session
+                    );
+
+
+                if (
+                    !parentFarm
+                ) {
+
+                    throw new Error(
+                        "The parent farm was not found."
+                    );
+
+                }
+
+
+                // ==========================================
+                // VALIDATE PARENT FARM
+                // ==========================================
+                //
+                // A farm is represented by a negative/positive
+                // code depending on the project's existing
+                // Dairy identity rules.
+                //
+                // We do not enforce code sign here because
+                // the existing application may use additional
+                // farm classification rules.
+                //
+                // ==========================================
+
+
+                // ==========================================
                 // PREVIOUS QUANTITY
                 // ==========================================
 
@@ -874,7 +950,7 @@ async function({
 
 
                 // ==========================================
-                // STORAGE NAME SNAPSHOT
+                // STORAGE NAME
                 // ==========================================
 
                 const storageName =
@@ -891,7 +967,7 @@ async function({
 
 
                 // ==========================================
-                // STOCK NAME SNAPSHOT
+                // STOCK NAME
                 // ==========================================
 
                 const feedName =
@@ -904,7 +980,7 @@ async function({
 
 
                 // ==========================================
-                // STOCK TYPE SNAPSHOT
+                // STOCK TYPE
                 // ==========================================
 
                 const feedType =
@@ -914,22 +990,24 @@ async function({
 
 
                 // ==========================================
-                // ROOM NUMBER SNAPSHOT
+                // PARENT FARM NAME
                 // ==========================================
 
-                const roomNumber =
-                    storageRoomNumber;
+                const parentFarmName =
+
+                    safeString(
+                        parentFarm.name
+                    ) ||
+
+                    safeString(
+                        parentFarm.title
+                    ) ||
+
+                    "Parent Farm";
 
 
                 // ==========================================
-                // SINGLE OPERATION TIMESTAMP
-                // ==========================================
-                //
-                // The exact same timestamp is used for:
-                //
-                //     stock history
-                //     feed history
-                //
+                // SINGLE EVENT TIMESTAMP
                 // ==========================================
 
                 const recordedAt =
@@ -953,13 +1031,10 @@ async function({
 
 
                 // ==========================================
-                // CREATE STOCK HISTORY RECORD
+                // STOCK HISTORY
                 // ==========================================
                 //
-                // IMPORTANT:
-                //
-                // This history represents exactly what happened
-                // to the actual stock record.
+                // Only ONE stock history record is created.
                 //
                 // ==========================================
 
@@ -999,7 +1074,7 @@ async function({
 
 
                 // ==========================================
-                // UPDATE CURRENT STOCK QUANTITY
+                // UPDATE CURRENT STOCK
                 // ==========================================
 
                 stockItem.quantity =
@@ -1007,7 +1082,7 @@ async function({
 
 
                 // ==========================================
-                // UPDATE CURRENT STOCK UNIT
+                // UPDATE UNIT
                 // ==========================================
 
                 if (
@@ -1030,19 +1105,84 @@ async function({
 
 
                 // ==========================================
-                // CREATE UPDATE FEED RECORD
+                // COMMON FEED SNAPSHOT
                 // ==========================================
                 //
-                // IMPORTANT:
-                //
-                // Update.dairy = STOCK DAIRY
-                //
-                // NOT AgroStore.
+                // All three Update documents receive the
+                // EXACT SAME snapshot.
                 //
                 // ==========================================
 
-                const stockUpdate =
-                    new Update({
+                const animalFeedSnapshot = {
+
+                    feedId:
+                        stockItem._id,
+
+                    storageId:
+                        agroStore._id,
+
+                    storageName:
+                        storageName,
+
+                    feedName:
+                        feedName,
+
+                    feedType:
+                        feedType,
+
+                    roomNumber:
+                        storageRoomNumber,
+
+                    previousQuantity:
+                        previousQuantity,
+
+                    quantity:
+                        newQuantity,
+
+                    quantityChange:
+                        quantityChange,
+
+                    unit:
+                        effectiveUnit,
+
+                    stockUpdateNote:
+                        safeNote,
+
+                    images:
+                        limitedImages,
+
+                    recordedBy:
+                        userId,
+
+                    recordedByName:
+                        userName,
+
+                    recordedByImage:
+                        userImage,
+
+                    recordedAt:
+                        recordedAt
+
+                };
+
+
+                // ==========================================
+                // CREATE THREE FEED UPDATES
+                // ==========================================
+                //
+                // 1. STOCK ITEM
+                // 2. AGROSTORE
+                // 3. PARENT FARM
+                //
+                // ==========================================
+
+                const updateDocuments = [
+
+                    // ======================================
+                    // STOCK ITEM FEED
+                    // ======================================
+
+                    {
 
                         dairy:
                             stockItem._id,
@@ -1071,146 +1211,209 @@ async function({
                         images:
                             limitedImages,
 
-                        animalFeed: {
+                        animalFeed:
+                            animalFeedSnapshot
 
-                            // ----------------------------------
-                            // STOCK
-                            // ----------------------------------
-
-                            feedId:
-                                stockItem._id,
-
-                            // ----------------------------------
-                            // STORAGE
-                            // ----------------------------------
-
-                            storageId:
-                                agroStore._id,
-
-                            storageName:
-                                storageName,
-
-                            // ----------------------------------
-                            // STOCK SNAPSHOT
-                            // ----------------------------------
-
-                            feedName:
-                                feedName,
-
-                            feedType:
-                                feedType,
-
-                            roomNumber:
-                                roomNumber,
-
-                            // ----------------------------------
-                            // QUANTITY SNAPSHOT
-                            // ----------------------------------
-
-                            previousQuantity:
-                                previousQuantity,
-
-                            quantity:
-                                newQuantity,
-
-                            quantityChange:
-                                quantityChange,
-
-                            unit:
-                                effectiveUnit,
-
-                            // ----------------------------------
-                            // NOTE
-                            // ----------------------------------
-
-                            stockUpdateNote:
-                                safeNote,
-
-                            // ----------------------------------
-                            // IMAGES
-                            // ----------------------------------
-
-                            images:
-                                limitedImages,
-
-                            // ----------------------------------
-                            // USER SNAPSHOT
-                            // ----------------------------------
-
-                            recordedBy:
-                                userId,
-
-                            recordedByName:
-                                userName,
-
-                            recordedByImage:
-                                userImage,
-
-                            recordedAt:
-                                recordedAt
-
-                        }
-
-                    });
+                    },
 
 
-                // ==========================================
-                // SAVE FEED UPDATE
-                // ==========================================
+                    // ======================================
+                    // AGROSTORE FEED
+                    // ======================================
 
-                await stockUpdate.save({
-                    session
-                });
-
-
-                // ==========================================
-                // STORE RESULT ON FUNCTION SCOPE
-                // ==========================================
-
-                result =
                     {
 
-                        success:
-                            true,
+                        dairy:
+                            agroStore._id,
 
-                        message:
-                            "Stock updated successfully.",
+                        user:
+                            userId,
 
-                        update:
-                            stockUpdate,
+                        userName:
+                            userName,
 
-                        stock:
-                            stockItem,
+                        userImage:
+                            userImage,
 
-                        previousQuantity:
-                            previousQuantity,
+                        authorRole:
+                            authorRole,
 
-                        quantity:
-                            newQuantity,
+                        type:
+                            "animalFeed",
 
-                        quantityChange:
-                            quantityChange,
+                        title:
+                            "Stock Updated",
 
-                        quantityDifference:
-                            quantityChange
+                        text:
+                            safeNote,
 
-                    };
+                        images:
+                            limitedImages,
+
+                        animalFeed:
+                            animalFeedSnapshot
+
+                    },
+
+
+                    // ======================================
+                    // PARENT FARM FEED
+                    // ======================================
+
+                    {
+
+                        dairy:
+                            parentFarm._id,
+
+                        user:
+                            userId,
+
+                        userName:
+                            userName,
+
+                        userImage:
+                            userImage,
+
+                        authorRole:
+                            authorRole,
+
+                        type:
+                            "animalFeed",
+
+                        title:
+                            "Stock Updated",
+
+                        text:
+                            safeNote,
+
+                        images:
+                            limitedImages,
+
+                        animalFeed:
+                            animalFeedSnapshot
+
+                    }
+
+                ];
+
+
+                // ==========================================
+                // INSERT ALL FEED RECORDS
+                // ==========================================
+                //
+                // insertMany makes the three feed records part
+                // of the same transaction.
+                //
+                // ==========================================
+
+                const createdUpdates =
+                    await Update.insertMany(
+                        updateDocuments,
+                        {
+                            session
+                        }
+                    );
+
+
+                // ==========================================
+                // SAFETY CHECK
+                // ==========================================
+
+                if (
+                    !createdUpdates ||
+                    createdUpdates.length !== 3
+                ) {
+
+                    throw new Error(
+                        "The stock was updated, but the complete feed history could not be created."
+                    );
+
+                }
+
+
+                // ==========================================
+                // RESULT
+                // ==========================================
+
+                result = {
+
+                    success:
+                        true,
+
+                    message:
+                        "Stock updated successfully.",
+
+                    stock:
+                        stockItem,
+
+                    update:
+                        createdUpdates[0],
+
+                    updates:
+                        createdUpdates,
+
+                    stockUpdate:
+                        createdUpdates[0],
+
+                    stockFeedUpdate:
+                        createdUpdates[0],
+
+                    agroStoreFeedUpdate:
+                        createdUpdates[1],
+
+                    parentFarmFeedUpdate:
+                        createdUpdates[2],
+
+                    stockItemId:
+                        stockItem._id,
+
+                    storageId:
+                        agroStore._id,
+
+                    parentFarmId:
+                        parentFarm._id,
+
+                    parentFarmName:
+                        parentFarmName,
+
+                    previousQuantity:
+                        previousQuantity,
+
+                    quantity:
+                        newQuantity,
+
+                    quantityChange:
+                        quantityChange,
+
+                    quantityDifference:
+                        quantityChange,
+
+                    unit:
+                        effectiveUnit,
+
+                    recordedAt:
+                        recordedAt
+
+                };
 
             }
+
         );
 
 
         // ==================================================
-        // RETURN SUCCESS
+        // RETURN
         // ==================================================
 
         return result;
 
 
-    } finally {
+    }
+
+    finally {
 
         // ==================================================
-        // ALWAYS CLOSE SESSION
+        // END SESSION
         // ==================================================
 
         await session.endSession();
