@@ -14,11 +14,25 @@ PURPOSE:
 
     DATABASE UPDATE:
 
+        content-item-update.ejs
+            ↓
         contentItemController.js
             ↓
         contentItemService.js
             ↓
         Dairy
+
+IMPORTANT:
+
+    content-item.ejs
+        = DISPLAY CARD ONLY
+
+    content-item-update.ejs
+        = UPDATE FORM ONLY
+
+    Both files are located in:
+
+        views/update/
 ==========================================================
 */ %>
 
@@ -109,28 +123,28 @@ const safeLatestStockUpdate =
 
 
     <!-- =================================================
-         CONTENT ITEM CARD
+         CONTENT ITEM
     ==================================================
 
-         IMPORTANT:
+         The content-item display is controlled ONLY
+         by dwellNumber.
 
-         The ONLY condition for displaying this card
-         is that the current Dairy has a dwellNumber.
-
-         We do NOT require:
+         No condition is placed here requiring:
 
              contentItem
              storage
              storage._id
              contentItem._id
 
-         here.
+         The content-item card itself handles its
+         display data.
 
-         The card is part of dairySet.ejs.
+         The update form is a SEPARATE INCLUDE:
 
-         Database updates are handled by:
+             update/content-item-update.ejs
 
-             contentItemController.js
+         Therefore the card and its update form remain
+         separate components.
     ================================================== -->
 
     <% if (
@@ -142,7 +156,42 @@ const safeLatestStockUpdate =
     ) { %>
 
 
+        <!-- =============================================
+             CONTENT ITEM CARD
+        ============================================== -->
+
         <%- include("update/content-item", {
+
+            dairy:
+                dairy,
+
+            storage:
+                safeStorage,
+
+            item:
+                safeContentItem,
+
+            user:
+                user,
+
+            successMessage:
+                safeSuccessMessage,
+
+            pageError:
+                safePageError,
+
+            latestStockUpdate:
+                safeLatestStockUpdate
+
+        }) %>
+
+
+
+        <!-- =============================================
+             CONTENT ITEM UPDATE FORM
+        ============================================== -->
+
+        <%- include("update/content-item-update", {
 
             dairy:
                 dairy,
@@ -168,7 +217,10 @@ const safeLatestStockUpdate =
             contentItemUpdateAction:
                 typeof contentItemUpdateAction !== "undefined"
                     ? contentItemUpdateAction
-                    : "/dairy/" + dairy._id + "/content-item"
+                    : "/dairy/" +
+                      dairy._id +
+                      "/" +
+                      safeContentItem._id
 
         }) %>
 
