@@ -14,6 +14,7 @@
          medical
          maintenance
          assetAdd
+         animalFeed
 
      IMPORTANT:
      ------------------------------------------------------
@@ -36,7 +37,19 @@
 
      STOCK:
      ------------------------------------------------------
-         Stock items are deliberately NOT rendered here.
+         Stock updates ARE rendered here.
+
+         Stock feed items use:
+
+             views/update/stock-update.ejs
+
+         The feed document contains:
+
+             item.type === "animalFeed"
+
+         and the stock information is stored in:
+
+             item.animalFeed
 ====================================================== -->
 
 
@@ -528,6 +541,30 @@ const hasAssetCards =
             <% } %>
 
 
+
+            <!-- =================================================
+                 STOCK / ANIMAL FEED UPDATED
+            ================================================= -->
+
+            <% if (
+                item.type === "animalFeed"
+            ) { %>
+
+
+                <%- include("stock-update", {
+
+                    item: item,
+
+                    user: user,
+
+                    type: "animalFeed"
+
+                }) %>
+
+
+            <% } %>
+
+
         <% }); %>
 
 
@@ -547,8 +584,10 @@ const hasAssetCards =
              medical
              maintenance
              assetAdd
+             animalFeed
 
-         Stock items are deliberately omitted.
+         Stock updates are now rendered chronologically
+         alongside the other feed items.
 
          Chronological order is preserved.
     ===================================================== -->
