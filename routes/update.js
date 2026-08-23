@@ -94,6 +94,14 @@ router.get(
 // ==========================================================
 // DAIRY PROFILE
 // ==========================================================
+//
+// GET:
+//
+//     /dairy/:id
+//
+// Here :id IS the Dairy farm/profile ID.
+//
+// ==========================================================
 
 router.get(
     "/dairy/:id",
@@ -105,32 +113,23 @@ router.get(
 // STORAGE CONTENT ITEM
 // ==========================================================
 //
-// ROUTE:
+// GET:
 //
 //     /dairy/:contentItemId/:dwellNumber
 //
 // PARAMETERS:
 //
-//     contentItemId
-//         = MongoDB _id of the content item
+//     :contentItemId
+//         = MongoDB _id of the actual content item
 //
-//     dwellNumber
-//         = roomNumber of the storage facility
-//
-// RELATIONSHIP:
-//
-//     contentItem.assetCode
-//         =
-//     dairyFarm.code
-//
-//     contentItem.dwellNumber
-//         =
-//     storage.roomNumber
+//     :dwellNumber
+//         = dwellNumber of the actual content item
 //
 // IMPORTANT:
 //
-// The first parameter is NOT the Dairy Farm ID.
-// It is the CONTENT ITEM ID.
+// The first parameter is NOT the Dairy farm ID.
+//
+// The second parameter is NOT an AgroStore ID.
 //
 // ==========================================================
 
@@ -138,6 +137,62 @@ router.get(
     "/dairy/:contentItemId/:dwellNumber",
     isAuth,
     controller.getContentItem
+);
+
+
+// ==========================================================
+// UPDATE STORAGE CONTENT ITEM
+// ==========================================================
+//
+// POST:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// PARAMETERS:
+//
+//     :contentItemId
+//         = MongoDB _id of the actual content item
+//
+//     :dwellNumber
+//         = dwellNumber of the actual content item
+//
+// BODY:
+//
+//     quantity
+//     unit
+//     stockUpdateNote
+//
+// FILES:
+//
+//     images
+//
+// RELATIONSHIP RESOLUTION:
+//
+//     contentItem.dwellNumber
+//             =
+//     agroStore.roomNumber
+//
+//     agroStore.assetCode
+//             =
+//     dairyFarm.code
+//
+// IMPORTANT:
+//
+// The Dairy farm ID is NOT supplied in this route.
+//
+// The AgroStore ID is NOT supplied in this route.
+//
+// The service resolves those relationships.
+// ==========================================================
+
+router.post(
+    "/dairy/:contentItemId/:dwellNumber",
+    isAuth,
+    upload.array(
+        "images",
+        10
+    ),
+    controller.updateContentItem
 );
 
 
@@ -197,22 +252,6 @@ router.put(
     "/dairy/:id/update",
     isAuth,
     controller.updateProfile
-);
-
-
-// ==========================================================
-// UPDATE CONTENT ITEM
-// ==========================================================
-//
-// This remains a separate endpoint for modifying the
-// content item.
-//
-// ==========================================================
-
-router.put(
-    "/dairy/:id/content-item",
-    isAuth,
-    controller.updateContentItem
 );
 
 
