@@ -9,25 +9,38 @@
 //
 // Handles updates submitted by the storage content-item card.
 //
-// The controller receives:
+// ROUTE:
 //
-//     dairyId
-//     storageId
-//     itemId
+//     POST /dairy/:contentItemId/:dwellNumber
 //
-// and passes the stock-update data to:
+// ROUTE IDENTITY
+// ----------------------------------------------------------
 //
-//     services/update/contentItemService.js
+//     req.params.contentItemId
+//         = ID of the actual content item
 //
-// The service is responsible for:
+//     req.params.dwellNumber
+//         = dwellNumber of the actual content item
 //
-//     • locating the storage
-//     • locating the content item
-//     • validating the update
-//     • updating the database
-//     • recording stock-update history
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// The dairy farm ID is NOT part of this route.
+//
+// The storage/agroStore ID is NOT part of this route.
+//
+// The relationship is resolved by the service:
+//
+//     content item.dwellNumber
+//             = agroStore.roomNumber
+//
+// and:
+//
+//     agroStore.assetCode
+//             = dairy.code
 //
 // ==========================================================
+
 
 const contentItemService =
     require("../../services/update/contentItemService");
@@ -37,11 +50,14 @@ const contentItemService =
 // UPDATE CONTENT ITEM FROM CARD
 // ==========================================================
 //
-// The route used by this controller should provide:
+// ROUTE:
 //
-//     req.params.dairyId
-//     req.params.storageId
-//     req.params.itemId
+//     POST /dairy/:contentItemId/:dwellNumber
+//
+// PARAMETERS:
+//
+//     contentItemId
+//     dwellNumber
 //
 // Expected body:
 //
@@ -61,32 +77,28 @@ exports.updateContentItem =
         try {
 
             // ==================================================
-            // IDS
+            // ROUTE PARAMETERS
             // ==================================================
 
-            const dairyId =
-                req.params.dairyId;
+            const contentItemId =
+                req.params.contentItemId;
 
-            const storageId =
-                req.params.storageId;
-
-            const itemId =
-                req.params.itemId;
+            const dwellNumber =
+                req.params.dwellNumber;
 
 
             // ==================================================
-            // VALIDATE IDS
+            // VALIDATE PARAMETERS
             // ==================================================
 
             if (
-                !dairyId ||
-                !storageId ||
-                !itemId
+                !contentItemId ||
+                !dwellNumber
             ) {
 
                 const error =
                     new Error(
-                        "Dairy ID, storage ID and content item ID are required."
+                        "Content item ID and dwell number are required."
                     );
 
                 error.status = 400;
@@ -156,15 +168,26 @@ exports.updateContentItem =
             // ==================================================
             // SERVICE UPDATE
             // ==================================================
+            //
+            // The service receives only the two route
+            // identifiers required by the new route.
+            //
+            // It is responsible for finding:
+            //
+            //     content item
+            //     agroStore
+            //     dairy farm
+            //
+            // through their relationships.
+            //
+            // ==================================================
 
             const result =
                 await contentItemService.updateContentItem({
 
-                    dairyId,
+                    contentItemId,
 
-                    storageId,
-
-                    itemId,
+                    dwellNumber,
 
                     data,
 
@@ -181,7 +204,7 @@ exports.updateContentItem =
             // RESPONSE
             // ==================================================
             //
-            // If the service returns a redirect target,
+            // If the service supplies a redirect target,
             // use it.
             //
             // Otherwise return JSON.
@@ -229,11 +252,14 @@ exports.updateContentItem =
 //
 // Used when the controller needs to load a content item.
 //
-// Params:
+// ROUTE:
 //
-//     dairyId
-//     storageId
-//     itemId
+//     GET /dairy/:contentItemId/:dwellNumber
+//
+// PARAMETERS:
+//
+//     contentItemId
+//     dwellNumber
 //
 // ==========================================================
 
@@ -242,29 +268,29 @@ exports.getContentItem =
 
         try {
 
-            const dairyId =
-                req.params.dairyId;
+            // ==================================================
+            // ROUTE PARAMETERS
+            // ==================================================
 
-            const storageId =
-                req.params.storageId;
+            const contentItemId =
+                req.params.contentItemId;
 
-            const itemId =
-                req.params.itemId;
+            const dwellNumber =
+                req.params.dwellNumber;
 
 
             // ==================================================
-            // VALIDATE IDS
+            // VALIDATE PARAMETERS
             // ==================================================
 
             if (
-                !dairyId ||
-                !storageId ||
-                !itemId
+                !contentItemId ||
+                !dwellNumber
             ) {
 
                 const error =
                     new Error(
-                        "Dairy ID, storage ID and content item ID are required."
+                        "Content item ID and dwell number are required."
                     );
 
                 error.status = 400;
@@ -275,17 +301,20 @@ exports.getContentItem =
 
 
             // ==================================================
-            // LOAD ITEM
+            // LOAD CONTENT ITEM
+            // ==================================================
+            //
+            // The service resolves the farm and storage
+            // relationships from the content item.
+            //
             // ==================================================
 
             const result =
                 await contentItemService.getContentItem({
 
-                    dairyId,
+                    contentItemId,
 
-                    storageId,
-
-                    itemId
+                    dwellNumber
 
                 });
 
@@ -318,8 +347,13 @@ exports.getContentItem =
 // BUILD CARD UPDATE ACTION
 // ==========================================================
 //
-// This is useful when dairySet.ejs needs the action supplied
-// by the controller rather than constructing a route itself.
+// The action is:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// No dairy ID is inserted.
+//
+// No storage ID is inserted.
 //
 // ==========================================================
 
@@ -328,25 +362,25 @@ exports.getContentItemUpdateAction =
 
         try {
 
-            const dairyId =
-                req.params.dairyId;
+            const contentItemId =
+                req.params.contentItemId;
 
-            const storageId =
-                req.params.storageId;
+            const dwellNumber =
+                req.params.dwellNumber;
 
-            const itemId =
-                req.params.itemId;
 
+            // ==================================================
+            // VALIDATE PARAMETERS
+            // ==================================================
 
             if (
-                !dairyId ||
-                !storageId ||
-                !itemId
+                !contentItemId ||
+                !dwellNumber
             ) {
 
                 const error =
                     new Error(
-                        "Dairy ID, storage ID and content item ID are required."
+                        "Content item ID and dwell number are required."
                     );
 
                 error.status = 400;
@@ -356,9 +390,17 @@ exports.getContentItemUpdateAction =
             }
 
 
-            const action =
-                `/storage/${dairyId}/contents/${storageId}/update/${itemId}`;
+            // ==================================================
+            // BUILD ACTION
+            // ==================================================
 
+            const action =
+                `/dairy/${contentItemId}/${dwellNumber}`;
+
+
+            // ==================================================
+            // RESPONSE
+            // ==================================================
 
             return res.status(200).json({
 
