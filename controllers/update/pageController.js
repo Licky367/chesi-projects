@@ -1,38 +1,29 @@
 // ==========================================================
 // controllers/update/pageController.js
 // DAIRY UPDATE PAGE CONTROLLER
-// =======================================================
+// ==========================================================
 //
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Loads the complete Dairy update page and passes all
-// required variables to views/update.ejs.
+// Loads the complete Dairy update page.
 //
-// IMPORTANT
-// ----------------------------------------------------------
+// The Boolean component:
 //
-// views/update/boolean.ejs is NOT a standalone page.
+//     views/update/boolean.ejs
 //
-// It is an INCLUDE rendered by:
+// is an INCLUDE inside:
 //
 //     views/update.ejs
 //
-// Therefore boolean data is loaded here and passed to
-// update.ejs.
+// Therefore boolean.ejs is NEVER rendered independently.
 //
-// BOOLEAN ANIMAL ELIGIBILITY
-// ----------------------------------------------------------
+// The parent update page receives:
 //
-// An animal is displayed by boolean.ejs when:
+//     booleanAnimals
+//     booleanFields
 //
-//     1. code is a positive EVEN number
-//
-// OR
-//
-//     2. gender is female
-//
-// The boolean include itself is rendered by update.ejs.
+// and passes them naturally to the include.
 //
 // ==========================================================
 
@@ -94,10 +85,6 @@ async (req, res) => {
             );
 
 
-        // ==================================================
-        // SAFE ITEM-LINK ARRAY
-        // ==================================================
-
         const itemLinks =
             Array.isArray(
                 resolvedItemLinks
@@ -107,64 +94,62 @@ async (req, res) => {
 
 
         // ==================================================
-        // GET BOOLEAN DATA
+        // BOOLEAN DATA
         // ==================================================
         //
-        // boolean.ejs is an INCLUDE inside update.ejs.
+        // boolean.ejs is an INCLUDE.
         //
-        // It therefore receives its data through the parent
+        // It therefore needs its data from the parent
         // update.ejs render.
         //
+        // booleanService supplies:
+        //
+        //     animals
+        //     fields
+        //
+        // We expose them to update.ejs as:
+        //
+        //     booleanAnimals
+        //     booleanFields
+        //
         // ==================================================
 
-        const booleanData =
-            await updateService.getBooleanData();
+        let booleanAnimals = [];
+
+        let booleanFields = [];
 
 
-        // ==================================================
-        // SAFE BOOLEAN ANIMAL ARRAY
-        // ==================================================
+        if (
+            typeof updateService.getBooleanData ===
+            "function"
+        ) {
 
-        const booleanAnimals =
-            Array.isArray(
-                booleanData &&
-                booleanData.animals
-            )
-                ? booleanData.animals
-                : [];
+            const booleanData =
+                await updateService.getBooleanData();
 
 
-        // ==================================================
-        // SAFE BOOLEAN FIELD ARRAY
-        // ==================================================
+            booleanAnimals =
+                Array.isArray(
+                    booleanData &&
+                    booleanData.animals
+                )
+                    ? booleanData.animals
+                    : [];
 
-        const booleanFields =
-            Array.isArray(
-                booleanData &&
-                booleanData.fields
-            )
-                ? booleanData.fields
-                : [];
+
+            booleanFields =
+                Array.isArray(
+                    booleanData &&
+                    booleanData.fields
+                )
+                    ? booleanData.fields
+                    : [];
+
+        }
 
 
         // ==================================================
         // DETERMINE PAGE FROM CODE
-        //
-        // NEGATIVE CODE:
-        //
-        //     Dairy Farm
-        //     -> update.ejs
-        //
-        // POSITIVE CODE:
-        //
-        //     Animal
-        //     -> dairySet.ejs
-        //
-        // NULL / UNDEFINED:
-        //
-        //     Structure / Machine / Tool
-        //     -> dairySet.ejs
-        //
         // ==================================================
 
         const isDairyFarm =
@@ -190,15 +175,7 @@ async (req, res) => {
 
 
         // ==================================================
-        // RENDER
-        // ==================================================
-        //
-        // BOOLEAN DATA IS PASSED TO update.ejs.
-        //
-        // update.ejs is responsible for including:
-        //
-        //     update/boolean.ejs
-        //
+        // RENDER PAGE
         // ==================================================
 
         return res.render(
@@ -282,10 +259,8 @@ async (req, res) => {
                 //
                 // Used by:
                 //
-                //     views/update/boolean.ejs
+                //     update/boolean.ejs
                 //
-                // boolean.ejs is an INCLUDE inside
-                // views/update.ejs.
                 // ------------------------------------------
 
                 booleanAnimals:
@@ -295,8 +270,10 @@ async (req, res) => {
                 // ------------------------------------------
                 // BOOLEAN FIELDS
                 //
-                // Boolean fields discovered from the
-                // Dairy schema.
+                // Used by:
+                //
+                //     update/boolean.ejs
+                //
                 // ------------------------------------------
 
                 booleanFields:
@@ -334,6 +311,7 @@ async (req, res) => {
 
 // ==========================================================
 // TOGGLE MILKING STATUS
+// ==========================================================
 //
 // POST:
 //
@@ -346,10 +324,6 @@ async (req, res) => {
 
     try {
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (
             !req.session.user
         ) {
@@ -358,8 +332,7 @@ async (req, res) => {
                 .status(401)
                 .json({
 
-                    success:
-                        false,
+                    success: false,
 
                     message:
                         "Unauthorized"
@@ -368,10 +341,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // DAIRY ID
-        // ==================================================
 
         const dairyId =
             req.params.id;
@@ -383,8 +352,7 @@ async (req, res) => {
                 .status(400)
                 .json({
 
-                    success:
-                        false,
+                    success: false,
 
                     message:
                         "Dairy ID is required."
@@ -394,26 +362,17 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // TOGGLE THROUGH SERVICE
-        // ==================================================
-
         const dairy =
             await updateService.toggleMilking(
                 dairyId
             );
 
 
-        // ==================================================
-        // SUCCESS RESPONSE
-        // ==================================================
-
         return res
             .status(200)
             .json({
 
-                success:
-                    true,
+                success: true,
 
                 isMilking:
                     dairy.isMilking
@@ -428,10 +387,6 @@ async (req, res) => {
         );
 
 
-        // ==================================================
-        // NOT FOUND
-        // ==================================================
-
         if (
             err.message ===
             "Dairy asset not found."
@@ -441,8 +396,7 @@ async (req, res) => {
                 .status(404)
                 .json({
 
-                    success:
-                        false,
+                    success: false,
 
                     message:
                         err.message
@@ -451,10 +405,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // BAD REQUEST
-        // ==================================================
 
         if (
             err.message ===
@@ -465,8 +415,7 @@ async (req, res) => {
                 .status(400)
                 .json({
 
-                    success:
-                        false,
+                    success: false,
 
                     message:
                         err.message
@@ -476,16 +425,11 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // SERVER ERROR
-        // ==================================================
-
         return res
             .status(500)
             .json({
 
-                success:
-                    false,
+                success: false,
 
                 message:
                     "Failed to toggle milking status."
@@ -499,6 +443,7 @@ async (req, res) => {
 
 // ==========================================================
 // SWITCH DAIRY FARM
+// ==========================================================
 //
 // GET:
 //
@@ -510,10 +455,6 @@ exports.switchDairy =
 async (req, res) => {
 
     try {
-
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
 
         if (
             !req.session.user
@@ -528,17 +469,9 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // USER
-        // ==================================================
-
         const user =
             req.session.user;
 
-
-        // ==================================================
-        // ROLE CHECK
-        // ==================================================
 
         if (
             user.role !== "dairyWorker"
@@ -552,10 +485,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // FARM ID
-        // ==================================================
 
         const farmId =
             req.params.id;
@@ -572,10 +501,6 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // VERIFY ASSIGNED FARM
-        // ==================================================
-
         const farm =
             await updateService
                 .getAssignedFarmForUser(
@@ -583,10 +508,6 @@ async (req, res) => {
                     farmId
                 );
 
-
-        // ==================================================
-        // FARM NOT ASSIGNED
-        // ==================================================
 
         if (!farm) {
 
@@ -598,10 +519,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // SWITCH
-        // ==================================================
 
         return res.redirect(
             `/dairy/${farm._id}`
