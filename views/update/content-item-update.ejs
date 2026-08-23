@@ -25,8 +25,19 @@ IMPORTANT:
 
 POST ROUTE:
 
-    POST /dairy/:dairyId/:contentItemId
+    POST /dairy/:contentItemId/:dwellNumber
 
+
+ROUTE IDENTITY
+--------------------------------------------------------------
+
+    :contentItemId
+        = ID of the actual content item being updated.
+
+    :dwellNumber
+        = dwellNumber of that content item.
+
+The route does NOT use the dairy farm ID.
 
 EXPECTED VARIABLES:
 
@@ -57,6 +68,31 @@ const updateDairy =
 
 const updateStorage =
     storage || {};
+
+
+/* ============================================================
+   CONTENT ITEM ID
+============================================================ */
+
+const contentItemId =
+    updateItem._id
+        ? String(
+            updateItem._id
+        )
+        : "";
+
+
+/* ============================================================
+   DWELL NUMBER
+============================================================ */
+
+const contentItemDwellNumber =
+    updateItem.dwellNumber !== null &&
+    updateItem.dwellNumber !== undefined
+        ? String(
+            updateItem.dwellNumber
+        )
+        : "";
 
 
 /* ============================================================
@@ -354,8 +390,18 @@ const updateUnit =
 
      THIS IS AN INCLUDE.
 
-     THERE IS INTENTIONALLY NO CONDITION HERE
-     THAT HIDES THE FORM.
+     ROUTE:
+
+         POST /dairy/:contentItemId/:dwellNumber
+
+     WHERE:
+
+         :contentItemId
+             = actual content item's _id
+
+         :dwellNumber
+             = actual content item's dwellNumber
+
 ============================================================= -->
 
 <section
@@ -388,13 +434,26 @@ const updateUnit =
 
          POST:
 
-         /dairy/:dairyId/:contentItemId
+             /dairy/:contentItemId/:dwellNumber
+
+         EXAMPLE:
+
+             /dairy/66abc123.../12
+
+         IMPORTANT:
+
+             The first parameter is the CONTENT ITEM ID.
+
+             The second parameter is the CONTENT ITEM'S
+             DWELL NUMBER.
+
+             The dairy farm ID is NOT used in this route.
     ========================================================= -->
 
     <form
         class="stock-update-form"
 
-        action="/dairy/<%= updateDairy._id %>/<%= updateItem._id %>"
+        action="/dairy/<%= contentItemId %>/<%= contentItemDwellNumber %>"
 
         method="POST"
 
