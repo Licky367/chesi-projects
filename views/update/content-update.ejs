@@ -10,66 +10,33 @@ FILE:
 PURPOSE:
     Displays stock-update history for ONE storage content item.
 
-IMPORTANT:
+DESIGN:
+    • Horizontal scroll from left to right.
+    • Story-style cards inspired by social-media status cards.
+    • First card = "Update Stock".
+    • Clicking the first card opens the update modal.
+    • Remaining cards = stock-update history.
+    • Latest update appears first.
+    • Greenish visual theme.
 
-    THIS IS NOT A PAGE.
+HISTORY CARD SHOWS:
+    • Last updated
+    • By who?
+    • From what?
+    • To what?
 
-    THIS IS AN INCLUDE.
+USER IDENTITY:
+    Uses:
 
-    It belongs to a storage CONTENT ITEM.
+        user._name
 
-CONTENT ITEM IDENTITY:
-
-    item._id
-        =
-    contentItemId
-
-STORAGE LOCATION:
-
-    item.dwellNumber
-        =
-    dwellNumber
-
-
-UPDATE ROUTE:
-
-    POST /dairy/:contentItemId/:dwellNumber
-
-
-EXAMPLE:
-
-    contentItemId = 6a89f0355464b1518f0c65f3
-    dwellNumber   = -1
-
-    POST:
-
-        /dairy/6a89f0355464b1518f0c65f3/-1
-
-
-HISTORY DISPLAY:
-
-    Last updated
-    By who?
-    From what?
-    To what?
-
-
-FIRST CARD:
-
-    The first card is an UPDATE STOCK card.
-
-    Clicking it opens the stock-update modal.
-
-    The modal includes:
-
-        content-item-update.ejs
-
+    It does NOT use user._id as the displayed identity.
 
 EXPECTED VARIABLES:
-
     item
     dairy
     storage
+    user
 
 ==============================================================
 */
@@ -80,13 +47,24 @@ EXPECTED VARIABLES:
 ============================================================ */
 
 const contentUpdateItem =
-    item || {};
+    (typeof item !== "undefined" && item)
+        ? item
+        : {};
 
 const contentUpdateDairy =
-    dairy || {};
+    (typeof dairy !== "undefined" && dairy)
+        ? dairy
+        : {};
 
 const contentUpdateStorage =
-    storage || {};
+    (typeof storage !== "undefined" && storage)
+        ? storage
+        : {};
+
+const contentUpdateUser =
+    (typeof user !== "undefined" && user)
+        ? user
+        : null;
 
 
 /* ============================================================
@@ -107,7 +85,10 @@ const contentItemId =
 
 const dwellNumber =
     contentUpdateItem.dwellNumber !== null &&
-    contentUpdateItem.dwellNumber !== undefined
+    contentUpdateItem.dwellNumber !== undefined &&
+    String(
+        contentUpdateItem.dwellNumber
+    ).trim() !== ""
         ? String(
             contentUpdateItem.dwellNumber
         )
@@ -124,7 +105,7 @@ const contentUpdateItemName =
 
 
 /* ============================================================
-   ITEM UNIT
+   UNIT
 ============================================================ */
 
 const contentUpdateUnit =
@@ -136,7 +117,7 @@ const contentUpdateUnit =
 
 
 /* ============================================================
-   STOCK UPDATE HISTORY
+   STOCK HISTORY
 ============================================================ */
 
 const rawStockUpdates =
@@ -149,15 +130,17 @@ const rawStockUpdates =
 
 /*
 --------------------------------------------------------------
-Create a safe chronological copy.
+Chronological copy.
 
-Oldest update first.
+Oldest first.
 
-This allows every update to determine:
+This allows us to determine:
 
-    FROM = previous quantity
+    FROM
+        previous update quantity
 
-    TO = current update quantity
+    TO
+        current update quantity
 --------------------------------------------------------------
 */
 
@@ -182,7 +165,6 @@ const stockHistory =
                     ).getTime()
                     : 0;
 
-
             const dateB =
                 b.recordedAt
                     ? new Date(
@@ -190,10 +172,19 @@ const stockHistory =
                     ).getTime()
                     : 0;
 
-
             return dateA - dateB;
 
         });
+
+
+/* ============================================================
+   DISPLAY HISTORY
+============================================================ */
+
+const displayHistory =
+    stockHistory
+        .slice()
+        .reverse();
 
 
 /* ============================================================
@@ -293,23 +284,62 @@ function formatContentUpdateDate(
 
 
 /* ============================================================
-   GET USER NAME
+   USER NAME
 ============================================================ */
 
 function getContentUpdateUserName(
     recordedBy
 ) {
 
-    if (!recordedBy) {
+    /*
+    ----------------------------------------------------------
+    IMPORTANT:
 
-        return "Unknown user";
+    Display identity using:
+
+        user._name
+
+    when the supplied user object is available.
+
+    Do NOT use _id as the displayed identity.
+    ----------------------------------------------------------
+    */
+
+    if (
+        contentUpdateUser &&
+        contentUpdateUser._name
+    ) {
+
+        return String(
+            contentUpdateUser._name
+        );
 
     }
 
 
+    /*
+    ----------------------------------------------------------
+    For historical records, use the populated user's name.
+
+    Still never display _id as identity.
+    ----------------------------------------------------------
+    */
+
     if (
+        recordedBy &&
         typeof recordedBy === "object"
     ) {
+
+        if (
+            recordedBy._name
+        ) {
+
+            return String(
+                recordedBy._name
+            );
+
+        }
+
 
         if (
             recordedBy.name
@@ -332,23 +362,22 @@ function getContentUpdateUserName(
 
         }
 
+    }
 
-        if (
-            recordedBy._id
-        ) {
 
-            return String(
-                recordedBy._id
-            );
+    if (
+        recordedBy &&
+        typeof recordedBy === "string"
+    ) {
 
-        }
+        return String(
+            recordedBy
+        );
 
     }
 
 
-    return String(
-        recordedBy
-    );
+    return "Unknown user";
 
 }
 
@@ -385,13 +414,21 @@ const currentContentQuantity =
    CONTENT UPDATE HISTORY
 ============================================================ */
 
-.content-update-history{
+.content-update-history {
 
-    width:100%;
+    width: 100%;
 
-    box-sizing:border-box;
+    margin:
+        0
+        0
+        20px;
 
-    margin:0 0 18px;
+    box-sizing: border-box;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
 }
 
@@ -400,102 +437,194 @@ const currentContentQuantity =
    HEADER
 ============================================================ */
 
-.content-update-history-header{
+.content-update-history-header {
 
-    display:flex;
+    width: 100%;
 
-    align-items:flex-start;
+    display: flex;
 
-    justify-content:space-between;
+    align-items: flex-start;
 
-    gap:14px;
+    justify-content: space-between;
 
-    margin-bottom:13px;
+    gap: 12px;
 
-}
+    margin:
+        0
+        0
+        12px;
 
-
-.content-update-history-heading{
-
-    min-width:0;
-
-    flex:1;
-
-}
-
-
-.content-update-history-title{
-
-    margin:0;
-
-    color:#202a23;
-
-    font-size:18px;
-
-    line-height:1.3;
-
-    font-weight:800;
-
-    letter-spacing:-.02em;
+    padding:
+        0
+        2px;
 
 }
 
 
-.content-update-history-description{
+.content-update-history-heading {
 
-    margin:4px 0 0;
+    min-width: 0;
 
-    color:#7a847d;
-
-    font-size:11px;
-
-    line-height:1.5;
+    flex: 1;
 
 }
 
 
-/* ============================================================
-   UPDATE ACTION LABEL
-============================================================ */
+.content-update-history-title {
 
-.content-update-history-action-label{
+    margin: 0;
 
-    flex:none;
+    color:
+        #183d29;
 
-    padding:7px 10px;
+    font-size:
+        18px;
 
-    border-radius:999px;
+    line-height:
+        1.3;
 
-    background:#edf7ef;
+    font-weight:
+        800;
 
-    color:#317448;
+}
 
-    font-size:9px;
 
-    line-height:1;
+.content-update-history-description {
 
-    font-weight:800;
+    margin:
+        4px
+        0
+        0;
 
-    letter-spacing:.05em;
+    color:
+        #718078;
 
-    text-transform:uppercase;
+    font-size:
+        11px;
+
+    line-height:
+        1.45;
 
 }
 
 
 /* ============================================================
-   HISTORY LIST
+   HEADER BADGE
 ============================================================ */
 
-.content-update-history-list{
+.content-update-history-action-label {
 
-    width:100%;
+    flex:
+        0 0 auto;
 
-    display:flex;
+    padding:
+        6px
+        10px;
 
-    flex-direction:column;
+    border:
+        1px solid
+        #cce5d3;
 
-    gap:9px;
+    border-radius:
+        999px;
+
+    background:
+        #edf8f0;
+
+    color:
+        #247342;
+
+    font-size:
+        8px;
+
+    line-height:
+        1;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        .05em;
+
+    text-transform:
+        uppercase;
+
+}
+
+
+/* ============================================================
+   HORIZONTAL STORY SCROLLER
+============================================================ */
+
+.content-update-history-list {
+
+    width: 100%;
+
+    display: flex;
+
+    flex-direction: row;
+
+    align-items: stretch;
+
+    gap: 10px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding:
+        3px
+        3px
+        10px;
+
+    box-sizing: border-box;
+
+    scroll-behavior: smooth;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+
+    overscroll-behavior-x:
+        contain;
+
+    scroll-snap-type:
+        x proximity;
+
+}
+
+
+.content-update-history-list::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+/*
+--------------------------------------------------------------
+Each card is a horizontal story.
+
+Never allow cards to shrink.
+
+--------------------------------------------------------------
+*/
+
+.content-update-history-list
+.content-update-card {
+
+    flex:
+        0 0
+        205px;
+
+    width:
+        205px;
+
+    min-width:
+        205px;
+
+    scroll-snap-align:
+        start;
 
 }
 
@@ -504,85 +633,143 @@ const currentContentQuantity =
    BASE CARD
 ============================================================ */
 
-.content-update-card{
+.content-update-card {
 
-    position:relative;
+    position: relative;
 
-    width:100%;
+    min-height:
+        190px;
 
-    box-sizing:border-box;
+    overflow: hidden;
 
-    border:1px solid #e1e8e3;
+    box-sizing: border-box;
 
-    border-radius:14px;
+    border:
+        1px solid
+        #d9e9de;
 
-    background:#ffffff;
+    border-radius:
+        18px;
+
+    background:
+        #ffffff;
 
     box-shadow:
-        0 2px 8px
-        rgba(25,45,32,.045);
+        0 3px 12px
+        rgba(
+            25,
+            70,
+            42,
+            .08
+        );
 
 }
 
 
 /* ============================================================
-   UPDATE BUTTON CARD
+   STORY TOP GREEN BAR
 ============================================================ */
 
-.content-update-open{
+.content-update-card::before {
 
-    width:100%;
+    content: "";
 
-    display:block;
+    position: absolute;
 
-    padding:15px;
+    top: 0;
 
-    border:0;
+    left: 0;
 
-    border-radius:14px;
+    right: 0;
 
-    background:
-        linear-gradient(
-            135deg,
-            #f0f8f2 0%,
-            #ffffff 100%
-        );
-
-    color:inherit;
-
-    text-align:left;
-
-    cursor:pointer;
-
-    font:inherit;
-
-}
-
-
-.content-update-open:hover{
+    height: 4px;
 
     background:
         linear-gradient(
-            135deg,
-            #eaf6ed 0%,
-            #ffffff 100%
+            90deg,
+            #1d7a42,
+            #48a868,
+            #8bcf9b
         );
 
 }
 
 
-.content-update-open:active{
+/* ============================================================
+   UPDATE STOCK STORY CARD
+============================================================ */
 
-    transform:scale(.99);
+.content-update-open {
+
+    width: 100%;
+
+    min-height:
+        190px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    padding:
+        18px;
+
+    border: 0;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #e9f7ed 0%,
+            #f7fcf8 55%,
+            #ffffff 100%
+        );
+
+    color: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    font: inherit;
+
+    transition:
+        transform .16s ease,
+        box-shadow .16s ease;
 
 }
 
 
-.content-update-open:focus-visible{
+.content-update-open:hover {
+
+    background:
+        linear-gradient(
+            145deg,
+            #dff2e4 0%,
+            #f4fbf6 55%,
+            #ffffff 100%
+        );
+
+}
+
+
+.content-update-open:active {
+
+    transform:
+        scale(.97);
+
+}
+
+
+.content-update-open:focus-visible {
 
     outline:
         2px solid
-        #2f7c48;
+        #26804a;
 
     outline-offset:
         2px;
@@ -591,16 +778,24 @@ const currentContentQuantity =
 
 
 /* ============================================================
-   UPDATE CARD INNER
+   UPDATE CARD CONTENT
 ============================================================ */
 
-.content-update-open-inner{
+.content-update-open-inner {
 
-    display:flex;
+    width: 100%;
 
-    align-items:center;
+    display: flex;
 
-    gap:13px;
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    text-align: center;
 
 }
 
@@ -609,29 +804,53 @@ const currentContentQuantity =
    UPDATE ICON
 ============================================================ */
 
-.content-update-open-icon{
+.content-update-open-icon {
 
-    width:44px;
+    width:
+        58px;
 
-    height:44px;
+    height:
+        58px;
 
-    flex:none;
+    flex:
+        0 0 auto;
 
-    display:flex;
+    display: flex;
 
-    align-items:center;
+    align-items: center;
 
-    justify-content:center;
+    justify-content: center;
 
-    border-radius:12px;
+    border:
+        2px solid
+        #b8dec2;
 
-    background:#dff0e3;
+    border-radius:
+        50%;
 
-    color:#2f7c48;
+    background:
+        #d9efdf;
 
-    font-size:22px;
+    color:
+        #237641;
 
-    font-weight:800;
+    font-size:
+        30px;
+
+    line-height:
+        1;
+
+    font-weight:
+        400;
+
+    box-shadow:
+        0 4px 12px
+        rgba(
+            36,
+            118,
+            65,
+            .10
+        );
 
 }
 
@@ -640,56 +859,69 @@ const currentContentQuantity =
    UPDATE TEXT
 ============================================================ */
 
-.content-update-open-content{
+.content-update-open-content {
 
-    min-width:0;
+    min-width: 0;
 
-    flex:1;
-
-}
-
-
-.content-update-open-title{
-
-    margin:0;
-
-    color:#294333;
-
-    font-size:13px;
-
-    line-height:1.35;
-
-    font-weight:800;
+    width: 100%;
 
 }
 
 
-.content-update-open-description{
+.content-update-open-title {
 
-    margin:4px 0 0;
+    display: block;
 
-    color:#78857d;
+    color:
+        #1d4b2f;
 
-    font-size:10px;
+    font-size:
+        14px;
 
-    line-height:1.45;
+    line-height:
+        1.3;
+
+    font-weight:
+        800;
+
+}
+
+
+.content-update-open-description {
+
+    display: block;
+
+    margin-top:
+        5px;
+
+    color:
+        #718078;
+
+    font-size:
+        10px;
+
+    line-height:
+        1.5;
 
 }
 
 
 /* ============================================================
-   ARROW
+   UPDATE ARROW
 ============================================================ */
 
-.content-update-open-arrow{
+.content-update-open-arrow {
 
-    flex:none;
+    display: block;
 
-    color:#438455;
+    color:
+        #32804d;
 
-    font-size:20px;
+    font-size:
+        22px;
 
-    font-weight:700;
+    line-height:
+        1;
 
 }
 
@@ -698,64 +930,101 @@ const currentContentQuantity =
    HISTORY CARD
 ============================================================ */
 
-.content-update-history-card{
+.content-update-history-card {
 
-    padding:14px;
+    display: flex;
+
+    flex-direction: column;
+
+    min-height:
+        190px;
+
+    padding:
+        15px;
+
+    box-sizing: border-box;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff 0%,
+            #f7fbf8 100%
+        );
 
 }
 
 
 /* ============================================================
-   HISTORY TOP
+   HISTORY CARD HEADER
 ============================================================ */
 
-.content-update-history-top{
+.content-update-history-top {
 
-    display:flex;
+    display: flex;
 
-    align-items:center;
+    flex-direction: column;
 
-    justify-content:space-between;
+    align-items: flex-start;
 
-    gap:10px;
+    gap: 6px;
 
-    margin-bottom:12px;
-
-}
-
-
-.content-update-history-date{
-
-    color:#7a867e;
-
-    font-size:9px;
-
-    line-height:1.3;
-
-    font-weight:700;
+    margin-bottom:
+        13px;
 
 }
 
 
-.content-update-history-number{
+.content-update-history-date {
 
-    flex:none;
+    color:
+        #63736a;
 
-    padding:5px 8px;
+    font-size:
+        9px;
 
-    border-radius:999px;
+    line-height:
+        1.3;
 
-    background:#f1f5f2;
+    font-weight:
+        700;
 
-    color:#65736a;
+}
 
-    font-size:8px;
 
-    line-height:1;
+.content-update-history-number {
 
-    font-weight:800;
+    display: inline-flex;
 
-    text-transform:uppercase;
+    align-items: center;
+
+    padding:
+        5px
+        8px;
+
+    border:
+        1px solid
+        #d5e7da;
+
+    border-radius:
+        999px;
+
+    background:
+        #edf7ef;
+
+    color:
+        #347248;
+
+    font-size:
+        8px;
+
+    line-height:
+        1;
+
+    font-weight:
+        800;
+
+    text-transform:
+        uppercase;
 
 }
 
@@ -764,18 +1033,16 @@ const currentContentQuantity =
    FROM / TO
 ============================================================ */
 
-.content-update-history-change{
+.content-update-history-change {
 
-    display:grid;
+    display:
+        grid;
 
     grid-template-columns:
-        minmax(0,1fr)
-        28px
         minmax(0,1fr);
 
-    align-items:center;
-
-    gap:7px;
+    gap:
+        7px;
 
 }
 
@@ -784,89 +1051,125 @@ const currentContentQuantity =
    CHANGE BOX
 ============================================================ */
 
-.content-update-change-box{
+.content-update-change-box {
 
-    min-width:0;
+    min-width:
+        0;
 
-    padding:11px;
+    padding:
+        9px;
 
-    border-radius:11px;
+    border:
+        1px solid
+        #e1ebe4;
 
-    background:#f8faf9;
+    border-radius:
+        11px;
 
-    border:1px solid #e6ece8;
-
-}
-
-
-.content-update-change-label{
-
-    display:block;
-
-    margin-bottom:5px;
-
-    color:#8a958e;
-
-    font-size:8px;
-
-    line-height:1;
-
-    font-weight:800;
-
-    letter-spacing:.07em;
-
-    text-transform:uppercase;
+    background:
+        #f8fbf9;
 
 }
 
 
-.content-update-change-value{
+.content-update-change-label {
 
-    display:block;
+    display:
+        block;
 
-    color:#304438;
+    margin-bottom:
+        4px;
 
-    font-size:15px;
+    color:
+        #87948c;
 
-    line-height:1.25;
+    font-size:
+        7px;
 
-    font-weight:850;
+    line-height:
+        1;
 
-    word-break:break-word;
+    font-weight:
+        800;
+
+    letter-spacing:
+        .08em;
+
+    text-transform:
+        uppercase;
 
 }
 
 
-.content-update-change-unit{
+.content-update-change-value {
 
-    margin-left:2px;
+    display:
+        block;
 
-    color:#7c8981;
+    color:
+        #274534;
 
-    font-size:9px;
+    font-size:
+        15px;
 
-    font-weight:700;
+    line-height:
+        1.2;
+
+    font-weight:
+        800;
+
+    word-break:
+        break-word;
+
+}
+
+
+.content-update-change-unit {
+
+    margin-left:
+        2px;
+
+    color:
+        #748279;
+
+    font-size:
+        8px;
+
+    font-weight:
+        700;
 
 }
 
 
 /* ============================================================
-   ARROW
+   CHANGE ARROW
 ============================================================ */
 
-.content-update-change-arrow{
+.content-update-change-arrow {
 
-    display:flex;
+    display:
+        flex;
 
-    align-items:center;
+    align-items:
+        center;
 
-    justify-content:center;
+    justify-content:
+        center;
 
-    color:#72917b;
+    height:
+        10px;
 
-    font-size:18px;
+    color:
+        #5b936d;
 
-    font-weight:800;
+    font-size:
+        14px;
+
+    line-height:
+        1;
+
+    font-weight:
+        800;
 
 }
 
@@ -875,28 +1178,60 @@ const currentContentQuantity =
    USER
 ============================================================ */
 
-.content-update-history-user{
+.content-update-history-user {
 
-    display:flex;
+    display:
+        flex;
 
-    align-items:center;
+    align-items:
+        center;
 
-    gap:6px;
+    gap:
+        5px;
 
-    margin-top:10px;
+    margin-top:
+        auto;
 
-    color:#66736b;
+    padding-top:
+        11px;
 
-    font-size:10px;
+    color:
+        #65736b;
 
-    line-height:1.4;
+    font-size:
+        9px;
+
+    line-height:
+        1.3;
 
 }
 
 
-.content-update-history-user-icon{
+.content-update-history-user-icon {
 
-    font-size:11px;
+    width:
+        20px;
+
+    height:
+        20px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border-radius:
+        50%;
+
+    background:
+        #e5f3e9;
+
+    font-size:
+        10px;
 
 }
 
@@ -905,23 +1240,32 @@ const currentContentQuantity =
    NOTE
 ============================================================ */
 
-.content-update-history-note{
+.content-update-history-note {
 
-    margin-top:10px;
+    margin-top:
+        8px;
 
-    padding-top:9px;
+    padding-top:
+        8px;
 
-    border-top:1px solid #edf1ee;
+    border-top:
+        1px solid
+        #e8eee9;
 
-    color:#69766e;
+    color:
+        #68766e;
 
-    font-size:10px;
+    font-size:
+        8px;
 
-    line-height:1.55;
+    line-height:
+        1.45;
 
-    white-space:pre-wrap;
+    white-space:
+        pre-wrap;
 
-    word-break:break-word;
+    word-break:
+        break-word;
 
 }
 
@@ -930,23 +1274,57 @@ const currentContentQuantity =
    EMPTY HISTORY
 ============================================================ */
 
-.content-update-empty{
+.content-update-empty {
 
-    padding:18px;
+    flex:
+        0 0
+        205px;
 
-    border:1px dashed #dce5df;
+    width:
+        205px;
 
-    border-radius:14px;
+    min-width:
+        205px;
 
-    background:#fafcfb;
+    min-height:
+        190px;
 
-    color:#7d8981;
+    display:
+        flex;
 
-    font-size:11px;
+    align-items:
+        center;
 
-    line-height:1.5;
+    justify-content:
+        center;
 
-    text-align:center;
+    padding:
+        18px;
+
+    box-sizing:
+        border-box;
+
+    border:
+        1px dashed
+        #cbded0;
+
+    border-radius:
+        18px;
+
+    background:
+        #f8fbf9;
+
+    color:
+        #78857d;
+
+    font-size:
+        10px;
+
+    line-height:
+        1.5;
+
+    text-align:
+        center;
 
 }
 
@@ -955,36 +1333,50 @@ const currentContentQuantity =
    MODAL BACKDROP
 ============================================================ */
 
-.content-update-modal{
+.content-update-modal {
 
-    position:fixed;
+    position:
+        fixed;
 
-    inset:0;
+    inset:
+        0;
 
-    z-index:9999;
+    z-index:
+        9999;
 
-    display:none;
+    display:
+        none;
 
-    align-items:center;
+    align-items:
+        center;
 
-    justify-content:center;
+    justify-content:
+        center;
 
-    padding:18px;
+    padding:
+        18px;
 
-    box-sizing:border-box;
+    box-sizing:
+        border-box;
 
     background:
-        rgba(20,32,25,.58);
+        rgba(
+            18,
+            35,
+            24,
+            .60
+        );
 
     backdrop-filter:
-        blur(4px);
+        blur(5px);
 
 }
 
 
-.content-update-modal.is-open{
+.content-update-modal.is-open {
 
-    display:flex;
+    display:
+        flex;
 
 }
 
@@ -993,30 +1385,46 @@ const currentContentQuantity =
    MODAL
 ============================================================ */
 
-.content-update-modal-dialog{
+.content-update-modal-dialog {
 
-    position:relative;
+    position:
+        relative;
 
-    width:100%;
+    width:
+        100%;
 
-    max-width:620px;
+    max-width:
+        620px;
 
     max-height:
         calc(
             100vh - 36px
         );
 
-    overflow-y:auto;
+    overflow-y:
+        auto;
 
-    box-sizing:border-box;
+    box-sizing:
+        border-box;
 
-    border-radius:18px;
+    border:
+        1px solid
+        #d6e8da;
 
-    background:#ffffff;
+    border-radius:
+        20px;
+
+    background:
+        #ffffff;
 
     box-shadow:
-        0 20px 60px
-        rgba(0,0,0,.20);
+        0 24px 70px
+        rgba(
+            0,
+            0,
+            0,
+            .24
+        );
 
 }
 
@@ -1025,87 +1433,119 @@ const currentContentQuantity =
    MODAL HEADER
 ============================================================ */
 
-.content-update-modal-header{
+.content-update-modal-header {
 
-    position:sticky;
+    position:
+        sticky;
 
-    top:0;
+    top:
+        0;
 
-    z-index:2;
+    z-index:
+        2;
 
-    display:flex;
+    display:
+        flex;
 
-    align-items:center;
+    align-items:
+        center;
 
-    justify-content:space-between;
+    justify-content:
+        space-between;
 
-    gap:12px;
+    gap:
+        12px;
 
-    padding:16px 18px;
+    padding:
+        15px
+        18px;
 
-    background:#ffffff;
+    background:
+        #f4faf5;
 
-    border-bottom:1px solid #e5ebe7;
-
-}
-
-
-.content-update-modal-title{
-
-    min-width:0;
-
-    margin:0;
-
-    color:#26382d;
-
-    font-size:16px;
-
-    line-height:1.3;
-
-    font-weight:850;
+    border-bottom:
+        1px solid
+        #dfeae1;
 
 }
 
 
-.content-update-modal-close{
+.content-update-modal-title {
 
-    width:34px;
+    min-width:
+        0;
 
-    height:34px;
+    margin:
+        0;
 
-    flex:none;
+    color:
+        #234c31;
 
-    display:flex;
+    font-size:
+        16px;
 
-    align-items:center;
+    line-height:
+        1.3;
 
-    justify-content:center;
-
-    border:0;
-
-    border-radius:50%;
-
-    background:#f1f4f2;
-
-    color:#59675e;
-
-    cursor:pointer;
-
-    font-size:20px;
-
-    line-height:1;
+    font-weight:
+        800;
 
 }
 
 
-.content-update-modal-close:hover{
+.content-update-modal-close {
 
-    background:#e8ede9;
+    width:
+        34px;
+
+    height:
+        34px;
+
+    flex:
+        0 0 auto;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border:
+        0;
+
+    border-radius:
+        50%;
+
+    background:
+        #e4f0e7;
+
+    color:
+        #476252;
+
+    cursor:
+        pointer;
+
+    font-size:
+        20px;
+
+    line-height:
+        1;
 
 }
 
 
-.content-update-modal-close:focus-visible{
+.content-update-modal-close:hover {
+
+    background:
+        #d7e9dc;
+
+}
+
+
+.content-update-modal-close:focus-visible {
 
     outline:
         2px solid
@@ -1121,114 +1561,180 @@ const currentContentQuantity =
    MODAL BODY
 ============================================================ */
 
-.content-update-modal-body{
+.content-update-modal-body {
 
-    padding:18px;
+    padding:
+        18px;
 
 }
 
-
-/* ============================================================
-   MODAL FORM OVERRIDE
-============================================================ */
 
 .content-update-modal-body
-.stock-update-section{
+.stock-update-section {
 
-    margin-top:0;
+    margin-top:
+        0;
 
 }
 
 
 /* ============================================================
-   MODAL MOBILE
+   MOBILE
 ============================================================ */
 
-@media (max-width:600px){
+@media (max-width: 600px) {
 
-    .content-update-history-header{
+    .content-update-history-title {
 
-        align-items:flex-start;
-
-    }
-
-
-    .content-update-history-action-label{
-
-        display:none;
+        font-size:
+            17px;
 
     }
 
 
-    .content-update-modal{
+    .content-update-history-description {
 
-        align-items:flex-end;
-
-        padding:0;
+        font-size:
+            10px;
 
     }
 
 
-    .content-update-modal-dialog{
+    .content-update-history-action-label {
 
-        max-width:none;
+        display:
+            none;
+
+    }
+
+
+    .content-update-history-list
+    .content-update-card {
+
+        flex-basis:
+            185px;
+
+        width:
+            185px;
+
+        min-width:
+            185px;
+
+    }
+
+
+    .content-update-card,
+    .content-update-open,
+    .content-update-history-card {
+
+        min-height:
+            180px;
+
+    }
+
+
+    .content-update-empty {
+
+        flex-basis:
+            185px;
+
+        width:
+            185px;
+
+        min-width:
+            185px;
+
+        min-height:
+            180px;
+
+    }
+
+
+    .content-update-modal {
+
+        align-items:
+            flex-end;
+
+        padding:
+            0;
+
+    }
+
+
+    .content-update-modal-dialog {
+
+        max-width:
+            none;
 
         max-height:
             92vh;
 
         border-radius:
-            18px 18px 0 0;
+            20px
+            20px
+            0
+            0;
 
     }
 
 }
 
 
-@media (max-width:470px){
+/* ============================================================
+   SMALL MOBILE
+============================================================ */
 
-    .content-update-history-title{
+@media (max-width: 400px) {
 
-        font-size:17px;
+    .content-update-history-list
+    .content-update-card {
 
-    }
+        flex-basis:
+            170px;
 
+        width:
+            170px;
 
-    .content-update-history-card{
-
-        padding:12px;
-
-    }
-
-
-    .content-update-history-change{
-
-        grid-template-columns:
-            minmax(0,1fr)
-            22px
-            minmax(0,1fr);
-
-        gap:4px;
+        min-width:
+            170px;
 
     }
 
 
-    .content-update-change-box{
+    .content-update-empty {
 
-        padding:9px;
+        flex-basis:
+            170px;
+
+        width:
+            170px;
+
+        min-width:
+            170px;
 
     }
 
 
-    .content-update-change-value{
+    .content-update-history-card {
 
-        font-size:14px;
+        padding:
+            13px;
 
     }
 
 
-    .content-update-modal-body{
+    .content-update-change-value {
 
-        padding:15px;
+        font-size:
+            14px;
+
+    }
+
+
+    .content-update-modal-body {
+
+        padding:
+            15px;
 
     }
 
@@ -1251,26 +1757,31 @@ const currentContentQuantity =
          HEADER
     ========================================================= -->
 
-    <header class="content-update-history-header">
+    <header
+        class="content-update-history-header"
+    >
 
 
-        <div class="content-update-history-heading">
+        <div
+            class="content-update-history-heading"
+        >
 
-
-            <h2 class="content-update-history-title">
+            <h2
+                class="content-update-history-title"
+            >
 
                 <%= contentUpdateItemName %> Updates
 
             </h2>
 
 
-            <p class="content-update-history-description">
+            <p
+                class="content-update-history-description"
+            >
 
-                View previous stock changes or give a new
-                update for this item.
+                View stock history or record a new update.
 
             </p>
-
 
         </div>
 
@@ -1287,11 +1798,16 @@ const currentContentQuantity =
     </header>
 
 
+
     <!-- ========================================================
-         HISTORY LIST
+         HORIZONTAL STORY CARDS
     ========================================================= -->
 
-    <div class="content-update-history-list">
+    <div
+        class="content-update-history-list"
+        role="list"
+        aria-label="Stock updates for <%= contentUpdateItemName %>"
+    >
 
 
         <!-- ====================================================
@@ -1300,9 +1816,10 @@ const currentContentQuantity =
 
         <% if (contentUpdateAction) { %>
 
-
-            <div class="content-update-card">
-
+            <div
+                class="content-update-card"
+                role="listitem"
+            >
 
                 <button
                     type="button"
@@ -1312,11 +1829,9 @@ const currentContentQuantity =
                     aria-controls="contentUpdateModal"
                 >
 
-
                     <span
                         class="content-update-open-inner"
                     >
-
 
                         <span
                             class="content-update-open-icon"
@@ -1331,7 +1846,6 @@ const currentContentQuantity =
                         <span
                             class="content-update-open-content"
                         >
-
 
                             <strong
                                 class="content-update-open-title"
@@ -1351,7 +1865,6 @@ const currentContentQuantity =
 
                             </span>
 
-
                         </span>
 
 
@@ -1360,19 +1873,15 @@ const currentContentQuantity =
                             aria-hidden="true"
                         >
 
-                            ›
+                            →
 
                         </span>
 
-
                     </span>
-
 
                 </button>
 
-
             </div>
-
 
         <% } %>
 
@@ -1382,23 +1891,7 @@ const currentContentQuantity =
              HISTORY CARDS
         ===================================================== -->
 
-        <% if (stockHistory.length) { %>
-
-
-            <%
-                /*
-                --------------------------------------------------
-                Reverse for display.
-
-                Latest update appears first.
-
-                --------------------------------------------------
-                */
-                const displayHistory =
-                    stockHistory
-                        .slice()
-                        .reverse();
-            %>
+        <% if (displayHistory.length) { %>
 
 
             <% displayHistory.forEach(
@@ -1407,27 +1900,11 @@ const currentContentQuantity =
                     displayIndex
                 ) {
 
-                    /*
-                    ------------------------------------------------
-                    Find this update's original chronological index.
-
-                    ------------------------------------------------
-                    */
-
                     const originalIndex =
                         stockHistory.indexOf(
                             update
                         );
 
-
-                    /*
-                    ------------------------------------------------
-                    Previous update.
-
-                    If this is the first recorded update,
-                    there is no previous stock-update quantity.
-                    ------------------------------------------------
-                    */
 
                     const previousUpdate =
                         originalIndex > 0
@@ -1437,13 +1914,8 @@ const currentContentQuantity =
                             : null;
 
 
-                    /*
-                    ------------------------------------------------
-                    FROM quantity
-                    ------------------------------------------------
-                    */
-
-                    let fromQuantity = null;
+                    let fromQuantity =
+                        null;
 
 
                     if (
@@ -1457,34 +1929,8 @@ const currentContentQuantity =
                                 previousUpdate.quantity
                             );
 
-                    } else if (
-                        originalIndex === 0
-                    ) {
-
-                        /*
-                        --------------------------------------------
-                        First recorded update.
-
-                        If the item has an acquisition/current
-                        quantity and no previous stock history,
-                        do not falsely claim that the stock was
-                        previously zero.
-
-                        Display "Initial" instead.
-                        --------------------------------------------
-                        */
-
-                        fromQuantity =
-                            null;
-
                     }
 
-
-                    /*
-                    ------------------------------------------------
-                    TO quantity
-                    ------------------------------------------------
-                    */
 
                     const toQuantity =
                         Number(
@@ -1492,35 +1938,17 @@ const currentContentQuantity =
                         );
 
 
-                    /*
-                    ------------------------------------------------
-                    USER
-                    ------------------------------------------------
-                    */
-
                     const historyUser =
                         getContentUpdateUserName(
                             update.recordedBy
                         );
 
 
-                    /*
-                    ------------------------------------------------
-                    DATE
-                    ------------------------------------------------
-                    */
-
                     const historyDate =
                         formatContentUpdateDate(
                             update.recordedAt
                         );
 
-
-                    /*
-                    ------------------------------------------------
-                    NOTE
-                    ------------------------------------------------
-                    */
 
                     const historyNote =
                         update.stockUpdateNote
@@ -1534,17 +1962,17 @@ const currentContentQuantity =
 
                 <article
                     class="content-update-card content-update-history-card"
+                    role="listitem"
                 >
 
 
-                    <!-- ==========================================
-                         HISTORY TOP
-                    =========================================== -->
+                    <!-- ========================================
+                         HISTORY HEADER
+                    ========================================= -->
 
                     <div
                         class="content-update-history-top"
                     >
-
 
                         <span
                             class="content-update-history-date"
@@ -1564,28 +1992,21 @@ const currentContentQuantity =
 
                         </span>
 
-
                     </div>
 
 
 
-                    <!-- ==========================================
-                         FROM → TO
-                    =========================================== -->
+                    <!-- ========================================
+                         FROM
+                    ========================================= -->
 
                     <div
                         class="content-update-history-change"
                     >
 
-
-                        <!-- ======================================
-                             FROM
-                        ======================================= -->
-
                         <div
                             class="content-update-change-box"
                         >
-
 
                             <span
                                 class="content-update-change-label"
@@ -1599,7 +2020,6 @@ const currentContentQuantity =
                             <span
                                 class="content-update-change-value"
                             >
-
 
                                 <% if (fromQuantity !== null) { %>
 
@@ -1620,44 +2040,40 @@ const currentContentQuantity =
 
                                     <% } %>
 
-
                                 <% } else { %>
 
                                     Initial
 
                                 <% } %>
 
-
                             </span>
-
 
                         </div>
 
 
 
-                        <!-- ======================================
+                        <!-- ====================================
                              ARROW
-                        ======================================= -->
+                        ===================================== -->
 
                         <span
                             class="content-update-change-arrow"
                             aria-hidden="true"
                         >
 
-                            →
+                            ↓
 
                         </span>
 
 
 
-                        <!-- ======================================
+                        <!-- ====================================
                              TO
-                        ======================================= -->
+                        ===================================== -->
 
                         <div
                             class="content-update-change-box"
                         >
-
 
                             <span
                                 class="content-update-change-label"
@@ -1671,7 +2087,6 @@ const currentContentQuantity =
                             <span
                                 class="content-update-change-value"
                             >
-
 
                                 <%= formatContentQuantity(
                                     toQuantity
@@ -1690,25 +2105,21 @@ const currentContentQuantity =
 
                                 <% } %>
 
-
                             </span>
 
-
                         </div>
-
 
                     </div>
 
 
 
-                    <!-- ==========================================
+                    <!-- ========================================
                          USER
-                    =========================================== -->
+                    ========================================= -->
 
                     <div
                         class="content-update-history-user"
                     >
-
 
                         <span
                             class="content-update-history-user-icon"
@@ -1730,17 +2141,15 @@ const currentContentQuantity =
 
                         </span>
 
-
                     </div>
 
 
 
-                    <!-- ==========================================
+                    <!-- ========================================
                          NOTE
-                    =========================================== -->
+                    ========================================= -->
 
                     <% if (historyNote) { %>
-
 
                         <div
                             class="content-update-history-note"
@@ -1749,7 +2158,6 @@ const currentContentQuantity =
                             <%= historyNote %>
 
                         </div>
-
 
                     <% } %>
 
@@ -1769,11 +2177,10 @@ const currentContentQuantity =
 
             <div
                 class="content-update-empty"
+                role="listitem"
             >
 
                 No stock updates have been recorded yet.
-                Use the update card above to record the first
-                stock update.
 
             </div>
 
@@ -1782,7 +2189,6 @@ const currentContentQuantity =
 
 
     </div>
-
 
 </section>
 
@@ -1819,7 +2225,6 @@ const currentContentQuantity =
             class="content-update-modal-header"
         >
 
-
             <h2
                 class="content-update-modal-title"
                 id="contentUpdateModalTitle"
@@ -1842,25 +2247,17 @@ const currentContentQuantity =
 
             </button>
 
-
         </header>
 
 
 
         <!-- ====================================================
              MODAL BODY
-
-             The existing update form is reused.
-
-             Its action is:
-
-                 /dairy/:contentItemId/:dwellNumber
         ===================================================== -->
 
         <div
             class="content-update-modal-body"
         >
-
 
             <%- include(
                 "content-item-update",
@@ -1872,16 +2269,17 @@ const currentContentQuantity =
                         contentUpdateStorage,
 
                     item:
-                        contentUpdateItem
+                        contentUpdateItem,
+
+                    user:
+                        contentUpdateUser
                 }
             ) %>
-
 
         </div>
 
 
     </div>
-
 
 </div>
 
@@ -1938,7 +2336,6 @@ const currentContentQuantity =
             "false"
         );
 
-
         document.body.style.overflow =
             "hidden";
 
@@ -1959,7 +2356,6 @@ const currentContentQuantity =
             "aria-hidden",
             "true"
         );
-
 
         document.body.style.overflow =
             "";
