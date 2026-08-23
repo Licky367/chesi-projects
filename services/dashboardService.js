@@ -14,19 +14,45 @@
 // 1. dairies
 //      = active Dairy Farm records
 //
+//      FARM RULE:
+//          code < 0
+//
 // 2. standaloneAssets
-//      = active standalone structures/assets
+//      = active Dairy records that lack BOTH:
 //
-// Standalone assets are identified by:
+//          assetCode
+//          code
 //
-//      recordType = "structure"
-//      code       = null
-//      assetCode  = null
+// STANDALONE ASSET RULE
+// ----------------------------------------------------------
 //
-// MongoDB _id is preserved for every record so the EJS views
-// can safely create links such as:
+// A standalone asset is an active Dairy document where:
 //
-//      /dairy/:id
+//      assetCode is null / missing
+//
+// AND
+//
+//      code is null / missing
+//
+// Therefore:
+//
+//      Farm:
+//          code < 0
+//          EXCLUDED
+//
+//      Animal:
+//          code > 0
+//          EXCLUDED
+//
+//      Asset with assetCode:
+//          EXCLUDED
+//
+//      Standalone asset:
+//          code = null/missing
+//          assetCode = null/missing
+//          INCLUDED
+//
+// MongoDB _id is preserved for every record.
 //
 // ==========================================================
 
@@ -36,19 +62,17 @@ const Dairy =
 
 
 // ==========================================================
-// GET DAIRIES FOR DAIRY DASHBOARD
+// GET DAIRIES FOR DASHBOARD
 // ==========================================================
 //
-// Returns active Dairy Farm records.
+// Returns ALL active Dairy Farm records.
 //
-// IMPORTANT:
+// FARM RULE:
 //
-// This specifically retrieves:
+//      code < 0
 //
-//      recordType = "farm"
-//
-// It does NOT mix animals or structures into the main
-// Dairy Farms list.
+// Every active Dairy document with a negative numeric code
+// is treated as a Dairy Farm.
 //
 // ==========================================================
 
@@ -59,9 +83,11 @@ exports.getDairiesForDashboard =
             await Dairy
                 .find({
 
-                    recordType: "farm",
+                    status: "active",
 
-                    status: "active"
+                    code: {
+                        $lt: 0
+                    }
 
                 })
                 .sort({
@@ -81,42 +107,42 @@ exports.getDairiesForDashboard =
 // GET STANDALONE ASSETS
 // ==========================================================
 //
-// Returns standalone structures/assets.
+// Returns ALL active standalone Dairy records.
 //
-// CANONICAL DEFINITION
+// STANDALONE ASSET RULE:
+//
+//      assetCode = null / missing
+//
+// AND
+//
+//      code = null / missing
+//
+// IMPORTANT
 // ----------------------------------------------------------
 //
-// Standalone asset:
+// We deliberately do NOT use:
 //
-//      recordType = "structure"
-//      code       = null
-//      assetCode  = null
+//      recordType: "structure"
 //
-// Examples may include:
+// The identity of a standalone asset is determined by the
+// absence of BOTH assetCode and code.
 //
-//      machine
-//      equipment
-//      tool
-//      building
-//      cowshed
-//      milkingParlour
-//      hayShed
-//      waterSystem
-//      fencing
-//      vehicle
-//      generator
-//      solarSystem
-//      feedStore
-//      feeds
-//      room
-//      agroStore
-//      other
+// MongoDB:
 //
-// IMPORTANT:
+//      field: null
 //
-// _id is preserved because the frontend uses it for:
+// matches both:
 //
-//      /dairy/:id
+//      field === null
+//
+// and documents where the field does not exist.
+//
+// Therefore:
+//
+//      assetCode: null
+//      code: null
+//
+// means the document lacks both identifiers.
 //
 // ==========================================================
 
@@ -127,13 +153,11 @@ exports.getStandaloneAssets =
             await Dairy
                 .find({
 
-                    recordType: "structure",
-
-                    code: null,
+                    status: "active",
 
                     assetCode: null,
 
-                    status: "active"
+                    code: null
 
                 })
                 .sort({
@@ -153,13 +177,14 @@ exports.getStandaloneAssets =
 // GET DAIRY DASHBOARD DATA
 // ==========================================================
 //
-// Convenience method.
+// Convenience method for the dashboard controller.
 //
-// Retrieves everything required by:
+// Retrieves:
 //
-//      views/admin.ejs
+//      dairies
+//      standaloneAssets
 //
-// This keeps the controller clean.
+// in parallel.
 //
 // Returned object:
 //
@@ -179,13 +204,14 @@ exports.getDairyDashboardData =
 
             standaloneAssets
 
-        ] = await Promise.all([
+        ] =
+            await Promise.all([
 
-            exports.getDairiesForDashboard(),
+                exports.getDairiesForDashboard(),
 
-            exports.getStandaloneAssets()
+                exports.getStandaloneAssets()
 
-        ]);
+            ]);
 
 
         return {
