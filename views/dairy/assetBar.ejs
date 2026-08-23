@@ -30,7 +30,14 @@ CLASSIFICATION:
 ----------------------------------------------------------
 
 Animals:
+    code > 0
+    OR
     recordType === "animal"
+
+    IMPORTANT:
+    recordType === "animal" alone is NOT enough.
+    The asset must have a POSITIVE code OR an
+    animal recordType.
 
 Cow Shades:
     roomNumber > 0
@@ -96,17 +103,40 @@ function isMissing(value) {
 
    An animal is identified by:
 
+       code > 0
+
+   OR
+
        recordType === "animal"
 
-   The comparison is made case-insensitively.
+   IMPORTANT:
+   ----------------------------------------------------------
+   recordType === "animal" alone is NOT sufficient.
+
+   The asset must satisfy at least one of:
+
+       1. Positive code
+       2. recordType === "animal"
+
+   The recordType comparison is case-insensitive.
 ========================================================== */
 
 const animalDairies =
     availableAssets.filter(asset => {
 
-        return (
+        const hasPositiveCode =
+            !isMissing(asset.code) &&
+            Number(asset.code) > 0;
+
+
+        const hasAnimalRecordType =
             typeof asset.recordType === "string" &&
-            asset.recordType.toLowerCase() === "animal"
+            asset.recordType.toLowerCase() === "animal";
+
+
+        return (
+            hasPositiveCode ||
+            hasAnimalRecordType
         );
 
     });
@@ -1407,18 +1437,10 @@ const isCurrentFarm =
         function openAssetBar() {
 
 
-            /*
-             * Always begin on Animals.
-             */
-
             setCategory(
                 "animals"
             );
 
-
-            /*
-             * Close farm switcher when opening.
-             */
 
             if (assignedFarmList) {
 
@@ -1437,10 +1459,6 @@ const isCurrentFarm =
 
             }
 
-
-            /*
-             * Activate sidebar.
-             */
 
             assetBar.classList.add(
                 "is-open"
@@ -1481,10 +1499,6 @@ const isCurrentFarm =
 
             }
 
-
-            /*
-             * Prevent background page scrolling.
-             */
 
             document.documentElement.classList.add(
                 "asset-bar-component--open"
@@ -1539,10 +1553,6 @@ const isCurrentFarm =
 
             }
 
-
-            /*
-             * Close farm selector.
-             */
 
             if (assignedFarmList) {
 
