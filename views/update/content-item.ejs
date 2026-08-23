@@ -8,7 +8,7 @@ FILE:
     views/update/content-item.ejs
 
 PURPOSE:
-    Reusable CARD for one content item belonging to a
+    Reusable CARD for one storage content item belonging to a
     Room or AgroStore.
 
 IMPORTANT:
@@ -21,11 +21,41 @@ IMPORTANT:
 
     The card may display ANY storage content item.
 
-    The update form is provided by:
+--------------------------------------------------------------
+CONTENT ITEM ROUTE
+--------------------------------------------------------------
 
-        content-item-update.ejs
+    POST /dairy/:contentItemId/:dwellNumber
 
-STOCK UPDATE ARCHITECTURE:
+IMPORTANT:
+
+    :contentItemId
+        = ID of the actual content item
+
+    :dwellNumber
+        = dwellNumber stored on the content item
+
+    The farm ID is NOT part of this route.
+
+--------------------------------------------------------------
+STORAGE RELATIONSHIP
+--------------------------------------------------------------
+
+    FARM
+       |
+       | assetCode === farm.code
+       |
+       v
+    AGROSTORE
+       |
+       | roomNumber === item.dwellNumber
+       |
+       v
+    CONTENT ITEM
+
+--------------------------------------------------------------
+STOCK UPDATE ARCHITECTURE
+--------------------------------------------------------------
 
     item.stockUpdates[]
 
@@ -37,21 +67,14 @@ Each update contains:
     recordedBy
     recordedAt
 
-
 CURRENT STOCK:
 
     item.quantity
-
 
 LATEST STOCK UPDATE:
 
     latestStockUpdate.recordedBy
     latestStockUpdate.recordedAt
-
-
-STOCK UPDATE POST:
-
-    POST /dairy/:dairyId/:contentItemId
 
 ==============================================================
 */
@@ -69,6 +92,42 @@ const currentStorage =
 
 const currentDairy =
     dairy || {};
+
+
+/* ============================================================
+   CONTENT ITEM ID
+============================================================ */
+
+const contentItemId =
+    contentItem._id
+        ? String(
+            contentItem._id
+        )
+        : "";
+
+
+/* ============================================================
+   DWELL NUMBER
+============================================================ */
+
+const dwellNumber =
+    contentItem.dwellNumber !== null &&
+    contentItem.dwellNumber !== undefined
+        ? String(
+            contentItem.dwellNumber
+        )
+        : "";
+
+
+/* ============================================================
+   STOCK UPDATE POST ROUTE
+============================================================ */
+
+const stockUpdateAction =
+    contentItemId &&
+    dwellNumber
+        ? `/dairy/${encodeURIComponent(contentItemId)}/${encodeURIComponent(dwellNumber)}`
+        : "";
 
 
 /* ============================================================
@@ -153,8 +212,7 @@ const itemCode =
 --------------------------------------------------------------
 The item remains a STORAGE CONTENT ITEM.
 
-These flags are only used to describe the item.
-They do NOT turn this EJS into a feed item.
+These flags only describe the item.
 --------------------------------------------------------------
 */
 
@@ -1377,7 +1435,7 @@ const stockUpdateImages =
 
      THIS IS AN INCLUDE.
 
-     THE UPDATE FORM IS INCLUDED SEPARATELY BELOW.
+     THE UPDATE FORM IS INCLUDED SEPARATELY.
 ============================================================= -->
 
 <div class="storage-content-item-page">
@@ -1796,19 +1854,6 @@ const stockUpdateImages =
 
             <!-- ==================================================
                  UPDATE FORM INCLUDE
-
-                 IMPORTANT:
-
-                 There is NO itemIsFeed condition here.
-
-                 There is NO storageType condition here.
-
-                 This card always provides the separate
-                 content-item-update include.
-
-                 The update include posts to:
-
-                 /dairy/:dairyId/:contentItemId
             ================================================== -->
 
             <%- include(
@@ -1821,7 +1866,16 @@ const stockUpdateImages =
                         currentStorage,
 
                     item:
-                        contentItem
+                        contentItem,
+
+                    contentItemId:
+                        contentItemId,
+
+                    dwellNumber:
+                        dwellNumber,
+
+                    stockUpdateAction:
+                        stockUpdateAction
                 }
             ) %>
 
