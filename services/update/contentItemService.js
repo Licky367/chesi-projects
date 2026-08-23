@@ -2,44 +2,38 @@
 // services/update/contentItemService.js
 // ==========================================================
 //
-// STORAGE CONTENT CARD SERVICE
+// STORAGE CONTENT ITEM SERVICE
 //
 // ROUTE
 // ----------------------------------------------------------
 //
 //     /dairy/:contentItemId/:dwellNumber
 //
+// IDENTIFICATION
+// ----------------------------------------------------------
+//
+//     contentItemId
+//         = MongoDB _id of the CONTENT ITEM
+//
+//     dwellNumber
+//         = dwellNumber belonging to that CONTENT ITEM
+//
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// contentItemId
-//     = MongoDB _id of the storage CONTENT ITEM
+// The CONTENT ITEM itself is the primary record.
 //
-// dwellNumber
-//     = roomNumber of the storage facility
+// We DO NOT:
 //
-// RELATIONSHIP
-// ----------------------------------------------------------
+//     • resolve a Dairy Farm from assetCode
+//     • require a farm lookup
+//     • use dairy.code to identify the item
+//     • require a parent farm to exist
 //
-// CONTENT ITEM
-//     contentItem._id
-//         |
-//         |
-//     contentItem.assetCode
-//         |
-//         v
-// DAIRY FARM
-//     farm.code
-//         |
-//         |
-//     storage.assetCode
-//         |
-//         v
-// STORAGE FACILITY / AGROSTORE
-//     storage.roomNumber
-//         |
-//         |
-//     contentItem.dwellNumber
+// The item is found directly using:
+//
+//     _id
+//     dwellNumber
 //
 // ==========================================================
 
@@ -52,11 +46,7 @@ const Dairy =
 
 
 // ==========================================================
-// HELPER
-// ==========================================================
-//
-// Check MongoDB ObjectId.
-//
+// OBJECT ID VALIDATION
 // ==========================================================
 
 function isValidObjectId(
@@ -71,11 +61,7 @@ function isValidObjectId(
 
 
 // ==========================================================
-// HELPER
-// ==========================================================
-//
-// Parse dwellNumber.
-//
+// DWELL NUMBER
 // ==========================================================
 
 function parseDwellNumber(
@@ -101,18 +87,7 @@ function parseDwellNumber(
 
 
 // ==========================================================
-// HELPER
-// ==========================================================
-//
-// Get latest stock update.
-//
-// IMPORTANT
-// ----------------------------------------------------------
-//
-// Latest means the update with the newest recordedAt.
-//
-// It does NOT depend on array position.
-//
+// LATEST STOCK UPDATE
 // ==========================================================
 
 function getLatestStockUpdate(
@@ -138,6 +113,7 @@ function getLatestStockUpdate(
                 update =>
                     update
             )
+            .slice()
             .sort(
                 (a, b) => {
 
@@ -171,11 +147,7 @@ function getLatestStockUpdate(
 
 
 // ==========================================================
-// HELPER
-// ==========================================================
-//
-// Prepare content item.
-//
+// PREPARE CONTENT ITEM
 // ==========================================================
 
 function prepareContentItem(
@@ -189,12 +161,6 @@ function prepareContentItem(
     }
 
 
-    const latestStockUpdate =
-        getLatestStockUpdate(
-            item
-        );
-
-
     const object =
         typeof item.toObject === "function"
 
@@ -202,7 +168,15 @@ function prepareContentItem(
                 virtuals: true
             })
 
-            : item;
+            : {
+                ...item
+            };
+
+
+    const latestStockUpdate =
+        getLatestStockUpdate(
+            object
+        );
 
 
     return {
@@ -217,17 +191,21 @@ function prepareContentItem(
 
 
 // ==========================================================
-// HELPER
+// NORMALIZE IMAGES
 // ==========================================================
 //
-// Convert uploaded files into values suitable for the
-// stockUpdates.images array.
+// Multer files may contain:
 //
-// Supports common multer properties.
+//     path
+//     filename
+//     location
+//     url
+//
+// We store a simple usable representation.
 //
 // ==========================================================
 
-function prepareImages(
+function normalizeImages(
     files
 ) {
 
@@ -251,11 +229,14 @@ function prepareImages(
                 }
 
 
-                /*
-                --------------------------------------------------
-                If the upload middleware already provides a URL.
-                --------------------------------------------------
-                */
+                if (
+                    file.location
+                ) {
+
+                    return file.location;
+
+                }
+
 
                 if (
                     file.url
@@ -266,27 +247,6 @@ function prepareImages(
                 }
 
 
-                /*
-                --------------------------------------------------
-                Cloudinary-style secure URL.
-                --------------------------------------------------
-                */
-
-                if (
-                    file.secure_url
-                ) {
-
-                    return file.secure_url;
-
-                }
-
-
-                /*
-                --------------------------------------------------
-                Local uploaded file path.
-                --------------------------------------------------
-                */
-
                 if (
                     file.path
                 ) {
@@ -295,32 +255,6 @@ function prepareImages(
 
                 }
 
-
-                /*
-                --------------------------------------------------
-                Multer destination + filename.
-                --------------------------------------------------
-                */
-
-                if (
-                    file.destination &&
-                    file.filename
-                ) {
-
-                    return (
-                        file.destination +
-                        "/" +
-                        file.filename
-                    );
-
-                }
-
-
-                /*
-                --------------------------------------------------
-                Filename fallback.
-                --------------------------------------------------
-                */
 
                 if (
                     file.filename
@@ -344,301 +278,6 @@ function prepareImages(
 
 
 // ==========================================================
-// HELPER
-// ==========================================================
-//
-// Resolve the farm belonging to a content item.
-//
-// RELATIONSHIP:
-//
-//     contentItem.assetCode === farm.code
-//
-// ==========================================================
-
-async function resolveFarmFromContentItem(
-    item
-) {
-
-    if (
-        !item
-    ) {
-
-        const error =
-            new Error(
-                "Content item was not supplied."
-            );
-
-        error.status = 404;
-
-        throw error;
-
-    }
-
-
-    if (
-        item.assetCode === null ||
-        item.assetCode === undefined
-    ) {
-
-        const error =
-            new Error(
-                "Storage content item does not belong to a Dairy Farm."
-            );
-
-        error.status = 404;
-
-        throw error;
-
-    }
-
-
-    const farmCode =
-        Number(
-            item.assetCode
-        );
-
-
-    if (
-        !Number.isInteger(
-            farmCode
-        ) ||
-        farmCode >= 0
-    ) {
-
-        const error =
-            new Error(
-                "Storage content item has an invalid parent Dairy Farm code."
-            );
-
-        error.status = 400;
-
-        throw error;
-
-    }
-
-
-    const dairy =
-        await Dairy.findOne({
-
-            code:
-                farmCode,
-
-            /*
-            ------------------------------------------------------
-            Farm identity.
-            ------------------------------------------------------
-            */
-
-            recordType:
-                "farm",
-
-            status:
-                "active"
-
-        })
-        .lean({
-
-            virtuals:
-                true
-
-        });
-
-
-    if (!dairy) {
-
-        const error =
-            new Error(
-                "Dairy farm belonging to this content item was not found."
-            );
-
-        error.status = 404;
-
-        throw error;
-
-    }
-
-
-    return dairy;
-
-}
-
-
-// ==========================================================
-// HELPER
-// ==========================================================
-//
-// Resolve storage facility.
-//
-// RELATIONSHIP:
-//
-//     storage.assetCode === farm.code
-//
-// AND:
-//
-//     storage.roomNumber === item.dwellNumber
-//
-// ==========================================================
-
-async function resolveStorageFromContentItem(
-    item,
-    dairy,
-    dwellNumber
-) {
-
-    const requestedDwellNumber =
-        parseDwellNumber(
-            dwellNumber
-        );
-
-
-    if (
-        requestedDwellNumber === null
-    ) {
-
-        const error =
-            new Error(
-                "Invalid dwell number."
-            );
-
-        error.status = 400;
-
-        throw error;
-
-    }
-
-
-    /*
-    ------------------------------------------------------------
-    The content item itself must point to the requested
-    storage location.
-    ------------------------------------------------------------
-    */
-
-    if (
-        Number(item.dwellNumber) !==
-        requestedDwellNumber
-    ) {
-
-        const error =
-            new Error(
-                "Content item does not belong to the requested storage location."
-            );
-
-        error.status = 409;
-
-        throw error;
-
-    }
-
-
-    /*
-    ------------------------------------------------------------
-    Find the storage facility.
-
-    Farm ownership:
-        storage.assetCode === dairy.code
-
-    Storage identity:
-        storage.roomNumber === dwellNumber
-
-    Storage must NOT itself be another content item.
-    ------------------------------------------------------------
-    */
-
-    const storage =
-        await Dairy.findOne({
-
-            recordType:
-                "structure",
-
-            type: {
-                $in: [
-                    "room",
-                    "agroStore"
-                ]
-            },
-
-            assetCode:
-                dairy.code,
-
-            roomNumber:
-                requestedDwellNumber,
-
-            dwellNumber:
-                null,
-
-            status:
-                "active"
-
-        })
-        .lean({
-
-            virtuals:
-                true
-
-        });
-
-
-    if (!storage) {
-
-        const error =
-            new Error(
-                "Storage facility for this content item was not found."
-            );
-
-        error.status = 404;
-
-        throw error;
-
-    }
-
-
-    /*
-    ------------------------------------------------------------
-    Explicit relationship verification.
-    ------------------------------------------------------------
-    */
-
-    if (
-        Number(storage.assetCode) !==
-        Number(dairy.code)
-    ) {
-
-        const error =
-            new Error(
-                "Storage facility does not belong to the Dairy Farm."
-            );
-
-        error.status = 409;
-
-        throw error;
-
-    }
-
-
-    if (
-        Number(storage.roomNumber) !==
-        Number(item.dwellNumber)
-    ) {
-
-        const error =
-            new Error(
-                "Content item does not belong to the resolved storage facility."
-            );
-
-        error.status = 409;
-
-        throw error;
-
-    }
-
-
-    return storage;
-
-}
-
-
-// ==========================================================
 // GET CONTENT ITEM
 // ==========================================================
 //
@@ -646,11 +285,12 @@ async function resolveStorageFromContentItem(
 //
 //     GET /dairy/:contentItemId/:dwellNumber
 //
-// contentItemId
-//     = content item _id
+// LOOKUP:
 //
-// dwellNumber
-//     = storage roomNumber
+//     _id           = contentItemId
+//     dwellNumber   = dwellNumber
+//
+// NO FARM LOOKUP.
 //
 // ==========================================================
 
@@ -710,7 +350,15 @@ exports.getContentItem =
 
 
         // ==================================================
-        // GET CONTENT ITEM
+        // FIND THE CONTENT ITEM DIRECTLY
+        // ==================================================
+        //
+        // THIS IS THE IMPORTANT PART.
+        //
+        // contentItemId IS THE ITEM ID.
+        //
+        // We do not convert it into a Dairy Farm ID.
+        //
         // ==================================================
 
         const item =
@@ -718,9 +366,6 @@ exports.getContentItem =
 
                 _id:
                     contentItemId,
-
-                recordType:
-                    "structure",
 
                 dwellNumber:
                     requestedDwellNumber,
@@ -746,6 +391,10 @@ exports.getContentItem =
             });
 
 
+        // ==================================================
+        // ITEM NOT FOUND
+        // ==================================================
+
         if (!item) {
 
             const error =
@@ -761,28 +410,6 @@ exports.getContentItem =
 
 
         // ==================================================
-        // RESOLVE FARM
-        // ==================================================
-
-        const dairy =
-            await resolveFarmFromContentItem(
-                item
-            );
-
-
-        // ==================================================
-        // RESOLVE STORAGE
-        // ==================================================
-
-        const storage =
-            await resolveStorageFromContentItem(
-                item,
-                dairy,
-                requestedDwellNumber
-            );
-
-
-        // ==================================================
         // PREPARE ITEM
         // ==================================================
 
@@ -795,12 +422,21 @@ exports.getContentItem =
         // ==================================================
         // RETURN
         // ==================================================
+        //
+        // There is deliberately NO dairy farm lookup.
+        //
+        // The content item itself is the record requested
+        // by the URL.
+        //
+        // ==================================================
 
         return {
 
-            dairy,
+            dairy:
+                null,
 
-            storage,
+            storage:
+                null,
 
             item:
                 preparedItem,
@@ -819,32 +455,32 @@ exports.getContentItem =
 // UPDATE CONTENT ITEM
 // ==========================================================
 //
-// THIS FUNCTION FIXES:
-//
-//     contentItemService.updateContentItem is not a function
-//
 // ROUTE:
 //
 //     POST /dairy/:contentItemId/:dwellNumber
 //
-// RELATIONSHIP:
+// PARAMETERS:
 //
 //     contentItemId
-//         |
-//         v
-//     contentItem._id
-//         |
-//         | assetCode
-//         v
-//     farm.code
-//         |
-//         | assetCode
-//         v
-//     storage.roomNumber
-//         |
-//         | dwellNumber
-//         v
-//     contentItem
+//     dwellNumber
+//
+// BODY:
+//
+//     quantity
+//     unit
+//     stockUpdateNote
+//
+// FILES:
+//
+//     images
+//
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// The item is located directly by:
+//
+//     _id
+//     dwellNumber
 //
 // ==========================================================
 
@@ -908,15 +544,7 @@ exports.updateContentItem =
 
 
         // ==================================================
-        // GET CONTENT ITEM
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // contentItemId is the item's _id.
-        //
-        // It is NOT the farm ID.
-        //
+        // FIND CONTENT ITEM DIRECTLY
         // ==================================================
 
         const item =
@@ -924,9 +552,6 @@ exports.updateContentItem =
 
                 _id:
                     contentItemId,
-
-                recordType:
-                    "structure",
 
                 dwellNumber:
                     requestedDwellNumber,
@@ -936,6 +561,10 @@ exports.updateContentItem =
 
             });
 
+
+        // ==================================================
+        // ITEM NOT FOUND
+        // ==================================================
 
         if (!item) {
 
@@ -952,76 +581,14 @@ exports.updateContentItem =
 
 
         // ==================================================
-        // RESOLVE FARM
+        // REQUEST DATA
         // ==================================================
 
-        const dairy =
-            await resolveFarmFromContentItem(
-                item
-            );
-
-
-        // ==================================================
-        // RESOLVE STORAGE
-        // ==================================================
-
-        const storage =
-            await resolveStorageFromContentItem(
-                item,
-                dairy,
-                requestedDwellNumber
-            );
-
-
-        // ==================================================
-        // NORMALIZE DATA
-        // ==================================================
-
-        const quantityValue =
+        const rawQuantity =
             data &&
-            data.quantity !== null &&
-            data.quantity !== undefined &&
-            String(data.quantity).trim() !== ""
-                ? Number(
-                    data.quantity
-                )
+            data.quantity !== undefined
+                ? data.quantity
                 : null;
-
-
-        if (
-            quantityValue !== null &&
-            !Number.isFinite(
-                quantityValue
-            )
-        ) {
-
-            const error =
-                new Error(
-                    "Invalid quantity."
-                );
-
-            error.status = 400;
-
-            throw error;
-
-        }
-
-
-        if (
-            quantityValue !== null &&
-            quantityValue < 0
-        ) {
-
-            const error =
-                new Error(
-                    "Quantity cannot be negative."
-                );
-
-            error.status = 400;
-
-            throw error;
-
-        }
 
 
         const unit =
@@ -1043,11 +610,42 @@ exports.updateContentItem =
 
 
         // ==================================================
-        // PREPARE IMAGES
+        // VALIDATE QUANTITY
         // ==================================================
 
-        const preparedImages =
-            prepareImages(
+        const quantity =
+            Number(
+                rawQuantity
+            );
+
+
+        if (
+            rawQuantity === null ||
+            rawQuantity === "" ||
+            !Number.isFinite(
+                quantity
+            ) ||
+            quantity < 0
+        ) {
+
+            const error =
+                new Error(
+                    "A valid non-negative quantity is required."
+                );
+
+            error.status = 400;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // NORMALIZE IMAGES
+        // ==================================================
+
+        const normalizedImages =
+            normalizeImages(
                 images
             );
 
@@ -1056,14 +654,8 @@ exports.updateContentItem =
         // UPDATE CURRENT STOCK
         // ==================================================
 
-        if (
-            quantityValue !== null
-        ) {
-
-            item.quantity =
-                quantityValue;
-
-        }
+        item.quantity =
+            quantity;
 
 
         // ==================================================
@@ -1071,7 +663,7 @@ exports.updateContentItem =
         // ==================================================
 
         if (
-            unit !== ""
+            unit
         ) {
 
             item.unit =
@@ -1081,20 +673,35 @@ exports.updateContentItem =
 
 
         // ==================================================
-        // CREATE STOCK UPDATE RECORD
+        // STOCK UPDATE HISTORY
         // ==================================================
+        //
+        // Keep the existing history.
+        //
+        // Each submission creates a new stock update record.
+        //
+        // ==================================================
+
+        if (
+            !Array.isArray(
+                item.stockUpdates
+            )
+        ) {
+
+            item.stockUpdates =
+                [];
+
+        }
+
 
         const stockUpdate = {
 
-            quantity:
-                quantityValue !== null
-                    ? quantityValue
-                    : item.quantity,
+            quantity,
 
             stockUpdateNote,
 
             images:
-                preparedImages,
+                normalizedImages,
 
             recordedAt:
                 new Date()
@@ -1120,46 +727,31 @@ exports.updateContentItem =
 
 
         // ==================================================
-        // OPTIONAL USER NAME
+        // SAVE USER NAME IF SUPPORTED
         // ==================================================
         //
-        // Only set this if the schema accepts it.
+        // Only add this field when the schema allows it.
         //
-        // Since existing architecture uses recordedBy,
-        // the authenticated User remains the source of identity.
+        // Mongoose strict mode will otherwise ignore unknown
+        // fields.
         //
         // ==================================================
 
         if (
-            userName &&
-            typeof userName === "string"
+            userName
         ) {
 
-            /*
-            --------------------------------------------------
-            Do not force userName into the document unless
-            the schema defines such a field.
-            --------------------------------------------------
-            */
+            stockUpdate.userName =
+                String(
+                    userName
+                );
 
         }
 
 
         // ==================================================
-        // PUSH STOCK UPDATE
+        // ADD STOCK UPDATE
         // ==================================================
-
-        if (
-            !Array.isArray(
-                item.stockUpdates
-            )
-        ) {
-
-            item.stockUpdates =
-                [];
-
-        }
-
 
         item.stockUpdates.push(
             stockUpdate
@@ -1174,10 +766,10 @@ exports.updateContentItem =
 
 
         // ==================================================
-        // GET UPDATED ITEM
+        // PREPARE RESULT
         // ==================================================
 
-        const updatedItem =
+        const savedItem =
             await Dairy.findById(
                 item._id
             )
@@ -1198,13 +790,9 @@ exports.updateContentItem =
             });
 
 
-        // ==================================================
-        // PREPARE UPDATED ITEM
-        // ==================================================
-
         const preparedItem =
             prepareContentItem(
-                updatedItem
+                savedItem
             );
 
 
@@ -1214,9 +802,11 @@ exports.updateContentItem =
 
         return {
 
-            dairy,
+            success:
+                true,
 
-            storage,
+            message:
+                "Stock updated successfully.",
 
             item:
                 preparedItem,
@@ -1226,12 +816,11 @@ exports.updateContentItem =
                     ? preparedItem.latestStockUpdate
                     : null,
 
-            /*
-            --------------------------------------------------
-            Redirect back to the exact content-item URL.
-            --------------------------------------------------
-            */
-
+            // IMPORTANT:
+            //
+            // Redirect back to the EXACT route that was
+            // submitted.
+            //
             redirect:
                 `/dairy/${contentItemId}/${requestedDwellNumber}`
 
@@ -1241,13 +830,12 @@ exports.updateContentItem =
 
 
 // ==========================================================
-// GET CONTENT ITEMS FOR A STORAGE FACILITY
+// GET STORAGE CONTENT ITEMS
 // ==========================================================
 //
-// This method is retained for pages that already know:
+// This method is retained for other parts of the application.
 //
-//     dairyId
-//     storageId
+// It requires a known storage facility.
 //
 // ==========================================================
 
@@ -1257,10 +845,6 @@ exports.getStorageContentItems =
         storageId
     }) {
 
-
-        // ==================================================
-        // VALIDATE DAIRY ID
-        // ==================================================
 
         if (
             !isValidObjectId(
@@ -1280,10 +864,6 @@ exports.getStorageContentItems =
         }
 
 
-        // ==================================================
-        // VALIDATE STORAGE ID
-        // ==================================================
-
         if (
             !isValidObjectId(
                 storageId
@@ -1302,70 +882,11 @@ exports.getStorageContentItems =
         }
 
 
-        // ==================================================
-        // GET FARM
-        // ==================================================
-
-        const dairy =
-            await Dairy.findOne({
-
-                _id:
-                    dairyId,
-
-                recordType:
-                    "farm",
-
-                status:
-                    "active"
-
-            })
-            .lean({
-
-                virtuals:
-                    true
-
-            });
-
-
-        if (!dairy) {
-
-            const error =
-                new Error(
-                    "Dairy farm not found."
-                );
-
-            error.status = 404;
-
-            throw error;
-
-        }
-
-
-        // ==================================================
-        // GET STORAGE
-        // ==================================================
-
         const storage =
             await Dairy.findOne({
 
                 _id:
                     storageId,
-
-                recordType:
-                    "structure",
-
-                type: {
-                    $in: [
-                        "room",
-                        "agroStore"
-                    ]
-                },
-
-                assetCode:
-                    dairy.code,
-
-                dwellNumber:
-                    null,
 
                 status:
                     "active"
@@ -1393,18 +914,11 @@ exports.getStorageContentItems =
         }
 
 
-        // ==================================================
-        // GET CONTENT
-        // ==================================================
-
         const items =
             await Dairy.find({
 
-                recordType:
-                    "structure",
-
                 assetCode:
-                    dairy.code,
+                    storage.assetCode,
 
                 dwellNumber:
                     storage.roomNumber,
@@ -1430,10 +944,6 @@ exports.getStorageContentItems =
             });
 
 
-        // ==================================================
-        // PREPARE ITEMS
-        // ==================================================
-
         const preparedItems =
             items.map(
                 item =>
@@ -1443,13 +953,10 @@ exports.getStorageContentItems =
             );
 
 
-        // ==================================================
-        // RETURN
-        // ==================================================
-
         return {
 
-            dairy,
+            dairy:
+                null,
 
             storage,
 
@@ -1462,11 +969,10 @@ exports.getStorageContentItems =
 
 
 // ==========================================================
-// GET ALL FARM STORAGE CONTENT
+// GET FARM STORAGE CONTENT
 // ==========================================================
 //
-// Retrieves every active content item belonging to a farm's
-// storage facilities.
+// Retained for compatibility with other services/pages.
 //
 // ==========================================================
 
@@ -1475,10 +981,6 @@ exports.getFarmStorageContent =
         dairyId
     }) {
 
-
-        // ==================================================
-        // VALIDATE ID
-        // ==================================================
 
         if (
             !isValidObjectId(
@@ -1498,23 +1000,10 @@ exports.getFarmStorageContent =
         }
 
 
-        // ==================================================
-        // GET FARM
-        // ==================================================
-
         const dairy =
-            await Dairy.findOne({
-
-                _id:
-                    dairyId,
-
-                recordType:
-                    "farm",
-
-                status:
-                    "active"
-
-            })
+            await Dairy.findById(
+                dairyId
+            )
             .lean({
 
                 virtuals:
@@ -1527,7 +1016,7 @@ exports.getFarmStorageContent =
 
             const error =
                 new Error(
-                    "Dairy farm not found."
+                    "Dairy record not found."
                 );
 
             error.status = 404;
@@ -1537,15 +1026,8 @@ exports.getFarmStorageContent =
         }
 
 
-        // ==================================================
-        // GET CONTENT
-        // ==================================================
-
         const items =
             await Dairy.find({
-
-                recordType:
-                    "structure",
 
                 assetCode:
                     dairy.code,
@@ -1576,10 +1058,6 @@ exports.getFarmStorageContent =
             });
 
 
-        // ==================================================
-        // PREPARE CONTENT
-        // ==================================================
-
         const preparedItems =
             items.map(
                 item =>
@@ -1588,10 +1066,6 @@ exports.getFarmStorageContent =
                     )
             );
 
-
-        // ==================================================
-        // RETURN
-        // ==================================================
 
         return {
 
@@ -1608,20 +1082,12 @@ exports.getFarmStorageContent =
 // ==========================================================
 // GET LATEST STOCK UPDATE
 // ==========================================================
-//
-// Convenience method.
-//
-// ==========================================================
 
 exports.getLatestStockUpdate =
     async function ({
         itemId
     }) {
 
-
-        // ==================================================
-        // VALIDATE ID
-        // ==================================================
 
         if (
             !isValidObjectId(
@@ -1640,10 +1106,6 @@ exports.getLatestStockUpdate =
 
         }
 
-
-        // ==================================================
-        // GET ITEM
-        // ==================================================
 
         const item =
             await Dairy.findById(
@@ -1678,10 +1140,6 @@ exports.getLatestStockUpdate =
         }
 
 
-        // ==================================================
-        // RETURN LATEST
-        // ==================================================
-
         return getLatestStockUpdate(
             item
         );
@@ -1692,13 +1150,22 @@ exports.getLatestStockUpdate =
 // ==========================================================
 // EXPORTS
 // ==========================================================
-//
-// updateContentItem is explicitly exported above.
-//
-// Therefore:
-//
-//     contentItemService.updateContentItem
-//
-// is now a valid function.
-//
-// ==========================================================
+
+module.exports = {
+
+    getContentItem:
+        exports.getContentItem,
+
+    updateContentItem:
+        exports.updateContentItem,
+
+    getStorageContentItems:
+        exports.getStorageContentItems,
+
+    getFarmStorageContent:
+        exports.getFarmStorageContent,
+
+    getLatestStockUpdate:
+        exports.getLatestStockUpdate
+
+};
