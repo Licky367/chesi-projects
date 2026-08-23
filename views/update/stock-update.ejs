@@ -1,0 +1,1904 @@
+<%
+/*
+==============================================================
+STOCK UPDATE FEED CARD
+==============================================================
+
+FILE:
+    views/update/partials/stock-update.ejs
+
+PURPOSE:
+    Displays an animal-feed / AgroStore stock update as a
+    feed card.
+
+EXPECTED VARIABLE:
+
+    update
+
+EXPECTED STRUCTURE:
+
+    update.type === "animalFeed"
+
+    update.animalFeed = {
+
+        feedId,
+        storageId,
+        storageName,
+
+        feedName,
+        feedType,
+
+        roomNumber,
+
+        previousQuantity,
+        quantity,
+        quantityChange,
+
+        unit,
+
+        stockUpdateNote,
+
+        images,
+
+        recordedBy,
+        recordedByName,
+        recordedByImage,
+        recordedAt
+
+    }
+
+AUTHOR FALLBACKS:
+
+    animalFeed.recordedByName
+        → update.userName
+        → "Unknown user"
+
+    animalFeed.recordedByImage
+        → update.userImage
+        → fallback avatar
+
+TIME:
+
+    animalFeed.recordedAt
+        → update.createdAt
+
+==============================================================
+*/
+
+
+/* ============================================================
+   SAFE UPDATE
+============================================================ */
+
+const stockUpdate =
+    update || {};
+
+
+/* ============================================================
+   SAFE ANIMAL FEED DATA
+============================================================ */
+
+const animalFeed =
+    stockUpdate.animalFeed || {};
+
+
+/* ============================================================
+   AUTHOR NAME
+============================================================ */
+
+const updaterName =
+
+    animalFeed.recordedByName &&
+    String(
+        animalFeed.recordedByName
+    ).trim()
+
+        ? String(
+            animalFeed.recordedByName
+        ).trim()
+
+        :
+
+    stockUpdate.userName &&
+    String(
+        stockUpdate.userName
+    ).trim()
+
+        ? String(
+            stockUpdate.userName
+        ).trim()
+
+        :
+
+    "Unknown user";
+
+
+/* ============================================================
+   AUTHOR IMAGE
+============================================================ */
+
+const updaterImage =
+
+    animalFeed.recordedByImage &&
+    String(
+        animalFeed.recordedByImage
+    ).trim()
+
+        ? String(
+            animalFeed.recordedByImage
+        ).trim()
+
+        :
+
+    stockUpdate.userImage &&
+    String(
+        stockUpdate.userImage
+    ).trim()
+
+        ? String(
+            stockUpdate.userImage
+        ).trim()
+
+        :
+
+    "";
+
+
+/* ============================================================
+   AUTHOR INITIAL
+============================================================ */
+
+const updaterInitial =
+
+    updaterName
+        .charAt(0)
+        .toUpperCase() || "U";
+
+
+/* ============================================================
+   STOCK NAME
+============================================================ */
+
+const feedName =
+
+    animalFeed.feedName &&
+    String(
+        animalFeed.feedName
+    ).trim()
+
+        ? String(
+            animalFeed.feedName
+        ).trim()
+
+        : "Unnamed Stock";
+
+
+/* ============================================================
+   STORAGE NAME
+============================================================ */
+
+const storageName =
+
+    animalFeed.storageName &&
+    String(
+        animalFeed.storageName
+    ).trim()
+
+        ? String(
+            animalFeed.storageName
+        ).trim()
+
+        : "AgroStore";
+
+
+/* ============================================================
+   UNIT
+============================================================ */
+
+const stockUnit =
+
+    animalFeed.unit &&
+    String(
+        animalFeed.unit
+    ).trim()
+
+        ? String(
+            animalFeed.unit
+        ).trim()
+
+        : "";
+
+
+/* ============================================================
+   PREVIOUS QUANTITY
+============================================================ */
+
+const previousQuantity =
+    Number(
+        animalFeed.previousQuantity
+    );
+
+
+/* ============================================================
+   CURRENT QUANTITY
+============================================================ */
+
+const currentQuantity =
+    Number(
+        animalFeed.quantity
+    );
+
+
+/* ============================================================
+   QUANTITY CHANGE
+============================================================ */
+
+let quantityChange =
+    Number(
+        animalFeed.quantityChange
+    );
+
+
+/*
+--------------------------------------------------------------
+If quantityChange is unavailable or invalid, calculate it.
+--------------------------------------------------------------
+*/
+
+if (
+    !Number.isFinite(
+        quantityChange
+    )
+) {
+
+    if (
+        Number.isFinite(
+            previousQuantity
+        ) &&
+        Number.isFinite(
+            currentQuantity
+        )
+    ) {
+
+        quantityChange =
+            currentQuantity -
+            previousQuantity;
+
+    } else {
+
+        quantityChange =
+            0;
+
+    }
+
+}
+
+
+/* ============================================================
+   QUANTITY CHANGE CLASS
+============================================================ */
+
+let quantityChangeClass =
+    "stock-change-neutral";
+
+
+let quantityChangeSymbol =
+    "";
+
+
+if (
+    quantityChange > 0
+) {
+
+    quantityChangeClass =
+        "stock-change-increase";
+
+    quantityChangeSymbol =
+        "+";
+
+} else if (
+    quantityChange < 0
+) {
+
+    quantityChangeClass =
+        "stock-change-decrease";
+
+    quantityChangeSymbol =
+        "−";
+
+}
+
+
+/* ============================================================
+   QUANTITY DISPLAY
+============================================================ */
+
+function formatQuantity(
+    value
+) {
+
+    if (
+        !Number.isFinite(
+            Number(value)
+        )
+    ) {
+
+        return "—";
+
+    }
+
+
+    return Number(
+        value
+    ).toLocaleString(
+        undefined,
+        {
+            maximumFractionDigits: 3
+        }
+    );
+
+}
+
+
+/* ============================================================
+   QUANTITY CHANGE DISPLAY
+============================================================ */
+
+const quantityChangeDisplay =
+
+    quantityChange === 0
+
+        ? "0"
+
+        :
+
+    quantityChange > 0
+
+        ? "+" +
+          formatQuantity(
+              quantityChange
+          )
+
+        :
+
+          "−" +
+          formatQuantity(
+              Math.abs(
+                  quantityChange
+              )
+          );
+
+
+/* ============================================================
+   STOCK NOTE
+============================================================ */
+
+const stockNote =
+
+    animalFeed.stockUpdateNote &&
+    String(
+        animalFeed.stockUpdateNote
+    ).trim()
+
+        ? String(
+            animalFeed.stockUpdateNote
+        ).trim()
+
+        : "";
+
+
+/* ============================================================
+   STOCK IMAGES
+============================================================ */
+
+const stockImages =
+
+    Array.isArray(
+        animalFeed.images
+    )
+
+        ? animalFeed.images.filter(
+            function(image) {
+
+                return !!image;
+
+            }
+        )
+
+        : [];
+
+
+/* ============================================================
+   IMAGE URL HELPER
+============================================================ */
+
+function getImageUrl(
+    image
+) {
+
+    if (
+        typeof image === "string"
+    ) {
+
+        return image;
+
+    }
+
+
+    if (
+        image &&
+        typeof image === "object"
+    ) {
+
+        return (
+
+            image.url ||
+
+            image.path ||
+
+            image.location ||
+
+            ""
+
+        );
+
+    }
+
+
+    return "";
+
+}
+
+
+/* ============================================================
+   RECORDED AT
+============================================================ */
+
+const recordedAt =
+
+    animalFeed.recordedAt ||
+
+    stockUpdate.createdAt ||
+
+    null;
+
+
+/* ============================================================
+   FORMATTED DATE
+============================================================ */
+
+let recordedAtText =
+    "";
+
+
+if (
+    recordedAt
+) {
+
+    const recordedDate =
+        new Date(
+            recordedAt
+        );
+
+
+    if (
+        !Number.isNaN(
+            recordedDate.getTime()
+        )
+    ) {
+
+        recordedAtText =
+            recordedDate.toLocaleString(
+                undefined,
+                {
+
+                    day:
+                        "numeric",
+
+                    month:
+                        "short",
+
+                    year:
+                        "numeric",
+
+                    hour:
+                        "numeric",
+
+                    minute:
+                        "2-digit"
+
+                }
+            );
+
+    }
+
+}
+
+
+/* ============================================================
+   FEED TYPE
+============================================================ */
+
+const feedType =
+
+    animalFeed.feedType &&
+    String(
+        animalFeed.feedType
+    ).trim()
+
+        ? String(
+            animalFeed.feedType
+        ).trim()
+
+        : "";
+
+
+/* ============================================================
+   IMAGE COUNT
+============================================================ */
+
+const imageCount =
+    stockImages.length;
+
+%>
+
+
+<!-- ==========================================================
+     STOCK UPDATE FEED CARD
+========================================================== -->
+
+<article
+    class="stock-update-card"
+    data-update-id="<%= stockUpdate._id || "" %>"
+>
+
+
+    <!-- ======================================================
+         HEADER
+    ======================================================= -->
+
+    <header class="stock-update-header">
+
+
+        <!-- ==================================================
+             AUTHOR AVATAR
+        =================================================== -->
+
+        <div class="stock-update-author-avatar">
+
+
+            <% if (updaterImage) { %>
+
+                <img
+                    src="<%= updaterImage %>"
+                    alt="<%= updaterName %>"
+                    class="stock-update-author-image"
+                    loading="lazy"
+                >
+
+            <% } else { %>
+
+                <span class="stock-update-author-initial">
+
+                    <%= updaterInitial %>
+
+                </span>
+
+            <% } %>
+
+
+        </div>
+
+
+        <!-- ==================================================
+             AUTHOR INFORMATION
+        =================================================== -->
+
+        <div class="stock-update-author-information">
+
+
+            <div class="stock-update-author-line">
+
+                <span class="stock-update-author-name">
+
+                    <%= updaterName %>
+
+                </span>
+
+
+                <span class="stock-update-author-action">
+
+                    updated stock
+
+                </span>
+
+            </div>
+
+
+            <time
+                class="stock-update-time"
+                datetime="<%= recordedAt || "" %>"
+            >
+
+                <%= recordedAtText || "Recently" %>
+
+            </time>
+
+
+        </div>
+
+
+        <!-- ==================================================
+             MORE BUTTON
+        =================================================== -->
+
+        <button
+            type="button"
+            class="stock-update-more"
+            aria-label="More options"
+        >
+
+            <span></span>
+            <span></span>
+            <span></span>
+
+        </button>
+
+
+    </header>
+
+
+    <!-- ======================================================
+         STOCK CONTENT
+    ======================================================= -->
+
+    <div class="stock-update-content">
+
+
+        <!-- ==================================================
+             STOCK LABEL
+        =================================================== -->
+
+        <div class="stock-update-label">
+
+
+            <span class="stock-update-label-icon">
+
+                🌾
+
+            </span>
+
+
+            <span>
+
+                STOCK UPDATED
+
+            </span>
+
+
+        </div>
+
+
+        <!-- ==================================================
+             STOCK NAME
+        =================================================== -->
+
+        <h2 class="stock-update-name">
+
+            <%= feedName %>
+
+        </h2>
+
+
+        <!-- ==================================================
+             STORAGE
+        =================================================== -->
+
+        <div class="stock-update-storage">
+
+
+            <span class="stock-update-storage-icon">
+
+                ▣
+
+            </span>
+
+
+            <span>
+
+                <%= storageName %>
+
+            </span>
+
+
+        </div>
+
+
+        <% if (feedType) { %>
+
+            <div class="stock-update-type">
+
+                <%= feedType %>
+
+            </div>
+
+        <% } %>
+
+
+        <!-- ==================================================
+             QUANTITY PANEL
+        =================================================== -->
+
+        <section class="stock-update-quantity-panel">
+
+
+            <div class="stock-update-quantity-label">
+
+                STOCK
+
+            </div>
+
+
+            <div class="stock-update-quantity-row">
+
+
+                <div class="stock-update-quantity-value">
+
+
+                    <span>
+
+                        <%= formatQuantity(
+                            previousQuantity
+                        ) %>
+
+                    </span>
+
+
+                    <% if (stockUnit) { %>
+
+                        <small>
+
+                            <%= stockUnit %>
+
+                        </small>
+
+                    <% } %>
+
+
+                </div>
+
+
+                <div class="stock-update-arrow">
+
+                    →
+
+                </div>
+
+
+                <div class="stock-update-quantity-value stock-update-current">
+
+
+                    <span>
+
+                        <%= formatQuantity(
+                            currentQuantity
+                        ) %>
+
+                    </span>
+
+
+                    <% if (stockUnit) { %>
+
+                        <small>
+
+                            <%= stockUnit %>
+
+                        </small>
+
+                    <% } %>
+
+
+                </div>
+
+
+            </div>
+
+
+            <!-- ==============================================
+                 QUANTITY DIFFERENCE
+            =============================================== -->
+
+            <div
+                class="
+                    stock-update-change
+                    <%= quantityChangeClass %>
+                "
+            >
+
+                <span class="stock-update-change-value">
+
+                    <%= quantityChangeDisplay %>
+
+                </span>
+
+
+                <% if (stockUnit) { %>
+
+                    <span class="stock-update-change-unit">
+
+                        <%= stockUnit %>
+
+                    </span>
+
+                <% } %>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==================================================
+             STOCK NOTE
+        =================================================== -->
+
+        <% if (stockNote) { %>
+
+            <div class="stock-update-note">
+
+                <p>
+
+                    <%= stockNote %>
+
+                </p>
+
+            </div>
+
+        <% } %>
+
+
+        <!-- ==================================================
+             STOCK IMAGES
+        =================================================== -->
+
+        <% if (imageCount > 0) { %>
+
+            <div
+                class="
+                    stock-update-images
+                    stock-update-images-count-<%= Math.min(
+                        imageCount,
+                        4
+                    ) %>
+                "
+            >
+
+
+                <% stockImages
+                    .slice(0, 4)
+                    .forEach(
+                        function(image, index)
+                    {
+
+                        const imageUrl =
+                            getImageUrl(
+                                image
+                            );
+
+
+                        if (!imageUrl) {
+                            return;
+                        }
+
+                %>
+
+
+                    <div class="stock-update-image-wrapper">
+
+
+                        <img
+                            src="<%= imageUrl %>"
+                            alt="Stock update image <%= index + 1 %>"
+                            class="stock-update-image"
+                            loading="lazy"
+                        >
+
+
+                        <% if (
+                            index === 3 &&
+                            imageCount > 4
+                        ) { %>
+
+                            <div class="stock-update-more-images">
+
+                                +<%= imageCount - 4 %>
+
+                            </div>
+
+                        <% } %>
+
+
+                    </div>
+
+
+                <% }); %>
+
+
+            </div>
+
+        <% } %>
+
+
+    </div>
+
+
+    <!-- ======================================================
+         FOOTER
+    ======================================================= -->
+
+    <footer class="stock-update-footer">
+
+
+        <div class="stock-update-footer-status">
+
+
+            <span
+                class="stock-update-footer-dot"
+            ></span>
+
+
+            <span>
+
+                AgroStore stock update
+
+            </span>
+
+
+        </div>
+
+
+        <% if (
+            animalFeed.roomNumber !== null &&
+            animalFeed.roomNumber !== undefined
+        ) { %>
+
+            <span class="stock-update-room">
+
+                Room <%= animalFeed.roomNumber %>
+
+            </span>
+
+        <% } %>
+
+
+    </footer>
+
+
+</article>
+
+
+<style>
+
+/* ============================================================
+   STOCK UPDATE CARD
+============================================================ */
+
+.stock-update-card{
+
+    width:100%;
+
+    box-sizing:border-box;
+
+    overflow:hidden;
+
+    background:#ffffff;
+
+    border:1px solid #dfe9e2;
+
+    border-radius:19px;
+
+    box-shadow:
+        0 8px 28px rgba(28,67,43,.055),
+        0 2px 7px rgba(28,67,43,.035);
+
+}
+
+
+/* ============================================================
+   HEADER
+============================================================ */
+
+.stock-update-header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:11px;
+
+    padding:16px 17px 13px;
+
+}
+
+
+/* ============================================================
+   AUTHOR AVATAR
+============================================================ */
+
+.stock-update-author-avatar{
+
+    width:43px;
+
+    height:43px;
+
+    flex:none;
+
+    overflow:hidden;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:50%;
+
+    background:#e5f1e8;
+
+    border:2px solid #d7e9dc;
+
+}
+
+
+.stock-update-author-image{
+
+    width:100%;
+
+    height:100%;
+
+    display:block;
+
+    object-fit:cover;
+
+}
+
+
+.stock-update-author-initial{
+
+    color:#2d7042;
+
+    font-size:15px;
+
+    line-height:1;
+
+    font-weight:850;
+
+}
+
+
+/* ============================================================
+   AUTHOR INFORMATION
+============================================================ */
+
+.stock-update-author-information{
+
+    min-width:0;
+
+    flex:1;
+
+}
+
+
+.stock-update-author-line{
+
+    display:flex;
+
+    align-items:baseline;
+
+    flex-wrap:wrap;
+
+    gap:5px;
+
+    line-height:1.3;
+
+}
+
+
+.stock-update-author-name{
+
+    color:#23392b;
+
+    font-size:12px;
+
+    font-weight:850;
+
+}
+
+
+.stock-update-author-action{
+
+    color:#7b8980;
+
+    font-size:11px;
+
+    font-weight:550;
+
+}
+
+
+.stock-update-time{
+
+    display:block;
+
+    margin-top:3px;
+
+    color:#9aa59e;
+
+    font-size:9px;
+
+    line-height:1.2;
+
+    font-weight:600;
+
+}
+
+
+/* ============================================================
+   MORE BUTTON
+============================================================ */
+
+.stock-update-more{
+
+    width:28px;
+
+    height:28px;
+
+    flex:none;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:2px;
+
+    border:0;
+
+    background:transparent;
+
+    border-radius:50%;
+
+    cursor:pointer;
+
+}
+
+
+.stock-update-more span{
+
+    width:3px;
+
+    height:3px;
+
+    display:block;
+
+    border-radius:50%;
+
+    background:#8a978f;
+
+}
+
+
+.stock-update-more:active{
+
+    background:#eef5f0;
+
+}
+
+
+/* ============================================================
+   CONTENT
+============================================================ */
+
+.stock-update-content{
+
+    padding:5px 17px 18px;
+
+}
+
+
+/* ============================================================
+   STOCK LABEL
+============================================================ */
+
+.stock-update-label{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    margin-bottom:7px;
+
+    color:#34784b;
+
+    font-size:9px;
+
+    line-height:1.2;
+
+    font-weight:850;
+
+    letter-spacing:.09em;
+
+}
+
+
+.stock-update-label-icon{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:13px;
+
+}
+
+
+/* ============================================================
+   STOCK NAME
+============================================================ */
+
+.stock-update-name{
+
+    margin:0;
+
+    color:#203629;
+
+    font-size:20px;
+
+    line-height:1.25;
+
+    font-weight:850;
+
+    letter-spacing:-.025em;
+
+    word-break:break-word;
+
+}
+
+
+/* ============================================================
+   STORAGE
+============================================================ */
+
+.stock-update-storage{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:5px;
+
+    margin-top:5px;
+
+    color:#68776e;
+
+    font-size:11px;
+
+    line-height:1.4;
+
+    font-weight:650;
+
+}
+
+
+.stock-update-storage-icon{
+
+    color:#559267;
+
+    font-size:11px;
+
+}
+
+
+/* ============================================================
+   FEED TYPE
+============================================================ */
+
+.stock-update-type{
+
+    display:inline-flex;
+
+    margin-top:8px;
+
+    padding:4px 8px;
+
+    color:#5d7765;
+
+    background:#f0f7f2;
+
+    border:1px solid #e0ede3;
+
+    border-radius:999px;
+
+    font-size:8px;
+
+    line-height:1;
+
+    font-weight:800;
+
+    letter-spacing:.05em;
+
+    text-transform:uppercase;
+
+}
+
+
+/* ============================================================
+   QUANTITY PANEL
+============================================================ */
+
+.stock-update-quantity-panel{
+
+    margin-top:16px;
+
+    padding:16px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #f3f9f4 0%,
+            #edf6ef 100%
+        );
+
+    border:1px solid #dceade;
+
+    border-radius:15px;
+
+}
+
+
+/* ============================================================
+   QUANTITY LABEL
+============================================================ */
+
+.stock-update-quantity-label{
+
+    margin-bottom:12px;
+
+    color:#78907f;
+
+    font-size:8px;
+
+    line-height:1;
+
+    font-weight:850;
+
+    letter-spacing:.1em;
+
+    text-transform:uppercase;
+
+}
+
+
+/* ============================================================
+   QUANTITY ROW
+============================================================ */
+
+.stock-update-quantity-row{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:13px;
+
+}
+
+
+/* ============================================================
+   QUANTITY VALUE
+============================================================ */
+
+.stock-update-quantity-value{
+
+    min-width:0;
+
+    display:flex;
+
+    align-items:baseline;
+
+    justify-content:center;
+
+    gap:4px;
+
+    color:#50695a;
+
+    font-size:19px;
+
+    line-height:1.2;
+
+    font-weight:750;
+
+    word-break:break-word;
+
+}
+
+
+.stock-update-quantity-value small{
+
+    color:#789080;
+
+    font-size:9px;
+
+    font-weight:750;
+
+}
+
+
+.stock-update-current{
+
+    color:#275e3b;
+
+    font-weight:900;
+
+}
+
+
+/* ============================================================
+   ARROW
+============================================================ */
+
+.stock-update-arrow{
+
+    flex:none;
+
+    color:#7a9a83;
+
+    font-size:18px;
+
+    font-weight:600;
+
+}
+
+
+/* ============================================================
+   CHANGE
+============================================================ */
+
+.stock-update-change{
+
+    display:flex;
+
+    align-items:baseline;
+
+    justify-content:center;
+
+    gap:4px;
+
+    margin-top:10px;
+
+    font-size:11px;
+
+    line-height:1.2;
+
+    font-weight:850;
+
+}
+
+
+.stock-update-change-value{
+
+    font-size:13px;
+
+}
+
+
+.stock-update-change-unit{
+
+    font-size:9px;
+
+    font-weight:750;
+
+}
+
+
+/* ============================================================
+   CHANGE — INCREASE
+============================================================ */
+
+.stock-change-increase{
+
+    color:#2f7d48;
+
+}
+
+
+/* ============================================================
+   CHANGE — DECREASE
+============================================================ */
+
+.stock-change-decrease{
+
+    color:#8a6551;
+
+}
+
+
+/* ============================================================
+   CHANGE — NO CHANGE
+============================================================ */
+
+.stock-change-neutral{
+
+    color:#718078;
+
+}
+
+
+/* ============================================================
+   NOTE
+============================================================ */
+
+.stock-update-note{
+
+    margin-top:15px;
+
+    padding:0 2px;
+
+}
+
+
+.stock-update-note p{
+
+    margin:0;
+
+    color:#4e6055;
+
+    font-size:12px;
+
+    line-height:1.7;
+
+    font-weight:500;
+
+    white-space:pre-wrap;
+
+    word-break:break-word;
+
+}
+
+
+/* ============================================================
+   IMAGES
+============================================================ */
+
+.stock-update-images{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0,1fr)
+        );
+
+    gap:7px;
+
+    margin-top:15px;
+
+}
+
+
+.stock-update-image-wrapper{
+
+    position:relative;
+
+    min-width:0;
+
+    overflow:hidden;
+
+    background:#edf2ee;
+
+    border-radius:12px;
+
+    aspect-ratio:1 / 1;
+
+}
+
+
+.stock-update-image{
+
+    width:100%;
+
+    height:100%;
+
+    display:block;
+
+    object-fit:cover;
+
+}
+
+
+/* ============================================================
+   SINGLE IMAGE
+============================================================ */
+
+.stock-update-images-count-1{
+
+    grid-template-columns:1fr;
+
+}
+
+
+.stock-update-images-count-1
+.stock-update-image-wrapper{
+
+    aspect-ratio:16 / 9;
+
+    max-height:390px;
+
+}
+
+
+/* ============================================================
+   THREE IMAGES
+============================================================ */
+
+.stock-update-images-count-3
+.stock-update-image-wrapper:first-child{
+
+    grid-column:span 2;
+
+    aspect-ratio:16 / 8;
+
+}
+
+
+/* ============================================================
+   MORE IMAGES OVERLAY
+============================================================ */
+
+.stock-update-more-images{
+
+    position:absolute;
+
+    inset:0;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:#ffffff;
+
+    background:
+        rgba(
+            24,
+            54,
+            34,
+            .48
+        );
+
+    font-size:22px;
+
+    font-weight:850;
+
+}
+
+
+/* ============================================================
+   FOOTER
+============================================================ */
+
+.stock-update-footer{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:10px;
+
+    padding:11px 17px;
+
+    background:#fafcfb;
+
+    border-top:1px solid #e6ede8;
+
+}
+
+
+/* ============================================================
+   FOOTER STATUS
+============================================================ */
+
+.stock-update-footer-status{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    color:#829087;
+
+    font-size:9px;
+
+    line-height:1.2;
+
+    font-weight:700;
+
+}
+
+
+.stock-update-footer-dot{
+
+    width:6px;
+
+    height:6px;
+
+    flex:none;
+
+    border-radius:50%;
+
+    background:#4b9862;
+
+    box-shadow:
+        0 0 0 3px #e8f3eb;
+
+}
+
+
+/* ============================================================
+   ROOM
+============================================================ */
+
+.stock-update-room{
+
+    color:#98a39c;
+
+    font-size:8px;
+
+    line-height:1.2;
+
+    font-weight:700;
+
+}
+
+
+/* ============================================================
+   MOBILE
+============================================================ */
+
+@media (max-width:520px){
+
+    .stock-update-header{
+
+        padding:14px 14px 11px;
+
+    }
+
+
+    .stock-update-content{
+
+        padding:
+            5px
+            14px
+            16px;
+
+    }
+
+
+    .stock-update-footer{
+
+        padding:
+            10px
+            14px;
+
+    }
+
+
+    .stock-update-author-avatar{
+
+        width:40px;
+
+        height:40px;
+
+    }
+
+
+    .stock-update-author-name{
+
+        font-size:11px;
+
+    }
+
+
+    .stock-update-author-action{
+
+        font-size:10px;
+
+    }
+
+
+    .stock-update-name{
+
+        font-size:18px;
+
+    }
+
+
+    .stock-update-quantity-panel{
+
+        padding:14px;
+
+    }
+
+
+    .stock-update-quantity-row{
+
+        gap:9px;
+
+    }
+
+
+    .stock-update-quantity-value{
+
+        font-size:17px;
+
+    }
+
+
+    .stock-update-arrow{
+
+        font-size:16px;
+
+    }
+
+}
+
+
+/* ============================================================
+   SMALL MOBILE
+============================================================ */
+
+@media (max-width:380px){
+
+    .stock-update-quantity-row{
+
+        gap:7px;
+
+    }
+
+
+    .stock-update-quantity-value{
+
+        font-size:15px;
+
+    }
+
+
+    .stock-update-quantity-value small{
+
+        font-size:8px;
+
+    }
+
+
+    .stock-update-change-value{
+
+        font-size:12px;
+
+    }
+
+}
+
+</style>
