@@ -186,45 +186,6 @@ const safeLatestStockUpdate =
         }) %>
 
 
-
-        <!-- =============================================
-             CONTENT ITEM UPDATE FORM
-        ============================================== -->
-
-        <%- include("update/content-item-update", {
-
-            dairy:
-                dairy,
-
-            storage:
-                safeStorage,
-
-            item:
-                safeContentItem,
-
-            user:
-                user,
-
-            successMessage:
-                safeSuccessMessage,
-
-            pageError:
-                safePageError,
-
-            latestStockUpdate:
-                safeLatestStockUpdate,
-
-            contentItemUpdateAction:
-                typeof contentItemUpdateAction !== "undefined"
-                    ? contentItemUpdateAction
-                    : "/dairy/" +
-                      dairy._id +
-                      "/" +
-                      safeContentItem._id
-
-        }) %>
-
-
     <% } %>
 
 
