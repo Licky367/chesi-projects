@@ -92,6 +92,76 @@ router.get(
 
 
 // ==========================================================
+// BOOLEAN MANAGEMENT
+// ==========================================================
+//
+// BOOLEAN UI:
+//
+//     views/update/boolean.ejs
+//
+// IMPORTANT:
+// ----------------------------------------------------------
+//
+// boolean.ejs is included inside:
+//
+//     views/update.ejs
+//
+// It is NOT rendered by its own route.
+//
+// The parent update page obtains its Boolean data
+// through the controller/service.
+//
+// TOGGLE:
+//
+//     PUT /dairy/:animalId/boolean
+//
+// BODY:
+//
+//     {
+//         field: "someBooleanField",
+//         value: true
+//     }
+//
+// ==========================================================
+
+router.put(
+    "/dairy/:animalId/boolean",
+    isAuth,
+    controller.updateBoolean
+);
+
+
+// ==========================================================
+// BOOLEAN FIELD DEFINITIONS
+// ==========================================================
+//
+// Optional endpoint.
+//
+// GET:
+//
+//     /dairy/boolean/fields
+//
+// Used only if the frontend needs to retrieve
+// the Boolean field definitions independently.
+//
+// IMPORTANT:
+// ----------------------------------------------------------
+//
+// This MUST remain before:
+//
+//     /dairy/:id
+//
+// Otherwise "boolean" could be interpreted as :id.
+// ==========================================================
+
+router.get(
+    "/dairy/boolean/fields",
+    isAuth,
+    controller.getBooleanFields
+);
+
+
+// ==========================================================
 // DAIRY PROFILE
 // ==========================================================
 //
@@ -148,41 +218,6 @@ router.get(
 //
 //     /dairy/:contentItemId/:dwellNumber
 //
-// PARAMETERS:
-//
-//     :contentItemId
-//         = MongoDB _id of the actual content item
-//
-//     :dwellNumber
-//         = dwellNumber of the actual content item
-//
-// BODY:
-//
-//     quantity
-//     unit
-//     stockUpdateNote
-//
-// FILES:
-//
-//     images
-//
-// RELATIONSHIP RESOLUTION:
-//
-//     contentItem.dwellNumber
-//             =
-//     agroStore.roomNumber
-//
-//     agroStore.assetCode
-//             =
-//     dairyFarm.code
-//
-// IMPORTANT:
-//
-// The Dairy farm ID is NOT supplied in this route.
-//
-// The AgroStore ID is NOT supplied in this route.
-//
-// The service resolves those relationships.
 // ==========================================================
 
 router.post(
