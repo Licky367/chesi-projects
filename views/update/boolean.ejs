@@ -6,119 +6,102 @@
        views/update/boolean.ejs
 
    PURPOSE:
-       INCLUDE COMPONENT.
+       INCLUDE ONLY.
 
-       This file is NOT rendered independently.
+   PARENT:
+       views/update.ejs
 
-       Parent:
-           views/update.ejs
+   DATA RECEIVED FROM PARENT:
+       booleanAnimals
+       booleanFields
 
-   DISPLAY:
+   ELIGIBLE ANIMAL:
    ----------------------------------------------------------
-       FIRST CARD:
-           Boolean selector.
-
-           Tapping it opens a dropdown containing all
-           Boolean fields supplied by the controller.
-
-       REMAINING CARDS:
-           Eligible female animals.
-
-   ELIGIBILITY:
-   ----------------------------------------------------------
-       Positive EVEN code
+       1. code > 0 AND code is even
 
        OR
 
-       gender === "female"
+       2. gender === female
 
-   TOGGLE ROUTE:
+   FIRST CARD:
    ----------------------------------------------------------
-       PUT /dairy/:animalId/boolean
+       Boolean selector.
 
-   BODY:
-       {
-           field: "...",
-           value: true
-       }
+       Tapping it opens/closes the available Boolean fields.
 
+   REMAINING CARDS:
+   ----------------------------------------------------------
+       One card per eligible female animal.
+
+       Each Boolean field can be toggled independently.
+
+   IMPORTANT:
+   ----------------------------------------------------------
+       This file MUST NOT expect:
+
+           animals
+           dairies
+           fields
+
+       directly from Express.
+
+       The parent passes:
+
+           booleanAnimals
+           booleanFields
+
+       and they are normalized below.
 ========================================================== */
 
 
 /* ==========================================================
-   SAFE DATA
+   SAFE INPUTS
 ========================================================== */
 
-const booleanAnimals =
-    Array.isArray(animals)
-        ? animals
-        : (
-            Array.isArray(booleanAnimalsData)
-                ? booleanAnimalsData
-                : []
-        );
+const animals =
+    Array.isArray(booleanAnimals)
+        ? booleanAnimals
+        : [];
 
 
-const booleanFields =
-    Array.isArray(fields)
-        ? fields
-        : (
-            Array.isArray(booleanFieldsData)
-                ? booleanFieldsData
-                : []
-        );
+const fields =
+    Array.isArray(booleanFields)
+        ? booleanFields
+        : [];
 
 
 /* ==========================================================
-   FILTER ELIGIBLE ANIMALS
+   SAFE DAIRY ID
 ========================================================== */
 
-const eligibleAnimals =
-    booleanAnimals.filter(
-        function (animal) {
-
-            if (!animal) {
-
-                return false;
-
-            }
+const currentDairyId =
+    dairy && dairy._id
+        ? String(dairy._id)
+        : "";
 
 
-            const numericCode =
-                Number(
-                    animal.code
-                );
+/* ==========================================================
+   FIELD LABEL
+========================================================== */
 
+function booleanLabel(field) {
 
-            const positiveEvenCode =
-                Number.isInteger(
-                    numericCode
-                ) &&
-                numericCode > 0 &&
-                numericCode % 2 === 0;
+    return String(field || "")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, function (letter) {
+            return letter.toUpperCase();
+        });
 
-
-            const isFemale =
-                String(
-                    animal.gender || ""
-                )
-                .trim()
-                .toLowerCase() === "female";
-
-
-            return (
-                positiveEvenCode ||
-                isFemale
-            );
-
-        }
-    );
+}
 
 %>
 
 
 <section
-    class="boolean-animal-strip"
+    class="update-boolean-section"
     aria-label="Female animal boolean management"
 >
 
@@ -127,11 +110,11 @@ const eligibleAnimals =
          HEADER
     ======================================================= -->
 
-    <div class="boolean-animal-header">
+    <div class="update-boolean-header">
 
-        <div class="boolean-animal-heading">
+        <div class="update-boolean-heading">
 
-            <span class="boolean-animal-kicker">
+            <span class="update-boolean-kicker">
                 ANIMAL MANAGEMENT
             </span>
 
@@ -142,9 +125,10 @@ const eligibleAnimals =
         </div>
 
 
-        <div class="boolean-animal-description">
+        <div class="update-boolean-description">
 
-            Select a property, then tap an animal to update it.
+            Tap the first card to choose a Boolean field,
+            then toggle it directly on any eligible animal.
 
         </div>
 
@@ -157,54 +141,59 @@ const eligibleAnimals =
     ======================================================= -->
 
     <div
-        class="boolean-animal-scroll"
+        class="update-boolean-scroll"
         role="list"
-        aria-label="Female animals"
+        aria-label="Female animal Boolean controls"
     >
 
 
         <!-- ==================================================
-             BOOLEAN SELECTOR CARD
+             FIRST CARD — BOOLEAN SELECTOR
         =================================================== -->
 
         <div
-            class="boolean-animal-card boolean-selector-card"
+            class="update-boolean-card update-boolean-selector-card"
             role="listitem"
         >
-
-            <div class="boolean-card-accent"></div>
 
 
             <button
                 type="button"
-                class="boolean-selector-button"
-                id="booleanSelectorButton"
+                class="update-boolean-selector"
+                id="booleanFieldSelector"
                 aria-expanded="false"
                 aria-controls="booleanFieldDropdown"
             >
 
-                <span class="boolean-selector-icon">
+                <div class="update-boolean-selector-icon">
 
                     <i class="fas fa-sliders"></i>
 
-                </span>
+                </div>
 
 
-                <span class="boolean-selector-title">
-                    Boolean
-                </span>
+                <div class="update-boolean-selector-title">
+
+                    Boolean Fields
+
+                </div>
 
 
-                <span class="boolean-selector-subtitle">
-                    Select property
-                </span>
+                <div class="update-boolean-selector-text">
+
+                    Choose what to manage
+
+                </div>
 
 
-                <span class="boolean-selector-arrow">
+                <div class="update-boolean-selector-arrow">
+
                     <i class="fas fa-chevron-down"></i>
-                </span>
+
+                </div>
 
             </button>
+
 
 
             <!-- ==============================================
@@ -213,47 +202,47 @@ const eligibleAnimals =
 
             <div
                 id="booleanFieldDropdown"
-                class="boolean-field-dropdown"
+                class="update-boolean-dropdown"
                 hidden
             >
 
-                <div class="boolean-dropdown-title">
-                    Boolean Fields
-                </div>
+                <% if (fields.length > 0) { %>
+
+                    <% fields.forEach(function(field) { %>
+
+                        <button
+                            type="button"
+                            class="update-boolean-field-option"
+                            data-boolean-field="<%= field %>"
+                        >
+
+                            <span class="update-boolean-field-option-icon">
+
+                                <i class="fas fa-toggle-on"></i>
+
+                            </span>
 
 
-                <% if (booleanFields.length > 0) { %>
+                            <span class="update-boolean-field-option-label">
 
-                    <div class="boolean-field-list">
+                                <%= booleanLabel(field) %>
 
-                        <% booleanFields.forEach(
-                            function (field) {
-                        %>
+                            </span>
 
-                            <button
-                                type="button"
-                                class="boolean-field-option"
-                                data-field="<%= field %>"
-                            >
 
-                                <span>
-                                    <%= field %>
-                                </span>
+                            <span class="update-boolean-field-option-check">
 
-                                <i
-                                    class="fas fa-check"
-                                    aria-hidden="true"
-                                ></i>
+                                <i class="fas fa-check"></i>
 
-                            </button>
+                            </span>
 
-                        <% }); %>
+                        </button>
 
-                    </div>
+                    <% }); %>
 
                 <% } else { %>
 
-                    <div class="boolean-no-fields">
+                    <div class="update-boolean-no-fields">
 
                         No Boolean fields available.
 
@@ -268,11 +257,12 @@ const eligibleAnimals =
 
 
         <!-- ==================================================
-             ELIGIBLE ANIMAL CARDS
+             ELIGIBLE ANIMALS
         =================================================== -->
 
-        <% eligibleAnimals.forEach(
-            function (animal) {
+        <% animals.forEach(function(animal) { %>
+
+            <%
 
                 if (
                     !animal ||
@@ -284,12 +274,41 @@ const eligibleAnimals =
                 }
 
 
+                /* ============================================
+                   ANIMAL NAME
+                ============================================ */
+
                 const animalName =
                     String(
                         animal.name ||
                         "Unnamed Animal"
                     );
 
+
+                /* ============================================
+                   ANIMAL CODE
+                ============================================ */
+
+                const animalCode =
+                    Number(
+                        animal.code
+                    );
+
+
+                /* ============================================
+                   GENDER
+                ============================================ */
+
+                const animalGender =
+                    String(
+                        animal.gender ||
+                        ""
+                    );
+
+
+                /* ============================================
+                   IMAGE
+                ============================================ */
 
                 const animalImage =
                     animal.displayImage ||
@@ -302,20 +321,6 @@ const eligibleAnimals =
                         "&background=e8f0e5&color=47733f"
                     );
 
-
-                const animalCode =
-                    Number(
-                        animal.code
-                    );
-
-
-                const animalGender =
-                    animal.gender
-                        ? String(
-                            animal.gender
-                        )
-                        : "Female";
-
             %>
 
 
@@ -323,42 +328,62 @@ const eligibleAnimals =
                  ANIMAL CARD
             =============================================== -->
 
-            <div
-                class="boolean-animal-card animal-boolean-card"
+            <article
+                class="update-boolean-card update-boolean-animal-card"
                 role="listitem"
                 data-animal-id="<%= animal._id %>"
             >
 
-                <div class="boolean-card-accent"></div>
+
+                <!-- ==========================================
+                     CARD ACCENT
+                =========================================== -->
+
+                <div
+                    class="update-boolean-card-accent"
+                    aria-hidden="true"
+                ></div>
+
 
 
                 <!-- ==========================================
                      IMAGE
                 =========================================== -->
 
-                <div class="boolean-animal-image-wrap">
+                <div class="update-boolean-image-wrap">
 
                     <img
                         src="<%= animalImage %>"
                         alt="<%= animalName %>"
-                        class="boolean-animal-image"
+                        class="update-boolean-image"
                         loading="lazy"
                     >
 
 
                     <div
-                        class="boolean-animal-image-overlay"
+                        class="update-boolean-image-overlay"
                         aria-hidden="true"
                     ></div>
 
 
-                    <div class="boolean-animal-badge">
+                    <!-- FEMALE BADGE -->
+
+                    <div class="update-boolean-female-badge">
 
                         <i class="fas fa-venus"></i>
 
                         <span>
                             FEMALE
                         </span>
+
+                    </div>
+
+
+                    <!-- CODE -->
+
+                    <div class="update-boolean-code">
+
+                        #<%= animalCode %>
 
                     </div>
 
@@ -370,72 +395,143 @@ const eligibleAnimals =
                      CONTENT
                 =========================================== -->
 
-                <div class="boolean-animal-content">
+                <div class="update-boolean-content">
 
 
-                    <div class="boolean-animal-name">
+                    <!-- NAME -->
+
+                    <div class="update-boolean-name">
 
                         <%= animalName %>
 
                     </div>
 
 
-                    <div class="boolean-animal-meta">
 
-                        <span>
-                            <i class="fas fa-hashtag"></i>
-                            <%= animalCode %>
-                        </span>
+                    <!-- GENDER -->
 
+                    <div class="update-boolean-gender">
 
-                        <span>
-                            <i class="fas fa-venus"></i>
-                            <%= animalGender %>
-                        </span>
+                        <i class="fas fa-venus"></i>
+
+                        <%= animalGender || "Female" %>
 
                     </div>
 
 
-                    <!-- ======================================
-                         BOOLEAN VALUE
 
-                         Initially disabled until a Boolean
-                         field is selected.
+                    <!-- ======================================
+                         BOOLEAN CONTROLS
                     ======================================= -->
 
-                    <button
-                        type="button"
-                        class="boolean-toggle"
-                        disabled
-                        data-animal-id="<%= animal._id %>"
-                        aria-pressed="false"
-                    >
-
-                        <span class="boolean-toggle-label">
-                            Select property
-                        </span>
+                    <div class="update-boolean-controls">
 
 
-                        <span class="boolean-toggle-switch">
+                        <% if (fields.length > 0) { %>
 
-                            <span class="boolean-toggle-knob"></span>
+                            <% fields.forEach(function(field) { %>
 
-                        </span>
+                                <%
 
-                    </button>
+                                    const fieldValue =
+                                        Boolean(
+                                            animal[field]
+                                        );
+
+                                %>
+
+
+                                <button
+                                    type="button"
+                                    class="update-boolean-toggle <%= fieldValue ? "is-on" : "" %>"
+                                    data-animal-id="<%= animal._id %>"
+                                    data-boolean-field="<%= field %>"
+                                    data-boolean-value="<%= fieldValue %>"
+                                    aria-pressed="<%= fieldValue ? "true" : "false" %>"
+                                    title="<%= booleanLabel(field) %>"
+                                >
+
+                                    <span
+                                        class="update-boolean-toggle-label"
+                                    >
+                                        <%= booleanLabel(field) %>
+                                    </span>
+
+
+                                    <span
+                                        class="update-boolean-toggle-switch"
+                                        aria-hidden="true"
+                                    >
+
+                                        <span
+                                            class="update-boolean-toggle-knob"
+                                        ></span>
+
+                                    </span>
+
+                                </button>
+
+                            <% }); %>
+
+                        <% } else { %>
+
+                            <div class="update-boolean-empty">
+
+                                No Boolean controls.
+
+                            </div>
+
+                        <% } %>
+
+
+                    </div>
 
                 </div>
 
 
+                <!-- ==========================================
+                     BOTTOM LINE
+                =========================================== -->
+
                 <div
-                    class="boolean-card-bottom-line"
+                    class="update-boolean-bottom-line"
                     aria-hidden="true"
                 ></div>
 
-            </div>
-
+            </article>
 
         <% }); %>
+
+
+
+        <!-- ==================================================
+             NO ANIMALS
+        =================================================== -->
+
+        <% if (animals.length === 0) { %>
+
+            <div class="update-boolean-empty-card">
+
+                <div class="update-boolean-empty-card-icon">
+
+                    <i class="fas fa-cow"></i>
+
+                </div>
+
+
+                <strong>
+                    No eligible female animals
+                </strong>
+
+
+                <span>
+                    No positive-even-code or female animals
+                    are currently available.
+                </span>
+
+            </div>
+
+        <% } %>
 
 
     </div>
@@ -447,10 +543,10 @@ const eligibleAnimals =
 <style>
 
 /* ==========================================================
-   STRIP
+   SECTION
 ========================================================== */
 
-.boolean-animal-strip {
+.update-boolean-section {
 
     width: 100%;
 
@@ -473,17 +569,17 @@ const eligibleAnimals =
    HEADER
 ========================================================== */
 
-.boolean-animal-header {
+.update-boolean-header {
 
     padding:
         0
         3px
-        13px;
+        12px;
 
 }
 
 
-.boolean-animal-heading {
+.update-boolean-heading {
 
     display: flex;
 
@@ -492,12 +588,11 @@ const eligibleAnimals =
 }
 
 
-.boolean-animal-kicker {
+.update-boolean-kicker {
 
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 
-    color:
-        #b96a27;
+    color: #b96a27;
 
     font-size: 8px;
 
@@ -505,15 +600,12 @@ const eligibleAnimals =
 
     letter-spacing: 2px;
 
-    text-transform: uppercase;
-
 }
 
 
-.boolean-animal-heading strong {
+.update-boolean-heading strong {
 
-    color:
-        #26382d;
+    color: #26382d;
 
     font-size: 19px;
 
@@ -522,14 +614,15 @@ const eligibleAnimals =
 }
 
 
-.boolean-animal-description {
+.update-boolean-description {
+
+    max-width: 620px;
 
     margin-top: 4px;
 
-    color:
-        #778078;
+    color: #778078;
 
-    font-size: 12px;
+    font-size: 11px;
 
     line-height: 1.45;
 
@@ -540,7 +633,7 @@ const eligibleAnimals =
    SCROLL
 ========================================================== */
 
-.boolean-animal-scroll {
+.update-boolean-scroll {
 
     width: 100%;
 
@@ -553,20 +646,20 @@ const eligibleAnimals =
     overflow-y: visible;
 
     padding:
-        4px
+        5px
         5px
         12px;
 
     box-sizing: border-box;
 
-    -webkit-overflow-scrolling: touch;
-
     scrollbar-width: none;
+
+    -webkit-overflow-scrolling: touch;
 
 }
 
 
-.boolean-animal-scroll::-webkit-scrollbar {
+.update-boolean-scroll::-webkit-scrollbar {
 
     display: none;
 
@@ -577,7 +670,7 @@ const eligibleAnimals =
    CARD
 ========================================================== */
 
-.boolean-animal-card {
+.update-boolean-card {
 
     position: relative;
 
@@ -589,9 +682,9 @@ const eligibleAnimals =
 
     height: 197px;
 
-    flex-shrink: 0;
-
     overflow: visible;
+
+    flex-shrink: 0;
 
     box-sizing: border-box;
 
@@ -604,25 +697,32 @@ const eligibleAnimals =
     background:
         linear-gradient(
             145deg,
-            #ffffff,
+            #ffffff 0%,
             #fffdfa 58%,
-            #f3f7f0
+            #f3f7f0 100%
         );
 
     box-shadow:
         0 3px 9px
-        rgba(39,55,42,.065),
+        rgba(39, 55, 42, .065),
         0 10px 20px
-        rgba(74,86,47,.035);
+        rgba(74, 86, 47, .035);
 
 }
 
 
 /* ==========================================================
-   ACCENT
+   ANIMAL CARD
 ========================================================== */
 
-.boolean-card-accent {
+.update-boolean-animal-card {
+
+    overflow: hidden;
+
+}
+
+
+.update-boolean-card-accent {
 
     position: absolute;
 
@@ -632,7 +732,7 @@ const eligibleAnimals =
 
     width: 4px;
 
-    z-index: 10;
+    z-index: 5;
 
     border-radius:
         18px
@@ -652,25 +752,407 @@ const eligibleAnimals =
 
 
 /* ==========================================================
+   IMAGE
+========================================================== */
+
+.update-boolean-image-wrap {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 112px;
+
+    overflow: hidden;
+
+    border-radius:
+        18px
+        18px
+        0
+        0;
+
+    background:
+        #e8efe6;
+
+}
+
+
+.update-boolean-image {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+.update-boolean-image-overlay {
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(25,49,32,.43),
+            rgba(25,49,32,.04)
+        );
+
+}
+
+
+/* ==========================================================
+   FEMALE BADGE
+========================================================== */
+
+.update-boolean-female-badge {
+
+    position: absolute;
+
+    top: 8px;
+    left: 9px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    padding:
+        4px
+        7px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255,255,255,.88);
+
+    color:
+        #47724a;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: .8px;
+
+}
+
+
+.update-boolean-female-badge i {
+
+    color:
+        #b96825;
+
+}
+
+
+/* ==========================================================
+   CODE
+========================================================== */
+
+.update-boolean-code {
+
+    position: absolute;
+
+    right: 8px;
+    bottom: 8px;
+
+    padding:
+        4px
+        7px;
+
+    border-radius: 7px;
+
+    background:
+        rgba(255,255,255,.9);
+
+    color:
+        #47724a;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+}
+
+
+/* ==========================================================
+   CONTENT
+========================================================== */
+
+.update-boolean-content {
+
+    height: 82px;
+
+    padding:
+        8px
+        9px
+        6px
+        11px;
+
+    box-sizing: border-box;
+
+}
+
+
+.update-boolean-name {
+
+    overflow: hidden;
+
+    color:
+        #26352b;
+
+    font-size: 12px;
+
+    font-weight: 750;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+.update-boolean-gender {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    margin-top: 3px;
+
+    color:
+        #7b847c;
+
+    font-size: 8px;
+
+}
+
+
+/* ==========================================================
+   BOOLEAN CONTROLS
+========================================================== */
+
+.update-boolean-controls {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+    margin-top: 5px;
+
+    max-height: 40px;
+
+    overflow-y: auto;
+
+    scrollbar-width: none;
+
+}
+
+
+.update-boolean-controls::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+.update-boolean-toggle {
+
+    width: 100%;
+
+    min-height: 22px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 4px;
+
+    padding:
+        2px
+        3px
+        2px
+        5px;
+
+    border:
+        1px solid
+        #e4e9e1;
+
+    border-radius: 7px;
+
+    background:
+        #f8faf7;
+
+    color:
+        #69736c;
+
+    cursor: pointer;
+
+}
+
+
+.update-boolean-toggle-label {
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-align: left;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 7px;
+
+    font-weight: 700;
+
+}
+
+
+.update-boolean-toggle-switch {
+
+    position: relative;
+
+    width: 25px;
+
+    height: 14px;
+
+    flex:
+        0 0
+        25px;
+
+    border-radius: 999px;
+
+    background:
+        #cdd4cd;
+
+    transition:
+        background .18s ease;
+
+}
+
+
+.update-boolean-toggle-knob {
+
+    position: absolute;
+
+    top: 2px;
+    left: 2px;
+
+    width: 10px;
+
+    height: 10px;
+
+    border-radius: 50%;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 1px 3px
+        rgba(0,0,0,.18);
+
+    transition:
+        transform .18s ease;
+
+}
+
+
+.update-boolean-toggle.is-on {
+
+    border-color:
+        #bcd1b8;
+
+    background:
+        #f0f6ed;
+
+    color:
+        #47724a;
+
+}
+
+
+.update-boolean-toggle.is-on
+.update-boolean-toggle-switch {
+
+    background:
+        #5f8b55;
+
+}
+
+
+.update-boolean-toggle.is-on
+.update-boolean-toggle-knob {
+
+    transform:
+        translateX(11px);
+
+}
+
+
+/* ==========================================================
+   BOTTOM LINE
+========================================================== */
+
+.update-boolean-bottom-line {
+
+    position: absolute;
+
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    height: 3px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #c86f29,
+            #a7823c,
+            #39764c
+        );
+
+}
+
+
+/* ==========================================================
    SELECTOR CARD
 ========================================================== */
 
-.boolean-selector-card {
+.update-boolean-selector-card {
 
-    overflow: visible;
+    z-index: 30;
+
+    display: flex;
+
+    flex-direction: column;
 
     background:
         linear-gradient(
             145deg,
             #fffdf9,
-            #f7f8ed 55%,
+            #f7f8ed,
             #edf5ed
         );
 
 }
 
 
-.boolean-selector-button {
+.update-boolean-selector {
 
     width: 100%;
 
@@ -692,14 +1174,15 @@ const eligibleAnimals =
 
     background: transparent;
 
-    color: #26382d;
+    color:
+        #29382d;
 
     cursor: pointer;
 
 }
 
 
-.boolean-selector-icon {
+.update-boolean-selector-icon {
 
     width: 44px;
 
@@ -734,35 +1217,58 @@ const eligibleAnimals =
 }
 
 
-.boolean-selector-title {
+.update-boolean-selector-title {
 
-    font-size: 13px;
+    font-size: 12px;
 
     font-weight: 750;
+
+    text-align: center;
 
 }
 
 
-.boolean-selector-subtitle {
+.update-boolean-selector-text {
+
+    max-width: 95px;
 
     margin-top: 5px;
 
     color:
         #7c847d;
 
-    font-size: 9px;
+    font-size: 8px;
+
+    line-height: 12px;
+
+    text-align: center;
 
 }
 
 
-.boolean-selector-arrow {
+.update-boolean-selector-arrow {
 
-    margin-top: 11px;
+    width: 24px;
+
+    height: 24px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-top: 10px;
+
+    border-radius: 50%;
+
+    background:
+        #f9eadb;
 
     color:
         #b96825;
 
-    font-size: 9px;
+    font-size: 8px;
 
 }
 
@@ -771,62 +1277,43 @@ const eligibleAnimals =
    DROPDOWN
 ========================================================== */
 
-.boolean-field-dropdown {
+.update-boolean-dropdown {
 
     position: absolute;
 
-    top: calc(100% + 7px);
+    top: calc(100% + 6px);
 
     left: 0;
 
-    width: 190px;
+    width: 180px;
 
     max-height: 230px;
 
     overflow-y: auto;
 
-    z-index: 100;
+    padding: 6px;
 
-    padding: 8px;
+    box-sizing: border-box;
 
     border:
         1px solid
-        #dce4d8;
+        #dfe6dc;
 
-    border-radius: 14px;
+    border-radius: 13px;
 
     background:
         #ffffff;
 
     box-shadow:
         0 10px 28px
-        rgba(25,45,30,.18);
+        rgba(30,50,35,.16);
+
+    z-index: 100;
 
 }
 
 
-.boolean-dropdown-title {
-
-    padding:
-        5px
-        7px
-        8px;
-
-    color:
-        #788178;
-
-    font-size: 8px;
-
-    font-weight: 800;
-
-    letter-spacing: 1px;
-
-    text-transform: uppercase;
-
-}
-
-
-.boolean-field-option {
+.update-boolean-field-option {
 
     width: 100%;
 
@@ -834,383 +1321,192 @@ const eligibleAnimals =
 
     align-items: center;
 
-    justify-content: space-between;
-
-    gap: 8px;
+    gap: 7px;
 
     padding:
-        9px
         8px;
 
     border: 0;
 
-    border-radius: 9px;
+    border-radius: 8px;
 
-    background: transparent;
+    background:
+        transparent;
 
     color:
-        #354239;
-
-    font-size: 10px;
-
-    text-align: left;
+        #526158;
 
     cursor: pointer;
 
+    text-align: left;
+
 }
 
 
-.boolean-field-option:hover {
+.update-boolean-field-option:hover {
 
     background:
-        #eef4e9;
+        #f1f6ef;
 
 }
 
 
-.boolean-field-option i {
+.update-boolean-field-option-icon {
 
-    display: none;
+    width: 22px;
+
+    height: 22px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex: 0 0 22px;
+
+    border-radius: 7px;
+
+    background:
+        #eef5e9;
 
     color:
-        #4e784f;
+        #52723d;
 
-    font-size: 9px;
+    font-size: 8px;
 
 }
 
 
-.boolean-field-option.selected {
+.update-boolean-field-option-label {
 
-    background:
-        #eef4e9;
+    min-width: 0;
+
+    flex: 1;
+
+    font-size: 9px;
 
     font-weight: 700;
 
 }
 
 
-.boolean-field-option.selected i {
+.update-boolean-field-option-check {
+
+    display: none;
+
+    color:
+        #47724a;
+
+    font-size: 8px;
+
+}
+
+
+.update-boolean-field-option.selected
+.update-boolean-field-option-check {
 
     display: block;
 
 }
 
 
-.boolean-no-fields {
+.update-boolean-no-fields {
 
-    padding: 10px 7px;
+    padding: 12px;
 
     color:
-        #8a918b;
+        #858d86;
 
     font-size: 9px;
 
+    text-align: center;
+
 }
 
 
 /* ==========================================================
-   IMAGE
+   EMPTY
 ========================================================== */
 
-.boolean-animal-image-wrap {
+.update-boolean-empty-card {
 
-    position: relative;
+    flex:
+        0 0
+        124px;
 
-    width: 100%;
+    width: 124px;
 
-    height: 119px;
+    height: 197px;
 
-    overflow: hidden;
+    display: flex;
 
-    border-radius:
-        17px
-        17px
-        0
-        0;
-
-}
-
-
-.boolean-animal-image {
-
-    width: 100%;
-
-    height: 100%;
-
-    display: block;
-
-    object-fit: cover;
-
-}
-
-
-.boolean-animal-image-overlay {
-
-    position: absolute;
-
-    inset: 0;
-
-    background:
-        linear-gradient(
-            to top,
-            rgba(25,49,32,.42),
-            rgba(25,49,32,.04)
-        );
-
-}
-
-
-.boolean-animal-badge {
-
-    position: absolute;
-
-    top: 8px;
-
-    left: 9px;
-
-    display: inline-flex;
+    flex-direction: column;
 
     align-items: center;
 
-    gap: 4px;
+    justify-content: center;
 
-    padding:
-        4px
-        7px;
-
-    border-radius: 999px;
-
-    background:
-        rgba(255,255,255,.88);
-
-    color:
-        #45613d;
-
-    font-size: 7px;
-
-    font-weight: 800;
-
-    letter-spacing: .8px;
-
-}
-
-
-/* ==========================================================
-   CONTENT
-========================================================== */
-
-.boolean-animal-content {
-
-    height: 78px;
-
-    padding:
-        8px
-        9px
-        7px
-        11px;
+    padding: 12px;
 
     box-sizing: border-box;
 
-}
+    border:
+        1px dashed
+        #cbd5c6;
 
+    border-radius: 18px;
 
-.boolean-animal-name {
-
-    overflow: hidden;
-
-    color:
-        #26352b;
-
-    font-size: 13px;
-
-    font-weight: 750;
-
-    line-height: 16px;
-
-    white-space: nowrap;
-
-    text-overflow: ellipsis;
+    text-align: center;
 
 }
 
 
-.boolean-animal-meta {
+.update-boolean-empty-card-icon {
 
-    display: flex;
+    width: 40px;
 
-    gap: 7px;
-
-    margin-top: 4px;
-
-    color:
-        #818981;
-
-    font-size: 8px;
-
-}
-
-
-.boolean-animal-meta span {
-
-    overflow: hidden;
-
-    white-space: nowrap;
-
-    text-overflow: ellipsis;
-
-}
-
-
-/* ==========================================================
-   TOGGLE
-========================================================== */
-
-.boolean-toggle {
-
-    width: 100%;
+    height: 40px;
 
     display: flex;
 
     align-items: center;
 
-    justify-content: space-between;
+    justify-content: center;
 
-    margin-top: 7px;
+    margin-bottom: 9px;
 
-    padding: 0;
+    border-radius: 12px;
 
-    border: 0;
-
-    background: transparent;
-
-    cursor: pointer;
-
-}
-
-
-.boolean-toggle:disabled {
-
-    cursor: not-allowed;
-
-    opacity: .55;
-
-}
-
-
-.boolean-toggle-label {
-
-    max-width: 75px;
-
-    overflow: hidden;
+    background:
+        #eef3e7;
 
     color:
-        #5d695f;
+        #5e793f;
+
+}
+
+
+.update-boolean-empty-card strong {
+
+    color:
+        #536057;
+
+    font-size: 10px;
+
+}
+
+
+.update-boolean-empty-card span {
+
+    margin-top: 5px;
+
+    color:
+        #89918a;
 
     font-size: 8px;
 
-    text-align: left;
-
-    white-space: nowrap;
-
-    text-overflow: ellipsis;
-
-}
-
-
-.boolean-toggle-switch {
-
-    position: relative;
-
-    width: 29px;
-
-    height: 16px;
-
-    flex: 0 0 29px;
-
-    border-radius: 999px;
-
-    background:
-        #d6ddd5;
-
-    transition:
-        background .18s ease;
-
-}
-
-
-.boolean-toggle-knob {
-
-    position: absolute;
-
-    top: 3px;
-
-    left: 3px;
-
-    width: 10px;
-
-    height: 10px;
-
-    border-radius: 50%;
-
-    background:
-        #ffffff;
-
-    box-shadow:
-        0 1px 3px
-        rgba(0,0,0,.18);
-
-    transition:
-        transform .18s ease;
-
-}
-
-
-.boolean-toggle[aria-pressed="true"]
-.boolean-toggle-switch {
-
-    background:
-        #4d8050;
-
-}
-
-
-.boolean-toggle[aria-pressed="true"]
-.boolean-toggle-knob {
-
-    transform:
-        translateX(13px);
-
-}
-
-
-/* ==========================================================
-   BOTTOM LINE
-========================================================== */
-
-.boolean-card-bottom-line {
-
-    position: absolute;
-
-    left: 0;
-    right: 0;
-    bottom: 0;
-
-    height: 3px;
-
-    border-radius:
-        0
-        0
-        18px
-        18px;
-
-    background:
-        linear-gradient(
-            90deg,
-            #c86f29,
-            #a7823c 45%,
-            #39764c
-        );
+    line-height: 12px;
 
 }
 
@@ -1221,7 +1517,7 @@ const eligibleAnimals =
 
 @media (max-width: 600px) {
 
-    .boolean-animal-card {
+    .update-boolean-card {
 
         flex-basis: 116px;
 
@@ -1234,16 +1530,16 @@ const eligibleAnimals =
     }
 
 
-    .boolean-animal-image-wrap {
+    .update-boolean-image-wrap {
 
-        height: 112px;
+        height: 106px;
 
     }
 
 
-    .boolean-animal-content {
+    .update-boolean-content {
 
-        height: 72px;
+        height: 78px;
 
         padding:
             7px
@@ -1254,16 +1550,27 @@ const eligibleAnimals =
     }
 
 
-    .boolean-animal-name {
+    .update-boolean-name {
 
-        font-size: 12px;
+        font-size: 11px;
 
     }
 
 
-    .boolean-field-dropdown {
+    .update-boolean-dropdown {
 
-        width: 175px;
+        width: 170px;
+
+    }
+
+
+    .update-boolean-empty-card {
+
+        flex-basis: 116px;
+
+        width: 116px;
+
+        height: 187px;
 
     }
 
@@ -1276,7 +1583,7 @@ const eligibleAnimals =
 
 @media (max-width: 380px) {
 
-    .boolean-animal-card {
+    .update-boolean-card {
 
         flex-basis: 110px;
 
@@ -1287,16 +1594,16 @@ const eligibleAnimals =
     }
 
 
-    .boolean-animal-image-wrap {
+    .update-boolean-image-wrap {
 
-        height: 106px;
+        height: 102px;
 
     }
 
 
-    .boolean-animal-name {
+    .update-boolean-name {
 
-        font-size: 11.5px;
+        font-size: 10.5px;
 
     }
 
@@ -1315,11 +1622,11 @@ const eligibleAnimals =
 
     /* ======================================================
        ELEMENTS
-    ====================================================== */
+    ======================================================= */
 
-    const selectorButton =
+    const selector =
         document.getElementById(
-            "booleanSelectorButton"
+            "booleanFieldSelector"
         );
 
 
@@ -1331,60 +1638,103 @@ const eligibleAnimals =
 
     const fieldOptions =
         document.querySelectorAll(
-            ".boolean-field-option"
+            ".update-boolean-field-option"
         );
 
 
-    const toggleButtons =
-        document.querySelectorAll(
-            ".boolean-toggle"
+    /* ======================================================
+       CURRENT FIELD
+    ======================================================= */
+
+    let selectedField =
+        fieldOptions.length > 0
+            ? fieldOptions[0]
+                .getAttribute(
+                    "data-boolean-field"
+                )
+            : "";
+
+
+    /* ======================================================
+       SELECT FIELD
+    ======================================================= */
+
+    function selectField(field) {
+
+        selectedField =
+            field || "";
+
+
+        fieldOptions.forEach(
+            function (option) {
+
+                const optionField =
+                    option.getAttribute(
+                        "data-boolean-field"
+                    );
+
+
+                option.classList.toggle(
+                    "selected",
+                    optionField === selectedField
+                );
+
+            }
         );
-
-
-    if (
-        !selectorButton ||
-        !dropdown
-    ) {
-
-        return;
 
     }
 
 
-    let selectedField =
-        null;
+    /* ======================================================
+       DROPDOWN
+    ======================================================= */
+
+    if (selector && dropdown) {
+
+        selector.addEventListener(
+            "click",
+            function () {
+
+                const isOpen =
+                    !dropdown.hasAttribute(
+                        "hidden"
+                    );
+
+
+                if (isOpen) {
+
+                    dropdown.setAttribute(
+                        "hidden",
+                        ""
+                    );
+
+                    selector.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                } else {
+
+                    dropdown.removeAttribute(
+                        "hidden"
+                    );
+
+                    selector.setAttribute(
+                        "aria-expanded",
+                        "true"
+                    );
+
+                }
+
+            }
+        );
+
+    }
 
 
     /* ======================================================
-       OPEN / CLOSE DROPDOWN
-    ====================================================== */
-
-    selectorButton.addEventListener(
-        "click",
-        function () {
-
-            const isOpen =
-                selectorButton.getAttribute(
-                    "aria-expanded"
-                ) === "true";
-
-
-            selectorButton.setAttribute(
-                "aria-expanded",
-                String(!isOpen)
-            );
-
-
-            dropdown.hidden =
-                isOpen;
-
-        }
-    );
-
-
-    /* ======================================================
-       FIELD SELECTION
-    ====================================================== */
+       FIELD OPTIONS
+    ======================================================= */
 
     fieldOptions.forEach(
         function (option) {
@@ -1393,270 +1743,247 @@ const eligibleAnimals =
                 "click",
                 function () {
 
-                    selectedField =
-                        option.dataset.field;
+                    selectField(
+                        option.getAttribute(
+                            "data-boolean-field"
+                        )
+                    );
 
 
-                    fieldOptions.forEach(
-                        function (item) {
+                    if (dropdown) {
 
-                            item.classList.remove(
-                                "selected"
+                        dropdown.setAttribute(
+                            "hidden",
+                            ""
+                        );
+
+                    }
+
+
+                    if (selector) {
+
+                        selector.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       INITIAL FIELD
+    ======================================================= */
+
+    selectField(
+        selectedField
+    );
+
+
+    /* ======================================================
+       BOOLEAN TOGGLE
+       ------------------------------------------------------
+       Route:
+
+           PUT /dairy/:animalId/boolean/:field
+    ======================================================= */
+
+    document
+        .querySelectorAll(
+            ".update-boolean-toggle"
+        )
+        .forEach(
+            function (button) {
+
+                button.addEventListener(
+                    "click",
+                    async function () {
+
+                        const animalId =
+                            button.getAttribute(
+                                "data-animal-id"
                             );
 
-                        }
-                    );
+
+                        const field =
+                            button.getAttribute(
+                                "data-boolean-field"
+                            );
 
 
-                    option.classList.add(
-                        "selected"
-                    );
+                        if (
+                            !animalId ||
+                            !field
+                        ) {
 
-
-                    selectorButton.querySelector(
-                        ".boolean-selector-subtitle"
-                    ).textContent =
-                        selectedField;
-
-
-                    toggleButtons.forEach(
-                        function (button) {
-
-                            button.disabled =
-                                false;
-
-                            button.querySelector(
-                                ".boolean-toggle-label"
-                            ).textContent =
-                                selectedField;
+                            return;
 
                         }
-                    );
 
 
-                    selectorButton.setAttribute(
-                        "aria-expanded",
-                        "false"
-                    );
+                        if (
+                            button.dataset.busy ===
+                            "true"
+                        ) {
+
+                            return;
+
+                        }
 
 
-                    dropdown.hidden =
-                        true;
+                        button.dataset.busy =
+                            "true";
 
 
-                    /*
-                     * Update the visible toggle state
-                     * using the selected field.
-                     */
+                        try {
 
-                    toggleButtons.forEach(
-                        function (button) {
+                            const response =
+                                await fetch(
+                                    "/dairy/" +
+                                    encodeURIComponent(
+                                        animalId
+                                    ) +
+                                    "/boolean/" +
+                                    encodeURIComponent(
+                                        field
+                                    ),
+                                    {
 
-                            const animalId =
-                                button.dataset.animalId;
+                                        method:
+                                            "POST",
 
+                                        headers: {
 
-                            const animal =
-                                document.querySelector(
-                                    '[data-animal-id="' +
-                                    animalId +
-                                    '"]'
+                                            "Content-Type":
+                                                "application/json"
+
+                                        }
+
+                                    }
                                 );
 
 
-                            if (!animal) {
+                            const result =
+                                await response.json();
 
-                                return;
+
+                            if (
+                                !response.ok ||
+                                !result.success
+                            ) {
+
+                                throw new Error(
+                                    result.message ||
+                                    "Failed to toggle Boolean."
+                                );
 
                             }
 
 
-                            /*
-                             * The actual initial value is
-                             * supplied below through the
-                             * animal's data attributes.
-                             */
-
-                            const value =
-                                animal.dataset[
-                                    "boolean-" +
-                                    selectedField
-                                ];
+                            const newValue =
+                                Boolean(
+                                    result.value
+                                );
 
 
-                            const isTrue =
-                                value === "true";
+                            button
+                                .classList
+                                .toggle(
+                                    "is-on",
+                                    newValue
+                                );
 
 
                             button.setAttribute(
                                 "aria-pressed",
-                                String(isTrue)
-                            );
-
-                        }
-                    );
-
-                }
-            );
-
-        }
-    );
-
-
-    /* ======================================================
-       TOGGLE
-    ====================================================== */
-
-    toggleButtons.forEach(
-        function (button) {
-
-            button.addEventListener(
-                "click",
-                async function () {
-
-                    if (
-                        button.disabled ||
-                        !selectedField
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    const animalId =
-                        button.dataset.animalId;
-
-
-                    const currentlyOn =
-                        button.getAttribute(
-                            "aria-pressed"
-                        ) === "true";
-
-
-                    const newValue =
-                        !currentlyOn;
-
-
-                    button.disabled =
-                        true;
-
-
-                    try {
-
-                        const response =
-                            await fetch(
-                                "/dairy/" +
-                                encodeURIComponent(
-                                    animalId
-                                ) +
-                                "/boolean",
-                                {
-
-                                    method:
-                                        "PUT",
-
-                                    headers: {
-
-                                        "Content-Type":
-                                            "application/json",
-
-                                        "Accept":
-                                            "application/json"
-
-                                    },
-
-                                    body:
-                                        JSON.stringify({
-
-                                            field:
-                                                selectedField,
-
-                                            value:
-                                                newValue
-
-                                        })
-
-                                }
+                                newValue
+                                    ? "true"
+                                    : "false"
                             );
 
 
-                        const result =
-                            await response.json();
-
-
-                        if (
-                            !response.ok ||
-                            !result.success
-                        ) {
-
-                            throw new Error(
-                                result.message ||
-                                "Failed to update boolean."
+                            button.setAttribute(
+                                "data-boolean-value",
+                                String(
+                                    newValue
+                                )
                             );
+
+
+                        } catch (error) {
+
+                            console.error(
+                                "BOOLEAN TOGGLE ERROR:",
+                                error
+                            );
+
+
+                            alert(
+                                error.message ||
+                                "Failed to toggle Boolean."
+                            );
+
+                        } finally {
+
+                            button.dataset.busy =
+                                "false";
 
                         }
 
-
-                        button.setAttribute(
-                            "aria-pressed",
-                            String(
-                                result.value
-                            )
-                        );
-
-
-                    } catch (error) {
-
-                        console.error(
-                            "BOOLEAN UPDATE ERROR:",
-                            error
-                        );
-
-
-                        alert(
-                            error.message ||
-                            "Failed to update boolean."
-                        );
-
-                    } finally {
-
-                        button.disabled =
-                            false;
-
                     }
+                );
 
-                }
-            );
-
-        }
-    );
+            }
+        );
 
 
     /* ======================================================
-       CLOSE WHEN CLICKING OUTSIDE
-    ====================================================== */
+       CLOSE DROPDOWN WHEN CLICKING OUTSIDE
+    ======================================================= */
 
     document.addEventListener(
         "click",
         function (event) {
 
             if (
-                !event.target.closest(
-                    ".boolean-selector-card"
+                !selector ||
+                !dropdown
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                selector.contains(
+                    event.target
+                ) ||
+                dropdown.contains(
+                    event.target
                 )
             ) {
 
-                selectorButton.setAttribute(
-                    "aria-expanded",
-                    "false"
-                );
-
-
-                dropdown.hidden =
-                    true;
+                return;
 
             }
+
+
+            dropdown.setAttribute(
+                "hidden",
+                ""
+            );
+
+
+            selector.setAttribute(
+                "aria-expanded",
+                "false"
+            );
 
         }
     );
