@@ -1,0 +1,2359 @@
+<%
+/* ==========================================================
+   FEMALE ANIMAL CARDS
+
+   FILE:
+       views/update/boolean.ejs
+
+   PURPOSE:
+       Display eligible Dairy animal records as horizontal,
+       left/right scrollable cards.
+
+   ANIMAL RULE:
+   ----------------------------------------------------------
+       An animal must have:
+
+           code > 0
+
+       AND:
+
+           code is EVEN
+           OR
+           gender === "female"
+
+   FIRST CARD:
+   ----------------------------------------------------------
+       Filter / boolean control card.
+
+       Tapping the first card opens a dropdown containing:
+
+           All
+           Female
+           Not Female
+
+   ANIMAL TOGGLE:
+   ----------------------------------------------------------
+       Every animal card contains a toggle controlling:
+
+           female = true / false
+
+   IMPORTANT:
+   ----------------------------------------------------------
+       The frontend does NOT infer female from the code.
+
+       The `female` boolean is authoritative.
+========================================================== */
+
+
+/* ==========================================================
+   SOURCE DATA
+========================================================== */
+
+const sourceAnimals =
+    Array.isArray(dairies)
+        ? dairies
+        : (
+            Array.isArray(animals)
+                ? animals
+                : []
+        );
+
+
+/* ==========================================================
+   ELIGIBLE ANIMALS
+========================================================== */
+
+const animalRecords =
+    sourceAnimals.filter(function (item) {
+
+        if (!item) {
+
+            return false;
+
+        }
+
+
+        if (!item._id) {
+
+            return false;
+
+        }
+
+
+        const code =
+            Number(item.code);
+
+
+        if (
+            !Number.isInteger(code) ||
+            code <= 0
+        ) {
+
+            return false;
+
+        }
+
+
+        const gender =
+            String(
+                item.gender ||
+                ""
+            ).trim().toLowerCase();
+
+
+        return (
+            code % 2 === 0 ||
+            gender === "female"
+        );
+
+    });
+
+%>
+
+
+<section
+    class="admin-animal-strip"
+    aria-label="Female animal management"
+>
+
+
+    <!-- ======================================================
+         HEADER
+    ======================================================= -->
+
+    <div class="admin-animal-strip-header">
+
+        <div class="admin-animal-heading">
+
+            <span class="admin-animal-kicker">
+                ANIMAL MANAGEMENT
+            </span>
+
+            <strong>
+                Female Animals
+            </strong>
+
+        </div>
+
+
+        <div class="admin-animal-description">
+
+            Manage the female status of eligible dairy animals.
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ======================================================
+         HORIZONTAL CARD SCROLL
+    ======================================================= -->
+
+    <div
+        class="admin-animal-scroll"
+        role="list"
+        aria-label="Dairy animals"
+    >
+
+
+        <!-- ==================================================
+             FIRST CARD — FILTER / BOOLEAN CONTROL
+        =================================================== -->
+
+        <div
+            class="admin-animal-card admin-animal-filter-card"
+            role="listitem"
+        >
+
+
+            <!-- ACCENT -->
+
+            <div
+                class="admin-animal-filter-accent"
+                aria-hidden="true"
+            ></div>
+
+
+
+            <!-- FILTER HEADER -->
+
+            <button
+                type="button"
+                class="admin-animal-filter-trigger"
+                aria-expanded="false"
+                aria-controls="female-filter-menu"
+            >
+
+
+                <div class="admin-animal-filter-icon">
+
+                    <i class="fas fa-venus"></i>
+
+                </div>
+
+
+                <div class="admin-animal-filter-heading">
+
+                    <span class="admin-animal-filter-kicker">
+                        FILTER
+                    </span>
+
+                    <strong>
+                        Female
+                    </strong>
+
+                </div>
+
+
+                <div class="admin-animal-filter-chevron">
+
+                    <i class="fas fa-chevron-down"></i>
+
+                </div>
+
+            </button>
+
+
+
+            <!-- CURRENT FILTER -->
+
+            <div class="admin-animal-filter-current">
+
+                <span
+                    class="admin-animal-filter-status-dot"
+                    aria-hidden="true"
+                ></span>
+
+                <span
+                    id="female-filter-label"
+                >
+                    All Animals
+                </span>
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 DROPDOWN
+            =================================================== -->
+
+            <div
+                id="female-filter-menu"
+                class="admin-animal-filter-menu"
+                hidden
+            >
+
+
+                <button
+                    type="button"
+                    class="admin-animal-filter-option active"
+                    data-filter="all"
+                >
+
+                    <span class="admin-animal-option-icon">
+
+                        <i class="fas fa-layer-group"></i>
+
+                    </span>
+
+                    <span class="admin-animal-option-text">
+
+                        <strong>
+                            All
+                        </strong>
+
+                        <small>
+                            Show all eligible animals
+                        </small>
+
+                    </span>
+
+                    <span class="admin-animal-option-check">
+
+                        <i class="fas fa-check"></i>
+
+                    </span>
+
+                </button>
+
+
+
+                <button
+                    type="button"
+                    class="admin-animal-filter-option"
+                    data-filter="female"
+                >
+
+                    <span class="admin-animal-option-icon">
+
+                        <i class="fas fa-venus"></i>
+
+                    </span>
+
+                    <span class="admin-animal-option-text">
+
+                        <strong>
+                            Female
+                        </strong>
+
+                        <small>
+                            Show female animals
+                        </small>
+
+                    </span>
+
+                    <span class="admin-animal-option-check">
+
+                        <i class="fas fa-check"></i>
+
+                    </span>
+
+                </button>
+
+
+
+                <button
+                    type="button"
+                    class="admin-animal-filter-option"
+                    data-filter="not-female"
+                >
+
+                    <span class="admin-animal-option-icon">
+
+                        <i class="fas fa-venus-mars"></i>
+
+                    </span>
+
+                    <span class="admin-animal-option-text">
+
+                        <strong>
+                            Not Female
+                        </strong>
+
+                        <small>
+                            Show animals not marked female
+                        </small>
+
+                    </span>
+
+                    <span class="admin-animal-option-check">
+
+                        <i class="fas fa-check"></i>
+
+                    </span>
+
+                </button>
+
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             ANIMAL CARDS
+        =================================================== -->
+
+        <% animalRecords.forEach(function (animal) { %>
+
+            <%
+
+                const animalId =
+                    String(
+                        animal._id
+                    );
+
+
+                const animalName =
+                    String(
+                        animal.name ||
+                        "Unnamed Animal"
+                    );
+
+
+                const animalCode =
+                    Number(
+                        animal.code
+                    );
+
+
+                const animalGender =
+                    String(
+                        animal.gender ||
+                        ""
+                    )
+                    .trim()
+                    .toLowerCase();
+
+
+                /*
+                 * FEMALE BOOLEAN
+                 *
+                 * The actual boolean is authoritative.
+                 */
+
+                const isFemale =
+                    animal.female === true;
+
+
+                /*
+                 * IMAGE
+                 */
+
+                const animalImage =
+                    animal.displayImage ||
+                    animal.profileImage ||
+                    (
+                        "https://ui-avatars.com/api/?name=" +
+                        encodeURIComponent(
+                            animalName
+                        ) +
+                        "&background=e8f0e5&color=47733f"
+                    );
+
+
+                /*
+                 * DISPLAY TYPE
+                 */
+
+                const animalType =
+                    animal.type
+                        ? String(
+                            animal.type
+                        )
+                        : "Dairy Animal";
+
+            %>
+
+
+            <article
+                class="
+                    admin-animal-card
+                    admin-animal-record-card
+                "
+                role="listitem"
+                data-animal-id="<%= animalId %>"
+                data-female="<%= isFemale ? 'true' : 'false' %>"
+            >
+
+
+                <!-- ==================================================
+                     LEFT ACCENT
+                =================================================== -->
+
+                <div
+                    class="admin-animal-card-accent"
+                    aria-hidden="true"
+                ></div>
+
+
+
+                <!-- ==================================================
+                     IMAGE
+                =================================================== -->
+
+                <div class="admin-animal-image-wrap">
+
+                    <img
+                        src="<%= animalImage %>"
+                        alt="<%= animalName %>"
+                        class="admin-animal-image"
+                        loading="lazy"
+                    >
+
+
+                    <div
+                        class="admin-animal-image-overlay"
+                        aria-hidden="true"
+                    ></div>
+
+
+
+                    <!-- ANIMAL BADGE -->
+
+                    <div class="admin-animal-badge">
+
+                        <i class="fas fa-cow"></i>
+
+                        <span>
+                            ANIMAL
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- CODE -->
+
+                    <div class="admin-animal-code-badge">
+
+                        #<%= animalCode %>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- ==================================================
+                     CONTENT
+                =================================================== -->
+
+                <div class="admin-animal-content">
+
+
+                    <!-- NAME -->
+
+                    <div class="admin-animal-name">
+
+                        <%= animalName %>
+
+                    </div>
+
+
+
+                    <!-- TYPE -->
+
+                    <div class="admin-animal-type">
+
+                        <span class="admin-animal-type-icon">
+
+                            <i class="fas fa-cow"></i>
+
+                        </span>
+
+                        <span>
+                            <%= animalType %>
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- ==================================================
+                         FEMALE TOGGLE
+                    =================================================== -->
+
+                    <div class="admin-animal-female-row">
+
+
+                        <div class="admin-animal-female-label">
+
+                            <span class="admin-animal-female-icon">
+
+                                <i class="fas fa-venus"></i>
+
+                            </span>
+
+
+                            <span>
+                                Female
+                            </span>
+
+                        </div>
+
+
+
+                        <label
+                            class="admin-animal-switch"
+                            title="Toggle female status"
+                        >
+
+                            <input
+                                type="checkbox"
+                                class="female-toggle"
+                                data-animal-id="<%= animalId %>"
+                                <%= isFemale ? "checked" : "" %>
+                            >
+
+                            <span
+                                class="admin-animal-slider"
+                            ></span>
+
+                        </label>
+
+
+                    </div>
+
+
+
+                    <!-- STATUS -->
+
+                    <div
+                        class="admin-animal-female-status
+                        <%= isFemale
+                            ? 'is-female'
+                            : 'is-not-female'
+                        %>"
+                    >
+
+                        <span class="admin-animal-status-dot"></span>
+
+                        <span class="female-status-text">
+
+                            <%= isFemale
+                                ? "Marked Female"
+                                : "Not Female"
+                            %>
+
+                        </span>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- BOTTOM LINE -->
+
+                <div
+                    class="admin-animal-bottom-line"
+                    aria-hidden="true"
+                ></div>
+
+            </article>
+
+        <% }); %>
+
+
+    </div>
+
+</section>
+
+
+
+<style>
+
+/* ==========================================================
+   ANIMAL STRIP
+========================================================== */
+
+.admin-animal-strip {
+
+    width: 100%;
+
+    margin:
+        0
+        0
+        22px;
+
+    padding: 0;
+
+    overflow: hidden;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+}
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.admin-animal-strip-header {
+
+    width: 100%;
+
+    padding:
+        0
+        3px
+        13px;
+
+}
+
+
+.admin-animal-heading {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+}
+
+
+.admin-animal-kicker {
+
+    display: inline-block;
+
+    margin-bottom: 2px;
+
+    color:
+        #b96a27;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: 2px;
+
+    line-height: 1;
+
+}
+
+
+.admin-animal-heading strong {
+
+    color:
+        #26382d;
+
+    font-size: 19px;
+
+    font-weight: 750;
+
+    line-height: 1.3;
+
+}
+
+
+.admin-animal-description {
+
+    max-width: 620px;
+
+    margin-top: 4px;
+
+    color:
+        #778078;
+
+    font-size: 12px;
+
+    line-height: 1.45;
+
+}
+
+
+/* ==========================================================
+   SCROLL
+========================================================== */
+
+.admin-animal-scroll {
+
+    width: 100%;
+
+    display: flex;
+
+    gap: 11px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding:
+        4px
+        5px
+        11px;
+
+    box-sizing: border-box;
+
+    scroll-behavior: smooth;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+
+}
+
+
+.admin-animal-scroll::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+/* ==========================================================
+   CARD
+========================================================== */
+
+.admin-animal-card {
+
+    position: relative;
+
+    flex:
+        0 0
+        124px;
+
+    width: 124px;
+
+    height: 197px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+
+    border:
+        1px solid
+        #e1e6de;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff 0%,
+            #fffdfa 58%,
+            #f3f7f0 100%
+        );
+
+    box-shadow:
+        0 3px 9px
+        rgba(39, 55, 42, .065),
+        0 10px 20px
+        rgba(74, 86, 47, .035);
+
+}
+
+
+/* ==========================================================
+   ANIMAL CARD ACCENT
+========================================================== */
+
+.admin-animal-card-accent {
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 4px;
+
+    z-index: 8;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #c86f29 0%,
+            #9a8740 48%,
+            #39764c 100%
+        );
+
+}
+
+
+/* ==========================================================
+   IMAGE
+========================================================== */
+
+.admin-animal-image-wrap {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 105px;
+
+    flex:
+        0 0
+        105px;
+
+    overflow: hidden;
+
+    background:
+        #e8eee5;
+
+}
+
+
+.admin-animal-image {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+    transition:
+        transform .35s ease;
+
+}
+
+
+.admin-animal-record-card:hover
+.admin-animal-image {
+
+    transform:
+        scale(1.055);
+
+}
+
+
+.admin-animal-image-overlay {
+
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(25, 49, 32, .43),
+            rgba(25, 49, 32, .04) 60%
+        );
+
+}
+
+
+/* ==========================================================
+   ANIMAL BADGE
+========================================================== */
+
+.admin-animal-badge {
+
+    position: absolute;
+
+    top: 8px;
+    left: 9px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    padding:
+        4px
+        7px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255, 255, 255, .88);
+
+    color:
+        #45613d;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: .7px;
+
+    box-shadow:
+        0 2px 7px
+        rgba(25, 45, 30, .12);
+
+    backdrop-filter:
+        blur(5px);
+
+}
+
+
+.admin-animal-badge i {
+
+    color:
+        #b96a27;
+
+}
+
+
+/* ==========================================================
+   CODE BADGE
+========================================================== */
+
+.admin-animal-code-badge {
+
+    position: absolute;
+
+    right: 8px;
+    bottom: 8px;
+
+    padding:
+        4px
+        7px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255, 255, 255, .9);
+
+    color:
+        #47724a;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    box-shadow:
+        0 2px 7px
+        rgba(20, 45, 27, .13);
+
+}
+
+
+/* ==========================================================
+   CONTENT
+========================================================== */
+
+.admin-animal-content {
+
+    width: 100%;
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    flex: 1;
+
+    box-sizing: border-box;
+
+    padding:
+        7px
+        8px
+        6px
+        11px;
+
+}
+
+
+/* ==========================================================
+   NAME
+========================================================== */
+
+.admin-animal-name {
+
+    width: 100%;
+
+    min-width: 0;
+
+    color:
+        #26352b;
+
+    font-size: 12.5px;
+
+    font-weight: 750;
+
+    line-height: 15px;
+
+    overflow: hidden;
+
+    display: -webkit-box;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 2;
+
+}
+
+
+/* ==========================================================
+   TYPE
+========================================================== */
+
+.admin-animal-type {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    margin-top: 3px;
+
+    color:
+        #7b847c;
+
+    font-size: 8.5px;
+
+}
+
+
+.admin-animal-type-icon {
+
+    width: 17px;
+
+    height: 17px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex:
+        0 0
+        17px;
+
+    border-radius: 6px;
+
+    background:
+        #eef3e7;
+
+    color:
+        #5e793f;
+
+    font-size: 8px;
+
+}
+
+
+/* ==========================================================
+   FEMALE ROW
+========================================================== */
+
+.admin-animal-female-row {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 5px;
+
+    margin-top: auto;
+
+    padding-top: 6px;
+
+    border-top:
+        1px solid
+        #edf0e9;
+
+}
+
+
+.admin-animal-female-label {
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    color:
+        #59665b;
+
+    font-size: 8.5px;
+
+    font-weight: 700;
+
+}
+
+
+.admin-animal-female-icon {
+
+    width: 18px;
+
+    height: 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 6px;
+
+    background:
+        #f5eaf0;
+
+    color:
+        #a04f76;
+
+    font-size: 8px;
+
+}
+
+
+/* ==========================================================
+   TOGGLE
+========================================================== */
+
+.admin-animal-switch {
+
+    position: relative;
+
+    display: inline-block;
+
+    width: 30px;
+
+    height: 17px;
+
+    flex:
+        0 0
+        30px;
+
+    cursor: pointer;
+
+}
+
+
+.admin-animal-switch input {
+
+    position: absolute;
+
+    opacity: 0;
+
+    width: 0;
+
+    height: 0;
+
+}
+
+
+.admin-animal-slider {
+
+    position: absolute;
+
+    inset: 0;
+
+    border-radius: 999px;
+
+    background:
+        #d6ddd5;
+
+    transition:
+        .2s ease;
+
+}
+
+
+.admin-animal-slider::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 13px;
+
+    height: 13px;
+
+    left: 2px;
+
+    top: 2px;
+
+    border-radius: 50%;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 1px 3px
+        rgba(0, 0, 0, .2);
+
+    transition:
+        .2s ease;
+
+}
+
+
+.admin-animal-switch input:checked
++ .admin-animal-slider {
+
+    background:
+        #a6537d;
+
+}
+
+
+.admin-animal-switch input:checked
++ .admin-animal-slider::before {
+
+    transform:
+        translateX(13px);
+
+}
+
+
+/* ==========================================================
+   STATUS
+========================================================== */
+
+.admin-animal-female-status {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    margin-top: 4px;
+
+    color:
+        #929992;
+
+    font-size: 7.5px;
+
+    font-weight: 600;
+
+}
+
+
+.admin-animal-status-dot {
+
+    width: 5px;
+
+    height: 5px;
+
+    flex:
+        0 0
+        5px;
+
+    border-radius: 50%;
+
+    background:
+        #b7beb8;
+
+}
+
+
+.admin-animal-female-status.is-female {
+
+    color:
+        #8b4c70;
+
+}
+
+
+.admin-animal-female-status.is-female
+.admin-animal-status-dot {
+
+    background:
+        #a6537d;
+
+}
+
+
+/* ==========================================================
+   BOTTOM LINE
+========================================================== */
+
+.admin-animal-bottom-line {
+
+    width: 100%;
+
+    height: 3px;
+
+    flex:
+        0 0
+        3px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #c86f29,
+            #a7823c 45%,
+            #39764c
+        );
+
+    opacity:
+        .8;
+
+}
+
+
+/* ==========================================================
+   FILTER CARD
+========================================================== */
+
+.admin-animal-filter-card {
+
+    overflow: visible;
+
+    z-index: 20;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fffdf9,
+            #f7f8ed 55%,
+            #edf5ed
+        );
+
+}
+
+
+.admin-animal-filter-accent {
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 4px;
+
+    border-radius:
+        18px
+        0
+        0
+        18px;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #c86f29,
+            #a7823c,
+            #39764c
+        );
+
+}
+
+
+/* ==========================================================
+   FILTER TRIGGER
+========================================================== */
+
+.admin-animal-filter-trigger {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding:
+        13px
+        9px
+        8px
+        12px;
+
+    border: 0;
+
+    background: transparent;
+
+    color: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+
+}
+
+
+.admin-animal-filter-icon {
+
+    width: 37px;
+
+    height: 37px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex:
+        0 0
+        37px;
+
+    border:
+        1px solid
+        #ead8df;
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fff0f6,
+            #f0f4ea
+        );
+
+    color:
+        #a6537d;
+
+    font-size: 15px;
+
+}
+
+
+.admin-animal-filter-heading {
+
+    min-width: 0;
+
+    flex: 1;
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+.admin-animal-filter-kicker {
+
+    color:
+        #9a9f99;
+
+    font-size: 6.5px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.2px;
+
+}
+
+
+.admin-animal-filter-heading strong {
+
+    margin-top: 2px;
+
+    color:
+        #29382d;
+
+    font-size: 13px;
+
+    line-height: 15px;
+
+}
+
+
+.admin-animal-filter-chevron {
+
+    color:
+        #788177;
+
+    font-size: 8px;
+
+    transition:
+        transform .2s ease;
+
+}
+
+
+.admin-animal-filter-card.is-open
+.admin-animal-filter-chevron {
+
+    transform:
+        rotate(180deg);
+
+}
+
+
+/* ==========================================================
+   CURRENT FILTER
+========================================================== */
+
+.admin-animal-filter-current {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    margin:
+        4px
+        10px
+        0
+        12px;
+
+    padding:
+        7px
+        8px;
+
+    border-radius: 9px;
+
+    background:
+        rgba(255, 255, 255, .72);
+
+    color:
+        #637064;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+}
+
+
+.admin-animal-filter-status-dot {
+
+    width: 6px;
+
+    height: 6px;
+
+    flex:
+        0 0
+        6px;
+
+    border-radius: 50%;
+
+    background:
+        #527b55;
+
+}
+
+
+/* ==========================================================
+   FILTER MENU
+========================================================== */
+
+.admin-animal-filter-menu {
+
+    position: absolute;
+
+    left: 5px;
+
+    right: 5px;
+
+    top:
+        calc(100% + 7px);
+
+    padding: 5px;
+
+    border:
+        1px solid
+        #dfe5dc;
+
+    border-radius: 13px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 8px 24px
+        rgba(39, 55, 42, .16);
+
+    z-index: 100;
+
+}
+
+
+.admin-animal-filter-option {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding:
+        7px;
+
+    border: 0;
+
+    border-radius: 9px;
+
+    background:
+        transparent;
+
+    text-align: left;
+
+    cursor: pointer;
+
+}
+
+
+.admin-animal-filter-option:hover {
+
+    background:
+        #f3f6f0;
+
+}
+
+
+.admin-animal-option-icon {
+
+    width: 23px;
+
+    height: 23px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex:
+        0 0
+        23px;
+
+    border-radius: 7px;
+
+    background:
+        #eef3e7;
+
+    color:
+        #5e793f;
+
+    font-size: 8px;
+
+}
+
+
+.admin-animal-option-text {
+
+    min-width: 0;
+
+    flex: 1;
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+.admin-animal-option-text strong {
+
+    color:
+        #334137;
+
+    font-size: 8.5px;
+
+}
+
+
+.admin-animal-option-text small {
+
+    margin-top: 1px;
+
+    color:
+        #8a918b;
+
+    font-size: 6.5px;
+
+}
+
+
+.admin-animal-option-check {
+
+    color:
+        #47724a;
+
+    font-size: 8px;
+
+    opacity: 0;
+
+}
+
+
+.admin-animal-filter-option.active {
+
+    background:
+        #f1f6ee;
+
+}
+
+
+.admin-animal-filter-option.active
+.admin-animal-option-check {
+
+    opacity: 1;
+
+}
+
+
+/* ==========================================================
+   HIDDEN FILTERED CARDS
+========================================================== */
+
+.admin-animal-record-card.is-filtered-out {
+
+    display: none;
+
+}
+
+
+/* ==========================================================
+   FOCUS
+========================================================== */
+
+.admin-animal-filter-trigger:focus-visible,
+.admin-animal-filter-option:focus-visible,
+.admin-animal-switch input:focus-visible
++ .admin-animal-slider {
+
+    outline:
+        2px solid
+        #71874c;
+
+    outline-offset: 2px;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+    .admin-animal-strip {
+
+        margin-bottom: 19px;
+
+    }
+
+
+    .admin-animal-heading strong {
+
+        font-size: 17px;
+
+    }
+
+
+    .admin-animal-description {
+
+        font-size: 11px;
+
+    }
+
+
+    .admin-animal-scroll {
+
+        gap: 9px;
+
+        padding:
+            3px
+            4px
+            9px;
+
+    }
+
+
+    .admin-animal-card {
+
+        flex-basis:
+            116px;
+
+        width:
+            116px;
+
+        height:
+            187px;
+
+        border-radius:
+            16px;
+
+    }
+
+
+    .admin-animal-image-wrap {
+
+        height:
+            100px;
+
+        flex-basis:
+            100px;
+
+    }
+
+
+    .admin-animal-content {
+
+        padding:
+            7px
+            8px
+            6px
+            10px;
+
+    }
+
+
+    .admin-animal-name {
+
+        font-size:
+            12px;
+
+        line-height:
+            15px;
+
+    }
+
+
+    .admin-animal-filter-icon {
+
+        width:
+            34px;
+
+        height:
+            34px;
+
+        flex-basis:
+            34px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .admin-animal-card {
+
+        flex-basis:
+            110px;
+
+        width:
+            110px;
+
+        height:
+            181px;
+
+    }
+
+
+    .admin-animal-image-wrap {
+
+        height:
+            96px;
+
+        flex-basis:
+            96px;
+
+    }
+
+
+    .admin-animal-name {
+
+        font-size:
+            11.5px;
+
+        line-height:
+            14px;
+
+    }
+
+}
+
+</style>
+
+
+
+<script>
+
+/* ==========================================================
+   FEMALE ANIMAL CARD CONTROLS
+========================================================== */
+
+(function () {
+
+    "use strict";
+
+
+    /* ======================================================
+       ELEMENTS
+    ====================================================== */
+
+    const filterCard =
+        document.querySelector(
+            ".admin-animal-filter-card"
+        );
+
+
+    const filterTrigger =
+        document.querySelector(
+            ".admin-animal-filter-trigger"
+        );
+
+
+    const filterMenu =
+        document.querySelector(
+            "#female-filter-menu"
+        );
+
+
+    const filterLabel =
+        document.querySelector(
+            "#female-filter-label"
+        );
+
+
+    const filterOptions =
+        document.querySelectorAll(
+            ".admin-animal-filter-option"
+        );
+
+
+    const animalCards =
+        document.querySelectorAll(
+            ".admin-animal-record-card"
+        );
+
+
+    /* ======================================================
+       FILTER LABELS
+    ====================================================== */
+
+    const filterLabels = {
+
+        "all":
+            "All Animals",
+
+        "female":
+            "Female Animals",
+
+        "not-female":
+            "Not Female"
+
+    };
+
+
+    /* ======================================================
+       OPEN / CLOSE FILTER
+    ====================================================== */
+
+    function openFilter() {
+
+        filterCard.classList.add(
+            "is-open"
+        );
+
+        filterTrigger.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+
+        filterMenu.hidden = false;
+
+    }
+
+
+    function closeFilter() {
+
+        filterCard.classList.remove(
+            "is-open"
+        );
+
+        filterTrigger.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+        filterMenu.hidden = true;
+
+    }
+
+
+    filterTrigger.addEventListener(
+        "click",
+        function (event) {
+
+            event.stopPropagation();
+
+
+            if (filterMenu.hidden) {
+
+                openFilter();
+
+            } else {
+
+                closeFilter();
+
+            }
+
+        }
+    );
+
+
+    /* ======================================================
+       APPLY FILTER
+    ====================================================== */
+
+    function applyFilter(filter) {
+
+        animalCards.forEach(
+            function (card) {
+
+                const isFemale =
+                    card.dataset.female === "true";
+
+
+                let visible = true;
+
+
+                if (filter === "female") {
+
+                    visible =
+                        isFemale;
+
+                }
+
+
+                if (filter === "not-female") {
+
+                    visible =
+                        !isFemale;
+
+                }
+
+
+                card.classList.toggle(
+                    "is-filtered-out",
+                    !visible
+                );
+
+            }
+        );
+
+
+        filterLabel.textContent =
+            filterLabels[filter] ||
+            "All Animals";
+
+
+        filterOptions.forEach(
+            function (option) {
+
+                option.classList.toggle(
+                    "active",
+                    option.dataset.filter === filter
+                );
+
+            }
+        );
+
+
+        closeFilter();
+
+    }
+
+
+    /* ======================================================
+       FILTER OPTIONS
+    ====================================================== */
+
+    filterOptions.forEach(
+        function (option) {
+
+            option.addEventListener(
+                "click",
+                function () {
+
+                    applyFilter(
+                        option.dataset.filter
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       CLOSE WHEN CLICKING OUTSIDE
+    ====================================================== */
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                filterCard &&
+                !filterCard.contains(event.target)
+            ) {
+
+                closeFilter();
+
+            }
+
+        }
+    );
+
+
+    /* ======================================================
+       FEMALE TOGGLE
+    ====================================================== */
+
+    document
+        .querySelectorAll(".female-toggle")
+        .forEach(
+            function (toggle) {
+
+
+                toggle.addEventListener(
+                    "change",
+                    async function () {
+
+                        const animalId =
+                            toggle.dataset.animalId;
+
+
+                        const newValue =
+                            toggle.checked;
+
+
+                        const card =
+                            toggle.closest(
+                                ".admin-animal-record-card"
+                            );
+
+
+                        const status =
+                            card.querySelector(
+                                ".admin-animal-female-status"
+                            );
+
+
+                        const statusText =
+                            card.querySelector(
+                                ".female-status-text"
+                            );
+
+
+                        /*
+                         * Prevent duplicate requests
+                         */
+
+                        toggle.disabled = true;
+
+
+                        try {
+
+
+                            /*
+                             * ==================================================
+                             * BACKEND UPDATE
+                             *
+                             * Change this endpoint if your actual
+                             * controller uses another route.
+                             * ==================================================
+                             */
+
+                            const response =
+                                await fetch(
+                                    "/dairy/" +
+                                    encodeURIComponent(
+                                        animalId
+                                    ) +
+                                    "/female",
+                                    {
+
+                                        method:
+                                            "PATCH",
+
+                                        headers: {
+
+                                            "Content-Type":
+                                                "application/json",
+
+                                            "Accept":
+                                                "application/json"
+
+                                        },
+
+                                        body:
+                                            JSON.stringify({
+
+                                                female:
+                                                    newValue
+
+                                            })
+
+                                    }
+                                );
+
+
+                            if (!response.ok) {
+
+                                throw new Error(
+                                    "Failed to update female status."
+                                );
+
+                            }
+
+
+                            /*
+                             * Update card state
+                             */
+
+                            card.dataset.female =
+                                newValue
+                                    ? "true"
+                                    : "false";
+
+
+                            status.classList.toggle(
+                                "is-female",
+                                newValue
+                            );
+
+
+                            status.classList.toggle(
+                                "is-not-female",
+                                !newValue
+                            );
+
+
+                            statusText.textContent =
+                                newValue
+                                    ? "Marked Female"
+                                    : "Not Female";
+
+
+                            /*
+                             * If current filter is active,
+                             * immediately hide cards that no
+                             * longer belong to it.
+                             */
+
+                            const activeFilter =
+                                document.querySelector(
+                                    ".admin-animal-filter-option.active"
+                                );
+
+
+                            if (activeFilter) {
+
+                                applyFilter(
+                                    activeFilter.dataset.filter
+                                );
+
+                            }
+
+
+                        } catch (error) {
+
+                            /*
+                             * Revert toggle when backend fails.
+                             */
+
+                            toggle.checked =
+                                !newValue;
+
+
+                            alert(
+                                "Failed to update female status. Please try again."
+                            );
+
+                        } finally {
+
+                            toggle.disabled =
+                                false;
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+})();
+
+</script>
