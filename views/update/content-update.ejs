@@ -297,7 +297,7 @@ function getContentUpdateUserName(
 
     Display identity using:
 
-        user._name
+        user.name
 
     when the supplied user object is available.
 
@@ -307,11 +307,11 @@ function getContentUpdateUserName(
 
     if (
         contentUpdateUser &&
-        contentUpdateUser._name
+        contentUpdateUser.name
     ) {
 
         return String(
-            contentUpdateUser._name
+            contentUpdateUser.name
         );
 
     }
@@ -331,11 +331,11 @@ function getContentUpdateUserName(
     ) {
 
         if (
-            recordedBy._name
+            recordedBy.name
         ) {
 
             return String(
-                recordedBy._name
+                recordedBy.name
             );
 
         }
