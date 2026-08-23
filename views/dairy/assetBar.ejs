@@ -34,6 +34,18 @@ Animals:
     OR
     recordType === "animal"
 
+    NOTE:
+    recordType is NOT the only criterion.
+
+Animal gender:
+    code % 2 !== 0
+        = Male
+
+    code % 2 === 0
+        = Female
+
+    Gender is DISPLAYED instead of the animal code.
+
 Cow Shades:
     roomNumber > 0
 
@@ -46,21 +58,6 @@ Tools:
     roomNumber is missing
     AND
     dwellNumber is missing
-
-IMPORTANT:
-----------------------------------------------------------
-Animals are NOT classified by recordType alone.
-
-An asset is an animal when:
-
-    Number(asset.code) > 0
-
-OR:
-
-    asset.recordType === "animal"
-
-The animal's CODE is NOT displayed in the Animals
-section. Gender is displayed instead.
 
 LAYOUT SAFETY:
 ----------------------------------------------------------
@@ -110,7 +107,7 @@ function isMissing(value) {
 
 /* ==========================================================
    HELPER:
-   CHECK POSITIVE CODE
+   CHECK FOR POSITIVE CODE
 ========================================================== */
 
 function hasPositiveCode(asset) {
@@ -127,14 +124,20 @@ function hasPositiveCode(asset) {
 
     }
 
-    return Number(asset.code) > 0;
+    const code =
+        Number(asset.code);
+
+    return (
+        Number.isFinite(code) &&
+        code > 0
+    );
 
 }
 
 
 /* ==========================================================
    HELPER:
-   CHECK ANIMAL RECORD TYPE
+   CHECK FOR ANIMAL RECORD TYPE
 ========================================================== */
 
 function hasAnimalRecordType(asset) {
@@ -147,7 +150,85 @@ function hasAnimalRecordType(asset) {
 
     return (
         typeof asset.recordType === "string" &&
-        asset.recordType.toLowerCase() === "animal"
+        asset.recordType
+            .trim()
+            .toLowerCase() === "animal"
+    );
+
+}
+
+
+/* ==========================================================
+   HELPER:
+   DETERMINE WHETHER AN ASSET IS AN ANIMAL
+----------------------------------------------------------
+   Animal if:
+
+       code > 0
+
+   OR
+
+       recordType === "animal"
+
+   IMPORTANT:
+   recordType alone is NOT used as the sole classification
+   rule. It is one of the two accepted animal criteria.
+========================================================== */
+
+function isAnimal(asset) {
+
+    return (
+        hasPositiveCode(asset) ||
+        hasAnimalRecordType(asset)
+    );
+
+}
+
+
+/* ==========================================================
+   HELPER:
+   DETERMINE ANIMAL GENDER
+
+----------------------------------------------------------
+   Positive / numeric animal code:
+
+       ODD
+           = Male
+
+       EVEN
+           = Female
+
+   Example:
+
+       code 1  = Male
+       code 2  = Female
+       code 3  = Male
+       code 4  = Female
+
+   If no valid numeric code exists, return empty string.
+========================================================== */
+
+function getAnimalGender(asset) {
+
+    if (!asset || isMissing(asset.code)) {
+
+        return "";
+
+    }
+
+    const code =
+        Number(asset.code);
+
+    if (!Number.isFinite(code)) {
+
+        return "";
+
+    }
+
+    return (
+        Math.abs(code) % 2 !== 0
+            ? "Male"
+            : "Female"
     );
 
 }
@@ -156,29 +237,19 @@ function hasAnimalRecordType(asset) {
 /* ==========================================================
    ANIMALS
 
-   An asset is an animal when EITHER:
+   An asset is an animal when:
 
-       1. code > 0
+       code > 0
 
-   OR:
+   OR
 
-       2. recordType === "animal"
-
-   recordType is therefore an additional merit,
-   NOT the only classification criterion.
-
-   IMPORTANT:
-   The animal CODE is intentionally NOT displayed.
-   Gender is displayed instead.
+       recordType === "animal"
 ========================================================== */
 
 const animalDairies =
     availableAssets.filter(asset => {
 
-        return (
-            hasPositiveCode(asset) ||
-            hasAnimalRecordType(asset)
-        );
+        return isAnimal(asset);
 
     });
 
@@ -187,17 +258,14 @@ const animalDairies =
    COW SHADES
 
    Cow shades have a POSITIVE roomNumber.
-
-   Animals are already classified independently above.
 ========================================================== */
 
 const cowShadeDairies =
     availableAssets.filter(asset => {
 
         return (
-            asset.roomNumber !== null &&
-            asset.roomNumber !== undefined &&
-            asset.roomNumber !== "" &&
+            !isAnimal(asset) &&
+            !isMissing(asset.roomNumber) &&
             Number(asset.roomNumber) > 0
         );
 
@@ -214,9 +282,8 @@ const animalFeedDairies =
     availableAssets.filter(asset => {
 
         return (
-            asset.roomNumber !== null &&
-            asset.roomNumber !== undefined &&
-            asset.roomNumber !== "" &&
+            !isAnimal(asset) &&
+            !isMissing(asset.roomNumber) &&
             Number(asset.roomNumber) < 0
         );
 
@@ -239,6 +306,7 @@ const toolDairies =
     availableAssets.filter(asset => {
 
         return (
+            !isAnimal(asset) &&
             isMissing(asset.code) &&
             isMissing(asset.roomNumber) &&
             isMissing(asset.dwellNumber)
@@ -313,7 +381,6 @@ const isCurrentFarm =
 
     <header class="asset-bar-component__header">
 
-
         <div class="asset-bar-component__heading">
 
             <span class="asset-bar-component__eyebrow">
@@ -340,7 +407,6 @@ const isCurrentFarm =
             </span>
 
         </button>
-
 
     </header>
 
@@ -369,21 +435,17 @@ const isCurrentFarm =
 
             <div class="asset-bar-component__current-farm">
 
-
                 <span class="asset-bar-component__farm-label">
                     CURRENT FARM
                 </span>
-
 
                 <span class="asset-bar-component__farm-name">
                     <%= dairy.name %>
                 </span>
 
-
                 <span class="asset-bar-component__farm-code">
                     Farm #<%= dairy.code %>
                 </span>
-
 
             </div>
 
@@ -394,9 +456,7 @@ const isCurrentFarm =
 
             <% if (canSwitchFarms) { %>
 
-
                 <div class="asset-bar-component__farm-switcher">
-
 
                     <button
                         type="button"
@@ -431,7 +491,6 @@ const isCurrentFarm =
                         hidden
                     >
 
-
                         <div
                             class="asset-bar-component__farm-list-title"
                         >
@@ -443,9 +502,7 @@ const isCurrentFarm =
                             class="asset-bar-component__farm-options"
                         >
 
-
                             <% workerAssignedFarms.forEach(farm => { %>
-
 
                                 <a
                                     href="/dairy/<%= farm._id %>"
@@ -457,7 +514,6 @@ const isCurrentFarm =
                                         farm._id.toString()
                                     ) ? 'is-current' : '' %>"
                                 >
-
 
                                     <span
                                         class="asset-bar-component__farm-option-icon"
@@ -479,7 +535,6 @@ const isCurrentFarm =
                                         class="asset-bar-component__farm-option-details"
                                     >
 
-
                                         <span
                                             class="asset-bar-component__farm-option-name"
                                         >
@@ -492,16 +547,13 @@ const isCurrentFarm =
                                             farm.code !== undefined
                                         ) { %>
 
-
                                             <span
                                                 class="asset-bar-component__farm-option-code"
                                             >
                                                 Farm #<%= farm.code %>
                                             </span>
 
-
                                         <% } %>
-
 
                                     </span>
 
@@ -514,37 +566,27 @@ const isCurrentFarm =
                                         farm._id.toString()
                                     ) { %>
 
-
                                         <span
                                             class="asset-bar-component__current-label"
                                         >
                                             CURRENT
                                         </span>
 
-
                                     <% } %>
-
 
                                 </a>
 
-
                             <% }); %>
-
 
                         </div>
 
-
                     </div>
-
 
                 </div>
 
-
             <% } %>
 
-
         </section>
-
 
     <% } %>
 
@@ -659,7 +701,6 @@ const isCurrentFarm =
 
         </button>
 
-
     </div>
 
 
@@ -681,7 +722,6 @@ const isCurrentFarm =
             role="tabpanel"
             aria-labelledby="assetAnimalsTab"
         >
-
 
             <div class="asset-bar-component__section-header">
 
@@ -706,22 +746,18 @@ const isCurrentFarm =
 
             <div class="asset-bar-component__list">
 
-
                 <% if (animalDairies.length > 0) { %>
 
-
                     <% animalDairies.forEach(animal => { %>
-
 
                         <a
                             href="/dairy/<%= animal._id %>"
                             class="asset-bar-component__item"
                             data-asset-id="<%= animal._id %>"
                             data-asset-code="<%= animal.code || '' %>"
-                            data-asset-room-number="<%= animal.roomNumber || '' %>"
+                            data-asset-gender="<%= getAnimalGender(animal) %>"
                             data-asset-type="animal"
                         >
-
 
                             <span
                                 class="asset-bar-component__item-image"
@@ -760,12 +796,23 @@ const isCurrentFarm =
                                 </span>
 
 
-                                <% if (animal.gender) { %>
+                                <!-- ==================================
+                                     GENDER
+
+                                     code odd  = Male
+                                     code even = Female
+                                =================================== -->
+
+                                <% const animalGender =
+                                    getAnimalGender(animal); %>
+
+
+                                <% if (animalGender) { %>
 
                                     <span
                                         class="asset-bar-component__item-code"
                                     >
-                                        <%= animal.gender %>
+                                        <%= animalGender %>
                                     </span>
 
                                 <% } %>
@@ -792,15 +839,11 @@ const isCurrentFarm =
                                 ›
                             </span>
 
-
                         </a>
-
 
                     <% }); %>
 
-
                 <% } else { %>
-
 
                     <div class="asset-bar-component__empty">
 
@@ -817,12 +860,9 @@ const isCurrentFarm =
 
                     </div>
 
-
                 <% } %>
 
-
             </div>
-
 
         </section>
 
@@ -839,7 +879,6 @@ const isCurrentFarm =
             aria-labelledby="assetCowShadesTab"
             hidden
         >
-
 
             <div class="asset-bar-component__section-header">
 
@@ -864,12 +903,9 @@ const isCurrentFarm =
 
             <div class="asset-bar-component__list">
 
-
                 <% if (cowShadeDairies.length > 0) { %>
 
-
                     <% cowShadeDairies.forEach(shade => { %>
-
 
                         <a
                             href="/dairy/<%= shade._id %>"
@@ -878,7 +914,6 @@ const isCurrentFarm =
                             data-asset-room-number="<%= shade.roomNumber %>"
                             data-asset-type="cow-shade"
                         >
-
 
                             <span
                                 class="asset-bar-component__item-image"
@@ -945,7 +980,6 @@ const isCurrentFarm =
 
                                 <% } %>
 
-
                             </span>
 
 
@@ -956,15 +990,11 @@ const isCurrentFarm =
                                 ›
                             </span>
 
-
                         </a>
-
 
                     <% }); %>
 
-
                 <% } else { %>
-
 
                     <div class="asset-bar-component__empty">
 
@@ -981,12 +1011,9 @@ const isCurrentFarm =
 
                     </div>
 
-
                 <% } %>
 
-
             </div>
-
 
         </section>
 
@@ -1003,7 +1030,6 @@ const isCurrentFarm =
             aria-labelledby="assetAnimalFeedsTab"
             hidden
         >
-
 
             <div class="asset-bar-component__section-header">
 
@@ -1028,12 +1054,9 @@ const isCurrentFarm =
 
             <div class="asset-bar-component__list">
 
-
                 <% if (animalFeedDairies.length > 0) { %>
 
-
                     <% animalFeedDairies.forEach(feed => { %>
-
 
                         <a
                             href="/dairy/<%= feed._id %>"
@@ -1042,7 +1065,6 @@ const isCurrentFarm =
                             data-asset-room-number="<%= feed.roomNumber %>"
                             data-asset-type="animal-feed"
                         >
-
 
                             <span
                                 class="asset-bar-component__item-image"
@@ -1109,7 +1131,6 @@ const isCurrentFarm =
 
                                 <% } %>
 
-
                             </span>
 
 
@@ -1120,15 +1141,11 @@ const isCurrentFarm =
                                 ›
                             </span>
 
-
                         </a>
-
 
                     <% }); %>
 
-
                 <% } else { %>
-
 
                     <div class="asset-bar-component__empty">
 
@@ -1146,12 +1163,9 @@ const isCurrentFarm =
 
                     </div>
 
-
                 <% } %>
 
-
             </div>
-
 
         </section>
 
@@ -1168,7 +1182,6 @@ const isCurrentFarm =
             aria-labelledby="assetToolsTab"
             hidden
         >
-
 
             <div class="asset-bar-component__section-header">
 
@@ -1193,12 +1206,9 @@ const isCurrentFarm =
 
             <div class="asset-bar-component__list">
 
-
                 <% if (toolDairies.length > 0) { %>
 
-
                     <% toolDairies.forEach(tool => { %>
-
 
                         <a
                             href="/dairy/<%= tool._id %>"
@@ -1206,7 +1216,6 @@ const isCurrentFarm =
                             data-asset-id="<%= tool._id %>"
                             data-asset-type="tool"
                         >
-
 
                             <span
                                 class="asset-bar-component__item-image"
@@ -1266,7 +1275,6 @@ const isCurrentFarm =
 
                                 <% } %>
 
-
                             </span>
 
 
@@ -1277,15 +1285,11 @@ const isCurrentFarm =
                                 ›
                             </span>
 
-
                         </a>
-
 
                     <% }); %>
 
-
                 <% } else { %>
-
 
                     <div class="asset-bar-component__empty">
 
@@ -1302,18 +1306,13 @@ const isCurrentFarm =
 
                     </div>
 
-
                 <% } %>
-
 
             </div>
 
-
         </section>
 
-
     </div>
-
 
 </aside>
 
@@ -1415,7 +1414,6 @@ const isCurrentFarm =
             tabs.forEach(
                 function (tab) {
 
-
                     const isActive =
                         tab.dataset.assetCategory ===
                         category;
@@ -1432,14 +1430,12 @@ const isCurrentFarm =
                         String(isActive)
                     );
 
-
                 }
             );
 
 
             sections.forEach(
                 function (section) {
-
 
                     const isActive =
                         section.dataset.assetSection ===
@@ -1454,7 +1450,6 @@ const isCurrentFarm =
 
                     section.hidden =
                         !isActive;
-
 
                 }
             );
@@ -1617,7 +1612,6 @@ const isCurrentFarm =
 
         if (openButton) {
 
-
             openButton.addEventListener(
                 "click",
                 function (event) {
@@ -1653,7 +1647,6 @@ const isCurrentFarm =
 
         if (closeButton) {
 
-
             closeButton.addEventListener(
                 "click",
                 function (event) {
@@ -1676,7 +1669,6 @@ const isCurrentFarm =
 
         if (overlay) {
 
-
             overlay.addEventListener(
                 "click",
                 function () {
@@ -1697,7 +1689,6 @@ const isCurrentFarm =
             farmSwitchButton &&
             assignedFarmList
         ) {
-
 
             farmSwitchButton.addEventListener(
                 "click",
@@ -1734,7 +1725,6 @@ const isCurrentFarm =
         tabs.forEach(
             function (tab) {
 
-
                 tab.addEventListener(
                     "click",
                     function (event) {
@@ -1755,7 +1745,6 @@ const isCurrentFarm =
                     }
                 );
 
-
             }
         );
 
@@ -1768,7 +1757,6 @@ const isCurrentFarm =
             "keydown",
             function (event) {
 
-
                 if (
                     event.key === "Escape" &&
                     assetBar.classList.contains(
@@ -1779,7 +1767,6 @@ const isCurrentFarm =
                     closeAssetBar();
 
                 }
-
 
             }
         );
@@ -1828,7 +1815,6 @@ const isCurrentFarm =
         setCategory(
             "animals"
         );
-
 
     }
 
