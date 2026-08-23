@@ -1,6 +1,6 @@
 // ==========================================================
 // services/update/index.js
-// =========================================================
+// ==========================================================
 
 module.exports = {
 
@@ -20,6 +20,8 @@ module.exports = {
 
     ...require("./itemLink"),
 
-    ...require("./stockUpdateService")
+    ...require("./stockUpdateService"),
+
+    ...require("./contentItemService")
 
 };
