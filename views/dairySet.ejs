@@ -8,6 +8,9 @@ FILE:
 PURPOSE:
     Display the profile page for a Dairy asset or
     structure.
+
+    The content-item card is displayed ONLY when the
+    current dairy has a dwellNumber.
 ==========================================================
 */ %>
 
@@ -33,12 +36,79 @@ PURPOSE:
          PROFILE
     ================================================== -->
 
-    <% if (dairy && dairy.code != null) { %>
+    <% if (
+        dairy &&
+        dairy.code != null
+    ) { %>
 
         <%- include("update/profile-card", {
             dairy: dairy,
             user: user
         }) %>
+
+    <% } %>
+
+
+
+    <!-- =================================================
+         STORAGE CONTENT ITEM
+    ==================================================
+
+         The content-item card is displayed ONLY when
+         the dairy has a dwellNumber.
+
+         The card uses contentsItemController.js for
+         database updates.
+
+         No storage update route is invented here.
+    ================================================== -->
+
+    <% if (
+        dairy &&
+        dairy.dwellNumber != null &&
+        String(dairy.dwellNumber).trim() !== "" &&
+        typeof contentItem !== "undefined" &&
+        contentItem
+    ) { %>
+
+
+        <%- include("update/content-item", {
+
+            dairy: dairy,
+
+            storage:
+                typeof storage !== "undefined"
+                    ? storage
+                    : null,
+
+            item:
+                contentItem,
+
+            user:
+                user,
+
+            successMessage:
+                typeof successMessage !== "undefined"
+                    ? successMessage
+                    : null,
+
+            pageError:
+                typeof pageError !== "undefined"
+                    ? pageError
+                    : null,
+
+            latestStockUpdate:
+                typeof latestStockUpdate !== "undefined"
+                    ? latestStockUpdate
+                    : null,
+
+            contentItemUpdateAction:
+                typeof contentItemUpdateAction !== "undefined"
+                    ? contentItemUpdateAction
+                    : null
+
+        }) %>
+
 
     <% } %>
 
