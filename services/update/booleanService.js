@@ -1,0 +1,374 @@
+// =========================================================
+// services/update/booleanService.js
+// ==========================================================
+//
+// BOOLEAN ANIMAL SERVICE
+//
+// PURPOSE
+// ---------------------------------------------------------
+//
+// Supplies female / eligible animal records to:
+//
+//     views/update/boolean.ejs
+//
+// ELIGIBLE ANIMAL:
+//
+//     1. Positive EVEN code
+//        OR
+//
+//     2. gender === "female"
+//
+// BOOLEAN FIELDS:
+//
+//     Boolean fields are discovered directly from the
+//     Dairy Mongoose schema.
+//
+// The include displays those fields as toggle controls.
+//
+// DATABASE TOGGLE:
+//
+//     Only actual Boolean schema paths may be toggled.
+// ==========================================================
+
+
+const Dairy =
+    require("../../models/dairy");
+
+
+// ==========================================================
+// GET BOOLEAN ANIMALS
+// ==========================================================
+//
+// Returns Dairy records where:
+//
+//     (code > 0 AND code % 2 === 0)
+//
+// OR:
+//
+//     gender === "female"
+//
+// ==========================================================
+
+exports.getBooleanAnimals =
+async function () {
+
+    // ======================================================
+    // LOAD RECORDS
+    // ======================================================
+
+    const records =
+        await Dairy
+            .find({
+
+                $or: [
+
+                    {
+                        code: {
+                            $gt: 0,
+                            $mod: [
+                                2,
+                                0
+                            ]
+                        }
+                    },
+
+                    {
+                        gender: "female"
+                    },
+
+                    {
+                        gender: "Female"
+                    },
+
+                    {
+                        gender: "FEMALE"
+                    }
+
+                ]
+
+            })
+            .sort({
+                code: 1,
+                name: 1
+            })
+            .lean();
+
+
+    return Array.isArray(records)
+        ? records
+        : [];
+
+};
+
+
+// ==========================================================
+// GET BOOLEAN FIELDS
+// ==========================================================
+//
+// Discovers fields whose Mongoose schema type is Boolean.
+//
+// This means the EJS does NOT need a hard-coded list of
+// boolean properties.
+//
+// ==========================================================
+
+exports.getBooleanFields =
+function () {
+
+    const fields = [];
+
+
+    const paths =
+        Dairy.schema.paths;
+
+
+    Object.keys(paths).forEach(
+        function (fieldName) {
+
+            const schemaPath =
+                paths[fieldName];
+
+
+            if (
+                schemaPath &&
+                schemaPath.instance === "Boolean"
+            ) {
+
+                fields.push(
+                    fieldName
+                );
+
+            }
+
+        }
+    );
+
+
+    return fields;
+
+};
+
+
+// ==========================================================
+// GET BOOLEAN DATA
+// ==========================================================
+//
+// Convenience method used by pageController.
+//
+// ==========================================================
+
+exports.getBooleanData =
+async function () {
+
+    const [
+        animals,
+        fields
+    ] =
+        await Promise.all([
+
+            exports.getBooleanAnimals(),
+
+            Promise.resolve(
+                exports.getBooleanFields()
+            )
+
+        ]);
+
+
+    return {
+
+        animals,
+
+        fields
+
+    };
+
+};
+
+
+// ==========================================================
+// TOGGLE BOOLEAN
+// ==========================================================
+//
+// PARAMS:
+//
+//     dairyId
+//     field
+//
+// The field MUST be an actual Boolean field defined in the
+// Dairy schema.
+//
+// ==========================================================
+
+exports.toggleBoolean =
+async function (
+    dairyId,
+    field
+) {
+
+    // ======================================================
+    // VALIDATE ID
+    // ======================================================
+
+    if (!dairyId) {
+
+        const error =
+            new Error(
+                "Dairy ID is required."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // VALIDATE FIELD
+    // ======================================================
+
+    if (
+        !field ||
+        typeof field !== "string"
+    ) {
+
+        const error =
+            new Error(
+                "Boolean field is required."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // VERIFY FIELD IS A BOOLEAN SCHEMA PATH
+    // ======================================================
+
+    const schemaPath =
+        Dairy.schema.path(
+            field
+        );
+
+
+    if (
+        !schemaPath ||
+        schemaPath.instance !== "Boolean"
+    ) {
+
+        const error =
+            new Error(
+                "Invalid boolean field."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // FIND ANIMAL
+    // ======================================================
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
+        );
+
+
+    if (!dairy) {
+
+        const error =
+            new Error(
+                "Dairy animal not found."
+            );
+
+        error.status = 404;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // VERIFY ELIGIBILITY
+    // ======================================================
+
+    const numericCode =
+        Number(
+            dairy.code
+        );
+
+
+    const evenPositiveCode =
+        Number.isInteger(
+            numericCode
+        ) &&
+        numericCode > 0 &&
+        numericCode % 2 === 0;
+
+
+    const female =
+        String(
+            dairy.gender || ""
+        ).toLowerCase() === "female";
+
+
+    if (
+        !evenPositiveCode &&
+        !female
+    ) {
+
+        const error =
+            new Error(
+                "This Dairy animal is not eligible for boolean updates."
+            );
+
+        error.status = 403;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // TOGGLE
+    // ======================================================
+
+    dairy[field] =
+        !Boolean(
+            dairy[field]
+        );
+
+
+    // ======================================================
+    // SAVE
+    // ======================================================
+
+    await dairy.save();
+
+
+    // ======================================================
+    // RESPONSE DATA
+    // ======================================================
+
+    return {
+
+        dairy,
+
+        field,
+
+        value:
+            Boolean(
+                dairy[field]
+            )
+
+    };
+
+};
