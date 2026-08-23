@@ -1,127 +1,242 @@
 <% /*
-
-ADMIN PLATFORM HERO
+==========================================================
+DAIRY FARM INTRODUCTION / H1
 
 FILE:
-views/admin/hero.ejs
+    views/update/h1.ejs
 
 PURPOSE:
-General welcome hero section for the Admin platform.
-
-IMPORTANT:
-This is NOT a dairy-specific section.
-
-It does not use:
-    dairy.name
-    dairy.code
-    or any other dairy data.
+    Premium editorial introductory section for the
+    dairy management dashboard.
 
 DATA REQUIRED:
-user
-
+    dairy
+==========================================================
 */ %>
 
 <section
-    class="admin-hero"
-    aria-label="Admin Welcome"
-><!-- =================================================
-     BACKGROUND LOGO
-================================================== -->
-
-<div
-    class="admin-hero-background"
-    aria-hidden="true"
+    class="dairy-h1"
+    aria-label="Dairy Farm Introduction"
 >
 
-    <img
-        src="/images/h1.png"
-        alt=""
-        class="admin-hero-logo"
+    <!-- ==================================================
+         BACKGROUND LOGO
+    =================================================== -->
+
+    <div
+        class="dairy-h1-background"
+        aria-hidden="true"
     >
-
-</div>
-
-
-<!-- =================================================
-     CONTENT
-================================================== -->
-
-<div class="admin-hero-content">
-
-    <div class="admin-hero-label">
-
-        <span class="admin-hero-label-line"></span>
-
-        <span>ADMINISTRATOR</span>
-
-        <span class="admin-hero-label-line"></span>
-
+        <img
+            src="/images/h1.png"
+            alt=""
+            class="dairy-h1-logo"
+        >
     </div>
 
 
-    <h1 class="admin-hero-title">
+    <!-- ==================================================
+         DECORATIVE ACCENTS
+    =================================================== -->
 
-        Welcome,
-        <span>
-            <%= user && user.name
-                ? user.name
-                : "Admin" %>
-        </span>
+    <div
+        class="dairy-h1-accent"
+        aria-hidden="true"
+    ></div>
 
-    </h1>
+    <div
+        class="dairy-h1-glow dairy-h1-glow-one"
+        aria-hidden="true"
+    ></div>
+
+    <div
+        class="dairy-h1-glow dairy-h1-glow-two"
+        aria-hidden="true"
+    ></div>
 
 
-    <div class="admin-hero-message">
+    <!-- ==================================================
+         CONTENT
+    =================================================== -->
 
-        <p>
-            Welcome to your administration
-            platform.
-        </p>
+    <div class="dairy-h1-content">
 
-        <p>
-            Go through this platform and
-            manage your activities here.
-        </p>
+        <!-- ==============================================
+             TOP LABEL
+        =============================================== -->
 
-        <p>
-            Monitor activities, manage records,
-            keep information updated, and use
-            the available tools to keep everything
-            organized.
-        </p>
+        <div class="dairy-h1-label">
+
+            <span class="dairy-h1-label-line"></span>
+
+            <span class="dairy-h1-label-text">
+                DAIRY FARM
+            </span>
+
+            <span class="dairy-h1-label-line"></span>
+
+        </div>
+
+
+        <!-- ==============================================
+             TITLE
+        =============================================== -->
+
+        <h1 class="dairy-h1-title">
+
+            <span class="dairy-h1-title-intro">
+                Welcome to
+            </span>
+
+            <span class="dairy-h1-title-name">
+                Your Dairy Farm
+            </span>
+
+        </h1>
+
+
+        <!-- ==============================================
+             FARM INFORMATION
+        =============================================== -->
+
+        <% if (dairy && dairy.code != null) { %>
+
+            <div class="dairy-h1-meta">
+
+                <span class="dairy-h1-meta-icon">
+                    <i class="fas fa-location-dot"></i>
+                </span>
+
+                <span class="dairy-h1-code">
+                    FARM #<%= dairy.code %>
+                </span>
+
+            </div>
+
+        <% } %>
+
+
+        <!-- ==============================================
+             MESSAGE
+        =============================================== -->
+
+        <div class="dairy-h1-message">
+
+            <p>
+                Welcome to your dairy management space.
+                We're glad to have you here.
+            </p>
+
+            <p>
+                Support the activities here by keeping us
+                informed about the welfare and condition
+                of all assets within the dairy farm.
+            </p>
+
+            <p>
+                If you experience any inconvenience,
+                please keep us updated through this site.
+            </p>
+
+        </div>
+
+
+        <!-- ==============================================
+             BOTTOM DETAIL
+        =============================================== -->
+
+        <div class="dairy-h1-footer">
+
+            <span class="dairy-h1-footer-line"></span>
+
+            <span>
+                FARM MANAGEMENT
+            </span>
+
+            <span class="dairy-h1-footer-dot"></span>
+
+            <span>
+                ASSET WELFARE
+            </span>
+
+        </div>
 
     </div>
 
-</div>
+</section>
 
-</section><style>
+
+<style>
 
 /* =========================================================
    MAIN SECTION
 ========================================================= */
 
-.admin-hero {
+.dairy-h1 {
 
     position: relative;
 
     width: 100%;
 
-    min-height: 390px;
+    min-height: 410px;
 
-    margin: 0 0 28px;
+    margin: 0 0 30px;
 
     overflow: hidden;
 
-    background: #fff;
+    isolation: isolate;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f9fcfa 52%,
+            #f1f8f3 100%
+        );
+
+    border: 1px solid #e2ebe4;
+
+    border-radius: 24px;
+
+    box-shadow:
+        0 12px 35px rgba(24, 63, 37, .07),
+        0 2px 8px rgba(24, 63, 37, .04);
 
 }
 
 
 /* =========================================================
-   BACKGROUND
+   LEFT ACCENT
 ========================================================= */
 
-.admin-hero-background {
+.dairy-h1-accent {
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 6px;
+
+    z-index: 5;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #0b5d1e,
+            #2d8a48,
+            #0b5d1e
+        );
+
+}
+
+
+/* =========================================================
+   BACKGROUND LOGO
+========================================================= */
+
+.dairy-h1-background {
 
     position: absolute;
 
@@ -133,7 +248,9 @@ user
 
     align-items: center;
 
-    justify-content: center;
+    justify-content: flex-end;
+
+    padding-right: 4%;
 
     overflow: hidden;
 
@@ -142,15 +259,70 @@ user
 }
 
 
-.admin-hero-logo {
+.dairy-h1-logo {
 
     display: block;
 
-    width: min(720px, 105vw);
+    width: min(610px, 62vw);
 
     height: auto;
 
-    opacity: .11;
+    opacity: .075;
+
+    filter:
+        saturate(.7)
+        contrast(.9);
+
+    transform:
+        rotate(-3deg)
+        translateX(3%);
+
+}
+
+
+/* =========================================================
+   DECORATIVE GLOW
+========================================================= */
+
+.dairy-h1-glow {
+
+    position: absolute;
+
+    z-index: 0;
+
+    border-radius: 50%;
+
+    pointer-events: none;
+
+    filter: blur(2px);
+
+}
+
+
+.dairy-h1-glow-one {
+
+    width: 230px;
+    height: 230px;
+
+    right: -90px;
+    top: -100px;
+
+    background:
+        rgba(42, 130, 65, .07);
+
+}
+
+
+.dairy-h1-glow-two {
+
+    width: 180px;
+    height: 180px;
+
+    left: -90px;
+    bottom: -100px;
+
+    background:
+        rgba(11, 93, 30, .045);
 
 }
 
@@ -159,24 +331,24 @@ user
    CONTENT
 ========================================================= */
 
-.admin-hero-content {
+.dairy-h1-content {
 
     position: relative;
 
-    z-index: 2;
+    z-index: 3;
 
     width: 100%;
 
     max-width: 1180px;
 
-    min-height: 390px;
+    min-height: 410px;
 
     margin: 0 auto;
 
     padding:
-        38px
-        clamp(20px, 5vw, 65px)
-        34px;
+        45px
+        clamp(25px, 6vw, 72px)
+        34px 48px;
 
     box-sizing: border-box;
 
@@ -195,17 +367,37 @@ user
    LABEL
 ========================================================= */
 
-.admin-hero-label {
+.dairy-h1-label {
 
     display: flex;
 
     align-items: center;
 
-    gap: 9px;
+    gap: 10px;
 
-    margin-bottom: 12px;
+    margin-bottom: 15px;
 
-    color: #426b4d;
+}
+
+
+.dairy-h1-label-line {
+
+    width: 30px;
+
+    height: 2px;
+
+    border-radius: 5px;
+
+    background: #0b5d1e;
+
+    opacity: .7;
+
+}
+
+
+.dairy-h1-label-text {
+
+    color: #397149;
 
     font-family:
         Arial,
@@ -216,19 +408,7 @@ user
 
     font-weight: 800;
 
-    letter-spacing: 2.5px;
-
-}
-
-
-.admin-hero-label-line {
-
-    width: 27px;
-
-    height: 1px;
-
-    background:
-        rgba(66, 107, 77, .65);
+    letter-spacing: 2.8px;
 
 }
 
@@ -237,38 +417,122 @@ user
    TITLE
 ========================================================= */
 
-.admin-hero-title {
+.dairy-h1-title {
 
-    max-width: 820px;
+    max-width: 850px;
 
     margin: 0;
-
-    color: #263d2d;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size:
-        clamp(34px, 4.5vw, 56px);
-
-    line-height: 1.02;
-
-    letter-spacing: -1.3px;
-
     font-weight: 700;
+
+    line-height: 1;
+
+    letter-spacing: -1.8px;
 
 }
 
 
-.admin-hero-title span {
+.dairy-h1-title-intro {
 
     display: block;
 
-    margin-top: 4px;
+    color: #263c2d;
 
-    color: #3d6849;
+    font-size:
+        clamp(32px, 4.3vw, 52px);
+
+}
+
+
+.dairy-h1-title-name {
+
+    display: block;
+
+    margin-top: 7px;
+
+    color: #0b5d1e;
+
+    font-size:
+        clamp(37px, 5.2vw, 64px);
+
+    line-height: 1.02;
+
+}
+
+
+/* =========================================================
+   FARM META
+========================================================= */
+
+.dairy-h1-meta {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 15px;
+
+    padding:
+        6px
+        11px
+        6px
+        8px;
+
+    border: 1px solid #d8e7db;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255, 255, 255, .72);
+
+    box-shadow:
+        0 2px 7px rgba(24, 63, 37, .035);
+
+}
+
+
+.dairy-h1-meta-icon {
+
+    width: 21px;
+    height: 21px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #eaf5ec;
+
+    color: #0b5d1e;
+
+    font-size: 9px;
+
+}
+
+
+.dairy-h1-code {
+
+    color: #42684d;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.5px;
 
 }
 
@@ -277,21 +541,27 @@ user
    MESSAGE
 ========================================================= */
 
-.admin-hero-message {
+.dairy-h1-message {
 
     max-width: 650px;
 
-    margin-top: 19px;
+    margin-top: 22px;
+
+    padding-left: 15px;
+
+    border-left:
+        2px solid
+        rgba(11, 93, 30, .16);
 
 }
 
 
-.admin-hero-message p {
+.dairy-h1-message p {
 
-    margin: 0 0 7px;
+    margin: 0 0 8px;
 
     color:
-        rgba(39, 58, 45, .84);
+        rgba(39, 58, 45, .82);
 
     font-family:
         Arial,
@@ -301,16 +571,69 @@ user
     font-size:
         clamp(12px, 1.35vw, 14px);
 
-    line-height: 1.55;
+    line-height: 1.6;
 
     font-weight: 400;
 
 }
 
 
-.admin-hero-message p:last-child {
+.dairy-h1-message p:last-child {
 
     margin-bottom: 0;
+
+}
+
+
+/* =========================================================
+   FOOTER DETAIL
+========================================================= */
+
+.dairy-h1-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 25px;
+
+    color: #789080;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.4px;
+
+}
+
+
+.dairy-h1-footer-line {
+
+    width: 25px;
+
+    height: 1px;
+
+    background: #9ab2a0;
+
+}
+
+
+.dairy-h1-footer-dot {
+
+    width: 3px;
+    height: 3px;
+
+    border-radius: 50%;
+
+    background: #4b7957;
 
 }
 
@@ -321,26 +644,31 @@ user
 
 @media (max-width: 900px) {
 
-    .admin-hero {
+    .dairy-h1 {
 
-        min-height: 365px;
+        min-height: 390px;
+
+        border-radius: 20px;
 
     }
 
-    .admin-hero-content {
+    .dairy-h1-content {
 
-        min-height: 365px;
+        min-height: 390px;
 
         padding:
-            34px
-            28px
-            30px;
+            38px
+            32px
+            30px
+            38px;
 
     }
 
-    .admin-hero-logo {
+    .dairy-h1-logo {
 
-        width: min(650px, 110vw);
+        width: 560px;
+
+        max-width: 75vw;
 
     }
 
@@ -353,73 +681,144 @@ user
 
 @media (max-width: 650px) {
 
-    .admin-hero {
+    .dairy-h1 {
 
-        min-height: 400px;
+        min-height: 430px;
 
         margin-bottom: 22px;
 
+        border-radius: 18px;
+
     }
 
-    .admin-hero-content {
 
-        min-height: 400px;
+    .dairy-h1-accent {
+
+        width: 4px;
+
+    }
+
+
+    .dairy-h1-content {
+
+        min-height: 430px;
 
         padding:
-            30px
-            20px
-            28px;
+            31px
+            21px
+            26px
+            25px;
 
     }
 
-    .admin-hero-logo {
 
-        width: 520px;
+    .dairy-h1-background {
 
-        max-width: 130vw;
+        align-items: flex-end;
 
-        opacity: .10;
+        justify-content: center;
 
-    }
-
-    .admin-hero-label {
-
-        margin-bottom: 10px;
-
-        font-size: 8px;
-
-        letter-spacing: 2px;
+        padding: 0;
 
     }
 
-    .admin-hero-title {
+
+    .dairy-h1-logo {
+
+        width: 480px;
+
+        max-width: 125vw;
+
+        opacity: .065;
+
+        transform:
+            rotate(-3deg)
+            translateY(15%);
+
+    }
+
+
+    .dairy-h1-label {
+
+        gap: 7px;
+
+        margin-bottom: 12px;
+
+    }
+
+
+    .dairy-h1-label-line {
+
+        width: 21px;
+
+    }
+
+
+    .dairy-h1-label-text {
+
+        font-size: 7.5px;
+
+        letter-spacing: 2.1px;
+
+    }
+
+
+    .dairy-h1-title-intro {
 
         font-size:
-            clamp(30px, 9vw, 41px);
-
-        letter-spacing: -.8px;
+            clamp(29px, 8.5vw, 39px);
 
     }
 
-    .admin-hero-title span {
 
-        margin-top: 3px;
+    .dairy-h1-title-name {
+
+        margin-top: 5px;
+
+        font-size:
+            clamp(34px, 10vw, 47px);
+
+        letter-spacing: -1px;
 
     }
 
-    .admin-hero-message {
 
-        margin-top: 17px;
+    .dairy-h1-meta {
+
+        margin-top: 12px;
 
     }
 
-    .admin-hero-message p {
 
-        font-size: 12.5px;
+    .dairy-h1-message {
 
-        line-height: 1.55;
+        max-width: 100%;
 
-        margin-bottom: 6px;
+        margin-top: 18px;
+
+        padding-left: 12px;
+
+    }
+
+
+    .dairy-h1-message p {
+
+        font-size: 12.2px;
+
+        line-height: 1.58;
+
+        margin-bottom: 7px;
+
+    }
+
+
+    .dairy-h1-footer {
+
+        margin-top: 19px;
+
+        font-size: 6.5px;
+
+        letter-spacing: 1.1px;
 
     }
 
@@ -432,46 +831,84 @@ user
 
 @media (max-width: 380px) {
 
-    .admin-hero {
+    .dairy-h1 {
 
-        min-height: 385px;
+        min-height: 415px;
 
     }
 
-    .admin-hero-content {
 
-        min-height: 385px;
+    .dairy-h1-content {
+
+        min-height: 415px;
 
         padding:
             27px
-            16px
-            25px;
+            17px
+            23px
+            21px;
 
     }
 
-    .admin-hero-title {
 
-        font-size: 29px;
+    .dairy-h1-title-intro {
 
-    }
-
-    .admin-hero-message {
-
-        margin-top: 15px;
+        font-size: 28px;
 
     }
 
-    .admin-hero-message p {
 
-        font-size: 12px;
+    .dairy-h1-title-name {
+
+        font-size: 32px;
+
+    }
+
+
+    .dairy-h1-message {
+
+        margin-top: 16px;
+
+    }
+
+
+    .dairy-h1-message p {
+
+        font-size: 11.5px;
 
         line-height: 1.5;
 
     }
 
-    .admin-hero-logo {
 
-        width: 470px;
+    .dairy-h1-footer {
+
+        margin-top: 16px;
+
+        font-size: 6px;
+
+    }
+
+
+    .dairy-h1-logo {
+
+        width: 440px;
+
+    }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .dairy-h1,
+    .dairy-h1-logo {
+
+        transition: none;
 
     }
 
