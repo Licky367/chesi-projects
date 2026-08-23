@@ -1,6 +1,12 @@
 // ==========================================================
 // controllers/update/index.js
 // ==========================================================
+//
+// UPDATE CONTROLLERS
+// ==========================================================
+//
+// Central export for all update-related controllers.
+// ==========================================================
 
 module.exports = {
 
@@ -22,6 +28,8 @@ module.exports = {
 
     ...require("./stockUpdateController"),
 
-    ...require("./contentItemController")
+    ...require("./contentItemController"),
+
+    ...require("./booleanController")
 
 };
