@@ -1,0 +1,695 @@
+<% /*
+==============================================================
+DAIRY FARM HORIZONTAL STATUS CARDS
+
+FILE:
+    views/admin/dairies.ejs
+
+PURPOSE:
+    Reusable EJS partial displaying Dairy Farms in a
+    WhatsApp Status-style horizontal scrollable row.
+
+CARD ORDER:
+
+    1. Add Dairy Farm
+       → /add
+
+    2. Existing Dairy Farms
+       → /dairy/:id
+
+DATA:
+
+    dairies
+        Supplied by dashboardController.
+
+IDENTITY:
+
+    Dairy Farm:
+        code < 0
+
+PROFILE IMAGE:
+
+    1. profileImage
+    2. profileImages[0]
+    3. Generated avatar when no image exists.
+
+IMPORTANT:
+
+    This is a PARTIAL.
+    It is intended to be included inside another view.
+
+==============================================================
+*/ %>
+
+
+<style>
+
+/* ==========================================================
+   DAIRY FARM SECTION
+   ========================================================== */
+
+.dairy-farms-section {
+
+    width: 100%;
+
+    margin: 0;
+
+    padding: 0 0 24px;
+
+    box-sizing: border-box;
+
+}
+
+
+/* ==========================================================
+   SECTION HEADER
+   ========================================================== */
+
+.dairy-farms-section-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin: 0 0 14px;
+
+    padding: 0 2px;
+
+}
+
+
+.dairy-farms-section-header h2 {
+
+    margin: 0;
+
+    color: #eef3ef;
+
+    font-size: 21px;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+    letter-spacing: -0.3px;
+
+}
+
+
+.dairy-farms-section-header p {
+
+    margin: 5px 0 0;
+
+    color: #89948e;
+
+    font-size: 13px;
+
+    line-height: 1.4;
+
+}
+
+
+/* ==========================================================
+   HORIZONTAL SCROLLER
+   ========================================================== */
+
+.dairy-farms-scroller {
+
+    display: flex;
+
+    flex-direction: row;
+
+    flex-wrap: nowrap;
+
+    align-items: stretch;
+
+    gap: 12px;
+
+    width: 100%;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding: 2px 4px 10px;
+
+    box-sizing: border-box;
+
+    scroll-snap-type: x proximity;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+
+    overscroll-behavior-x: contain;
+
+}
+
+
+.dairy-farms-scroller::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+/* ==========================================================
+   ALL FARM CARDS
+   ========================================================== */
+
+.dairy-farm-card {
+
+    position: relative;
+
+    flex: 0 0 120px;
+
+    width: 120px;
+
+    height: 174px;
+
+    min-width: 120px;
+
+    overflow: hidden;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: flex-end;
+
+    box-sizing: border-box;
+
+    border-radius: 17px;
+
+    border: 1px solid rgba(255, 255, 255, 0.10);
+
+    background: #151b18;
+
+    text-decoration: none;
+
+    scroll-snap-align: start;
+
+    box-shadow:
+        0 5px 18px rgba(0, 0, 0, 0.20);
+
+    transition:
+        transform 0.16s ease,
+        box-shadow 0.16s ease;
+
+}
+
+
+.dairy-farm-card:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.28);
+
+}
+
+
+.dairy-farm-card:active {
+
+    transform: scale(0.96);
+
+}
+
+
+/* ==========================================================
+   FARM IMAGE
+   ========================================================== */
+
+.dairy-farm-card-image {
+
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+    object-position: center;
+
+}
+
+
+/* ==========================================================
+   IMAGE GRADIENT
+   ========================================================== */
+
+.dairy-farm-card-overlay {
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 1;
+
+    background:
+
+        linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.02) 0%,
+            rgba(0, 0, 0, 0.04) 35%,
+            rgba(0, 0, 0, 0.30) 58%,
+            rgba(0, 0, 0, 0.88) 100%
+        );
+
+    pointer-events: none;
+
+}
+
+
+/* ==========================================================
+   FARM NAME
+   ========================================================== */
+
+.dairy-farm-card-name {
+
+    position: relative;
+
+    z-index: 2;
+
+    display: -webkit-box;
+
+    width: 100%;
+
+    padding: 10px 10px 11px;
+
+    box-sizing: border-box;
+
+    overflow: hidden;
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    line-height: 1.25;
+
+    text-align: left;
+
+    text-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.55);
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 2;
+
+}
+
+
+/* ==========================================================
+   ADD CARD
+   ========================================================== */
+
+.dairy-farm-add-card {
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 12px;
+
+    background:
+
+        linear-gradient(
+            145deg,
+            #18211d,
+            #111613
+        );
+
+    border-color:
+        rgba(48, 205, 105, 0.22);
+
+}
+
+
+/* ==========================================================
+   ADD ICON
+   ========================================================== */
+
+.dairy-farm-add-icon {
+
+    width: 66px;
+
+    height: 66px;
+
+    margin-bottom: 13px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    border-radius: 50%;
+
+    background: #202c26;
+
+    border: 2px solid #25d366;
+
+    color: #25d366;
+
+    font-size: 38px;
+
+    font-weight: 300;
+
+    line-height: 1;
+
+    box-shadow:
+        0 0 0 5px rgba(37, 211, 102, 0.07);
+
+}
+
+
+.dairy-farm-add-label {
+
+    color: #f2f5f3;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+}
+
+
+/* ==========================================================
+   EMPTY STATE
+   ========================================================== */
+
+.dairy-farms-empty {
+
+    flex: 0 0 auto;
+
+    min-width: 220px;
+
+    min-height: 174px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 18px;
+
+    box-sizing: border-box;
+
+    border-radius: 17px;
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    background: #151b18;
+
+    color: #89948e;
+
+    font-size: 14px;
+
+    text-align: center;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 480px) {
+
+    .dairy-farm-card {
+
+        flex-basis: 116px;
+
+        width: 116px;
+
+        min-width: 116px;
+
+        height: 170px;
+
+    }
+
+
+    .dairy-farms-scroller {
+
+        gap: 10px;
+
+        padding-left: 2px;
+
+        padding-right: 2px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   REDUCED MOTION
+   ========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .dairy-farms-scroller {
+
+        scroll-behavior: auto;
+
+    }
+
+
+    .dairy-farm-card {
+
+        transition: none;
+
+    }
+
+}
+
+</style>
+
+
+<%
+/* ==========================================================
+   FILTER DAIRY FARMS
+   ========================================================== */
+
+const dairyFarms =
+    Array.isArray(dairies)
+
+        ? dairies.filter(function (dairy) {
+
+            return (
+
+                dairy &&
+
+                dairy.code !== null &&
+
+                dairy.code !== undefined &&
+
+                Number(dairy.code) < 0
+
+            );
+
+        })
+
+        : [];
+
+%>
+
+
+<section class="dairy-farms-section">
+
+
+    <!-- ======================================================
+         SECTION HEADER
+    ======================================================= -->
+
+    <div class="dairy-farms-section-header">
+
+        <div>
+
+            <h2>
+                Dairy Farms
+            </h2>
+
+            <p>
+                Your dairy farms
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- ======================================================
+         HORIZONTAL CARD ROW
+    ======================================================= -->
+
+    <div class="dairy-farms-scroller">
+
+
+        <!-- ==================================================
+             ADD DAIRY FARM
+        ================================================== -->
+
+        <a
+            href="/add"
+            class="dairy-farm-card dairy-farm-add-card"
+            aria-label="Add Dairy Farm"
+        >
+
+            <span
+                class="dairy-farm-add-icon"
+                aria-hidden="true"
+            >
+                +
+            </span>
+
+            <span class="dairy-farm-add-label">
+                Add
+            </span>
+
+        </a>
+
+
+        <!-- ==================================================
+             EXISTING DAIRY FARMS
+        ================================================== -->
+
+        <% dairyFarms.forEach(function (dairy) { %>
+
+            <%
+
+                /*
+                 * Select the best available image.
+                 *
+                 * Priority:
+                 *
+                 *     1. profileImage
+                 *     2. profileImages[0]
+                 *     3. Generated avatar
+                 */
+
+                let farmImage = "";
+
+                if (
+                    dairy.profileImage &&
+                    String(dairy.profileImage).trim()
+                ) {
+
+                    farmImage =
+                        String(
+                            dairy.profileImage
+                        ).trim();
+
+                } else if (
+                    Array.isArray(
+                        dairy.profileImages
+                    ) &&
+                    dairy.profileImages.length > 0 &&
+                    dairy.profileImages[0]
+                ) {
+
+                    farmImage =
+                        String(
+                            dairy.profileImages[0]
+                        ).trim();
+
+                }
+
+
+                if (!farmImage) {
+
+                    farmImage =
+                        "https://ui-avatars.com/api/?name=" +
+                        encodeURIComponent(
+                            dairy.name || "Dairy Farm"
+                        ) +
+                        "&background=25322b" +
+                        "&color=ffffff" +
+                        "&size=256";
+
+                }
+
+            %>
+
+
+            <!-- ==============================================
+                 DAIRY FARM CARD
+            =============================================== -->
+
+            <a
+                href="/dairy/<%= dairy._id %>"
+                class="dairy-farm-card"
+                aria-label="<%= dairy.name || 'Dairy Farm' %>"
+            >
+
+
+                <!-- ==========================================
+                     PROFILE IMAGE
+                =========================================== -->
+
+                <img
+                    src="<%= farmImage %>"
+                    alt="<%= dairy.name || 'Dairy Farm' %>"
+                    class="dairy-farm-card-image"
+                    loading="lazy"
+                >
+
+
+                <!-- ==========================================
+                     IMAGE OVERLAY
+                =========================================== -->
+
+                <span
+                    class="dairy-farm-card-overlay"
+                    aria-hidden="true"
+                ></span>
+
+
+                <!-- ==========================================
+                     FARM NAME
+                =========================================== -->
+
+                <span class="dairy-farm-card-name">
+
+                    <%= dairy.name || "Dairy Farm" %>
+
+                </span>
+
+
+            </a>
+
+
+        <% }); %>
+
+
+        <!-- ==================================================
+             EMPTY STATE
+        =================================================== -->
+
+        <% if (dairyFarms.length === 0) { %>
+
+            <div class="dairy-farms-empty">
+
+                No Dairy Farms found.
+
+            </div>
+
+        <% } %>
+
+
+    </div>
+
+</section>
