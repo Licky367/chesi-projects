@@ -1,187 +1,269 @@
-<% /*
-==============================================================
-STANDALONE DAIRY ASSETS
-==============================================================
-
-FILE:
-    views/admin/standalone.ejs
-
-PURPOSE:
-    Reusable EJS partial displaying standalone Dairy
-    assets as WhatsApp / Facebook / Instagram
-    Stories-style horizontal cards.
-
-IDENTIFICATION:
-
-    dairy.assetCode === null
-        = Standalone asset
-
-    dairy.assetCode === undefined
-        = Standalone asset
-
-    dairy.assetCode !== null
-    AND
-    dairy.assetCode !== undefined
-        = Assigned asset
-        = NOT displayed here
-
-IMPORTANT:
-
-    Standalone status is determined ONLY by assetCode.
-
-    dairy.code is NOT used to determine standalone status.
-
-STANDALONE ASSETS MAY BE:
-
-    • Animals
-    • Structures
-    • Facilities
-    • Equipment
-
-FINANCIAL INFORMATION:
-
-    This partial contains NO financial information.
-
-    It does NOT use:
-
-        currentWorth
-        assetWorth
-        value
-        price
-        netWorth
-
-    The cards display only:
-
-        • Image
-        • Asset name
-
-LINK:
-
-    /dairy/:id
-
-DESIGN:
-
-    • Greenish theme
-    • Story-style vertical cards
-    • Horizontal left-to-right scrolling
-    • Touch friendly
-    • Scroll snapping
-    • Image focused
-    • Green status ring
-    • Responsive sizing
-    • No visible scrollbar
-
-CARD SIZES:
-
-    Mobile:
-        108px × 150px
-
-    Very small screens:
-        102px × 144px
-
-    Laptop / desktop:
-        116px × 164px
-
-IMPORTANT:
-
-    This is a PARTIAL.
-
-    It is intended to be included
-    inside another view.
-
-==============================================================
-*/ %>
-
-
 <%
 /* ==========================================================
-   SAFE ASSET ARRAY
-==========================================================
+   ADMIN STANDALONE ASSET CARDS
 
-   typeof is important here.
+   FILE:
+       views/admin/standalone.ejs
 
-   If the controller does not provide standaloneAssets,
-   EJS will NOT throw:
+   PURPOSE:
+       Horizontal, left/right scrollable cards for standalone
+       structures / manual assets.
 
-       standaloneAssets is not defined
-
-   Instead, an empty array is used.
-========================================================== */
-
-const standaloneAssetSource =
-    typeof standaloneAssets !== "undefined" &&
-    Array.isArray(standaloneAssets)
-
-        ? standaloneAssets
-
-        : [];
-
-
-/* ==========================================================
-   FILTER STANDALONE ASSETS
-==========================================================
-
-   STANDALONE DEFINITION:
-
+   STANDALONE RULE:
+       recordType === "structure"
+       AND
+       code === null
+       AND
        assetCode === null
-       OR
-       assetCode === undefined
 
-   IMPORTANT:
+   EXISTING ASSET:
+       /dairy/:id
 
-       dairy.code is deliberately NOT checked.
-
-   Therefore an asset may have:
-
-       code > 0
-       code < 0
-       code === 0
-
-   and STILL be standalone if assetCode
-   is missing.
+   FIRST CARD:
+       /add
 ========================================================== */
 
-const standaloneAssetList =
-    standaloneAssetSource.filter(
-        function (dairy) {
 
-            if (!dairy) {
+const sourceAssets =
+    Array.isArray(standaloneAssets)
+        ? standaloneAssets
+        : (
+            Array.isArray(assets)
+                ? assets
+                : []
+        );
 
-                return false;
 
-            }
+const standaloneRecords =
+    sourceAssets.filter(function (item) {
 
-
-            return (
-                dairy.assetCode === null ||
-                dairy.assetCode === undefined
-            );
-
+        if (!item) {
+            return false;
         }
-    );
 
+        const recordType =
+            String(
+                item.recordType || ""
+            )
+                .trim()
+                .toLowerCase();
+
+        const codeIsNull =
+            item.code === null ||
+            item.code === undefined;
+
+        const assetCodeIsNull =
+            item.assetCode === null ||
+            item.assetCode === undefined;
+
+        return (
+            recordType === "structure" &&
+            codeIsNull &&
+            assetCodeIsNull
+        );
+
+    });
 %>
+
+
+<section
+    class="admin-standalone-strip"
+    aria-label="Standalone assets"
+>
+
+    <!-- ======================================================
+         HEADER
+    ======================================================= -->
+
+    <div class="admin-standalone-strip-header">
+
+        <div class="admin-standalone-strip-title">
+
+            <strong>
+                Standalone Assets
+            </strong>
+
+        </div>
+
+        <div class="admin-standalone-strip-description">
+
+            View and manage structures and assets that are not
+            assigned to a dairy farm.
+
+        </div>
+
+    </div>
+
+
+    <!-- ======================================================
+         HORIZONTAL SCROLL
+    ======================================================= -->
+
+    <div
+        class="admin-standalone-scroll"
+        role="list"
+        aria-label="Standalone assets"
+    >
+
+
+        <!-- ==================================================
+             ADD ASSET CARD
+        ================================================== -->
+
+        <a
+            href="/add"
+            class="admin-standalone-card admin-standalone-add-card"
+            role="listitem"
+            aria-label="Add a standalone asset"
+        >
+
+            <div class="admin-standalone-add-icon">
+                +
+            </div>
+
+            <div class="admin-standalone-add-title">
+                Add Asset
+            </div>
+
+            <div class="admin-standalone-add-text">
+                Create a standalone asset
+            </div>
+
+        </a>
+
+
+
+        <!-- ==================================================
+             EXISTING STANDALONE ASSETS
+        ================================================== -->
+
+        <% standaloneRecords.forEach(function (asset) { %>
+
+            <%
+                if (
+                    !asset ||
+                    !asset._id
+                ) {
+                    return;
+                }
+
+
+                const assetName =
+                    asset.name ||
+                    "Unnamed Asset";
+
+
+                const assetImage =
+                    asset.displayImage ||
+                    asset.profileImage ||
+                    (
+                        "https://ui-avatars.com/api/?name=" +
+                        encodeURIComponent(
+                            assetName
+                        ) +
+                        "&background=e8f5ee&color=198754"
+                    );
+
+
+                const assetType =
+                    asset.type
+                        ? String(asset.type)
+                        : "Asset";
+
+
+                const assetCondition =
+                    asset.condition
+                        ? String(asset.condition)
+                        : "";
+            %>
+
+
+            <a
+                href="/dairy/<%= asset._id %>"
+                class="admin-standalone-card"
+                role="listitem"
+                aria-label="Open <%= assetName %>"
+            >
+
+                <div class="admin-standalone-image-wrap">
+
+                    <img
+                        src="<%= assetImage %>"
+                        alt="<%= assetName %>"
+                        class="admin-standalone-image"
+                        loading="lazy"
+                    >
+
+                </div>
+
+
+                <div class="admin-standalone-content">
+
+                    <div class="admin-standalone-name">
+                        <%= assetName %>
+                    </div>
+
+
+                    <div class="admin-standalone-type">
+
+                        <span
+                            class="admin-standalone-type-icon"
+                            aria-hidden="true"
+                        >
+                            🧰
+                        </span>
+
+                        <span>
+                            <%= assetType %>
+                        </span>
+
+                    </div>
+
+
+                    <% if (assetCondition) { %>
+
+                        <div class="admin-standalone-condition">
+
+                            <span class="admin-standalone-condition-label">
+                                Condition:
+                            </span>
+
+                            <span>
+                                <%= assetCondition %>
+                            </span>
+
+                        </div>
+
+                    <% } %>
+
+                </div>
+
+            </a>
+
+        <% }); %>
+
+
+    </div>
+
+</section>
+
 
 
 <style>
 
 /* ==========================================================
-   STANDALONE ASSETS SECTION
+   STANDALONE STRIP
 ========================================================== */
 
-.standalone-assets-section {
+.admin-standalone-strip {
 
-    width:
-        100%;
+    width: 100%;
 
-    margin:
-        0;
+    margin: 0 0 18px;
 
-    padding:
-        0 0 20px;
+    padding: 0;
 
-    box-sizing:
-        border-box;
+    overflow: hidden;
 
     font-family:
         Arial,
@@ -192,289 +274,125 @@ const standaloneAssetList =
 
 
 /* ==========================================================
-   SECTION HEADER
+   HEADER
 ========================================================== */
 
-.standalone-assets-header {
+.admin-standalone-strip-header {
 
-    width:
-        100%;
-
-    display:
-        flex;
-
-    align-items:
-        flex-start;
-
-    justify-content:
-        space-between;
-
-    gap:
-        12px;
-
-    margin:
-        0 0 12px;
+    width: 100%;
 
     padding:
-        0 2px;
-
-    box-sizing:
-        border-box;
-
-}
-
-
-.standalone-assets-heading {
-
-    min-width:
-        0;
-
-    flex:
-        1;
-
-}
-
-
-.standalone-assets-title {
-
-    margin:
-        0;
-
-    color:
-        #26352c;
-
-    font-size:
-        19px;
-
-    font-weight:
-        800;
-
-    line-height:
-        1.3;
-
-    letter-spacing:
-        -.02em;
-
-}
-
-
-.standalone-assets-description {
-
-    margin:
-        4px 0 0;
-
-    color:
-        #7b877f;
-
-    font-size:
-        11px;
-
-    line-height:
-        1.45;
-
-}
-
-
-/* ==========================================================
-   STATUS LABEL
-========================================================== */
-
-.standalone-assets-status-label {
-
-    flex:
-        0 0 auto;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        5px;
-
-    padding:
-        6px 9px;
-
-    border:
-        1px solid
-        #dcebdd;
-
-    border-radius:
-        999px;
-
-    background:
-        #f2f9f3;
-
-    color:
-        #39734a;
-
-    font-size:
-        9px;
-
-    font-weight:
-        800;
-
-    line-height:
-        1;
-
-    text-transform:
-        uppercase;
-
-    letter-spacing:
-        .04em;
-
-}
-
-
-.standalone-assets-status-dot {
-
-    width:
-        6px;
-
-    height:
-        6px;
-
-    flex:
-        0 0 6px;
-
-    border-radius:
-        50%;
-
-    background:
-        #39a65a;
-
-    box-shadow:
-        0 0 0 3px
-        rgba(57,166,90,.10);
-
-}
-
-
-/* ==========================================================
-   HORIZONTAL STORY SCROLLER
-========================================================== */
-
-.standalone-assets-scroller {
-
-    width:
-        100%;
-
-    display:
-        flex;
-
-    flex-direction:
-        row;
-
-    flex-wrap:
-        nowrap;
-
-    align-items:
-        stretch;
-
-    gap:
+        0
+        2px
         10px;
 
-    overflow-x:
-        auto;
+}
 
-    overflow-y:
-        hidden;
 
-    padding:
-        4px 3px 10px;
+.admin-standalone-strip-title strong {
 
-    box-sizing:
-        border-box;
+    display: block;
 
-    scroll-snap-type:
-        x proximity;
+    color: #202520;
 
-    scroll-behavior:
-        smooth;
+    font-size: 18px;
 
-    -webkit-overflow-scrolling:
-        touch;
+    font-weight: 700;
 
-    scrollbar-width:
-        none;
-
-    overscroll-behavior-x:
-        contain;
-
-    touch-action:
-        pan-x;
+    line-height: 1.35;
 
 }
 
 
-.standalone-assets-scroller::-webkit-scrollbar {
+.admin-standalone-strip-description {
 
-    display:
-        none;
+    max-width: 620px;
+
+    margin-top: 4px;
+
+    color: #7b847e;
+
+    font-size: 12px;
+
+    line-height: 1.45;
 
 }
 
 
 /* ==========================================================
-   BASE ASSET STORY CARD
-
-   LAPTOP / DESKTOP
-
-       116px × 164px
+   HORIZONTAL SCROLL
 ========================================================== */
 
-.standalone-asset-card {
+.admin-standalone-scroll {
 
-    position:
-        relative;
+    width: 100%;
+
+    display: flex;
+
+    gap: 10px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding:
+        2px
+        2px
+        8px;
+
+    scroll-behavior: smooth;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+
+}
+
+
+.admin-standalone-scroll::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+/* ==========================================================
+   CARD
+========================================================== */
+
+.admin-standalone-card {
+
+    position: relative;
 
     flex:
-        0 0 116px;
-
-    width:
+        0 0
         116px;
 
-    min-width:
-        116px;
+    width: 116px;
 
-    height:
-        164px;
+    height: 190px;
 
-    overflow:
-        hidden;
+    display: flex;
 
-    display:
-        flex;
+    flex-direction: column;
 
-    flex-direction:
-        column;
+    overflow: hidden;
 
-    justify-content:
-        flex-end;
+    flex-shrink: 0;
 
-    box-sizing:
-        border-box;
+    text-decoration: none;
 
     border:
         1px solid
-        #dfe8e1;
+        #e4e9e6;
 
-    border-radius:
-        16px;
+    border-radius: 15px;
 
-    background:
-        #edf3ee;
-
-    text-decoration:
-        none;
-
-    scroll-snap-align:
-        start;
+    background: #ffffff;
 
     box-shadow:
-        0 3px 10px
-        rgba(28,57,37,.08);
+        0 2px 8px
+        rgba(20, 40, 28, .06);
 
     transition:
         transform .16s ease,
@@ -483,1023 +401,384 @@ const standaloneAssetList =
 }
 
 
-/* ==========================================================
-   CARD HOVER
-========================================================== */
-
-.standalone-asset-card:hover {
+.admin-standalone-card:hover {
 
     transform:
         translateY(-2px);
 
     box-shadow:
-        0 7px 17px
-        rgba(28,57,37,.13);
+        0 5px 14px
+        rgba(20, 40, 28, .10);
 
 }
 
 
-/* ==========================================================
-   CARD PRESS
-========================================================== */
-
-.standalone-asset-card:active {
+.admin-standalone-card:active {
 
     transform:
-        scale(.96);
+        scale(.97);
 
 }
 
 
 /* ==========================================================
-   CARD FOCUS
+   IMAGE
 ========================================================== */
 
-.standalone-asset-card:focus-visible {
+.admin-standalone-image-wrap {
 
-    outline:
-        2px solid
-        #3d9655;
+    position: relative;
 
-    outline-offset:
-        3px;
+    width: 100%;
 
-}
-
-
-/* ==========================================================
-   ASSET IMAGE
-========================================================== */
-
-.standalone-asset-image {
-
-    position:
-        absolute;
-
-    inset:
-        0;
-
-    width:
-        100%;
-
-    height:
-        100%;
-
-    display:
-        block;
-
-    object-fit:
-        cover;
-
-    object-position:
-        center;
-
-}
-
-
-/* ==========================================================
-   ASSET AVATAR FALLBACK
-========================================================== */
-
-.standalone-asset-avatar {
-
-    position:
-        absolute;
-
-    inset:
-        0;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    background:
-
-        linear-gradient(
-            145deg,
-            #e6f3e8 0%,
-            #cfe5d3 100%
-        );
-
-    color:
-        #39734a;
-
-    font-size:
-        40px;
-
-    font-weight:
-        800;
-
-}
-
-
-/* ==========================================================
-   IMAGE OVERLAY
-========================================================== */
-
-.standalone-asset-overlay {
-
-    position:
-        absolute;
-
-    inset:
-        0;
-
-    z-index:
-        1;
-
-    pointer-events:
-        none;
-
-    background:
-
-        linear-gradient(
-            to bottom,
-            rgba(15,35,22,.02) 0%,
-            rgba(15,35,22,.04) 35%,
-            rgba(15,35,22,.24) 55%,
-            rgba(10,27,16,.86) 100%
-        );
-
-}
-
-
-/* ==========================================================
-   GREEN STATUS RING
-========================================================== */
-
-.standalone-asset-status {
-
-    position:
-        absolute;
-
-    top:
-        7px;
-
-    left:
-        7px;
-
-    z-index:
-        3;
-
-    width:
-        34px;
-
-    height:
-        34px;
-
-    padding:
-        2px;
-
-    box-sizing:
-        border-box;
-
-    border:
-        2px solid
-        #39a65a;
-
-    border-radius:
-        50%;
-
-    background:
-        #ffffff;
-
-    box-shadow:
-        0 2px 7px
-        rgba(0,0,0,.16);
-
-}
-
-
-.standalone-asset-status-inner {
-
-    width:
-        100%;
-
-    height:
-        100%;
-
-    overflow:
-        hidden;
-
-    border-radius:
-        50%;
-
-    background:
-        #e8f2e9;
-
-}
-
-
-.standalone-asset-status-inner img {
-
-    width:
-        100%;
-
-    height:
-        100%;
-
-    display:
-        block;
-
-    object-fit:
-        cover;
-
-}
-
-
-/* ==========================================================
-   STATUS AVATAR
-========================================================== */
-
-.standalone-asset-status-avatar {
-
-    width:
-        100%;
-
-    height:
-        100%;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    box-sizing:
-        border-box;
-
-    background:
-        #e6f3e8;
-
-    color:
-        #39734a;
-
-    font-size:
-        13px;
-
-    font-weight:
-        800;
-
-}
-
-
-/* ==========================================================
-   ASSET INFORMATION
-========================================================== */
-
-.standalone-asset-info {
-
-    position:
-        relative;
-
-    z-index:
-        2;
-
-    width:
-        100%;
-
-    padding:
-        8px
-        8px
-        9px;
-
-    box-sizing:
-        border-box;
-
-}
-
-
-/* ==========================================================
-   ASSET NAME
-========================================================== */
-
-.standalone-asset-name {
-
-    display:
-        -webkit-box;
-
-    width:
-        100%;
-
-    overflow:
-        hidden;
-
-    color:
-        #ffffff;
-
-    font-size:
-        12px;
-
-    font-weight:
-        800;
-
-    line-height:
-        1.25;
-
-    text-align:
-        left;
-
-    text-shadow:
-        0 1px 4px
-        rgba(0,0,0,.55);
-
-    -webkit-box-orient:
-        vertical;
-
-    -webkit-line-clamp:
-        2;
-
-}
-
-
-/* ==========================================================
-   EMPTY STATE
-========================================================== */
-
-.standalone-assets-empty {
+    height: 116px;
 
     flex:
-        0 0 220px;
+        0 0
+        116px;
 
-    width:
-        220px;
+    overflow: hidden;
 
-    min-width:
-        220px;
+    background: #eef3ef;
 
-    height:
-        150px;
+}
 
-    display:
-        flex;
 
-    flex-direction:
-        column;
+.admin-standalone-image {
 
-    align-items:
-        center;
+    width: 100%;
 
-    justify-content:
-        center;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+/* ==========================================================
+   CONTENT
+========================================================== */
+
+.admin-standalone-content {
+
+    width: 100%;
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    flex: 1;
+
+}
+
+
+/* ==========================================================
+   NAME
+========================================================== */
+
+.admin-standalone-name {
+
+    width: 100%;
 
     padding:
-        18px;
+        8px
+        8px
+        2px;
 
-    box-sizing:
-        border-box;
+    color: #202520;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    line-height: 16px;
+
+    overflow: hidden;
+
+    display: -webkit-box;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 2;
+
+}
+
+
+/* ==========================================================
+   TYPE
+========================================================== */
+
+.admin-standalone-type {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    padding:
+        1px
+        8px
+        3px;
+
+    color: #7b847e;
+
+    font-size: 10px;
+
+    line-height: 13px;
+
+    overflow: hidden;
+
+}
+
+
+.admin-standalone-type-icon {
+
+    flex:
+        0 0
+        auto;
+
+    font-size: 10px;
+
+}
+
+
+.admin-standalone-type span:last-child {
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+/* ==========================================================
+   CONDITION
+========================================================== */
+
+.admin-standalone-condition {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: baseline;
+
+    gap: 3px;
+
+    padding:
+        1px
+        8px
+        8px;
+
+    color: #198754;
+
+    font-size: 10px;
+
+    font-weight: 600;
+
+    line-height: 13px;
+
+    overflow: hidden;
+
+}
+
+
+.admin-standalone-condition-label {
+
+    flex:
+        0 0
+        auto;
+
+    color: #8a938d;
+
+    font-weight: 400;
+
+}
+
+
+.admin-standalone-condition > span:last-child {
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+/* ==========================================================
+   ADD CARD
+========================================================== */
+
+.admin-standalone-add-card {
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 12px;
 
     border:
         1px dashed
-        #cddbd0;
-
-    border-radius:
-        16px;
+        #b9cfc1;
 
     background:
-        #f7faf8;
+        #f7fbf8;
 
-    color:
-        #7d8981;
+}
 
-    font-size:
-        11px;
 
-    line-height:
-        1.5;
+.admin-standalone-add-icon {
 
-    text-align:
-        center;
+    width: 42px;
+
+    height: 42px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 9px;
+
+    border-radius: 50%;
+
+    background: #e8f5ee;
+
+    color: #198754;
+
+    font-size: 27px;
+
+    font-weight: 400;
+
+    line-height: 1;
+
+}
+
+
+.admin-standalone-add-title {
+
+    color: #202520;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    line-height: 16px;
+
+}
+
+
+.admin-standalone-add-text {
+
+    margin-top: 4px;
+
+    color: #7b847e;
+
+    font-size: 10px;
+
+    line-height: 13px;
 
 }
 
 
 /* ==========================================================
-   EMPTY ICON
+   FOCUS
 ========================================================== */
 
-.standalone-assets-empty-icon {
+.admin-standalone-card:focus-visible {
 
-    width:
-        36px;
+    outline:
+        2px solid
+        #198754;
 
-    height:
-        36px;
-
-    margin:
-        0 0 8px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    border:
-        1px solid
-        #d4e3d7;
-
-    border-radius:
-        50%;
-
-    background:
-        #edf6ef;
-
-    color:
-        #579167;
-
-    font-size:
-        18px;
-
-    font-weight:
-        400;
+    outline-offset: 2px;
 
 }
 
 
 /* ==========================================================
    MOBILE
-
-       108px × 150px
 ========================================================== */
 
-@media (max-width:600px) {
+@media (max-width: 600px) {
 
-    .standalone-assets-section {
+    .admin-standalone-card {
 
-        padding-bottom:
-            16px;
+        flex-basis: 112px;
 
-    }
+        width: 112px;
 
+        height: 184px;
 
-    .standalone-assets-title {
-
-        font-size:
-            18px;
+        border-radius: 14px;
 
     }
 
 
-    .standalone-assets-description {
+    .admin-standalone-image-wrap {
 
-        font-size:
-            10px;
+        height: 112px;
 
-    }
-
-
-    .standalone-assets-status-label {
-
-        padding:
-            6px 8px;
-
-        font-size:
-            8px;
+        flex-basis: 112px;
 
     }
 
 
-    .standalone-asset-card {
-
-        flex-basis:
-            108px;
-
-        width:
-            108px;
-
-        min-width:
-            108px;
-
-        height:
-            150px;
-
-        border-radius:
-            15px;
-
-    }
-
-
-    .standalone-assets-scroller {
-
-        gap:
-            9px;
-
-        padding-left:
-            2px;
-
-        padding-right:
-            2px;
-
-    }
-
-
-    .standalone-asset-status {
-
-        width:
-            33px;
-
-        height:
-            33px;
-
-        top:
-            7px;
-
-        left:
-            7px;
-
-    }
-
-
-    .standalone-asset-name {
-
-        font-size:
-            11px;
-
-    }
-
-
-    .standalone-asset-info {
+    .admin-standalone-name {
 
         padding:
             7px
             7px
-            8px;
+            2px;
 
-    }
+        font-size: 12px;
 
-}
-
-
-/* ==========================================================
-   VERY SMALL SCREENS
-
-       102px × 144px
-========================================================== */
-
-@media (max-width:380px) {
-
-    .standalone-asset-card {
-
-        flex-basis:
-            102px;
-
-        width:
-            102px;
-
-        min-width:
-            102px;
-
-        height:
-            144px;
-
-        border-radius:
-            14px;
+        line-height: 15px;
 
     }
 
 
-    .standalone-assets-scroller {
-
-        gap:
-            8px;
-
-    }
-
-
-    .standalone-asset-status {
-
-        width:
-            30px;
-
-        height:
-            30px;
-
-        top:
-            6px;
-
-        left:
-            6px;
-
-    }
-
-
-    .standalone-asset-name {
-
-        font-size:
-            10px;
-
-    }
-
-
-    .standalone-asset-info {
+    .admin-standalone-type {
 
         padding:
-            6px
-            6px
+            1px
+            7px
+            3px;
+
+        font-size: 9px;
+
+    }
+
+
+    .admin-standalone-condition {
+
+        padding:
+            1px
+            7px
             7px;
 
-    }
-
-
-    .standalone-asset-status-avatar {
-
-        font-size:
-            11px;
-
-    }
-
-}
-
-
-/* ==========================================================
-   REDUCED MOTION
-========================================================== */
-
-@media (prefers-reduced-motion: reduce) {
-
-    .standalone-assets-scroller {
-
-        scroll-behavior:
-            auto;
-
-    }
-
-
-    .standalone-asset-card {
-
-        transition:
-            none;
+        font-size: 9px;
 
     }
 
 }
 
 </style>
-
-
-<!-- ==========================================================
-     STANDALONE ASSETS SECTION
-========================================================== -->
-
-<section
-    class="standalone-assets-section"
-    aria-label="Standalone assets"
->
-
-
-    <!-- ======================================================
-         HEADER
-    ======================================================= -->
-
-    <header
-        class="standalone-assets-header"
-    >
-
-
-        <div
-            class="standalone-assets-heading"
-        >
-
-
-            <h2
-                class="standalone-assets-title"
-            >
-
-                Standalone Assets
-
-            </h2>
-
-
-            <p
-                class="standalone-assets-description"
-            >
-
-                Assets not assigned to another asset
-
-            </p>
-
-
-        </div>
-
-
-        <span
-            class="standalone-assets-status-label"
-        >
-
-            <span
-                class="standalone-assets-status-dot"
-                aria-hidden="true"
-            ></span>
-
-            Assets
-
-        </span>
-
-
-    </header>
-
-
-
-    <!-- ======================================================
-         HORIZONTAL STORIES ROW
-
-         Cards remain in ONE horizontal row.
-
-         They never wrap.
-
-         Users can swipe:
-
-             ← LEFT
-             RIGHT →
-
-         on mobile.
-    ======================================================= -->
-
-    <div
-        class="standalone-assets-scroller"
-        role="list"
-        aria-label="Standalone assets"
-    >
-
-
-        <% if (
-            standaloneAssetList.length > 0
-        ) { %>
-
-
-            <% standaloneAssetList.forEach(
-                function (dairy) {
-
-                    if (
-                        !dairy ||
-                        !dairy._id
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    /* ==========================================
-                       ASSET NAME
-                    =========================================== */
-
-                    const assetName =
-                        dairy.name ||
-                        "Unnamed Asset";
-
-
-                    /* ==========================================
-                       PROFILE IMAGE
-                    =========================================== */
-
-                    let assetImage =
-                        "";
-
-
-                    if (
-                        dairy.profileImage &&
-                        String(
-                            dairy.profileImage
-                        ).trim()
-                    ) {
-
-                        assetImage =
-                            String(
-                                dairy.profileImage
-                            ).trim();
-
-                    }
-
-
-                    /* ==========================================
-                       FALLBACK PROFILE IMAGE
-                    =========================================== */
-
-                    if (
-                        !assetImage &&
-                        Array.isArray(
-                            dairy.profileImages
-                        ) &&
-                        dairy.profileImages.length > 0
-                    ) {
-
-                        const firstImage =
-                            dairy.profileImages[0];
-
-
-                        if (
-                            firstImage &&
-                            String(
-                                firstImage
-                            ).trim()
-                        ) {
-
-                            assetImage =
-                                String(
-                                    firstImage
-                                ).trim();
-
-                        }
-
-                    }
-
-
-                    /* ==========================================
-                       AVATAR LETTER
-                    =========================================== */
-
-                    const avatarLetter =
-                        String(
-                            assetName
-                        )
-                            .trim()
-                            .charAt(0)
-                            .toUpperCase() ||
-                        "A";
-
-            %>
-
-
-                <!-- ==========================================
-                     ASSET STORY CARD
-                =========================================== -->
-
-                <a
-                    href="/dairy/<%= dairy._id %>"
-                    class="standalone-asset-card"
-                    role="listitem"
-                    aria-label="Open <%= assetName %>"
-                >
-
-
-                    <!-- ======================================
-                         IMAGE / AVATAR
-                    ======================================= -->
-
-                    <% if (assetImage) { %>
-
-
-                        <img
-                            src="<%= assetImage %>"
-                            alt="<%= assetName %>"
-                            class="standalone-asset-image"
-                            loading="lazy"
-                        >
-
-
-                    <% } else { %>
-
-
-                        <span
-                            class="standalone-asset-avatar"
-                            aria-hidden="true"
-                        >
-
-                            <%= avatarLetter %>
-
-                        </span>
-
-
-                    <% } %>
-
-
-
-                    <!-- ======================================
-                         IMAGE OVERLAY
-                    ======================================= -->
-
-                    <span
-                        class="standalone-asset-overlay"
-                        aria-hidden="true"
-                    ></span>
-
-
-
-                    <!-- ======================================
-                         STORY-STYLE STATUS RING
-                    ======================================= -->
-
-                    <span
-                        class="standalone-asset-status"
-                        aria-hidden="true"
-                    >
-
-
-                        <span
-                            class="standalone-asset-status-inner"
-                        >
-
-
-                            <% if (assetImage) { %>
-
-
-                                <img
-                                    src="<%= assetImage %>"
-                                    alt=""
-                                >
-
-
-                            <% } else { %>
-
-
-                                <span
-                                    class="standalone-asset-status-avatar"
-                                >
-
-                                    <%= avatarLetter %>
-
-                                </span>
-
-
-                            <% } %>
-
-
-                        </span>
-
-
-                    </span>
-
-
-
-                    <!-- ======================================
-                         ASSET INFORMATION
-
-                         ONLY ASSET NAME IS DISPLAYED.
-                    ======================================= -->
-
-                    <span
-                        class="standalone-asset-info"
-                    >
-
-
-                        <span
-                            class="standalone-asset-name"
-                        >
-
-                            <%= assetName %>
-
-                        </span>
-
-
-                    </span>
-
-
-                </a>
-
-
-            <% }); %>
-
-
-        <% } else { %>
-
-
-            <!-- ==============================================
-                 EMPTY STATE
-            =============================================== -->
-
-            <div
-                class="standalone-assets-empty"
-                role="status"
-            >
-
-
-                <span
-                    class="standalone-assets-empty-icon"
-                    aria-hidden="true"
-                >
-
-                    +
-
-                </span>
-
-
-                <span>
-
-                    No standalone assets found.
-
-                </span>
-
-
-            </div>
-
-
-        <% } %>
-
-
-    </div>
-
-
-</section>
