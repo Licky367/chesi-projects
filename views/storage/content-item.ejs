@@ -8,8 +8,8 @@ FILE:
     views/storage/content-item.ejs
 
 PURPOSE:
-    Display a clean professional detail card for one item
-    contained inside an AgroStore or Room.
+    Display details for one item contained inside a Room
+    or AgroStore.
 
 ROUTE:
 
@@ -25,31 +25,33 @@ OPTIONAL:
 
     successMessage
     pageError
+    latestStockUpdate
 
-DISPLAYED:
+STOCK UPDATE ARCHITECTURE:
 
-    Header
-    Quantity & Value
-    Description
-    Last Updated
-    Updated By
+    item.stockUpdates[]
 
-UPDATED:
+Each update contains:
 
-    Quantity is editable.
-    Stock update note can be entered.
-    Images can be attached to a stock update.
-    Last updater and timestamp are displayed in the footer.
+    quantity
+    stockUpdateNote
+    images
+    recordedBy
+    recordedAt
 
-EXPECTED UPDATE DATA:
+IMPORTANT:
 
-    item.updatedAt
-    item.updatedBy
+    The current stock quantity is taken from:
 
-    item.updatedBy may be:
-        - populated User document
-        - ObjectId
-        - string
+        item.quantity
+
+    The latest updater is taken from:
+
+        latestStockUpdate.recordedBy
+
+    The latest update timestamp is taken from:
+
+        latestStockUpdate.recordedAt
 
 ==============================================================
 */
@@ -85,6 +87,53 @@ const safePageError =
 
 
 /* ============================================================
+   SAFE LATEST STOCK UPDATE
+============================================================ */
+
+let safeLatestStockUpdate =
+    null;
+
+
+/*
+--------------------------------------------------------------
+Prefer the controller/service supplied latestStockUpdate.
+--------------------------------------------------------------
+*/
+
+if (
+    typeof latestStockUpdate !== "undefined" &&
+    latestStockUpdate
+) {
+
+    safeLatestStockUpdate =
+        latestStockUpdate;
+
+}
+
+
+/*
+--------------------------------------------------------------
+Fallback to the latest item.stockUpdates record.
+--------------------------------------------------------------
+*/
+
+if (
+    !safeLatestStockUpdate &&
+    Array.isArray(
+        contentItem.stockUpdates
+    ) &&
+    contentItem.stockUpdates.length > 0
+) {
+
+    safeLatestStockUpdate =
+        contentItem.stockUpdates[
+            contentItem.stockUpdates.length - 1
+        ];
+
+}
+
+
+/* ============================================================
    STORAGE TYPE
 ============================================================ */
 
@@ -101,12 +150,18 @@ const storageType =
    HELPERS
 ============================================================ */
 
-function displayValue(value) {
+function displayValue(
+    value
+) {
 
     return (
+
         value !== null &&
         value !== undefined &&
-        String(value).trim() !== ""
+        String(
+            value
+        ).trim() !== ""
+
     )
         ? value
         : "—";
@@ -133,7 +188,9 @@ const itemCode =
 const itemIsAnimal =
     contentItem.code !== null &&
     contentItem.code !== undefined &&
-    !Number.isNaN(itemCode) &&
+    !Number.isNaN(
+        itemCode
+    ) &&
     itemCode > 0;
 
 
@@ -159,7 +216,9 @@ let itemCategoryClass =
     "asset-badge";
 
 
-if (itemIsFeed) {
+if (
+    itemIsFeed
+) {
 
     itemCategory =
         "Feed";
@@ -170,7 +229,9 @@ if (itemIsFeed) {
     itemCategoryClass =
         "feed-badge";
 
-} else if (itemIsAnimal) {
+} else if (
+    itemIsAnimal
+) {
 
     itemCategory =
         "Animal";
@@ -181,7 +242,9 @@ if (itemIsFeed) {
     itemCategoryClass =
         "animal-badge";
 
-} else if (itemIsAgroStore) {
+} else if (
+    itemIsAgroStore
+) {
 
     itemCategory =
         "AgroStore";
@@ -251,60 +314,64 @@ const itemName =
 
 
 /* ============================================================
-   LAST UPDATED
+   LAST STOCK UPDATE
 ============================================================ */
 
-const hasUpdatedAt =
-    contentItem.updatedAt !== null &&
-    contentItem.updatedAt !== undefined &&
-    String(
-        contentItem.updatedAt
-    ).trim() !== "";
+const lastUpdateTime =
+    safeLatestStockUpdate &&
+    safeLatestStockUpdate.recordedAt
+        ? safeLatestStockUpdate.recordedAt
+        : null;
 
 
 /* ============================================================
-   UPDATED BY
+   LAST UPDATED USER
 ============================================================ */
 
-const updatedBy =
-    contentItem.updatedBy || null;
+const lastUpdatedUser =
+    safeLatestStockUpdate &&
+    safeLatestStockUpdate.recordedBy
+        ? safeLatestStockUpdate.recordedBy
+        : null;
 
 
 /* ============================================================
-   UPDATED BY NAME
+   UPDATED USER NAME
 ============================================================ */
 
 let updatedByName =
     "Unknown user";
 
 
-if (updatedBy) {
+if (
+    lastUpdatedUser
+) {
 
     if (
-        typeof updatedBy === "object" &&
-        updatedBy.name
+        typeof lastUpdatedUser === "object" &&
+        lastUpdatedUser.name
     ) {
 
         updatedByName =
             String(
-                updatedBy.name
+                lastUpdatedUser.name
             );
 
     } else if (
-        typeof updatedBy === "object" &&
-        updatedBy.email
+        typeof lastUpdatedUser === "object" &&
+        lastUpdatedUser.email
     ) {
 
         updatedByName =
             String(
-                updatedBy.email
+                lastUpdatedUser.email
             );
 
     } else {
 
         updatedByName =
             String(
-                updatedBy
+                lastUpdatedUser
             );
 
     }
@@ -320,11 +387,13 @@ let updatedAtText =
     "Not updated yet";
 
 
-if (hasUpdatedAt) {
+if (
+    lastUpdateTime
+) {
 
     const updatedDate =
         new Date(
-            contentItem.updatedAt
+            lastUpdateTime
         );
 
 
@@ -338,11 +407,20 @@ if (hasUpdatedAt) {
             updatedDate.toLocaleString(
                 undefined,
                 {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit"
+                    year:
+                        "numeric",
+
+                    month:
+                        "short",
+
+                    day:
+                        "numeric",
+
+                    hour:
+                        "numeric",
+
+                    minute:
+                        "2-digit"
                 }
             );
 
@@ -352,23 +430,28 @@ if (hasUpdatedAt) {
 
 
 /* ============================================================
-   STOCK UPDATE NOTE
+   LATEST STOCK UPDATE NOTE
 ============================================================ */
 
 const stockUpdateNote =
-    contentItem.stockUpdateNote ||
-    "";
+    safeLatestStockUpdate &&
+    safeLatestStockUpdate.stockUpdateNote
+        ? String(
+            safeLatestStockUpdate.stockUpdateNote
+        ).trim()
+        : "";
 
 
 /* ============================================================
-   STOCK UPDATE IMAGES
+   LATEST STOCK UPDATE IMAGES
 ============================================================ */
 
 const stockUpdateImages =
+    safeLatestStockUpdate &&
     Array.isArray(
-        contentItem.stockUpdateImages
+        safeLatestStockUpdate.images
     )
-        ? contentItem.stockUpdateImages
+        ? safeLatestStockUpdate.images
         : [];
 
 %>
@@ -381,11 +464,17 @@ const stockUpdateImages =
 ============================================================ */
 
 .storage-content-item-page{
+
     width:100%;
+
     max-width:850px;
+
     margin:0 auto;
+
     padding:28px 16px 65px;
+
     box-sizing:border-box;
+
 }
 
 
@@ -394,14 +483,21 @@ const stockUpdateImages =
 ============================================================ */
 
 .content-item-card{
+
     width:100%;
+
     overflow:hidden;
+
     background:#ffffff;
+
     border:1px solid #e1e9e3;
+
     border-radius:20px;
+
     box-shadow:
         0 10px 35px rgba(24,45,31,.07),
         0 2px 8px rgba(24,45,31,.035);
+
 }
 
 
@@ -410,8 +506,11 @@ const stockUpdateImages =
 ============================================================ */
 
 .content-item-hero{
+
     display:flex;
+
     align-items:center;
+
     gap:18px;
 
     padding:25px;
@@ -424,6 +523,7 @@ const stockUpdateImages =
         );
 
     border-bottom:1px solid #e4ebe6;
+
 }
 
 
@@ -432,13 +532,17 @@ const stockUpdateImages =
 ============================================================ */
 
 .content-item-icon{
+
     flex:none;
 
     width:72px;
+
     height:72px;
 
     display:flex;
+
     align-items:center;
+
     justify-content:center;
 
     border-radius:19px;
@@ -449,6 +553,7 @@ const stockUpdateImages =
         inset 0 0 0 1px rgba(45,123,72,.06);
 
     font-size:34px;
+
 }
 
 
@@ -457,17 +562,22 @@ const stockUpdateImages =
 ============================================================ */
 
 .content-item-hero-information{
+
     min-width:0;
+
     flex:1;
+
 }
 
 
 .content-item-eyebrow{
+
     margin:0 0 5px;
 
     color:#7b8a81;
 
     font-size:9px;
+
     line-height:1.2;
 
     font-weight:850;
@@ -475,15 +585,18 @@ const stockUpdateImages =
     letter-spacing:.12em;
 
     text-transform:uppercase;
+
 }
 
 
 .content-item-title{
+
     margin:0;
 
     color:#203328;
 
     font-size:27px;
+
     line-height:1.2;
 
     font-weight:850;
@@ -491,6 +604,7 @@ const stockUpdateImages =
     letter-spacing:-.035em;
 
     word-break:break-word;
+
 }
 
 
@@ -499,19 +613,26 @@ const stockUpdateImages =
 ============================================================ */
 
 .content-item-badges{
+
     display:flex;
+
     align-items:center;
+
     flex-wrap:wrap;
 
     gap:7px;
 
     margin-top:12px;
+
 }
 
 
 .content-item-badge{
+
     display:inline-flex;
+
     align-items:center;
+
     justify-content:center;
 
     min-height:24px;
@@ -521,6 +642,7 @@ const stockUpdateImages =
     border-radius:999px;
 
     font-size:9px;
+
     line-height:1;
 
     font-weight:850;
@@ -528,30 +650,43 @@ const stockUpdateImages =
     letter-spacing:.06em;
 
     text-transform:uppercase;
+
 }
 
 
 .animal-badge{
+
     background:#edf7ef;
+
     color:#347148;
+
 }
 
 
 .feed-badge{
+
     background:#eaf6ed;
+
     color:#2d7243;
+
 }
 
 
 .asset-badge{
+
     background:#f1f3f3;
+
     color:#68746d;
+
 }
 
 
 .status-badge{
+
     background:#f4f7f5;
+
     color:#536359;
+
 }
 
 
@@ -560,7 +695,9 @@ const stockUpdateImages =
 ============================================================ */
 
 .content-item-body{
+
     padding:25px;
+
 }
 
 
@@ -569,20 +706,27 @@ const stockUpdateImages =
 ============================================================ */
 
 .detail-section{
+
     margin:0;
+
 }
 
 
 .detail-section-heading{
+
     display:flex;
+
     align-items:center;
+
     gap:12px;
 
     margin-bottom:14px;
+
 }
 
 
 .detail-section-title{
+
     flex:none;
 
     margin:0;
@@ -590,20 +734,24 @@ const stockUpdateImages =
     color:#263a2c;
 
     font-size:15px;
+
     line-height:1.3;
 
     font-weight:850;
 
     letter-spacing:-.015em;
+
 }
 
 
 .detail-section-line{
+
     flex:1;
 
     height:1px;
 
     background:#e6ece8;
+
 }
 
 
@@ -612,6 +760,7 @@ const stockUpdateImages =
 ============================================================ */
 
 .highlight-grid{
+
     display:grid;
 
     grid-template-columns:
@@ -621,10 +770,12 @@ const stockUpdateImages =
         );
 
     gap:12px;
+
 }
 
 
 .highlight-box{
+
     position:relative;
 
     min-width:0;
@@ -642,24 +793,11 @@ const stockUpdateImages =
 
     border-radius:14px;
 
-    transition:
-        transform .18s ease,
-        box-shadow .18s ease,
-        border-color .18s ease;
-}
-
-
-.highlight-box:hover{
-    transform:translateY(-1px);
-
-    border-color:#d2e1d6;
-
-    box-shadow:
-        0 5px 15px rgba(30,70,43,.05);
 }
 
 
 .highlight-label{
+
     display:block;
 
     margin-bottom:8px;
@@ -667,6 +805,7 @@ const stockUpdateImages =
     color:#849188;
 
     font-size:9px;
+
     line-height:1.2;
 
     font-weight:800;
@@ -674,24 +813,29 @@ const stockUpdateImages =
     text-transform:uppercase;
 
     letter-spacing:.06em;
+
 }
 
 
 .highlight-value{
+
     display:block;
 
     color:#294333;
 
     font-size:20px;
+
     line-height:1.25;
 
     font-weight:850;
 
     word-break:break-word;
+
 }
 
 
 .highlight-unit{
+
     margin-left:3px;
 
     color:#738078;
@@ -699,6 +843,7 @@ const stockUpdateImages =
     font-size:10px;
 
     font-weight:700;
+
 }
 
 
@@ -707,11 +852,14 @@ const stockUpdateImages =
 ============================================================ */
 
 .description-section{
+
     margin-top:27px;
+
 }
 
 
 .description-box{
+
     min-height:90px;
 
     padding:17px;
@@ -721,10 +869,12 @@ const stockUpdateImages =
     border:1px solid #e4ebe6;
 
     border-radius:14px;
+
 }
 
 
 .description-text{
+
     margin:0;
 
     color:#526259;
@@ -738,10 +888,12 @@ const stockUpdateImages =
     white-space:pre-wrap;
 
     word-break:break-word;
+
 }
 
 
 .no-description{
+
     display:block;
 
     color:#8a958e;
@@ -751,6 +903,7 @@ const stockUpdateImages =
     line-height:1.6;
 
     font-style:italic;
+
 }
 
 
@@ -759,11 +912,14 @@ const stockUpdateImages =
 ============================================================ */
 
 .stock-note-section{
+
     margin-top:27px;
+
 }
 
 
 .stock-note-box{
+
     padding:17px;
 
     background:#f8fbf9;
@@ -771,10 +927,12 @@ const stockUpdateImages =
     border:1px solid #e1e9e3;
 
     border-radius:14px;
+
 }
 
 
 .stock-note-text{
+
     margin:0;
 
     color:#526259;
@@ -788,15 +946,18 @@ const stockUpdateImages =
     white-space:pre-wrap;
 
     word-break:break-word;
+
 }
 
 
 .no-stock-note{
+
     color:#8a958e;
 
     font-size:11px;
 
     font-style:italic;
+
 }
 
 
@@ -805,11 +966,14 @@ const stockUpdateImages =
 ============================================================ */
 
 .stock-images-section{
+
     margin-top:27px;
+
 }
 
 
 .stock-images-grid{
+
     display:grid;
 
     grid-template-columns:
@@ -819,11 +983,14 @@ const stockUpdateImages =
         );
 
     gap:10px;
+
 }
 
 
 .stock-image{
+
     width:100%;
+
     height:150px;
 
     display:block;
@@ -835,15 +1002,7 @@ const stockUpdateImages =
     border:1px solid #e1e9e3;
 
     background:#f2f5f3;
-}
 
-
-.no-stock-images{
-    color:#8a958e;
-
-    font-size:11px;
-
-    font-style:italic;
 }
 
 
@@ -852,12 +1011,16 @@ const stockUpdateImages =
 ============================================================ */
 
 .stock-update-section{
+
     margin-top:27px;
+
 }
 
 
 .stock-update-form{
+
     display:flex;
+
     flex-direction:column;
 
     gap:14px;
@@ -869,18 +1032,23 @@ const stockUpdateImages =
     border:1px solid #e1e9e3;
 
     border-radius:14px;
+
 }
 
 
 .stock-update-field{
+
     display:flex;
+
     flex-direction:column;
 
     gap:7px;
+
 }
 
 
 .stock-update-label{
+
     color:#536359;
 
     font-size:10px;
@@ -890,11 +1058,13 @@ const stockUpdateImages =
     letter-spacing:.05em;
 
     text-transform:uppercase;
+
 }
 
 
 .stock-update-input,
 .stock-update-textarea{
+
     width:100%;
 
     box-sizing:border-box;
@@ -914,38 +1084,46 @@ const stockUpdateImages =
     font-family:inherit;
 
     font-size:12px;
+
 }
 
 
 .stock-update-input:focus,
 .stock-update-textarea:focus{
+
     border-color:#4c9663;
 
     box-shadow:
         0 0 0 3px
         rgba(76,150,99,.10);
+
 }
 
 
 .stock-update-textarea{
+
     min-height:95px;
 
     resize:vertical;
 
     line-height:1.6;
+
 }
 
 
 .stock-update-images{
+
     width:100%;
 
     font-size:11px;
 
     color:#69766e;
+
 }
 
 
 .stock-update-button{
+
     align-self:flex-start;
 
     padding:10px 17px;
@@ -964,19 +1142,13 @@ const stockUpdateImages =
 
     font-weight:800;
 
-    transition:
-        background .16s ease,
-        transform .16s ease;
-}
-
-
-.stock-update-button:hover{
-    background:#286d3e;
 }
 
 
 .stock-update-button:active{
+
     transform:scale(.97);
+
 }
 
 
@@ -985,8 +1157,11 @@ const stockUpdateImages =
 ============================================================ */
 
 .content-item-footer{
+
     display:flex;
+
     align-items:center;
+
     justify-content:space-between;
 
     gap:15px;
@@ -996,6 +1171,7 @@ const stockUpdateImages =
     background:#fafcfb;
 
     border-top:1px solid #e5ebe7;
+
 }
 
 
@@ -1004,7 +1180,9 @@ const stockUpdateImages =
 ============================================================ */
 
 .footer-status{
+
     display:flex;
+
     align-items:center;
 
     gap:7px;
@@ -1014,11 +1192,14 @@ const stockUpdateImages =
     font-size:10px;
 
     font-weight:700;
+
 }
 
 
 .footer-status-dot{
+
     width:7px;
+
     height:7px;
 
     flex:none;
@@ -1029,6 +1210,7 @@ const stockUpdateImages =
 
     box-shadow:
         0 0 0 3px #e8f4eb;
+
 }
 
 
@@ -1037,6 +1219,7 @@ const stockUpdateImages =
 ============================================================ */
 
 .footer-updated{
+
     min-width:0;
 
     display:flex;
@@ -1050,10 +1233,12 @@ const stockUpdateImages =
     gap:3px;
 
     text-align:right;
+
 }
 
 
 .footer-updated-label{
+
     color:#9aa49e;
 
     font-size:8px;
@@ -1065,10 +1250,12 @@ const stockUpdateImages =
     letter-spacing:.08em;
 
     text-transform:uppercase;
+
 }
 
 
 .footer-updated-user{
+
     max-width:220px;
 
     color:#526259;
@@ -1084,10 +1271,12 @@ const stockUpdateImages =
     text-overflow:ellipsis;
 
     white-space:nowrap;
+
 }
 
 
 .footer-updated-time{
+
     color:#7a867e;
 
     font-size:9px;
@@ -1095,6 +1284,7 @@ const stockUpdateImages =
     line-height:1.3;
 
     font-weight:600;
+
 }
 
 
@@ -1103,7 +1293,9 @@ const stockUpdateImages =
 ============================================================ */
 
 .content-item-message{
+
     display:flex;
+
     align-items:center;
 
     gap:9px;
@@ -1117,24 +1309,29 @@ const stockUpdateImages =
     font-size:12px;
 
     font-weight:650;
+
 }
 
 
 .content-item-success{
+
     background:#f1f8f3;
 
     border:1px solid #d8e9dc;
 
     color:#28603a;
+
 }
 
 
 .content-item-error{
+
     background:#fff5f4;
 
     border:1px solid #efd9d6;
 
     color:#9a443b;
+
 }
 
 
@@ -1145,71 +1342,92 @@ const stockUpdateImages =
 @media (max-width:700px){
 
     .storage-content-item-page{
+
         padding:16px 11px 45px;
+
     }
 
 
     .content-item-hero{
+
         align-items:flex-start;
 
         gap:13px;
 
         padding:18px;
+
     }
 
 
     .content-item-icon{
+
         width:57px;
+
         height:57px;
 
         border-radius:15px;
 
         font-size:27px;
+
     }
 
 
     .content-item-title{
+
         font-size:22px;
+
     }
 
 
     .content-item-body{
+
         padding:18px;
+
     }
 
 
     .highlight-grid{
+
         grid-template-columns:
             repeat(
                 2,
                 minmax(0,1fr)
             );
+
     }
 
 
     .stock-images-grid{
+
         grid-template-columns:
             repeat(
                 2,
                 minmax(0,1fr)
             );
+
     }
 
 
     .stock-image{
+
         height:130px;
+
     }
 
 
     .content-item-footer{
+
         align-items:flex-end;
 
         padding:14px 18px;
+
     }
 
 
     .footer-updated{
+
         max-width:55%;
+
     }
 
 }
@@ -1218,58 +1436,77 @@ const stockUpdateImages =
 @media (max-width:470px){
 
     .content-item-hero{
+
         gap:11px;
 
         padding:16px;
+
     }
 
 
     .content-item-icon{
+
         width:49px;
+
         height:49px;
 
         border-radius:13px;
 
         font-size:23px;
+
     }
 
 
     .content-item-eyebrow{
+
         font-size:8px;
+
     }
 
 
     .content-item-title{
+
         font-size:19px;
+
     }
 
 
     .content-item-badge{
+
         min-height:22px;
 
         padding:0 8px;
 
         font-size:8px;
+
     }
 
 
     .content-item-body{
+
         padding:16px;
+
     }
 
 
     .highlight-grid{
+
         grid-template-columns:1fr;
+
     }
 
 
     .highlight-box{
+
         padding:15px;
+
     }
 
 
     .highlight-value{
+
         font-size:18px;
+
     }
 
 
@@ -1277,41 +1514,55 @@ const stockUpdateImages =
     .stock-note-section,
     .stock-images-section,
     .stock-update-section{
+
         margin-top:23px;
+
     }
 
 
     .stock-images-grid{
+
         grid-template-columns:1fr 1fr;
+
     }
 
 
     .stock-image{
+
         height:115px;
+
     }
 
 
     .content-item-footer{
+
         align-items:flex-end;
 
         gap:10px;
 
         padding:13px 16px;
+
     }
 
 
     .footer-status{
+
         font-size:9px;
+
     }
 
 
     .footer-updated{
+
         max-width:60%;
+
     }
 
 
     .footer-updated-user{
+
         max-width:150px;
+
     }
 
 }
@@ -1330,7 +1581,9 @@ const stockUpdateImages =
 
         <div class="content-item-message content-item-success">
 
-            <span>✓</span>
+            <span>
+                ✓
+            </span>
 
             <span>
                 <%= safeSuccessMessage %>
@@ -1349,7 +1602,9 @@ const stockUpdateImages =
 
         <div class="content-item-message content-item-error">
 
-            <span>!</span>
+            <span>
+                !
+            </span>
 
             <span>
                 <%= safePageError %>
@@ -1374,16 +1629,12 @@ const stockUpdateImages =
         <header class="content-item-hero">
 
 
-            <!-- ITEM ICON -->
-
             <div class="content-item-icon">
 
                 <%= itemIcon %>
 
             </div>
 
-
-            <!-- ITEM INFORMATION -->
 
             <div class="content-item-hero-information">
 
@@ -1401,8 +1652,6 @@ const stockUpdateImages =
 
                 </h1>
 
-
-                <!-- CATEGORY / STATUS -->
 
                 <div class="content-item-badges">
 
@@ -1469,12 +1718,7 @@ const stockUpdateImages =
                 <div class="highlight-grid">
 
 
-                    <!-- ==========================================
-                         QUANTITY
-                    =========================================== -->
-
                     <div class="highlight-box">
-
 
                         <span class="highlight-label">
 
@@ -1511,16 +1755,10 @@ const stockUpdateImages =
 
                         </span>
 
-
                     </div>
 
 
-                    <!-- ==========================================
-                         UNIT
-                    =========================================== -->
-
                     <div class="highlight-box">
-
 
                         <span class="highlight-label">
 
@@ -1535,16 +1773,10 @@ const stockUpdateImages =
 
                         </span>
 
-
                     </div>
 
 
-                    <!-- ==========================================
-                         CURRENT WORTH
-                    =========================================== -->
-
                     <div class="highlight-box">
-
 
                         <span class="highlight-label">
 
@@ -1568,7 +1800,6 @@ const stockUpdateImages =
 
 
                         </span>
-
 
                     </div>
 
@@ -1639,7 +1870,7 @@ const stockUpdateImages =
 
 
             <!-- ==================================================
-                 STOCK UPDATE NOTE
+                 LATEST STOCK UPDATE NOTE
             ================================================== -->
 
             <% if (stockUpdateNote) { %>
@@ -1651,7 +1882,7 @@ const stockUpdateImages =
 
                         <h2 class="detail-section-title">
 
-                            Stock Update Note
+                            Latest Stock Update Note
 
                         </h2>
 
@@ -1678,7 +1909,7 @@ const stockUpdateImages =
 
 
             <!-- ==================================================
-                 STOCK UPDATE IMAGES
+                 LATEST STOCK UPDATE IMAGES
             ================================================== -->
 
             <% if (stockUpdateImages.length) { %>
@@ -1690,7 +1921,7 @@ const stockUpdateImages =
 
                         <h2 class="detail-section-title">
 
-                            Stock Images
+                            Latest Stock Update Images
 
                         </h2>
 
@@ -1703,18 +1934,35 @@ const stockUpdateImages =
                     <div class="stock-images-grid">
 
 
-                        <% stockUpdateImages.forEach(function(image) { %>
+                        <% stockUpdateImages.forEach(
+                            function(image)
+                        { %>
 
-                            <% if (image) { %>
+
+                            <%
+                                const imageUrl =
+                                    typeof image === "string"
+                                        ? image
+                                        : image &&
+                                          (
+                                              image.url ||
+                                              image.path ||
+                                              image.location
+                                          );
+                            %>
+
+
+                            <% if (imageUrl) { %>
 
                                 <img
-                                    src="<%= typeof image === 'string' ? image : image.url %>"
+                                    src="<%= imageUrl %>"
                                     alt="Stock update image"
                                     class="stock-image"
                                     loading="lazy"
                                 >
 
                             <% } %>
+
 
                         <% }); %>
 
@@ -1731,133 +1979,184 @@ const stockUpdateImages =
                  STOCK UPDATE FORM
             ================================================== -->
 
-            <section class="detail-section stock-update-section">
+            <% if (itemIsFeed && storageType === "agroStore") { %>
 
-
-                <div class="detail-section-heading">
-
-                    <h2 class="detail-section-title">
-
-                        Update Stock
-
-                    </h2>
-
-
-                    <span class="detail-section-line"></span>
-
-                </div>
-
-
-                <form
-                    class="stock-update-form"
-                    action="/storage/<%= currentDairy._id %>/contents/<%= currentStorage._id %>/details/<%= contentItem._id %>/update"
-                    method="POST"
-                    enctype="multipart/form-data"
+                <section
+                    class="detail-section stock-update-section"
                 >
 
 
-                    <!-- ==========================================
-                         QUANTITY
-                    =========================================== -->
+                    <div class="detail-section-heading">
 
-                    <div class="stock-update-field">
+                        <h2 class="detail-section-title">
 
-                        <label
-                            for="stockQuantity"
-                            class="stock-update-label"
-                        >
+                            Update Stock
 
-                            Quantity
-
-                        </label>
+                        </h2>
 
 
-                        <input
-                            type="number"
-                            id="stockQuantity"
-                            name="quantity"
-                            class="stock-update-input"
-                            value="<%= hasQuantity ? quantityValue : '' %>"
-                            step="any"
-                            min="0"
-                            required
-                        >
+                        <span class="detail-section-line"></span>
 
                     </div>
 
 
                     <!-- ==========================================
-                         STOCK UPDATE NOTE
+                         IMPORTANT:
+
+                         Route is:
+
+                         /update/:itemId
+
+                         NOT:
+
+                         /details/:itemId/update
                     =========================================== -->
 
-                    <div class="stock-update-field">
+                    <form
+                        class="stock-update-form"
 
-                        <label
-                            for="stockUpdateNote"
-                            class="stock-update-label"
-                        >
+                        action="/storage/<%= currentDairy._id %>/contents/<%= currentStorage._id %>/update/<%= contentItem._id %>"
 
-                            Stock Update Note
+                        method="POST"
 
-                        </label>
-
-
-                        <textarea
-                            id="stockUpdateNote"
-                            name="stockUpdateNote"
-                            class="stock-update-textarea"
-                            placeholder="Describe what changed..."
-                        ><%= stockUpdateNote %></textarea>
-
-                    </div>
-
-
-                    <!-- ==========================================
-                         IMAGES
-                    =========================================== -->
-
-                    <div class="stock-update-field">
-
-                        <label
-                            for="stockUpdateImages"
-                            class="stock-update-label"
-                        >
-
-                            Images
-
-                        </label>
-
-
-                        <input
-                            type="file"
-                            id="stockUpdateImages"
-                            name="stockUpdateImages"
-                            class="stock-update-images"
-                            accept="image/*"
-                            multiple
-                        >
-
-                    </div>
-
-
-                    <!-- ==========================================
-                         SUBMIT
-                    =========================================== -->
-
-                    <button
-                        type="submit"
-                        class="stock-update-button"
+                        enctype="multipart/form-data"
                     >
 
-                        Save Stock Update
 
-                    </button>
+                        <!-- ======================================
+                             QUANTITY
+                        ======================================= -->
+
+                        <div class="stock-update-field">
+
+                            <label
+                                for="stockQuantity"
+                                class="stock-update-label"
+                            >
+
+                                Quantity
+
+                            </label>
 
 
-                </form>
+                            <input
+                                type="number"
+                                id="stockQuantity"
+                                name="quantity"
+                                class="stock-update-input"
+                                value="<%= hasQuantity ? quantityValue : "" %>"
+                                step="any"
+                                min="0"
+                                required
+                            >
+
+                        </div>
 
 
-            </section>
+                        <!-- ======================================
+                             UNIT
+                        ======================================= -->
+
+                        <div class="stock-update-field">
+
+                            <label
+                                for="stockUnit"
+                                class="stock-update-label"
+                            >
+
+                                Unit
+
+                            </label>
+
+
+                            <input
+                                type="text"
+                                id="stockUnit"
+                                name="unit"
+                                class="stock-update-input"
+                                value="<%= itemUnit %>"
+                                maxlength="50"
+                                placeholder="e.g. kg, bags, litres"
+                            >
+
+                        </div>
+
+
+                        <!-- ======================================
+                             STOCK UPDATE NOTE
+                        ======================================= -->
+
+                        <div class="stock-update-field">
+
+                            <label
+                                for="stockUpdateNote"
+                                class="stock-update-label"
+                            >
+
+                                Stock Update Note
+
+                            </label>
+
+
+                            <textarea
+                                id="stockUpdateNote"
+                                name="stockUpdateNote"
+                                class="stock-update-textarea"
+                                maxlength="5000"
+                                placeholder="Describe what changed..."
+                            ></textarea>
+
+                        </div>
+
+
+                        <!-- ======================================
+                             IMAGES
+                        ======================================= -->
+
+                        <div class="stock-update-field">
+
+                            <label
+                                for="stockUpdateImages"
+                                class="stock-update-label"
+                            >
+
+                                Images
+
+                            </label>
+
+
+                            <input
+                                type="file"
+                                id="stockUpdateImages"
+                                name="images"
+                                class="stock-update-images"
+                                accept="image/*"
+                                multiple
+                            >
+
+                        </div>
+
+
+                        <!-- ======================================
+                             SUBMIT
+                        ======================================= -->
+
+                        <button
+                            type="submit"
+                            class="stock-update-button"
+                        >
+
+                            Save Stock Update
+
+                        </button>
+
+
+                    </form>
+
+
+                </section>
+
+            <% } %>
 
 
         </div>
@@ -1869,10 +2168,6 @@ const stockUpdateImages =
 
         <footer class="content-item-footer">
 
-
-            <!-- ================================================
-                 ITEM STATUS
-            ================================================= -->
 
             <div class="footer-status">
 
