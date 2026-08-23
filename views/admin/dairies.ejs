@@ -56,16 +56,12 @@ const farmRecords =
 
         }
 
-
         const code =
             Number(item.code);
 
-
         return (
-
             Number.isInteger(code) &&
             code < 0
-
         );
 
     });
@@ -85,7 +81,11 @@ const farmRecords =
 
     <div class="admin-dairy-strip-header">
 
-        <div class="admin-dairy-strip-title">
+        <div class="admin-dairy-heading">
+
+            <span class="admin-dairy-kicker">
+                MANAGEMENT
+            </span>
 
             <strong>
                 Dairy Farms
@@ -126,8 +126,13 @@ const farmRecords =
             aria-label="Add a new dairy farm"
         >
 
+            <div class="admin-dairy-add-accent"></div>
+
+
             <div class="admin-dairy-add-icon">
-                +
+
+                <i class="fas fa-plus"></i>
+
             </div>
 
 
@@ -138,6 +143,11 @@ const farmRecords =
 
             <div class="admin-dairy-add-text">
                 Create a new dairy farm
+            </div>
+
+
+            <div class="admin-dairy-add-arrow">
+                <i class="fas fa-arrow-right"></i>
             </div>
 
         </a>
@@ -185,7 +195,7 @@ const farmRecords =
                         encodeURIComponent(
                             farmName
                         ) +
-                        "&background=e8f5ee&color=198754"
+                        "&background=e8f0e5&color=47733f"
                     );
 
 
@@ -219,10 +229,21 @@ const farmRecords =
 
             <a
                 href="/dairy/<%= farm._id %>"
-                class="admin-dairy-card"
+                class="admin-dairy-card admin-dairy-farm-card"
                 role="listitem"
                 aria-label="Open <%= farmName %>"
             >
+
+
+                <!-- ==========================================
+                     CARD ACCENT
+                =========================================== -->
+
+                <div
+                    class="admin-dairy-card-accent"
+                    aria-hidden="true"
+                ></div>
+
 
 
                 <!-- ==========================================
@@ -237,6 +258,36 @@ const farmRecords =
                         class="admin-dairy-image"
                         loading="lazy"
                     >
+
+
+                    <!-- IMAGE SHADE -->
+
+                    <div
+                        class="admin-dairy-image-overlay"
+                        aria-hidden="true"
+                    ></div>
+
+
+                    <!-- FARM BADGE -->
+
+                    <div class="admin-dairy-farm-badge">
+
+                        <i class="fas fa-cow"></i>
+
+                        <span>
+                            FARM
+                        </span>
+
+                    </div>
+
+
+                    <!-- OPEN ICON -->
+
+                    <div class="admin-dairy-open-icon">
+
+                        <i class="fas fa-arrow-up-right-from-square"></i>
+
+                    </div>
 
                 </div>
 
@@ -271,7 +322,7 @@ const farmRecords =
                             class="admin-dairy-type-icon"
                             aria-hidden="true"
                         >
-                            🐄
+                            <i class="fas fa-cow"></i>
                         </span>
 
 
@@ -290,11 +341,11 @@ const farmRecords =
                     <div class="admin-dairy-code">
 
                         <span class="admin-dairy-code-label">
-                            Code:
+                            Code
                         </span>
 
 
-                        <span>
+                        <span class="admin-dairy-code-value">
                             <%= farmCode %>
                         </span>
 
@@ -302,6 +353,16 @@ const farmRecords =
 
 
                 </div>
+
+
+                <!-- ==========================================
+                     BOTTOM ACCENT
+                =========================================== -->
+
+                <div
+                    class="admin-dairy-bottom-line"
+                    aria-hidden="true"
+                ></div>
 
             </a>
 
@@ -324,7 +385,10 @@ const farmRecords =
 
     width: 100%;
 
-    margin: 0 0 18px;
+    margin:
+        0
+        0
+        22px;
 
     padding: 0;
 
@@ -348,8 +412,40 @@ const farmRecords =
 
     padding:
         0
-        2px
-        10px;
+        3px
+        13px;
+
+}
+
+
+.admin-dairy-heading {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+}
+
+
+.admin-dairy-kicker {
+
+    display: inline-block;
+
+    margin-bottom: 2px;
+
+    color: #b96a27;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: 2px;
+
+    line-height: 1;
+
+    text-transform: uppercase;
 
 }
 
@@ -358,13 +454,13 @@ const farmRecords =
 
     display: block;
 
-    color: #202520;
+    color: #26382d;
 
-    font-size: 18px;
+    font-size: 19px;
 
-    font-weight: 700;
+    font-weight: 750;
 
-    line-height: 1.35;
+    line-height: 1.3;
 
 }
 
@@ -375,7 +471,7 @@ const farmRecords =
 
     margin-top: 4px;
 
-    color: #7b847e;
+    color: #778078;
 
     font-size: 12px;
 
@@ -394,16 +490,18 @@ const farmRecords =
 
     display: flex;
 
-    gap: 10px;
+    gap: 11px;
 
     overflow-x: auto;
 
     overflow-y: hidden;
 
     padding:
-        2px
-        2px
-        8px;
+        4px
+        5px
+        11px;
+
+    box-sizing: border-box;
 
     scroll-behavior: smooth;
 
@@ -431,37 +529,48 @@ const farmRecords =
 
     flex:
         0 0
-        116px;
+        124px;
 
-    width: 116px;
+    width: 124px;
 
-    height: 190px;
+    height: 197px;
 
     display: flex;
 
     flex-direction: column;
 
+    flex-shrink: 0;
+
     overflow: hidden;
 
-    flex-shrink: 0;
+    box-sizing: border-box;
 
     text-decoration: none;
 
     border:
         1px solid
-        #e4e9e6;
+        #e1e6de;
 
-    border-radius: 15px;
+    border-radius: 18px;
 
-    background: #ffffff;
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff 0%,
+            #fffdfa 58%,
+            #f3f7f0 100%
+        );
 
     box-shadow:
-        0 2px 8px
-        rgba(20, 40, 28, .06);
+        0 3px 9px
+        rgba(39, 55, 42, .065),
+        0 10px 20px
+        rgba(74, 86, 47, .035);
 
     transition:
-        transform .16s ease,
-        box-shadow .16s ease;
+        transform .18s ease,
+        box-shadow .18s ease,
+        border-color .18s ease;
 
 }
 
@@ -469,11 +578,16 @@ const farmRecords =
 .admin-dairy-card:hover {
 
     transform:
-        translateY(-2px);
+        translateY(-4px);
+
+    border-color:
+        #d4d9ca;
 
     box-shadow:
-        0 5px 14px
-        rgba(20, 40, 28, .10);
+        0 7px 18px
+        rgba(39, 55, 42, .11),
+        0 14px 28px
+        rgba(74, 86, 47, .05);
 
 }
 
@@ -481,7 +595,34 @@ const farmRecords =
 .admin-dairy-card:active {
 
     transform:
-        scale(.97);
+        scale(.975);
+
+}
+
+
+/* ==========================================================
+   LEFT VERTICAL ACCENT
+========================================================== */
+
+.admin-dairy-card-accent {
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 4px;
+
+    z-index: 8;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #c86f29 0%,
+            #9a8740 48%,
+            #39764c 100%
+        );
 
 }
 
@@ -496,18 +637,27 @@ const farmRecords =
 
     width: 100%;
 
-    height: 116px;
+    height: 119px;
 
     flex:
         0 0
-        116px;
+        119px;
 
     overflow: hidden;
 
-    background: #eef3ef;
+    background:
+        linear-gradient(
+            145deg,
+            #edf2e9,
+            #e3ebe2
+        );
 
 }
 
+
+/* ==========================================================
+   IMAGE
+========================================================== */
 
 .admin-dairy-image {
 
@@ -518,6 +668,142 @@ const farmRecords =
     display: block;
 
     object-fit: cover;
+
+    transition:
+        transform .35s ease;
+
+}
+
+
+.admin-dairy-card:hover
+.admin-dairy-image {
+
+    transform:
+        scale(1.055);
+
+}
+
+
+/* ==========================================================
+   IMAGE OVERLAY
+========================================================== */
+
+.admin-dairy-image-overlay {
+
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(25, 49, 32, .42) 0%,
+            rgba(25, 49, 32, .08) 45%,
+            rgba(184, 105, 38, .03) 100%
+        );
+
+}
+
+
+/* ==========================================================
+   FARM BADGE
+========================================================== */
+
+.admin-dairy-farm-badge {
+
+    position: absolute;
+
+    top: 8px;
+    left: 9px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    padding:
+        4px
+        7px;
+
+    border:
+        1px solid
+        rgba(255, 255, 255, .42);
+
+    border-radius: 999px;
+
+    background:
+        rgba(255, 255, 255, .86);
+
+    color:
+        #45613d;
+
+    box-shadow:
+        0 2px 7px
+        rgba(25, 45, 30, .12);
+
+    backdrop-filter:
+        blur(5px);
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: .8px;
+
+}
+
+
+.admin-dairy-farm-badge i {
+
+    color:
+        #b96a27;
+
+    font-size: 7px;
+
+}
+
+
+/* ==========================================================
+   OPEN ICON
+========================================================== */
+
+.admin-dairy-open-icon {
+
+    position: absolute;
+
+    right: 8px;
+    bottom: 8px;
+
+    width: 25px;
+
+    height: 25px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border:
+        1px solid
+        rgba(255, 255, 255, .42);
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 255, 255, .88);
+
+    color:
+        #47724a;
+
+    box-shadow:
+        0 2px 7px
+        rgba(20, 45, 27, .13);
+
+    font-size: 8px;
 
 }
 
@@ -538,6 +824,14 @@ const farmRecords =
 
     flex: 1;
 
+    box-sizing: border-box;
+
+    padding:
+        8px
+        9px
+        7px
+        11px;
+
 }
 
 
@@ -549,16 +843,14 @@ const farmRecords =
 
     width: 100%;
 
-    padding:
-        8px
-        8px
-        2px;
+    min-width: 0;
 
-    color: #202520;
+    color:
+        #26352b;
 
     font-size: 13px;
 
-    font-weight: 700;
+    font-weight: 750;
 
     line-height: 16px;
 
@@ -581,20 +873,20 @@ const farmRecords =
 
     width: 100%;
 
+    min-width: 0;
+
     display: flex;
 
     align-items: center;
 
-    gap: 4px;
+    gap: 5px;
 
-    padding:
-        1px
-        8px
-        3px;
+    margin-top: 4px;
 
-    color: #7b847e;
+    color:
+        #7b847c;
 
-    font-size: 10px;
+    font-size: 9px;
 
     line-height: 13px;
 
@@ -605,11 +897,29 @@ const farmRecords =
 
 .admin-dairy-type-icon {
 
+    width: 17px;
+
+    height: 17px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
     flex:
         0 0
-        auto;
+        17px;
 
-    font-size: 10px;
+    border-radius: 6px;
+
+    background:
+        #eef3e7;
+
+    color:
+        #5e793f;
+
+    font-size: 8px;
 
 }
 
@@ -637,37 +947,92 @@ const farmRecords =
 
     display: flex;
 
-    align-items: baseline;
+    align-items: center;
 
-    gap: 3px;
+    gap: 5px;
 
-    padding:
-        1px
-        8px
-        8px;
+    margin-top: auto;
 
-    color: #198754;
+    padding-top: 6px;
 
-    font-size: 10px;
+    border-top:
+        1px solid
+        #edf0e9;
 
-    font-weight: 600;
+    color:
+        #4c704d;
 
-    line-height: 13px;
+    font-size: 9px;
 
-    overflow: hidden;
+    font-weight: 700;
+
+    line-height: 12px;
 
 }
 
 
 .admin-dairy-code-label {
 
+    color:
+        #999f99;
+
+    font-weight: 500;
+
+}
+
+
+.admin-dairy-code-value {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-width: 22px;
+
+    padding:
+        2px
+        5px;
+
+    border-radius: 6px;
+
+    background:
+        #eef5e9;
+
+    color:
+        #52723d;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+}
+
+
+/* ==========================================================
+   BOTTOM LINE
+========================================================== */
+
+.admin-dairy-bottom-line {
+
+    width: 100%;
+
+    height: 3px;
+
     flex:
         0 0
-        auto;
+        3px;
 
-    color: #8a938d;
+    background:
+        linear-gradient(
+            90deg,
+            #c86f29 0%,
+            #a7823c 45%,
+            #39764c 100%
+        );
 
-    font-weight: 400;
+    opacity: .8;
 
 }
 
@@ -684,23 +1049,54 @@ const farmRecords =
 
     text-align: center;
 
-    padding: 12px;
+    padding:
+        13px;
 
     border:
         1px dashed
-        #b9cfc1;
+        #c8d3c2;
 
     background:
-        #f7fbf8;
+        linear-gradient(
+            145deg,
+            #fffdf9 0%,
+            #f7f8ed 52%,
+            #edf5ed 100%
+        );
 
 }
 
 
+.admin-dairy-add-accent {
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 4px;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #c86f29,
+            #aa853d,
+            #39764c
+        );
+
+}
+
+
+/* ==========================================================
+   ADD ICON
+========================================================== */
+
 .admin-dairy-add-icon {
 
-    width: 42px;
+    width: 44px;
 
-    height: 42px;
+    height: 44px;
 
     display: flex;
 
@@ -708,30 +1104,41 @@ const farmRecords =
 
     justify-content: center;
 
-    margin-bottom: 9px;
+    margin-bottom: 10px;
 
-    border-radius: 50%;
+    border:
+        1px solid
+        #e7d7c2;
 
-    background: #e8f5ee;
+    border-radius: 14px;
 
-    color: #198754;
+    background:
+        linear-gradient(
+            145deg,
+            #fff1df,
+            #eef4e9
+        );
 
-    font-size: 27px;
+    color:
+        #b96825;
 
-    font-weight: 400;
+    font-size: 18px;
 
-    line-height: 1;
+    box-shadow:
+        0 3px 9px
+        rgba(111, 83, 43, .08);
 
 }
 
 
 .admin-dairy-add-title {
 
-    color: #202520;
+    color:
+        #29382d;
 
     font-size: 13px;
 
-    font-weight: 700;
+    font-weight: 750;
 
     line-height: 16px;
 
@@ -740,13 +1147,43 @@ const farmRecords =
 
 .admin-dairy-add-text {
 
-    margin-top: 4px;
+    max-width: 95px;
 
-    color: #7b847e;
+    margin-top: 5px;
 
-    font-size: 10px;
+    color:
+        #7c847d;
+
+    font-size: 9px;
 
     line-height: 13px;
+
+}
+
+
+.admin-dairy-add-arrow {
+
+    width: 24px;
+
+    height: 24px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-top: 11px;
+
+    border-radius: 50%;
+
+    background:
+        #f9eadb;
+
+    color:
+        #b96825;
+
+    font-size: 8px;
 
 }
 
@@ -759,9 +1196,9 @@ const farmRecords =
 
     outline:
         2px solid
-        #198754;
+        #71874c;
 
-    outline-offset: 2px;
+    outline-offset: 3px;
 
 }
 
@@ -772,15 +1209,55 @@ const farmRecords =
 
 @media (max-width: 600px) {
 
+    .admin-dairy-strip {
+
+        margin-bottom: 19px;
+
+    }
+
+
+    .admin-dairy-strip-header {
+
+        padding-bottom: 11px;
+
+    }
+
+
+    .admin-dairy-strip-title strong {
+
+        font-size: 17px;
+
+    }
+
+
+    .admin-dairy-strip-description {
+
+        font-size: 11px;
+
+    }
+
+
+    .admin-dairy-scroll {
+
+        gap: 9px;
+
+        padding:
+            3px
+            4px
+            9px;
+
+    }
+
+
     .admin-dairy-card {
 
-        flex-basis: 112px;
+        flex-basis: 116px;
 
-        width: 112px;
+        width: 116px;
 
-        height: 184px;
+        height: 187px;
 
-        border-radius: 14px;
+        border-radius: 16px;
 
     }
 
@@ -794,12 +1271,18 @@ const farmRecords =
     }
 
 
-    .admin-dairy-name {
+    .admin-dairy-content {
 
         padding:
             7px
-            7px
-            2px;
+            8px
+            6px
+            10px;
+
+    }
+
+
+    .admin-dairy-name {
 
         font-size: 12px;
 
@@ -810,24 +1293,109 @@ const farmRecords =
 
     .admin-dairy-type {
 
-        padding:
-            1px
-            7px
-            3px;
+        margin-top: 3px;
 
-        font-size: 9px;
+        font-size: 8.5px;
 
     }
 
 
     .admin-dairy-code {
 
-        padding:
-            1px
-            7px
-            7px;
+        padding-top: 5px;
 
-        font-size: 9px;
+        font-size: 8.5px;
+
+    }
+
+
+    .admin-dairy-farm-badge {
+
+        top: 7px;
+        left: 8px;
+
+        padding:
+            3px
+            6px;
+
+        font-size: 6.5px;
+
+    }
+
+
+    .admin-dairy-open-icon {
+
+        right: 7px;
+        bottom: 7px;
+
+        width: 23px;
+        height: 23px;
+
+        font-size: 7px;
+
+    }
+
+
+    .admin-dairy-add-icon {
+
+        width: 40px;
+
+        height: 40px;
+
+        border-radius: 12px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .admin-dairy-card {
+
+        flex-basis: 110px;
+
+        width: 110px;
+
+        height: 181px;
+
+        border-radius: 15px;
+
+    }
+
+
+    .admin-dairy-image-wrap {
+
+        height: 106px;
+
+        flex-basis: 106px;
+
+    }
+
+
+    .admin-dairy-name {
+
+        font-size: 11.5px;
+
+        line-height: 14px;
+
+    }
+
+
+    .admin-dairy-type {
+
+        font-size: 8px;
+
+    }
+
+
+    .admin-dairy-code {
+
+        font-size: 8px;
 
     }
 
