@@ -5,16 +5,18 @@ STORAGE CONTENT ITEM CARD
 ==============================================================
 
 FILE:
-    views/update/content-item.ejs
+    views/storage/content-item.ejs
 
 PURPOSE:
-    Reusable card component for displaying one item contained
-    inside a Room or AgroStore.
+    Reusable card for displaying details for one item
+    contained inside a Room or AgroStore.
 
 IMPORTANT:
-    THIS FILE IS AN INCLUDEABLE CARD.
+    THIS FILE IS AN INCLUDE.
 
     It is NOT a standalone page.
+
+    It must be included inside another EJS page.
 
 EXPECTED VARIABLES:
 
@@ -42,17 +44,21 @@ Each update contains:
 
 IMPORTANT:
 
-    The current stock quantity is taken from:
+    Current stock quantity:
 
         item.quantity
 
-    The latest updater is taken from:
+    Latest updater:
 
         latestStockUpdate.recordedBy
 
-    The latest update timestamp is taken from:
+    Latest update timestamp:
 
         latestStockUpdate.recordedAt
+
+STOCK UPDATE POST:
+
+    /dairy/:dairyId/:itemId
 
 ==============================================================
 */
@@ -97,7 +103,7 @@ let safeLatestStockUpdate =
 
 /*
 --------------------------------------------------------------
-Prefer the controller/service supplied latestStockUpdate.
+Prefer controller/service supplied latestStockUpdate.
 --------------------------------------------------------------
 */
 
@@ -114,7 +120,7 @@ if (
 
 /*
 --------------------------------------------------------------
-Fallback to the latest item.stockUpdates record.
+Fallback to latest item.stockUpdates record.
 --------------------------------------------------------------
 */
 
@@ -461,6 +467,19 @@ const stockUpdateImages =
 <style>
 
 /* ============================================================
+   CARD CONTAINER
+============================================================ */
+
+.storage-content-item-page{
+
+    width:100%;
+
+    box-sizing:border-box;
+
+}
+
+
+/* ============================================================
    MAIN CARD
 ============================================================ */
 
@@ -469,8 +488,6 @@ const stockUpdateImages =
     width:100%;
 
     overflow:hidden;
-
-    box-sizing:border-box;
 
     background:#ffffff;
 
@@ -1548,13 +1565,12 @@ const stockUpdateImages =
 
 
 <!-- ============================================================
-     INCLUDEABLE CARD
+     REUSABLE CARD
      
-     This is intentionally NOT a page wrapper.
-     It can be inserted into another EJS page.
-============================================================ -->
+     This is an INCLUDE, not a standalone page.
+============================================================= -->
 
-<div class="content-item-card">
+<div class="storage-content-item-page">
 
 
     <!-- ========================================================
@@ -1600,607 +1616,634 @@ const stockUpdateImages =
 
 
     <!-- ========================================================
-         HEADER
+         MAIN CARD
     ========================================================= -->
 
-    <header class="content-item-hero">
+    <article class="content-item-card">
 
 
-        <div class="content-item-icon">
+        <!-- ====================================================
+             HEADER
+        ==================================================== -->
 
-            <%= itemIcon %>
-
-        </div>
-
-
-        <div class="content-item-hero-information">
+        <header class="content-item-hero">
 
 
-            <p class="content-item-eyebrow">
+            <div class="content-item-icon">
 
-                Storage Content
+                <%= itemIcon %>
 
-            </p>
-
-
-            <h1 class="content-item-title">
-
-                <%= itemName %>
-
-            </h1>
+            </div>
 
 
-            <div class="content-item-badges">
+            <div class="content-item-hero-information">
 
 
-                <span
-                    class="content-item-badge <%= itemCategoryClass %>"
-                >
+                <p class="content-item-eyebrow">
 
-                    <%= itemCategory %>
+                    Storage Content
 
-                </span>
+                </p>
 
 
-                <% if (contentItem.status) { %>
+                <h1 class="content-item-title">
+
+                    <%= itemName %>
+
+                </h1>
+
+
+                <div class="content-item-badges">
+
 
                     <span
-                        class="content-item-badge status-badge"
+                        class="content-item-badge <%= itemCategoryClass %>"
                     >
 
-                        <%= contentItem.status %>
+                        <%= itemCategory %>
 
                     </span>
 
-                <% } %>
+
+                    <% if (contentItem.status) { %>
+
+                        <span
+                            class="content-item-badge status-badge"
+                        >
+
+                            <%= contentItem.status %>
+
+                        </span>
+
+                    <% } %>
+
+
+                </div>
 
 
             </div>
 
 
-        </div>
+        </header>
 
 
-    </header>
+        <!-- ====================================================
+             BODY
+        ==================================================== -->
+
+        <div class="content-item-body">
 
 
-    <!-- ========================================================
-         BODY
-    ========================================================= -->
+            <!-- ==================================================
+                 QUANTITY & VALUE
+            ================================================== -->
 
-    <div class="content-item-body">
-
-
-        <!-- ======================================================
-             QUANTITY & VALUE
-        ====================================================== -->
-
-        <section class="detail-section">
+            <section class="detail-section">
 
 
-            <div class="detail-section-heading">
+                <div class="detail-section-heading">
 
-                <h2 class="detail-section-title">
+                    <h2 class="detail-section-title">
 
-                    Quantity & Value
+                        Quantity & Value
 
-                </h2>
-
-
-                <span class="detail-section-line"></span>
-
-            </div>
+                    </h2>
 
 
-            <div class="highlight-grid">
+                    <span class="detail-section-line"></span>
+
+                </div>
 
 
-                <div class="highlight-box">
-
-                    <span class="highlight-label">
-
-                        Quantity
-
-                    </span>
+                <div class="highlight-grid">
 
 
-                    <span class="highlight-value">
+                    <div class="highlight-box">
+
+                        <span class="highlight-label">
+
+                            Quantity
+
+                        </span>
 
 
-                        <% if (hasQuantity) { %>
-
-                            <%= quantityValue.toLocaleString() %>
+                        <span class="highlight-value">
 
 
-                            <% if (itemUnit) { %>
+                            <% if (hasQuantity) { %>
 
-                                <span class="highlight-unit">
+                                <%= quantityValue.toLocaleString() %>
 
-                                    <%= itemUnit %>
 
-                                </span>
+                                <% if (itemUnit) { %>
+
+                                    <span class="highlight-unit">
+
+                                        <%= itemUnit %>
+
+                                    </span>
+
+                                <% } %>
+
+
+                            <% } else { %>
+
+                                —
 
                             <% } %>
 
 
-                        <% } else { %>
-
-                            —
-
-                        <% } %>
-
-
-                    </span>
-
-                </div>
-
-
-                <div class="highlight-box">
-
-                    <span class="highlight-label">
-
-                        Unit
-
-                    </span>
-
-
-                    <span class="highlight-value">
-
-                        <%= itemUnit || "—" %>
-
-                    </span>
-
-                </div>
-
-
-                <div class="highlight-box">
-
-                    <span class="highlight-label">
-
-                        Current Worth
-
-                    </span>
-
-
-                    <span class="highlight-value">
-
-
-                        <% if (hasCurrentWorth) { %>
-
-                            <%= currentWorthValue.toLocaleString() %>
-
-                        <% } else { %>
-
-                            —
-
-                        <% } %>
-
-
-                    </span>
-
-                </div>
-
-
-            </div>
-
-
-        </section>
-
-
-        <!-- ======================================================
-             DESCRIPTION
-        ====================================================== -->
-
-        <section class="detail-section description-section">
-
-
-            <div class="detail-section-heading">
-
-                <h2 class="detail-section-title">
-
-                    Description
-
-                </h2>
-
-
-                <span class="detail-section-line"></span>
-
-            </div>
-
-
-            <div class="description-box">
-
-
-                <% if (
-                    contentItem.description &&
-                    String(
-                        contentItem.description
-                    ).trim() !== ""
-                ) { %>
-
-
-                    <p class="description-text">
-
-                        <%= contentItem.description %>
-
-                    </p>
-
-
-                <% } else { %>
-
-
-                    <span class="no-description">
-
-                        No description has been provided
-                        for this item.
-
-                    </span>
-
-
-                <% } %>
-
-
-            </div>
-
-
-        </section>
-
-
-        <!-- ======================================================
-             LATEST STOCK UPDATE NOTE
-        ====================================================== -->
-
-        <% if (stockUpdateNote) { %>
-
-            <section
-                class="detail-section stock-note-section"
-            >
-
-
-                <div class="detail-section-heading">
-
-                    <h2 class="detail-section-title">
-
-                        Latest Stock Update Note
-
-                    </h2>
-
-
-                    <span class="detail-section-line"></span>
-
-                </div>
-
-
-                <div class="stock-note-box">
-
-                    <p class="stock-note-text">
-
-                        <%= stockUpdateNote %>
-
-                    </p>
-
-                </div>
-
-
-            </section>
-
-        <% } %>
-
-
-        <!-- ======================================================
-             LATEST STOCK UPDATE IMAGES
-        ====================================================== -->
-
-        <% if (stockUpdateImages.length) { %>
-
-            <section
-                class="detail-section stock-images-section"
-            >
-
-
-                <div class="detail-section-heading">
-
-                    <h2 class="detail-section-title">
-
-                        Latest Stock Update Images
-
-                    </h2>
-
-
-                    <span class="detail-section-line"></span>
-
-                </div>
-
-
-                <div class="stock-images-grid">
-
-
-                    <% stockUpdateImages.forEach(
-                        function(image)
-                    { %>
-
-
-                        <%
-                            const imageUrl =
-                                typeof image === "string"
-                                    ? image
-                                    : image &&
-                                      (
-                                          image.url ||
-                                          image.path ||
-                                          image.location
-                                      );
-                        %>
-
-
-                        <% if (imageUrl) { %>
-
-                            <img
-                                src="<%= imageUrl %>"
-                                alt="Stock update image"
-                                class="stock-image"
-                                loading="lazy"
-                            >
-
-                        <% } %>
-
-
-                    <% }); %>
-
-
-                </div>
-
-
-            </section>
-
-        <% } %>
-
-
-        <!-- ======================================================
-             STOCK UPDATE FORM
-
-             PRESERVED IN FULL.
-
-             This is the part that allows the user to update
-             the stock of a feed in an AgroStore.
-        ====================================================== -->
-
-        <% if (itemIsFeed && storageType === "agroStore") { %>
-
-            <section
-                class="detail-section stock-update-section"
-            >
-
-
-                <div class="detail-section-heading">
-
-                    <h2 class="detail-section-title">
-
-                        Update Stock
-
-                    </h2>
-
-
-                    <span class="detail-section-line"></span>
-
-                </div>
-
-
-                <!-- ==============================================
-                     IMPORTANT:
-
-                     Route is:
-
-                     /update/:itemId
-
-                     NOT:
-
-                     /details/:itemId/update
-                =============================================== -->
-
-                <form
-                    class="stock-update-form"
-
-                    action="/storage/<%= currentDairy._id %>/contents/<%= currentStorage._id %>/update/<%= contentItem._id %>"
-
-                    method="POST"
-
-                    enctype="multipart/form-data"
-                >
-
-
-                    <!-- ==========================================
-                         QUANTITY
-                    =========================================== -->
-
-                    <div class="stock-update-field">
-
-                        <label
-                            for="stockQuantity"
-                            class="stock-update-label"
-                        >
-
-                            Quantity
-
-                        </label>
-
-
-                        <input
-                            type="number"
-                            id="stockQuantity"
-                            name="quantity"
-                            class="stock-update-input"
-                            value="<%= hasQuantity ? quantityValue : "" %>"
-                            step="any"
-                            min="0"
-                            required
-                        >
+                        </span>
 
                     </div>
 
 
-                    <!-- ==========================================
-                         UNIT
-                    =========================================== -->
+                    <div class="highlight-box">
 
-                    <div class="stock-update-field">
-
-                        <label
-                            for="stockUnit"
-                            class="stock-update-label"
-                        >
+                        <span class="highlight-label">
 
                             Unit
 
-                        </label>
+                        </span>
 
 
-                        <input
-                            type="text"
-                            id="stockUnit"
-                            name="unit"
-                            class="stock-update-input"
-                            value="<%= itemUnit %>"
-                            maxlength="50"
-                            placeholder="e.g. kg, bags, litres"
-                        >
+                        <span class="highlight-value">
+
+                            <%= itemUnit || "—" %>
+
+                        </span>
 
                     </div>
 
 
-                    <!-- ==========================================
-                         STOCK UPDATE NOTE
-                    =========================================== -->
+                    <div class="highlight-box">
 
-                    <div class="stock-update-field">
+                        <span class="highlight-label">
 
-                        <label
-                            for="stockUpdateNote"
-                            class="stock-update-label"
-                        >
+                            Current Worth
 
-                            Stock Update Note
-
-                        </label>
+                        </span>
 
 
-                        <textarea
-                            id="stockUpdateNote"
-                            name="stockUpdateNote"
-                            class="stock-update-textarea"
-                            maxlength="5000"
-                            placeholder="Describe what changed..."
-                        ></textarea>
-
-                    </div>
+                        <span class="highlight-value">
 
 
-                    <!-- ==========================================
-                         IMAGES
-                    =========================================== -->
+                            <% if (hasCurrentWorth) { %>
 
-                    <div class="stock-update-field">
+                                <%= currentWorthValue.toLocaleString() %>
 
-                        <label
-                            for="stockUpdateImages"
-                            class="stock-update-label"
-                        >
+                            <% } else { %>
 
-                            Images
+                                —
 
-                        </label>
+                            <% } %>
 
 
-                        <input
-                            type="file"
-                            id="stockUpdateImages"
-                            name="images"
-                            class="stock-update-images"
-                            accept="image/*"
-                            multiple
-                        >
+                        </span>
 
                     </div>
 
 
-                    <!-- ==========================================
-                         SUBMIT
-                    =========================================== -->
-
-                    <button
-                        type="submit"
-                        class="stock-update-button"
-                    >
-
-                        Save Stock Update
-
-                    </button>
-
-
-                </form>
+                </div>
 
 
             </section>
 
-        <% } %>
+
+            <!-- ==================================================
+                 DESCRIPTION
+            ================================================== -->
+
+            <section class="detail-section description-section">
 
 
-    </div>
+                <div class="detail-section-heading">
+
+                    <h2 class="detail-section-title">
+
+                        Description
+
+                    </h2>
 
 
-    <!-- ========================================================
-         FOOTER
-    ========================================================= -->
+                    <span class="detail-section-line"></span>
 
-    <footer class="content-item-footer">
+                </div>
 
 
-        <div class="footer-status">
+                <div class="description-box">
 
-            <span class="footer-status-dot"></span>
 
-            <span>
-                Item details
-            </span>
+                    <% if (
+                        contentItem.description &&
+                        String(
+                            contentItem.description
+                        ).trim() !== ""
+                    ) { %>
+
+
+                        <p class="description-text">
+
+                            <%= contentItem.description %>
+
+                        </p>
+
+
+                    <% } else { %>
+
+
+                        <span class="no-description">
+
+                            No description has been provided
+                            for this item.
+
+                        </span>
+
+
+                    <% } %>
+
+
+                </div>
+
+
+            </section>
+
+
+            <!-- ==================================================
+                 LATEST STOCK UPDATE NOTE
+            ================================================== -->
+
+            <% if (stockUpdateNote) { %>
+
+                <section
+                    class="detail-section stock-note-section"
+                >
+
+
+                    <div class="detail-section-heading">
+
+                        <h2 class="detail-section-title">
+
+                            Latest Stock Update Note
+
+                        </h2>
+
+
+                        <span class="detail-section-line"></span>
+
+                    </div>
+
+
+                    <div class="stock-note-box">
+
+                        <p class="stock-note-text">
+
+                            <%= stockUpdateNote %>
+
+                        </p>
+
+                    </div>
+
+
+                </section>
+
+            <% } %>
+
+
+            <!-- ==================================================
+                 LATEST STOCK UPDATE IMAGES
+            ================================================== -->
+
+            <% if (stockUpdateImages.length) { %>
+
+                <section
+                    class="detail-section stock-images-section"
+                >
+
+
+                    <div class="detail-section-heading">
+
+                        <h2 class="detail-section-title">
+
+                            Latest Stock Update Images
+
+                        </h2>
+
+
+                        <span class="detail-section-line"></span>
+
+                    </div>
+
+
+                    <div class="stock-images-grid">
+
+
+                        <% stockUpdateImages.forEach(
+                            function(image)
+                        { %>
+
+
+                            <%
+                                const imageUrl =
+                                    typeof image === "string"
+                                        ? image
+                                        : image &&
+                                          (
+                                              image.url ||
+                                              image.path ||
+                                              image.location
+                                          );
+                            %>
+
+
+                            <% if (imageUrl) { %>
+
+                                <img
+                                    src="<%= imageUrl %>"
+                                    alt="Stock update image"
+                                    class="stock-image"
+                                    loading="lazy"
+                                >
+
+                            <% } %>
+
+
+                        <% }); %>
+
+
+                    </div>
+
+
+                </section>
+
+            <% } %>
+
+
+            <!-- ==================================================
+                 STOCK UPDATE FORM
+            ================================================== -->
+
+            <% if (itemIsFeed && storageType === "agroStore") { %>
+
+                <section
+                    class="detail-section stock-update-section"
+                >
+
+
+                    <div class="detail-section-heading">
+
+                        <h2 class="detail-section-title">
+
+                            Update Stock
+
+                        </h2>
+
+
+                        <span class="detail-section-line"></span>
+
+                    </div>
+
+
+                    <!-- ==========================================
+                         STOCK UPDATE FORM
+
+                         POST:
+
+                         /dairy/:dairyId/:itemId
+
+                         Example:
+
+                         /dairy/ABC123/XYZ789
+                    =========================================== -->
+
+                    <form
+                        class="stock-update-form"
+
+                        action="/dairy/<%= currentDairy._id %>/<%= contentItem._id %>"
+
+                        method="POST"
+
+                        enctype="multipart/form-data"
+                    >
+
+
+                        <!-- ======================================
+                             QUANTITY
+                        ======================================= -->
+
+                        <div class="stock-update-field">
+
+                            <label
+                                for="stockQuantity"
+                                class="stock-update-label"
+                            >
+
+                                Quantity
+
+                            </label>
+
+
+                            <input
+                                type="number"
+
+                                id="stockQuantity"
+
+                                name="quantity"
+
+                                class="stock-update-input"
+
+                                value="<%= hasQuantity ? quantityValue : "" %>"
+
+                                step="any"
+
+                                min="0"
+
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- ======================================
+                             UNIT
+                        ======================================= -->
+
+                        <div class="stock-update-field">
+
+                            <label
+                                for="stockUnit"
+                                class="stock-update-label"
+                            >
+
+                                Unit
+
+                            </label>
+
+
+                            <input
+                                type="text"
+
+                                id="stockUnit"
+
+                                name="unit"
+
+                                class="stock-update-input"
+
+                                value="<%= itemUnit %>"
+
+                                maxlength="50"
+
+                                placeholder="e.g. kg, bags, litres"
+                            >
+
+                        </div>
+
+
+                        <!-- ======================================
+                             STOCK UPDATE NOTE
+                        ======================================= -->
+
+                        <div class="stock-update-field">
+
+                            <label
+                                for="stockUpdateNote"
+                                class="stock-update-label"
+                            >
+
+                                Stock Update Note
+
+                            </label>
+
+
+                            <textarea
+                                id="stockUpdateNote"
+
+                                name="stockUpdateNote"
+
+                                class="stock-update-textarea"
+
+                                maxlength="5000"
+
+                                placeholder="Describe what changed..."
+                            ></textarea>
+
+                        </div>
+
+
+                        <!-- ======================================
+                             IMAGES
+                        ======================================= -->
+
+                        <div class="stock-update-field">
+
+                            <label
+                                for="stockUpdateImages"
+                                class="stock-update-label"
+                            >
+
+                                Images
+
+                            </label>
+
+
+                            <input
+                                type="file"
+
+                                id="stockUpdateImages"
+
+                                name="images"
+
+                                class="stock-update-images"
+
+                                accept="image/*"
+
+                                multiple
+                            >
+
+                        </div>
+
+
+                        <!-- ======================================
+                             SUBMIT
+                        ======================================= -->
+
+                        <button
+                            type="submit"
+                            class="stock-update-button"
+                        >
+
+                            Save Stock Update
+
+                        </button>
+
+
+                    </form>
+
+
+                </section>
+
+            <% } %>
+
 
         </div>
 
 
         <!-- ====================================================
-             LAST UPDATED
+             FOOTER
         ==================================================== -->
 
-        <div
-            class="footer-updated"
-            aria-label="Last updated information"
-        >
+        <footer class="content-item-footer">
 
 
-            <span class="footer-updated-label">
+            <div class="footer-status">
 
-                Last updated
+                <span class="footer-status-dot"></span>
 
-            </span>
+                <span>
+                    Item details
+                </span>
 
-
-            <span class="footer-updated-user">
-
-                <%= updatedByName %>
-
-            </span>
+            </div>
 
 
-            <span class="footer-updated-time">
+            <!-- ================================================
+                 LAST UPDATED
+            ================================================= -->
 
-                <%= updatedAtText %>
-
-            </span>
-
-
-        </div>
+            <div
+                class="footer-updated"
+                aria-label="Last updated information"
+            >
 
 
-    </footer>
+                <span class="footer-updated-label">
+
+                    Last updated
+
+                </span>
+
+
+                <span class="footer-updated-user">
+
+                    <%= updatedByName %>
+
+                </span>
+
+
+                <span class="footer-updated-time">
+
+                    <%= updatedAtText %>
+
+                </span>
+
+
+            </div>
+
+
+        </footer>
+
+
+    </article>
 
 
 </div>
