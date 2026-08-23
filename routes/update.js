@@ -102,6 +102,46 @@ router.get(
 
 
 // ==========================================================
+// STORAGE CONTENT ITEM
+// ==========================================================
+//
+// ROUTE:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// PARAMETERS:
+//
+//     contentItemId
+//         = MongoDB _id of the content item
+//
+//     dwellNumber
+//         = roomNumber of the storage facility
+//
+// RELATIONSHIP:
+//
+//     contentItem.assetCode
+//         =
+//     dairyFarm.code
+//
+//     contentItem.dwellNumber
+//         =
+//     storage.roomNumber
+//
+// IMPORTANT:
+//
+// The first parameter is NOT the Dairy Farm ID.
+// It is the CONTENT ITEM ID.
+//
+// ==========================================================
+
+router.get(
+    "/dairy/:contentItemId/:dwellNumber",
+    isAuth,
+    controller.getContentItem
+);
+
+
+// ==========================================================
 // TOGGLE MILKING
 // ==========================================================
 
@@ -161,27 +201,11 @@ router.put(
 
 
 // ==========================================================
-// CONTENT ITEM CARD
+// UPDATE CONTENT ITEM
 // ==========================================================
 //
-// The content-item card is part of:
-//
-//     views/dairySet.ejs
-//
-// It updates the Dairy document represented by
-// the content item.
-//
-// ROUTE:
-//
-//     PUT /dairy/:id/content-item
-//
-// CONTROLLER:
-//
-//     contentsItemController.updateContentItem
-//
-// SERVICE:
-//
-//     contentItemService
+// This remains a separate endpoint for modifying the
+// content item.
 //
 // ==========================================================
 
@@ -189,26 +213,6 @@ router.put(
     "/dairy/:id/content-item",
     isAuth,
     controller.updateContentItem
-);
-
-
-// ==========================================================
-// GET CONTENT ITEM
-// ==========================================================
-//
-// Used when the content-item data needs to be loaded
-// independently.
-//
-// GET:
-//
-//     /dairy/:id/content-item
-//
-// ==========================================================
-
-router.get(
-    "/dairy/:id/content-item",
-    isAuth,
-    controller.getContentItem
 );
 
 
