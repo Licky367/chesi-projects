@@ -5,7 +5,7 @@ STORAGE CONTENT ITEM CARD
 ==============================================================
 
 FILE:
-    views/storage/content-item.ejs
+    views/update/content-item.ejs
 
 PURPOSE:
     Reusable CARD for one content item belonging to a
@@ -21,21 +21,9 @@ IMPORTANT:
 
     The card may display ANY storage content item.
 
-    Feed classification is used only where necessary for
-    storage-stock behavior.
+    The update form is provided by:
 
-EXPECTED VARIABLES:
-
-    dairy
-    storage
-    item
-
-OPTIONAL:
-
-    successMessage
-    pageError
-    latestStockUpdate
-
+        content-item-update.ejs
 
 STOCK UPDATE ARCHITECTURE:
 
@@ -146,43 +134,7 @@ if (
 
 
 /* ============================================================
-   STORAGE TYPE
-============================================================ */
-
-const storageType =
-    currentStorage &&
-    currentStorage.type
-        ? String(
-            currentStorage.type
-        ).trim()
-        : "";
-
-
-/* ============================================================
-   HELPERS
-============================================================ */
-
-function displayValue(
-    value
-) {
-
-    return (
-
-        value !== null &&
-        value !== undefined &&
-        String(
-            value
-        ).trim() !== ""
-
-    )
-        ? value
-        : "—";
-
-}
-
-
-/* ============================================================
-   CONTENT ITEM CLASSIFICATION
+   ITEM CLASSIFICATION
 ============================================================ */
 
 const itemType =
@@ -199,9 +151,9 @@ const itemCode =
 
 /*
 --------------------------------------------------------------
-The item itself remains a STORAGE CONTENT ITEM.
+The item remains a STORAGE CONTENT ITEM.
 
-These flags describe the content item.
+These flags are only used to describe the item.
 They do NOT turn this EJS into a feed item.
 --------------------------------------------------------------
 */
@@ -482,10 +434,6 @@ const stockUpdateImages =
 
 /* ============================================================
    CARD CONTAINER
-
-   IMPORTANT:
-   No page-level max-width or page padding.
-   This file is an INCLUDE.
 ============================================================ */
 
 .storage-content-item-page{
@@ -969,17 +917,6 @@ const stockUpdateImages =
 }
 
 
-.no-stock-note{
-
-    color:#8a958e;
-
-    font-size:11px;
-
-    font-style:italic;
-
-}
-
-
 /* ============================================================
    STOCK IMAGES
 ============================================================ */
@@ -1021,152 +958,6 @@ const stockUpdateImages =
     border:1px solid #e1e9e3;
 
     background:#f2f5f3;
-
-}
-
-
-/* ============================================================
-   UPDATE FORM
-============================================================ */
-
-.stock-update-section{
-
-    margin-top:27px;
-
-}
-
-
-.stock-update-form{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:14px;
-
-    padding:17px;
-
-    background:#f8fbf9;
-
-    border:1px solid #e1e9e3;
-
-    border-radius:14px;
-
-}
-
-
-.stock-update-field{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:7px;
-
-}
-
-
-.stock-update-label{
-
-    color:#536359;
-
-    font-size:10px;
-
-    font-weight:800;
-
-    letter-spacing:.05em;
-
-    text-transform:uppercase;
-
-}
-
-
-.stock-update-input,
-.stock-update-textarea{
-
-    width:100%;
-
-    box-sizing:border-box;
-
-    padding:11px 12px;
-
-    color:#263a2c;
-
-    background:#ffffff;
-
-    border:1px solid #dbe5de;
-
-    border-radius:10px;
-
-    outline:none;
-
-    font-family:inherit;
-
-    font-size:12px;
-
-}
-
-
-.stock-update-input:focus,
-.stock-update-textarea:focus{
-
-    border-color:#4c9663;
-
-    box-shadow:
-        0 0 0 3px
-        rgba(76,150,99,.10);
-
-}
-
-
-.stock-update-textarea{
-
-    min-height:95px;
-
-    resize:vertical;
-
-    line-height:1.6;
-
-}
-
-
-.stock-update-images{
-
-    width:100%;
-
-    font-size:11px;
-
-    color:#69766e;
-
-}
-
-
-.stock-update-button{
-
-    align-self:flex-start;
-
-    padding:10px 17px;
-
-    border:0;
-
-    border-radius:10px;
-
-    background:#2f7c48;
-
-    color:#ffffff;
-
-    cursor:pointer;
-
-    font-size:11px;
-
-    font-weight:800;
-
-}
-
-
-.stock-update-button:active{
-
-    transform:scale(.97);
 
 }
 
@@ -1524,8 +1315,7 @@ const stockUpdateImages =
 
     .description-section,
     .stock-note-section,
-    .stock-images-section,
-    .stock-update-section{
+    .stock-images-section{
 
         margin-top:23px;
 
@@ -1585,7 +1375,9 @@ const stockUpdateImages =
 <!-- ============================================================
      STORAGE CONTENT ITEM CARD
 
-     This is an INCLUDE.
+     THIS IS AN INCLUDE.
+
+     THE UPDATE FORM IS INCLUDED SEPARATELY BELOW.
 ============================================================= -->
 
 <div class="storage-content-item-page">
@@ -2003,219 +1795,35 @@ const stockUpdateImages =
 
 
             <!-- ==================================================
-                 UPDATE STOCK
+                 UPDATE FORM INCLUDE
 
-                 THE FORM IS PRESERVED.
+                 IMPORTANT:
 
-                 This is a STORAGE CONTENT ITEM CARD.
+                 There is NO itemIsFeed condition here.
 
-                 If the current storage content item is a feed
-                 inside an AgroStore, the stock-update form is
-                 displayed for that item.
+                 There is NO storageType condition here.
+
+                 This card always provides the separate
+                 content-item-update include.
+
+                 The update include posts to:
+
+                 /dairy/:dairyId/:contentItemId
             ================================================== -->
 
-            <% if (
-                itemIsFeed &&
-                storageType === "agroStore"
-            ) { %>
-
-
-                <section
-                    class="detail-section stock-update-section"
-                >
-
-
-                    <div class="detail-section-heading">
-
-                        <h2 class="detail-section-title">
-
-                            Update Stock
-
-                        </h2>
-
-
-                        <span class="detail-section-line"></span>
-
-                    </div>
-
-
-                    <!-- ==========================================
-                         STOCK UPDATE FORM
-
-                         POST:
-
-                         /dairy/:dairyId/:contentItemId
-                    =========================================== -->
-
-                    <form
-                        class="stock-update-form"
-
-                        action="/dairy/<%= currentDairy._id %>/<%= contentItem._id %>"
-
-                        method="POST"
-
-                        enctype="multipart/form-data"
-                    >
-
-
-                        <!-- ======================================
-                             QUANTITY
-                        ======================================= -->
-
-                        <div class="stock-update-field">
-
-                            <label
-                                for="stockQuantity"
-                                class="stock-update-label"
-                            >
-
-                                Quantity
-
-                            </label>
-
-
-                            <input
-                                type="number"
-
-                                id="stockQuantity"
-
-                                name="quantity"
-
-                                class="stock-update-input"
-
-                                value="<%= hasQuantity ? quantityValue : "" %>"
-
-                                step="any"
-
-                                min="0"
-
-                                required
-                            >
-
-                        </div>
-
-
-                        <!-- ======================================
-                             UNIT
-                        ======================================= -->
-
-                        <div class="stock-update-field">
-
-                            <label
-                                for="stockUnit"
-                                class="stock-update-label"
-                            >
-
-                                Unit
-
-                            </label>
-
-
-                            <input
-                                type="text"
-
-                                id="stockUnit"
-
-                                name="unit"
-
-                                class="stock-update-input"
-
-                                value="<%= itemUnit %>"
-
-                                maxlength="50"
-
-                                placeholder="e.g. kg, bags, litres"
-                            >
-
-                        </div>
-
-
-                        <!-- ======================================
-                             STOCK UPDATE NOTE
-                        ======================================= -->
-
-                        <div class="stock-update-field">
-
-                            <label
-                                for="stockUpdateNote"
-                                class="stock-update-label"
-                            >
-
-                                Stock Update Note
-
-                            </label>
-
-
-                            <textarea
-                                id="stockUpdateNote"
-
-                                name="stockUpdateNote"
-
-                                class="stock-update-textarea"
-
-                                maxlength="5000"
-
-                                placeholder="Describe what changed..."
-                            ></textarea>
-
-                        </div>
-
-
-                        <!-- ======================================
-                             IMAGES
-                        ======================================= -->
-
-                        <div class="stock-update-field">
-
-                            <label
-                                for="stockUpdateImages"
-                                class="stock-update-label"
-                            >
-
-                                Images
-
-                            </label>
-
-
-                            <input
-                                type="file"
-
-                                id="stockUpdateImages"
-
-                                name="images"
-
-                                class="stock-update-images"
-
-                                accept="image/*"
-
-                                multiple
-                            >
-
-                        </div>
-
-
-                        <!-- ======================================
-                             SUBMIT
-                        ======================================= -->
-
-                        <button
-                            type="submit"
-
-                            class="stock-update-button"
-                        >
-
-                            Save Stock Update
-
-                        </button>
-
-
-                    </form>
-
-
-                </section>
-
-
-            <% } %>
+            <%- include(
+                "content-item-update",
+                {
+                    dairy:
+                        currentDairy,
+
+                    storage:
+                        currentStorage,
+
+                    item:
+                        contentItem
+                }
+            ) %>
 
 
         </div>
@@ -2240,10 +1848,6 @@ const stockUpdateImages =
 
             </div>
 
-
-            <!-- ==================================================
-                 LAST UPDATED
-            ================================================== -->
 
             <div
                 class="footer-updated"
