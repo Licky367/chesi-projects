@@ -1,6 +1,6 @@
 <% /*
 ==========================================================
-DAIRY FARM INTRODUCTION / H1
+DAIRY MANAGEMENT INTRODUCTION / H1
 
 FILE:
     views/update/h1.ejs
@@ -10,13 +10,13 @@ PURPOSE:
     dairy management dashboard.
 
 DATA REQUIRED:
-    dairy
+    user
 ==========================================================
 */ %>
 
 <section
     class="dairy-h1"
-    aria-label="Dairy Farm Introduction"
+    aria-label="Management Introduction"
 >
 
     <!-- ==================================================
@@ -70,7 +70,7 @@ DATA REQUIRED:
             <span class="dairy-h1-label-line"></span>
 
             <span class="dairy-h1-label-text">
-                DAIRY FARM
+                MANAGEMENT
             </span>
 
             <span class="dairy-h1-label-line"></span>
@@ -79,63 +79,44 @@ DATA REQUIRED:
 
 
         <!-- ==============================================
-             TITLE
+             WELCOME
         =============================================== -->
 
         <h1 class="dairy-h1-title">
 
             <span class="dairy-h1-title-intro">
-                Welcome to
+                Welcome,
             </span>
 
             <span class="dairy-h1-title-name">
-                Your Dairy Farm
+                <%= user && user.name ? user.name : "User" %>
             </span>
 
         </h1>
 
 
         <!-- ==============================================
-             FARM INFORMATION
-        =============================================== -->
-
-        <% if (dairy && dairy.code != null) { %>
-
-            <div class="dairy-h1-meta">
-
-                <span class="dairy-h1-meta-icon">
-                    <i class="fas fa-location-dot"></i>
-                </span>
-
-                <span class="dairy-h1-code">
-                    FARM #<%= dairy.code %>
-                </span>
-
-            </div>
-
-        <% } %>
-
-
-        <!-- ==============================================
-             MESSAGE
+             MANAGEMENT MESSAGE
         =============================================== -->
 
         <div class="dairy-h1-message">
 
             <p>
-                Welcome to your dairy management space.
+                Welcome to your management space.
                 We're glad to have you here.
             </p>
 
             <p>
-                Support the activities here by keeping us
-                informed about the welfare and condition
-                of all assets within the dairy farm.
+                Keep management information up to date
+                and ensure that activities, records, assets,
+                welfare, maintenance, and other operations
+                are properly monitored.
             </p>
 
             <p>
-                If you experience any inconvenience,
-                please keep us updated through this site.
+                Review updates regularly and keep the
+                relevant information current to support
+                effective management and decision-making.
             </p>
 
         </div>
@@ -150,13 +131,13 @@ DATA REQUIRED:
             <span class="dairy-h1-footer-line"></span>
 
             <span>
-                FARM MANAGEMENT
+                MANAGEMENT
             </span>
 
             <span class="dairy-h1-footer-dot"></span>
 
             <span>
-                ASSET WELFARE
+                OPERATIONS
             </span>
 
         </div>
@@ -462,77 +443,7 @@ DATA REQUIRED:
 
     line-height: 1.02;
 
-}
-
-
-/* =========================================================
-   FARM META
-========================================================= */
-
-.dairy-h1-meta {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    margin-top: 15px;
-
-    padding:
-        6px
-        11px
-        6px
-        8px;
-
-    border: 1px solid #d8e7db;
-
-    border-radius: 999px;
-
-    background:
-        rgba(255, 255, 255, .72);
-
-    box-shadow:
-        0 2px 7px rgba(24, 63, 37, .035);
-
-}
-
-
-.dairy-h1-meta-icon {
-
-    width: 21px;
-    height: 21px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background: #eaf5ec;
-
-    color: #0b5d1e;
-
-    font-size: 9px;
-
-}
-
-
-.dairy-h1-code {
-
-    color: #42684d;
-
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
-
-    font-size: 8px;
-
-    font-weight: 800;
-
-    letter-spacing: 1.5px;
+    text-wrap: balance;
 
 }
 
@@ -779,13 +690,6 @@ DATA REQUIRED:
             clamp(34px, 10vw, 47px);
 
         letter-spacing: -1px;
-
-    }
-
-
-    .dairy-h1-meta {
-
-        margin-top: 12px;
 
     }
 
