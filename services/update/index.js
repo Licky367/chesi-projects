@@ -1,6 +1,12 @@
 // ==========================================================
 // services/update/index.js
 // ==========================================================
+//
+// UPDATE SERVICES
+// ==========================================================
+//
+// Central export for all update-related services.
+// ==========================================================
 
 module.exports = {
 
@@ -22,6 +28,8 @@ module.exports = {
 
     ...require("./stockUpdateService"),
 
-    ...require("./contentItemService")
+    ...require("./contentItemService"),
+
+    ...require("./booleanService")
 
 };
