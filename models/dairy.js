@@ -21,10 +21,10 @@
 //
 //     recordType MUST NOT be confused with type.
 //
-// -------------------------------------------------------
+// ----------------------------------------------------------
 //
 // type
-// -------------------------------------------------------
+// ----------------------------------------------------------
 //
 //     farm
 //         = ranch / zeroGrazing / etc.
@@ -48,6 +48,53 @@
 //
 // code === null
 //     = Structure / Facility / Manual Asset
+//
+// ==========================================================
+//
+// ANIMAL GENDER
+// ----------------------------------------------------------
+//
+// Positive animal code:
+//
+//     EVEN
+//         = Female
+//
+//     ODD
+//         = Male
+//
+// Therefore:
+//
+//     code % 2 === 0
+//         = Female
+//
+//     code % 2 !== 0
+//         = Male
+//
+// ==========================================================
+//
+// FEMALE ANIMAL BOOLEAN FIELDS
+// ----------------------------------------------------------
+//
+// isMilking
+// isBred
+// isInCalf
+// isComingIntoHeat
+// isInHeat
+// isDry
+// isCloseToCalving
+// hasCalved
+// isLactating
+// isWeaned
+// isSick
+// isUnderTreatment
+// isOnMedication
+// isQuarantined
+// isForSale
+// isSold
+//
+// All default to false.
+//
+// Male animals are always forced to false for these fields.
 //
 // ==========================================================
 //
@@ -100,16 +147,6 @@
 //     null
 //         = item is not currently allocated
 //
-// IMPORTANT:
-//
-// roomNumber and dwellNumber are NOT interchangeable.
-//
-// roomNumber:
-//     identifies the storage facility.
-//
-// dwellNumber:
-//     identifies the storage location of content.
-//
 // ==========================================================
 //
 // FEED
@@ -129,36 +166,6 @@
 //
 // description
 //     = permanent/general description
-//
-// ==========================================================
-//
-// STOCK UPDATE HISTORY
-// ----------------------------------------------------------
-//
-// item.stockUpdates[]
-//
-// Every stock update contains:
-//
-//     quantity
-//     stockUpdateNote
-//     images
-//     recordedBy
-//     recordedAt
-//
-// recordedBy:
-//     User ObjectId
-//
-// recordedAt:
-//     Date
-//
-// This allows:
-//
-//     .populate("stockUpdates.recordedBy")
-//
-// and therefore:
-//
-//     latestStockUpdate.recordedBy.name
-//     latestStockUpdate.recordedBy.email
 //
 // ==========================================================
 
@@ -433,34 +440,67 @@ function normalizeProfileImage(
 
 
 // ==========================================================
-// STOCK UPDATE IMAGE SCHEMA
+// HELPER: FEMALE ANIMAL
 // ==========================================================
 //
-// The view supports images stored as:
+// Female:
 //
-//     "https://example.com/image.jpg"
+//     positive even code
 //
-// OR:
+// Male:
 //
-//     {
-//         url: "..."
-//     }
+//     positive odd code
 //
-// OR:
+// ==========================================================
+
+function isFemaleAnimalCode(code) {
+
+    return (
+
+        Number.isInteger(code) &&
+        code > 0 &&
+        code % 2 === 0
+
+    );
+
+}
+
+
+// ==========================================================
+// HELPER: FEMALE-ONLY BOOLEAN FIELDS
+// ==========================================================
 //
-//     {
-//         path: "..."
-//     }
+// These fields are meaningful for female cattle in the
+// current dairy model.
 //
-// OR:
+// Male animals are always forced to false.
 //
-//     {
-//         location: "..."
-//     }
-//
-// Therefore Mixed is deliberately used here so the existing
-// image storage format is not broken.
-//
+// ==========================================================
+
+const FEMALE_BOOLEAN_FIELDS = [
+
+    "isMilking",
+    "isBred",
+    "isInCalf",
+    "isComingIntoHeat",
+    "isInHeat",
+    "isDry",
+    "isCloseToCalving",
+    "hasCalved",
+    "isLactating",
+    "isWeaned",
+    "isSick",
+    "isUnderTreatment",
+    "isOnMedication",
+    "isQuarantined",
+    "isForSale",
+    "isSold"
+
+];
+
+
+// ==========================================================
+// STOCK UPDATE IMAGE SCHEMA
 // ==========================================================
 
 const stockUpdateImageSchema =
@@ -481,18 +521,6 @@ const stockUpdateImageSchema =
 
 // ==========================================================
 // STOCK UPDATE SCHEMA
-// ==========================================================
-//
-// IMPORTANT:
-//
-// This is the field that fixes the error:
-//
-//     Cannot populate path
-//     'stockUpdates.recordedBy'
-//     because it is not in your schema.
-//
-// recordedBy is explicitly defined as a User reference.
-//
 // ==========================================================
 
 const stockUpdateSchema =
@@ -551,12 +579,6 @@ const stockUpdateSchema =
 
             // ==================================================
             // USER WHO RECORDED THE UPDATE
-            // ==================================================
-            //
-            // THIS IS THE FIELD REQUIRED BY:
-            //
-            //     .populate("stockUpdates.recordedBy")
-            //
             // ==================================================
 
             recordedBy: {
@@ -770,6 +792,201 @@ const dairySchema =
 
 
             // ==================================================
+            // BREEDING STATUS
+            // ==================================================
+
+            isBred: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // PREGNANCY / IN-CALF STATUS
+            // ==================================================
+
+            isInCalf: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // APPROACHING HEAT
+            // ==================================================
+
+            isComingIntoHeat: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // CURRENT HEAT
+            // ==================================================
+
+            isInHeat: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // DRY PERIOD
+            // ==================================================
+
+            isDry: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // CLOSE TO CALVING
+            // ==================================================
+
+            isCloseToCalving: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // HAS CALVED
+            // ==================================================
+
+            hasCalved: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // LACTATION STATUS
+            // ==================================================
+
+            isLactating: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // WEANING STATUS
+            // ==================================================
+
+            isWeaned: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // HEALTH STATUS
+            // ==================================================
+
+            isSick: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // TREATMENT STATUS
+            // ==================================================
+
+            isUnderTreatment: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // MEDICATION STATUS
+            // ==================================================
+
+            isOnMedication: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // QUARANTINE STATUS
+            // ==================================================
+
+            isQuarantined: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // SALE STATUS
+            // ==================================================
+
+            isForSale: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // SOLD STATUS
+            // ==================================================
+
+            isSold: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
             // PARENT FARM CODE
             // ==================================================
 
@@ -971,24 +1188,6 @@ const dairySchema =
 
             // ==================================================
             // STOCK UPDATE HISTORY
-            // ==================================================
-            //
-            // REQUIRED BY:
-            //
-            //     views/storage/content-item.ejs
-            //
-            // The view expects:
-            //
-            //     item.stockUpdates[]
-            //
-            // Each update contains:
-            //
-            //     quantity
-            //     stockUpdateNote
-            //     images
-            //     recordedBy
-            //     recordedAt
-            //
             // ==================================================
 
             stockUpdates: {
@@ -1807,7 +2006,31 @@ dairySchema.virtual(
     return (
 
         this.isAnimal &&
-        Number(this.code) % 2 === 0
+        isFemaleAnimalCode(
+            Number(this.code)
+        )
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS MALE
+// ==========================================================
+
+dairySchema.virtual(
+    "isMale"
+).get(function () {
+
+    return (
+
+        this.isAnimal &&
+        Number.isInteger(
+            Number(this.code)
+        ) &&
+        Number(this.code) > 0 &&
+        Number(this.code) % 2 !== 0
 
     );
 
@@ -2493,8 +2716,6 @@ dairySchema.pre(
 
             this.mass = 0;
 
-            this.isMilking = false;
-
             this.quantity = null;
 
             this.unit = null;
@@ -2502,6 +2723,19 @@ dairySchema.pre(
             this.stockUpdateNote = "";
 
             this.stockUpdates = [];
+
+
+            // ----------------------------------------------
+            // Animal-only boolean fields
+            // ----------------------------------------------
+
+            FEMALE_BOOLEAN_FIELDS.forEach(
+                field => {
+
+                    this[field] = false;
+
+                }
+            );
 
         }
 
@@ -2573,15 +2807,51 @@ dairySchema.pre(
             }
 
 
-            // ----------------------------------------------
-            // Only female animals can be marked as milking.
-            // ----------------------------------------------
+            // ==================================================
+            // GENDER ENFORCEMENT
+            // ==================================================
+            //
+            // EVEN CODE
+            //     = Female
+            //
+            // ODD CODE
+            //     = Male
+            //
+            // Male animals can never have the female boolean
+            // fields set to true.
+            //
+            // ==================================================
 
-            if (
-                Number(this.code) % 2 !== 0
-            ) {
+            const female =
+                isFemaleAnimalCode(
+                    Number(this.code)
+                );
 
-                this.isMilking = false;
+
+            if (!female) {
+
+                FEMALE_BOOLEAN_FIELDS.forEach(
+                    field => {
+
+                        this[field] = false;
+
+                    }
+                );
+
+            } else {
+
+                // ----------------------------------------------
+                // Normalize all female boolean values.
+                // ----------------------------------------------
+
+                FEMALE_BOOLEAN_FIELDS.forEach(
+                    field => {
+
+                        this[field] =
+                            !!this[field];
+
+                    }
+                );
 
             }
 
@@ -2641,7 +2911,18 @@ dairySchema.pre(
 
             this.mass = 0;
 
-            this.isMilking = false;
+
+            // ----------------------------------------------
+            // All animal booleans are false.
+            // ----------------------------------------------
+
+            FEMALE_BOOLEAN_FIELDS.forEach(
+                field => {
+
+                    this[field] = false;
+
+                }
+            );
 
 
             // ----------------------------------------------
@@ -3163,8 +3444,6 @@ dairySchema.pre(
 
             this.mass = 0;
 
-            this.isMilking = false;
-
             this.quantity = null;
 
             this.unit = null;
@@ -3172,6 +3451,15 @@ dairySchema.pre(
             this.stockUpdateNote = "";
 
             this.stockUpdates = [];
+
+
+            FEMALE_BOOLEAN_FIELDS.forEach(
+                field => {
+
+                    this[field] = false;
+
+                }
+            );
 
         }
 
@@ -3194,6 +3482,40 @@ dairySchema.pre(
 
             this.stockUpdates = [];
 
+
+            // ----------------------------------------------
+            // Enforce female/male rule again at save time.
+            // ----------------------------------------------
+
+            const female =
+                isFemaleAnimalCode(
+                    Number(this.code)
+                );
+
+
+            if (!female) {
+
+                FEMALE_BOOLEAN_FIELDS.forEach(
+                    field => {
+
+                        this[field] = false;
+
+                    }
+                );
+
+            } else {
+
+                FEMALE_BOOLEAN_FIELDS.forEach(
+                    field => {
+
+                        this[field] =
+                            !!this[field];
+
+                    }
+                );
+
+            }
+
         }
 
 
@@ -3209,7 +3531,14 @@ dairySchema.pre(
 
             this.mass = 0;
 
-            this.isMilking = false;
+
+            FEMALE_BOOLEAN_FIELDS.forEach(
+                field => {
+
+                    this[field] = false;
+
+                }
+            );
 
         }
 
@@ -3424,6 +3753,62 @@ dairySchema.index({
 dairySchema.index({
 
     isMilking: 1
+
+});
+
+
+dairySchema.index({
+
+    isBred: 1
+
+});
+
+
+dairySchema.index({
+
+    isInCalf: 1
+
+});
+
+
+dairySchema.index({
+
+    isComingIntoHeat: 1
+
+});
+
+
+dairySchema.index({
+
+    isInHeat: 1
+
+});
+
+
+dairySchema.index({
+
+    isCloseToCalving: 1
+
+});
+
+
+dairySchema.index({
+
+    hasCalved: 1
+
+});
+
+
+dairySchema.index({
+
+    isLactating: 1
+
+});
+
+
+dairySchema.index({
+
+    isDry: 1
 
 });
 
