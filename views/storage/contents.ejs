@@ -28,25 +28,19 @@ SUPPORTED STORAGE TYPES:
         • No reshuffle
         • No omit
 
-IMPORTANT:
-
-    AgroStore CURRENT CONTENTS are filtered ONLY by:
-
-        1. dwellNumber === storage.roomNumber
-        2. quantity > 0
-
-    NO code filter
-    NO assetCode filter
-    NO type filter
-    NO animal filter
-    NO recordType filter
-
-DATABASE STORAGE TYPES:
-
-    "room"
-    "agroStore"
 ==============================================================
 */
+
+
+/* ============================================================
+   USER / ADMIN
+============================================================ */
+
+const isAdmin =
+    Boolean(
+        user &&
+        user.role === "admin"
+    );
 
 
 /* ============================================================
@@ -105,7 +99,7 @@ const storageRoomNumber =
         storage.roomNumber !== undefined
     )
         ? storage.roomNumber
-        : "—";
+        : null;
 
 
 /* ============================================================
@@ -189,10 +183,7 @@ function displayStorageName(item) {
 
 /* ============================================================
    ITEM CLASSIFICATION
-   ONLY USED FOR DISPLAY.
-
-   THESE FUNCTIONS DO NOT CONTROL WHETHER AN ITEM APPEARS
-   IN THE AGROSTORE.
+   DISPLAY ONLY
 ============================================================ */
 
 function itemIsFeed(item) {
@@ -237,31 +228,10 @@ function itemIsAgroStore(item) {
 
 
 /* ============================================================
-   EMPTY DWELL NUMBER
-============================================================ */
-
-function hasEmptyDwellNumber(item) {
-
-    if (!item) {
-
-        return true;
-
-    }
-
-    return (
-        item.dwellNumber === null ||
-        item.dwellNumber === undefined ||
-        String(item.dwellNumber).trim() === ""
-    );
-
-}
-
-
-/* ============================================================
    STORAGE RECORD CHECK
-   USED ONLY BY ROOM "ADD ITEMS".
 
-   THIS HAS NO EFFECT ON AGROSTORE CONTENTS.
+   Used to prevent rooms/agrostores themselves from being
+   selected as ordinary Dairy contents.
 ============================================================ */
 
 function isStorageRecord(item) {
@@ -288,24 +258,57 @@ function isStorageRecord(item) {
 
 
 /* ============================================================
-   AGROSTORE CONTENT FILTER
-============================================================
+   VALUE COMPARISON
 
-   IMPORTANT:
+   Storage numbers / codes may arrive from MongoDB as numbers
+   while other values may arrive as strings.
 
-   THIS IS THE ONLY FILTER USED FOR ITEMS DISPLAYED INSIDE
-   AN AGROSTORE.
+   Compare their trimmed string representations so that:
 
-   CONDITION 1:
-       dwellNumber matches storage.roomNumber
+       2 === "2"
 
-   CONDITION 2:
-       quantity is greater than zero
-
-   NOTHING ELSE IS CHECKED.
+   is treated as equal.
 ============================================================ */
 
-function agroStoreDwellAndQuantityMatch(item) {
+function sameValue(a, b) {
+
+    if (
+        a === null ||
+        a === undefined ||
+        b === null ||
+        b === undefined
+    ) {
+
+        return false;
+
+    }
+
+    return (
+        String(a).trim() ===
+        String(b).trim()
+    );
+
+}
+
+
+/* ============================================================
+   ROOM CURRENT CONTENTS
+============================================================
+
+   A Dairy record belongs to the current room when:
+
+       item.dwellNumber === storage.roomNumber
+
+   Nothing else is required for room current contents.
+============================================================ */
+
+function belongsToCurrentRoom(item) {
+
+    if (!isNormalRoom) {
+
+        return false;
+
+    }
 
     if (!item) {
 
@@ -313,51 +316,73 @@ function agroStoreDwellAndQuantityMatch(item) {
 
     }
 
+    if (
+        storageRoomNumber === null ||
+        storageRoomNumber === undefined
+    ) {
 
-    /* --------------------------------------------------------
-       FILTER 1: DWELL NUMBER
-    -------------------------------------------------------- */
+        return false;
+
+    }
+
+    return sameValue(
+        item.dwellNumber,
+        storageRoomNumber
+    );
+
+}
+
+
+/* ============================================================
+   AGROSTORE CURRENT CONTENTS
+============================================================
+
+   AgroStore rule remains:
+
+       dwellNumber === storage.roomNumber
+       AND
+       quantity > 0
+
+   No code filter.
+   No assetCode filter.
+============================================================ */
+
+function belongsToAgroStore(item) {
+
+    if (!isAgroStore) {
+
+        return false;
+
+    }
+
+    if (!item) {
+
+        return false;
+
+    }
 
     if (
         storageRoomNumber === null ||
-        storageRoomNumber === undefined ||
-        String(storageRoomNumber).trim() === "" ||
-        String(storageRoomNumber).trim() === "—"
+        storageRoomNumber === undefined
     ) {
 
         return false;
 
     }
-
 
     if (
-        item.dwellNumber === null ||
-        item.dwellNumber === undefined ||
-        String(item.dwellNumber).trim() === ""
+        !sameValue(
+            item.dwellNumber,
+            storageRoomNumber
+        )
     ) {
 
         return false;
 
     }
-
-
-    if (
-        String(item.dwellNumber).trim() !==
-        String(storageRoomNumber).trim()
-    ) {
-
-        return false;
-
-    }
-
-
-    /* --------------------------------------------------------
-       FILTER 2: QUANTITY
-    -------------------------------------------------------- */
 
     const quantity =
         Number(item.quantity);
-
 
     if (
         Number.isNaN(quantity) ||
@@ -367,7 +392,6 @@ function agroStoreDwellAndQuantityMatch(item) {
         return false;
 
     }
-
 
     return true;
 
@@ -383,21 +407,51 @@ const currentItems =
         ? suppliedItems.filter(
             function(item) {
 
-                return agroStoreDwellAndQuantityMatch(item);
+                return belongsToAgroStore(item);
 
             }
         )
-        : suppliedItems;
+        : suppliedItems.filter(
+            function(item) {
+
+                return belongsToCurrentRoom(item);
+
+            }
+        );
 
 
 /* ============================================================
    ADD ITEM ELIGIBILITY
    ROOM ONLY
+============================================================
+
+   A record can appear in "Add Items" when:
+
+       1. Current storage is a normal room.
+
+       2. item.assetCode === storage.roomNumber
+
+       3. item.dwellNumber !== storage.roomNumber
+
+       4. The item is not itself a storage structure.
+
+   IMPORTANT:
+
+       The previous dairy.code comparison is intentionally
+       removed.
+
+       The room's roomNumber is the comparison value.
 ============================================================ */
 
-function canBeAddedToStorage(item) {
+function canBeAddedToRoom(item) {
 
     if (!isNormalRoom) {
+
+        return false;
+
+    }
+
+    if (!isAdmin) {
 
         return false;
 
@@ -410,31 +464,55 @@ function canBeAddedToStorage(item) {
     }
 
     if (
-        !dairy ||
-        dairy.code === null ||
-        dairy.code === undefined
+        storageRoomNumber === null ||
+        storageRoomNumber === undefined
     ) {
 
         return false;
 
     }
+
+    /*
+    ------------------------------------------------------------
+    ASSET CODE MUST MATCH THE ROOM NUMBER
+    ------------------------------------------------------------
+    */
 
     if (
-        String(item.assetCode) !==
-        String(dairy.code)
+        !sameValue(
+            item.assetCode,
+            storageRoomNumber
+        )
     ) {
 
         return false;
 
     }
+
+
+    /*
+    ------------------------------------------------------------
+    DWELL NUMBER MUST NOT MATCH THE ROOM NUMBER
+    ------------------------------------------------------------
+    */
 
     if (
-        !hasEmptyDwellNumber(item)
+        sameValue(
+            item.dwellNumber,
+            storageRoomNumber
+        )
     ) {
 
         return false;
 
     }
+
+
+    /*
+    ------------------------------------------------------------
+    DO NOT ADD STORAGE STRUCTURES AS CONTENTS
+    ------------------------------------------------------------
+    */
 
     if (
         isStorageRecord(item)
@@ -443,6 +521,7 @@ function canBeAddedToStorage(item) {
         return false;
 
     }
+
 
     return true;
 
@@ -454,11 +533,11 @@ function canBeAddedToStorage(item) {
 ============================================================ */
 
 const filteredAddItems =
-    isNormalRoom
+    isNormalRoom && isAdmin
         ? availableAddItems.filter(
             function(item) {
 
-                return canBeAddedToStorage(item);
+                return canBeAddedToRoom(item);
 
             }
         )
@@ -1382,8 +1461,7 @@ const addItemCount =
 
                 <% } else { %>
 
-                    Manage the records currently located in this
-                    storage room.
+                    Dairy records currently assigned to this room.
 
                 <% } %>
 
@@ -1394,7 +1472,7 @@ const addItemCount =
 
         <div class="storage-header-actions">
 
-            <% if (isNormalRoom || isAgroStore) { %>
+            <% if (isAdmin) { %>
 
                 <a
                     href="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add/<%= storageType %>"
@@ -1404,14 +1482,6 @@ const addItemCount =
                 </a>
 
             <% } %>
-
-
-            <a
-                href="/storage/<%= dairy._id %>"
-                class="back-storage"
-            >
-                ← Back to Storage
-            </a>
 
         </div>
 
@@ -1472,13 +1542,17 @@ const addItemCount =
             </button>
 
 
-            <button
-                type="button"
-                class="storage-tab"
-                data-storage-tab="add-items"
-            >
-                Add Items
-            </button>
+            <% if (isAdmin) { %>
+
+                <button
+                    type="button"
+                    class="storage-tab"
+                    data-storage-tab="add-items"
+                >
+                    Add Items
+                </button>
+
+            <% } %>
 
         </nav>
 
@@ -1713,22 +1787,6 @@ const addItemCount =
                             itemIsAgroStore(item);
 
 
-                        /*
-                        ==================================================
-                        ITEM DETAILS URL
-
-                        ROOM:
-                            /dairy/<item._id>
-
-                        AGROSTORE:
-                            /storage/<farmId>/contents/<agroStoreId>/details/<item._id>
-
-                        dairy._id  = farm ID
-                        storage._id = current storage / agroStore ID
-                        item._id    = tapped content ID
-                        ==================================================
-                        */
-
                         const currentItemUrl =
                             isAgroStore
                                 ? "/storage/" +
@@ -1772,14 +1830,30 @@ const addItemCount =
 
                         <div class="content-icon">
 
-                            <% if (currentItemIsFeed) { %>
+                            <% if (item.profileImage) { %>
+
+                                <img
+                                    src="<%= item.profileImage %>"
+                                    alt="<%= item.name || 'Dairy' %>"
+                                    style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"
+                                >
+
+                            <% } else if (currentItemIsFeed) { %>
+
                                 🌾
+
                             <% } else if (currentItemIsAnimal) { %>
+
                                 🐄
+
                             <% } else if (currentItemIsAgroStore) { %>
+
                                 🌾
+
                             <% } else { %>
+
                                 📦
+
                             <% } %>
 
                         </div>
@@ -1818,176 +1892,6 @@ const addItemCount =
                                 </span>
 
                             </div>
-
-
-                            <div class="content-meta">
-
-                                <span class="content-meta-item">
-
-                                    <strong>
-                                        Code:
-                                    </strong>
-
-                                    <%= displayValue(item.code) %>
-
-                                </span>
-
-
-                                <span class="content-meta-item">
-
-                                    <strong>
-                                        Asset Code:
-                                    </strong>
-
-                                    <%= displayValue(item.assetCode) %>
-
-                                </span>
-
-
-                                <span class="content-meta-item">
-
-                                    <strong>
-                                        Type:
-                                    </strong>
-
-                                    <%= displayValue(item.type) %>
-
-                                </span>
-
-
-                                <span class="content-meta-item">
-
-                                    <strong>
-                                        Status:
-                                    </strong>
-
-                                    <%= displayValue(item.status) %>
-
-                                </span>
-
-
-                                <span class="content-meta-item">
-
-                                    <strong>
-                                        Dwell:
-                                    </strong>
-
-                                    <%= displayValue(item.dwellNumber) %>
-
-                                </span>
-
-
-                                <% if (
-                                    item.quantity !== null &&
-                                    item.quantity !== undefined
-                                ) { %>
-
-                                    <span class="content-meta-item">
-
-                                        <strong>
-                                            Quantity:
-                                        </strong>
-
-                                        <%= Number(
-                                            item.quantity || 0
-                                        ).toLocaleString() %>
-
-                                        <%= item.unit || "unit" %>
-
-                                    </span>
-
-                                <% } %>
-
-
-                                <% if (item.condition) { %>
-
-                                    <span class="content-meta-item">
-
-                                        <strong>
-                                            Condition:
-                                        </strong>
-
-                                        <%= item.condition %>
-
-                                    </span>
-
-                                <% } %>
-
-
-                                <% if (
-                                    item.currentWorth !== null &&
-                                    item.currentWorth !== undefined
-                                ) { %>
-
-                                    <span class="content-meta-item">
-
-                                        <strong>
-                                            Worth:
-                                        </strong>
-
-                                        <%= Number(
-                                            item.currentWorth || 0
-                                        ).toLocaleString() %>
-
-                                    </span>
-
-                                <% } %>
-
-                            </div>
-
-
-                            <% if (currentItemIsAnimal) { %>
-
-                                <div class="animal-information">
-
-                                    <span>
-
-                                        <strong>
-                                            Gender:
-                                        </strong>
-
-                                        <%= item.gender || "—" %>
-
-                                    </span>
-
-
-                                    <span>
-
-                                        <strong>
-                                            Age:
-                                        </strong>
-
-                                        <%= item.ageText || "—" %>
-
-                                    </span>
-
-
-                                    <span>
-
-                                        <strong>
-                                            Milking:
-                                        </strong>
-
-                                        <% if (item.isMilking) { %>
-                                            Yes
-                                        <% } else { %>
-                                            No
-                                        <% } %>
-
-                                    </span>
-
-                                </div>
-
-                            <% } %>
-
-
-                            <% if (item.description) { %>
-
-                                <p class="content-description">
-                                    <%= item.description %>
-                                </p>
-
-                            <% } %>
 
                         </div>
 
@@ -2057,8 +1961,12 @@ const addItemCount =
 
                     <% } else { %>
 
-                        No records are currently located in this
-                        storage room.
+                        No Dairy records currently have a
+                        <strong>dwellNumber</strong> matching
+                        this room's
+                        <strong>
+                            roomNumber <%= displayValue(storageRoomNumber) %>
+                        </strong>.
 
                     <% } %>
 
@@ -2075,7 +1983,7 @@ const addItemCount =
          ROOM ADD ITEMS TAB
     ========================================================= -->
 
-    <% if (isNormalRoom) { %>
+    <% if (isNormalRoom && isAdmin) { %>
 
         <section
             class="storage-tab-panel"
@@ -2093,11 +2001,15 @@ const addItemCount =
 
                     <p>
 
-                        Only Dairy records belonging to this Dairy
-                        Farm, currently without a
-                        <strong>dwellNumber</strong>, and not
-                        themselves storage structures are available
-                        to add.
+                        Available Dairy records whose
+                        <strong>assetCode</strong> matches this
+                        room's
+                        <strong>
+                            roomNumber <%= displayValue(storageRoomNumber) %>
+                        </strong>
+                        and whose
+                        <strong>dwellNumber</strong> is not this
+                        room.
 
                     </p>
 
@@ -2194,14 +2106,30 @@ const addItemCount =
 
                                     <div class="add-icon">
 
-                                        <% if (addRecordIsFeed) { %>
+                                        <% if (item.profileImage) { %>
+
+                                            <img
+                                                src="<%= item.profileImage %>"
+                                                alt="<%= item.name || 'Dairy' %>"
+                                                style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"
+                                            >
+
+                                        <% } else if (addRecordIsFeed) { %>
+
                                             🌾
+
                                         <% } else if (addRecordIsAnimal) { %>
+
                                             🐄
+
                                         <% } else if (addRecordIsAgroStore) { %>
+
                                             🌾
+
                                         <% } else { %>
+
                                             📦
+
                                         <% } %>
 
                                     </div>
@@ -2241,64 +2169,6 @@ const addItemCount =
 
                                         </div>
 
-
-                                        <div class="add-meta">
-
-                                            <span>
-                                                <strong>ID:</strong>
-                                                <%= displayValue(item._id) %>
-                                            </span>
-
-
-                                            <span>
-                                                <strong>Code:</strong>
-                                                <%= displayValue(item.code) %>
-                                            </span>
-
-
-                                            <span>
-                                                <strong>Asset Code:</strong>
-                                                <%= displayValue(item.assetCode) %>
-                                            </span>
-
-
-                                            <span>
-                                                <strong>Type:</strong>
-                                                <%= displayValue(item.type) %>
-                                            </span>
-
-
-                                            <span>
-                                                <strong>Status:</strong>
-                                                <%= displayValue(item.status) %>
-                                            </span>
-
-
-                                            <span>
-                                                <strong>Dwell:</strong>
-                                                <%= displayValue(item.dwellNumber) %>
-                                            </span>
-
-
-                                            <% if (
-                                                item.quantity !== null &&
-                                                item.quantity !== undefined
-                                            ) { %>
-
-                                                <span>
-                                                    <strong>Quantity:</strong>
-
-                                                    <%= Number(
-                                                        item.quantity || 0
-                                                    ).toLocaleString() %>
-
-                                                    <%= item.unit || "unit" %>
-                                                </span>
-
-                                            <% } %>
-
-                                        </div>
-
                                     </div>
 
                                 </article>
@@ -2327,8 +2197,11 @@ const addItemCount =
 
                         <p>
 
-                            There are no eligible Dairy records
-                            available to add to this storage.
+                            There are no Dairy records whose
+                            <strong>assetCode</strong> matches this
+                            room and whose
+                            <strong>dwellNumber</strong> is different
+                            from this room.
 
                         </p>
 
@@ -2362,24 +2235,6 @@ document.addEventListener(
 
         /* ======================================================
            CURRENT CONTENT ITEM NAVIGATION
-        ======================================================
-
-           ROOM:
-               /dairy/<item._id>
-
-           AGROSTORE:
-               /storage/<dairy._id>/contents/<storage._id>/details/<item._id>
-
-           IMPORTANT:
-
-           On a normal room, clicking the checkbox must NOT
-           navigate to the Dairy page.
-
-           The checkbox remains available for:
-               • Select
-               • Reshuffle
-               • Omit
-
         ====================================================== */
 
         const contentCards =
@@ -2394,12 +2249,6 @@ document.addEventListener(
                 card.addEventListener(
                     "click",
                     function(event){
-
-                        /*
-                        --------------------------------------------------
-                        DO NOT NAVIGATE WHEN THE ROOM CHECKBOX IS CLICKED
-                        --------------------------------------------------
-                        */
 
                         if (
                             event.target &&
@@ -2417,12 +2266,6 @@ document.addEventListener(
 
                         }
 
-
-                        /*
-                        --------------------------------------------------
-                        DO NOT NAVIGATE IF CLICK IS INSIDE A FORM CONTROL
-                        --------------------------------------------------
-                        */
 
                         if (
                             event.target &&
@@ -2524,10 +2367,6 @@ document.addEventListener(
         }
 
 
-        /* ======================================================
-           AGROSTORE HAS NO ROOM MANAGEMENT
-        ====================================================== */
-
         if (!isNormalRoom) {
 
             return;
@@ -2626,6 +2465,7 @@ document.addEventListener(
 
             const selected =
                 getSelectedContents();
+
 
             const count =
                 selected.length;
