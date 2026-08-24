@@ -343,6 +343,108 @@ const farmProductionSchema =
 
     );
 
+// ==========================================================
+// SALE FARM ALLOCATION
+// ==========================================================
+//
+// Records exactly how much milk was deducted from each farm
+// for one sale.
+//
+// Example:
+//
+//     Customer wants 20L
+//
+//     Farm A -> 10L
+//     Farm B -> 10L
+//
+// ==========================================================
+
+const farmAllocationSchema =
+    new mongoose.Schema(
+
+        {
+
+            // ==================================================
+            // FARM
+            // ==================================================
+
+            farm: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref:
+                    "Dairy",
+
+                required:
+                    true
+
+            },
+
+
+            // ==================================================
+            // FARM CODE
+            // ==================================================
+
+            farmCode: {
+
+                type:
+                    Number,
+
+                required:
+                    true,
+
+                validate: {
+
+                    validator:
+                        isFiniteNumber,
+
+                    message:
+                        "Farm code must be a valid number."
+
+                }
+
+            },
+
+
+            // ==================================================
+            // LITERS DEDUCTED FROM FARM
+            // ==================================================
+
+            liters: {
+
+                type:
+                    Number,
+
+                required:
+                    true,
+
+                min:
+                    0,
+
+                validate: {
+
+                    validator:
+                        isFiniteNumber,
+
+                    message:
+                        "Allocated milk must be a valid number."
+
+                }
+
+            }
+
+        },
+
+        {
+
+            _id:
+                false
+
+        }
+
+    );
+
 
 // ==========================================================
 // DAILY SALE
