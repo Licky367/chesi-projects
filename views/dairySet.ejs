@@ -9,36 +9,24 @@ PURPOSE:
     Display the profile page for a Dairy asset or
     structure.
 
-    CONTENT ITEM UPDATE LOGIC:
+    CONTENT ITEM LOGIC:
 
-        The current Dairy record is treated as a
-        storage content item when it has a dwellNumber.
-
-        Therefore:
-
-            dairy.dwellNumber != null
-                ↓
-            include content-update.ejs
-
-    DATABASE UPDATE:
-
-        content-update.ejs
+        dairy.dwellNumber != null
             ↓
-        contentItemController.js
-            ↓
-        contentItemService.js
-            ↓
-        Dairy
+        views/update/content-item.ejs
+
+    The content item card is displayed immediately
+    after the update-cards section.
 
 IMPORTANT:
 
     content-item.ejs
-        = DISPLAY CARD ONLY
+        = STORAGE CONTENT ITEM DISPLAY CARD
 
-    content-update.ejs
-        = STOCK UPDATE HISTORY + UPDATE MODAL
+    content-item-update.ejs
+        = STOCK UPDATE SECTION
 
-    Both files are located in:
+    Both are located in:
 
         views/update/
 ==========================================================
@@ -129,6 +117,48 @@ const hasDwellNumber =
 
 
     <!-- =================================================
+         STORAGE CONTENT ITEM
+    ==================================================
+
+         If this Dairy record has a dwellNumber,
+         it is treated as a storage content item.
+
+         content-item.ejs is therefore rendered
+         immediately after update-cards.ejs.
+    ================================================== -->
+
+    <% if (hasDwellNumber) { %>
+
+        <%- include("update/content-item", {
+
+            dairy:
+                dairy,
+
+            storage:
+                safeStorage,
+
+            item:
+                safeContentItem,
+
+            user:
+                user,
+
+            successMessage:
+                safeSuccessMessage,
+
+            pageError:
+                safePageError,
+
+            latestStockUpdate:
+                safeLatestStockUpdate
+
+        }) %>
+
+    <% } %>
+
+
+
+    <!-- =================================================
          PROFILE
     ================================================== -->
 
@@ -146,48 +176,6 @@ const hasDwellNumber =
                 user
 
         }) %>
-
-    <% } %>
-
-
-
-    <!-- =================================================
-         STORAGE CONTENT ITEM
-    ==================================================
-
-         A Dairy record with a dwellNumber is a
-         storage content item.
-
-         Therefore content-item.ejs is displayed only
-         when dwellNumber exists.
-    ================================================== -->
-
-    <% if (hasDwellNumber) { %>
-
-
-        <!-- =============================================
-             CONTENT UPDATE HISTORY + UPDATE MODAL
-        ============================================== -->
-
-        <%- include("update/content-update", {
-
-            dairy:
-                dairy,
-
-            storage:
-                safeStorage,
-
-            item:
-                safeContentItem,
-
-            user:
-                user,
-
-            latestStockUpdate:
-                safeLatestStockUpdate
-
-        }) %>
-
 
     <% } %>
 
