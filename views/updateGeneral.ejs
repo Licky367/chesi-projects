@@ -1,0 +1,329 @@
+<%
+/* ==========================================================
+   DAIRY GENERAL UPDATE FEED
+
+   FILE:
+       views/updateGeneral.ejs
+
+   ROUTE:
+       /dairy/:id/general
+
+   PURPOSE:
+       Display the MAIN / GENERAL dairy update feed.
+
+   IMPORTANT:
+   ----------------------------------------------------------
+   This view focuses ONLY on the feed.
+
+   It does NOT render:
+
+       - create-post
+       - H1
+       - asset cards
+       - boolean management
+       - item links
+       - asset sidebar
+       - storage cards
+       - fixed page actions
+
+   The controller should provide:
+
+       dairy
+       user
+       feed
+
+   FEED ITEM TYPES:
+
+       post
+       milk
+       medical
+       maintenance
+       animalFeed
+       assetAdd
+
+   Every actual item contained in `feed` is rendered.
+========================================================== */
+%>
+
+
+<!-- =====================================================
+     GENERAL UPDATE FEED ASSETS
+===================================================== -->
+
+<link
+    rel="stylesheet"
+    href="/css/update/update.css"
+>
+
+
+<script
+    src="/socket.io/socket.io.js"
+></script>
+
+
+
+<!-- =====================================================
+     GENERAL FEED PAGE
+===================================================== -->
+
+<div class="dairy-page">
+
+
+    <!-- =================================================
+         MAIN FEED
+    ================================================== -->
+
+    <section
+        id="feed"
+        class="feed-container"
+    >
+
+
+        <!-- =================================================
+             FEED EXISTS
+        ================================================== -->
+
+        <% if (
+            Array.isArray(feed) &&
+            feed.length > 0
+        ) { %>
+
+
+            <!-- =================================================
+                 FEED LOOP
+
+                 IMPORTANT:
+                 -------------------------------------------------
+                 This loop renders feed documents only.
+
+                 No fixed page components are rendered here.
+            ================================================== -->
+
+            <% feed.forEach(
+                function(item, index)
+            { %>
+
+
+                <!-- =============================================
+                     NORMAL POST
+                ============================================== -->
+
+                <% if (
+                    item.type === "post"
+                ) { %>
+
+                    <%- include(
+                        "update/post",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
+                <% } %>
+
+
+
+                <!-- =============================================
+                     WEEKLY MILK REPORT
+                ============================================== -->
+
+                <% if (
+                    item.type === "milk"
+                ) { %>
+
+                    <%- include(
+                        "update/milk",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
+                <% } %>
+
+
+
+                <!-- =============================================
+                     MEDICAL — MARKED
+                ============================================== -->
+
+                <% if (
+                    item.type === "medical" &&
+                    item.status === "marked"
+                ) { %>
+
+                    <%- include(
+                        "update/medical-marked",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
+                <% } %>
+
+
+
+                <!-- =============================================
+                     MEDICAL — CLEARED
+                ============================================== -->
+
+                <% if (
+                    item.type === "medical" &&
+                    item.status === "cleared"
+                ) { %>
+
+                    <%- include(
+                        "update/medical-cleared",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
+                <% } %>
+
+
+
+                <!-- =============================================
+                     MAINTENANCE — MARKED
+                ============================================== -->
+
+                <% if (
+                    item.type === "maintenance" &&
+                    item.status === "marked"
+                ) { %>
+
+                    <%- include(
+                        "update/maintenance-marked",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
+                <% } %>
+
+
+
+                <!-- =============================================
+                     MAINTENANCE — CLEARED
+                ============================================== -->
+
+                <% if (
+                    item.type === "maintenance" &&
+                    item.status === "cleared"
+                ) { %>
+
+                    <%- include(
+                        "update/maintenance-cleared",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
+                <% } %>
+
+
+
+                <!-- =============================================
+                     ANIMAL FEED / STOCK UPDATE
+
+                     stock-update.ejs expects:
+
+                         update
+
+                     Therefore:
+
+                         update: item
+                ============================================== -->
+
+                <% if (
+                    item.type === "animalFeed"
+                ) { %>
+
+                    <%- include(
+                        "update/stock-update",
+                        {
+                            update: item,
+                            user: user
+                        }
+                    ) %>
+
+                <% } %>
+
+
+
+                <!-- =============================================
+                     ASSET ADDED
+                ============================================== -->
+
+                <% if (
+                    item.type === "assetAdd"
+                ) { %>
+
+                    <%- include(
+                        "update/addAsset",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
+                <% } %>
+
+
+            <% }); %>
+
+
+
+        <!-- =================================================
+             EMPTY FEED
+        ================================================== -->
+
+        <% } else { %>
+
+
+            <div
+                class="feed-empty-state"
+                style="
+                    width:100%;
+                    padding:30px 20px;
+                    text-align:center;
+                    color:#7b847e;
+                "
+            >
+
+                <i
+                    class="bi bi-journal-text"
+                    aria-hidden="true"
+                ></i>
+
+
+                <p>
+                    No updates have been recorded yet.
+                </p>
+
+            </div>
+
+
+        <% } %>
+
+
+    </section>
+
+
+</div>
+
+
+
+<!-- =====================================================
+     GENERAL FEED JAVASCRIPT
+===================================================== -->
+
+<script
+    src="/js/update/index.js"
+    defer
+></script>
