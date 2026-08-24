@@ -1,96 +1,94 @@
 <%
-/*
-==========================================================
-DAIRY SET PAGE
+/* ==========================================================
+   STORAGE CONTENT ITEM
 
-FILE:
-    views/dairySet.ejs
+   FILE:
+       views/update/content-item.ejs
 
-PURPOSE:
-    Display the profile page for a Dairy asset or
-    structure.
+   PURPOSE:
+       Display one storage content item together with:
 
-CONTENT ITEM LOGIC:
+       1. Current item information
+       2. Quantity / value
+       3. Description
+       4. Swipeable stock-update history
+       5. Update composer
 
-    ONLY a Dairy record with a NEGATIVE dwellNumber
-    is treated as a storage content item.
+   IMPORTANT:
+       This is an INCLUDE.
+       It is NOT a standalone page.
 
-        dairy.dwellNumber < 0
-            ↓
-        views/update/content-item.ejs
-            ↓
-        views/update/content-update.ejs
+   STOCK UPDATE ROUTE:
+       POST /dairy/:contentItemId/:dwellNumber
 
-    If dairy.dwellNumber is:
+   STOCK UPDATE STRUCTURE:
+       item.stockUpdates[]
 
-        null
-            ↓
-        content-item.ejs NOT INCLUDED
-        content-update.ejs NOT INCLUDED
+   EACH UPDATE:
+       quantity
+       stockUpdateNote
+       images
+       recordedBy
+       recordedAt
 
-        0
-            ↓
-        content-item.ejs NOT INCLUDED
-        content-update.ejs NOT INCLUDED
-
-        positive
-            ↓
-        content-item.ejs NOT INCLUDED
-        content-update.ejs NOT INCLUDED
-
-        negative
-            ↓
-        content-item.ejs INCLUDED
-        content-update.ejs INCLUDED
-
-IMPORTANT:
-
-    content-item.ejs
-        = STORAGE CONTENT ITEM DISPLAY CARD
-
-    content-update.ejs
-        = STOCK UPDATE HISTORY + UPDATE MODAL
-
-    Both are located in:
-
-        views/update/
-
-==========================================================
-*/
-%>
+   CURRENT STOCK:
+       item.quantity
+========================================================== */
 
 
-<%
-/* =========================================================
-   SAFE CONTENT ITEM
-========================================================= */
+/* ==========================================================
+   SAFE DATA
+========================================================== */
 
-const safeContentItem =
-    typeof contentItem !== "undefined" &&
-    contentItem
-        ? contentItem
-        : dairy;
+const contentItem =
+    item || {};
 
+const currentStorage =
+    storage || {};
 
-/* =========================================================
-   SAFE STORAGE
-========================================================= */
-
-const safeStorage =
-    typeof storage !== "undefined"
-        ? storage
-        : null;
+const currentDairy =
+    dairy || {};
 
 
-/* =========================================================
-   SAFE MESSAGES
-========================================================= */
+/* ==========================================================
+   CONTENT ITEM ID
+========================================================== */
+
+const contentItemId =
+    contentItem._id
+        ? String(contentItem._id)
+        : "";
+
+
+/* ==========================================================
+   DWELL NUMBER
+========================================================== */
+
+const dwellNumber =
+    contentItem.dwellNumber !== null &&
+    contentItem.dwellNumber !== undefined
+        ? String(contentItem.dwellNumber)
+        : "";
+
+
+/* ==========================================================
+   UPDATE ROUTE
+========================================================== */
+
+const stockUpdateAction =
+    contentItemId && dwellNumber
+        ? `/dairy/${encodeURIComponent(contentItemId)}/${encodeURIComponent(dwellNumber)}`
+        : "";
+
+
+/* ==========================================================
+   OPTIONAL MESSAGES
+========================================================== */
 
 const safeSuccessMessage =
     typeof successMessage !== "undefined"
         ? successMessage
         : null;
-
 
 const safePageError =
     typeof pageError !== "undefined"
@@ -98,148 +96,2729 @@ const safePageError =
         : null;
 
 
-/* =========================================================
-   SAFE LATEST STOCK UPDATE
-========================================================= */
+/* ==========================================================
+   ITEM CLASSIFICATION
+========================================================== */
 
-const safeLatestStockUpdate =
-    typeof latestStockUpdate !== "undefined"
-        ? latestStockUpdate
+const itemType =
+    String(
+        contentItem.type || ""
+    ).trim();
+
+const itemCode =
+    Number(
+        contentItem.code
+    );
+
+const itemIsAnimal =
+    contentItem.code !== null &&
+    contentItem.code !== undefined &&
+    !Number.isNaN(itemCode) &&
+    itemCode > 0;
+
+const itemIsFeed =
+    itemType === "feeds";
+
+const itemIsAgroStore =
+    itemType === "agroStore";
+
+
+/* ==========================================================
+   DISPLAY CLASSIFICATION
+========================================================== */
+
+let itemCategory =
+    "Asset";
+
+let itemIcon =
+    "📦";
+
+let itemCategoryClass =
+    "asset-badge";
+
+
+if (itemIsFeed) {
+
+    itemCategory =
+        "Feed";
+
+    itemIcon =
+        "🌾";
+
+    itemCategoryClass =
+        "feed-badge";
+
+}
+else if (itemIsAnimal) {
+
+    itemCategory =
+        "Animal";
+
+    itemIcon =
+        "🐄";
+
+    itemCategoryClass =
+        "animal-badge";
+
+}
+else if (itemIsAgroStore) {
+
+    itemCategory =
+        "AgroStore";
+
+    itemIcon =
+        "🌾";
+
+    itemCategoryClass =
+        "feed-badge";
+
+}
+
+
+/* ==========================================================
+   ITEM NAME
+========================================================== */
+
+const itemName =
+    contentItem.name ||
+    "Unnamed Item";
+
+
+/* ==========================================================
+   QUANTITY
+========================================================== */
+
+const hasQuantity =
+    contentItem.quantity !== null &&
+    contentItem.quantity !== undefined;
+
+const quantityValue =
+    hasQuantity
+        ? Number(
+            contentItem.quantity || 0
+        )
         : null;
 
 
-/* =========================================================
-   CONTENT ITEM CHECK
+/* ==========================================================
+   CURRENT WORTH
+========================================================== */
 
-   ONLY Dairy records with a NEGATIVE dwellNumber
-   are storage content items.
-========================================================= */
+const hasCurrentWorth =
+    contentItem.currentWorth !== null &&
+    contentItem.currentWorth !== undefined;
 
-const hasNegativeDwellNumber =
-    dairy &&
-    dairy.dwellNumber !== null &&
-    dairy.dwellNumber !== undefined &&
-    Number(
-        dairy.dwellNumber
-    ) < 0;
+const currentWorthValue =
+    hasCurrentWorth
+        ? Number(
+            contentItem.currentWorth || 0
+        )
+        : null;
+
+
+/* ==========================================================
+   UNIT
+========================================================== */
+
+const itemUnit =
+    contentItem.unit
+        ? String(
+            contentItem.unit
+        ).trim()
+        : "";
+
+
+/* ==========================================================
+   STOCK UPDATE HISTORY
+========================================================== */
+
+const stockUpdates =
+    Array.isArray(
+        contentItem.stockUpdates
+    )
+        ? contentItem.stockUpdates
+        : [];
+
+
+/*
+    Display newest update first.
+
+    We create a copy so the original
+    Mongoose array is not mutated.
+*/
+
+const historyUpdates =
+    stockUpdates
+        .slice()
+        .reverse();
+
+
+/* ==========================================================
+   LATEST UPDATE
+========================================================== */
+
+const latestStockUpdate =
+    historyUpdates.length
+        ? historyUpdates[0]
+        : null;
+
+
+/* ==========================================================
+   FORMAT UPDATE USER
+========================================================== */
+
+function getUpdateUserName(update) {
+
+    if (
+        !update ||
+        !update.recordedBy
+    ) {
+
+        return "Unknown user";
+
+    }
+
+
+    const recordedBy =
+        update.recordedBy;
+
+
+    if (
+        typeof recordedBy === "object" &&
+        recordedBy.name
+    ) {
+
+        return String(
+            recordedBy.name
+        );
+
+    }
+
+
+    if (
+        typeof recordedBy === "object" &&
+        recordedBy.email
+    ) {
+
+        return String(
+            recordedBy.email
+        );
+
+    }
+
+
+    return String(
+        recordedBy
+    );
+
+}
+
+
+/* ==========================================================
+   FORMAT UPDATE DATE
+========================================================== */
+
+function getUpdateDate(update) {
+
+    if (
+        !update ||
+        !update.recordedAt
+    ) {
+
+        return "Unknown date";
+
+    }
+
+
+    const date =
+        new Date(
+            update.recordedAt
+        );
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return "Unknown date";
+
+    }
+
+
+    return date.toLocaleString(
+        undefined,
+        {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit"
+        }
+    );
+
+}
+
+
+/* ==========================================================
+   FORMAT UPDATE IMAGES
+========================================================== */
+
+function getUpdateImages(update) {
+
+    if (
+        !update ||
+        !Array.isArray(
+            update.images
+        )
+    ) {
+
+        return [];
+
+    }
+
+
+    return update.images
+        .map(function(image) {
+
+            if (
+                typeof image === "string"
+            ) {
+
+                return image;
+
+            }
+
+
+            if (
+                image &&
+                image.url
+            ) {
+
+                return image.url;
+
+            }
+
+
+            if (
+                image &&
+                image.path
+            ) {
+
+                return image.path;
+
+            }
+
+
+            if (
+                image &&
+                image.location
+            ) {
+
+                return image.location;
+
+            }
+
+
+            return null;
+
+        })
+        .filter(Boolean);
+
+}
+
+
+/* ==========================================================
+   LATEST UPDATE INFORMATION
+========================================================== */
+
+const latestUpdatedBy =
+    latestStockUpdate
+        ? getUpdateUserName(
+            latestStockUpdate
+        )
+        : "Not updated yet";
+
+const latestUpdatedAt =
+    latestStockUpdate
+        ? getUpdateDate(
+            latestStockUpdate
+        )
+        : "No update history";
+
+
+/* ==========================================================
+   LATEST NOTE
+========================================================== */
+
+const latestNote =
+    latestStockUpdate &&
+    latestStockUpdate.stockUpdateNote
+        ? String(
+            latestStockUpdate.stockUpdateNote
+        ).trim()
+        : "";
 
 %>
 
 
-<div class="dairy-page">
+<!-- ==========================================================
+     SUCCESS MESSAGE
+========================================================== -->
+
+<% if (safeSuccessMessage) { %>
+
+    <div class="content-item-message content-item-success">
+
+        <span class="content-item-message-icon">
+            ✓
+        </span>
+
+        <span>
+            <%= safeSuccessMessage %>
+        </span>
+
+    </div>
+
+<% } %>
 
 
-    <!-- =================================================
-         UPDATE CARDS
-    ================================================== -->
+<!-- ==========================================================
+     ERROR MESSAGE
+========================================================== -->
 
-    <% if (user) { %>
+<% if (safePageError) { %>
 
-        <%- include(
-            "update/update-cards",
-            {
-                user:
-                    user
+    <div class="content-item-message content-item-error">
+
+        <span class="content-item-message-icon">
+            !
+        </span>
+
+        <span>
+            <%= safePageError %>
+        </span>
+
+    </div>
+
+<% } %>
+
+
+<!-- ==========================================================
+     MAIN CONTENT ITEM CARD
+========================================================== -->
+
+<article class="content-item-card">
+
+
+    <!-- ======================================================
+         HERO
+    ======================================================= -->
+
+    <header class="content-item-hero">
+
+
+        <div class="content-item-icon">
+
+            <%= itemIcon %>
+
+        </div>
+
+
+        <div class="content-item-hero-information">
+
+            <p class="content-item-eyebrow">
+                STORAGE CONTENT
+            </p>
+
+
+            <h1 class="content-item-title">
+                <%= itemName %>
+            </h1>
+
+
+            <div class="content-item-badges">
+
+                <span
+                    class="content-item-badge <%= itemCategoryClass %>"
+                >
+                    <%= itemCategory %>
+                </span>
+
+
+                <% if (contentItem.status) { %>
+
+                    <span
+                        class="content-item-badge status-badge"
+                    >
+                        <%= contentItem.status %>
+                    </span>
+
+                <% } %>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- ======================================================
+         BODY
+    ======================================================= -->
+
+    <div class="content-item-body">
+
+
+        <!-- ==================================================
+             CURRENT STOCK SNAPSHOT
+        =================================================== -->
+
+        <section class="detail-section">
+
+            <div class="detail-section-heading">
+
+                <h2 class="detail-section-title">
+                    Current Stock
+                </h2>
+
+                <span class="detail-section-line"></span>
+
+            </div>
+
+
+            <div class="highlight-grid">
+
+
+                <div class="highlight-box">
+
+                    <span class="highlight-label">
+                        Quantity
+                    </span>
+
+                    <span class="highlight-value">
+
+                        <% if (hasQuantity) { %>
+
+                            <%= quantityValue.toLocaleString() %>
+
+                            <% if (itemUnit) { %>
+
+                                <span class="highlight-unit">
+                                    <%= itemUnit %>
+                                </span>
+
+                            <% } %>
+
+                        <% } else { %>
+
+                            —
+
+                        <% } %>
+
+                    </span>
+
+                </div>
+
+
+
+                <div class="highlight-box">
+
+                    <span class="highlight-label">
+                        Unit
+                    </span>
+
+                    <span class="highlight-value">
+                        <%= itemUnit || "—" %>
+                    </span>
+
+                </div>
+
+
+
+                <div class="highlight-box">
+
+                    <span class="highlight-label">
+                        Current Worth
+                    </span>
+
+                    <span class="highlight-value">
+
+                        <% if (hasCurrentWorth) { %>
+
+                            <%= currentWorthValue.toLocaleString() %>
+
+                        <% } else { %>
+
+                            —
+
+                        <% } %>
+
+                    </span>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==================================================
+             DESCRIPTION
+        =================================================== -->
+
+        <section
+            class="detail-section description-section"
+        >
+
+            <div class="detail-section-heading">
+
+                <h2 class="detail-section-title">
+                    Description
+                </h2>
+
+                <span class="detail-section-line"></span>
+
+            </div>
+
+
+            <div class="description-box">
+
+                <% if (
+                    contentItem.description &&
+                    String(
+                        contentItem.description
+                    ).trim() !== ""
+                ) { %>
+
+                    <p class="description-text">
+                        <%= contentItem.description %>
+                    </p>
+
+                <% } else { %>
+
+                    <span class="no-description">
+                        No description has been provided
+                        for this item.
+                    </span>
+
+                <% } %>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==================================================
+             UPDATE HISTORY
+        =================================================== -->
+
+        <section
+            class="stock-history-section"
+            aria-label="Stock update history"
+        >
+
+
+            <div class="stock-history-heading">
+
+                <div>
+
+                    <span class="stock-history-kicker">
+                        ACTIVITY
+                    </span>
+
+                    <h2 class="stock-history-title">
+                        Update History
+                    </h2>
+
+                </div>
+
+
+                <span class="stock-history-count">
+                    <%= historyUpdates.length %>
+                    <%= historyUpdates.length === 1
+                        ? "update"
+                        : "updates" %>
+                </span>
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 HORIZONTAL HISTORY STRIP
+            =================================================== -->
+
+            <div
+                class="stock-history-scroll"
+                role="list"
+                aria-label="Stock updates"
+            >
+
+
+                <!-- ==============================================
+                     FIRST CARD = UPDATE COMPOSER
+                =============================================== -->
+
+                <button
+                    type="button"
+                    class="stock-history-card stock-history-new"
+                    id="openStockComposer"
+                    aria-controls="stockUpdateComposer"
+                    aria-expanded="false"
+                >
+
+                    <span class="stock-history-new-icon">
+                        +
+                    </span>
+
+
+                    <span class="stock-history-new-title">
+                        Update Stock
+                    </span>
+
+
+                    <span class="stock-history-new-text">
+                        Record a new stock update
+                    </span>
+
+
+                    <span class="stock-history-new-arrow">
+                        →
+                    </span>
+
+                </button>
+
+
+
+                <!-- ==============================================
+                     UPDATE HISTORY CARDS
+                =============================================== -->
+
+                <% historyUpdates.forEach(
+                    function(update, index)
+                {
+
+                    const updateImages =
+                        getUpdateImages(
+                            update
+                        );
+
+                    const updateUser =
+                        getUpdateUserName(
+                            update
+                        );
+
+                    const updateDate =
+                        getUpdateDate(
+                            update
+                        );
+
+                    const updateNote =
+                        update &&
+                        update.stockUpdateNote
+                            ? String(
+                                update.stockUpdateNote
+                            ).trim()
+                            : "";
+
+                    const updateQuantity =
+                        update &&
+                        update.quantity !== null &&
+                        update.quantity !== undefined
+                            ? Number(
+                                update.quantity
+                            )
+                            : null;
+
+                %>
+
+
+                    <article
+                        class="stock-history-card"
+                        role="listitem"
+                    >
+
+
+                        <!-- ==================================
+                             CARD TOP
+                        =================================== -->
+
+                        <div class="stock-history-card-top">
+
+                            <span class="stock-history-number">
+                                #<%= historyUpdates.length - index %>
+                            </span>
+
+
+                            <% if (index === 0) { %>
+
+                                <span class="stock-history-latest">
+                                    LATEST
+                                </span>
+
+                            <% } %>
+
+                        </div>
+
+
+
+                        <!-- ==================================
+                             QUANTITY
+                        =================================== -->
+
+                        <div class="stock-history-quantity">
+
+                            <span class="stock-history-small-label">
+                                Quantity
+                            </span>
+
+
+                            <strong>
+
+                                <%= updateQuantity !== null
+                                    ? updateQuantity.toLocaleString()
+                                    : "—" %>
+
+                                <% if (
+                                    updateQuantity !== null &&
+                                    itemUnit
+                                ) { %>
+
+                                    <small>
+                                        <%= itemUnit %>
+                                    </small>
+
+                                <% } %>
+
+                            </strong>
+
+                        </div>
+
+
+
+                        <!-- ==================================
+                             NOTE
+                        =================================== -->
+
+                        <div class="stock-history-note">
+
+                            <% if (updateNote) { %>
+
+                                <%= updateNote %>
+
+                            <% } else { %>
+
+                                No note provided.
+
+                            <% } %>
+
+                        </div>
+
+
+
+                        <!-- ==================================
+                             IMAGE INDICATOR
+                        =================================== -->
+
+                        <% if (updateImages.length) { %>
+
+                            <div class="stock-history-images">
+
+                                <% updateImages
+                                    .slice(0, 3)
+                                    .forEach(
+                                        function(image)
+                                { %>
+
+                                    <img
+                                        src="<%= image %>"
+                                        alt="Stock update"
+                                        loading="lazy"
+                                    >
+
+                                <% }); %>
+
+
+                                <% if (
+                                    updateImages.length > 3
+                                ) { %>
+
+                                    <span>
+                                        +<%= updateImages.length - 3 %>
+                                    </span>
+
+                                <% } %>
+
+                            </div>
+
+                        <% } %>
+
+
+
+                        <!-- ==================================
+                             FOOTER
+                        =================================== -->
+
+                        <div class="stock-history-card-footer">
+
+                            <span>
+                                <%= updateUser %>
+                            </span>
+
+                            <time>
+                                <%= updateDate %>
+                            </time>
+
+                        </div>
+
+
+                    </article>
+
+
+                <% }); %>
+
+
+                <!-- ==============================================
+                     EMPTY HISTORY
+                =============================================== -->
+
+                <% if (!historyUpdates.length) { %>
+
+                    <div class="stock-history-empty">
+
+                        <span class="stock-history-empty-icon">
+                            ○
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                No updates yet
+                            </strong>
+
+                            <p>
+                                Record the first stock update
+                                using the card on the left.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                <% } %>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==================================================
+             LATEST NOTE
+        =================================================== -->
+
+        <% if (latestNote) { %>
+
+            <section class="detail-section stock-note-section">
+
+                <div class="detail-section-heading">
+
+                    <h2 class="detail-section-title">
+                        Latest Update
+                    </h2>
+
+                    <span class="detail-section-line"></span>
+
+                </div>
+
+
+                <div class="stock-note-box">
+
+                    <p class="stock-note-text">
+                        <%= latestNote %>
+                    </p>
+
+                </div>
+
+            </section>
+
+        <% } %>
+
+
+
+        <!-- ==================================================
+             UPDATE COMPOSER
+        =================================================== -->
+
+        <div
+            id="stockUpdateComposer"
+            class="stock-update-composer"
+            hidden
+        >
+
+            <div class="stock-update-composer-header">
+
+                <div>
+
+                    <span class="stock-update-composer-kicker">
+                        NEW UPDATE
+                    </span>
+
+                    <h2>
+                        Update Stock
+                    </h2>
+
+                    <p>
+                        Record the latest stock information
+                        for this content item.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="stock-update-composer-close"
+                    id="closeStockComposer"
+                    aria-label="Close stock update composer"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div class="stock-update-composer-body">
+
+                <%- include(
+                    "content-item-update",
+                    {
+                        dairy:
+                            currentDairy,
+
+                        storage:
+                            currentStorage,
+
+                        item:
+                            contentItem,
+
+                        contentItemId:
+                            contentItemId,
+
+                        dwellNumber:
+                            dwellNumber,
+
+                        stockUpdateAction:
+                            stockUpdateAction
+                    }
+                ) %>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ======================================================
+         FOOTER
+    ======================================================= -->
+
+    <footer class="content-item-footer">
+
+        <div class="footer-status">
+
+            <span class="footer-status-dot"></span>
+
+            <span>
+                Item details
+            </span>
+
+        </div>
+
+
+        <div
+            class="footer-updated"
+            aria-label="Last stock update"
+        >
+
+            <span class="footer-updated-label">
+                Last updated
+            </span>
+
+            <span class="footer-updated-user">
+                <%= latestUpdatedBy %>
+            </span>
+
+            <span class="footer-updated-time">
+                <%= latestUpdatedAt %>
+            </span>
+
+        </div>
+
+    </footer>
+
+
+</article>
+
+
+
+<style>
+
+/* ==========================================================
+   CONTENT ITEM CARD
+========================================================== */
+
+.content-item-card {
+
+    width: 100%;
+
+    overflow: hidden;
+
+    border:
+        1px solid
+        #e2e9e4;
+
+    border-radius: 22px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 10px 30px
+        rgba(25, 55, 35, .07);
+
+}
+
+
+/* ==========================================================
+   HERO
+========================================================== */
+
+.content-item-hero {
+
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    padding:
+        24px 24px 22px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f8fcf9,
+            #eef7f0
+        );
+
+    border-bottom:
+        1px solid
+        #e2ebe4;
+
+}
+
+
+.content-item-hero::before {
+
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    top: 0;
+    bottom: 0;
+
+    width: 5px;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #0b5d1e,
+            #7aa96f
+        );
+
+}
+
+
+.content-item-icon {
+
+    width: 52px;
+    height: 52px;
+
+    flex:
+        0 0
+        52px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 16px;
+
+    background: #ffffff;
+
+    border:
+        1px solid
+        #dbe8de;
+
+    font-size: 25px;
+
+    box-shadow:
+        0 4px 12px
+        rgba(25, 70, 40, .07);
+
+}
+
+
+.content-item-hero-information {
+
+    min-width: 0;
+
+}
+
+
+.content-item-eyebrow {
+
+    margin: 0 0 3px;
+
+    color: #71917a;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: 2px;
+
+}
+
+
+.content-item-title {
+
+    margin: 0;
+
+    color: #24372a;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:
+        clamp(24px, 4vw, 35px);
+
+    line-height: 1.05;
+
+}
+
+
+/* ==========================================================
+   BADGES
+========================================================== */
+
+.content-item-badges {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 6px;
+
+    margin-top: 8px;
+
+}
+
+
+.content-item-badge {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    min-height: 22px;
+
+    padding:
+        3px
+        8px;
+
+    border-radius: 999px;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: .8px;
+
+    text-transform: uppercase;
+
+}
+
+
+.asset-badge {
+
+    color: #53685a;
+
+    background: #edf2ee;
+
+}
+
+
+.feed-badge {
+
+    color: #4c7138;
+
+    background: #edf6e7;
+
+}
+
+
+.animal-badge {
+
+    color: #7a5d36;
+
+    background: #f7f0e5;
+
+}
+
+
+.status-badge {
+
+    color: #52675a;
+
+    background: #f2f5f3;
+
+}
+
+
+/* ==========================================================
+   BODY
+========================================================== */
+
+.content-item-body {
+
+    padding:
+        24px;
+
+}
+
+
+/* ==========================================================
+   DETAIL SECTIONS
+========================================================== */
+
+.detail-section {
+
+    margin-bottom: 25px;
+
+}
+
+
+.detail-section-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 10px;
+
+}
+
+
+.detail-section-title {
+
+    margin: 0;
+
+    color: #34483a;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    letter-spacing: .3px;
+
+}
+
+
+.detail-section-line {
+
+    flex: 1;
+
+    height: 1px;
+
+    background: #e4ebe6;
+
+}
+
+
+/* ==========================================================
+   HIGHLIGHTS
+========================================================== */
+
+.highlight-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 9px;
+
+}
+
+
+.highlight-box {
+
+    min-width: 0;
+
+    padding:
+        13px;
+
+    border:
+        1px solid
+        #e4ebe6;
+
+    border-radius: 13px;
+
+    background:
+        #fbfdfb;
+
+}
+
+
+.highlight-label {
+
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #829188;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+
+}
+
+
+.highlight-value {
+
+    color: #294032;
+
+    font-size: 16px;
+
+    font-weight: 800;
+
+}
+
+
+.highlight-unit {
+
+    color: #78877d;
+
+    font-size: 9px;
+
+    font-weight: 600;
+
+}
+
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.description-box {
+
+    padding:
+        14px 15px;
+
+    border-left:
+        3px solid
+        #b9cfbd;
+
+    border-radius:
+        0 12px 12px 0;
+
+    background:
+        #f8fbf8;
+
+}
+
+
+.description-text {
+
+    margin: 0;
+
+    color: #526158;
+
+    font-size: 12px;
+
+    line-height: 1.65;
+
+}
+
+
+.no-description {
+
+    color: #99a39d;
+
+    font-size: 11px;
+
+}
+
+
+/* ==========================================================
+   STOCK HISTORY
+========================================================== */
+
+.stock-history-section {
+
+    margin:
+        28px -24px 26px;
+
+    padding:
+        21px 24px 23px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #f8fbf8 0%,
+            #f4f8f5 100%
+        );
+
+    border-top:
+        1px solid
+        #e2ebe4;
+
+    border-bottom:
+        1px solid
+        #e2ebe4;
+
+}
+
+
+.stock-history-heading {
+
+    display: flex;
+
+    align-items: flex-end;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 13px;
+
+}
+
+
+.stock-history-kicker {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #7b9581;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: 2px;
+
+}
+
+
+.stock-history-title {
+
+    margin: 0;
+
+    color: #293d30;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 20px;
+
+}
+
+
+.stock-history-count {
+
+    flex:
+        0 0 auto;
+
+    padding:
+        5px 8px;
+
+    border-radius: 999px;
+
+    color: #61776a;
+
+    background: #ffffff;
+
+    border:
+        1px solid
+        #dfe8e1;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+}
+
+
+/* ==========================================================
+   HORIZONTAL SCROLL
+========================================================== */
+
+.stock-history-scroll {
+
+    display: flex;
+
+    gap: 10px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding:
+        3px
+        3px
+        8px;
+
+    scroll-snap-type:
+        x
+        mandatory;
+
+    -webkit-overflow-scrolling:
+        touch;
+
+    scrollbar-width: none;
+
+}
+
+
+.stock-history-scroll::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+/* ==========================================================
+   HISTORY CARDS
+========================================================== */
+
+.stock-history-card {
+
+    position: relative;
+
+    flex:
+        0 0
+        215px;
+
+    width: 215px;
+
+    min-height: 185px;
+
+    scroll-snap-align: start;
+
+    overflow: hidden;
+
+    border:
+        1px solid
+        #dfe8e1;
+
+    border-radius: 16px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 4px 12px
+        rgba(30, 65, 40, .06);
+
+}
+
+
+article.stock-history-card {
+
+    padding:
+        13px;
+
+}
+
+
+.stock-history-card-top {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 13px;
+
+}
+
+
+.stock-history-number {
+
+    color: #8a9b90;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+}
+
+
+.stock-history-latest {
+
+    padding:
+        3px 6px;
+
+    border-radius: 999px;
+
+    color: #347247;
+
+    background: #edf7ef;
+
+    font-size: 6px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+}
+
+
+/* ==========================================================
+   QUANTITY
+========================================================== */
+
+.stock-history-quantity {
+
+    padding-bottom: 10px;
+
+    border-bottom:
+        1px solid
+        #edf1ee;
+
+}
+
+
+.stock-history-small-label {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #89968d;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+
+}
+
+
+.stock-history-quantity strong {
+
+    color: #294332;
+
+    font-size: 22px;
+
+    line-height: 1;
+
+}
+
+
+.stock-history-quantity small {
+
+    margin-left: 3px;
+
+    color: #7d8b82;
+
+    font-size: 8px;
+
+    font-weight: 600;
+
+}
+
+
+/* ==========================================================
+   NOTE
+========================================================== */
+
+.stock-history-note {
+
+    height: 42px;
+
+    margin-top: 10px;
+
+    overflow: hidden;
+
+    color: #5c6961;
+
+    font-size: 10px;
+
+    line-height: 1.45;
+
+}
+
+
+/* ==========================================================
+   UPDATE IMAGES
+========================================================== */
+
+.stock-history-images {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    height: 31px;
+
+    margin-top: 8px;
+
+}
+
+
+.stock-history-images img {
+
+    width: 31px;
+    height: 31px;
+
+    object-fit: cover;
+
+    border-radius: 7px;
+
+    border:
+        1px solid
+        #dce5de;
+
+}
+
+
+.stock-history-images span {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 31px;
+    height: 31px;
+
+    border-radius: 7px;
+
+    color: #65766b;
+
+    background: #f0f4f1;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+}
+
+
+/* ==========================================================
+   CARD FOOTER
+========================================================== */
+
+.stock-history-card-footer {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+
+    margin-top: 11px;
+
+    padding-top: 9px;
+
+    border-top:
+        1px solid
+        #edf1ee;
+
+}
+
+
+.stock-history-card-footer span {
+
+    overflow: hidden;
+
+    color: #52665a;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+.stock-history-card-footer time {
+
+    color: #9aa59e;
+
+    font-size: 7px;
+
+}
+
+
+/* ==========================================================
+   NEW UPDATE CARD
+========================================================== */
+
+.stock-history-new {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    justify-content: center;
+
+    padding:
+        17px;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    border:
+        1px dashed
+        #9fbea7;
+
+    background:
+        linear-gradient(
+            145deg,
+            #f5faf6,
+            #edf6ef
+        );
+
+    transition:
+        transform .16s ease,
+        box-shadow .16s ease,
+        border-color .16s ease;
+
+}
+
+
+.stock-history-new:hover {
+
+    transform:
+        translateY(-2px);
+
+    border-color:
+        #73a27f;
+
+    box-shadow:
+        0 7px 18px
+        rgba(40, 100, 55, .10);
+
+}
+
+
+.stock-history-new:active {
+
+    transform:
+        scale(.98);
+
+}
+
+
+.stock-history-new-icon {
+
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 13px;
+
+    border-radius: 12px;
+
+    color: #ffffff;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0b5d1e,
+            #4d8b59
+        );
+
+    font-size: 24px;
+
+    box-shadow:
+        0 5px 12px
+        rgba(11, 93, 30, .15);
+
+}
+
+
+.stock-history-new-title {
+
+    color: #294332;
+
+    font-size: 15px;
+
+    font-weight: 800;
+
+}
+
+
+.stock-history-new-text {
+
+    max-width: 145px;
+
+    margin-top: 5px;
+
+    color: #718078;
+
+    font-size: 9px;
+
+    line-height: 1.45;
+
+}
+
+
+.stock-history-new-arrow {
+
+    margin-top: 13px;
+
+    color: #4d7957;
+
+    font-size: 16px;
+
+}
+
+
+/* ==========================================================
+   EMPTY HISTORY
+========================================================== */
+
+.stock-history-empty {
+
+    flex:
+        0 0
+        215px;
+
+    min-height: 185px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 15px;
+
+    text-align: center;
+
+    border:
+        1px dashed
+        #d7e2da;
+
+    border-radius: 16px;
+
+    background: #ffffff;
+
+}
+
+
+.stock-history-empty-icon {
+
+    margin-bottom: 9px;
+
+    color: #a3b0a7;
+
+    font-size: 22px;
+
+}
+
+
+.stock-history-empty strong {
+
+    color: #59685f;
+
+    font-size: 11px;
+
+}
+
+
+.stock-history-empty p {
+
+    max-width: 150px;
+
+    margin: 5px 0 0;
+
+    color: #919c95;
+
+    font-size: 8px;
+
+    line-height: 1.5;
+
+}
+
+
+/* ==========================================================
+   UPDATE COMPOSER
+========================================================== */
+
+.stock-update-composer {
+
+    margin:
+        0 0 25px;
+
+    overflow: hidden;
+
+    border:
+        1px solid
+        #cbdccc;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #f7fbf7,
+            #ffffff
+        );
+
+    box-shadow:
+        0 8px 22px
+        rgba(25, 70, 38, .08);
+
+}
+
+
+.stock-update-composer-header {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding:
+        18px;
+
+    border-bottom:
+        1px solid
+        #e2ebe3;
+
+    background:
+        #f0f7f1;
+
+}
+
+
+.stock-update-composer-kicker {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #6f9278;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.8px;
+
+}
+
+
+.stock-update-composer-header h2 {
+
+    margin: 0;
+
+    color: #294332;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 21px;
+
+}
+
+
+.stock-update-composer-header p {
+
+    margin:
+        4px 0 0;
+
+    color: #718078;
+
+    font-size: 9px;
+
+}
+
+
+.stock-update-composer-close {
+
+    width: 31px;
+    height: 31px;
+
+    flex:
+        0 0
+        31px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    color: #617168;
+
+    background: #ffffff;
+
+    font-size: 20px;
+
+    cursor: pointer;
+
+}
+
+
+.stock-update-composer-body {
+
+    padding: 18px;
+
+}
+
+
+/* ==========================================================
+   FOOTER
+========================================================== */
+
+.content-item-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding:
+        15px 24px;
+
+    border-top:
+        1px solid
+        #e5ebe6;
+
+    background:
+        #fbfcfb;
+
+}
+
+
+.footer-status {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    color: #728077;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+}
+
+
+.footer-status-dot {
+
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: #4c8a58;
+
+}
+
+
+.footer-updated {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    flex-wrap: wrap;
+
+    justify-content: flex-end;
+
+    font-size: 7px;
+
+}
+
+
+.footer-updated-label {
+
+    color: #9aa49e;
+
+}
+
+
+.footer-updated-user {
+
+    color: #53645a;
+
+    font-weight: 700;
+
+}
+
+
+.footer-updated-time {
+
+    color: #8e9992;
+
+}
+
+
+/* ==========================================================
+   MESSAGES
+========================================================== */
+
+.content-item-message {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-bottom: 12px;
+
+    padding:
+        10px 12px;
+
+    border-radius: 11px;
+
+    font-size: 11px;
+
+}
+
+
+.content-item-success {
+
+    color: #31683c;
+
+    background: #eef8f0;
+
+    border:
+        1px solid
+        #d2e8d5;
+
+}
+
+
+.content-item-error {
+
+    color: #8a4b3c;
+
+    background: #fff3ef;
+
+    border:
+        1px solid
+        #efd9d2;
+
+}
+
+
+.content-item-message-icon {
+
+    font-weight: 800;
+
+}
+
+
+/* ==========================================================
+   FOCUS
+========================================================== */
+
+.stock-history-new:focus-visible,
+.stock-update-composer-close:focus-visible {
+
+    outline:
+        2px solid
+        #4b8a58;
+
+    outline-offset: 2px;
+
+}
+
+
+/* ==========================================================
+   TABLETS
+========================================================== */
+
+@media (max-width: 700px) {
+
+    .content-item-body {
+
+        padding:
+            20px;
+
+    }
+
+
+    .stock-history-section {
+
+        margin:
+            25px -20px 23px;
+
+        padding:
+            19px 20px 21px;
+
+    }
+
+
+    .content-item-footer {
+
+        padding:
+            14px 20px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+    .content-item-card {
+
+        border-radius: 18px;
+
+    }
+
+
+    .content-item-hero {
+
+        padding:
+            20px 18px;
+
+    }
+
+
+    .content-item-icon {
+
+        width: 45px;
+        height: 45px;
+
+        flex-basis: 45px;
+
+        border-radius: 13px;
+
+        font-size: 21px;
+
+    }
+
+
+    .content-item-title {
+
+        font-size: 25px;
+
+    }
+
+
+    .highlight-grid {
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+    }
+
+
+    .highlight-box:last-child {
+
+        grid-column:
+            1 / -1;
+
+    }
+
+
+    .stock-history-card {
+
+        flex-basis: 205px;
+
+        width: 205px;
+
+    }
+
+
+    .stock-history-new {
+
+        flex-basis: 205px;
+
+        width: 205px;
+
+    }
+
+
+    .stock-history-title {
+
+        font-size: 18px;
+
+    }
+
+
+    .content-item-footer {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+    }
+
+
+    .footer-updated {
+
+        justify-content: flex-start;
+
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .content-item-body {
+
+        padding:
+            17px;
+
+    }
+
+
+    .stock-history-section {
+
+        margin:
+            23px -17px 21px;
+
+        padding:
+            17px;
+
+    }
+
+
+    .stock-history-card,
+    .stock-history-new {
+
+        flex-basis: 195px;
+
+        width: 195px;
+
+    }
+
+
+    .highlight-box {
+
+        padding:
+            11px;
+
+    }
+
+
+    .highlight-value {
+
+        font-size: 14px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   REDUCED MOTION
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .stock-history-scroll {
+
+        scroll-behavior:
+            auto;
+
+    }
+
+
+    .stock-history-new {
+
+        transition:
+            none;
+
+    }
+
+}
+
+</style>
+
+
+
+<script>
+
+/* ==========================================================
+   STOCK UPDATE COMPOSER
+========================================================== */
+
+(function () {
+
+    const openButton =
+        document.getElementById(
+            "openStockComposer"
+        );
+
+    const closeButton =
+        document.getElementById(
+            "closeStockComposer"
+        );
+
+    const composer =
+        document.getElementById(
+            "stockUpdateComposer"
+        );
+
+
+    if (
+        !openButton ||
+        !composer
+    ) {
+
+        return;
+
+    }
+
+
+    /* ======================================================
+       OPEN
+    ======================================================= */
+
+    openButton.addEventListener(
+        "click",
+        function () {
+
+            composer.hidden = false;
+
+            openButton.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+            /*
+                Give the composer a small delay so the
+                browser can position it naturally.
+            */
+
+            requestAnimationFrame(
+                function () {
+
+                    composer.scrollIntoView({
+                        behavior:
+                            "smooth",
+
+                        block:
+                            "start"
+                    });
+
+                }
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       CLOSE
+    ======================================================= */
+
+    if (closeButton) {
+
+        closeButton.addEventListener(
+            "click",
+            function () {
+
+                composer.hidden = true;
+
+                openButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+                openButton.focus();
+
             }
-        ) %>
+        );
 
-    <% } %>
+    }
 
+})();
 
-
-    <!-- =================================================
-         STORAGE CONTENT ITEM
-
-         ONLY NEGATIVE DWELL NUMBERS
-    ================================================== -->
-
-    <% if (hasNegativeDwellNumber) { %>
-
-
-        <!-- =============================================
-             CONTENT ITEM DISPLAY CARD
-        ============================================== -->
-
-        <%- include(
-            "update/content-item",
-            {
-                dairy:
-                    dairy,
-
-                storage:
-                    safeStorage,
-
-                item:
-                    safeContentItem,
-
-                user:
-                    user,
-
-                successMessage:
-                    safeSuccessMessage,
-
-                pageError:
-                    safePageError,
-
-                latestStockUpdate:
-                    safeLatestStockUpdate
-            }
-        ) %>
-
-
-
-        <!-- =============================================
-             CONTENT UPDATE
-
-             ONLY INCLUDED FOR NEGATIVE DWELL NUMBERS
-        ============================================== -->
-
-        <%- include(
-            "update/content-update",
-            {
-                dairy:
-                    dairy,
-
-                storage:
-                    safeStorage,
-
-                item:
-                    safeContentItem,
-
-                user:
-                    user,
-
-                latestStockUpdate:
-                    safeLatestStockUpdate
-            }
-        ) %>
-
-
-    <% } %>
-
-
-
-    <!-- =================================================
-         PROFILE
-    ================================================== -->
-
-    <% if (
-        dairy &&
-        dairy.code != null
-    ) { %>
-
-        <%- include(
-            "update/profile-card",
-            {
-                dairy:
-                    dairy,
-
-                user:
-                    user
-            }
-        ) %>
-
-    <% } %>
-
-
-</div>
+</script>
