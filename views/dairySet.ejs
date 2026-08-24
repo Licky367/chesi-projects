@@ -2,6 +2,7 @@
 /*
 ==========================================================
 DAIRY SET PAGE
+==========================================================
 
 FILE:
     views/dairySet.ejs
@@ -9,36 +10,33 @@ FILE:
 PURPOSE:
     Display the profile page for a Dairy asset or structure.
 
-CONTENT ITEM LOGIC:
-    ONLY a Dairy record with a NEGATIVE dwellNumber
-    is treated as a storage content item.
+STORAGE CONTENT RULE:
+    A Dairy record is considered a storage content item ONLY
+    when:
 
-        dairy.dwellNumber < 0
-            ↓
-        content-item.ejs
-            ↓
-        content-update.ejs
+        Number(dairy.dwellNumber) < 0
 
-    null / undefined / 0 / positive
-            ↓
-        No storage content item.
+    Therefore:
 
-    negative
-            ↓
-        Storage content item is included.
+        null / undefined / 0 / positive
+            → not a storage content item
 
-INCLUDES:
-    views/update/update-cards.ejs
-    views/update/content-item.ejs
-    views/update/content-update.ejs
-    views/update/profile-card.ejs
-    views/update/feed.ejs
+        negative
+            → storage content item
+
+IMPORTANT:
+    This file DOES NOT include content-item.ejs.
+
+    content-update.ejs is responsible for displaying the
+    storage content update interface.
+
+    content-item.ejs must NOT be included from this file.
 ==========================================================
 */
 
 
 /* =========================================================
-   SAFE VALUES
+   SAFE DAIRY
 ========================================================= */
 
 const safeDairy =
@@ -46,30 +44,46 @@ const safeDairy =
         ? dairy
         : null;
 
+
+/* =========================================================
+   SAFE USER
+========================================================= */
+
 const safeUser =
-    typeof user !== "undefined"
+    typeof user !== "undefined" && user
         ? user
         : null;
 
-const safeContentItem =
-    typeof contentItem !== "undefined" && contentItem
-        ? contentItem
-        : safeDairy;
+
+/* =========================================================
+   SAFE STORAGE
+========================================================= */
 
 const safeStorage =
     typeof storage !== "undefined"
         ? storage
         : null;
 
+
+/* =========================================================
+   SAFE MESSAGES
+========================================================= */
+
 const safeSuccessMessage =
     typeof successMessage !== "undefined"
         ? successMessage
         : null;
 
+
 const safePageError =
     typeof pageError !== "undefined"
         ? pageError
         : null;
+
+
+/* =========================================================
+   SAFE STOCK UPDATE
+========================================================= */
 
 const safeLatestStockUpdate =
     typeof latestStockUpdate !== "undefined"
@@ -78,13 +92,40 @@ const safeLatestStockUpdate =
 
 
 /* =========================================================
-   STORAGE CONTENT ITEM CHECK
+   CONTENT ITEM DATA
+=========================================================
 
-   ONLY a negative dwellNumber qualifies.
+   Prefer contentItem supplied by the controller.
+
+   If no contentItem was supplied, use the Dairy record.
+
+   This is ONLY DATA.
+
+   No content-item.ejs include occurs here.
+========================================================= */
+
+const safeContentItem =
+    typeof contentItem !== "undefined" && contentItem
+        ? contentItem
+        : safeDairy;
+
+
+/* =========================================================
+   NEGATIVE DWELL NUMBER
+=========================================================
+
+   ONLY negative dwellNumber values qualify.
+
+   null
+   undefined
+   0
+   positive values
+
+   do NOT qualify.
 ========================================================= */
 
 const hasNegativeDwellNumber =
-    safeDairy &&
+    !!safeDairy &&
     safeDairy.dwellNumber !== null &&
     safeDairy.dwellNumber !== undefined &&
     Number(safeDairy.dwellNumber) < 0;
@@ -101,76 +142,54 @@ const hasNegativeDwellNumber =
 
     <% if (safeUser) { %>
 
-        <%- include(
-            "update/update-cards",
-            {
-                user: safeUser
-            }
-        ) %>
+        <%- include("update/update-cards", {
+            user: safeUser
+        }) %>
 
     <% } %>
 
 
     <!-- =====================================================
-         STORAGE CONTENT ITEM
+         STORAGE CONTENT UPDATE
+    ======================================================
 
-         ONLY SHOWN WHEN dwellNumber IS NEGATIVE
+         IMPORTANT:
+
+         content-item.ejs is NOT included here.
+
+         Only content-update.ejs is included.
+
+         The update interface is available only for a Dairy
+         record whose dwellNumber is negative.
     ====================================================== -->
 
-    <% if (hasNegativeDwellNumber) { %>
+    <% if (hasNegativeDwellNumber && safeContentItem) { %>
 
-        <%- include(
-            "update/content-item",
-            {
-                dairy: safeDairy,
-                storage: safeStorage,
-                item: safeContentItem,
-                user: safeUser,
-                successMessage: safeSuccessMessage,
-                pageError: safePageError,
-                latestStockUpdate: safeLatestStockUpdate
-            }
-        ) %>
-
-
-        <!-- ================================================
-             CONTENT UPDATE
-
-             Kept inside the same negative-dwell condition.
-             It therefore cannot appear for ordinary Dairy
-             records, structures, or positive dwell numbers.
-        ================================================= -->
-
-        <%- include(
-            "update/content-update",
-            {
-                dairy: safeDairy,
-                storage: safeStorage,
-                item: safeContentItem,
-                user: safeUser,
-                successMessage: safeSuccessMessage,
-                pageError: safePageError,
-                latestStockUpdate: safeLatestStockUpdate
-            }
-        ) %>
+        <%- include("update/content-update", {
+            dairy: safeDairy,
+            storage: safeStorage,
+            item: safeContentItem,
+            user: safeUser,
+            successMessage: safeSuccessMessage,
+            pageError: safePageError,
+            latestStockUpdate: safeLatestStockUpdate
+        }) %>
 
     <% } %>
 
 
     <!-- =====================================================
-         PROFILE
+         PROFILE CARD
     ====================================================== -->
 
     <% if (safeDairy && safeDairy.code != null) { %>
 
-        <%- include(
-            "update/profile-card",
-            {
-                dairy: safeDairy,
-                user: safeUser
-            }
-        ) %>
+        <%- include("update/profile-card", {
+            dairy: safeDairy,
+            user: safeUser
+        }) %>
 
     <% } %>
+
 
 </div>
