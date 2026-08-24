@@ -1,4 +1,5 @@
-<% /*
+<%
+/*
 ==========================================================
 DAIRY SET PAGE
 
@@ -9,14 +10,20 @@ PURPOSE:
     Display the profile page for a Dairy asset or
     structure.
 
-    CONTENT ITEM LOGIC:
+CONTENT ITEM LOGIC:
 
-        dairy.dwellNumber != null
+    ONLY a Dairy record with a valid dwellNumber
+    is treated as a storage content item.
+
+        dairy.dwellNumber exists
             ↓
         views/update/content-item.ejs
 
-    The content item card is displayed immediately
-    after the update-cards section.
+    If dairy.dwellNumber does NOT exist:
+
+        content-item.ejs
+            ↓
+        NOT INCLUDED
 
 IMPORTANT:
 
@@ -29,8 +36,10 @@ IMPORTANT:
     Both are located in:
 
         views/update/
+
 ==========================================================
-*/ %>
+*/
+%>
 
 
 <%
@@ -83,6 +92,9 @@ const safeLatestStockUpdate =
 
 /* =========================================================
    CONTENT ITEM CHECK
+
+   ONLY Dairy records with a real dwellNumber
+   are storage content items.
 ========================================================= */
 
 const hasDwellNumber =
@@ -105,12 +117,13 @@ const hasDwellNumber =
 
     <% if (user) { %>
 
-        <%- include("update/update-cards", {
-
-            user:
-                user
-
-        }) %>
+        <%- include(
+            "update/update-cards",
+            {
+                user:
+                    user
+            }
+        ) %>
 
     <% } %>
 
@@ -118,41 +131,43 @@ const hasDwellNumber =
 
     <!-- =================================================
          STORAGE CONTENT ITEM
-    ==================================================
 
-         If this Dairy record has a dwellNumber,
-         it is treated as a storage content item.
+         IMPORTANT:
 
-         content-item.ejs is therefore rendered
-         immediately after update-cards.ejs.
+         content-item.ejs is included ONLY when
+         this Dairy record has a dwellNumber.
+
+         Dairies without dwellNumber NEVER receive
+         this include.
     ================================================== -->
 
     <% if (hasDwellNumber) { %>
 
-        <%- include("update/content-item", {
+        <%- include(
+            "update/content-item",
+            {
+                dairy:
+                    dairy,
 
-            dairy:
-                dairy,
+                storage:
+                    safeStorage,
 
-            storage:
-                safeStorage,
+                item:
+                    safeContentItem,
 
-            item:
-                safeContentItem,
+                user:
+                    user,
 
-            user:
-                user,
+                successMessage:
+                    safeSuccessMessage,
 
-            successMessage:
-                safeSuccessMessage,
+                pageError:
+                    safePageError,
 
-            pageError:
-                safePageError,
-
-            latestStockUpdate:
-                safeLatestStockUpdate
-
-        }) %>
+                latestStockUpdate:
+                    safeLatestStockUpdate
+            }
+        ) %>
 
     <% } %>
 
@@ -167,44 +182,16 @@ const hasDwellNumber =
         dairy.code != null
     ) { %>
 
-        <%- include("update/profile-card", {
-
-            dairy:
-                dairy,
-
-            user:
-                user
-
-        }) %>
-
-    <% } %>
-  <% if (hasDwellNumber) { %>
-
-
-        <!-- =============================================
-             CONTENT UPDATE HISTORY + UPDATE MODAL
-        ============================================== -->
-
         <%- include(
-            "update/content-update",
+            "update/profile-card",
             {
                 dairy:
                     dairy,
 
-                storage:
-                    safeStorage,
-
-                item:
-                    safeContentItem,
-
                 user:
-                    user,
-
-                latestStockUpdate:
-                    safeLatestStockUpdate
+                    user
             }
         ) %>
-
 
     <% } %>
 
