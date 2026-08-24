@@ -431,6 +431,18 @@
             user: user
         }
     ) %>
+    <!-- =================================================
+         Medical Attention is Needed
+    ================================================== -->
+
+    <%- include(
+        "update/composers/medic",
+        {
+            dairy: dairy,
+            user: user,
+            assetDairies: assetDairies || []
+        }
+    ) %>
 
 
 
