@@ -12,18 +12,30 @@ PURPOSE:
 
 CONTENT ITEM LOGIC:
 
-    ONLY a Dairy record with a valid dwellNumber
+    ONLY a Dairy record with a NEGATIVE dwellNumber
     is treated as a storage content item.
 
-        dairy.dwellNumber exists
+        dairy.dwellNumber < 0
             ↓
         views/update/content-item.ejs
 
-    If dairy.dwellNumber does NOT exist:
+    If dairy.dwellNumber is:
 
-        content-item.ejs
+        null
             ↓
-        NOT INCLUDED
+        content-item.ejs NOT INCLUDED
+
+        0
+            ↓
+        content-item.ejs NOT INCLUDED
+
+        positive
+            ↓
+        content-item.ejs NOT INCLUDED
+
+        negative
+            ↓
+        content-item.ejs INCLUDED
 
 IMPORTANT:
 
@@ -93,17 +105,17 @@ const safeLatestStockUpdate =
 /* =========================================================
    CONTENT ITEM CHECK
 
-   ONLY Dairy records with a real dwellNumber
+   ONLY Dairy records with a NEGATIVE dwellNumber
    are storage content items.
 ========================================================= */
 
-const hasDwellNumber =
+const hasNegativeDwellNumber =
     dairy &&
     dairy.dwellNumber !== null &&
     dairy.dwellNumber !== undefined &&
-    String(
+    Number(
         dairy.dwellNumber
-    ).trim() !== "";
+    ) < 0;
 
 %>
 
@@ -135,13 +147,14 @@ const hasDwellNumber =
          IMPORTANT:
 
          content-item.ejs is included ONLY when
-         this Dairy record has a dwellNumber.
+         dairy.dwellNumber is NEGATIVE.
 
-         Dairies without dwellNumber NEVER receive
-         this include.
+         Dairies with zero, positive, null, or
+         undefined dwellNumber do NOT receive
+         content-item.ejs.
     ================================================== -->
 
-    <% if (hasDwellNumber) { %>
+    <% if (hasNegativeDwellNumber) { %>
 
         <%- include(
             "update/content-item",
