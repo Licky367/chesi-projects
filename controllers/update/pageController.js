@@ -6,24 +6,21 @@
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Loads the complete Dairy update page.
+// Handles:
 //
-// The Boolean component:
+//     GET /dairy/:id
 //
-//     views/update/boolean.ejs
+//     GET /dairy/:id/general
 //
-// is an INCLUDE inside:
+// The normal Dairy Farm page renders:
 //
 //     views/update.ejs
 //
-// Therefore boolean.ejs is NEVER rendered independently.
+// The General page renders:
 //
-// The parent update page receives:
+//     views/updateGeneral.ejs
 //
-//     booleanAnimals
-//     booleanFields
-//
-// and passes them naturally to the include.
+// updateGeneral.ejs is FEED ONLY.
 //
 // ==========================================================
 
@@ -96,23 +93,6 @@ async (req, res) => {
         // ==================================================
         // BOOLEAN DATA
         // ==================================================
-        //
-        // boolean.ejs is an INCLUDE.
-        //
-        // It therefore needs its data from the parent
-        // update.ejs render.
-        //
-        // booleanService supplies:
-        //
-        //     animals
-        //     fields
-        //
-        // We expose them to update.ejs as:
-        //
-        //     booleanAnimals
-        //     booleanFields
-        //
-        // ==================================================
 
         let booleanAnimals = [];
 
@@ -182,107 +162,38 @@ async (req, res) => {
             view,
             {
 
-                // ------------------------------------------
-                // PAGE TITLE
-                // ------------------------------------------
-
                 title:
                     "Dairy Profile",
-
-
-                // ------------------------------------------
-                // CURRENT DAIRY / ASSET
-                // ------------------------------------------
 
                 dairy:
                     data.dairy,
 
-
-                // ------------------------------------------
-                // FEED
-                // ------------------------------------------
-
                 feed:
                     data.feed || [],
-
-
-                // ------------------------------------------
-                // WEEKLY MILK FEED
-                // ------------------------------------------
 
                 weeklyFeed:
                     data.weeklyFeeds || null,
 
-
-                // ------------------------------------------
-                // COMMENT COUNT
-                // ------------------------------------------
-
                 commentCount:
                     data.commentCount || 0,
-
-
-                // ------------------------------------------
-                // CURRENT FARM ASSETS
-                // ------------------------------------------
 
                 assetDairies:
                     data.assetDairies || [],
 
-
-                // ------------------------------------------
-                // ASSIGNED FARMS
-                // ------------------------------------------
-
                 assignedFarms:
                     data.assignedFarms || [],
-
-
-                // ------------------------------------------
-                // AGROSTORE INVENTORY
-                // ------------------------------------------
 
                 animalFeeds:
                     data.animalFeeds || [],
 
-
-                // ------------------------------------------
-                // ANIMAL FEED ITEM LINKS
-                // ------------------------------------------
-
                 itemLinks:
                     itemLinks,
-
-
-                // ------------------------------------------
-                // BOOLEAN ANIMALS
-                //
-                // Used by:
-                //
-                //     update/boolean.ejs
-                //
-                // ------------------------------------------
 
                 booleanAnimals:
                     booleanAnimals,
 
-
-                // ------------------------------------------
-                // BOOLEAN FIELDS
-                //
-                // Used by:
-                //
-                //     update/boolean.ejs
-                //
-                // ------------------------------------------
-
                 booleanFields:
                     booleanFields,
-
-
-                // ------------------------------------------
-                // LOGGED-IN USER
-                // ------------------------------------------
 
                 user:
                     sessionUser
@@ -302,6 +213,219 @@ async (req, res) => {
             .status(500)
             .send(
                 "Failed to load dairy profile"
+            );
+
+    }
+
+};
+
+
+// ==========================================================
+// VIEW GENERAL FEED
+// ==========================================================
+//
+// GET:
+//
+//     /dairy/:id/general
+//
+// PURPOSE:
+// ----------------------------------------------------------
+//
+// Renders:
+//
+//     views/updateGeneral.ejs
+//
+// This page intentionally renders ONLY the main feed.
+//
+// It does NOT render:
+//
+//     - asset cards
+//     - boolean management
+//     - item links
+//     - asset sidebar
+//     - create-post
+//     - H1
+//     - other fixed update-page components
+//
+// ==========================================================
+
+exports.viewGeneral =
+async (req, res) => {
+
+    try {
+
+        // ==================================================
+        // DAIRY ID
+        // ==================================================
+
+        const {
+            id
+        } = req.params;
+
+
+        if (!id) {
+
+            return res
+                .status(400)
+                .send(
+                    "Dairy ID is required."
+                );
+
+        }
+
+
+        // ==================================================
+        // LOGGED-IN USER
+        // ==================================================
+
+        const sessionUser =
+            req.session.user || null;
+
+
+        const userId =
+            sessionUser
+                ? sessionUser._id
+                : null;
+
+
+        // ==================================================
+        // GET DAIRY PAGE DATA
+        // ==================================================
+        //
+        // We deliberately use the same service that builds
+        // the normal update feed.
+        //
+        // This ensures updateGeneral.ejs receives the same
+        // chronological feed data.
+        //
+        // ==================================================
+
+        const data =
+            await updateService.getDairyPage(
+                id,
+                userId
+            );
+
+
+        // ==================================================
+        // VERIFY DAIRY EXISTS
+        // ==================================================
+
+        if (
+            !data ||
+            !data.dairy
+        ) {
+
+            return res
+                .status(404)
+                .send(
+                    "Dairy Farm not found."
+                );
+
+        }
+
+
+        // ==================================================
+        // VERIFY THIS IS A DAIRY FARM
+        // ==================================================
+        //
+        // A Dairy Farm is represented by:
+        //
+        //     code < 0
+        //
+        // ==================================================
+
+        const isDairyFarm =
+            data.dairy.code !== null &&
+
+            data.dairy.code !== undefined &&
+
+            Number(
+                data.dairy.code
+            ) < 0;
+
+
+        if (!isDairyFarm) {
+
+            return res
+                .status(400)
+                .send(
+                    "General feed is only available for a Dairy Farm."
+                );
+
+        }
+
+
+        // ==================================================
+        // RENDER GENERAL FEED
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // updateGeneral.ejs only needs:
+        //
+        //     dairy
+        //     feed
+        //     user
+        //
+        // No Boolean data or asset collections are required.
+        //
+        // ==================================================
+
+        return res.render(
+            "updateGeneral",
+            {
+
+                // ------------------------------------------
+                // PAGE TITLE
+                // ------------------------------------------
+
+                title:
+                    "General Updates",
+
+
+                // ------------------------------------------
+                // PARENT DAIRY FARM
+                // ------------------------------------------
+
+                dairy:
+                    data.dairy,
+
+
+                // ------------------------------------------
+                // MAIN FEED
+                // ------------------------------------------
+
+                feed:
+                    Array.isArray(
+                        data.feed
+                    )
+                        ? data.feed
+                        : [],
+
+
+                // ------------------------------------------
+                // LOGGED-IN USER
+                // ------------------------------------------
+
+                user:
+                    sessionUser
+
+            }
+        );
+
+    } catch (err) {
+
+        console.error(
+            "VIEW GENERAL FEED ERROR:",
+            err
+        );
+
+
+        return res
+            .status(500)
+            .send(
+                "Failed to load general dairy feed."
             );
 
     }
