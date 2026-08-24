@@ -18,31 +18,34 @@
 
    FARM OWNERSHIP:
    ----------------------------------------------------------
-   The animal MUST belong to the current Dairy Farm.
-
        animal.assetCode === dairy.code
 
    ELIGIBILITY:
    ----------------------------------------------------------
-   After farm ownership is confirmed, an animal is eligible
-   when EITHER of these conditions is true:
+       The animal belongs to the current Dairy Farm AND:
 
-       1. gender === "female"
+           gender === "female"
 
-   OR
+       OR
 
-       2. code > 0 AND code is even
+           code > 0 AND code is even
 
-   Therefore:
-
-       female
-          OR
-       positive-even code
-
-   IMPORTANT:
+   CARD NAVIGATION:
    ----------------------------------------------------------
-   Gender alone NEVER allows an animal from another farm
-   into this page.
+       Every eligible animal card opens:
+
+           /dairy/:id
+
+       where:
+
+           :id === animal._id
+
+   BOOLEAN TOGGLES:
+   ----------------------------------------------------------
+       Boolean buttons remain interactive.
+
+       Clicking a Boolean toggle does NOT navigate to
+       /dairy/:id.
 
 ========================================================== */
 
@@ -65,19 +68,6 @@ const fields =
 
 /* ==========================================================
    CURRENT FARM CODE
-   ----------------------------------------------------------
-   The parent page is expected to provide the current
-   Dairy Farm as `dairy`.
-
-   Normal farm:
-
-       dairy.recordType === "farm"
-       dairy.code < 0
-
-   The farm's negative code is the ownership identifier
-   stored in child animals as:
-
-       animal.assetCode
 ========================================================== */
 
 let currentFarmCode = null;
@@ -108,9 +98,6 @@ if (
 
 /* ==========================================================
    FALLBACK FARM CODE
-   ----------------------------------------------------------
-   If the supplied dairy is a child record whose assetCode
-   points back to the farm, use that value.
 ========================================================== */
 
 if (
@@ -121,7 +108,9 @@ if (
 ) {
 
     const farmCode =
-        Number(dairy.assetCode);
+        Number(
+            dairy.assetCode
+        );
 
 
     if (
@@ -140,25 +129,25 @@ if (
 /* ==========================================================
    FILTER ELIGIBLE ANIMALS
    ----------------------------------------------------------
-   STEP 1:
-       Animal must belong to the current farm.
+   REQUIREMENT:
 
-   STEP 2:
-       Animal must satisfy:
+       animal belongs to current farm
 
-           gender === female
+   AND:
 
-       OR
+       gender === female
 
-           code > 0 AND code is even
+   OR:
+
+       code > 0 && code is even
 ========================================================== */
 
 const eligibleAnimals =
     animals.filter(function (animal) {
 
-        /* ==================================================
-           INVALID RECORD
-        ================================================== */
+        /* --------------------------------------------------
+           VALID RECORD
+        -------------------------------------------------- */
 
         if (
             !animal ||
@@ -170,14 +159,9 @@ const eligibleAnimals =
         }
 
 
-        /* ==================================================
-           RECORD TYPE
-           --------------------------------------------------
-           If recordType exists, it must be "animal".
-
-           Records without recordType are tolerated for
-           backwards compatibility.
-        ================================================== */
+        /* --------------------------------------------------
+           ANIMAL RECORD TYPE
+        -------------------------------------------------- */
 
         if (
             animal.recordType &&
@@ -191,9 +175,9 @@ const eligibleAnimals =
         }
 
 
-        /* ==================================================
+        /* --------------------------------------------------
            CURRENT FARM MUST EXIST
-        ================================================== */
+        -------------------------------------------------- */
 
         if (
             currentFarmCode === null
@@ -204,9 +188,9 @@ const eligibleAnimals =
         }
 
 
-        /* ==================================================
-           ANIMAL MUST HAVE ASSET CODE
-        ================================================== */
+        /* --------------------------------------------------
+           ASSET CODE REQUIRED
+        -------------------------------------------------- */
 
         if (
             animal.assetCode === null ||
@@ -218,9 +202,9 @@ const eligibleAnimals =
         }
 
 
-        /* ==================================================
+        /* --------------------------------------------------
            ANIMAL FARM CODE
-        ================================================== */
+        -------------------------------------------------- */
 
         const animalFarmCode =
             Number(
@@ -239,14 +223,9 @@ const eligibleAnimals =
         }
 
 
-        /* ==================================================
+        /* --------------------------------------------------
            FARM OWNERSHIP
-           --------------------------------------------------
-           THIS CHECK HAPPENS BEFORE THE FEMALE/EVEN RULE.
-
-           This prevents female animals from other farms
-           from appearing.
-        ================================================== */
+        -------------------------------------------------- */
 
         if (
             animalFarmCode !== currentFarmCode
@@ -257,9 +236,9 @@ const eligibleAnimals =
         }
 
 
-        /* ==================================================
-           NORMALIZE GENDER
-        ================================================== */
+        /* --------------------------------------------------
+           GENDER
+        -------------------------------------------------- */
 
         const animalGender =
             String(
@@ -269,9 +248,13 @@ const eligibleAnimals =
             .toLowerCase();
 
 
-        /* ==================================================
-           ANIMAL CODE
-        ================================================== */
+        const isFemale =
+            animalGender === "female";
+
+
+        /* --------------------------------------------------
+           CODE
+        -------------------------------------------------- */
 
         const animalCode =
             Number(
@@ -279,25 +262,11 @@ const eligibleAnimals =
             );
 
 
-        /* ==================================================
-           FEMALE RULE
-           --------------------------------------------------
-           gender === female
-        ================================================== */
+        /* --------------------------------------------------
+           POSITIVE EVEN CODE
+        -------------------------------------------------- */
 
-        const isFemale =
-            animalGender === "female";
-
-
-        /* ==================================================
-           EVEN CODE RULE
-           --------------------------------------------------
-           code > 0
-           AND
-           code is even
-        ================================================== */
-
-        const hasPositiveEvenCode =
+        const positiveEvenCode =
             Number.isInteger(
                 animalCode
             ) &&
@@ -305,52 +274,54 @@ const eligibleAnimals =
             animalCode % 2 === 0;
 
 
-        /* ==================================================
-           FINAL ELIGIBILITY
-           --------------------------------------------------
-           FEMALE
+        /* --------------------------------------------------
+           FINAL MERIT
+
+               gender === female
 
            OR
 
-           POSITIVE EVEN CODE
-        ================================================== */
+               code > 0 && code even
+        -------------------------------------------------- */
 
         return (
             isFemale ||
-            hasPositiveEvenCode
+            positiveEvenCode
         );
 
     });
 
 
 /* ==========================================================
-   FIELD LABEL
+   BOOLEAN FIELD LABEL
 ========================================================== */
 
 function booleanLabel(field) {
 
-    return String(field || "")
-        .replace(
-            /([a-z])([A-Z])/g,
-            "$1 $2"
-        )
-        .replace(
-            /[_-]+/g,
-            " "
-        )
-        .replace(
-            /\s+/g,
-            " "
-        )
-        .trim()
-        .replace(
-            /\b\w/g,
-            function (letter) {
+    return String(
+        field || ""
+    )
+    .replace(
+        /([a-z])([A-Z])/g,
+        "$1 $2"
+    )
+    .replace(
+        /[_-]+/g,
+        " "
+    )
+    .replace(
+        /\s+/g,
+        " "
+    )
+    .trim()
+    .replace(
+        /\b\w/g,
+        function (letter) {
 
-                return letter.toUpperCase();
+            return letter.toUpperCase();
 
-            }
-        );
+        }
+    );
 
 }
 
@@ -359,7 +330,7 @@ function booleanLabel(field) {
 
 <section
     class="update-boolean-section"
-    aria-label="Female animal boolean management"
+    aria-label="Female animal Boolean management"
 >
 
 
@@ -375,6 +346,7 @@ function booleanLabel(field) {
                 ANIMAL MANAGEMENT
             </span>
 
+
             <strong>
                 Female Animals
             </strong>
@@ -384,9 +356,8 @@ function booleanLabel(field) {
 
         <div class="update-boolean-description">
 
-            Tap the first card to choose a Boolean field,
-            then toggle it directly on eligible animals
-            belonging to this Dairy Farm.
+            Select a Boolean field or open an animal card
+            to view and manage that animal.
 
         </div>
 
@@ -401,16 +372,19 @@ function booleanLabel(field) {
     <div
         class="update-boolean-scroll"
         role="list"
-        aria-label="Female animal Boolean controls"
+        aria-label="Eligible animal Boolean controls"
     >
 
 
         <!-- ==================================================
-             FIRST CARD — BOOLEAN SELECTOR
+             BOOLEAN FIELD SELECTOR CARD
         =================================================== -->
 
         <div
-            class="update-boolean-card update-boolean-selector-card"
+            class="
+                update-boolean-card
+                update-boolean-selector-card
+            "
             role="listitem"
         >
 
@@ -422,34 +396,43 @@ function booleanLabel(field) {
                 aria-controls="booleanFieldDropdown"
             >
 
-                <div class="update-boolean-selector-icon">
+                <div
+                    class="update-boolean-selector-icon"
+                >
 
                     <i class="fas fa-sliders"></i>
 
                 </div>
 
 
-                <div class="update-boolean-selector-title">
+                <div
+                    class="update-boolean-selector-title"
+                >
 
                     Boolean Fields
 
                 </div>
 
 
-                <div class="update-boolean-selector-text">
+                <div
+                    class="update-boolean-selector-text"
+                >
 
                     Choose what to manage
 
                 </div>
 
 
-                <div class="update-boolean-selector-arrow">
+                <div
+                    class="update-boolean-selector-arrow"
+                >
 
                     <i class="fas fa-chevron-down"></i>
 
                 </div>
 
             </button>
+
 
 
             <!-- ==============================================
@@ -473,16 +456,22 @@ function booleanLabel(field) {
                         >
 
                             <span
-                                class="update-boolean-field-option-icon"
+                                class="
+                                    update-boolean-field-option-icon
+                                "
                             >
 
-                                <i class="fas fa-toggle-on"></i>
+                                <i
+                                    class="fas fa-toggle-on"
+                                ></i>
 
                             </span>
 
 
                             <span
-                                class="update-boolean-field-option-label"
+                                class="
+                                    update-boolean-field-option-label
+                                "
                             >
 
                                 <%= booleanLabel(field) %>
@@ -491,7 +480,9 @@ function booleanLabel(field) {
 
 
                             <span
-                                class="update-boolean-field-option-check"
+                                class="
+                                    update-boolean-field-option-check
+                                "
                             >
 
                                 <i class="fas fa-check"></i>
@@ -504,7 +495,9 @@ function booleanLabel(field) {
 
                 <% } else { %>
 
-                    <div class="update-boolean-no-fields">
+                    <div
+                        class="update-boolean-no-fields"
+                    >
 
                         No Boolean fields available.
 
@@ -519,12 +512,39 @@ function booleanLabel(field) {
 
 
         <!-- ==================================================
-             ELIGIBLE ANIMALS
+             ELIGIBLE ANIMAL CARDS
+             --------------------------------------------------
+             EACH CARD NAVIGATES TO:
+
+                 /dairy/:id
+
+             where :id = animal._id
         =================================================== -->
 
         <% eligibleAnimals.forEach(function(animal) { %>
 
             <%
+
+                /* ============================================
+                   ANIMAL ID
+                ============================================ */
+
+                const animalId =
+                    String(
+                        animal._id
+                    );
+
+
+                /* ============================================
+                   ANIMAL PROFILE URL
+                ============================================ */
+
+                const animalUrl =
+                    "/dairy/" +
+                    encodeURIComponent(
+                        animalId
+                    );
+
 
                 /* ============================================
                    ANIMAL NAME
@@ -586,9 +606,13 @@ function booleanLabel(field) {
             %>
 
 
-            <!-- ==============================================
-                 ANIMAL CARD
-            =============================================== -->
+            <!-- ==================================================
+                 CLICKABLE ANIMAL CARD
+                 --------------------------------------------------
+                 The entire card opens:
+
+                     /dairy/:id
+            =================================================== -->
 
             <article
                 class="
@@ -596,8 +620,12 @@ function booleanLabel(field) {
                     update-boolean-animal-card
                 "
                 role="listitem"
-                data-animal-id="<%= animal._id %>"
+                data-animal-id="<%= animalId %>"
                 data-farm-code="<%= animalFarmCode %>"
+                data-dairy-url="<%= animalUrl %>"
+                tabindex="0"
+                role="link"
+                aria-label="Open <%= animalName %>"
             >
 
 
@@ -616,7 +644,9 @@ function booleanLabel(field) {
                      IMAGE
                 =========================================== -->
 
-                <div class="update-boolean-image-wrap">
+                <div
+                    class="update-boolean-image-wrap"
+                >
 
                     <img
                         src="<%= animalImage %>"
@@ -634,7 +664,9 @@ function booleanLabel(field) {
 
                     <!-- FEMALE BADGE -->
 
-                    <div class="update-boolean-female-badge">
+                    <div
+                        class="update-boolean-female-badge"
+                    >
 
                         <i class="fas fa-venus"></i>
 
@@ -647,7 +679,9 @@ function booleanLabel(field) {
 
                     <!-- CODE -->
 
-                    <div class="update-boolean-code">
+                    <div
+                        class="update-boolean-code"
+                    >
 
                         #<%= animalCode %>
 
@@ -661,12 +695,16 @@ function booleanLabel(field) {
                      CONTENT
                 =========================================== -->
 
-                <div class="update-boolean-content">
+                <div
+                    class="update-boolean-content"
+                >
 
 
                     <!-- NAME -->
 
-                    <div class="update-boolean-name">
+                    <div
+                        class="update-boolean-name"
+                    >
 
                         <%= animalName %>
 
@@ -676,7 +714,9 @@ function booleanLabel(field) {
 
                     <!-- GENDER -->
 
-                    <div class="update-boolean-gender">
+                    <div
+                        class="update-boolean-gender"
+                    >
 
                         <i class="fas fa-venus"></i>
 
@@ -690,7 +730,9 @@ function booleanLabel(field) {
                          BOOLEAN CONTROLS
                     ======================================= -->
 
-                    <div class="update-boolean-controls">
+                    <div
+                        class="update-boolean-controls"
+                    >
 
                         <% if (fields.length > 0) { %>
 
@@ -705,13 +747,14 @@ function booleanLabel(field) {
 
                                 %>
 
+
                                 <button
                                     type="button"
                                     class="
                                         update-boolean-toggle
                                         <%= fieldValue ? "is-on" : "" %>
                                     "
-                                    data-animal-id="<%= animal._id %>"
+                                    data-animal-id="<%= animalId %>"
                                     data-boolean-field="<%= field %>"
                                     data-boolean-value="<%= fieldValue %>"
                                     aria-pressed="<%= fieldValue ? "true" : "false" %>"
@@ -750,7 +793,9 @@ function booleanLabel(field) {
 
                         <% } else { %>
 
-                            <div class="update-boolean-empty">
+                            <div
+                                class="update-boolean-empty"
+                            >
 
                                 No Boolean controls.
 
@@ -761,6 +806,7 @@ function booleanLabel(field) {
                     </div>
 
                 </div>
+
 
 
                 <!-- ==========================================
@@ -784,9 +830,13 @@ function booleanLabel(field) {
 
         <% if (eligibleAnimals.length === 0) { %>
 
-            <div class="update-boolean-empty-card">
+            <div
+                class="update-boolean-empty-card"
+            >
 
-                <div class="update-boolean-empty-card-icon">
+                <div
+                    class="update-boolean-empty-card-icon"
+                >
 
                     <i class="fas fa-cow"></i>
 
@@ -799,9 +849,11 @@ function booleanLabel(field) {
 
 
                 <span>
+
                     No female animals or positive-even-code
                     animals belonging to this Dairy Farm
                     are currently available.
+
                 </span>
 
             </div>
@@ -823,14 +875,16 @@ function booleanLabel(field) {
 
 .update-boolean-section {
 
-    width: 100%;
+    width:
+        100%;
 
     margin:
         0
         0
         22px;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
     font-family:
         Arial,
@@ -920,7 +974,7 @@ function booleanLabel(field) {
 
 
 /* ==========================================================
-   SCROLL
+   HORIZONTAL SCROLL
 ========================================================== */
 
 .update-boolean-scroll {
@@ -966,7 +1020,7 @@ function booleanLabel(field) {
 
 
 /* ==========================================================
-   CARD
+   BASE CARD
 ========================================================== */
 
 .update-boolean-card {
@@ -1018,7 +1072,7 @@ function booleanLabel(field) {
 
 
 /* ==========================================================
-   ANIMAL CARD
+   CLICKABLE ANIMAL CARD
 ========================================================== */
 
 .update-boolean-animal-card {
@@ -1026,8 +1080,55 @@ function booleanLabel(field) {
     overflow:
         hidden;
 
+    cursor:
+        pointer;
+
+    transition:
+        transform
+        .16s
+        ease,
+        box-shadow
+        .16s
+        ease,
+        border-color
+        .16s
+        ease;
+
 }
 
+
+.update-boolean-animal-card:hover {
+
+    transform:
+        translateY(-2px);
+
+    border-color:
+        #c7d6c2;
+
+    box-shadow:
+        0 6px 14px
+        rgba(39, 55, 42, .10),
+        0 14px 26px
+        rgba(74, 86, 47, .06);
+
+}
+
+
+.update-boolean-animal-card:focus-visible {
+
+    outline:
+        2px solid
+        #5f8b55;
+
+    outline-offset:
+        3px;
+
+}
+
+
+/* ==========================================================
+   CARD ACCENT
+========================================================== */
 
 .update-boolean-card-accent {
 
@@ -1329,6 +1430,10 @@ function booleanLabel(field) {
 
 }
 
+
+/* ==========================================================
+   BOOLEAN TOGGLE
+========================================================== */
 
 .update-boolean-toggle {
 
@@ -1922,7 +2027,7 @@ function booleanLabel(field) {
 
 
 /* ==========================================================
-   EMPTY ANIMAL CARD
+   EMPTY CARD
 ========================================================== */
 
 .update-boolean-empty-card {
@@ -2229,7 +2334,10 @@ function booleanLabel(field) {
 
         selector.addEventListener(
             "click",
-            function () {
+            function (event) {
+
+                event.stopPropagation();
+
 
                 const isOpen =
                     !dropdown.hasAttribute(
@@ -2277,7 +2385,10 @@ function booleanLabel(field) {
 
             option.addEventListener(
                 "click",
-                function () {
+                function (event) {
+
+                    event.stopPropagation();
+
 
                     selectField(
                         option.getAttribute(
@@ -2322,6 +2433,111 @@ function booleanLabel(field) {
 
 
     /* ======================================================
+       ANIMAL CARD NAVIGATION
+       ------------------------------------------------------
+       Every animal card opens:
+
+           /dairy/:id
+
+       Boolean buttons explicitly stop propagation so
+       clicking them does not navigate.
+    ======================================================= */
+
+    document
+        .querySelectorAll(
+            ".update-boolean-animal-card"
+        )
+        .forEach(
+            function (card) {
+
+                function openAnimal() {
+
+                    const url =
+                        card.getAttribute(
+                            "data-dairy-url"
+                        );
+
+
+                    if (!url) {
+
+                        return;
+
+                    }
+
+
+                    window.location.href =
+                        url;
+
+                }
+
+
+                /* ------------------------------------------
+                   MOUSE / TOUCH
+                ------------------------------------------ */
+
+                card.addEventListener(
+                    "click",
+                    function () {
+
+                        openAnimal();
+
+                    }
+                );
+
+
+                /* ------------------------------------------
+                   KEYBOARD
+                   ------------------------------------------------
+                   Makes the card accessible like a link.
+                ------------------------------------------ */
+
+                card.addEventListener(
+                    "keydown",
+                    function (event) {
+
+                        if (
+                            event.key === "Enter" ||
+                            event.key === " "
+                        ) {
+
+                            event.preventDefault();
+
+                            openAnimal();
+
+                        }
+
+                    }
+                );
+
+
+                /* ------------------------------------------
+                   BOOLEAN BUTTONS MUST NOT NAVIGATE
+                ------------------------------------------ */
+
+                card
+                    .querySelectorAll(
+                        ".update-boolean-toggle"
+                    )
+                    .forEach(
+                        function (button) {
+
+                            button.addEventListener(
+                                "click",
+                                function (event) {
+
+                                    event.stopPropagation();
+
+                                }
+                            );
+
+                        }
+                    );
+
+            }
+        );
+
+
+    /* ======================================================
        BOOLEAN TOGGLE
        ------------------------------------------------------
        Route:
@@ -2338,7 +2554,17 @@ function booleanLabel(field) {
 
                 button.addEventListener(
                     "click",
-                    async function () {
+                    async function (event) {
+
+                        /*
+                         * Prevent the animal card's click
+                         * handler from opening /dairy/:id.
+                         */
+
+                        event.preventDefault();
+
+                        event.stopPropagation();
+
 
                         const animalId =
                             button.getAttribute(
@@ -2477,7 +2703,7 @@ function booleanLabel(field) {
 
 
     /* ======================================================
-       CLOSE DROPDOWN OUTSIDE
+       CLOSE DROPDOWN WHEN CLICKING OUTSIDE
     ======================================================= */
 
     document.addEventListener(
