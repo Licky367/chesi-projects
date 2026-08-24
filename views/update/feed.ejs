@@ -8,21 +8,11 @@
    PURPOSE:
        Reusable feed partial.
 
-   INCLUDE EXAMPLE:
-
-       <%- include(
-           "update/feed",
-           {
-               feed: feed || [],
-               user: user
-           }
-       ) %>
-
-   DATA RECEIVED:
+   EXPECTED DATA:
        feed
        user
 
-   FEED ITEM TYPES:
+   FEED TYPES:
        post
        milk
        medical
@@ -32,63 +22,32 @@
 
    IMPORTANT:
    ----------------------------------------------------------
-   This partial renders ONLY the feed.
+   This file is an INCLUDE only.
 
-   It does NOT render:
+   It does NOT contain:
 
        - page wrappers
+       - stylesheet links
+       - scripts
        - create-post
        - H1
        - asset cards
-       - boolean management
-       - item links
+       - boolean cards
        - asset sidebar
-       - scripts
-       - stylesheets
-
-   Every actual item contained in feed is evaluated.
 ========================================================== */
 %>
-
-
-<!-- =====================================================
-     MAIN FEED
-===================================================== -->
 
 <section
     id="feed"
     class="feed-container"
 >
 
+    <% if (Array.isArray(feed) && feed.length > 0) { %>
 
-    <!-- =================================================
-         FEED EXISTS
-    ================================================== -->
-
-    <% if (
-        Array.isArray(feed) &&
-        feed.length > 0
-    ) { %>
+        <% feed.forEach(function(item) { %>
 
 
-        <!-- =================================================
-             FEED LOOP
-
-             Fixed page components are NOT rendered here.
-        ================================================== -->
-
-        <% feed.forEach(
-            function(item, index)
-        { %>
-
-
-            <!-- =============================================
-                 NORMAL POST
-            ============================================== -->
-
-            <% if (
-                item.type === "post"
-            ) { %>
+            <% if (item.type === "post") { %>
 
                 <%- include(
                     "update/post",
@@ -98,17 +57,7 @@
                     }
                 ) %>
 
-            <% } %>
-
-
-
-            <!-- =============================================
-                 WEEKLY MILK REPORT
-            ============================================== -->
-
-            <% if (
-                item.type === "milk"
-            ) { %>
+            <% } else if (item.type === "milk") { %>
 
                 <%- include(
                     "update/milk",
@@ -118,15 +67,7 @@
                     }
                 ) %>
 
-            <% } %>
-
-
-
-            <!-- =============================================
-                 MEDICAL — MARKED
-            ============================================== -->
-
-            <% if (
+            <% } else if (
                 item.type === "medical" &&
                 item.status === "marked"
             ) { %>
@@ -139,15 +80,7 @@
                     }
                 ) %>
 
-            <% } %>
-
-
-
-            <!-- =============================================
-                 MEDICAL — CLEARED
-            ============================================== -->
-
-            <% if (
+            <% } else if (
                 item.type === "medical" &&
                 item.status === "cleared"
             ) { %>
@@ -160,15 +93,7 @@
                     }
                 ) %>
 
-            <% } %>
-
-
-
-            <!-- =============================================
-                 MAINTENANCE — MARKED
-            ============================================== -->
-
-            <% if (
+            <% } else if (
                 item.type === "maintenance" &&
                 item.status === "marked"
             ) { %>
@@ -181,15 +106,7 @@
                     }
                 ) %>
 
-            <% } %>
-
-
-
-            <!-- =============================================
-                 MAINTENANCE — CLEARED
-            ============================================== -->
-
-            <% if (
+            <% } else if (
                 item.type === "maintenance" &&
                 item.status === "cleared"
             ) { %>
@@ -202,25 +119,7 @@
                     }
                 ) %>
 
-            <% } %>
-
-
-
-            <!-- =============================================
-                 ANIMAL FEED / STOCK UPDATE
-
-                 stock-update.ejs expects:
-
-                     update
-
-                 Therefore:
-
-                     update: item
-            ============================================== -->
-
-            <% if (
-                item.type === "animalFeed"
-            ) { %>
+            <% } else if (item.type === "animalFeed") { %>
 
                 <%- include(
                     "update/stock-update",
@@ -230,17 +129,7 @@
                     }
                 ) %>
 
-            <% } %>
-
-
-
-            <!-- =============================================
-                 ASSET ADDED
-            ============================================== -->
-
-            <% if (
-                item.type === "assetAdd"
-            ) { %>
+            <% } else if (item.type === "assetAdd") { %>
 
                 <%- include(
                     "update/addAsset",
@@ -256,13 +145,7 @@
         <% }); %>
 
 
-
-    <!-- =================================================
-         EMPTY FEED
-    ================================================== -->
-
     <% } else { %>
-
 
         <div
             class="feed-empty-state"
@@ -279,15 +162,12 @@
                 aria-hidden="true"
             ></i>
 
-
             <p>
                 No updates have been recorded yet.
             </p>
 
         </div>
 
-
     <% } %>
-
 
 </section>
