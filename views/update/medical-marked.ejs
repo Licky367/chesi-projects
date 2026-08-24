@@ -1,0 +1,214 @@
+<!-- ==========================================================
+     MEDICAL RECORD - MARKED
+========================================================== -->
+ 
+<article
+    class="feed-card medical-card"
+    data-id="<%= item._id %>"
+    data-type="medical"
+>
+
+    <!-- =================================================
+         HEADER
+    ================================================== -->
+
+    <div class="feed-header">
+
+        <div class="feed-user">
+
+            <img
+                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
+                class="avatar-sm"
+                alt="<%= item.userName || 'User' %>"
+            >
+
+            <div class="feed-user-info">
+
+                <!-- =========================================
+                     MEDICAL META
+                ========================================== -->
+
+                <div class="post-meta-line">
+
+                    <strong class="post-user-name">
+
+                        🩺 <%= item.userName || "User" %>
+
+                    </strong>
+
+                    <% if (item.dairyName && item.dairyId) { %>
+
+                        <span class="post-meta-action">
+
+                            about
+
+                        </span>
+
+                        <a
+                            href="/dairy/<%= item.dairyId %>"
+                            class="post-subject"
+                            title="View <%= item.dairyName %>"
+                        >
+
+                            <%= item.dairyName %>
+
+                        </a>
+
+                    <% } %>
+
+                </div>
+
+
+                <!-- =========================================
+                     DATE / TIME
+                ========================================== -->
+
+                <small class="post-time">
+
+                    <%= item.dateText %>
+
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             DELETE MEDICAL RECORD
+        ================================================== -->
+
+        <% if (
+            user &&
+            (
+                user.role === "admin" ||
+                (
+                    user._id &&
+                    item.userId &&
+                    user._id.toString() ===
+                    item.userId.toString()
+                )
+            )
+        ) { %>
+
+            <button
+                class="delete-post"
+                data-id="<%= item._id %>"
+                data-type="medical"
+                title="Delete Medical Record"
+                aria-label="Delete Medical Record"
+                type="button"
+            >
+
+                <i
+                    class="bi bi-trash3-fill"
+                    aria-hidden="true"
+                ></i>
+
+            </button>
+
+        <% } %>
+
+    </div>
+
+
+    <!-- =================================================
+         BODY
+    ================================================== -->
+
+    <div class="feed-body">
+
+        <h3>
+
+            🩺 Medical Record
+
+        </h3>
+
+
+        <!-- =============================================
+             STATUS
+        ============================================== -->
+
+        <div class="medical-status marked">
+
+            Status:
+
+            <strong>
+
+                Marked
+
+            </strong>
+
+        </div>
+
+
+        <!-- =============================================
+             CONDITION / TITLE
+        ============================================== -->
+
+        <% if (item.title) { %>
+
+            <p>
+
+                <strong>Condition:</strong>
+
+                <%= item.title %>
+
+            </p>
+
+        <% } %>
+
+
+        <!-- =============================================
+             DESCRIPTION
+        ============================================== -->
+
+        <% if (item.description) { %>
+
+            <p>
+
+                <%= item.description %>
+
+            </p>
+
+        <% } %>
+
+
+        <!-- =============================================
+             DETAILS
+        ============================================== -->
+
+        <% if (item.details) { %>
+
+            <p>
+
+                <%= item.details %>
+
+            </p>
+
+        <% } %>
+
+    </div>
+
+
+    <!-- =================================================
+         ACTIONS
+    ================================================== -->
+
+    <%- include("partials/feed-actions", {
+        item,
+        type: "medical"
+    }) %>
+
+
+    <!-- =================================================
+         COMMENTS
+    ================================================== -->
+
+    <%- include("comment-section", {
+        item,
+        user,
+        type: "medical"
+    }) %>
+
+</article>
