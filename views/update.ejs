@@ -13,21 +13,7 @@
 
      It is rendered directly below asset-cards.ejs.
 
-     It is NOT a standalone page.
-
-     Boolean data expected from controller:
-
-         booleanFields
-         booleanAnimals
-
-     The Boolean component allows the user to:
-
-         1. Tap the first card.
-         2. Open the Boolean-field dropdown.
-         3. Select a Boolean field.
-         4. View eligible female animals.
-         5. Toggle the selected Boolean value.
-
+     The MAIN FEED is currently COMMENTED OUT.
 ===================================================== -->
 
 
@@ -376,12 +362,6 @@
          FIXED ASSET CARDS
 
          ALWAYS DIRECTLY BELOW H1
-
-         IMPORTANT:
-         -------------------------------------------------
-         asset-cards.ejs is rendered exactly once.
-
-         It is NOT inside the feed loop.
     ================================================== -->
 
     <%- include(
@@ -400,25 +380,7 @@
          FILE:
              views/update/boolean.ejs
 
-         IMPORTANT:
-         -------------------------------------------------
-         boolean.ejs is an INCLUDE.
-
-         It is NOT a standalone page.
-
-         It is rendered exactly once here.
-
-         The controller supplies:
-
-             booleanFields
-             booleanAnimals
-
-         The Boolean component is responsible for:
-
-             - first expandable Boolean card
-             - Boolean-field dropdown
-             - eligible animal cards
-             - Boolean toggle requests
+         RENDERED EXACTLY ONCE.
     ================================================== -->
 
     <%- include(
@@ -432,12 +394,10 @@
         }
     ) %>
 
+
+
     <!-- =================================================
          ANIMAL FEED ITEM LINKS
-
-         Appears directly below boolean.ejs.
-
-         itemLinks is always supplied as an array.
     ================================================== -->
 
     <%- include(
@@ -466,18 +426,21 @@
 
 
     <!-- =================================================
-         MAIN FEED
+         MAIN FEED — COMMENTED OUT
+         
+         NOTHING INSIDE THIS SECTION WILL RENDER.
+
+         The feed variable is not evaluated.
+         No feed includes are executed.
+         No empty-feed message is displayed.
     ================================================== -->
+
+    <!--
 
     <section
         id="feed"
         class="feed-container"
     >
-
-
-        <!-- =================================================
-             FEED EXISTS
-        ================================================== -->
 
         <% if (
             Array.isArray(feed) &&
@@ -485,24 +448,10 @@
         ) { %>
 
 
-            <!-- =================================================
-                 FEED LOOP
-
-                 IMPORTANT:
-                 -------------------------------------------------
-                 Fixed components are NOT rendered here.
-
-                 This loop renders feed documents only.
-            ================================================== -->
-
             <% feed.forEach(
                 function(item, index)
             { %>
 
-
-                <!-- =============================================
-                     NORMAL POST
-                ============================================== -->
 
                 <% if (
                     item.type === "post"
@@ -520,10 +469,6 @@
 
 
 
-                <!-- =============================================
-                     WEEKLY MILK REPORT
-                ============================================== -->
-
                 <% if (
                     item.type === "milk"
                 ) { %>
@@ -539,10 +484,6 @@
                 <% } %>
 
 
-
-                <!-- =============================================
-                     MEDICAL — MARKED
-                ============================================== -->
 
                 <% if (
                     item.type === "medical" &&
@@ -561,10 +502,6 @@
 
 
 
-                <!-- =============================================
-                     MEDICAL — CLEARED
-                ============================================== -->
-
                 <% if (
                     item.type === "medical" &&
                     item.status === "cleared"
@@ -581,10 +518,6 @@
                 <% } %>
 
 
-
-                <!-- =============================================
-                     MAINTENANCE — MARKED
-                ============================================== -->
 
                 <% if (
                     item.type === "maintenance" &&
@@ -603,10 +536,6 @@
 
 
 
-                <!-- =============================================
-                     MAINTENANCE — CLEARED
-                ============================================== -->
-
                 <% if (
                     item.type === "maintenance" &&
                     item.status === "cleared"
@@ -624,20 +553,6 @@
 
 
 
-                <!-- =============================================
-                     STOCK UPDATE
-
-                     EXCEPTION:
-
-                         stock-update.ejs expects:
-
-                             update
-
-                     Therefore this intentionally receives:
-
-                         update: item
-                =======================================.======= -->
-
                 <% if (
                     item.type === "animalFeed"
                 ) { %>
@@ -653,10 +568,6 @@
                 <% } %>
 
 
-
-                <!-- =============================================
-                     ASSET ADDED
-                ============================================== -->
 
                 <% if (
                     item.type === "assetAdd"
@@ -676,11 +587,6 @@
             <% }); %>
 
 
-
-        <!-- =================================================
-             EMPTY FEED
-        ================================================== -->
-
         <% } else { %>
 
 
@@ -699,7 +605,6 @@
                     aria-hidden="true"
                 ></i>
 
-
                 <p>
                     No updates have been recorded yet.
                 </p>
@@ -711,6 +616,9 @@
 
 
     </section>
+
+    -->
+
 
 
 </div>
