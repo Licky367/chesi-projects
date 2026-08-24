@@ -18,32 +18,38 @@ CONTENT ITEM LOGIC:
         dairy.dwellNumber < 0
             ↓
         views/update/content-item.ejs
+            ↓
+        views/update/content-update.ejs
 
     If dairy.dwellNumber is:
 
         null
             ↓
         content-item.ejs NOT INCLUDED
+        content-update.ejs NOT INCLUDED
 
         0
             ↓
         content-item.ejs NOT INCLUDED
+        content-update.ejs NOT INCLUDED
 
         positive
             ↓
         content-item.ejs NOT INCLUDED
+        content-update.ejs NOT INCLUDED
 
         negative
             ↓
         content-item.ejs INCLUDED
+        content-update.ejs INCLUDED
 
 IMPORTANT:
 
     content-item.ejs
         = STORAGE CONTENT ITEM DISPLAY CARD
 
-    content-item-update.ejs
-        = STOCK UPDATE SECTION
+    content-update.ejs
+        = STOCK UPDATE HISTORY + UPDATE MODAL
 
     Both are located in:
 
@@ -144,17 +150,15 @@ const hasNegativeDwellNumber =
     <!-- =================================================
          STORAGE CONTENT ITEM
 
-         IMPORTANT:
-
-         content-item.ejs is included ONLY when
-         dairy.dwellNumber is NEGATIVE.
-
-         Dairies with zero, positive, null, or
-         undefined dwellNumber do NOT receive
-         content-item.ejs.
+         ONLY NEGATIVE DWELL NUMBERS
     ================================================== -->
 
     <% if (hasNegativeDwellNumber) { %>
+
+
+        <!-- =============================================
+             CONTENT ITEM DISPLAY CARD
+        ============================================== -->
 
         <%- include(
             "update/content-item",
@@ -181,6 +185,35 @@ const hasNegativeDwellNumber =
                     safeLatestStockUpdate
             }
         ) %>
+
+
+
+        <!-- =============================================
+             CONTENT UPDATE
+
+             ONLY INCLUDED FOR NEGATIVE DWELL NUMBERS
+        ============================================== -->
+
+        <%- include(
+            "update/content-update",
+            {
+                dairy:
+                    dairy,
+
+                storage:
+                    safeStorage,
+
+                item:
+                    safeContentItem,
+
+                user:
+                    user,
+
+                latestStockUpdate:
+                    safeLatestStockUpdate
+            }
+        ) %>
+
 
     <% } %>
 
