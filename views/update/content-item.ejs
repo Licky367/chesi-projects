@@ -8,74 +8,16 @@ FILE:
     views/update/content-item.ejs
 
 PURPOSE:
-    Reusable CARD for one storage content item belonging to a
-    Room or AgroStore.
+    Reusable CARD for displaying one storage content item.
 
 IMPORTANT:
+    THIS IS AN INCLUDE.
+    THIS FILE HANDLES ITEM INFORMATION ONLY.
 
-    THIS IS NOT A PAGE.
+STOCK UPDATES:
+    Handled separately by:
 
-    THIS IS NOT A FEED ITEM.
-
-    THIS FILE IS AN INCLUDE.
-
-    The card may display ANY storage content item.
-
---------------------------------------------------------------
-CONTENT ITEM ROUTE
---------------------------------------------------------------
-
-    POST /dairy/:contentItemId/:dwellNumber
-
-IMPORTANT:
-
-    :contentItemId
-        = ID of the actual content item
-
-    :dwellNumber
-        = dwellNumber stored on the content item
-
-    The farm ID is NOT part of this route.
-
---------------------------------------------------------------
-STORAGE RELATIONSHIP
---------------------------------------------------------------
-
-    FARM
-       |
-       | assetCode === farm.code
-       |
-       v
-    AGROSTORE
-       |
-       | roomNumber === item.dwellNumber
-       |
-       v
-    CONTENT ITEM
-
---------------------------------------------------------------
-STOCK UPDATE ARCHITECTURE
---------------------------------------------------------------
-
-    item.stockUpdates[]
-
-Each update contains:
-
-    quantity
-    stockUpdateNote
-    images
-    recordedBy
-    recordedAt
-
-CURRENT STOCK:
-
-    item.quantity
-
-LATEST STOCK UPDATE:
-
-    latestStockUpdate.recordedBy
-    latestStockUpdate.recordedAt
-
+        content-item-update.ejs
 ==============================================================
 */
 
@@ -100,9 +42,7 @@ const currentDairy =
 
 const contentItemId =
     contentItem._id
-        ? String(
-            contentItem._id
-        )
+        ? String(contentItem._id)
         : "";
 
 
@@ -113,20 +53,7 @@ const contentItemId =
 const dwellNumber =
     contentItem.dwellNumber !== null &&
     contentItem.dwellNumber !== undefined
-        ? String(
-            contentItem.dwellNumber
-        )
-        : "";
-
-
-/* ============================================================
-   STOCK UPDATE POST ROUTE
-============================================================ */
-
-const stockUpdateAction =
-    contentItemId &&
-    dwellNumber
-        ? `/dairy/${encodeURIComponent(contentItemId)}/${encodeURIComponent(dwellNumber)}`
+        ? String(contentItem.dwellNumber)
         : "";
 
 
@@ -146,53 +73,6 @@ const safePageError =
 
 
 /* ============================================================
-   SAFE LATEST STOCK UPDATE
-============================================================ */
-
-let safeLatestStockUpdate =
-    null;
-
-
-/*
---------------------------------------------------------------
-Prefer controller/service supplied latestStockUpdate.
---------------------------------------------------------------
-*/
-
-if (
-    typeof latestStockUpdate !== "undefined" &&
-    latestStockUpdate
-) {
-
-    safeLatestStockUpdate =
-        latestStockUpdate;
-
-}
-
-
-/*
---------------------------------------------------------------
-Fallback to latest item.stockUpdates record.
---------------------------------------------------------------
-*/
-
-if (
-    !safeLatestStockUpdate &&
-    Array.isArray(
-        contentItem.stockUpdates
-    ) &&
-    contentItem.stockUpdates.length > 0
-) {
-
-    safeLatestStockUpdate =
-        contentItem.stockUpdates[
-            contentItem.stockUpdates.length - 1
-        ];
-
-}
-
-
-/* ============================================================
    ITEM CLASSIFICATION
 ============================================================ */
 
@@ -208,20 +88,10 @@ const itemCode =
     );
 
 
-/*
---------------------------------------------------------------
-The item remains a STORAGE CONTENT ITEM.
-
-These flags only describe the item.
---------------------------------------------------------------
-*/
-
 const itemIsAnimal =
     contentItem.code !== null &&
     contentItem.code !== undefined &&
-    !Number.isNaN(
-        itemCode
-    ) &&
+    !Number.isNaN(itemCode) &&
     itemCode > 0;
 
 
@@ -247,9 +117,7 @@ let itemCategoryClass =
     "asset-badge";
 
 
-if (
-    itemIsFeed
-) {
+if (itemIsFeed) {
 
     itemCategory =
         "Feed";
@@ -260,9 +128,7 @@ if (
     itemCategoryClass =
         "feed-badge";
 
-} else if (
-    itemIsAnimal
-) {
+} else if (itemIsAnimal) {
 
     itemCategory =
         "Animal";
@@ -273,9 +139,7 @@ if (
     itemCategoryClass =
         "animal-badge";
 
-} else if (
-    itemIsAgroStore
-) {
+} else if (itemIsAgroStore) {
 
     itemCategory =
         "AgroStore";
@@ -342,148 +206,6 @@ const itemUnit =
 const itemName =
     contentItem.name ||
     "Unnamed Item";
-
-
-/* ============================================================
-   LAST STOCK UPDATE
-============================================================ */
-
-const lastUpdateTime =
-    safeLatestStockUpdate &&
-    safeLatestStockUpdate.recordedAt
-        ? safeLatestStockUpdate.recordedAt
-        : null;
-
-
-/* ============================================================
-   LAST UPDATED USER
-============================================================ */
-
-const lastUpdatedUser =
-    safeLatestStockUpdate &&
-    safeLatestStockUpdate.recordedBy
-        ? safeLatestStockUpdate.recordedBy
-        : null;
-
-
-/* ============================================================
-   UPDATED USER NAME
-============================================================ */
-
-let updatedByName =
-    "Unknown user";
-
-
-if (
-    lastUpdatedUser
-) {
-
-    if (
-        typeof lastUpdatedUser === "object" &&
-        lastUpdatedUser.name
-    ) {
-
-        updatedByName =
-            String(
-                lastUpdatedUser.name
-            );
-
-    } else if (
-        typeof lastUpdatedUser === "object" &&
-        lastUpdatedUser.email
-    ) {
-
-        updatedByName =
-            String(
-                lastUpdatedUser.email
-            );
-
-    } else {
-
-        updatedByName =
-            String(
-                lastUpdatedUser
-            );
-
-    }
-
-}
-
-
-/* ============================================================
-   FORMATTED UPDATE TIME
-============================================================ */
-
-let updatedAtText =
-    "Not updated yet";
-
-
-if (
-    lastUpdateTime
-) {
-
-    const updatedDate =
-        new Date(
-            lastUpdateTime
-        );
-
-
-    if (
-        !Number.isNaN(
-            updatedDate.getTime()
-        )
-    ) {
-
-        updatedAtText =
-            updatedDate.toLocaleString(
-                undefined,
-                {
-                    year:
-                        "numeric",
-
-                    month:
-                        "short",
-
-                    day:
-                        "numeric",
-
-                    hour:
-                        "numeric",
-
-                    minute:
-                        "2-digit"
-                }
-            );
-
-    }
-
-}
-
-
-/* ============================================================
-   LATEST STOCK UPDATE NOTE
-============================================================ */
-
-const stockUpdateNote =
-    safeLatestStockUpdate &&
-    safeLatestStockUpdate.stockUpdateNote
-        ? String(
-            safeLatestStockUpdate.stockUpdateNote
-        ).trim()
-        : "";
-
-
-/* ============================================================
-   LATEST STOCK UPDATE IMAGES
-============================================================ */
-
-const stockUpdateImages =
-    safeLatestStockUpdate &&
-    Array.isArray(
-        safeLatestStockUpdate.images
-    )
-        ? safeLatestStockUpdate.images
-        : [];
 
 %>
 
@@ -933,230 +655,6 @@ const stockUpdateImages =
 
 
 /* ============================================================
-   STOCK UPDATE NOTE
-============================================================ */
-
-.stock-note-section{
-
-    margin-top:27px;
-
-}
-
-
-.stock-note-box{
-
-    padding:17px;
-
-    background:#f8fbf9;
-
-    border:1px solid #e1e9e3;
-
-    border-radius:14px;
-
-}
-
-
-.stock-note-text{
-
-    margin:0;
-
-    color:#526259;
-
-    font-size:12px;
-
-    line-height:1.75;
-
-    font-weight:500;
-
-    white-space:pre-wrap;
-
-    word-break:break-word;
-
-}
-
-
-/* ============================================================
-   STOCK IMAGES
-============================================================ */
-
-.stock-images-section{
-
-    margin-top:27px;
-
-}
-
-
-.stock-images-grid{
-
-    display:grid;
-
-    grid-template-columns:
-        repeat(
-            3,
-            minmax(0,1fr)
-        );
-
-    gap:10px;
-
-}
-
-
-.stock-image{
-
-    width:100%;
-
-    height:150px;
-
-    display:block;
-
-    object-fit:cover;
-
-    border-radius:13px;
-
-    border:1px solid #e1e9e3;
-
-    background:#f2f5f3;
-
-}
-
-
-/* ============================================================
-   FOOTER
-============================================================ */
-
-.content-item-footer{
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:space-between;
-
-    gap:15px;
-
-    padding:16px 25px;
-
-    background:#fafcfb;
-
-    border-top:1px solid #e5ebe7;
-
-}
-
-
-/* ============================================================
-   FOOTER STATUS
-============================================================ */
-
-.footer-status{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:7px;
-
-    color:#758279;
-
-    font-size:10px;
-
-    font-weight:700;
-
-}
-
-
-.footer-status-dot{
-
-    width:7px;
-
-    height:7px;
-
-    flex:none;
-
-    border-radius:50%;
-
-    background:#3c8b55;
-
-    box-shadow:
-        0 0 0 3px #e8f4eb;
-
-}
-
-
-/* ============================================================
-   LAST UPDATED
-============================================================ */
-
-.footer-updated{
-
-    min-width:0;
-
-    display:flex;
-
-    flex-direction:column;
-
-    align-items:flex-end;
-
-    justify-content:center;
-
-    gap:3px;
-
-    text-align:right;
-
-}
-
-
-.footer-updated-label{
-
-    color:#9aa49e;
-
-    font-size:8px;
-
-    line-height:1.2;
-
-    font-weight:800;
-
-    letter-spacing:.08em;
-
-    text-transform:uppercase;
-
-}
-
-
-.footer-updated-user{
-
-    max-width:220px;
-
-    color:#526259;
-
-    font-size:10px;
-
-    line-height:1.3;
-
-    font-weight:750;
-
-    overflow:hidden;
-
-    text-overflow:ellipsis;
-
-    white-space:nowrap;
-
-}
-
-
-.footer-updated-time{
-
-    color:#7a867e;
-
-    font-size:9px;
-
-    line-height:1.3;
-
-    font-weight:600;
-
-}
-
-
-/* ============================================================
    MESSAGES
 ============================================================ */
 
@@ -1257,40 +755,6 @@ const stockUpdateImages =
 
     }
 
-
-    .stock-images-grid{
-
-        grid-template-columns:
-            repeat(
-                2,
-                minmax(0,1fr)
-            );
-
-    }
-
-
-    .stock-image{
-
-        height:130px;
-
-    }
-
-
-    .content-item-footer{
-
-        align-items:flex-end;
-
-        padding:14px 18px;
-
-    }
-
-
-    .footer-updated{
-
-        max-width:55%;
-
-    }
-
 }
 
 
@@ -1370,61 +834,6 @@ const stockUpdateImages =
 
     }
 
-
-    .description-section,
-    .stock-note-section,
-    .stock-images-section{
-
-        margin-top:23px;
-
-    }
-
-
-    .stock-images-grid{
-
-        grid-template-columns:1fr 1fr;
-
-    }
-
-
-    .stock-image{
-
-        height:115px;
-
-    }
-
-
-    .content-item-footer{
-
-        align-items:flex-end;
-
-        gap:10px;
-
-        padding:13px 16px;
-
-    }
-
-
-    .footer-status{
-
-        font-size:9px;
-
-    }
-
-
-    .footer-updated{
-
-        max-width:60%;
-
-    }
-
-
-    .footer-updated-user{
-
-        max-width:150px;
-
-    }
-
 }
 
 </style>
@@ -1432,10 +841,6 @@ const stockUpdateImages =
 
 <!-- ============================================================
      STORAGE CONTENT ITEM CARD
-
-     THIS IS AN INCLUDE.
-
-     THE UPDATE FORM IS INCLUDED SEPARATELY.
 ============================================================= -->
 
 <div class="storage-content-item-page">
@@ -1449,9 +854,7 @@ const stockUpdateImages =
 
         <div class="content-item-message content-item-success">
 
-            <span>
-                ✓
-            </span>
+            <span>✓</span>
 
             <span>
                 <%= safeSuccessMessage %>
@@ -1470,9 +873,7 @@ const stockUpdateImages =
 
         <div class="content-item-message content-item-error">
 
-            <span>
-                !
-            </span>
+            <span>!</span>
 
             <span>
                 <%= safePageError %>
@@ -1496,7 +897,6 @@ const stockUpdateImages =
 
         <header class="content-item-hero">
 
-
             <div class="content-item-icon">
 
                 <%= itemIcon %>
@@ -1506,30 +906,22 @@ const stockUpdateImages =
 
             <div class="content-item-hero-information">
 
-
                 <p class="content-item-eyebrow">
-
                     Storage Content
-
                 </p>
 
 
                 <h1 class="content-item-title">
-
                     <%= itemName %>
-
                 </h1>
 
 
                 <div class="content-item-badges">
 
-
                     <span
                         class="content-item-badge <%= itemCategoryClass %>"
                     >
-
                         <%= itemCategory %>
-
                     </span>
 
 
@@ -1538,19 +930,14 @@ const stockUpdateImages =
                         <span
                             class="content-item-badge status-badge"
                         >
-
                             <%= contentItem.status %>
-
                         </span>
 
                     <% } %>
 
-
                 </div>
 
-
             </div>
-
 
         </header>
 
@@ -1568,15 +955,11 @@ const stockUpdateImages =
 
             <section class="detail-section">
 
-
                 <div class="detail-section-heading">
 
                     <h2 class="detail-section-title">
-
                         Quantity & Value
-
                     </h2>
-
 
                     <span class="detail-section-line"></span>
 
@@ -1589,30 +972,23 @@ const stockUpdateImages =
                     <div class="highlight-box">
 
                         <span class="highlight-label">
-
                             Quantity
-
                         </span>
 
 
                         <span class="highlight-value">
 
-
                             <% if (hasQuantity) { %>
 
                                 <%= quantityValue.toLocaleString() %>
 
-
                                 <% if (itemUnit) { %>
 
                                     <span class="highlight-unit">
-
                                         <%= itemUnit %>
-
                                     </span>
 
                                 <% } %>
-
 
                             <% } else { %>
 
@@ -1620,7 +996,6 @@ const stockUpdateImages =
 
                             <% } %>
 
-
                         </span>
 
                     </div>
@@ -1629,16 +1004,11 @@ const stockUpdateImages =
                     <div class="highlight-box">
 
                         <span class="highlight-label">
-
                             Unit
-
                         </span>
 
-
                         <span class="highlight-value">
-
                             <%= itemUnit || "—" %>
-
                         </span>
 
                     </div>
@@ -1647,14 +1017,10 @@ const stockUpdateImages =
                     <div class="highlight-box">
 
                         <span class="highlight-label">
-
                             Current Worth
-
                         </span>
 
-
                         <span class="highlight-value">
-
 
                             <% if (hasCurrentWorth) { %>
 
@@ -1666,14 +1032,11 @@ const stockUpdateImages =
 
                             <% } %>
 
-
                         </span>
 
                     </div>
 
-
                 </div>
-
 
             </section>
 
@@ -1686,15 +1049,11 @@ const stockUpdateImages =
                 class="detail-section description-section"
             >
 
-
                 <div class="detail-section-heading">
 
                     <h2 class="detail-section-title">
-
                         Description
-
                     </h2>
-
 
                     <span class="detail-section-line"></span>
 
@@ -1703,7 +1062,6 @@ const stockUpdateImages =
 
                 <div class="description-box">
 
-
                     <% if (
                         contentItem.description &&
                         String(
@@ -1711,149 +1069,28 @@ const stockUpdateImages =
                         ).trim() !== ""
                     ) { %>
 
-
                         <p class="description-text">
-
                             <%= contentItem.description %>
-
                         </p>
-
 
                     <% } else { %>
 
-
                         <span class="no-description">
-
                             No description has been provided
                             for this item.
-
                         </span>
-
 
                     <% } %>
 
-
                 </div>
-
 
             </section>
 
 
             <!-- ==================================================
-                 LATEST STOCK UPDATE NOTE
-            ================================================== -->
-
-            <% if (stockUpdateNote) { %>
-
-                <section
-                    class="detail-section stock-note-section"
-                >
-
-
-                    <div class="detail-section-heading">
-
-                        <h2 class="detail-section-title">
-
-                            Latest Stock Update Note
-
-                        </h2>
-
-
-                        <span class="detail-section-line"></span>
-
-                    </div>
-
-
-                    <div class="stock-note-box">
-
-                        <p class="stock-note-text">
-
-                            <%= stockUpdateNote %>
-
-                        </p>
-
-                    </div>
-
-
-                </section>
-
-            <% } %>
-
-
-            <!-- ==================================================
-                 LATEST STOCK UPDATE IMAGES
-            ================================================== -->
-
-            <% if (stockUpdateImages.length) { %>
-
-                <section
-                    class="detail-section stock-images-section"
-                >
-
-
-                    <div class="detail-section-heading">
-
-                        <h2 class="detail-section-title">
-
-                            Latest Stock Update Images
-
-                        </h2>
-
-
-                        <span class="detail-section-line"></span>
-
-                    </div>
-
-
-                    <div class="stock-images-grid">
-
-
-                        <% stockUpdateImages.forEach(
-                            function(image)
-                        { %>
-
-
-                            <%
-                                const imageUrl =
-                                    typeof image === "string"
-                                        ? image
-                                        : image &&
-                                          (
-                                              image.url ||
-                                              image.path ||
-                                              image.location
-                                          );
-                            %>
-
-
-                            <% if (imageUrl) { %>
-
-                                <img
-                                    src="<%= imageUrl %>"
-
-                                    alt="Stock update image"
-
-                                    class="stock-image"
-
-                                    loading="lazy"
-                                >
-
-                            <% } %>
-
-
-                        <% }); %>
-
-
-                    </div>
-
-
-                </section>
-
-            <% } %>
-
-
-            <!-- ==================================================
-                 UPDATE FORM INCLUDE
+                 STOCK UPDATE SECTION
+                 
+                 KEPT SEPARATE FROM THE ITEM INFORMATION.
             ================================================== -->
 
             <%- include(
@@ -1872,70 +1109,12 @@ const stockUpdateImages =
                         contentItemId,
 
                     dwellNumber:
-                        dwellNumber,
-
-                    stockUpdateAction:
-                        stockUpdateAction
+                        dwellNumber
                 }
             ) %>
 
 
         </div>
-
-
-        <!-- ====================================================
-             FOOTER
-        ==================================================== -->
-
-        <footer class="content-item-footer">
-
-
-            <div class="footer-status">
-
-                <span class="footer-status-dot"></span>
-
-                <span>
-
-                    Item details
-
-                </span>
-
-            </div>
-
-
-            <div
-                class="footer-updated"
-
-                aria-label="Last updated information"
-            >
-
-
-                <span class="footer-updated-label">
-
-                    Last updated
-
-                </span>
-
-
-                <span class="footer-updated-user">
-
-                    <%= updatedByName %>
-
-                </span>
-
-
-                <span class="footer-updated-time">
-
-                    <%= updatedAtText %>
-
-                </span>
-
-
-            </div>
-
-
-        </footer>
-
 
     </article>
 
