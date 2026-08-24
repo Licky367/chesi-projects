@@ -10,9 +10,105 @@
     content="width=device-width, initial-scale=1.0"
 >
 
+
+<!-- =========================================================
+   PAGE TITLE
+========================================================= -->
+
 <title>
-    <%= typeof title !== "undefined" ? title : "Projects" %>
+    <%= typeof title !== "undefined" ? title : "Chesi Projects" %>
 </title>
+
+
+<!-- =========================================================
+   FAVICON
+   ---------------------------------------------------------
+   This is the small logo shown in the browser tab.
+========================================================= -->
+
+<link
+    rel="icon"
+    type="image/png"
+    href="/images/cfp-logo.png"
+>
+
+
+<!-- =========================================================
+   OPEN GRAPH
+   ---------------------------------------------------------
+   These tags control the image, title and description shown
+   when a website URL is shared on platforms such as:
+
+       WhatsApp
+       Facebook
+       LinkedIn
+       Telegram
+       and other Open Graph readers.
+
+   IMPORTANT:
+   ---------------------------------------------------------
+   og:image MUST be an absolute PUBLIC URL.
+
+   Replace:
+       https://YOUR-DOMAIN.com
+
+   with your real production domain.
+========================================================= -->
+
+<meta
+    property="og:title"
+    content="<%= typeof title !== "undefined" ? title : "Chesi Projects" %>"
+>
+
+<meta
+    property="og:description"
+    content="Chesi Projects Management System"
+>
+
+<meta
+    property="og:image"
+    content="https://YOUR-DOMAIN.com/images/cfp-logo.png"
+>
+
+<meta
+    property="og:url"
+    content="https://YOUR-DOMAIN.com<%= currentPath || "/" %>"
+>
+
+<meta
+    property="og:type"
+    content="website"
+>
+
+<meta
+    property="og:site_name"
+    content="Chesi Projects"
+>
+
+
+<!-- =========================================================
+   X / TWITTER LINK PREVIEW
+========================================================= -->
+
+<meta
+    name="twitter:card"
+    content="summary_large_image"
+>
+
+<meta
+    name="twitter:title"
+    content="<%= typeof title !== "undefined" ? title : "Chesi Projects" %>"
+>
+
+<meta
+    name="twitter:description"
+    content="Chesi Projects Management System"
+>
+
+<meta
+    name="twitter:image"
+    content="https://YOUR-DOMAIN.com/images/cfp-logo.png"
+>
 
 
 <style>
@@ -508,7 +604,6 @@ body{
         left .28s ease;
 }
 
-
 .admin-dashboard-sidebar.open{
 
     left:0;
@@ -531,7 +626,6 @@ body{
     padding:0;
 }
 
-
 .admin-sidebar-item{
 
     width:100%;
@@ -540,7 +634,6 @@ body{
 
     padding:0;
 }
-
 
 .admin-sidebar-menu-button{
 
@@ -585,7 +678,6 @@ body{
     background:var(--primary-light);
 }
 
-
 .admin-sidebar-menu-icon{
 
     width:34px;
@@ -610,7 +702,6 @@ body{
 
     pointer-events:none;
 }
-
 
 .admin-sidebar-link{
 
@@ -649,7 +740,6 @@ body{
     color:var(--primary);
 }
 
-
 .admin-sidebar-link.active{
 
     background:var(--primary-light);
@@ -664,7 +754,6 @@ body{
 
     color:var(--primary);
 }
-
 
 .admin-sidebar-icon{
 
@@ -691,7 +780,6 @@ body{
     pointer-events:none;
 }
 
-
 .admin-sidebar-label{
 
     display:block;
@@ -702,7 +790,6 @@ body{
 
     color:inherit;
 }
-
 
 .admin-sidebar-section-button{
 
@@ -749,14 +836,12 @@ body{
     color:var(--primary);
 }
 
-
 .admin-sidebar-section-button.expanded{
 
     background:var(--primary-light);
 
     color:var(--primary);
 }
-
 
 .admin-sidebar-section-arrow{
 
@@ -780,7 +865,6 @@ body{
     transform:rotate(90deg);
 }
 
-
 .admin-sidebar-submenu{
 
     display:none;
@@ -803,7 +887,6 @@ body{
     display:block;
 }
 
-
 .admin-sidebar-submenu
 .admin-sidebar-link{
 
@@ -823,7 +906,6 @@ body{
     background:var(--primary-light);
 }
 
-
 .admin-sidebar-submenu
 .admin-sidebar-icon{
 
@@ -836,7 +918,6 @@ body{
     font-size:18px;
 }
 
-
 .admin-sidebar-submenu
 .admin-sidebar-label{
 
@@ -844,7 +925,6 @@ body{
 
     font-weight:600;
 }
-
 
 .admin-sidebar-footer{
 
@@ -998,11 +1078,6 @@ body{
 
 /* =========================================================
    MAIN — AUTH PAGES
-   ---------------------------------------------------------
-   IMPORTANT:
-   Auth pages do NOT receive the 140px top padding.
-   
-   They still receive bottom space for the fixed footer.
 ========================================================= */
 
 .auth-page .main{
@@ -1016,10 +1091,6 @@ body{
 
 /* =========================================================
    FOOTER
-   ---------------------------------------------------------
-   Footer is shown on BOTH:
-       - Normal pages
-       - Authentication pages
 ========================================================= */
 
 .footer{
@@ -1063,14 +1134,12 @@ body{
         min-height:70px;
     }
 
-
     .header-logo{
 
         height:100px;
 
         top:8px;
     }
-
 
     .header-title{
 
@@ -1079,7 +1148,6 @@ body{
         flex:1 1 auto;
     }
 
-
     .header-title-text{
 
         font-size:15px;
@@ -1087,12 +1155,10 @@ body{
         line-height:18px;
     }
 
-
     .top-menu{
 
         padding:0 8px;
     }
-
 
     .dairy-worker-nav{
 
@@ -1103,7 +1169,6 @@ body{
         min-width:0;
     }
 
-
     .dairy-worker-nav a{
 
         min-width:0;
@@ -1111,16 +1176,13 @@ body{
         padding:2px 5px;
     }
 
-
     .nav-icon{
         font-size:18px;
     }
 
-
     .nav-label{
         font-size:9px;
     }
-
 
     .menu-btn{
 
@@ -1131,18 +1193,15 @@ body{
         height:42px;
     }
 
-
     .profile-trigger{
 
         min-width:53px;
     }
 
-
     .profile-name{
 
         max-width:60px;
     }
-
 
     .admin-dashboard-sidebar{
 
@@ -1151,12 +1210,10 @@ body{
         left:-285px;
     }
 
-
     .admin-dashboard-sidebar.open{
 
         left:0;
     }
-
 
     .main{
 
@@ -1164,11 +1221,6 @@ body{
 
         padding-right:12px;
     }
-
-
-    /* =============================================
-       AUTH MOBILE
-    ============================================== */
 
     .auth-page .main{
 
@@ -1195,18 +1247,15 @@ body{
         padding:0 6px;
     }
 
-
     .header-logo{
 
         height:88px;
     }
 
-
     .header-title{
 
         padding-left:4px;
     }
-
 
     .header-title-text{
 
@@ -1215,18 +1264,15 @@ body{
         line-height:17px;
     }
 
-
     .profile-trigger{
 
         min-width:48px;
     }
 
-
     .profile-name{
 
         max-width:50px;
     }
-
 
     .dairy-worker-nav a{
 
@@ -1234,7 +1280,6 @@ body{
 
         padding-right:2px;
     }
-
 
     .admin-dashboard-sidebar{
 
@@ -1288,9 +1333,9 @@ const isAuthPage =
 let homeLink = "/";
 
 
-/*
+/* =========================================================
    ADMIN
-*/
+========================================================= */
 
 if(
     user &&
@@ -1303,9 +1348,9 @@ if(
 }
 
 
-/*
+/* =========================================================
    DAIRY WORKER
-*/
+========================================================= */
 
 else if(
     user &&
@@ -2062,9 +2107,6 @@ const isPoultryWorker =
 
 <!-- =========================================================
    FOOTER
-   ---------------------------------------------------------
-   IMPORTANT:
-   Footer is rendered for BOTH auth and normal pages.
 ========================================================= -->
 
 <div class="footer">
@@ -2201,30 +2243,25 @@ const adminSidebar =
         "adminDashboardSidebar"
     );
 
-
 const adminTopMenuButton =
     document.getElementById(
         "adminTopMenuButton"
     );
-
 
 const adminSidebarMenuButton =
     document.getElementById(
         "adminSidebarMenuButton"
     );
 
-
 const adminSidebarOverlay =
     document.getElementById(
         "adminSidebarOverlay"
     );
 
-
 const dairyActivitiesButton =
     document.getElementById(
         "dairyActivitiesButton"
     );
-
 
 const dairyActivitiesSubmenu =
     document.getElementById(
@@ -2247,22 +2284,18 @@ function openAdminSidebar(){
 
     }
 
-
     adminSidebar.classList.add(
         "open"
     );
-
 
     adminSidebarOverlay.classList.add(
         "active"
     );
 
-
     adminSidebar.setAttribute(
         "aria-expanded",
         "true"
     );
-
 
     if(adminTopMenuButton){
 
@@ -2272,7 +2305,6 @@ function openAdminSidebar(){
         );
 
     }
-
 
     adminSidebarOverlay.setAttribute(
         "aria-hidden",
@@ -2297,17 +2329,14 @@ function closeDairyActivities(){
 
     }
 
-
     dairyActivitiesButton.setAttribute(
         "aria-expanded",
         "false"
     );
 
-
     dairyActivitiesButton.classList.remove(
         "expanded"
     );
-
 
     dairyActivitiesSubmenu.classList.remove(
         "open"
@@ -2331,22 +2360,18 @@ function closeAdminSidebar(){
 
     }
 
-
     adminSidebar.classList.remove(
         "open"
     );
-
 
     adminSidebarOverlay.classList.remove(
         "active"
     );
 
-
     adminSidebar.setAttribute(
         "aria-expanded",
         "false"
     );
-
 
     if(adminTopMenuButton){
 
@@ -2357,12 +2382,10 @@ function closeAdminSidebar(){
 
     }
 
-
     adminSidebarOverlay.setAttribute(
         "aria-hidden",
         "true"
     );
-
 
     closeDairyActivities();
 
@@ -2382,7 +2405,6 @@ if(adminTopMenuButton){
             event.preventDefault();
 
             event.stopPropagation();
-
 
             if(
                 adminSidebar &&
@@ -2446,24 +2468,20 @@ if(
 
             event.stopPropagation();
 
-
             const isExpanded =
                 dairyActivitiesButton.getAttribute(
                     "aria-expanded"
                 ) === "true";
-
 
             dairyActivitiesButton.setAttribute(
                 "aria-expanded",
                 String(!isExpanded)
             );
 
-
             dairyActivitiesButton.classList.toggle(
                 "expanded",
                 !isExpanded
             );
-
 
             dairyActivitiesSubmenu.classList.toggle(
                 "open",
@@ -2560,7 +2578,6 @@ document.addEventListener(
             closeSidebar();
 
             closeAdminSidebar();
-
 
             if(profileBox){
 
