@@ -20,30 +20,41 @@ CONTENT ITEM LOGIC:
         content-update.ejs
 
     null / undefined / 0 / positive
-        ↓
-    No storage content item.
+            ↓
+        No storage content item.
 
     negative
-        ↓
-    Storage content item is included.
+            ↓
+        Storage content item is included.
 
-FILES:
+INCLUDES:
+    views/update/update-cards.ejs
     views/update/content-item.ejs
     views/update/content-update.ejs
+    views/update/profile-card.ejs
+    views/update/feed.ejs
 ==========================================================
 */
-%>
 
 
-<%
 /* =========================================================
    SAFE VALUES
 ========================================================= */
 
+const safeDairy =
+    typeof dairy !== "undefined" && dairy
+        ? dairy
+        : null;
+
+const safeUser =
+    typeof user !== "undefined"
+        ? user
+        : null;
+
 const safeContentItem =
     typeof contentItem !== "undefined" && contentItem
         ? contentItem
-        : dairy;
+        : safeDairy;
 
 const safeStorage =
     typeof storage !== "undefined"
@@ -73,47 +84,70 @@ const safeLatestStockUpdate =
 ========================================================= */
 
 const hasNegativeDwellNumber =
-    dairy &&
-    dairy.dwellNumber !== null &&
-    dairy.dwellNumber !== undefined &&
-    Number(dairy.dwellNumber) < 0;
+    safeDairy &&
+    safeDairy.dwellNumber !== null &&
+    safeDairy.dwellNumber !== undefined &&
+    Number(safeDairy.dwellNumber) < 0;
 
 %>
 
 
 <div class="dairy-page">
 
-    <!-- =================================================
-         UPDATE CARDS
-    ================================================== -->
 
-    <% if (user) { %>
+    <!-- =====================================================
+         UPDATE CARDS
+    ====================================================== -->
+
+    <% if (safeUser) { %>
 
         <%- include(
             "update/update-cards",
             {
-                user: user
+                user: safeUser
             }
         ) %>
 
     <% } %>
 
 
-    <!-- =================================================
+    <!-- =====================================================
          STORAGE CONTENT ITEM
 
-         ONLY SHOWN FOR NEGATIVE DWELL NUMBER
-    ================================================== -->
+         ONLY SHOWN WHEN dwellNumber IS NEGATIVE
+    ====================================================== -->
 
     <% if (hasNegativeDwellNumber) { %>
 
         <%- include(
             "update/content-item",
             {
-                dairy: dairy,
+                dairy: safeDairy,
                 storage: safeStorage,
                 item: safeContentItem,
-                user: user,
+                user: safeUser,
+                successMessage: safeSuccessMessage,
+                pageError: safePageError,
+                latestStockUpdate: safeLatestStockUpdate
+            }
+        ) %>
+
+
+        <!-- ================================================
+             CONTENT UPDATE
+
+             Kept inside the same negative-dwell condition.
+             It therefore cannot appear for ordinary Dairy
+             records, structures, or positive dwell numbers.
+        ================================================= -->
+
+        <%- include(
+            "update/content-update",
+            {
+                dairy: safeDairy,
+                storage: safeStorage,
+                item: safeContentItem,
+                user: safeUser,
                 successMessage: safeSuccessMessage,
                 pageError: safePageError,
                 latestStockUpdate: safeLatestStockUpdate
@@ -123,20 +157,43 @@ const hasNegativeDwellNumber =
     <% } %>
 
 
-    <!-- =================================================
+    <!-- =====================================================
          PROFILE
-    ================================================== -->
+    ====================================================== -->
 
-    <% if (dairy && dairy.code != null) { %>
+    <% if (safeDairy && safeDairy.code != null) { %>
 
         <%- include(
             "update/profile-card",
             {
-                dairy: dairy,
-                user: user
+                dairy: safeDairy,
+                user: safeUser
             }
         ) %>
 
     <% } %>
+
+
+    <!-- =====================================================
+         FEED
+
+         Feed is rendered at the bottom of the Dairy page.
+    ====================================================== -->
+
+    <% if (safeDairy) { %>
+
+        <%- include(
+            "update/feed",
+            {
+                dairy: safeDairy,
+                user: safeUser,
+                storage: safeStorage,
+                successMessage: safeSuccessMessage,
+                pageError: safePageError
+            }
+        ) %>
+
+    <% } %>
+
 
 </div>
