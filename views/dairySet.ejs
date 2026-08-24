@@ -173,27 +173,4 @@ const hasNegativeDwellNumber =
 
     <% } %>
 
-
-    <!-- =====================================================
-         FEED
-
-         Feed is rendered at the bottom of the Dairy page.
-    ====================================================== -->
-
-    <% if (safeDairy) { %>
-
-        <%- include(
-            "update/feedSet",
-            {
-                dairy: safeDairy,
-                user: safeUser,
-                storage: safeStorage,
-                successMessage: safeSuccessMessage,
-                pageError: safePageError
-            }
-        ) %>
-
-    <% } %>
-
-
 </div>
