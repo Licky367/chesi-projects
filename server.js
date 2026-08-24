@@ -107,7 +107,7 @@ try {
 }
 
 
-// ---------------------------------------------------------
+// ----------------------------------------------------------
 // AUTH
 // ----------------------------------------------------------
 
@@ -167,59 +167,6 @@ try {
 }
 
 
-// ==========================================================
-// STORAGE URL CODE GENERATOR
-// ==========================================================
-//
-// FILE:
-//
-//     routes/code-gen.js
-//
-// ROUTER DEFINITION:
-//
-//     router.get(
-//         "/storage/code-gen",
-//         controller.index
-//     );
-//
-// REQUIRED FINAL URL:
-//
-//     GET /update/storage/code-gen
-//
-// THEREFORE:
-//
-//     app.use(
-//         "/update",
-//         storageCodeGenRoutes
-//     );
-//
-// DO NOT mount this router at:
-//
-//     /update/storage
-//
-// because that would produce:
-//
-//     /update/storage/storage/code-gen
-//
-// ==========================================================
-/*
-let storageCodeGenRoutes;
-
-try {
-
-  storageCodeGenRoutes =
-    require("./routes/code-gen");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load storage code-generation routes:",
-    err.message
-  );
-
-}
-*/
-
 // ----------------------------------------------------------
 // ADD DAIRY / ASSET
 // ----------------------------------------------------------
@@ -260,9 +207,19 @@ try {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // MILK
-// ----------------------------------------------------------
+// ==========================================================
+//
+// Existing milk router.
+//
+// FILE:
+//
+//     routes/milk.js
+//
+// Keep this router separate from milkSales.js.
+//
+// ==========================================================
 
 let milkRoutes;
 
@@ -274,6 +231,53 @@ try {
 
   console.warn(
     "Warning: failed to load milk routes:",
+    err.message
+  );
+
+}
+
+
+// ==========================================================
+// MILK SALES
+// ==========================================================
+//
+// Separate router.
+//
+// FILE:
+//
+//     routes/milkSales.js
+//
+// This is NOT routes/milk.js.
+//
+// ROUTER CONTRACT:
+//
+//     router.get("/", ...)
+//     router.post("/price", ...)
+//     router.post("/sell", ...)
+//
+// Mounted at:
+//
+//     /milk
+//
+// Final URLs:
+//
+//     GET  /milk/sales
+//     POST /milk/sales/price
+//     POST /milk/sales/sell
+//
+// ==========================================================
+
+let milkSalesRoutes;
+
+try {
+
+  milkSalesRoutes =
+    require("./routes/milkSales");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load milkSales routes:",
     err.message
   );
 
@@ -343,20 +347,6 @@ try {
 // ==========================================================
 // STORAGE
 // ==========================================================
-//
-// Handles storage facilities / rooms / AgroStores.
-//
-// Mounted at:
-//
-//     /storage
-//
-// Examples:
-//
-//     GET /storage
-//     GET /storage?type=room
-//     GET /storage?type=agroStore
-//
-// ==========================================================
 
 let storageRoutes;
 
@@ -375,75 +365,8 @@ try {
 
 
 // ==========================================================
-// INVENTORY
-// ==========================================================
-//
-// AgroStore inventory.
-//
-// IMPORTANT ROUTING CONTRACT
-// ----------------------------------------------------------
-//
-// Inventory pages use:
-//
-//     /dairy/:parentId/agroStore/:roomNumber
-//
-// Where:
-//
-//     parentId
-//         = _id of the parent Dairy farm
-//
-//     roomNumber
-//         = roomNumber of the AgroStore
-//
-// IMPORTANT:
-//
-// parentId is NOT the AgroStore's _id.
-//
-// The inventory router is mounted at:
-//
-//     /dairy
-//
-// Therefore routes/inventory.js should define:
-//
-//     GET /:parentId/agroStore/:roomNumber
-//
-// Result:
-//
-//     GET /dairy/:parentId/agroStore/:roomNumber
-//
-// ----------------------------------------------------------
-//
-// Inventory updates:
-//
-//     POST
-//     /dairy/:parentId/agroStore/:roomNumber/inventory/:inventoryId/update
-//
-// ==========================================================
-/*
-let inventoryRoutes;
-
-try {
-
-  inventoryRoutes = require("./routes/inventory");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load inventory routes:",
-    err.message
-  );
-
-}
-*/
-
-// ==========================================================
-// POULTRY
-// ==========================================================
-
-
-// ----------------------------------------------------------
 // POULTRY STATS
-// ----------------------------------------------------------
+// ==========================================================
 
 let poultryStatsRoutes;
 
@@ -462,9 +385,9 @@ try {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // EGGS
-// ----------------------------------------------------------
+// ==========================================================
 
 let eggRoutes;
 
@@ -483,9 +406,9 @@ try {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // CAGE
-// ----------------------------------------------------------
+// ==========================================================
 
 let cageRoutes;
 
@@ -504,9 +427,9 @@ try {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // NURSING
-// ----------------------------------------------------------
+// ==========================================================
 
 let nursingRoutes;
 
@@ -525,9 +448,9 @@ try {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // FINANCE
-// ----------------------------------------------------------
+// ==========================================================
 
 let financeRoutes;
 
@@ -546,9 +469,9 @@ try {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // INCUBATION
-// ----------------------------------------------------------
+// ==========================================================
 
 let incubationRoutes;
 
@@ -567,9 +490,9 @@ try {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // DASHBOARD
-// ----------------------------------------------------------
+// ==========================================================
 
 let dashboardRoutes;
 
@@ -761,7 +684,6 @@ const io =
 
 app.set("io", io);
 
-
 socketHandler(io);
 
 
@@ -853,14 +775,11 @@ app.use(
 
     cookie: {
 
-      httpOnly:
-        true,
+      httpOnly: true,
 
-      secure:
-        isProduction,
+      secure: isProduction,
 
-      sameSite:
-        "lax",
+      sameSite: "lax",
 
       maxAge:
         1000 *
@@ -1054,39 +973,6 @@ if (authRoutes) {
 }
 
 
-// ==========================================================
-// STORAGE URL CODE GENERATOR
-// ==========================================================
-//
-// routes/code-gen.js contains:
-//
-//     router.get(
-//         "/storage/code-gen",
-//         controller.index
-//     );
-//
-// Mount:
-//
-//     /update
-//
-// Final route:
-//
-//     /update + /storage/code-gen
-//
-//     = /update/storage/code-gen
-//
-// ==========================================================
-/*
-if (storageCodeGenRoutes) {
-
-  app.use(
-    "/update",
-    storageCodeGenRoutes
-  );
-
-}
-*/
-
 // ----------------------------------------------------------
 // UPDATE
 // ----------------------------------------------------------
@@ -1129,15 +1015,57 @@ if (profileRoutes) {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // MILK
-// ----------------------------------------------------------
+// ==========================================================
+//
+// Existing routes/milk.js.
+//
+// Left exactly as its own independent router.
+//
+// ==========================================================
 
 if (milkRoutes) {
 
   app.use(
     "/",
     milkRoutes
+  );
+
+}
+
+
+// ==========================================================
+// MILK SALES
+// ==========================================================
+//
+// FILE:
+//
+//     routes/milkSales.js
+//
+// IMPORTANT:
+//
+// This is a separate router from:
+//
+//     routes/milk.js
+//
+// MOUNT:
+//
+//     /milk
+//
+// Final URLs:
+//
+//     GET  /milk-sales
+//     POST /milk-sales/price
+//     POST /milk-sales/sell
+//
+// ==========================================================
+
+if (milkSalesRoutes) {
+
+  app.use(
+    "/milk",
+    milkSalesRoutes
   );
 
 }
@@ -1189,7 +1117,6 @@ if (financialsRoutes) {
 // STORAGE
 // ==========================================================
 
-
 if (storageRoutes) {
 
   app.use(
@@ -1199,22 +1126,6 @@ if (storageRoutes) {
 
 }
 
-
-
-// ==========================================================
-// INVENTORY
-// ==========================================================
-/*
-
-if (inventoryRoutes) {
-
-  app.use(
-    "/dairy",
-    inventoryRoutes
-  );
-
-}
-*/
 
 // ==========================================================
 // POULTRY
@@ -1363,33 +1274,19 @@ app.use(
       );
 
 
-    // ------------------------------------------------------
-    // MULTER ERRORS
-    // ------------------------------------------------------
-
     if (
       err &&
-      err.name === "MulterError"
+      err.name === "MulterError" &&
+      err.code === "LIMIT_FILE_SIZE"
     ) {
 
-      if (
-        err.code ===
-        "LIMIT_FILE_SIZE"
-      ) {
+      statusCode = 400;
 
-        statusCode = 400;
-
-        err.message =
-          "The uploaded image is too large. Maximum size is 5MB.";
-
-      }
+      err.message =
+        "The uploaded image is too large. Maximum size is 5MB.";
 
     }
 
-
-    // ------------------------------------------------------
-    // HTML RESPONSE
-    // ------------------------------------------------------
 
     if (
       req.accepts("html")
@@ -1398,17 +1295,11 @@ app.use(
       const views = {
 
         400: "400",
-
         401: "401",
-
         403: "403",
-
         404: "404",
-
         409: "409",
-
         422: "422",
-
         500: "500"
 
       };
@@ -1443,10 +1334,6 @@ app.use(
 
     }
 
-
-    // ------------------------------------------------------
-    // JSON RESPONSE
-    // ------------------------------------------------------
 
     return res.status(
       statusCode
@@ -1520,9 +1407,7 @@ server.on(
     ) {
 
       console.error(
-
         `❌ Port ${PORT} is already in use. Free it or set a different port in the environment.`
-
       );
 
       process.exit(1);
@@ -1559,13 +1444,7 @@ process.on(
 
 
     server.close(
-
-      () => {
-
-        process.exit(0);
-
-      }
-
+      () => process.exit(0)
     );
 
   }
@@ -1585,13 +1464,7 @@ process.on(
 
 
     server.close(
-
-      () => {
-
-        process.exit(0);
-
-      }
-
+      () => process.exit(0)
     );
 
   }
@@ -1607,17 +1480,9 @@ const bootstrap = async () => {
 
   try {
 
-    // ======================================================
-    // CONNECT TO MONGODB
-    // ======================================================
-
     const dbConnected =
       await connectDB();
 
-
-    // ======================================================
-    // DATABASE AVAILABLE
-    // ======================================================
 
     if (dbConnected) {
 
@@ -1626,11 +1491,6 @@ const bootstrap = async () => {
       );
 
     }
-
-
-    // ======================================================
-    // DATABASE UNAVAILABLE
-    // ======================================================
 
     else if (isProduction) {
 
@@ -1651,10 +1511,6 @@ const bootstrap = async () => {
     }
 
 
-    // ======================================================
-    // START SERVER
-    // ======================================================
-
     startServer(PORT);
 
   } catch (error) {
@@ -1671,10 +1527,6 @@ const bootstrap = async () => {
 
     }
 
-
-    // ------------------------------------------------------
-    // DEVELOPMENT MODE
-    // ------------------------------------------------------
 
     startServer(PORT);
 
