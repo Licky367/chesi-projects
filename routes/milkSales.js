@@ -2,10 +2,21 @@
 // routes/milkSales.js
 // ==========================================================
 //
-// ROUTES:
+// MILK SALES ROUTES
+//
+// MOUNT:
+//
+//     app.use(
+//         "/milk",
+//         milkSalesRoutes
+//     );
+//
+// FINAL ROUTES:
 //
 //     GET  /milk/sales
+//
 //     POST /milk/sales/price
+//
 //     POST /milk/sales/sell
 //
 // ==========================================================
@@ -20,45 +31,39 @@ const router =
 
 
 const milkSalesController =
-    require("../controllers/milkSalesController");
+    require(
+        "../controllers/milkSalesController"
+    );
 
 
 // ==========================================================
-// AUTH MIDDLEWARE
+// GET MILK SALES PAGE
+// ==========================================================
 //
-// Replace this with the exact middleware used by your project.
-// ==========================================================
-
-const {
-    isAuthenticated
-} =
-    require("../middleware/auth");
-
-
-// ==========================================================
-// MILK SALES PAGE
+// FINAL:
+//
+//     GET /milk/sales
+//
 // ==========================================================
 
 router.get(
     "/sales",
-
-    isAuthenticated,
-
     milkSalesController.getMilkSalesPage
 );
 
 
 // ==========================================================
-// UPDATE PRICE
+// UPDATE MILK PRICE
+// ==========================================================
 //
-// ADMIN ONLY
+// FINAL:
+//
+//     POST /milk/sales/price
+//
 // ==========================================================
 
 router.post(
     "/sales/price",
-
-    isAuthenticated,
-
     milkSalesController.updateMilkPrice
 );
 
@@ -66,12 +71,15 @@ router.post(
 // ==========================================================
 // SELL MILK
 // ==========================================================
+//
+// FINAL:
+//
+//     POST /milk/sales/sell
+//
+// ==========================================================
 
 router.post(
     "/sales/sell",
-
-    isAuthenticated,
-
     milkSalesController.sellMilk
 );
 
