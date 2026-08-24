@@ -11,43 +11,38 @@
    PARENT:
        views/update.ejs
 
-   DATA RECEIVED FROM PARENT:
+   DATA RECEIVED:
        booleanAnimals
        booleanFields
        dairy
 
-   ELIGIBLE ANIMAL:
-   ----------------------------------------------------------
-       1. recordType === "animal"
-
-       2. assetCode === current Dairy Farm code
-
-       3. code > 0
-
-       4. code is EVEN
-
    FARM OWNERSHIP:
    ----------------------------------------------------------
-       Parent Dairy Farm:
+   The animal MUST belong to the current Dairy Farm.
 
-           dairy.recordType === "farm"
-           dairy.code < 0
+       animal.assetCode === dairy.code
 
-       Child Animal:
+   ELIGIBILITY:
+   ----------------------------------------------------------
+   After farm ownership is confirmed, an animal is eligible
+   when EITHER of these conditions is true:
 
-           animal.recordType === "animal"
-           animal.assetCode === dairy.code
+       1. gender === "female"
+
+   OR
+
+       2. code > 0 AND code is even
+
+   Therefore:
+
+       female
+          OR
+       positive-even code
 
    IMPORTANT:
    ----------------------------------------------------------
-       This file MUST NOT display female animals from other
-       Dairy Farms.
-
-       The parent farm relationship is determined by:
-
-           animal.assetCode === dairy.code
-
-       NOT by gender, animal code, or array position.
+   Gender alone NEVER allows an animal from another farm
+   into this page.
 
 ========================================================== */
 
@@ -69,33 +64,20 @@ const fields =
 
 
 /* ==========================================================
-   CURRENT DAIRY ID
-========================================================== */
-
-const currentDairyId =
-    dairy &&
-    dairy._id
-        ? String(dairy._id)
-        : "";
-
-
-/* ==========================================================
-   CURRENT PARENT FARM CODE
+   CURRENT FARM CODE
    ----------------------------------------------------------
-   Normally the parent page supplies the Dairy Farm itself.
+   The parent page is expected to provide the current
+   Dairy Farm as `dairy`.
+
+   Normal farm:
 
        dairy.recordType === "farm"
        dairy.code < 0
 
-   Therefore:
+   The farm's negative code is the ownership identifier
+   stored in child animals as:
 
-       dairy.code
-
-   is the parent farm identifier.
-
-   The fallback to assetCode makes this safer if the parent
-   happens to provide a child record whose assetCode points
-   back to the farm.
+       animal.assetCode
 ========================================================== */
 
 let currentFarmCode = null;
@@ -103,7 +85,6 @@ let currentFarmCode = null;
 
 if (
     dairy &&
-    dairy.recordType === "farm" &&
     dairy.code !== null &&
     dairy.code !== undefined
 ) {
@@ -126,7 +107,10 @@ if (
 
 
 /* ==========================================================
-   FALLBACK PARENT FARM CODE
+   FALLBACK FARM CODE
+   ----------------------------------------------------------
+   If the supplied dairy is a child record whose assetCode
+   points back to the farm, use that value.
 ========================================================== */
 
 if (
@@ -154,28 +138,27 @@ if (
 
 
 /* ==========================================================
-   FILTER FEMALE ANIMALS
+   FILTER ELIGIBLE ANIMALS
    ----------------------------------------------------------
-   ONLY animals belonging to the CURRENT Dairy Farm survive.
+   STEP 1:
+       Animal must belong to the current farm.
 
-   Relationship:
+   STEP 2:
+       Animal must satisfy:
 
-       animal.assetCode
-              ===
-       currentFarmCode
+           gender === female
 
-   Female rule:
+       OR
 
-       code > 0
-       code % 2 === 0
+           code > 0 AND code is even
 ========================================================== */
 
 const eligibleAnimals =
     animals.filter(function (animal) {
 
-        /* ----------------------------------------------
-           Invalid record
-        ---------------------------------------------- */
+        /* ==================================================
+           INVALID RECORD
+        ================================================== */
 
         if (
             !animal ||
@@ -187,13 +170,20 @@ const eligibleAnimals =
         }
 
 
-        /* ----------------------------------------------
-           Must be an animal
-        ---------------------------------------------- */
+        /* ==================================================
+           RECORD TYPE
+           --------------------------------------------------
+           If recordType exists, it must be "animal".
+
+           Records without recordType are tolerated for
+           backwards compatibility.
+        ================================================== */
 
         if (
             animal.recordType &&
-            animal.recordType !== "animal"
+            String(
+                animal.recordType
+            ).toLowerCase() !== "animal"
         ) {
 
             return false;
@@ -201,9 +191,9 @@ const eligibleAnimals =
         }
 
 
-        /* ----------------------------------------------
-           A valid parent farm is required
-        ---------------------------------------------- */
+        /* ==================================================
+           CURRENT FARM MUST EXIST
+        ================================================== */
 
         if (
             currentFarmCode === null
@@ -214,9 +204,9 @@ const eligibleAnimals =
         }
 
 
-        /* ----------------------------------------------
-           Animal must belong to CURRENT FARM
-        ---------------------------------------------- */
+        /* ==================================================
+           ANIMAL MUST HAVE ASSET CODE
+        ================================================== */
 
         if (
             animal.assetCode === null ||
@@ -227,6 +217,10 @@ const eligibleAnimals =
 
         }
 
+
+        /* ==================================================
+           ANIMAL FARM CODE
+        ================================================== */
 
         const animalFarmCode =
             Number(
@@ -245,6 +239,15 @@ const eligibleAnimals =
         }
 
 
+        /* ==================================================
+           FARM OWNERSHIP
+           --------------------------------------------------
+           THIS CHECK HAPPENS BEFORE THE FEMALE/EVEN RULE.
+
+           This prevents female animals from other farms
+           from appearing.
+        ================================================== */
+
         if (
             animalFarmCode !== currentFarmCode
         ) {
@@ -254,9 +257,21 @@ const eligibleAnimals =
         }
 
 
-        /* ----------------------------------------------
-           Animal code
-        ---------------------------------------------- */
+        /* ==================================================
+           NORMALIZE GENDER
+        ================================================== */
+
+        const animalGender =
+            String(
+                animal.gender || ""
+            )
+            .trim()
+            .toLowerCase();
+
+
+        /* ==================================================
+           ANIMAL CODE
+        ================================================== */
 
         const animalCode =
             Number(
@@ -264,23 +279,45 @@ const eligibleAnimals =
             );
 
 
-        /* ----------------------------------------------
-           Female:
+        /* ==================================================
+           FEMALE RULE
+           --------------------------------------------------
+           gender === female
+        ================================================== */
 
-               positive
-               even
-        ---------------------------------------------- */
+        const isFemale =
+            animalGender === "female";
 
-        return (
 
+        /* ==================================================
+           EVEN CODE RULE
+           --------------------------------------------------
+           code > 0
+           AND
+           code is even
+        ================================================== */
+
+        const hasPositiveEvenCode =
             Number.isInteger(
                 animalCode
             ) &&
-
             animalCode > 0 &&
+            animalCode % 2 === 0;
 
-            animalCode % 2 === 0
 
+        /* ==================================================
+           FINAL ELIGIBILITY
+           --------------------------------------------------
+           FEMALE
+
+           OR
+
+           POSITIVE EVEN CODE
+        ================================================== */
+
+        return (
+            isFemale ||
+            hasPositiveEvenCode
         );
 
     });
@@ -348,8 +385,8 @@ function booleanLabel(field) {
         <div class="update-boolean-description">
 
             Tap the first card to choose a Boolean field,
-            then toggle it directly on any eligible female
-            animal belonging to this Dairy Farm.
+            then toggle it directly on eligible animals
+            belonging to this Dairy Farm.
 
         </div>
 
@@ -376,7 +413,6 @@ function booleanLabel(field) {
             class="update-boolean-card update-boolean-selector-card"
             role="listitem"
         >
-
 
             <button
                 type="button"
@@ -416,9 +452,8 @@ function booleanLabel(field) {
             </button>
 
 
-
             <!-- ==============================================
-                 DROPDOWN
+                 BOOLEAN FIELD DROPDOWN
             =============================================== -->
 
             <div
@@ -484,19 +519,7 @@ function booleanLabel(field) {
 
 
         <!-- ==================================================
-             ELIGIBLE FEMALE ANIMALS
-             --------------------------------------------------
-             IMPORTANT:
-
-                 eligibleAnimals
-
-             has already been filtered by:
-
-                 animal.assetCode === currentFarmCode
-
-             AND:
-
-                 positive even animal code
+             ELIGIBLE ANIMALS
         =================================================== -->
 
         <% eligibleAnimals.forEach(function(animal) { %>
@@ -525,7 +548,7 @@ function booleanLabel(field) {
 
 
                 /* ============================================
-                   ANIMAL FARM CODE
+                   FARM CODE
                 ============================================ */
 
                 const animalFarmCode =
@@ -568,7 +591,10 @@ function booleanLabel(field) {
             =============================================== -->
 
             <article
-                class="update-boolean-card update-boolean-animal-card"
+                class="
+                    update-boolean-card
+                    update-boolean-animal-card
+                "
                 role="listitem"
                 data-animal-id="<%= animal._id %>"
                 data-farm-code="<%= animalFarmCode %>"
@@ -666,7 +692,6 @@ function booleanLabel(field) {
 
                     <div class="update-boolean-controls">
 
-
                         <% if (fields.length > 0) { %>
 
                             <% fields.forEach(function(field) { %>
@@ -680,10 +705,12 @@ function booleanLabel(field) {
 
                                 %>
 
-
                                 <button
                                     type="button"
-                                    class="update-boolean-toggle <%= fieldValue ? "is-on" : "" %>"
+                                    class="
+                                        update-boolean-toggle
+                                        <%= fieldValue ? "is-on" : "" %>
+                                    "
                                     data-animal-id="<%= animal._id %>"
                                     data-boolean-field="<%= field %>"
                                     data-boolean-value="<%= fieldValue %>"
@@ -692,7 +719,9 @@ function booleanLabel(field) {
                                 >
 
                                     <span
-                                        class="update-boolean-toggle-label"
+                                        class="
+                                            update-boolean-toggle-label
+                                        "
                                     >
 
                                         <%= booleanLabel(field) %>
@@ -701,12 +730,16 @@ function booleanLabel(field) {
 
 
                                     <span
-                                        class="update-boolean-toggle-switch"
+                                        class="
+                                            update-boolean-toggle-switch
+                                        "
                                         aria-hidden="true"
                                     >
 
                                         <span
-                                            class="update-boolean-toggle-knob"
+                                            class="
+                                                update-boolean-toggle-knob
+                                            "
                                         ></span>
 
                                     </span>
@@ -724,7 +757,6 @@ function booleanLabel(field) {
                             </div>
 
                         <% } %>
-
 
                     </div>
 
@@ -747,7 +779,7 @@ function booleanLabel(field) {
 
 
         <!-- ==================================================
-             NO ELIGIBLE FEMALE ANIMALS
+             NO ELIGIBLE ANIMALS
         =================================================== -->
 
         <% if (eligibleAnimals.length === 0) { %>
@@ -767,8 +799,9 @@ function booleanLabel(field) {
 
 
                 <span>
-                    This Dairy Farm has no active female
-                    animals available for Boolean management.
+                    No female animals or positive-even-code
+                    animals belonging to this Dairy Farm
+                    are currently available.
                 </span>
 
             </div>
@@ -823,16 +856,19 @@ function booleanLabel(field) {
 
 .update-boolean-heading {
 
-    display: flex;
+    display:
+        flex;
 
-    flex-direction: column;
+    flex-direction:
+        column;
 
 }
 
 
 .update-boolean-kicker {
 
-    margin-bottom: 3px;
+    margin-bottom:
+        3px;
 
     color:
         #b96a27;
@@ -2183,7 +2219,7 @@ function booleanLabel(field) {
 
 
     /* ======================================================
-       DROPDOWN
+       DROPDOWN TOGGLE
     ======================================================= */
 
     if (
@@ -2391,12 +2427,10 @@ function booleanLabel(field) {
                                 );
 
 
-                            button
-                                .classList
-                                .toggle(
-                                    "is-on",
-                                    newValue
-                                );
+                            button.classList.toggle(
+                                "is-on",
+                                newValue
+                            );
 
 
                             button.setAttribute(
@@ -2443,7 +2477,7 @@ function booleanLabel(field) {
 
 
     /* ======================================================
-       CLOSE DROPDOWN WHEN CLICKING OUTSIDE
+       CLOSE DROPDOWN OUTSIDE
     ======================================================= */
 
     document.addEventListener(
