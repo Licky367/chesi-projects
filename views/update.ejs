@@ -431,36 +431,6 @@
             user: user
         }
     ) %>
-    <!-- =================================================
-         MARK MEDICAL
-    ================================================== -->
-
-    <%- include(
-        "update/composers/medic",
-        {
-            medicalDairies: medicalDairies,
-            dairy: dairy,
-            user: user,
-            assetDairies: assetDairies || []
-        }
-    ) %>
-
-
-    <!-- =================================================
-         CLEAR MEDICAL
-    ================================================== -->
-
-    <%- include(
-        "update/composers/!medic",
-        {
-            medicalAnimals: medicalAnimals,
-            dairy: dairy,
-            user: user,
-            assetDairies: assetDairies || []
-        }
-    ) %>
-
-
 
     <!-- =================================================
          ANIMAL FEED ITEM LINKS
