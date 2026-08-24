@@ -1,6 +1,24 @@
+"views/milk/milksales.ejs"
+
 <!-- =========================================================
      MILK SALES
      FILE: views/milk/milksales.ejs
+
+     PURPOSE:
+         Daily milk production, available milk and sales.
+
+     DESIGN:
+         Modern green + warm orange agricultural theme.
+
+     FUNCTIONALITY:
+         - Admin can update milk price.
+         - Displays visible farm production.
+         - Calculates milk already sold per farm.
+         - Calculates available milk.
+         - Allows sales across multiple farms.
+         - Prevents duplicate farm allocations.
+         - Prevents allocation above available milk.
+         - Requires allocation to exactly equal requested liters.
 ========================================================= -->
 
 <%
@@ -58,25 +76,12 @@
         Number.isFinite(
             Number(pageSummary?.price)
         )
-
             ? Number(pageSummary.price)
-
             : 50;
 
 
     // ========================================================
     // VISIBLE FARMS
-    //
-    // IMPORTANT:
-    //
-    // Service decides which farms are passed here.
-    //
-    // Admin:
-    //     All farms
-    //
-    // dairyWorker:
-    //     Assigned farms only
-    //
     // ========================================================
 
     const pageFarms =
@@ -89,9 +94,7 @@
         Array.isArray(
             pageSummary?.farmProduction
         )
-
             ? pageSummary.farmProduction
-
             : [];
 
 
@@ -99,17 +102,12 @@
         Array.isArray(
             pageSummary?.sales
         )
-
             ? pageSummary.sales
-
             : [];
 
 
     // ========================================================
     // FARM SALES MAP
-    //
-    // Calculates total liters already deducted from each farm.
-    //
     // ========================================================
 
     const farmSalesMap =
@@ -125,9 +123,7 @@
                     sale.farmAllocations
                 )
             ) {
-
                 return;
-
             }
 
 
@@ -138,9 +134,7 @@
                         !allocation ||
                         !allocation.farm
                     ) {
-
                         return;
-
                     }
 
 
@@ -158,9 +152,7 @@
                         !Number.isFinite(liters) ||
                         liters < 0
                     ) {
-
                         return;
-
                     }
 
 
@@ -169,13 +161,10 @@
                         farmId,
 
                         (
-                            farmSalesMap.get(farmId) ||
-                            0
-                        )
-
-                        +
-
-                        liters
+                            farmSalesMap.get(
+                                farmId
+                            ) || 0
+                        ) + liters
 
                     );
 
@@ -215,17 +204,17 @@
                             productionEntry?.liters
                         )
                     )
-
                         ? Number(
                             productionEntry.liters
                         )
-
                         : 0;
 
 
                 const sold =
                     Number(
-                        farmSalesMap.get(farmId)
+                        farmSalesMap.get(
+                            farmId
+                        )
                     ) || 0;
 
 
@@ -307,28 +296,83 @@
 
     <header class="page-header">
 
-        <h1>
-            Milk Sales
-        </h1>
+        <div class="header-content">
 
-        <p>
-            Farm milk production and sales for
-            <%= pageDay %>
-        </p>
+            <span class="header-kicker">
+                DAILY MILK MANAGEMENT
+            </span>
+
+            <h1>
+                Milk Sales
+            </h1>
+
+            <p>
+                Manage today's farm production,
+                available milk and customer sales.
+            </p>
+
+        </div>
+
+        <div class="header-date">
+
+            <span>
+                Sales Day
+            </span>
+
+            <strong>
+                <%= pageDay %>
+            </strong>
+
+        </div>
 
     </header>
 
 
 
     <!-- =====================================================
-         SUCCESS
+         MESSAGES
     ====================================================== -->
 
     <% if (pageSuccess) { %>
 
         <div class="message success">
 
-            <%= pageSuccess %>
+            <span class="message-icon">
+                ✓
+            </span>
+
+            <div>
+                <strong>
+                    Sale Updated
+                </strong>
+
+                <p>
+                    <%= pageSuccess %>
+                </p>
+            </div>
+
+        </div>
+
+    <% } %>
+
+
+    <% if (pageError) { %>
+
+        <div class="message error">
+
+            <span class="message-icon">
+                !
+            </span>
+
+            <div>
+                <strong>
+                    Something went wrong
+                </strong>
+
+                <p>
+                    <%= pageError %>
+                </p>
+            </div>
 
         </div>
 
@@ -337,18 +381,76 @@
 
 
     <!-- =====================================================
-         ERROR
+         QUICK SUMMARY
     ====================================================== -->
 
-    <% if (pageError) { %>
+    <section class="overview-grid">
 
-        <div class="message error">
+        <div class="overview-card">
 
-            <%= pageError %>
+            <div class="overview-icon green">
+                🥛
+            </div>
+
+            <div>
+
+                <span>
+                    Total Production
+                </span>
+
+                <strong>
+                    <%= totalProduction.toFixed(2) %>
+                    <small>L</small>
+                </strong>
+
+            </div>
 
         </div>
 
-    <% } %>
+
+        <div class="overview-card">
+
+            <div class="overview-icon orange">
+                ◉
+            </div>
+
+            <div>
+
+                <span>
+                    Available for Sale
+                </span>
+
+                <strong>
+                    <%= totalAvailable.toFixed(2) %>
+                    <small>L</small>
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="overview-card">
+
+            <div class="overview-icon green">
+                KSh
+            </div>
+
+            <div>
+
+                <span>
+                    Price Per Liter
+                </span>
+
+                <strong>
+                    <%= pagePrice.toFixed(2) %>
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
 
 
 
@@ -358,11 +460,32 @@
 
     <% if (pageIsAdmin) { %>
 
-        <section class="milk-card">
+        <section class="milk-card price-card">
 
-            <h2>
-                Milk Price
-            </h2>
+            <div class="section-heading">
+
+                <div>
+
+                    <span class="section-label">
+                        ADMINISTRATION
+                    </span>
+
+                    <h2>
+                        Milk Price
+                    </h2>
+
+                    <p>
+                        Set the selling price used for today's
+                        milk transactions.
+                    </p>
+
+                </div>
+
+                <div class="section-icon orange">
+                    KSh
+                </div>
+
+            </div>
 
 
             <form
@@ -381,22 +504,27 @@
                 <div class="form-group">
 
                     <label for="price">
-
                         Price Per Liter
-
                     </label>
 
+                    <div class="input-prefix">
 
-                    <input
-                        type="number"
-                        id="price"
-                        name="price"
-                        class="form-control"
-                        min="0"
-                        step="0.01"
-                        value="<%= pagePrice %>"
-                        required
-                    >
+                        <span>
+                            KSh
+                        </span>
+
+                        <input
+                            type="number"
+                            id="price"
+                            name="price"
+                            class="form-control"
+                            min="0"
+                            step="0.01"
+                            value="<%= pagePrice %>"
+                            required
+                        >
+
+                    </div>
 
                 </div>
 
@@ -405,9 +533,7 @@
                     type="submit"
                     class="milk-button"
                 >
-
                     Update Price
-
                 </button>
 
             </form>
@@ -419,23 +545,53 @@
 
 
     <!-- =====================================================
-         FARM PRODUCTION TABLE
+         FARM PRODUCTION
     ====================================================== -->
 
     <section class="milk-card">
 
-        <h2>
-            Farm Production
-        </h2>
+        <div class="section-heading">
+
+            <div>
+
+                <span class="section-label">
+                    PRODUCTION
+                </span>
+
+                <h2>
+                    Farm Production
+                </h2>
+
+                <p>
+                    Milk produced by each visible farm today.
+                </p>
+
+            </div>
+
+            <div class="section-icon green">
+                🥛
+            </div>
+
+        </div>
 
 
         <% if (visibleFarmData.length === 0) { %>
 
-            <p class="empty-state">
+            <div class="empty-state">
 
-                No farm production is available.
+                <div class="empty-icon">
+                    🥛
+                </div>
 
-            </p>
+                <strong>
+                    No farm production
+                </strong>
+
+                <p>
+                    No farm production is available for this day.
+                </p>
+
+            </div>
 
         <% } else { %>
 
@@ -452,7 +608,7 @@
                             </th>
 
                             <th>
-                                Farm Production
+                                Production
                             </th>
 
                         </tr>
@@ -468,14 +624,25 @@
 
                                 <td>
 
-                                    <%= farm.name %>
+                                    <div class="farm-name">
+
+                                        <span class="farm-dot"></span>
+
+                                        <strong>
+                                            <%= farm.name %>
+                                        </strong>
+
+                                    </div>
 
                                 </td>
 
 
                                 <td>
 
-                                    <%= farm.produced.toFixed(2) %> L
+                                    <span class="liter-value">
+                                        <%= farm.produced.toFixed(2) %>
+                                        L
+                                    </span>
 
                                 </td>
 
@@ -487,11 +654,20 @@
                         <tr class="total-row">
 
                             <td>
-                                Total
+
+                                <strong>
+                                    Total Production
+                                </strong>
+
                             </td>
 
                             <td>
-                                <%= totalProduction.toFixed(2) %> L
+
+                                <strong>
+                                    <%= totalProduction.toFixed(2) %>
+                                    L
+                                </strong>
+
                             </td>
 
                         </tr>
@@ -512,22 +688,54 @@
          SELL MILK
     ====================================================== -->
 
-    <section class="milk-card">
+    <section class="milk-card sale-card">
 
-        <h2>
-            Sell Milk
-        </h2>
+        <div class="section-heading">
+
+            <div>
+
+                <span class="section-label">
+                    TRANSACTION
+                </span>
+
+                <h2>
+                    Sell Milk
+                </h2>
+
+                <p>
+                    Record a customer sale and allocate the milk
+                    to the supplying farm or farms.
+                </p>
+
+            </div>
+
+            <div class="section-icon orange">
+                +
+            </div>
+
+        </div>
 
 
         <% if (visibleFarmData.length === 0) { %>
 
-            <p class="empty-state">
+            <div class="empty-state">
 
-                No milk-producing farms are available for sale.
+                <div class="empty-icon">
+                    🥛
+                </div>
 
-            </p>
+                <strong>
+                    No milk available
+                </strong>
+
+                <p>
+                    No milk-producing farms are available for sale.
+                </p>
+
+            </div>
 
         <% } else { %>
+
 
             <form
                 action="/milk/sales/sell"
@@ -546,71 +754,105 @@
                      CUSTOMER DETAILS
                 ========================================== -->
 
-                <div class="sales-grid">
+                <div class="subsection">
 
+                    <div class="subsection-heading">
 
-                    <div class="form-group">
+                        <span class="step-number">
+                            01
+                        </span>
 
-                        <label for="customerName">
+                        <div>
 
-                            Customer Name
+                            <h3>
+                                Customer Details
+                            </h3>
 
-                        </label>
+                            <p>
+                                Enter the customer's information
+                                and required quantity.
+                            </p>
 
-
-                        <input
-                            type="text"
-                            id="customerName"
-                            name="customerName"
-                            class="form-control"
-                            required
-                        >
-
-                    </div>
-
-
-
-                    <div class="form-group">
-
-                        <label for="saleLiters">
-
-                            Milk Required (L)
-
-                        </label>
-
-
-                        <input
-                            type="number"
-                            id="saleLiters"
-                            name="liters"
-                            class="form-control"
-                            min="0.01"
-                            step="0.01"
-                            required
-                        >
+                        </div>
 
                     </div>
 
 
-
-                    <div class="form-group">
-
-                        <label>
-
-                            Price Per Liter
-
-                        </label>
+                    <div class="sales-grid">
 
 
-                        <input
-                            type="text"
-                            class="form-control"
-                            value="<%= pagePrice.toFixed(2) %>"
-                            readonly
-                        >
+                        <div class="form-group">
+
+                            <label for="customerName">
+                                Customer Name
+                            </label>
+
+                            <input
+                                type="text"
+                                id="customerName"
+                                name="customerName"
+                                class="form-control"
+                                placeholder="Enter customer name"
+                                autocomplete="name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="saleLiters">
+                                Milk Required
+                            </label>
+
+                            <div class="input-suffix">
+
+                                <input
+                                    type="number"
+                                    id="saleLiters"
+                                    name="liters"
+                                    class="form-control"
+                                    min="0.01"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    required
+                                >
+
+                                <span>
+                                    L
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>
+                                Price Per Liter
+                            </label>
+
+                            <div class="input-prefix">
+
+                                <span>
+                                    KSh
+                                </span>
+
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    value="<%= pagePrice.toFixed(2) %>"
+                                    readonly
+                                >
+
+                            </div>
+
+                        </div>
+
 
                     </div>
-
 
                 </div>
 
@@ -620,9 +862,13 @@
                      FARM ALLOCATION
                 ========================================== -->
 
-                <div class="allocation-section">
+                <div class="subsection allocation-subsection">
 
-                    <div class="allocation-heading">
+                    <div class="subsection-heading">
+
+                        <span class="step-number orange-step">
+                            02
+                        </span>
 
                         <div>
 
@@ -631,31 +877,35 @@
                             </h3>
 
                             <p>
-                                Select the farm or farms supplying
-                                this milk.
+                                Select which farm or farms are
+                                supplying this customer's milk.
                             </p>
 
                         </div>
 
+                    </div>
 
-                        <strong>
 
-                            Available:
-                            <span id="totalAvailable">
+                    <div class="allocation-topbar">
+
+                        <div>
+
+                            <span>
+                                Total milk available
+                            </span>
+
+                            <strong id="totalAvailable">
 
                                 <%= totalAvailable.toFixed(2) %> L
 
-                            </span>
+                            </strong>
 
-                        </strong>
+                        </div>
 
                     </div>
 
 
-
-                    <div
-                        id="allocationContainer"
-                    >
+                    <div id="allocationContainer">
 
                         <div class="allocation-row">
 
@@ -665,7 +915,6 @@
                                     Farm
                                 </label>
 
-
                                 <select
                                     name="allocations[0][farm]"
                                     class="form-control farm-select"
@@ -673,7 +922,7 @@
                                 >
 
                                     <option value="">
-                                        Select Farm
+                                        Select supplying farm
                                     </option>
 
 
@@ -686,7 +935,8 @@
 
                                             <%= farm.name %>
                                             —
-                                            <%= farm.available.toFixed(2) %> L Available
+                                            <%= farm.available.toFixed(2) %>
+                                            L available
 
                                         </option>
 
@@ -697,22 +947,29 @@
                             </div>
 
 
-
                             <div class="form-group">
 
                                 <label>
                                     Liters
                                 </label>
 
+                                <div class="input-suffix">
 
-                                <input
-                                    type="number"
-                                    name="allocations[0][liters]"
-                                    class="form-control allocation-liters"
-                                    min="0.01"
-                                    step="0.01"
-                                    required
-                                >
+                                    <input
+                                        type="number"
+                                        name="allocations[0][liters]"
+                                        class="form-control allocation-liters"
+                                        min="0.01"
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        required
+                                    >
+
+                                    <span>
+                                        L
+                                    </span>
+
+                                </div>
 
                             </div>
 
@@ -721,12 +978,15 @@
                     </div>
 
 
-
                     <button
                         type="button"
                         class="milk-button secondary-button"
                         id="addFarmButton"
                     >
+
+                        <span class="plus-symbol">
+                            +
+                        </span>
 
                         Add Another Farm
 
@@ -742,46 +1002,45 @@
 
                 <div class="sale-summary">
 
-                    <div>
+                    <div class="summary-item">
 
                         <span>
                             Customer Requires
                         </span>
 
-                        <strong
-                            id="requiredLiters"
-                        >
+                        <strong id="requiredLiters">
                             0.00 L
                         </strong>
 
                     </div>
 
 
-                    <div>
+                    <div class="summary-item">
 
                         <span>
                             Allocated
                         </span>
 
-                        <strong
-                            id="allocatedLiters"
-                        >
+                        <strong id="allocatedLiters">
                             0.00 L
                         </strong>
 
                     </div>
 
 
-                    <div class="cash-row">
+                    <div class="summary-item cash-row">
 
                         <span>
-                            Cash
+                            Total Cash
                         </span>
 
-                        <strong
-                            id="saleCash"
-                        >
-                            0.00
+                        <strong>
+
+                            KSh
+                            <span id="saleCash">
+                                0.00
+                            </span>
+
                         </strong>
 
                     </div>
@@ -790,18 +1049,27 @@
 
 
 
+                <!-- =========================================
+                     FORM ACTION
+                ========================================== -->
+
                 <div class="form-action">
 
                     <button
                         type="submit"
-                        class="milk-button"
+                        class="milk-button complete-button"
                     >
 
                         Complete Sale
 
+                        <span>
+                            →
+                        </span>
+
                     </button>
 
                 </div>
+
 
             </form>
 
@@ -819,7 +1087,6 @@
 document.addEventListener(
     "DOMContentLoaded",
     function() {
-
 
         const form =
             document.getElementById(
@@ -930,6 +1197,46 @@ document.addEventListener(
                     price
                 ).toFixed(2);
 
+
+            updateAllocationState(
+                required,
+                allocated
+            );
+
+        }
+
+
+        // ==================================================
+        // ALLOCATION STATE
+        // ==================================================
+
+        function updateAllocationState(
+            required,
+            allocated
+        ) {
+
+            const difference =
+                required -
+                allocated;
+
+
+            if (
+                required > 0 &&
+                Math.abs(difference) < 0.001
+            ) {
+
+                allocatedOutput.classList.add(
+                    "summary-complete"
+                );
+
+            } else {
+
+                allocatedOutput.classList.remove(
+                    "summary-complete"
+                );
+
+            }
+
         }
 
 
@@ -972,6 +1279,18 @@ document.addEventListener(
                     input.max =
                         available;
 
+
+                    input.placeholder =
+                        available > 0
+                            ? "Max " +
+                              available.toFixed(2)
+                            : "0.00";
+
+
+                    updateFarmOptions();
+
+                    updateSummary();
+
                 }
             );
 
@@ -983,6 +1302,74 @@ document.addEventListener(
 
         }
 
+
+        // ==================================================
+        // PREVENT SAME FARM FROM BEING SELECTED
+        // ==================================================
+
+        function updateFarmOptions() {
+
+            const selectedValues =
+                Array.from(
+                    container.querySelectorAll(
+                        ".farm-select"
+                    )
+                )
+                .map(
+                    select =>
+                        select.value
+                )
+                .filter(
+                    value =>
+                        value
+                );
+
+
+            container
+                .querySelectorAll(
+                    ".farm-select"
+                )
+                .forEach(
+                    currentSelect => {
+
+                        const currentValue =
+                            currentSelect.value;
+
+
+                        Array.from(
+                            currentSelect.options
+                        )
+                        .forEach(
+                            option => {
+
+                                if (
+                                    !option.value
+                                ) {
+
+                                    return;
+
+                                }
+
+
+                                option.disabled =
+                                    selectedValues.includes(
+                                        option.value
+                                    ) &&
+                                    option.value !==
+                                        currentValue;
+
+                            }
+                        );
+
+                    }
+                );
+
+        }
+
+
+        // ==================================================
+        // INITIAL BINDING
+        // ==================================================
 
         container
             .querySelectorAll(
@@ -1006,7 +1393,6 @@ document.addEventListener(
         addButton.addEventListener(
             "click",
             function() {
-
 
                 const rows =
                     container.querySelectorAll(
@@ -1063,6 +1449,10 @@ document.addEventListener(
                     "";
 
 
+                input.placeholder =
+                    "0.00";
+
+
                 input.removeAttribute(
                     "max"
                 );
@@ -1078,6 +1468,8 @@ document.addEventListener(
                 );
 
 
+                updateFarmOptions();
+
                 updateSummary();
 
             }
@@ -1092,11 +1484,27 @@ document.addEventListener(
             "submit",
             function(event) {
 
-
                 const required =
                     Number(
                         saleLitersInput.value
                     ) || 0;
+
+
+                if (
+                    required <= 0
+                ) {
+
+                    event.preventDefault();
+
+                    alert(
+                        "Enter the amount of milk required."
+                    );
+
+                    saleLitersInput.focus();
+
+                    return;
+
+                }
 
 
                 let allocated =
@@ -1220,11 +1628,19 @@ document.addEventListener(
                         "The total allocated milk must exactly equal the customer's required milk."
                     );
 
+                    return;
+
                 }
 
             }
         );
 
+
+        // ==================================================
+        // INITIAL STATE
+        // ==================================================
+
+        updateFarmOptions();
 
         updateSummary();
 
@@ -1232,3 +1648,1896 @@ document.addEventListener(
 );
 
 </script>
+
+"public/css/milk/milksales.css"
+
+/* =========================================================
+   MILK SALES
+   FILE: public/css/milk/milksales.css
+
+   MODERN GREEN + WARM ORANGE THEME
+========================================================= */
+
+
+/* =========================================================
+   VARIABLES
+========================================================= */
+
+:root {
+
+    --milk-green-950: #153b29;
+    --milk-green-900: #1b4b34;
+    --milk-green-800: #276342;
+    --milk-green-700: #347b50;
+    --milk-green-600: #459664;
+
+    --milk-green-100: #e7f2eb;
+    --milk-green-50: #f3f8f4;
+
+    --milk-orange-800: #ad541b;
+    --milk-orange-700: #c76522;
+    --milk-orange-600: #df7629;
+    --milk-orange-500: #ed8b3d;
+
+    --milk-orange-100: #fff0e2;
+    --milk-orange-50: #fff8f1;
+
+    --milk-text: #203229;
+    --milk-muted: #738078;
+
+    --milk-white: #ffffff;
+    --milk-page: #f7f9f7;
+
+    --milk-border: #e2e9e4;
+
+    --milk-success: #28754b;
+    --milk-success-bg: #eaf7ef;
+
+    --milk-danger: #b94040;
+    --milk-danger-bg: #fff0f0;
+
+    --milk-shadow:
+        0 10px 30px
+        rgba(24, 59, 41, .07);
+
+    --milk-shadow-hover:
+        0 16px 40px
+        rgba(24, 59, 41, .10);
+
+    --milk-radius: 20px;
+}
+
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+.milk-sales-page {
+
+    width:
+        min(
+            1100px,
+            calc(100% - 30px)
+        );
+
+    margin:
+        0 auto;
+
+    padding:
+        28px
+        0
+        60px;
+
+    color:
+        var(--milk-text);
+
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.milk-sales-page .page-header {
+
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 25px;
+
+    min-height: 145px;
+
+    box-sizing: border-box;
+
+    margin-bottom: 22px;
+
+    padding:
+        28px
+        30px;
+
+    overflow: hidden;
+
+    border-radius: 25px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--milk-green-950),
+            var(--milk-green-800)
+        );
+
+    box-shadow:
+        0 18px 40px
+        rgba(21,59,41,.18);
+}
+
+
+.milk-sales-page .page-header::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 250px;
+    height: 250px;
+
+    right: -90px;
+    top: -125px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(237,139,61,.18);
+}
+
+
+.milk-sales-page .page-header::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 130px;
+    height: 130px;
+
+    right: 100px;
+    bottom: -85px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.04);
+}
+
+
+.milk-sales-page .header-content,
+.milk-sales-page .header-date {
+
+    position: relative;
+
+    z-index: 2;
+}
+
+
+.milk-sales-page .header-kicker {
+
+    display: block;
+
+    margin-bottom: 5px;
+
+    color:
+        rgba(255,255,255,.55);
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.3px;
+}
+
+
+.milk-sales-page .page-header h1 {
+
+    margin: 0;
+
+    color: #fff;
+
+    font-size:
+        clamp(
+            29px,
+            5vw,
+            40px
+        );
+
+    line-height: 1.05;
+
+    font-weight: 850;
+
+    letter-spacing: -1.2px;
+}
+
+
+.milk-sales-page .page-header p {
+
+    margin:
+        8px
+        0
+        0;
+
+    color:
+        rgba(255,255,255,.72);
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+.milk-sales-page .header-date {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-end;
+
+    gap: 5px;
+
+    min-width: 120px;
+}
+
+
+.milk-sales-page .header-date span {
+
+    color:
+        rgba(255,255,255,.55);
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: .8px;
+}
+
+
+.milk-sales-page .header-date strong {
+
+    padding:
+        9px
+        12px;
+
+    border:
+        1px solid
+        rgba(255,255,255,.13);
+
+    border-radius: 10px;
+
+    color: #fff;
+
+    background:
+        rgba(255,255,255,.08);
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   OVERVIEW
+========================================================= */
+
+.milk-sales-page .overview-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 15px;
+
+    margin-bottom: 22px;
+}
+
+
+.milk-sales-page .overview-card {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding:
+        17px;
+
+    background:
+        var(--milk-white);
+
+    border:
+        1px solid
+        var(--milk-border);
+
+    border-radius: 17px;
+
+    box-shadow:
+        var(--milk-shadow);
+}
+
+
+.milk-sales-page .overview-icon {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 45px;
+    height: 45px;
+
+    border-radius: 13px;
+
+    font-size: 17px;
+
+    font-weight: 850;
+}
+
+
+.milk-sales-page .overview-icon.green {
+
+    color:
+        var(--milk-green-800);
+
+    background:
+        var(--milk-green-100);
+}
+
+
+.milk-sales-page .overview-icon.orange {
+
+    color:
+        var(--milk-orange-700);
+
+    background:
+        var(--milk-orange-100);
+}
+
+
+.milk-sales-page .overview-card span {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    color:
+        var(--milk-muted);
+
+    font-size: 10px;
+
+    font-weight: 750;
+
+    text-transform: uppercase;
+
+    letter-spacing: .45px;
+}
+
+
+.milk-sales-page .overview-card strong {
+
+    color:
+        var(--milk-green-950);
+
+    font-size: 20px;
+
+    font-weight: 850;
+}
+
+
+.milk-sales-page .overview-card small {
+
+    color:
+        var(--milk-muted);
+
+    font-size: 11px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.milk-sales-page .message {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+    margin-bottom: 18px;
+
+    padding:
+        14px
+        16px;
+
+    border:
+        1px solid
+        transparent;
+
+    border-radius: 14px;
+}
+
+
+.milk-sales-page .message.success {
+
+    color:
+        var(--milk-success);
+
+    background:
+        var(--milk-success-bg);
+
+    border-color:
+        rgba(40,117,75,.14);
+}
+
+
+.milk-sales-page .message.error {
+
+    color:
+        var(--milk-danger);
+
+    background:
+        var(--milk-danger-bg);
+
+    border-color:
+        rgba(185,64,64,.14);
+}
+
+
+.milk-sales-page .message-icon {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 27px;
+    height: 27px;
+
+    border-radius: 50%;
+
+    color: #fff;
+
+    background:
+        currentColor;
+
+    font-size: 13px;
+
+    font-weight: 900;
+}
+
+
+.milk-sales-page .message.success .message-icon {
+
+    color:
+        var(--milk-success);
+}
+
+
+.milk-sales-page .message.error .message-icon {
+
+    color:
+        var(--milk-danger);
+}
+
+
+.milk-sales-page .message strong {
+
+    display: block;
+
+    margin-bottom: 2px;
+
+    font-size: 13px;
+}
+
+
+.milk-sales-page .message p {
+
+    margin: 0;
+
+    color: inherit;
+
+    opacity: .82;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.milk-sales-page .milk-card {
+
+    margin-bottom: 22px;
+
+    padding:
+        25px;
+
+    background:
+        var(--milk-white);
+
+    border:
+        1px solid
+        var(--milk-border);
+
+    border-radius:
+        var(--milk-radius);
+
+    box-shadow:
+        var(--milk-shadow);
+
+    transition:
+        box-shadow .2s ease;
+}
+
+
+.milk-sales-page .milk-card:hover {
+
+    box-shadow:
+        var(--milk-shadow-hover);
+}
+
+
+/* =========================================================
+   SECTION HEADING
+========================================================= */
+
+.milk-sales-page .section-heading {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 18px;
+
+    margin-bottom: 22px;
+}
+
+
+.milk-sales-page .section-label {
+
+    display: block;
+
+    margin-bottom: 5px;
+
+    color:
+        var(--milk-orange-700);
+
+    font-size: 9px;
+
+    font-weight: 850;
+
+    letter-spacing: 1px;
+}
+
+
+.milk-sales-page .section-heading h2 {
+
+    margin: 0;
+
+    color:
+        var(--milk-green-950);
+
+    font-size: 20px;
+
+    font-weight: 850;
+
+    letter-spacing: -.4px;
+}
+
+
+.milk-sales-page .section-heading p {
+
+    margin:
+        5px
+        0
+        0;
+
+    color:
+        var(--milk-muted);
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+
+.milk-sales-page .section-icon {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 43px;
+    height: 43px;
+
+    border-radius: 12px;
+
+    font-size: 14px;
+
+    font-weight: 850;
+}
+
+
+.milk-sales-page .section-icon.green {
+
+    color:
+        var(--milk-green-800);
+
+    background:
+        var(--milk-green-100);
+}
+
+
+.milk-sales-page .section-icon.orange {
+
+    color:
+        var(--milk-orange-700);
+
+    background:
+        var(--milk-orange-100);
+}
+
+
+/* =========================================================
+   FORMS
+========================================================= */
+
+.milk-sales-page .form-group {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+
+.milk-sales-page label {
+
+    color:
+        var(--milk-green-950);
+
+    font-size: 12px;
+
+    font-weight: 750;
+}
+
+
+.milk-sales-page .form-control {
+
+    width: 100%;
+
+    min-height: 46px;
+
+    box-sizing: border-box;
+
+    padding:
+        11px
+        13px;
+
+    color:
+        var(--milk-text);
+
+    background:
+        #fcfdfc;
+
+    border:
+        1px solid
+        var(--milk-border);
+
+    border-radius: 11px;
+
+    outline: none;
+
+    font-family: inherit;
+
+    font-size: 13px;
+
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        background .2s ease;
+}
+
+
+.milk-sales-page .form-control:hover {
+
+    border-color:
+        #c9d7cf;
+}
+
+
+.milk-sales-page .form-control:focus {
+
+    background: #fff;
+
+    border-color:
+        var(--milk-green-600);
+
+    box-shadow:
+        0 0 0 4px
+        rgba(69,150,100,.11);
+}
+
+
+.milk-sales-page .form-control::placeholder {
+
+    color:
+        #a4aea8;
+}
+
+
+.milk-sales-page input[readonly] {
+
+    color:
+        var(--milk-green-900);
+
+    background:
+        var(--milk-green-50);
+
+    font-weight: 750;
+}
+
+
+/* =========================================================
+   INPUT PREFIX / SUFFIX
+========================================================= */
+
+.milk-sales-page .input-prefix,
+.milk-sales-page .input-suffix {
+
+    position: relative;
+}
+
+
+.milk-sales-page .input-prefix > span {
+
+    position: absolute;
+
+    left: 13px;
+    top: 50%;
+
+    z-index: 2;
+
+    transform:
+        translateY(-50%);
+
+    color:
+        var(--milk-green-700);
+
+    font-size: 12px;
+
+    font-weight: 800;
+}
+
+
+.milk-sales-page .input-prefix .form-control {
+
+    padding-left: 43px;
+}
+
+
+.milk-sales-page .input-suffix > span {
+
+    position: absolute;
+
+    right: 13px;
+    top: 50%;
+
+    z-index: 2;
+
+    transform:
+        translateY(-50%);
+
+    color:
+        var(--milk-muted);
+
+    font-size: 12px;
+
+    font-weight: 800;
+}
+
+
+.milk-sales-page .input-suffix .form-control {
+
+    padding-right: 35px;
+}
+
+
+/* =========================================================
+   PRICE FORM
+========================================================= */
+
+.milk-sales-page .price-form {
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(180px, 280px)
+        auto;
+
+    align-items: end;
+
+    gap: 15px;
+}
+
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+.milk-sales-page .milk-button {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    min-height: 46px;
+
+    box-sizing: border-box;
+
+    padding:
+        11px
+        19px;
+
+    border: 0;
+
+    border-radius: 11px;
+
+    color: #fff;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--milk-green-800),
+            var(--milk-green-600)
+        );
+
+    box-shadow:
+        0 7px 17px
+        rgba(39,99,66,.18);
+
+    cursor: pointer;
+
+    font-family: inherit;
+
+    font-size: 13px;
+
+    font-weight: 800;
+
+    transition:
+        transform .18s ease,
+        box-shadow .18s ease,
+        filter .18s ease;
+}
+
+
+.milk-sales-page .milk-button:hover {
+
+    transform:
+        translateY(-1px);
+
+    box-shadow:
+        0 10px 23px
+        rgba(39,99,66,.23);
+
+    filter:
+        brightness(1.03);
+}
+
+
+.milk-sales-page .milk-button:active {
+
+    transform:
+        translateY(0);
+}
+
+
+.milk-sales-page .secondary-button {
+
+    color:
+        var(--milk-orange-700);
+
+    background:
+        var(--milk-orange-50);
+
+    border:
+        1px solid
+        #f0d1b7;
+
+    box-shadow: none;
+}
+
+
+.milk-sales-page .secondary-button:hover {
+
+    color:
+        var(--milk-orange-800);
+
+    background:
+        var(--milk-orange-100);
+
+    box-shadow: none;
+
+    filter: none;
+}
+
+
+.milk-sales-page .plus-symbol {
+
+    font-size: 18px;
+
+    line-height: 1;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.milk-sales-page .table-wrapper {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+    border:
+        1px solid
+        var(--milk-border);
+
+    border-radius: 14px;
+}
+
+
+.milk-sales-page .milk-table {
+
+    width: 100%;
+
+    min-width: 480px;
+
+    border-collapse: collapse;
+}
+
+
+.milk-sales-page .milk-table th {
+
+    padding:
+        13px
+        16px;
+
+    text-align: left;
+
+    color:
+        var(--milk-green-950);
+
+    background:
+        var(--milk-green-50);
+
+    border-bottom:
+        1px solid
+        var(--milk-border);
+
+    font-size: 10px;
+
+    font-weight: 850;
+
+    text-transform: uppercase;
+
+    letter-spacing: .65px;
+}
+
+
+.milk-sales-page .milk-table td {
+
+    padding:
+        15px
+        16px;
+
+    border-bottom:
+        1px solid
+        #edf1ee;
+
+    font-size: 13px;
+}
+
+
+.milk-sales-page .milk-table tbody tr:last-child td {
+
+    border-bottom: 0;
+}
+
+
+.milk-sales-page .milk-table tbody tr:not(.total-row):hover {
+
+    background:
+        #fafcfb;
+}
+
+
+.milk-sales-page .farm-name {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+}
+
+
+.milk-sales-page .farm-dot {
+
+    width: 7px;
+    height: 7px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background:
+        var(--milk-green-600);
+}
+
+
+.milk-sales-page .farm-name strong {
+
+    color:
+        var(--milk-text);
+
+    font-size: 13px;
+}
+
+
+.milk-sales-page .liter-value {
+
+    color:
+        var(--milk-green-800);
+
+    font-weight: 800;
+}
+
+
+.milk-sales-page .total-row {
+
+    background:
+        var(--milk-orange-50);
+}
+
+
+.milk-sales-page .total-row td {
+
+    color:
+        var(--milk-orange-700);
+
+    border-top:
+        1px solid
+        #f1dcc9;
+}
+
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.milk-sales-page .empty-state {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding:
+        32px
+        20px;
+
+    text-align: center;
+
+    border:
+        1px dashed
+        #cad8ce;
+
+    border-radius: 15px;
+
+    background:
+        var(--milk-green-50);
+}
+
+
+.milk-sales-page .empty-icon {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 46px;
+    height: 46px;
+
+    margin-bottom: 10px;
+
+    border-radius: 50%;
+
+    background:
+        var(--milk-green-100);
+
+    font-size: 19px;
+}
+
+
+.milk-sales-page .empty-state strong {
+
+    color:
+        var(--milk-green-900);
+
+    font-size: 14px;
+}
+
+
+.milk-sales-page .empty-state p {
+
+    margin:
+        5px
+        0
+        0;
+
+    color:
+        var(--milk-muted);
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   SUBSECTION
+========================================================= */
+
+.milk-sales-page .subsection {
+
+    margin-top: 4px;
+
+    padding-bottom: 25px;
+}
+
+
+.milk-sales-page .subsection + .subsection {
+
+    padding-top: 25px;
+
+    border-top:
+        1px solid
+        var(--milk-border);
+}
+
+
+.milk-sales-page .subsection-heading {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 11px;
+
+    margin-bottom: 18px;
+}
+
+
+.milk-sales-page .step-number {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 31px;
+    height: 31px;
+
+    border-radius: 9px;
+
+    color:
+        var(--milk-green-800);
+
+    background:
+        var(--milk-green-100);
+
+    font-size: 10px;
+
+    font-weight: 850;
+}
+
+
+.milk-sales-page .orange-step {
+
+    color:
+        var(--milk-orange-700);
+
+    background:
+        var(--milk-orange-100);
+}
+
+
+.milk-sales-page .subsection-heading h3 {
+
+    margin: 1px 0 0;
+
+    color:
+        var(--milk-green-950);
+
+    font-size: 15px;
+
+    font-weight: 850;
+}
+
+
+.milk-sales-page .subsection-heading p {
+
+    margin:
+        4px
+        0
+        0;
+
+    color:
+        var(--milk-muted);
+
+    font-size: 11px;
+
+    line-height: 1.45;
+}
+
+
+/* =========================================================
+   SALES GRID
+========================================================= */
+
+.milk-sales-page .sales-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        1.4fr
+        1fr
+        1fr;
+
+    gap: 15px;
+}
+
+
+/* =========================================================
+   ALLOCATION
+========================================================= */
+
+.milk-sales-page .allocation-subsection {
+
+    margin-top: 0;
+}
+
+
+.milk-sales-page .allocation-topbar {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    margin-bottom: 13px;
+}
+
+
+.milk-sales-page .allocation-topbar > div {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding:
+        8px
+        11px;
+
+    border-radius: 9px;
+
+    background:
+        var(--milk-orange-50);
+}
+
+
+.milk-sales-page .allocation-topbar span {
+
+    color:
+        var(--milk-muted);
+
+    font-size: 10px;
+
+    font-weight: 700;
+}
+
+
+.milk-sales-page .allocation-topbar strong {
+
+    color:
+        var(--milk-orange-700);
+
+    font-size: 12px;
+
+    font-weight: 850;
+}
+
+
+/* =========================================================
+   ALLOCATION ROW
+========================================================= */
+
+.milk-sales-page .allocation-row {
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        170px;
+
+    gap: 15px;
+
+    margin-bottom: 12px;
+
+    padding:
+        15px;
+
+    background:
+        #fbfcfb;
+
+    border:
+        1px solid
+        var(--milk-border);
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 3px 10px
+        rgba(24,59,41,.025);
+}
+
+
+.milk-sales-page .allocation-row:hover {
+
+    border-color:
+        #d3ded7;
+}
+
+
+/* =========================================================
+   SALE SUMMARY
+========================================================= */
+
+.milk-sales-page .sale-summary {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    overflow: hidden;
+
+    margin-top: 4px;
+
+    border:
+        1px solid
+        var(--milk-border);
+
+    border-radius: 15px;
+
+    background:
+        #fff;
+}
+
+
+.milk-sales-page .summary-item {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    padding:
+        16px
+        18px;
+
+    border-right:
+        1px solid
+        var(--milk-border);
+}
+
+
+.milk-sales-page .summary-item:last-child {
+
+    border-right: 0;
+}
+
+
+.milk-sales-page .summary-item > span {
+
+    color:
+        var(--milk-muted);
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: .55px;
+}
+
+
+.milk-sales-page .summary-item strong {
+
+    color:
+        var(--milk-green-900);
+
+    font-size: 19px;
+
+    font-weight: 850;
+}
+
+
+.milk-sales-page .summary-complete {
+
+    color:
+        var(--milk-success) !important;
+}
+
+
+.milk-sales-page .cash-row {
+
+    background:
+        var(--milk-orange-50);
+}
+
+
+.milk-sales-page .cash-row strong {
+
+    color:
+        var(--milk-orange-700);
+}
+
+
+/* =========================================================
+   FORM ACTION
+========================================================= */
+
+.milk-sales-page .form-action {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    margin-top: 21px;
+
+    padding-top: 20px;
+
+    border-top:
+        1px solid
+        var(--milk-border);
+}
+
+
+.milk-sales-page .complete-button {
+
+    min-width: 175px;
+}
+
+
+.milk-sales-page .complete-button > span {
+
+    font-size: 17px;
+
+    line-height: 1;
+
+    transition:
+        transform .18s ease;
+}
+
+
+.milk-sales-page .complete-button:hover > span {
+
+    transform:
+        translateX(3px);
+}
+
+
+/* =========================================================
+   SELECT
+========================================================= */
+
+.milk-sales-page select.form-control {
+
+    cursor: pointer;
+
+    appearance: auto;
+}
+
+
+.milk-sales-page option:disabled {
+
+    color:
+        #adb6b0;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 850px) {
+
+    .milk-sales-page {
+
+        width:
+            min(
+                100% - 22px,
+                720px
+            );
+    }
+
+
+    .milk-sales-page .overview-grid {
+
+        grid-template-columns:
+            repeat(3, 1fr);
+
+        gap: 10px;
+    }
+
+
+    .milk-sales-page .overview-card {
+
+        padding: 13px;
+
+        gap: 10px;
+    }
+
+
+    .milk-sales-page .overview-icon {
+
+        width: 38px;
+        height: 38px;
+    }
+
+
+    .milk-sales-page .overview-card strong {
+
+        font-size: 17px;
+    }
+
+
+    .milk-sales-page .sales-grid {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+
+    .milk-sales-page .sales-grid
+    .form-group:first-child {
+
+        grid-column:
+            1 / -1;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 620px) {
+
+    .milk-sales-page {
+
+        width:
+            calc(100% - 18px);
+
+        padding:
+            12px
+            0
+            40px;
+    }
+
+
+    .milk-sales-page .page-header {
+
+        min-height: 0;
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        margin-bottom: 15px;
+
+        padding:
+            22px
+            20px;
+
+        border-radius: 19px;
+    }
+
+
+    .milk-sales-page .header-date {
+
+        align-items: flex-start;
+
+        width: 100%;
+    }
+
+
+    .milk-sales-page .overview-grid {
+
+        grid-template-columns:
+            1fr;
+
+        gap: 9px;
+
+        margin-bottom: 15px;
+    }
+
+
+    .milk-sales-page .overview-card {
+
+        padding: 13px 15px;
+    }
+
+
+    .milk-sales-page .milk-card {
+
+        margin-bottom: 15px;
+
+        padding:
+            17px;
+
+        border-radius: 17px;
+    }
+
+
+    .milk-sales-page .section-heading {
+
+        margin-bottom: 18px;
+    }
+
+
+    .milk-sales-page .section-heading h2 {
+
+        font-size: 18px;
+    }
+
+
+    .milk-sales-page .section-icon {
+
+        width: 38px;
+        height: 38px;
+    }
+
+
+    /* Price */
+
+    .milk-sales-page .price-form {
+
+        grid-template-columns: 1fr;
+
+        gap: 13px;
+    }
+
+
+    .milk-sales-page .price-form
+    .milk-button {
+
+        width: 100%;
+    }
+
+
+    /* Customer */
+
+    .milk-sales-page .sales-grid {
+
+        grid-template-columns: 1fr;
+
+        gap: 13px;
+    }
+
+
+    .milk-sales-page .sales-grid
+    .form-group:first-child {
+
+        grid-column: auto;
+    }
+
+
+    /* Allocation */
+
+    .milk-sales-page .allocation-topbar {
+
+        justify-content: stretch;
+    }
+
+
+    .milk-sales-page .allocation-topbar > div {
+
+        width: 100%;
+
+        box-sizing: border-box;
+
+        justify-content: space-between;
+    }
+
+
+    .milk-sales-page .allocation-row {
+
+        grid-template-columns: 1fr;
+
+        gap: 12px;
+
+        padding: 13px;
+
+        border-radius: 12px;
+    }
+
+
+    .milk-sales-page .secondary-button {
+
+        width: 100%;
+    }
+
+
+    /* Summary */
+
+    .milk-sales-page .sale-summary {
+
+        grid-template-columns: 1fr;
+
+        border-radius: 13px;
+    }
+
+
+    .milk-sales-page .summary-item {
+
+        border-right: 0;
+
+        border-bottom:
+            1px solid
+            var(--milk-border);
+    }
+
+
+    .milk-sales-page .summary-item:last-child {
+
+        border-bottom: 0;
+    }
+
+
+    .milk-sales-page .summary-item strong {
+
+        font-size: 18px;
+    }
+
+
+    /* Action */
+
+    .milk-sales-page .form-action {
+
+        display: block;
+    }
+
+
+    .milk-sales-page .complete-button {
+
+        width: 100%;
+    }
+
+
+    /* Table */
+
+    .milk-sales-page .table-wrapper {
+
+        border-radius: 12px;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .milk-sales-page {
+
+        width:
+            calc(100% - 12px);
+    }
+
+
+    .milk-sales-page .milk-card {
+
+        padding: 14px;
+    }
+
+
+    .milk-sales-page .page-header {
+
+        padding: 19px;
+    }
+
+
+    .milk-sales-page .page-header h1 {
+
+        font-size: 26px;
+    }
+
+
+    .milk-sales-page .section-heading p {
+
+        font-size: 11px;
+    }
+
+
+    .milk-sales-page .allocation-row {
+
+        padding: 11px;
+    }
+
+
+    .milk-sales-page .form-control {
+
+        min-height: 44px;
+
+        font-size: 12px;
+    }
+
+}
