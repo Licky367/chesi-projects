@@ -7,11 +7,24 @@
 // ROUTER MOUNT
 // ---------------------------------------------------------
 //
-// This router is mounted at:
+// Mounted at:
 //
 //     /
 //
-// ==========================================================
+// IMPORTANT STORAGE RULE
+// ---------------------------------------------------------
+//
+// The content-item route:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// is ONLY allowed to reach getContentItem when the second
+// parameter is an actual numeric dwellNumber.
+//
+// An unrelated URL must NEVER be interpreted as a
+// dwellNumber request.
+//
+// =========================================================
 
 
 const express =
@@ -22,25 +35,25 @@ const router =
     express.Router();
 
 
-// ==========================================================
+// =========================================================
 // CONTROLLER
-// ==========================================================
+// =========================================================
 
 const controller =
     require("../controllers/update");
 
 
-// ==========================================================
+// =========================================================
 // UPLOAD MIDDLEWARE
-// ==========================================================
+// =========================================================
 
 const upload =
     require("../middleware/uploadMiddleware");
 
 
-// ==========================================================
-// AUTH MIDDLEWARE
-// ==========================================================
+// =========================================================
+// AUTHENTICATION
+// =========================================================
 
 function isAuth(
     req,
@@ -56,13 +69,8 @@ function isAuth(
         return res
             .status(401)
             .json({
-
-                success:
-                    false,
-
-                message:
-                    "Unauthorized"
-
+                success: false,
+                message: "Unauthorized"
             });
 
     }
@@ -77,9 +85,100 @@ function isAuth(
 }
 
 
-// ==========================================================
+// =========================================================
+// DWELL NUMBER GUARD
+// =========================================================
+//
+// IMPORTANT:
+//
+// This middleware does NOT say that a negative dwellNumber
+// is invalid.
+//
+// Negative dwellNumbers are allowed.
+//
+// The only question here is:
+//
+//     "Is this actually a numeric dwellNumber?"
+//
+// Valid examples:
+//
+//     -5
+//     -1
+//      0
+//      1
+//      25
+//
+// Invalid examples:
+//
+//     post
+//     maintenance
+//     mark
+//     undefined
+//     abc
+//
+// If it is not numeric, we call next() instead of returning
+// "Invalid dwell number".
+//
+// This allows another matching router to handle the request
+// rather than forcing it through getContentItem().
+//
+// =========================================================
+
+function isValidDwellNumber(
+    req,
+    res,
+    next
+) {
+
+    const value =
+        req.params.dwellNumber;
+
+
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+
+        return next();
+
+    }
+
+
+    const dwellNumber =
+        Number(value);
+
+
+    if (
+        !Number.isFinite(
+            dwellNumber
+        )
+    ) {
+
+        return next();
+
+    }
+
+
+    /*
+     * Preserve the numeric value for the controller.
+     *
+     * IMPORTANT:
+     * Negative values remain completely valid.
+     */
+
+    req.dwellNumber =
+        dwellNumber;
+
+
+    next();
+
+}
+
+
+// =========================================================
 // LIST PAGES
-// ==========================================================
+// =========================================================
 
 router.get(
     "/dairyProjects",
@@ -93,57 +192,22 @@ router.get(
 );
 
 
-// ==========================================================
+// =========================================================
 // BOOLEAN MANAGEMENT
-// ==========================================================
+// =========================================================
 //
-// BOOLEAN UI:
+// POST:
 //
-//     views/update/boolean.ejs
-//
-// IMPORTANT:
-// ----------------------------------------------------------
-//
-// boolean.ejs is an INCLUDE inside:
-//
-//     views/update.ejs
-//
-// It is NOT rendered through a route.
-//
-// The parent page receives:
-//
-//     booleanAnimals
-//     booleanFields
-//
-// ----------------------------------------------------------
-// TOGGLE ROUTE
-// ----------------------------------------------------------
-//
-// The JavaScript inside boolean.ejs sends:
-//
-//     POST /dairy/:animalId/boolean/:field
+//     /dairy/:animalId/boolean/:field
 //
 // Example:
 //
-//     POST /dairy/64abc123/milking/
+//     /dairy/64abc123/boolean/milking
 //
-// More generally:
+// This is explicitly defined before the generic content-item
+// route.
 //
-//     POST /dairy/:animalId/boolean/:field
-//
-// The controller receives:
-//
-//     req.params.animalId
-//     req.params.field
-//
-// and calls:
-//
-//     updateService.toggleBoolean(
-//         animalId,
-//         field
-//     )
-//
-// ==========================================================
+// =========================================================
 
 router.post(
     "/dairy/:animalId/boolean/:field",
@@ -152,30 +216,9 @@ router.post(
 );
 
 
-// ==========================================================
+// =========================================================
 // BOOLEAN FIELD DEFINITIONS
-// ==========================================================
-//
-// Optional endpoint.
-//
-// GET:
-//
-//     /dairy/boolean/fields
-//
-// This is NOT used by the current boolean.ejs to perform
-// toggles because booleanFields are supplied directly by
-// the parent update page.
-//
-// It remains available for independent frontend use.
-//
-// IMPORTANT:
-// ----------------------------------------------------------
-//
-// This route remains BEFORE:
-//
-//     /dairy/:id
-//
-// ==========================================================
+// =========================================================
 
 router.get(
     "/dairy/boolean/fields",
@@ -184,17 +227,15 @@ router.get(
 );
 
 
-// ==========================================================
+// =========================================================
 // DAIRY PROFILE
-// ==========================================================
+// =========================================================
 //
 // GET:
 //
 //     /dairy/:id
 //
-// Here :id is the Dairy farm/profile ID.
-//
-// ==========================================================
+// =========================================================
 
 router.get(
     "/dairy/:id",
@@ -202,61 +243,21 @@ router.get(
 );
 
 
-// ==========================================================
-// STORAGE CONTENT ITEM
-// ==========================================================
-//
-// GET:
-//
-//     /dairy/:contentItemId/:dwellNumber
-//
-// PARAMETERS:
-//
-//     :contentItemId
-//         = MongoDB _id of the actual content item
-//
-//     :dwellNumber
-//         = dwellNumber of the actual content item
-//
-// IMPORTANT:
-//
-// The first parameter is NOT the Dairy farm ID.
-//
-// The second parameter is NOT an AgroStore ID.
-//
-// ==========================================================
-
-router.get(
-    "/dairy/:contentItemId/:dwellNumber",
-    isAuth,
-    controller.getContentItem
-);
-
-
-// ==========================================================
-// UPDATE STORAGE CONTENT ITEM
-// ==========================================================
+// =========================================================
+// TOGGLE MILKING
+// =========================================================
 //
 // POST:
 //
-//     /dairy/:contentItemId/:dwellNumber
+//     /dairy/:id/toggle-milking
 //
-// ==========================================================
-
-router.post(
-    "/dairy/:contentItemId/:dwellNumber",
-    isAuth,
-    upload.array(
-        "images",
-        10
-    ),
-    controller.updateContentItem
-);
-
-
-// ==========================================================
-// TOGGLE MILKING
-// ==========================================================
+// IMPORTANT:
+//
+// This is NOT a content-item route.
+//
+// dwellNumber is not involved.
+//
+// =========================================================
 
 router.post(
     "/dairy/:id/toggle-milking",
@@ -265,9 +266,15 @@ router.post(
 );
 
 
-// ==========================================================
+// =========================================================
 // SWITCH DAIRY
-// ==========================================================
+// =========================================================
+//
+// GET:
+//
+//     /dairy/:id/switch
+//
+// =========================================================
 
 router.get(
     "/dairy/:id/switch",
@@ -276,9 +283,15 @@ router.get(
 );
 
 
-// ==========================================================
+// =========================================================
 // GENERAL DAIRY COMMENT
-// ==========================================================
+// =========================================================
+//
+// POST:
+//
+//     /dairy/:id/comment
+//
+// =========================================================
 
 router.post(
     "/dairy/:id/comment",
@@ -287,9 +300,15 @@ router.post(
 );
 
 
-// ==========================================================
+// =========================================================
 // PROFILE IMAGES
-// ==========================================================
+// =========================================================
+//
+// PUT:
+//
+//     /dairy/:id/image
+//
+// =========================================================
 
 router.put(
     "/dairy/:id/image",
@@ -302,9 +321,15 @@ router.put(
 );
 
 
-// ==========================================================
+// =========================================================
 // UPDATE DAIRY PROFILE
-// ==========================================================
+// =========================================================
+//
+// PUT:
+//
+//     /dairy/:id/update
+//
+// =========================================================
 
 router.put(
     "/dairy/:id/update",
@@ -313,9 +338,20 @@ router.put(
 );
 
 
-// ==========================================================
+// =========================================================
 // CREATE GENERAL POST
-// ==========================================================
+// =========================================================
+//
+// POST:
+//
+//     /dairy/:id/post
+//
+// IMPORTANT:
+//
+// This route must remain independent from storage
+// content-item handling.
+//
+// =========================================================
 
 router.post(
     "/dairy/:id/post",
@@ -328,75 +364,20 @@ router.post(
 );
 
 
-// ==========================================================
-// POST LIKE
-// ==========================================================
-
-router.post(
-    "/post/:id/like",
-    isAuth,
-    controller.likePost
-);
-
-
-// ==========================================================
-// POST COMMENT
-// ==========================================================
-
-router.post(
-    "/post/:id/comment",
-    isAuth,
-    controller.addPostComment
-);
-
-
-// ==========================================================
-// GENERIC UPDATE LIKE
-// ==========================================================
-
-router.post(
-    "/:type/:id/like",
-    isAuth,
-    controller.likePost
-);
-
-
-// ==========================================================
-// GENERIC UPDATE COMMENT
-// ==========================================================
-
-router.post(
-    "/:type/:id/comment",
-    isAuth,
-    controller.addPostComment
-);
-
-
-// ==========================================================
-// DELETE POST
-// ==========================================================
-
-router.delete(
-    "/post/:id",
-    isAuth,
-    controller.deletePost
-);
-
-
-// ==========================================================
-// DELETE COMMENT
-// ==========================================================
-
-router.delete(
-    "/comment/:id",
-    isAuth,
-    controller.deleteComment
-);
-
-
-// ==========================================================
+// =========================================================
 // MEDICAL
-// ==========================================================
+// =========================================================
+//
+// These routes are explicit.
+//
+// They do NOT contain dwellNumber.
+//
+// =========================================================
+
+
+// ---------------------------------------------------------
+// MARK MEDICAL
+// ---------------------------------------------------------
 
 router.post(
     "/dairy/:id/medical-mark",
@@ -405,6 +386,10 @@ router.post(
 );
 
 
+// ---------------------------------------------------------
+// UNMARK MEDICAL
+// ---------------------------------------------------------
+
 router.post(
     "/dairy/:id/medical-unmark",
     isAuth,
@@ -412,9 +397,20 @@ router.post(
 );
 
 
-// ==========================================================
+// =========================================================
 // MAINTENANCE
-// ==========================================================
+// =========================================================
+//
+// These routes are explicit.
+//
+// They do NOT contain dwellNumber.
+//
+// =========================================================
+
+
+// ---------------------------------------------------------
+// MARK MAINTENANCE
+// ---------------------------------------------------------
 
 router.post(
     "/dairy/:id/maintenance/mark",
@@ -423,6 +419,10 @@ router.post(
 );
 
 
+// ---------------------------------------------------------
+// CLEAR MAINTENANCE
+// ---------------------------------------------------------
+
 router.post(
     "/dairy/:id/maintenance/clear",
     isAuth,
@@ -430,9 +430,169 @@ router.post(
 );
 
 
-// ==========================================================
+// =========================================================
+// STORAGE CONTENT ITEM
+// =========================================================
+//
+// GET:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// POST:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// IMPORTANT:
+//
+// This is intentionally placed AFTER all known explicit
+// Dairy routes.
+//
+// More importantly:
+//
+//     isValidDwellNumber
+//
+// prevents an arbitrary second URL segment from being
+// treated as a dwellNumber.
+//
+//
+//
+// NEGATIVE DWELL NUMBERS ARE VALID.
+//
+// Examples:
+//
+//     /dairy/abc123/-1
+//     /dairy/abc123/-5
+//     /dairy/abc123/10
+//
+// are allowed to reach getContentItem/updateContentItem.
+//
+//
+//
+// But:
+//
+//     /dairy/abc123/post
+//     /dairy/abc123/maintenance
+//     /dairy/abc123/anything
+//
+// are NOT treated as content-item requests.
+//
+// =========================================================
+
+
+// ---------------------------------------------------------
+// VIEW STORAGE CONTENT ITEM
+// ---------------------------------------------------------
+
+router.get(
+    "/dairy/:contentItemId/:dwellNumber",
+    isAuth,
+    isValidDwellNumber,
+    controller.getContentItem
+);
+
+
+// ---------------------------------------------------------
+// UPDATE STORAGE CONTENT ITEM
+// ---------------------------------------------------------
+
+router.post(
+    "/dairy/:contentItemId/:dwellNumber",
+    isAuth,
+    isValidDwellNumber,
+    upload.array(
+        "images",
+        10
+    ),
+    controller.updateContentItem
+);
+
+
+// =========================================================
+// POST INTERACTIONS
+// =========================================================
+//
+// These routes are independent of dwellNumber.
+//
+// =========================================================
+
+
+// ---------------------------------------------------------
+// POST LIKE
+// ---------------------------------------------------------
+
+router.post(
+    "/post/:id/like",
+    isAuth,
+    controller.likePost
+);
+
+
+// ---------------------------------------------------------
+// POST COMMENT
+// ---------------------------------------------------------
+
+router.post(
+    "/post/:id/comment",
+    isAuth,
+    controller.addPostComment
+);
+
+
+// ---------------------------------------------------------
+// GENERIC UPDATE LIKE
+// ---------------------------------------------------------
+
+router.post(
+    "/:type/:id/like",
+    isAuth,
+    controller.likePost
+);
+
+
+// ---------------------------------------------------------
+// GENERIC UPDATE COMMENT
+// ---------------------------------------------------------
+
+router.post(
+    "/:type/:id/comment",
+    isAuth,
+    controller.addPostComment
+);
+
+
+// =========================================================
+// DELETE POST
+// =========================================================
+
+router.delete(
+    "/post/:id",
+    isAuth,
+    controller.deletePost
+);
+
+
+// =========================================================
+// DELETE COMMENT
+// =========================================================
+
+router.delete(
+    "/comment/:id",
+    isAuth,
+    controller.deleteComment
+);
+
+
+// =========================================================
 // DELETE DAIRY
-// ==========================================================
+// =========================================================
+//
+// This is deliberately after the more specific:
+//
+//     /dairy/:id/...
+//
+// routes.
+//
+// =========================================================
 
 router.delete(
     "/dairy/:id",
@@ -441,9 +601,9 @@ router.delete(
 );
 
 
-// ==========================================================
+// =========================================================
 // EXPORT
-// ==========================================================
+// =========================================================
 
 module.exports =
     router;
