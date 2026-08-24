@@ -1,0 +1,55 @@
+<%
+const switcherFarms =
+    Array.isArray(availableFarms)
+        ? availableFarms
+        : [];
+
+const currentFarm =
+    activeFarm || null;
+%>
+
+<% if (switcherFarms.length) { %>
+
+<div class="farm-switcher">
+
+    <form
+        method="POST"
+        action="/farm-context/switch"
+    >
+
+        <input
+            type="hidden"
+            name="returnTo"
+            value="<%= typeof currentPath !== 'undefined' ? currentPath : '/sales' %>"
+        >
+
+        <label>
+            Active Farm
+        </label>
+
+        <select
+            name="farmId"
+            onchange="this.form.submit()"
+        >
+
+            <% switcherFarms.forEach(farm => { %>
+
+                <option
+                    value="<%= farm._id %>"
+                    <%= currentFarm &&
+                        String(currentFarm._id) === String(farm._id)
+                        ? "selected"
+                        : "" %>
+                >
+                    <%= farm.name || ("Farm " + farm.code) %>
+                </option>
+
+            <% }) %>
+
+        </select>
+
+    </form>
+
+</div>
+
+<% } %>
