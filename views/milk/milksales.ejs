@@ -1,0 +1,1234 @@
+<!-- =========================================================
+     MILK SALES
+     FILE: views/milk/milksales.ejs
+========================================================= -->
+
+<%
+    // ========================================================
+    // SAFE USER
+    // ========================================================
+
+    const pageUser =
+        typeof user !== "undefined" && user
+            ? user
+            : null;
+
+
+    const pageIsAdmin =
+        Boolean(
+            pageUser &&
+            pageUser.role === "admin"
+        );
+
+
+    // ========================================================
+    // MESSAGES
+    // ========================================================
+
+    const pageSuccess =
+        typeof success !== "undefined" && success
+            ? success
+            : "";
+
+
+    const pageError =
+        typeof error !== "undefined" && error
+            ? error
+            : "";
+
+
+    // ========================================================
+    // SUMMARY
+    // ========================================================
+
+    const pageSummary =
+        typeof summary !== "undefined" && summary
+            ? summary
+            : null;
+
+
+    const pageDay =
+        pageSummary?.day ||
+        new Date()
+            .toISOString()
+            .slice(0, 10);
+
+
+    const pagePrice =
+        Number.isFinite(
+            Number(pageSummary?.price)
+        )
+
+            ? Number(pageSummary.price)
+
+            : 50;
+
+
+    // ========================================================
+    // VISIBLE FARMS
+    //
+    // IMPORTANT:
+    //
+    // Service decides which farms are passed here.
+    //
+    // Admin:
+    //     All farms
+    //
+    // dairyWorker:
+    //     Assigned farms only
+    //
+    // ========================================================
+
+    const pageFarms =
+        Array.isArray(farms)
+            ? farms
+            : [];
+
+
+    const farmProduction =
+        Array.isArray(
+            pageSummary?.farmProduction
+        )
+
+            ? pageSummary.farmProduction
+
+            : [];
+
+
+    const sales =
+        Array.isArray(
+            pageSummary?.sales
+        )
+
+            ? pageSummary.sales
+
+            : [];
+
+
+    // ========================================================
+    // FARM SALES MAP
+    //
+    // Calculates total liters already deducted from each farm.
+    //
+    // ========================================================
+
+    const farmSalesMap =
+        new Map();
+
+
+    sales.forEach(
+        sale => {
+
+            if (
+                !sale ||
+                !Array.isArray(
+                    sale.farmAllocations
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            sale.farmAllocations.forEach(
+                allocation => {
+
+                    if (
+                        !allocation ||
+                        !allocation.farm
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const farmId =
+                        allocation.farm.toString();
+
+
+                    const liters =
+                        Number(
+                            allocation.liters
+                        );
+
+
+                    if (
+                        !Number.isFinite(liters) ||
+                        liters < 0
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    farmSalesMap.set(
+
+                        farmId,
+
+                        (
+                            farmSalesMap.get(farmId) ||
+                            0
+                        )
+
+                        +
+
+                        liters
+
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // VISIBLE FARM DATA
+    // ========================================================
+
+    const visibleFarmData =
+        pageFarms.map(
+            farm => {
+
+                const farmId =
+                    farm?._id
+                        ? farm._id.toString()
+                        : "";
+
+
+                const productionEntry =
+                    farmProduction.find(
+                        entry =>
+                            entry?.farm &&
+                            entry.farm.toString() ===
+                                farmId
+                    );
+
+
+                const produced =
+                    Number.isFinite(
+                        Number(
+                            productionEntry?.liters
+                        )
+                    )
+
+                        ? Number(
+                            productionEntry.liters
+                        )
+
+                        : 0;
+
+
+                const sold =
+                    Number(
+                        farmSalesMap.get(farmId)
+                    ) || 0;
+
+
+                const available =
+                    Math.max(
+                        0,
+                        produced - sold
+                    );
+
+
+                return {
+
+                    _id:
+                        farm._id,
+
+                    name:
+                        farm.name ||
+                        "Unnamed Farm",
+
+                    produced,
+
+                    sold,
+
+                    available
+
+                };
+
+            }
+        );
+
+
+    // ========================================================
+    // TOTALS
+    // ========================================================
+
+    const totalProduction =
+        visibleFarmData.reduce(
+
+            (total, farm) =>
+
+                total +
+                farm.produced,
+
+            0
+
+        );
+
+
+    const totalAvailable =
+        visibleFarmData.reduce(
+
+            (total, farm) =>
+
+                total +
+                farm.available,
+
+            0
+
+        );
+
+%>
+
+
+<link
+    rel="stylesheet"
+    href="/css/milk/milksales.css"
+>
+
+
+<div
+    class="milk-sales-page"
+    data-price="<%= pagePrice %>"
+>
+
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <header class="page-header">
+
+        <h1>
+            Milk Sales
+        </h1>
+
+        <p>
+            Farm milk production and sales for
+            <%= pageDay %>
+        </p>
+
+    </header>
+
+
+
+    <!-- =====================================================
+         SUCCESS
+    ====================================================== -->
+
+    <% if (pageSuccess) { %>
+
+        <div class="message success">
+
+            <%= pageSuccess %>
+
+        </div>
+
+    <% } %>
+
+
+
+    <!-- =====================================================
+         ERROR
+    ====================================================== -->
+
+    <% if (pageError) { %>
+
+        <div class="message error">
+
+            <%= pageError %>
+
+        </div>
+
+    <% } %>
+
+
+
+    <!-- =====================================================
+         ADMIN PRICE CARD
+    ====================================================== -->
+
+    <% if (pageIsAdmin) { %>
+
+        <section class="milk-card">
+
+            <h2>
+                Milk Price
+            </h2>
+
+
+            <form
+                action="/milk/sales/price"
+                method="POST"
+                class="price-form"
+            >
+
+                <input
+                    type="hidden"
+                    name="day"
+                    value="<%= pageDay %>"
+                >
+
+
+                <div class="form-group">
+
+                    <label for="price">
+
+                        Price Per Liter
+
+                    </label>
+
+
+                    <input
+                        type="number"
+                        id="price"
+                        name="price"
+                        class="form-control"
+                        min="0"
+                        step="0.01"
+                        value="<%= pagePrice %>"
+                        required
+                    >
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="milk-button"
+                >
+
+                    Update Price
+
+                </button>
+
+            </form>
+
+        </section>
+
+    <% } %>
+
+
+
+    <!-- =====================================================
+         FARM PRODUCTION TABLE
+    ====================================================== -->
+
+    <section class="milk-card">
+
+        <h2>
+            Farm Production
+        </h2>
+
+
+        <% if (visibleFarmData.length === 0) { %>
+
+            <p class="empty-state">
+
+                No farm production is available.
+
+            </p>
+
+        <% } else { %>
+
+            <div class="table-wrapper">
+
+                <table class="milk-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Farm
+                            </th>
+
+                            <th>
+                                Farm Production
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        <% visibleFarmData.forEach(function(farm) { %>
+
+                            <tr>
+
+                                <td>
+
+                                    <%= farm.name %>
+
+                                </td>
+
+
+                                <td>
+
+                                    <%= farm.produced.toFixed(2) %> L
+
+                                </td>
+
+                            </tr>
+
+                        <% }); %>
+
+
+                        <tr class="total-row">
+
+                            <td>
+                                Total
+                            </td>
+
+                            <td>
+                                <%= totalProduction.toFixed(2) %> L
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        <% } %>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         SELL MILK
+    ====================================================== -->
+
+    <section class="milk-card">
+
+        <h2>
+            Sell Milk
+        </h2>
+
+
+        <% if (visibleFarmData.length === 0) { %>
+
+            <p class="empty-state">
+
+                No milk-producing farms are available for sale.
+
+            </p>
+
+        <% } else { %>
+
+            <form
+                action="/milk/sales/sell"
+                method="POST"
+                id="milkSaleForm"
+            >
+
+                <input
+                    type="hidden"
+                    name="day"
+                    value="<%= pageDay %>"
+                >
+
+
+                <!-- =========================================
+                     CUSTOMER DETAILS
+                ========================================== -->
+
+                <div class="sales-grid">
+
+
+                    <div class="form-group">
+
+                        <label for="customerName">
+
+                            Customer Name
+
+                        </label>
+
+
+                        <input
+                            type="text"
+                            id="customerName"
+                            name="customerName"
+                            class="form-control"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label for="saleLiters">
+
+                            Milk Required (L)
+
+                        </label>
+
+
+                        <input
+                            type="number"
+                            id="saleLiters"
+                            name="liters"
+                            class="form-control"
+                            min="0.01"
+                            step="0.01"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <div class="form-group">
+
+                        <label>
+
+                            Price Per Liter
+
+                        </label>
+
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            value="<%= pagePrice.toFixed(2) %>"
+                            readonly
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =========================================
+                     FARM ALLOCATION
+                ========================================== -->
+
+                <div class="allocation-section">
+
+                    <div class="allocation-heading">
+
+                        <div>
+
+                            <h3>
+                                Farm Allocation
+                            </h3>
+
+                            <p>
+                                Select the farm or farms supplying
+                                this milk.
+                            </p>
+
+                        </div>
+
+
+                        <strong>
+
+                            Available:
+                            <span id="totalAvailable">
+
+                                <%= totalAvailable.toFixed(2) %> L
+
+                            </span>
+
+                        </strong>
+
+                    </div>
+
+
+
+                    <div
+                        id="allocationContainer"
+                    >
+
+                        <div class="allocation-row">
+
+                            <div class="form-group">
+
+                                <label>
+                                    Farm
+                                </label>
+
+
+                                <select
+                                    name="allocations[0][farm]"
+                                    class="form-control farm-select"
+                                    required
+                                >
+
+                                    <option value="">
+                                        Select Farm
+                                    </option>
+
+
+                                    <% visibleFarmData.forEach(function(farm) { %>
+
+                                        <option
+                                            value="<%= farm._id %>"
+                                            data-available="<%= farm.available %>"
+                                        >
+
+                                            <%= farm.name %>
+                                            —
+                                            <%= farm.available.toFixed(2) %> L Available
+
+                                        </option>
+
+                                    <% }); %>
+
+                                </select>
+
+                            </div>
+
+
+
+                            <div class="form-group">
+
+                                <label>
+                                    Liters
+                                </label>
+
+
+                                <input
+                                    type="number"
+                                    name="allocations[0][liters]"
+                                    class="form-control allocation-liters"
+                                    min="0.01"
+                                    step="0.01"
+                                    required
+                                >
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <button
+                        type="button"
+                        class="milk-button secondary-button"
+                        id="addFarmButton"
+                    >
+
+                        Add Another Farm
+
+                    </button>
+
+                </div>
+
+
+
+                <!-- =========================================
+                     SALE SUMMARY
+                ========================================== -->
+
+                <div class="sale-summary">
+
+                    <div>
+
+                        <span>
+                            Customer Requires
+                        </span>
+
+                        <strong
+                            id="requiredLiters"
+                        >
+                            0.00 L
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Allocated
+                        </span>
+
+                        <strong
+                            id="allocatedLiters"
+                        >
+                            0.00 L
+                        </strong>
+
+                    </div>
+
+
+                    <div class="cash-row">
+
+                        <span>
+                            Cash
+                        </span>
+
+                        <strong
+                            id="saleCash"
+                        >
+                            0.00
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="form-action">
+
+                    <button
+                        type="submit"
+                        class="milk-button"
+                    >
+
+                        Complete Sale
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        <% } %>
+
+    </section>
+
+
+</div>
+
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+
+        const form =
+            document.getElementById(
+                "milkSaleForm"
+            );
+
+
+        if (!form) {
+
+            return;
+
+        }
+
+
+        const page =
+            document.querySelector(
+                ".milk-sales-page"
+            );
+
+
+        const price =
+            Number(
+                page.dataset.price
+            ) || 0;
+
+
+        const container =
+            document.getElementById(
+                "allocationContainer"
+            );
+
+
+        const addButton =
+            document.getElementById(
+                "addFarmButton"
+            );
+
+
+        const saleLitersInput =
+            document.getElementById(
+                "saleLiters"
+            );
+
+
+        const requiredOutput =
+            document.getElementById(
+                "requiredLiters"
+            );
+
+
+        const allocatedOutput =
+            document.getElementById(
+                "allocatedLiters"
+            );
+
+
+        const cashOutput =
+            document.getElementById(
+                "saleCash"
+            );
+
+
+        // ==================================================
+        // UPDATE SUMMARY
+        // ==================================================
+
+        function updateSummary() {
+
+            const required =
+                Number(
+                    saleLitersInput.value
+                ) || 0;
+
+
+            let allocated =
+                0;
+
+
+            form
+                .querySelectorAll(
+                    ".allocation-liters"
+                )
+                .forEach(
+                    input => {
+
+                        allocated +=
+                            Number(
+                                input.value
+                            ) || 0;
+
+                    }
+                );
+
+
+            requiredOutput.textContent =
+                required.toFixed(2) +
+                " L";
+
+
+            allocatedOutput.textContent =
+                allocated.toFixed(2) +
+                " L";
+
+
+            cashOutput.textContent =
+                (
+                    required *
+                    price
+                ).toFixed(2);
+
+        }
+
+
+        // ==================================================
+        // BIND ROW
+        // ==================================================
+
+        function bindRow(
+            row
+        ) {
+
+            const select =
+                row.querySelector(
+                    ".farm-select"
+                );
+
+
+            const input =
+                row.querySelector(
+                    ".allocation-liters"
+                );
+
+
+            select.addEventListener(
+                "change",
+                function() {
+
+                    const option =
+                        select.options[
+                            select.selectedIndex
+                        ];
+
+
+                    const available =
+                        Number(
+                            option.dataset.available
+                        ) || 0;
+
+
+                    input.max =
+                        available;
+
+                }
+            );
+
+
+            input.addEventListener(
+                "input",
+                updateSummary
+            );
+
+        }
+
+
+        container
+            .querySelectorAll(
+                ".allocation-row"
+            )
+            .forEach(
+                bindRow
+            );
+
+
+        saleLitersInput.addEventListener(
+            "input",
+            updateSummary
+        );
+
+
+        // ==================================================
+        // ADD FARM
+        // ==================================================
+
+        addButton.addEventListener(
+            "click",
+            function() {
+
+
+                const rows =
+                    container.querySelectorAll(
+                        ".allocation-row"
+                    );
+
+
+                const index =
+                    rows.length;
+
+
+                const firstRow =
+                    rows[0];
+
+
+                if (!firstRow) {
+
+                    return;
+
+                }
+
+
+                const row =
+                    firstRow.cloneNode(
+                        true
+                    );
+
+
+                const select =
+                    row.querySelector(
+                        ".farm-select"
+                    );
+
+
+                const input =
+                    row.querySelector(
+                        ".allocation-liters"
+                    );
+
+
+                select.name =
+                    `allocations[${index}][farm]`;
+
+
+                input.name =
+                    `allocations[${index}][liters]`;
+
+
+                select.value =
+                    "";
+
+
+                input.value =
+                    "";
+
+
+                input.removeAttribute(
+                    "max"
+                );
+
+
+                container.appendChild(
+                    row
+                );
+
+
+                bindRow(
+                    row
+                );
+
+
+                updateSummary();
+
+            }
+        );
+
+
+        // ==================================================
+        // SUBMIT VALIDATION
+        // ==================================================
+
+        form.addEventListener(
+            "submit",
+            function(event) {
+
+
+                const required =
+                    Number(
+                        saleLitersInput.value
+                    ) || 0;
+
+
+                let allocated =
+                    0;
+
+
+                const usedFarms =
+                    new Set();
+
+
+                for (
+                    const row
+                    of container.querySelectorAll(
+                        ".allocation-row"
+                    )
+                ) {
+
+                    const select =
+                        row.querySelector(
+                            ".farm-select"
+                        );
+
+
+                    const input =
+                        row.querySelector(
+                            ".allocation-liters"
+                        );
+
+
+                    const farmId =
+                        select.value;
+
+
+                    const liters =
+                        Number(
+                            input.value
+                        ) || 0;
+
+
+                    if (
+                        !farmId ||
+                        liters <= 0
+                    ) {
+
+                        event.preventDefault();
+
+                        alert(
+                            "Every allocation requires a farm and liters."
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        usedFarms.has(
+                            farmId
+                        )
+                    ) {
+
+                        event.preventDefault();
+
+                        alert(
+                            "The same farm cannot be allocated twice."
+                        );
+
+                        return;
+
+                    }
+
+
+                    usedFarms.add(
+                        farmId
+                    );
+
+
+                    const option =
+                        select.options[
+                            select.selectedIndex
+                        ];
+
+
+                    const available =
+                        Number(
+                            option.dataset.available
+                        ) || 0;
+
+
+                    if (
+                        liters > available
+                    ) {
+
+                        event.preventDefault();
+
+                        alert(
+                            "Allocated liters exceed the available milk for a selected farm."
+                        );
+
+                        return;
+
+                    }
+
+
+                    allocated +=
+                        liters;
+
+                }
+
+
+                if (
+                    Math.abs(
+                        allocated -
+                        required
+                    ) > 0.001
+                ) {
+
+                    event.preventDefault();
+
+                    alert(
+                        "The total allocated milk must exactly equal the customer's required milk."
+                    );
+
+                }
+
+            }
+        );
+
+
+        updateSummary();
+
+    }
+);
+
+</script>
