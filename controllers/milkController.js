@@ -27,45 +27,6 @@
 //
 //     controllers/milkCollectController.js
 //
-// IMPORTANT FARM CONTEXT RULE
-// ----------------------------------------------------------
-//
-// Farm selection is NOT determined by this controller.
-//
-// The active farm is selected through:
-//
-//     /farm-context/switch
-//
-// and stored in the authenticated user's session.
-//
-// The farm-context middleware/controller exposes the active
-// farm through:
-//
-//     req.farm
-//     req.farmId
-//
-// The controller passes that selected farm to milkService.
-//
-// The controller does NOT calculate:
-//
-//     • farm production
-//     • farm available milk
-//     • farm sales
-//     • farm revenue
-//
-// Those calculations belong to milkService.js.
-//
-// IMPORTANT
-// ----------------------------------------------------------
-//
-// The controller NEVER does this:
-//
-//     farmTotals[0]
-//
-// to determine the active farm.
-//
-// The active farm comes from the farm-context system.
-//
 // ==========================================================
 
 
@@ -77,15 +38,19 @@ const milkService =
     require("../services/milkService");
 
 
+const Dairy =
+    require("../models/dairy");
+
+
 // ==========================================================
 // AUTHENTICATED USER
 // ==========================================================
 //
-// Application normally uses:
+// The application uses:
 //
 //     req.session.user
 //
-// Some middleware may expose:
+// Some middleware may also expose:
 //
 //     req.user
 //
@@ -101,52 +66,6 @@ function getUser(
         req.session?.user ||
         req.user ||
         null
-    );
-
-}
-
-
-// ==========================================================
-// ACTIVE FARM ID
-// ==========================================================
-//
-// The farm-context middleware should expose:
-//
-//     req.farmId
-//
-// The session also contains the active farm:
-//
-//     req.session.activeFarmId
-//
-// Support both.
-//
-// req.farmId is preferred because the middleware has already
-// resolved and validated the active farm.
-//
-// ==========================================================
-
-function getActiveFarmId(
-    req
-) {
-
-    const farmId =
-        req.farmId ||
-        req.session?.activeFarmId ||
-        req.session?.farmContext?.farmId ||
-        null;
-
-
-    if (
-        !farmId
-    ) {
-
-        return null;
-
-    }
-
-
-    return String(
-        farmId
     );
 
 }
@@ -188,74 +107,6 @@ function isValidObjectId(
 
 
 // ==========================================================
-// REQUIRE ACTIVE FARM
-// ==========================================================
-//
-// The controller requires an active farm for operations that
-// are farm-scoped.
-//
-// The controller does NOT verify whether the user owns the
-// farm.
-//
-// That authorization belongs to the farm-context layer and
-// milkService.
-//
-// ==========================================================
-
-function requireActiveFarm(
-    req
-) {
-
-    const farmId =
-        getActiveFarmId(req);
-
-
-    if (
-        !farmId
-    ) {
-
-        const error =
-            new Error(
-                "A dairy farm must be selected."
-            );
-
-
-        error.code =
-            "MILK_FARM_REQUIRED";
-
-
-        throw error;
-
-    }
-
-
-    if (
-        !isValidObjectId(
-            farmId
-        )
-    ) {
-
-        const error =
-            new Error(
-                "Invalid active dairy farm."
-            );
-
-
-        error.code =
-            "MILK_FARM_ACCESS_DENIED";
-
-
-        throw error;
-
-    }
-
-
-    return farmId;
-
-}
-
-
-// ==========================================================
 // ERROR RESPONSE
 // ==========================================================
 
@@ -268,81 +119,6 @@ function sendError(
     console.error(
         error
     );
-
-
-    // ======================================================
-    // BUSINESS ERRORS
-    // ======================================================
-
-    const businessErrors = [
-
-        "MILK_USER_REQUIRED",
-
-        "MILK_ADMIN_REQUIRED",
-
-        "MILK_FARM_REQUIRED",
-
-        "MILK_FARM_ACCESS_DENIED",
-
-        "MILK_INVALID_ANIMAL",
-
-        "MILK_NO_RECORDS",
-
-        "MILK_TIME_CLOSED",
-
-        "MILK_INVALID_QUANTITY",
-
-        "MILK_DUPLICATE_RECORD",
-
-        "MILK_ALREADY_RECORDED",
-
-        "MILK_SAVE_FAILED",
-
-        "MILK_NOT_FOUND",
-
-        "MILK_INVALID_DAY",
-
-        "MILK_INVALID_MONTH",
-
-        "MILK_INVALID_PRICE",
-
-        "MILK_INVALID_CUSTOMER",
-
-        "MILK_INSUFFICIENT",
-
-        "MILK_DAY_LOCKED",
-
-        "MILK_INVALID_ORDER",
-
-        "MILK_ORDER_NOT_FOUND",
-
-        "MILK_ORDER_INACTIVE",
-
-        "MILK_ORDER_NOT_ACTIVE",
-
-        "MILK_ORDER_ALREADY_PROCESSED",
-
-        "MILK_SUMMARY_NOT_FOUND"
-
-    ];
-
-
-    if (
-        error?.code &&
-        businessErrors.includes(
-            error.code
-        )
-    ) {
-
-        return res
-            .status(400)
-            .send(
-                error.message ||
-                fallback ||
-                "Unable to complete the request."
-            );
-
-    }
 
 
     return res
@@ -369,18 +145,6 @@ function sendError(
 // /stats?type=day&date=2026-08-13
 //
 // /stats?type=month&month=2026-08
-//
-// IMPORTANT
-// ----------------------------------------------------------
-//
-// Statistics are calculated for the ACTIVE FARM.
-//
-// The controller passes:
-//
-//     user
-//     farmId
-//
-// to milkService.
 //
 // ==========================================================
 
@@ -410,14 +174,6 @@ async function(
 
 
         // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            requireActiveFarm(req);
-
-
-        // ==================================================
         // TYPE
         // ==================================================
 
@@ -444,16 +200,9 @@ async function(
 
 
             const data =
-                await milkService.getDailyStats({
-
-                    day:
-                        selectedDate,
-
-                    farmId,
-
-                    user
-
-                });
+                await milkService.getDailyStats(
+                    selectedDate
+                );
 
 
             return res.render(
@@ -487,20 +236,6 @@ async function(
                             ? data.sales
                             : [],
 
-                    farmTotals:
-                        Array.isArray(
-                            data?.farmTotals
-                        )
-                            ? data.farmTotals
-                            : [],
-
-                    activeFarm:
-                        data?.activeFarm ||
-                        req.farm ||
-                        null,
-
-                    farmId,
-
                     user
 
                 }
@@ -527,16 +262,9 @@ async function(
 
 
             const data =
-                await milkService.getMonthlyStats({
-
-                    month:
-                        selectedMonth,
-
-                    farmId,
-
-                    user
-
-                });
+                await milkService.getMonthlyStats(
+                    selectedMonth
+                );
 
 
             return res.render(
@@ -569,20 +297,6 @@ async function(
                         )
                             ? data.sales
                             : [],
-
-                    farmTotals:
-                        Array.isArray(
-                            data?.farmTotals
-                        )
-                            ? data.farmTotals
-                            : [],
-
-                    activeFarm:
-                        data?.activeFarm ||
-                        req.farm ||
-                        null,
-
-                    farmId,
 
                     user
 
@@ -619,13 +333,7 @@ async function(
                     total:
                         0,
 
-                    production:
-                        0,
-
                     consumed:
-                        0,
-
-                    sold:
                         0,
 
                     available:
@@ -635,9 +343,6 @@ async function(
                         0,
 
                     cash:
-                        0,
-
-                    revenue:
                         0,
 
                     locked:
@@ -650,15 +355,6 @@ async function(
 
                 sales:
                     [],
-
-                farmTotals:
-                    [],
-
-                activeFarm:
-                    req.farm ||
-                    null,
-
-                farmId,
 
                 user
 
@@ -687,8 +383,6 @@ async function(
 // POST /stats/day
 //
 // ADMIN ONLY.
-//
-// The active farm is passed to the service.
 //
 // ==========================================================
 
@@ -735,14 +429,6 @@ async function(
 
 
         // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            requireActiveFarm(req);
-
-
-        // ==================================================
         // REQUEST DATA
         // ==================================================
 
@@ -771,11 +457,7 @@ async function(
 
             day,
 
-            price,
-
-            farmId,
-
-            user
+            price
 
         });
 
@@ -809,24 +491,6 @@ async function(
 //
 // GET /sales
 //
-// IMPORTANT
-// ----------------------------------------------------------
-//
-// getSalesPageData receives:
-//
-//     farmId
-//     user
-//
-// The service determines:
-//
-//     • farm production
-//     • farm total production
-//     • farm milk available
-//     • farm milk sold
-//     • farm revenue
-//
-// The controller simply passes the result to sales.ejs.
-//
 // ==========================================================
 
 exports.getSalesPage =
@@ -855,37 +519,11 @@ async function(
 
 
         // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            requireActiveFarm(req);
-
-
-        // ==================================================
         // PAGE DATA
         // ==================================================
 
         const data =
-            await milkService.getSalesPageData({
-
-                farmId,
-
-                user
-
-            });
-
-
-        // ==================================================
-        // FARM TOTALS
-        // ==================================================
-
-        const farmTotals =
-            Array.isArray(
-                data?.farmTotals
-            )
-                ? data.farmTotals
-                : [];
+            await milkService.getSalesPageData();
 
 
         // ==================================================
@@ -910,16 +548,6 @@ async function(
                         ? data.manualSales
                         : [],
 
-                farmTotals,
-
-                selectedFarmId:
-                    farmId,
-
-                activeFarm:
-                    data?.activeFarm ||
-                    req.farm ||
-                    null,
-
                 currentPrice:
                     Number(
                         data?.currentPrice ?? 50
@@ -930,22 +558,10 @@ async function(
                         data?.totalSales || 0
                     ),
 
-                totalProduction:
-                    Number(
-                        data?.totalProduction || 0
-                    ),
-
-                totalRevenue:
-                    Number(
-                        data?.totalRevenue || 0
-                    ),
-
                 availableMilk:
                     Number(
                         data?.availableMilk || 0
                     ),
-
-                farmId,
 
                 user
 
@@ -973,10 +589,6 @@ async function(
 //
 // POST /sales/manual
 //
-// The farm comes from the ACTIVE FARM CONTEXT.
-//
-// A submitted farmId is deliberately NOT trusted.
-//
 // ==========================================================
 
 exports.submitManualSale =
@@ -991,10 +603,6 @@ async function(
             getUser(req);
 
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (!user) {
 
             return res.redirect(
@@ -1003,18 +611,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            requireActiveFarm(req);
-
-
-        // ==================================================
-        // CUSTOMER
-        // ==================================================
 
         const customerName =
             typeof req.body?.customerName === "string"
@@ -1032,10 +628,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // LITERS
-        // ==================================================
 
         const rawLiters =
             req.body?.liters;
@@ -1061,9 +653,7 @@ async function(
 
 
         if (
-            !Number.isFinite(
-                liters
-            ) ||
+            !Number.isFinite(liters) ||
             liters <= 0
         ) {
 
@@ -1074,31 +664,17 @@ async function(
         }
 
 
-        // ==================================================
-        // SAVE FARM-SCOPED SALE
-        // ==================================================
-
         await milkService.submitManualSale({
-
-            farmId,
 
             customerName,
 
-            liters,
-
-            user
+            liters
 
         });
 
 
-        // ==================================================
-        // SUCCESS
-        // ==================================================
-
         return res.redirect(
-            `/sales?success=${encodeURIComponent(
-                "Sale recorded successfully."
-            )}`
+            "/sales?success=Sale%20recorded%20successfully."
         );
 
     }
@@ -1122,14 +698,6 @@ async function(
 //
 // POST /sales/standing-order
 //
-// Required:
-//
-//     standingOrderId
-//
-// Farm:
-//
-//     ACTIVE FARM CONTEXT
-//
 // ==========================================================
 
 exports.submitStandingOrderSale =
@@ -1144,10 +712,6 @@ async function(
             getUser(req);
 
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (!user) {
 
             return res.redirect(
@@ -1156,18 +720,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            requireActiveFarm(req);
-
-
-        // ==================================================
-        // STANDING ORDER
-        // ==================================================
 
         const standingOrderId =
             req.body?.standingOrderId;
@@ -1195,29 +747,15 @@ async function(
         }
 
 
-        // ==================================================
-        // SAVE FARM-SCOPED SALE
-        // ==================================================
-
         await milkService.submitStandingOrderSale({
 
-            farmId,
-
-            standingOrderId,
-
-            user
+            standingOrderId
 
         });
 
 
-        // ==================================================
-        // SUCCESS
-        // ==================================================
-
         return res.redirect(
-            `/sales?success=${encodeURIComponent(
-                "Standing order sale recorded."
-            )}`
+            "/sales?success=Standing%20order%20sale%20recorded."
         );
 
     }
@@ -1243,9 +781,6 @@ async function(
 //
 // ADMIN ONLY.
 //
-// Price is global unless milkService explicitly scopes the
-// price to a farm.
-//
 // ==========================================================
 
 exports.updateMilkPrice =
@@ -1260,10 +795,6 @@ async function(
             getUser(req);
 
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (!user) {
 
             return res.redirect(
@@ -1272,10 +803,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // ADMIN ONLY
-        // ==================================================
 
         if (
             user.role !== "admin"
@@ -1289,18 +816,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            requireActiveFarm(req);
-
-
-        // ==================================================
-        // PRICE
-        // ==================================================
 
         const rawPrice =
             req.body?.price;
@@ -1324,29 +839,13 @@ async function(
         }
 
 
-        // ==================================================
-        // UPDATE
-        // ==================================================
+        await milkService.updateMilkPrice(
+            price
+        );
 
-        await milkService.updateMilkPrice({
-
-            price,
-
-            farmId,
-
-            user
-
-        });
-
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
 
         return res.redirect(
-            `/sales?success=${encodeURIComponent(
-                "Milk price updated successfully."
-            )}`
+            "/sales?success=Milk%20price%20updated%20successfully."
         );
 
     }
@@ -1370,11 +869,6 @@ async function(
 //
 // POST /sales/standing-order/add
 //
-// IMPORTANT
-// ----------------------------------------------------------
-//
-// Standing orders are created inside the active farm context.
-//
 // ==========================================================
 
 exports.addStandingOrder =
@@ -1389,10 +883,6 @@ async function(
             getUser(req);
 
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (!user) {
 
             return res.redirect(
@@ -1401,18 +891,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            requireActiveFarm(req);
-
-
-        // ==================================================
-        // CUSTOMER
-        // ==================================================
 
         const customerName =
             typeof req.body?.customerName === "string"
@@ -1430,10 +908,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // LITERS
-        // ==================================================
 
         const liters =
             Number(
@@ -1453,31 +927,17 @@ async function(
         }
 
 
-        // ==================================================
-        // CREATE ORDER
-        // ==================================================
-
         await milkService.addStandingOrder({
 
             customerName,
 
-            liters,
-
-            farmId,
-
-            user
+            liters
 
         });
 
 
-        // ==================================================
-        // SUCCESS
-        // ==================================================
-
         return res.redirect(
-            `/sales?success=${encodeURIComponent(
-                "Standing order added successfully."
-            )}`
+            "/sales?success=Standing%20order%20added%20successfully."
         );
 
     }
@@ -1515,10 +975,6 @@ async function(
             getUser(req);
 
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (!user) {
 
             return res.redirect(
@@ -1527,18 +983,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            requireActiveFarm(req);
-
-
-        // ==================================================
-        // ORDER ID
-        // ==================================================
 
         const id =
             req.body?.id;
@@ -1564,30 +1008,18 @@ async function(
         }
 
 
-        // ==================================================
-        // OMIT
-        // ==================================================
-
         await milkService.omitStandingOrder({
 
             orderId:
                 id,
-
-            farmId,
 
             user
 
         });
 
 
-        // ==================================================
-        // SUCCESS
-        // ==================================================
-
         return res.redirect(
-            `/sales?success=${encodeURIComponent(
-                "Standing order omitted."
-            )}`
+            "/sales?success=Standing%20order%20omitted."
         );
 
     }
@@ -1613,17 +1045,34 @@ async function(
 //
 //     /milk/history/:dairyId
 //
-// IMPORTANT
+// ==========================================================
+//
+// IMPORTANT BUSINESS RULE
 // ----------------------------------------------------------
 //
-// Historical milk records belong to the female animal.
+// Milking history belongs to the FEMALE ANIMAL.
 //
-// History must NOT depend on:
+// It does NOT depend on:
 //
 //     • isMilking
 //     • current milking status
+//     • dairy-farm assignment
+//     • dairy-worker assignment
 //
-// The active farm is passed to the service where required.
+// Therefore:
+//
+//     female + not currently milking
+//
+// MUST still be allowed to view her historical milk records.
+//
+// Likewise:
+//
+//     female + currently milking
+//
+// is allowed.
+//
+// `isMilking` is only a CURRENT STATUS flag. It must never
+// determine whether historical records can be viewed.
 //
 // ==========================================================
 
@@ -1687,6 +1136,106 @@ async function(
 
 
         // ==================================================
+        // FIND ANIMAL
+        // ==================================================
+        //
+        // This is deliberately done here instead of relying
+        // on isMilking.
+        //
+        // There is NO farm-assignment check.
+        //
+        // ==================================================
+
+        const dairy =
+            await Dairy.findById(
+                dairyId
+            );
+
+
+        if (!dairy) {
+
+            return res.status(
+                404
+            ).send(
+                "Dairy animal not found."
+            );
+
+        }
+
+
+        // ==================================================
+        // FEMALE CHECK
+        // ==================================================
+        //
+        // Milking history is available for female animals.
+        //
+        // It is NOT restricted by:
+        //
+        //     dairy.isMilking
+        //
+        // A female animal that has stopped milking can still
+        // have historical records.
+        //
+        // ==================================================
+
+        let isFemale =
+            false;
+
+
+        // --------------------------------------------------
+        // Use the Dairy model's isFemale virtual if present.
+        // --------------------------------------------------
+
+        if (
+            typeof dairy.isFemale === "boolean"
+        ) {
+
+            isFemale =
+                dairy.isFemale;
+
+        }
+
+        // --------------------------------------------------
+        // Fallback to gender if available.
+        // --------------------------------------------------
+
+        else if (
+            typeof dairy.gender === "string"
+        ) {
+
+            isFemale =
+                dairy.gender.toLowerCase() ===
+                "female";
+
+        }
+
+        // --------------------------------------------------
+        // Fallback to sex if the schema uses sex.
+        // --------------------------------------------------
+
+        else if (
+            typeof dairy.sex === "string"
+        ) {
+
+            isFemale =
+                dairy.sex.toLowerCase() ===
+                "female";
+
+        }
+
+
+        if (!isFemale) {
+
+            return res.status(
+                400
+            ).send(
+                "Milking history is available only for female dairy animals."
+            );
+
+        }
+
+
+        // ==================================================
         // MONTH
         // ==================================================
 
@@ -1699,15 +1248,19 @@ async function(
 
 
         // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            getActiveFarmId(req);
-
-
-        // ==================================================
         // HISTORY
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // We pass the actual Dairy document/user to the
+        // service.
+        //
+        // The service MUST NOT reject the animal because:
+        //
+        //     • isMilking === false
+        //     • it has no farm assignment
+        //
         // ==================================================
 
         const data =
@@ -1716,8 +1269,6 @@ async function(
                 dairyId,
 
                 month,
-
-                farmId,
 
                 user
 
@@ -1734,7 +1285,7 @@ async function(
 
                 dairy:
                     data?.dairy ||
-                    null,
+                    dairy,
 
                 records:
                     Array.isArray(
@@ -1759,13 +1310,6 @@ async function(
 
                 selectedMonth:
                     month,
-
-                activeFarm:
-                    data?.activeFarm ||
-                    req.farm ||
-                    null,
-
-                farmId,
 
                 user
 
@@ -1801,13 +1345,12 @@ async function(
 //
 // ADMIN ONLY.
 //
+// IMPORTANT:
+//
 // This changes ONLY the current `isMilking` status.
 //
-// It does NOT determine whether the animal can:
-//
-//     • have milk records
-//     • have milk history
-//     • be included in historical production
+// It does NOT determine whether the animal can view
+// historical records.
 //
 // ==========================================================
 
@@ -1882,14 +1425,6 @@ async function(
 
 
         // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            getActiveFarmId(req);
-
-
-        // ==================================================
         // TOGGLE
         // ==================================================
 
@@ -1897,8 +1432,6 @@ async function(
 
             dairyId:
                 id,
-
-            farmId,
 
             user
 
@@ -1929,240 +1462,10 @@ async function(
 
 
 // ==========================================================
-// LOCK DAILY SUMMARY
-// ==========================================================
-//
-// POST /stats/day/lock
-//
-// ADMIN ONLY.
-//
-// ==========================================================
-
-exports.lockDay =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        const user =
-            getUser(req);
-
-
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        // ==================================================
-        // ADMIN ONLY
-        // ==================================================
-
-        if (
-            user.role !== "admin"
-        ) {
-
-            return res.status(
-                403
-            ).send(
-                "Only administrators can lock daily summaries."
-            );
-
-        }
-
-
-        // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            requireActiveFarm(req);
-
-
-        // ==================================================
-        // DAY
-        // ==================================================
-
-        const day =
-            req.body?.day;
-
-
-        if (!day) {
-
-            throw new Error(
-                "Day is required."
-            );
-
-        }
-
-
-        // ==================================================
-        // LOCK
-        // ==================================================
-
-        await milkService.lockDay({
-
-            day,
-
-            farmId,
-
-            user
-
-        });
-
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
-
-        return res.redirect(
-            `/stats?type=day&date=${encodeURIComponent(day)}`
-        );
-
-    }
-
-    catch (error) {
-
-        return sendError(
-            res,
-            error,
-            "Unable to lock daily summary."
-        );
-
-    }
-
-};
-
-
-// ==========================================================
-// UNLOCK DAILY SUMMARY
-// ==========================================================
-//
-// POST /stats/day/unlock
-//
-// ADMIN ONLY.
-//
-// ==========================================================
-
-exports.unlockDay =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        const user =
-            getUser(req);
-
-
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        // ==================================================
-        // ADMIN ONLY
-        // ==================================================
-
-        if (
-            user.role !== "admin"
-        ) {
-
-            return res.status(
-                403
-            ).send(
-                "Only administrators can unlock daily summaries."
-            );
-
-        }
-
-
-        // ==================================================
-        // ACTIVE FARM
-        // ==================================================
-
-        const farmId =
-            requireActiveFarm(req);
-
-
-        // ==================================================
-        // DAY
-        // ==================================================
-
-        const day =
-            req.body?.day;
-
-
-        if (!day) {
-
-            throw new Error(
-                "Day is required."
-            );
-
-        }
-
-
-        // ==================================================
-        // UNLOCK
-        // ==================================================
-
-        await milkService.unlockDay({
-
-            day,
-
-            farmId,
-
-            user
-
-        });
-
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
-
-        return res.redirect(
-            `/stats?type=day&date=${encodeURIComponent(day)}`
-        );
-
-    }
-
-    catch (error) {
-
-        return sendError(
-            res,
-            error,
-            "Unable to unlock daily summary."
-        );
-
-    }
-
-};
-
-
-// ==========================================================
 // CONTROLLER EXPORT SUMMARY
 // ==========================================================
 //
-// The following functions belong here:
+// The following functions intentionally belong here:
 //
 //     getMilkStats
 //     saveDailyStats
@@ -2177,9 +1480,6 @@ async function(
 //
 //     getMilkingHistory
 //     toggleMilkingStatus
-//
-//     lockDay
-//     unlockDay
 //
 // ----------------------------------------------------------
 //
