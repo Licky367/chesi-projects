@@ -1,87 +1,134 @@
-<% /*
-==========================================================
-DAIRY ASSET HORIZONTAL CARDS
-
-FILE:
-    views/update/asset-cards.ejs
-
-PURPOSE:
-    Compact WhatsApp-style horizontal dairy asset navigator.
-
-    The section:
-        - Introduces the dairy's assets
-        - Shows assets in horizontally scrollable cards
-        - Shows the asset profile image
-        - Shows the asset name
-        - Shows whether it is an Animal or Structure / Tool
-        - Links directly to /dairy/:id
-
-EXPECTED DATA:
-    assetDairies
-
-TYPE RULES:
-----------------------------------------------------------
-    code > 0
-        Animal
-
-    code === null
-    code === undefined
-    code === ""
-        Structure / Facility / Tool
-
-    code < 0
-        Not displayed
-
-IMPORTANT:
-    Cards DO NOT open the post modal.
-
-    Clicking an asset takes the user directly to:
-
-        /dairy/:id
-==========================================================
-*/ %>
-
-
 <%
-    /* ======================================================
-       SAFE ASSET ARRAY
-    ====================================================== */
+/* ==========================================================
+   FEMALE ANIMAL BOOLEAN CARDS
 
-    const assets =
-        Array.isArray(assetDairies)
-            ? assetDairies
-            : [];
+   FILE:
+       views/update/boolean.ejs
+
+   PURPOSE:
+       INCLUDE ONLY.
+
+   PARENT:
+       views/update.ejs
+
+   DATA RECEIVED FROM PARENT:
+       booleanAnimals
+       booleanFields
+
+   ELIGIBLE ANIMAL:
+   ----------------------------------------------------------
+       1. code > 0 AND code is even
+
+       OR
+
+       2. gender === female
+
+   FIRST CARD:
+   ----------------------------------------------------------
+       Boolean selector.
+
+       Tapping it opens/closes the available Boolean fields.
+
+   REMAINING CARDS:
+   ----------------------------------------------------------
+       One card per eligible female animal.
+
+       Each Boolean field can be toggled independently.
+
+   IMPORTANT:
+   ----------------------------------------------------------
+       This file MUST NOT expect:
+
+           animals
+           dairies
+           fields
+
+       directly from Express.
+
+       The parent passes:
+
+           booleanAnimals
+           booleanFields
+
+       and they are normalized below.
+========================================================== */
+
+
+/* ==========================================================
+   SAFE INPUTS
+========================================================== */
+
+const animals =
+    Array.isArray(booleanAnimals)
+        ? booleanAnimals
+        : [];
+
+
+const fields =
+    Array.isArray(booleanFields)
+        ? booleanFields
+        : [];
+
+
+/* ==========================================================
+   SAFE DAIRY ID
+========================================================== */
+
+const currentDairyId =
+    dairy && dairy._id
+        ? String(dairy._id)
+        : "";
+
+
+/* ==========================================================
+   FIELD LABEL
+========================================================== */
+
+function booleanLabel(field) {
+
+    return String(field || "")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, function (letter) {
+            return letter.toUpperCase();
+        });
+
+}
+
 %>
 
 
-<% if (assets.length) { %>
-
 <section
-    class="dairy-asset-strip"
-    aria-label="Dairy Farm Assets"
+    class="update-boolean-section"
+    aria-label="Female animal boolean management"
 >
 
 
-    <!-- =====================================================
-         SECTION HEADER
-    ====================================================== -->
+    <!-- ======================================================
+         HEADER
+    ======================================================= -->
 
-    <div class="dairy-asset-strip-header">
+    <div class="update-boolean-header">
 
-        <div class="dairy-asset-strip-title">
+        <div class="update-boolean-heading">
+
+            <span class="update-boolean-kicker">
+                ANIMAL MANAGEMENT
+            </span>
 
             <strong>
-                View the dairy assets
+                Female Animals
             </strong>
 
         </div>
 
 
-        <div class="dairy-asset-strip-description">
+        <div class="update-boolean-description">
 
-            Explore the animals, structures, facilities, and
-            tools that make up
-            <strong><%= dairy.name %></strong>.
+            Tap the first card to choose a Boolean field,
+            then toggle it directly on any eligible animal.
 
         </div>
 
@@ -89,202 +136,405 @@ IMPORTANT:
 
 
 
-    <!-- =====================================================
-         HORIZONTAL SCROLL AREA
-    ====================================================== -->
+    <!-- ======================================================
+         HORIZONTAL CARD STRIP
+    ======================================================= -->
 
     <div
-        class="dairy-asset-scroll"
+        class="update-boolean-scroll"
         role="list"
-        aria-label="Dairy assets"
+        aria-label="Female animal Boolean controls"
     >
 
 
-        <% assets.forEach(function (asset) { %>
+        <!-- ==================================================
+             FIRST CARD — BOOLEAN SELECTOR
+        =================================================== -->
+
+        <div
+            class="update-boolean-card update-boolean-selector-card"
+            role="listitem"
+        >
+
+
+            <button
+                type="button"
+                class="update-boolean-selector"
+                id="booleanFieldSelector"
+                aria-expanded="false"
+                aria-controls="booleanFieldDropdown"
+            >
+
+                <div class="update-boolean-selector-icon">
+
+                    <i class="fas fa-sliders"></i>
+
+                </div>
+
+
+                <div class="update-boolean-selector-title">
+
+                    Boolean Fields
+
+                </div>
+
+
+                <div class="update-boolean-selector-text">
+
+                    Choose what to manage
+
+                </div>
+
+
+                <div class="update-boolean-selector-arrow">
+
+                    <i class="fas fa-chevron-down"></i>
+
+                </div>
+
+            </button>
+
+
+
+            <!-- ==============================================
+                 DROPDOWN
+            =============================================== -->
+
+            <div
+                id="booleanFieldDropdown"
+                class="update-boolean-dropdown"
+                hidden
+            >
+
+                <% if (fields.length > 0) { %>
+
+                    <% fields.forEach(function(field) { %>
+
+                        <button
+                            type="button"
+                            class="update-boolean-field-option"
+                            data-boolean-field="<%= field %>"
+                        >
+
+                            <span class="update-boolean-field-option-icon">
+
+                                <i class="fas fa-toggle-on"></i>
+
+                            </span>
+
+
+                            <span class="update-boolean-field-option-label">
+
+                                <%= booleanLabel(field) %>
+
+                            </span>
+
+
+                            <span class="update-boolean-field-option-check">
+
+                                <i class="fas fa-check"></i>
+
+                            </span>
+
+                        </button>
+
+                    <% }); %>
+
+                <% } else { %>
+
+                    <div class="update-boolean-no-fields">
+
+                        No Boolean fields available.
+
+                    </div>
+
+                <% } %>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             ELIGIBLE ANIMALS
+        =================================================== -->
+
+        <% animals.forEach(function(animal) { %>
 
             <%
-                /* =================================================
-                   SAFETY CHECK
-                ================================================= */
-
-                if (!asset || !asset._id) {
-                    return;
-                }
-
-
-                /* =================================================
-                   RAW CODE
-                ================================================= */
-
-                const assetCode =
-                    asset.code;
-
-
-                /* =================================================
-                   NORMALIZE CODE
-                ================================================= */
-
-                const numericCode =
-                    (
-                        assetCode !== null &&
-                        assetCode !== undefined &&
-                        assetCode !== ""
-                    )
-                        ? Number(assetCode)
-                        : null;
-
-
-
-                /* =================================================
-                   NEVER DISPLAY NEGATIVE-CODE RECORDS
-                ================================================= */
 
                 if (
-                    numericCode !== null &&
-                    Number.isFinite(numericCode) &&
-                    numericCode < 0
+                    !animal ||
+                    !animal._id
                 ) {
+
                     return;
+
                 }
 
 
+                /* ============================================
+                   ANIMAL NAME
+                ============================================ */
 
-                /* =================================================
-                   DETERMINE ASSET TYPE
-
-                   code > 0
-                       Animal
-
-                   no code
-                       Structure / Facility / Tool
-                ================================================= */
-
-                const isAnimal =
-                    numericCode !== null &&
-                    Number.isFinite(numericCode) &&
-                    numericCode > 0;
+                const animalName =
+                    String(
+                        animal.name ||
+                        "Unnamed Animal"
+                    );
 
 
-                const assetType =
-                    isAnimal
-                        ? "Animal"
-                        : "Structure / Tool";
+                /* ============================================
+                   ANIMAL CODE
+                ============================================ */
+
+                const animalCode =
+                    Number(
+                        animal.code
+                    );
 
 
+                /* ============================================
+                   GENDER
+                ============================================ */
 
-                /* =================================================
+                const animalGender =
+                    String(
+                        animal.gender ||
+                        ""
+                    );
+
+
+                /* ============================================
                    IMAGE
+                ============================================ */
 
-                   Prefer:
-                       profileImage
-                       displayImage
-
-                   Otherwise generate a simple avatar.
-                ================================================= */
-
-                const assetImage =
-                    asset.profileImage ||
-                    asset.displayImage ||
+                const animalImage =
+                    animal.displayImage ||
+                    animal.profileImage ||
                     (
                         "https://ui-avatars.com/api/?name=" +
                         encodeURIComponent(
-                            asset.name || "Asset"
+                            animalName
                         ) +
-                        "&background=e8f5ee&color=198754"
+                        "&background=e8f0e5&color=47733f"
                     );
+
             %>
 
 
+            <!-- ==============================================
+                 ANIMAL CARD
+            =============================================== -->
 
-            <!-- =================================================
-                 ASSET CARD
-            ================================================== -->
-
-            <a
-                href="/dairy/<%= asset._id %>"
-                class="dairy-asset-card"
+            <article
+                class="update-boolean-card update-boolean-animal-card"
                 role="listitem"
-                aria-label="View <%= asset.name || 'Asset' %>"
+                data-animal-id="<%= animal._id %>"
             >
 
 
-                <!-- =============================================
-                     IMAGE
-                ============================================== -->
+                <!-- ==========================================
+                     CARD ACCENT
+                =========================================== -->
 
-                <div class="dairy-asset-image-wrap">
+                <div
+                    class="update-boolean-card-accent"
+                    aria-hidden="true"
+                ></div>
+
+
+
+                <!-- ==========================================
+                     IMAGE
+                =========================================== -->
+
+                <div class="update-boolean-image-wrap">
 
                     <img
-                        src="<%= assetImage %>"
-                        alt="<%= asset.name || 'Asset' %>"
-                        class="dairy-asset-image"
+                        src="<%= animalImage %>"
+                        alt="<%= animalName %>"
+                        class="update-boolean-image"
                         loading="lazy"
                     >
 
-                </div>
+
+                    <div
+                        class="update-boolean-image-overlay"
+                        aria-hidden="true"
+                    ></div>
 
 
+                    <!-- FEMALE BADGE -->
 
-                <!-- =============================================
-                     ASSET NAME
-                ============================================== -->
+                    <div class="update-boolean-female-badge">
 
-                <div class="dairy-asset-name">
-
-                    <%= asset.name || "Unnamed Asset" %>
-
-                </div>
-
-
-
-                <!-- =============================================
-                     ASSET TYPE
-                ============================================== -->
-
-                <div class="dairy-asset-type">
-
-
-                    <% if (isAnimal) { %>
-
-                        <span
-                            class="dairy-asset-type-icon"
-                            aria-hidden="true"
-                        >
-                            🐄
-                        </span>
+                        <i class="fas fa-venus"></i>
 
                         <span>
-                            <%= assetType %>
+                            FEMALE
                         </span>
 
+                    </div>
 
-                    <% } else { %>
 
-                        <span
-                            class="dairy-asset-type-icon"
-                            aria-hidden="true"
-                        >
-                            🏗️
-                        </span>
+                    <!-- CODE -->
 
-                        <span>
-                            <%= assetType %>
-                        </span>
+                    <div class="update-boolean-code">
 
-                    <% } %>
+                        #<%= animalCode %>
 
+                    </div>
 
                 </div>
 
 
-            </a>
 
+                <!-- ==========================================
+                     CONTENT
+                =========================================== -->
+
+                <div class="update-boolean-content">
+
+
+                    <!-- NAME -->
+
+                    <div class="update-boolean-name">
+
+                        <%= animalName %>
+
+                    </div>
+
+
+
+                    <!-- GENDER -->
+
+                    <div class="update-boolean-gender">
+
+                        <i class="fas fa-venus"></i>
+
+                        <%= animalGender || "Female" %>
+
+                    </div>
+
+
+
+                    <!-- ======================================
+                         BOOLEAN CONTROLS
+                    ======================================= -->
+
+                    <div class="update-boolean-controls">
+
+
+                        <% if (fields.length > 0) { %>
+
+                            <% fields.forEach(function(field) { %>
+
+                                <%
+
+                                    const fieldValue =
+                                        Boolean(
+                                            animal[field]
+                                        );
+
+                                %>
+
+
+                                <button
+                                    type="button"
+                                    class="update-boolean-toggle <%= fieldValue ? "is-on" : "" %>"
+                                    data-animal-id="<%= animal._id %>"
+                                    data-boolean-field="<%= field %>"
+                                    data-boolean-value="<%= fieldValue %>"
+                                    aria-pressed="<%= fieldValue ? "true" : "false" %>"
+                                    title="<%= booleanLabel(field) %>"
+                                >
+
+                                    <span
+                                        class="update-boolean-toggle-label"
+                                    >
+                                        <%= booleanLabel(field) %>
+                                    </span>
+
+
+                                    <span
+                                        class="update-boolean-toggle-switch"
+                                        aria-hidden="true"
+                                    >
+
+                                        <span
+                                            class="update-boolean-toggle-knob"
+                                        ></span>
+
+                                    </span>
+
+                                </button>
+
+                            <% }); %>
+
+                        <% } else { %>
+
+                            <div class="update-boolean-empty">
+
+                                No Boolean controls.
+
+                            </div>
+
+                        <% } %>
+
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==========================================
+                     BOTTOM LINE
+                =========================================== -->
+
+                <div
+                    class="update-boolean-bottom-line"
+                    aria-hidden="true"
+                ></div>
+
+            </article>
 
         <% }); %>
 
 
-    </div>
 
+        <!-- ==================================================
+             NO ANIMALS
+        =================================================== -->
+
+        <% if (animals.length === 0) { %>
+
+            <div class="update-boolean-empty-card">
+
+                <div class="update-boolean-empty-card-icon">
+
+                    <i class="fas fa-cow"></i>
+
+                </div>
+
+
+                <strong>
+                    No eligible female animals
+                </strong>
+
+
+                <span>
+                    No positive-even-code or female animals
+                    are currently available.
+                </span>
+
+            </div>
+
+        <% } %>
+
+
+    </div>
 
 </section>
 
@@ -293,21 +543,17 @@ IMPORTANT:
 <style>
 
 /* ==========================================================
-   DAIRY ASSET STRIP
-
-   Namespaced specifically for this component.
+   SECTION
 ========================================================== */
 
-.dairy-asset-strip {
+.update-boolean-section {
 
     width: 100%;
 
     margin:
         0
         0
-        16px;
-
-    padding: 0;
+        22px;
 
     overflow: hidden;
 
@@ -319,404 +565,950 @@ IMPORTANT:
 }
 
 
-
 /* ==========================================================
    HEADER
 ========================================================== */
 
-.dairy-asset-strip-header {
-
-    width: 100%;
+.update-boolean-header {
 
     padding:
         0
-        2px
-        10px;
-
-}
-
-
-
-/* ==========================================================
-   TITLE
-========================================================== */
-
-.dairy-asset-strip-title {
-
-    width: 100%;
-
-}
-
-
-.dairy-asset-strip-title strong {
-
-    display: block;
-
-    color:
-        #202520;
-
-    font-size:
-        18px;
-
-    font-weight:
-        700;
-
-    line-height:
-        1.3;
-
-}
-
-
-
-/* ==========================================================
-   DESCRIPTION
-========================================================== */
-
-.dairy-asset-strip-description {
-
-    max-width:
-        620px;
-
-    margin-top:
-        3px;
-
-    color:
-        #7b847e;
-
-    font-size:
+        3px
         12px;
 
-    line-height:
-        1.45;
+}
+
+
+.update-boolean-heading {
+
+    display: flex;
+
+    flex-direction: column;
 
 }
 
 
-.dairy-asset-strip-description strong {
+.update-boolean-kicker {
 
-    color:
-        #4e5952;
+    margin-bottom: 3px;
 
-    font-weight:
-        600;
+    color: #b96a27;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: 2px;
 
 }
 
+
+.update-boolean-heading strong {
+
+    color: #26382d;
+
+    font-size: 19px;
+
+    font-weight: 750;
+
+}
+
+
+.update-boolean-description {
+
+    max-width: 620px;
+
+    margin-top: 4px;
+
+    color: #778078;
+
+    font-size: 11px;
+
+    line-height: 1.45;
+
+}
 
 
 /* ==========================================================
-   HORIZONTAL SCROLL
+   SCROLL
 ========================================================== */
 
-.dairy-asset-scroll {
+.update-boolean-scroll {
 
     width: 100%;
 
     display: flex;
 
-    gap:
-        10px;
+    gap: 11px;
 
-    overflow-x:
-        auto;
+    overflow-x: auto;
 
-    overflow-y:
-        hidden;
+    overflow-y: visible;
 
     padding:
-        2px
-        2px
-        8px;
+        5px
+        5px
+        12px;
 
-    scroll-behavior:
-        smooth;
+    box-sizing: border-box;
 
-    -webkit-overflow-scrolling:
-        touch;
+    scrollbar-width: none;
 
-    scrollbar-width:
-        none;
+    -webkit-overflow-scrolling: touch;
 
 }
 
 
-.dairy-asset-scroll::-webkit-scrollbar {
+.update-boolean-scroll::-webkit-scrollbar {
 
-    display:
-        none;
+    display: none;
 
 }
-
 
 
 /* ==========================================================
-   ASSET CARD
+   CARD
 ========================================================== */
 
-.dairy-asset-card {
+.update-boolean-card {
 
-    position:
-        relative;
+    position: relative;
 
     flex:
         0 0
-        116px;
+        124px;
 
-    width:
-        116px;
+    width: 124px;
 
-    height:
-        178px;
+    height: 197px;
 
-    display:
-        flex;
+    overflow: visible;
 
-    flex-direction:
-        column;
+    flex-shrink: 0;
 
-    overflow:
-        hidden;
-
-    text-decoration:
-        none;
+    box-sizing: border-box;
 
     border:
         1px solid
-        #e4e9e6;
+        #e1e6de;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff 0%,
+            #fffdfa 58%,
+            #f3f7f0 100%
+        );
+
+    box-shadow:
+        0 3px 9px
+        rgba(39, 55, 42, .065),
+        0 10px 20px
+        rgba(74, 86, 47, .035);
+
+}
+
+
+/* ==========================================================
+   ANIMAL CARD
+========================================================== */
+
+.update-boolean-animal-card {
+
+    overflow: hidden;
+
+}
+
+
+.update-boolean-card-accent {
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: 4px;
+
+    z-index: 5;
 
     border-radius:
-        15px;
+        18px
+        0
+        0
+        18px;
 
     background:
-        #ffffff;
-
-    box-shadow:
-        0 2px 8px
-        rgba(20, 40, 28, .06);
-
-    transition:
-        transform .16s ease,
-        box-shadow .16s ease;
+        linear-gradient(
+            to bottom,
+            #c86f29,
+            #9a8740,
+            #39764c
+        );
 
 }
-
-
-
-/* ==========================================================
-   CARD HOVER
-========================================================== */
-
-.dairy-asset-card:hover {
-
-    transform:
-        translateY(-2px);
-
-    box-shadow:
-        0 5px 14px
-        rgba(20, 40, 28, .10);
-
-}
-
-
-
-/* ==========================================================
-   CARD ACTIVE
-========================================================== */
-
-.dairy-asset-card:active {
-
-    transform:
-        scale(.97);
-
-}
-
-
-
-/* ==========================================================
-   IMAGE WRAPPER
-========================================================== */
-
-.dairy-asset-image-wrap {
-
-    position:
-        relative;
-
-    width:
-        100%;
-
-    height:
-        116px;
-
-    flex:
-        0 0
-        116px;
-
-    overflow:
-        hidden;
-
-    background:
-        #eef3ef;
-
-}
-
 
 
 /* ==========================================================
    IMAGE
 ========================================================== */
 
-.dairy-asset-image {
+.update-boolean-image-wrap {
 
-    width:
-        100%;
+    position: relative;
 
-    height:
-        100%;
+    width: 100%;
 
-    display:
-        block;
+    height: 112px;
 
-    object-fit:
-        cover;
+    overflow: hidden;
 
-}
-
-
-
-/* ==========================================================
-   ASSET NAME
-========================================================== */
-
-.dairy-asset-name {
-
-    width:
-        100%;
-
-    padding:
-        8px
-        8px
-        2px;
-
-    color:
-        #202520;
-
-    font-size:
-        13px;
-
-    font-weight:
-        700;
-
-    line-height:
-        16px;
-
-    overflow:
-        hidden;
-
-    display:
-        -webkit-box;
-
-    -webkit-box-orient:
-        vertical;
-
-    -webkit-line-clamp:
-        2;
-
-}
-
-
-
-/* ==========================================================
-   ASSET TYPE
-========================================================== */
-
-.dairy-asset-type {
-
-    width:
-        100%;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        4px;
-
-    padding:
-        1px
-        8px
-        8px;
-
-    color:
-        #7b847e;
-
-    font-size:
-        10px;
-
-    line-height:
-        13px;
-
-    overflow:
-        hidden;
-
-}
-
-
-
-/* ==========================================================
-   TYPE ICON
-========================================================== */
-
-.dairy-asset-type-icon {
-
-    flex:
-        0 0 auto;
-
-    font-size:
-        10px;
-
-}
-
-
-
-/* ==========================================================
-   TYPE TEXT
-========================================================== */
-
-.dairy-asset-type span:last-child {
-
-    min-width:
+    border-radius:
+        18px
+        18px
+        0
         0;
 
-    overflow:
-        hidden;
-
-    text-overflow:
-        ellipsis;
-
-    white-space:
-        nowrap;
+    background:
+        #e8efe6;
 
 }
 
+
+.update-boolean-image {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+.update-boolean-image-overlay {
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(25,49,32,.43),
+            rgba(25,49,32,.04)
+        );
+
+}
 
 
 /* ==========================================================
-   FOCUS ACCESSIBILITY
+   FEMALE BADGE
 ========================================================== */
 
-.dairy-asset-card:focus-visible {
+.update-boolean-female-badge {
 
-    outline:
-        2px solid
-        #198754;
+    position: absolute;
 
-    outline-offset:
-        2px;
+    top: 8px;
+    left: 9px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    padding:
+        4px
+        7px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255,255,255,.88);
+
+    color:
+        #47724a;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: .8px;
 
 }
 
+
+.update-boolean-female-badge i {
+
+    color:
+        #b96825;
+
+}
+
+
+/* ==========================================================
+   CODE
+========================================================== */
+
+.update-boolean-code {
+
+    position: absolute;
+
+    right: 8px;
+    bottom: 8px;
+
+    padding:
+        4px
+        7px;
+
+    border-radius: 7px;
+
+    background:
+        rgba(255,255,255,.9);
+
+    color:
+        #47724a;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+}
+
+
+/* ==========================================================
+   CONTENT
+========================================================== */
+
+.update-boolean-content {
+
+    height: 82px;
+
+    padding:
+        8px
+        9px
+        6px
+        11px;
+
+    box-sizing: border-box;
+
+}
+
+
+.update-boolean-name {
+
+    overflow: hidden;
+
+    color:
+        #26352b;
+
+    font-size: 12px;
+
+    font-weight: 750;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+.update-boolean-gender {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    margin-top: 3px;
+
+    color:
+        #7b847c;
+
+    font-size: 8px;
+
+}
+
+
+/* ==========================================================
+   BOOLEAN CONTROLS
+========================================================== */
+
+.update-boolean-controls {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+    margin-top: 5px;
+
+    max-height: 40px;
+
+    overflow-y: auto;
+
+    scrollbar-width: none;
+
+}
+
+
+.update-boolean-controls::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+.update-boolean-toggle {
+
+    width: 100%;
+
+    min-height: 22px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 4px;
+
+    padding:
+        2px
+        3px
+        2px
+        5px;
+
+    border:
+        1px solid
+        #e4e9e1;
+
+    border-radius: 7px;
+
+    background:
+        #f8faf7;
+
+    color:
+        #69736c;
+
+    cursor: pointer;
+
+}
+
+
+.update-boolean-toggle-label {
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-align: left;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 7px;
+
+    font-weight: 700;
+
+}
+
+
+.update-boolean-toggle-switch {
+
+    position: relative;
+
+    width: 25px;
+
+    height: 14px;
+
+    flex:
+        0 0
+        25px;
+
+    border-radius: 999px;
+
+    background:
+        #cdd4cd;
+
+    transition:
+        background .18s ease;
+
+}
+
+
+.update-boolean-toggle-knob {
+
+    position: absolute;
+
+    top: 2px;
+    left: 2px;
+
+    width: 10px;
+
+    height: 10px;
+
+    border-radius: 50%;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 1px 3px
+        rgba(0,0,0,.18);
+
+    transition:
+        transform .18s ease;
+
+}
+
+
+.update-boolean-toggle.is-on {
+
+    border-color:
+        #bcd1b8;
+
+    background:
+        #f0f6ed;
+
+    color:
+        #47724a;
+
+}
+
+
+.update-boolean-toggle.is-on
+.update-boolean-toggle-switch {
+
+    background:
+        #5f8b55;
+
+}
+
+
+.update-boolean-toggle.is-on
+.update-boolean-toggle-knob {
+
+    transform:
+        translateX(11px);
+
+}
+
+
+/* ==========================================================
+   BOTTOM LINE
+========================================================== */
+
+.update-boolean-bottom-line {
+
+    position: absolute;
+
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    height: 3px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #c86f29,
+            #a7823c,
+            #39764c
+        );
+
+}
+
+
+/* ==========================================================
+   SELECTOR CARD
+========================================================== */
+
+.update-boolean-selector-card {
+
+    z-index: 30;
+
+    display: flex;
+
+    flex-direction: column;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fffdf9,
+            #f7f8ed,
+            #edf5ed
+        );
+
+}
+
+
+.update-boolean-selector {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 13px;
+
+    border: 0;
+
+    border-radius: 18px;
+
+    background: transparent;
+
+    color:
+        #29382d;
+
+    cursor: pointer;
+
+}
+
+
+.update-boolean-selector-icon {
+
+    width: 44px;
+
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 10px;
+
+    border:
+        1px solid
+        #e7d7c2;
+
+    border-radius: 14px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fff1df,
+            #eef4e9
+        );
+
+    color:
+        #b96825;
+
+    font-size: 17px;
+
+}
+
+
+.update-boolean-selector-title {
+
+    font-size: 12px;
+
+    font-weight: 750;
+
+    text-align: center;
+
+}
+
+
+.update-boolean-selector-text {
+
+    max-width: 95px;
+
+    margin-top: 5px;
+
+    color:
+        #7c847d;
+
+    font-size: 8px;
+
+    line-height: 12px;
+
+    text-align: center;
+
+}
+
+
+.update-boolean-selector-arrow {
+
+    width: 24px;
+
+    height: 24px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-top: 10px;
+
+    border-radius: 50%;
+
+    background:
+        #f9eadb;
+
+    color:
+        #b96825;
+
+    font-size: 8px;
+
+}
+
+
+/* ==========================================================
+   DROPDOWN
+========================================================== */
+
+.update-boolean-dropdown {
+
+    position: absolute;
+
+    top: calc(100% + 6px);
+
+    left: 0;
+
+    width: 180px;
+
+    max-height: 230px;
+
+    overflow-y: auto;
+
+    padding: 6px;
+
+    box-sizing: border-box;
+
+    border:
+        1px solid
+        #dfe6dc;
+
+    border-radius: 13px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 10px 28px
+        rgba(30,50,35,.16);
+
+    z-index: 100;
+
+}
+
+
+.update-boolean-field-option {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding:
+        8px;
+
+    border: 0;
+
+    border-radius: 8px;
+
+    background:
+        transparent;
+
+    color:
+        #526158;
+
+    cursor: pointer;
+
+    text-align: left;
+
+}
+
+
+.update-boolean-field-option:hover {
+
+    background:
+        #f1f6ef;
+
+}
+
+
+.update-boolean-field-option-icon {
+
+    width: 22px;
+
+    height: 22px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex: 0 0 22px;
+
+    border-radius: 7px;
+
+    background:
+        #eef5e9;
+
+    color:
+        #52723d;
+
+    font-size: 8px;
+
+}
+
+
+.update-boolean-field-option-label {
+
+    min-width: 0;
+
+    flex: 1;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+}
+
+
+.update-boolean-field-option-check {
+
+    display: none;
+
+    color:
+        #47724a;
+
+    font-size: 8px;
+
+}
+
+
+.update-boolean-field-option.selected
+.update-boolean-field-option-check {
+
+    display: block;
+
+}
+
+
+.update-boolean-no-fields {
+
+    padding: 12px;
+
+    color:
+        #858d86;
+
+    font-size: 9px;
+
+    text-align: center;
+
+}
+
+
+/* ==========================================================
+   EMPTY
+========================================================== */
+
+.update-boolean-empty-card {
+
+    flex:
+        0 0
+        124px;
+
+    width: 124px;
+
+    height: 197px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 12px;
+
+    box-sizing: border-box;
+
+    border:
+        1px dashed
+        #cbd5c6;
+
+    border-radius: 18px;
+
+    text-align: center;
+
+}
+
+
+.update-boolean-empty-card-icon {
+
+    width: 40px;
+
+    height: 40px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 9px;
+
+    border-radius: 12px;
+
+    background:
+        #eef3e7;
+
+    color:
+        #5e793f;
+
+}
+
+
+.update-boolean-empty-card strong {
+
+    color:
+        #536057;
+
+    font-size: 10px;
+
+}
+
+
+.update-boolean-empty-card span {
+
+    margin-top: 5px;
+
+    color:
+        #89918a;
+
+    font-size: 8px;
+
+    line-height: 12px;
+
+}
 
 
 /* ==========================================================
@@ -725,126 +1517,93 @@ IMPORTANT:
 
 @media (max-width: 600px) {
 
+    .update-boolean-card {
 
-    .dairy-asset-strip {
+        flex-basis: 116px;
 
-        margin-bottom:
-            14px;
+        width: 116px;
 
-    }
+        height: 187px;
 
-
-
-    /* ==============================================
-       TITLE
-    ============================================== */
-
-    .dairy-asset-strip-title strong {
-
-        font-size:
-            17px;
+        border-radius: 16px;
 
     }
 
 
+    .update-boolean-image-wrap {
 
-    /* ==============================================
-       DESCRIPTION
-    ============================================== */
-
-    .dairy-asset-strip-description {
-
-        font-size:
-            11px;
-
-        line-height:
-            1.4;
+        height: 106px;
 
     }
 
 
+    .update-boolean-content {
 
-    /* ==============================================
-       CARD
-    ============================================== */
-
-    .dairy-asset-card {
-
-        flex-basis:
-            112px;
-
-        width:
-            112px;
-
-        height:
-            174px;
-
-        border-radius:
-            14px;
-
-    }
-
-
-
-    /* ==============================================
-       IMAGE
-    ============================================== */
-
-    .dairy-asset-image-wrap {
-
-        height:
-            112px;
-
-        flex-basis:
-            112px;
-
-    }
-
-
-
-    /* ==============================================
-       NAME
-    ============================================== */
-
-    .dairy-asset-name {
+        height: 78px;
 
         padding:
             7px
-            7px
-            2px;
-
-        font-size:
-            12px;
-
-        line-height:
-            15px;
+            8px
+            6px
+            10px;
 
     }
 
 
+    .update-boolean-name {
 
-    /* ==============================================
-       TYPE
-    ============================================== */
-
-    .dairy-asset-type {
-
-        padding:
-            1px
-            7px
-            7px;
-
-        font-size:
-            9px;
+        font-size: 11px;
 
     }
 
 
+    .update-boolean-dropdown {
 
-    .dairy-asset-type-icon {
+        width: 170px;
 
-        font-size:
-            9px;
+    }
+
+
+    .update-boolean-empty-card {
+
+        flex-basis: 116px;
+
+        width: 116px;
+
+        height: 187px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .update-boolean-card {
+
+        flex-basis: 110px;
+
+        width: 110px;
+
+        height: 181px;
+
+    }
+
+
+    .update-boolean-image-wrap {
+
+        height: 102px;
+
+    }
+
+
+    .update-boolean-name {
+
+        font-size: 10.5px;
 
     }
 
@@ -853,4 +1612,382 @@ IMPORTANT:
 </style>
 
 
-<% } %>
+
+<script>
+
+(function () {
+
+    "use strict";
+
+
+    /* ======================================================
+       ELEMENTS
+    ======================================================= */
+
+    const selector =
+        document.getElementById(
+            "booleanFieldSelector"
+        );
+
+
+    const dropdown =
+        document.getElementById(
+            "booleanFieldDropdown"
+        );
+
+
+    const fieldOptions =
+        document.querySelectorAll(
+            ".update-boolean-field-option"
+        );
+
+
+    /* ======================================================
+       CURRENT FIELD
+    ======================================================= */
+
+    let selectedField =
+        fieldOptions.length > 0
+            ? fieldOptions[0]
+                .getAttribute(
+                    "data-boolean-field"
+                )
+            : "";
+
+
+    /* ======================================================
+       SELECT FIELD
+    ======================================================= */
+
+    function selectField(field) {
+
+        selectedField =
+            field || "";
+
+
+        fieldOptions.forEach(
+            function (option) {
+
+                const optionField =
+                    option.getAttribute(
+                        "data-boolean-field"
+                    );
+
+
+                option.classList.toggle(
+                    "selected",
+                    optionField === selectedField
+                );
+
+            }
+        );
+
+    }
+
+
+    /* ======================================================
+       DROPDOWN
+    ======================================================= */
+
+    if (selector && dropdown) {
+
+        selector.addEventListener(
+            "click",
+            function () {
+
+                const isOpen =
+                    !dropdown.hasAttribute(
+                        "hidden"
+                    );
+
+
+                if (isOpen) {
+
+                    dropdown.setAttribute(
+                        "hidden",
+                        ""
+                    );
+
+                    selector.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                } else {
+
+                    dropdown.removeAttribute(
+                        "hidden"
+                    );
+
+                    selector.setAttribute(
+                        "aria-expanded",
+                        "true"
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ======================================================
+       FIELD OPTIONS
+    ======================================================= */
+
+    fieldOptions.forEach(
+        function (option) {
+
+            option.addEventListener(
+                "click",
+                function () {
+
+                    selectField(
+                        option.getAttribute(
+                            "data-boolean-field"
+                        )
+                    );
+
+
+                    if (dropdown) {
+
+                        dropdown.setAttribute(
+                            "hidden",
+                            ""
+                        );
+
+                    }
+
+
+                    if (selector) {
+
+                        selector.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       INITIAL FIELD
+    ======================================================= */
+
+    selectField(
+        selectedField
+    );
+
+
+    /* ======================================================
+       BOOLEAN TOGGLE
+       ------------------------------------------------------
+       Route:
+
+           PUT /dairy/:animalId/boolean/:field
+    ======================================================= */
+
+    document
+        .querySelectorAll(
+            ".update-boolean-toggle"
+        )
+        .forEach(
+            function (button) {
+
+                button.addEventListener(
+                    "click",
+                    async function () {
+
+                        const animalId =
+                            button.getAttribute(
+                                "data-animal-id"
+                            );
+
+
+                        const field =
+                            button.getAttribute(
+                                "data-boolean-field"
+                            );
+
+
+                        if (
+                            !animalId ||
+                            !field
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        if (
+                            button.dataset.busy ===
+                            "true"
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        button.dataset.busy =
+                            "true";
+
+
+                        try {
+
+                            const response =
+                                await fetch(
+                                    "/dairy/" +
+                                    encodeURIComponent(
+                                        animalId
+                                    ) +
+                                    "/boolean/" +
+                                    encodeURIComponent(
+                                        field
+                                    ),
+                                    {
+
+                                        method:
+                                            "POST",
+
+                                        headers: {
+
+                                            "Content-Type":
+                                                "application/json"
+
+                                        }
+
+                                    }
+                                );
+
+
+                            const result =
+                                await response.json();
+
+
+                            if (
+                                !response.ok ||
+                                !result.success
+                            ) {
+
+                                throw new Error(
+                                    result.message ||
+                                    "Failed to toggle Boolean."
+                                );
+
+                            }
+
+
+                            const newValue =
+                                Boolean(
+                                    result.value
+                                );
+
+
+                            button
+                                .classList
+                                .toggle(
+                                    "is-on",
+                                    newValue
+                                );
+
+
+                            button.setAttribute(
+                                "aria-pressed",
+                                newValue
+                                    ? "true"
+                                    : "false"
+                            );
+
+
+                            button.setAttribute(
+                                "data-boolean-value",
+                                String(
+                                    newValue
+                                )
+                            );
+
+
+                        } catch (error) {
+
+                            console.error(
+                                "BOOLEAN TOGGLE ERROR:",
+                                error
+                            );
+
+
+                            alert(
+                                error.message ||
+                                "Failed to toggle Boolean."
+                            );
+
+                        } finally {
+
+                            button.dataset.busy =
+                                "false";
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+    /* ======================================================
+       CLOSE DROPDOWN WHEN CLICKING OUTSIDE
+    ======================================================= */
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                !selector ||
+                !dropdown
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                selector.contains(
+                    event.target
+                ) ||
+                dropdown.contains(
+                    event.target
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            dropdown.setAttribute(
+                "hidden",
+                ""
+            );
+
+
+            selector.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
+    );
+
+})();
+
+</script>
