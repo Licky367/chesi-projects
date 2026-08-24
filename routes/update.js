@@ -13,8 +13,10 @@
 //
 // ==========================================================
 
+
 const express =
     require("express");
+
 
 const router =
     express.Router();
@@ -51,17 +53,17 @@ function isAuth(
         !req.session.user
     ) {
 
-        return res.status(
-            401
-        ).json({
+        return res
+            .status(401)
+            .json({
 
-            success:
-                false,
+                success:
+                    false,
 
-            message:
-                "Unauthorized"
+                message:
+                    "Unauthorized"
 
-        });
+            });
 
     }
 
@@ -102,32 +104,51 @@ router.get(
 // IMPORTANT:
 // ----------------------------------------------------------
 //
-// boolean.ejs is included inside:
+// boolean.ejs is an INCLUDE inside:
 //
 //     views/update.ejs
 //
-// It is NOT rendered by its own route.
+// It is NOT rendered through a route.
 //
-// The parent update page obtains its Boolean data
-// through the controller/service.
+// The parent page receives:
 //
-// TOGGLE:
+//     booleanAnimals
+//     booleanFields
 //
-//     PUT /dairy/:animalId/boolean
+// ----------------------------------------------------------
+// TOGGLE ROUTE
+// ----------------------------------------------------------
 //
-// BODY:
+// The JavaScript inside boolean.ejs sends:
 //
-//     {
-//         field: "someBooleanField",
-//         value: true
-//     }
+//     POST /dairy/:animalId/boolean/:field
+//
+// Example:
+//
+//     POST /dairy/64abc123/milking/
+//
+// More generally:
+//
+//     POST /dairy/:animalId/boolean/:field
+//
+// The controller receives:
+//
+//     req.params.animalId
+//     req.params.field
+//
+// and calls:
+//
+//     updateService.toggleBoolean(
+//         animalId,
+//         field
+//     )
 //
 // ==========================================================
 
-router.put(
-    "/dairy/:animalId/boolean",
+router.post(
+    "/dairy/:animalId/boolean/:field",
     isAuth,
-    controller.updateBoolean
+    controller.toggleBoolean
 );
 
 
@@ -141,17 +162,19 @@ router.put(
 //
 //     /dairy/boolean/fields
 //
-// Used only if the frontend needs to retrieve
-// the Boolean field definitions independently.
+// This is NOT used by the current boolean.ejs to perform
+// toggles because booleanFields are supplied directly by
+// the parent update page.
+//
+// It remains available for independent frontend use.
 //
 // IMPORTANT:
 // ----------------------------------------------------------
 //
-// This MUST remain before:
+// This route remains BEFORE:
 //
 //     /dairy/:id
 //
-// Otherwise "boolean" could be interpreted as :id.
 // ==========================================================
 
 router.get(
@@ -169,7 +192,7 @@ router.get(
 //
 //     /dairy/:id
 //
-// Here :id IS the Dairy farm/profile ID.
+// Here :id is the Dairy farm/profile ID.
 //
 // ==========================================================
 
