@@ -1,7 +1,255 @@
+<%
+/* ==========================================================
+   AGROSTORE CONTENTS PAGE
+   ==========================================================
+
+   PURPOSE
+   ----------------------------------------------------------
+   Display the contents of the current AgroStore.
+
+   CURRENT CONTENTS
+   ----------------------------------------------------------
+   A Dairy is considered CURRENT CONTENT when:
+
+       dairy.dwellNumber === agroStore.roomNumber
+
+   ADD ITEMS
+   ----------------------------------------------------------
+   A Dairy is available to ADD when:
+
+       dairy.assetCode === agroStore.assetCode
+
+   AND
+
+       dairy.dwellNumber !== agroStore.roomNumber
+
+   ADMIN
+   ----------------------------------------------------------
+   Only users with:
+
+       user.role === "admin"
+
+   can see the "Add Item" button.
+
+   DISPLAY
+   ----------------------------------------------------------
+   Each dairy item displays ONLY:
+
+       - profile image / avatar
+       - dairy name
+       - record type
+
+   ========================================================== */
+
+
+/* ==========================================================
+   SAFE DATA
+   ========================================================== */
+
+const currentAgroStore =
+    agroStore || storage || null;
+
+const allDairies =
+    Array.isArray(dairies)
+        ? dairies
+        : [];
+
+
+/* ==========================================================
+   ADMIN CHECK
+   ========================================================== */
+
+const isAdmin =
+    user &&
+    user.role === "admin";
+
+
+/* ==========================================================
+   AGROSTORE VALUES
+   ========================================================== */
+
+const agroStoreRoomNumber =
+    currentAgroStore &&
+    currentAgroStore.roomNumber !== null &&
+    currentAgroStore.roomNumber !== undefined
+        ? currentAgroStore.roomNumber
+        : null;
+
+const agroStoreAssetCode =
+    currentAgroStore &&
+    currentAgroStore.assetCode !== null &&
+    currentAgroStore.assetCode !== undefined
+        ? currentAgroStore.assetCode
+        : null;
+
+
+/* ==========================================================
+   CURRENT CONTENTS
+   ----------------------------------------------------------
+   Only dairies whose dwellNumber is equal to the
+   AgroStore roomNumber.
+   ========================================================== */
+
+const currentContents =
+    allDairies.filter(function (item) {
+
+        if (!item) {
+            return false;
+        }
+
+        if (
+            agroStoreRoomNumber === null ||
+            agroStoreRoomNumber === undefined
+        ) {
+            return false;
+        }
+
+        if (
+            item.dwellNumber === null ||
+            item.dwellNumber === undefined
+        ) {
+            return false;
+        }
+
+        return String(item.dwellNumber) ===
+               String(agroStoreRoomNumber);
+    });
+
+
+/* ==========================================================
+   ADD ITEMS
+   ----------------------------------------------------------
+   Only dairies whose assetCode matches the AgroStore
+   assetCode AND whose dwellNumber does not match the
+   AgroStore roomNumber.
+   ========================================================== */
+
+const addItems =
+    allDairies.filter(function (item) {
+
+        if (!item) {
+            return false;
+        }
+
+        if (
+            agroStoreAssetCode === null ||
+            agroStoreAssetCode === undefined
+        ) {
+            return false;
+        }
+
+        if (
+            item.assetCode === null ||
+            item.assetCode === undefined
+        ) {
+            return false;
+        }
+
+        const sameAssetCode =
+            String(item.assetCode) ===
+            String(agroStoreAssetCode);
+
+        const differentDwellNumber =
+            String(item.dwellNumber) !==
+            String(agroStoreRoomNumber);
+
+        return (
+            sameAssetCode &&
+            differentDwellNumber
+        );
+    });
+
+
+/* ==========================================================
+   PROFILE IMAGE HELPER
+   ========================================================== */
+
+function getProfileImage(item) {
+
+    if (
+        item &&
+        item.profileImage &&
+        typeof item.profileImage === "string" &&
+        item.profileImage.trim() !== ""
+    ) {
+        return item.profileImage;
+    }
+
+    return null;
+}
+
+
+/* ==========================================================
+   NAME HELPER
+   ========================================================== */
+
+function getDairyName(item) {
+
+    if (
+        item &&
+        item.name &&
+        String(item.name).trim() !== ""
+    ) {
+        return item.name;
+    }
+
+    if (
+        item &&
+        item.code !== null &&
+        item.code !== undefined
+    ) {
+        return `Dairy ${item.code}`;
+    }
+
+    return "Unnamed Dairy";
+}
+
+
+/* ==========================================================
+   RECORD TYPE HELPER
+   ========================================================== */
+
+function getRecordType(item) {
+
+    if (!item) {
+        return "Dairy";
+    }
+
+    /*
+     * Prefer an existing recordType/type value when supplied.
+     */
+
+    if (
+        item.recordType &&
+        String(item.recordType).trim() !== ""
+    ) {
+        return item.recordType;
+    }
+
+    if (
+        item.type &&
+        String(item.type).trim() !== ""
+    ) {
+        return item.type;
+    }
+
+    /*
+     * A negative dairy code represents a Dairy Farm.
+     * Positive codes represent animals.
+     * For this page, the item itself is treated as Dairy
+     * when no more specific type is available.
+     */
+
+    return "Dairy";
+}
+
+%>
+
+
 <style>
 
 /* ==========================================================
-   STORAGE PAGE
+   AGROSTORE CONTENTS PAGE
    ========================================================== */
 
 .storage-page {
@@ -67,104 +315,93 @@
 
 
 /* ==========================================================
-   FILTER CARD
+   TABS HEADER
    ========================================================== */
 
-.storage-filter-card {
-    background: #ffffff;
-    border: 1px solid #dce9df;
-    border-left: 5px solid #0b5d1e;
-    border-radius: 12px;
-    padding: 18px;
+.storage-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 18px;
-    box-shadow: 0 4px 14px rgba(11, 93, 30, 0.06);
+    padding: 5px;
+    background: #f3f8f4;
+    border: 1px solid #dce9df;
+    border-radius: 10px;
 }
 
-.storage-filter-form {
-    display: flex;
-    align-items: flex-end;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 220px;
-}
-
-.filter-group label {
-    color: #31533a;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.filter-group select {
-    height: 42px;
-    padding: 0 12px;
-    border: 1px solid #cbdccf;
-    border-radius: 8px;
-    background: #f9fcfa;
-    color: #26332a;
+.storage-tab {
+    flex: 1;
+    min-height: 42px;
+    padding: 8px 14px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #637068;
     font-size: 14px;
-    outline: none;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
     cursor: pointer;
     transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
 }
 
-.filter-group select:focus {
-    border-color: #0b5d1e;
-    box-shadow: 0 0 0 3px rgba(11, 93, 30, 0.10);
+.storage-tab:hover {
+    background: #e6f3e9;
+    color: #0b5d1e;
+}
+
+.storage-tab.active {
+    background: #ffffff;
+    border-color: #cfe3d3;
+    color: #0b5d1e;
+    box-shadow: 0 2px 7px rgba(11, 93, 30, 0.07);
 }
 
 
 /* ==========================================================
-   BUTTONS
+   ACTION BAR
    ========================================================== */
 
-.filter-button {
-    height: 42px;
-    padding: 0 20px;
+.storage-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 18px;
+}
+
+
+/* ==========================================================
+   ADD ITEM BUTTON
+   ========================================================== */
+
+.add-item-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 17px;
     border: none;
     border-radius: 8px;
     background: #0b5d1e;
     color: #ffffff;
+    text-decoration: none;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition:
         background 0.2s ease,
         transform 0.15s ease;
 }
 
-.filter-button:hover {
+.add-item-button:hover {
     background: #084817;
 }
 
-.filter-button:active {
+.add-item-button:active {
     transform: translateY(1px);
-}
-
-.clear-filter {
-    height: 42px;
-    display: inline-flex;
-    align-items: center;
-    padding: 0 16px;
-    border: 1px solid #b8cfbd;
-    border-radius: 8px;
-    background: #f4faf5;
-    color: #0b5d1e;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    transition: background 0.2s ease;
-}
-
-.clear-filter:hover {
-    background: #e6f3e9;
 }
 
 
@@ -193,23 +430,29 @@
 
 .storage-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 16px;
+    grid-template-columns:
+        repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px;
 }
 
 
 /* ==========================================================
-   STORAGE CARD
+   DAIRY CARD
    ========================================================== */
 
 .storage-card {
     display: flex;
-    gap: 15px;
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
+    padding: 14px;
     background: #ffffff;
     border: 1px solid #dce9df;
-    border-radius: 14px;
-    padding: 18px;
-    box-shadow: 0 5px 16px rgba(11, 93, 30, 0.06);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    box-shadow:
+        0 4px 13px rgba(11, 93, 30, 0.05);
     transition:
         transform 0.2s ease,
         box-shadow 0.2s ease,
@@ -219,25 +462,49 @@
 .storage-card:hover {
     transform: translateY(-2px);
     border-color: #a9c9b0;
-    box-shadow: 0 8px 22px rgba(11, 93, 30, 0.10);
+    box-shadow:
+        0 7px 18px rgba(11, 93, 30, 0.09);
 }
 
 
 /* ==========================================================
-   STORAGE ICON
+   PROFILE IMAGE
    ========================================================== */
 
-.storage-icon {
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
+.storage-avatar {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: 50%;
     background: #eaf5ed;
     border: 1px solid #cfe3d3;
-    font-size: 25px;
+    color: #0b5d1e;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.storage-avatar img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+
+/* ==========================================================
+   AVATAR FALLBACK
+   ========================================================== */
+
+.storage-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
 }
 
 
@@ -246,158 +513,40 @@
    ========================================================== */
 
 .storage-information {
-    flex: 1;
     min-width: 0;
+    flex: 1;
 }
 
 
 /* ==========================================================
-   TITLE ROW
+   DAIRY NAME
    ========================================================== */
 
-.storage-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 14px;
-}
-
-.storage-title-row h3 {
-    margin: 0;
+.storage-name {
+    margin: 0 0 5px;
+    overflow: hidden;
     color: #0b5d1e;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
-    word-break: break-word;
-}
-
-
-/* ==========================================================
-   TITLE ACTIONS
-   ========================================================== */
-
-.storage-title-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-
-/* ==========================================================
-   VIEW CONTENTS BUTTON
-   ========================================================== */
-
-.view-storage-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 30px;
-    padding: 5px 11px;
-    border: 1px solid #b8cfbd;
-    border-radius: 7px;
-    background: #f4faf5;
-    color: #0b5d1e;
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 700;
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.15s ease;
-}
-
-.view-storage-button:hover {
-    background: #e6f3e9;
-    border-color: #8fb99a;
-    color: #084817;
-}
-
-.view-storage-button:active {
-    transform: translateY(1px);
-}
-
-
-/* ==========================================================
-   STORAGE TYPE BADGE
-   ========================================================== */
-
-.storage-type {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 5px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
+    line-height: 1.3;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.room-type {
-    background: #e8f4eb;
-    color: #0b5d1e;
-}
-
-.agrostore-type {
-    background: #edf5df;
-    color: #4b6716;
-}
-
 
 /* ==========================================================
-   STORAGE DETAILS
+   RECORD TYPE
    ========================================================== */
 
-.storage-details {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-}
-
-.storage-detail {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding: 9px;
-    background: #f7faf8;
-    border-radius: 8px;
-}
-
-.detail-label {
-    color: #7a877e;
+.storage-record-type {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 14px;
+    background: #edf5ef;
+    color: #52705a;
     font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.detail-value {
-    color: #26332a;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.status-active {
-    color: #0b5d1e;
-}
-
-.status-inactive {
-    color: #9a5b00;
-}
-
-
-/* ==========================================================
-   DESCRIPTION
-   ========================================================== */
-
-.storage-description {
-    margin: 13px 0 0;
-    padding-top: 11px;
-    border-top: 1px solid #e5eee7;
-    color: #66736a;
-    font-size: 13px;
-    line-height: 1.5;
+    font-weight: 700;
 }
 
 
@@ -411,7 +560,8 @@
     border-radius: 14px;
     padding: 45px 20px;
     text-align: center;
-    box-shadow: 0 4px 14px rgba(11, 93, 30, 0.04);
+    box-shadow:
+        0 4px 14px rgba(11, 93, 30, 0.04);
 }
 
 .empty-storage-icon {
@@ -436,6 +586,7 @@
     margin: 0;
     color: #718078;
     font-size: 14px;
+    line-height: 1.5;
 }
 
 
@@ -449,28 +600,18 @@
         padding: 15px;
     }
 
-    .storage-header-top {
-        flex-direction: column;
-    }
-
     .storage-header h2 {
         font-size: 23px;
     }
 
-    .storage-filter-form {
-        align-items: stretch;
-        flex-direction: column;
+    .storage-tabs {
+        gap: 5px;
     }
 
-    .filter-group {
-        width: 100%;
-        min-width: 0;
-    }
-
-    .filter-button,
-    .clear-filter {
-        width: 100%;
-        justify-content: center;
+    .storage-tab {
+        min-height: 40px;
+        padding: 8px 9px;
+        font-size: 12px;
     }
 
     .storage-list {
@@ -478,21 +619,7 @@
     }
 
     .storage-card {
-        padding: 15px;
-    }
-
-    .storage-title-row {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .storage-title-actions {
-        width: 100%;
-        justify-content: flex-start;
-    }
-
-    .storage-details {
-        grid-template-columns: 1fr;
+        padding: 13px;
     }
 
 }
@@ -504,19 +631,22 @@
 
 @media (max-width: 400px) {
 
-    .storage-card {
-        gap: 11px;
+    .storage-tabs {
+        flex-direction: column;
     }
 
-    .storage-icon {
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        font-size: 21px;
+    .storage-tab {
+        width: 100%;
     }
 
-    .storage-title-row h3 {
-        font-size: 16px;
+    .storage-avatar {
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+    }
+
+    .storage-name {
+        font-size: 15px;
     }
 
 }
@@ -538,14 +668,14 @@
             <div>
 
                 <h2>
-                    <%= dairy && dairy.name
-                        ? `${dairy.name} Storage`
-                        : "Dairy Storage"
+                    <%= currentAgroStore && currentAgroStore.name
+                        ? currentAgroStore.name
+                        : "AgroStore"
                     %>
                 </h2>
 
                 <p class="storage-subtitle">
-                    Rooms and AgroStores available for this dairy farm.
+                    Manage the dairies currently assigned to this AgroStore.
                 </p>
 
             </div>
@@ -573,482 +703,360 @@
 
 
     <!-- ==================================================
-         STORAGE FILTER
+         TABS
          ================================================== -->
 
-    <div class="storage-filter-card">
+    <div class="storage-tabs">
 
-        <form
-            method="GET"
-            action="/storage/<%= dairy._id %>"
-            class="storage-filter-form"
+        <a
+            href="?tab=current"
+            class="storage-tab <%= (!tab || tab === "current")
+                ? "active"
+                : ""
+            %>"
         >
-
-            <div class="filter-group">
-
-                <label for="storageType">
-                    Storage Type
-                </label>
-
-                <select
-                    id="storageType"
-                    name="type"
-                >
-
-                    <option
-                        value="all"
-                        <%= selectedType === "all"
-                            ? "selected"
-                            : ""
-                        %>
-                    >
-                        All Storage
-                    </option>
-
-                    <option
-                        value="room"
-                        <%= selectedType === "room"
-                            ? "selected"
-                            : ""
-                        %>
-                    >
-                        Rooms
-                    </option>
-
-                    <option
-                        value="agroStore"
-                        <%= selectedType === "agroStore"
-                            ? "selected"
-                            : ""
-                        %>
-                    >
-                        AgroStores
-                    </option>
-
-                </select>
-
-            </div>
+            Current Contents
+        </a>
 
 
-            <button
-                type="submit"
-                class="filter-button"
-            >
-                Apply Filter
-            </button>
+        <a
+            href="?tab=add"
+            class="storage-tab <%= tab === "add"
+                ? "active"
+                : ""
+            %>"
+        >
+            Add Items
+        </a>
+
+    </div>
 
 
-            <% if (selectedType !== "all") { %>
+    <!-- ==================================================
+         CURRENT CONTENTS
+         ================================================== -->
+
+    <% if (!tab || tab === "current") { %>
+
+
+        <div class="storage-action-bar">
+
+            <% if (isAdmin) { %>
 
                 <a
-                    href="/storage/<%= dairy._id %>"
-                    class="clear-filter"
+                    href="/storage/<%= dairy._id %>/contents/<%= currentAgroStore._id %>/add"
+                    class="add-item-button"
                 >
-                    Show All
+                    Add Item
                 </a>
 
             <% } %>
 
-        </form>
-
-    </div>
+        </div>
 
 
-    <%
-        /*
-         * ==================================================
-         * VALID STORAGE TYPES
-         * ==================================================
-         *
-         * The list is strictly limited to:
-         *
-         *     room
-         *     agroStore
-         *
-         * Any other storage type is excluded completely.
-         *
-         * ==================================================
-         */
+        <div class="storage-summary">
 
-        const validStorage =
-            Array.isArray(storage)
-                ? storage.filter(function (item) {
-                    return item &&
-                        (
-                            item.type === "room" ||
-                            item.type === "agroStore"
-                        );
-                })
-                : [];
-    %>
+            <span>
 
+                <strong>
+                    <%= currentContents.length %>
+                </strong>
 
-    <!-- ==================================================
-         SUMMARY
-         ================================================== -->
-
-    <div class="storage-summary">
-
-        <span>
-
-            <strong>
-                <%= validStorage.length %>
-            </strong>
-
-            <%= validStorage.length === 1
-                ? "storage facility"
-                : "storage facilities"
-            %>
-
-        </span>
-
-    </div>
-
-
-    <!-- ==================================================
-         STORAGE LIST
-         ================================================== -->
-
-    <% if (validStorage.length > 0) { %>
-
-        <div class="storage-list">
-
-
-            <% validStorage.forEach(function (item) { %>
-
-
-                <%
-                    /*
-                     * ==================================================
-                     * STORAGE TYPE
-                     * ==================================================
-                     *
-                     * Because validStorage has already been filtered,
-                     * item.type can ONLY be:
-                     *
-                     *     room
-                     *     agroStore
-                     *
-                     * ==================================================
-                     */
-
-                    const isRoom =
-                        item.type === "room";
-
-                    const isAgroStore =
-                        item.type === "agroStore";
+                <%= currentContents.length === 1
+                    ? "item"
+                    : "items"
                 %>
 
+            </span>
 
-                <div
-                    class="storage-card"
-                    data-storage-id="<%= item._id %>"
-                    data-storage-type="<%= item.type %>"
-                >
+        </div>
 
 
-                    <!-- ==========================================
-                         STORAGE ICON
-                         ========================================== -->
+        <% if (currentContents.length > 0) { %>
 
-                    <div class="storage-icon">
-
-                        <% if (isAgroStore) { %>
-
-                            🏪
-
-                        <% } else { %>
-
-                            🏠
-
-                        <% } %>
-
-                    </div>
+            <div class="storage-list">
 
 
-                    <!-- ==========================================
-                         INFORMATION
-                         ========================================== -->
+                <% currentContents.forEach(function (item) { %>
 
-                    <div class="storage-information">
+                    <%
+                        const image =
+                            getProfileImage(item);
 
+                        const itemName =
+                            getDairyName(item);
 
-                        <!-- ======================================
-                             TITLE
-                             ====================================== -->
-
-                        <div class="storage-title-row">
-
-
-                            <h3>
-
-                                <% if (item.name) { %>
-
-                                    <%= item.name %>
-
-                                <% } else if (isAgroStore) { %>
-
-                                    AgroStore <%= Math.abs(item.roomNumber) %>
-
-                                <% } else { %>
-
-                                    Room <%= item.roomNumber %>
-
-                                <% } %>
-
-                            </h3>
+                        const recordType =
+                            getRecordType(item);
+                    %>
 
 
-                            <div class="storage-title-actions">
+                    <a
+                        href="/dairy/<%= item._id %>"
+                        class="storage-card"
+                    >
 
 
-                                <!-- ==================================
-                                     VIEW CONTENTS
-                                     ================================== -->
+                        <!-- ==================================
+                             PROFILE IMAGE / AVATAR
+                             ================================== -->
 
-                                <a
-                                    href="/storage/<%= dairy._id %>/contents/<%= item._id %>"
-                                    class="view-storage-button"
+                        <div class="storage-avatar">
+
+                            <% if (image) { %>
+
+                                <img
+                                    src="<%= image %>"
+                                    alt="<%= itemName %>"
                                 >
-                                    View
-                                </a>
 
-
-                                <!-- ==================================
-                                     TYPE BADGE
-                                     ================================== -->
-
-                                <% if (isAgroStore) { %>
-
-                                    <span
-                                        class="storage-type agrostore-type"
-                                    >
-                                        AgroStore
-                                    </span>
-
-                                <% } else { %>
-
-                                    <span
-                                        class="storage-type room-type"
-                                    >
-                                        Room
-                                    </span>
-
-                                <% } %>
-
-
-                            </div>
-
-                        </div>
-
-
-                        <!-- ==========================================
-                             STORAGE DETAILS
-                             ========================================== -->
-
-                        <div class="storage-details">
-
-
-                            <!-- ======================================
-                                 FARM CODE
-                                 ====================================== -->
-
-                            <div class="storage-detail">
-
-                                <span class="detail-label">
-                                    Farm Code
-                                </span>
-
-                                <span class="detail-value">
-
-                                    <%= item.assetCode !== null &&
-                                        item.assetCode !== undefined
-                                            ? item.assetCode
-                                            : dairy.code
-                                    %>
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- ======================================
-                                 STORAGE NUMBER
-                                 ====================================== -->
-
-                            <div class="storage-detail">
-
-                                <span class="detail-label">
-
-                                    <% if (isAgroStore) { %>
-
-                                        AgroStore Number
-
-                                    <% } else { %>
-
-                                        Room Number
-
-                                    <% } %>
-
-                                </span>
-
-
-                                <span class="detail-value">
-
-                                    <% if (isAgroStore) { %>
-
-                                        <%= Math.abs(item.roomNumber) %>
-
-                                    <% } else { %>
-
-                                        <%= item.roomNumber %>
-
-                                    <% } %>
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- ======================================
-                                 DWELLING NUMBER
-                                 ====================================== -->
-
-                            <div class="storage-detail">
-
-                                <span class="detail-label">
-                                    Dwell Number
-                                </span>
-
-                                <span class="detail-value">
-
-                                    <%= item.dwellNumber !== null &&
-                                        item.dwellNumber !== undefined
-                                            ? item.dwellNumber
-                                            : "—"
-                                    %>
-
-                                </span>
-
-                            </div>
-
-
-                        </div>
-
-
-                        <!-- ==========================================
-                             STATUS
-                             ========================================== -->
-
-                        <div
-                            class="storage-details"
-                            style="margin-top: 10px;"
-                        >
-
-                            <div class="storage-detail">
-
-                                <span class="detail-label">
-                                    Status
-                                </span>
+                            <% } else { %>
 
                                 <span
-                                    class="detail-value <%= item.status === "active"
-                                        ? "status-active"
-                                        : "status-inactive"
-                                    %>"
+                                    class="storage-avatar-fallback"
+                                    aria-hidden="true"
                                 >
-
-                                    <%= item.status === "active"
-                                        ? "Active"
-                                        : "Inactive"
-                                    %>
-
+                                    🐄
                                 </span>
 
-                            </div>
+                            <% } %>
 
                         </div>
 
 
-                        <!-- ==========================================
-                             DESCRIPTION
-                             ========================================== -->
+                        <!-- ==================================
+                             DAIRY INFORMATION
+                             ================================== -->
 
-                        <% if (item.description) { %>
+                        <div class="storage-information">
 
-                            <p class="storage-description">
+                            <h3 class="storage-name">
+                                <%= itemName %>
+                            </h3>
 
-                                <%= item.description %>
+                            <span class="storage-record-type">
+                                <%= recordType %>
+                            </span>
 
-                            </p>
-
-                        <% } %>
+                        </div>
 
 
-                    </div>
+                    </a>
+
+
+                <% }); %>
+
+
+            </div>
+
+
+        <% } else { %>
+
+
+            <div class="empty-storage">
+
+                <div class="empty-storage-icon">
+                    🏪
+                </div>
+
+                <h3>
+                    No Current Contents
+                </h3>
+
+                <p>
+                    There are currently no dairies assigned
+                    to this AgroStore.
+                </p>
+
+            </div>
+
+
+        <% } %>
+
+
+    <!-- ==================================================
+         ADD ITEMS
+         ================================================== -->
+
+    <% } else if (tab === "add") { %>
+
+
+        <% if (isAdmin) { %>
+
+            <div class="storage-summary">
+
+                <span>
+
+                    <strong>
+                        <%= addItems.length %>
+                    </strong>
+
+                    <%= addItems.length === 1
+                        ? "item available"
+                        : "items available"
+                    %>
+
+                </span>
+
+            </div>
+
+
+            <% if (addItems.length > 0) { %>
+
+
+                <div class="storage-list">
+
+
+                    <% addItems.forEach(function (item) { %>
+
+                        <%
+                            const image =
+                                getProfileImage(item);
+
+                            const itemName =
+                                getDairyName(item);
+
+                            const recordType =
+                                getRecordType(item);
+                        %>
+
+
+                        <a
+                            href="/storage/<%= dairy._id %>/contents/<%= currentAgroStore._id %>/add/<%= item._id %>"
+                            class="storage-card"
+                        >
+
+
+                            <!-- ==============================
+                                 PROFILE IMAGE / AVATAR
+                                 ============================== -->
+
+                            <div class="storage-avatar">
+
+                                <% if (image) { %>
+
+                                    <img
+                                        src="<%= image %>"
+                                        alt="<%= itemName %>"
+                                    >
+
+                                <% } else { %>
+
+                                    <span
+                                        class="storage-avatar-fallback"
+                                        aria-hidden="true"
+                                    >
+                                        🐄
+                                    </span>
+
+                                <% } %>
+
+                            </div>
+
+
+                            <!-- ==============================
+                                 DAIRY INFORMATION
+                                 ============================== -->
+
+                            <div class="storage-information">
+
+                                <h3 class="storage-name">
+                                    <%= itemName %>
+                                </h3>
+
+                                <span class="storage-record-type">
+                                    <%= recordType %>
+                                </span>
+
+                            </div>
+
+
+                        </a>
+
+
+                    <% }); %>
+
 
                 </div>
 
 
-            <% }); %>
+            <% } else { %>
 
 
-        </div>
+                <div class="empty-storage">
+
+                    <div class="empty-storage-icon">
+                        ➕
+                    </div>
+
+                    <h3>
+                        No Items Available
+                    </h3>
+
+                    <p>
+                        There are no dairies with the same
+                        AgroStore asset code outside the
+                        current AgroStore room.
+                    </p>
+
+                </div>
+
+
+            <% } %>
+
+
+        <% } else { %>
+
+
+            <!-- ==========================================
+                 NON-ADMIN ADD ITEMS
+                 ========================================== -->
+
+            <div class="empty-storage">
+
+                <div class="empty-storage-icon">
+                    🔒
+                </div>
+
+                <h3>
+                    Admin Access Required
+                </h3>
+
+                <p>
+                    Only an administrator can add items
+                    to this AgroStore.
+                </p>
+
+            </div>
+
+
+        <% } %>
 
 
     <% } else { %>
 
 
         <!-- ==================================================
-             EMPTY STATE
+             INVALID TAB
              ================================================== -->
 
         <div class="empty-storage">
 
-
             <div class="empty-storage-icon">
-
-                <% if (selectedType === "agroStore") { %>
-
-                    🏪
-
-                <% } else { %>
-
-                    🏠
-
-                <% } %>
-
+                🏪
             </div>
 
-
             <h3>
-                No Storage Found
+                No Content Found
             </h3>
 
-
             <p>
-
-                <% if (selectedType === "room") { %>
-
-                    There are currently no active rooms
-                    for this dairy farm.
-
-                <% } else if (selectedType === "agroStore") { %>
-
-                    There are currently no active AgroStores
-                    for this dairy farm.
-
-                <% } else { %>
-
-                    There are currently no active rooms
-                    or AgroStores for this dairy farm.
-
-                <% } %>
-
+                The requested storage tab does not exist.
             </p>
 
-
         </div>
+
 
     <% } %>
 
