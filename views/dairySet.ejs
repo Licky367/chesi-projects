@@ -1,52 +1,75 @@
 <%
 /*
-============================================================
+==========================================================
 DAIRY SET PAGE
 
 FILE:
     views/dairySet.ejs
 
 PURPOSE:
-    Display the appropriate Dairy page content.
+    Display the profile page for a Dairy asset or structure.
 
-RULES:
-------------------------------------------------------------
+CONTENT ITEM LOGIC:
+    ONLY a Dairy record with a NEGATIVE dwellNumber
+    is treated as a storage content item.
 
-1. NEGATIVE DWELL NUMBER
-   If:
-       dairy.dwellNumber < 0
+        dairy.dwellNumber < 0
+            ↓
+        content-item.ejs
+            ↓
+        content-update.ejs
 
-   Include:
-       update/update-cards.ejs
-       update/content-item.ejs
+    null / undefined / 0 / positive
+        ↓
+    No storage content item.
 
+    negative
+        ↓
+    Storage content item is included.
 
-2. POSITIVE CODE
-   If:
-       dairy.code > 0
-
-   Include:
-       update/update-cards.ejs
-       update/profile-card.ejs
-
-
-IMPORTANT:
-------------------------------------------------------------
-
-dwellNumber is ONLY used to identify a storage
-content item.
-
-Normal Dairy update cards are NOT dependent on
-dwellNumber.
-
-============================================================
+FILES:
+    views/update/content-item.ejs
+    views/update/content-update.ejs
+==========================================================
 */
 %>
 
 
 <%
 /* =========================================================
-   SAFETY CHECK
+   SAFE VALUES
+========================================================= */
+
+const safeContentItem =
+    typeof contentItem !== "undefined" && contentItem
+        ? contentItem
+        : dairy;
+
+const safeStorage =
+    typeof storage !== "undefined"
+        ? storage
+        : null;
+
+const safeSuccessMessage =
+    typeof successMessage !== "undefined"
+        ? successMessage
+        : null;
+
+const safePageError =
+    typeof pageError !== "undefined"
+        ? pageError
+        : null;
+
+const safeLatestStockUpdate =
+    typeof latestStockUpdate !== "undefined"
+        ? latestStockUpdate
+        : null;
+
+
+/* =========================================================
+   STORAGE CONTENT ITEM CHECK
+
+   ONLY a negative dwellNumber qualifies.
 ========================================================= */
 
 const hasNegativeDwellNumber =
@@ -55,78 +78,56 @@ const hasNegativeDwellNumber =
     dairy.dwellNumber !== undefined &&
     Number(dairy.dwellNumber) < 0;
 
-
-const hasPositiveCode =
-    dairy &&
-    dairy.code !== null &&
-    dairy.code !== undefined &&
-    Number(dairy.code) > 0;
-
 %>
 
 
-<% if (dairy) { %>
+<div class="dairy-page">
 
-    <!-- =====================================================
-         NEGATIVE DWELL NUMBER
+    <!-- =================================================
+         UPDATE CARDS
+    ================================================== -->
 
-         Storage content item.
-
-         Includes:
-             update-cards
-             content-item
-    ====================================================== -->
-
-    <% if (hasNegativeDwellNumber) { %>
+    <% if (user) { %>
 
         <%- include(
             "update/update-cards",
             {
-                dairy: dairy,
-                user: user,
-                itemLinks: itemLinks
-            }
-        ) %>
-
-
-        <%- include(
-            "update/content-item",
-            {
-                dairy: dairy,
-                storage: storage,
-                item: contentItem || dairy,
-                user: user,
-                successMessage: successMessage,
-                pageError: pageError,
-                latestStockUpdate: latestStockUpdate
+                user: user
             }
         ) %>
 
     <% } %>
 
 
+    <!-- =================================================
+         STORAGE CONTENT ITEM
 
-    <!-- =====================================================
-         POSITIVE CODE
+         ONLY SHOWN FOR NEGATIVE DWELL NUMBER
+    ================================================== -->
 
-         Normal Dairy asset/animal.
-
-         Includes:
-             update-cards
-             profile-card
-    ====================================================== -->
-
-    <% if (hasPositiveCode) { %>
+    <% if (hasNegativeDwellNumber) { %>
 
         <%- include(
-            "update/update-cards",
+            "update/content-item",
             {
                 dairy: dairy,
+                storage: safeStorage,
+                item: safeContentItem,
                 user: user,
-                itemLinks: itemLinks
+                successMessage: safeSuccessMessage,
+                pageError: safePageError,
+                latestStockUpdate: safeLatestStockUpdate
             }
         ) %>
 
+    <% } %>
+
+
+    <!-- =================================================
+         PROFILE
+    ================================================== -->
+
+    <% if (dairy && dairy.code != null) { %>
 
         <%- include(
             "update/profile-card",
@@ -138,4 +139,4 @@ const hasPositiveCode =
 
     <% } %>
 
-<% } %>
+</div>
