@@ -1,30 +1,39 @@
 <%
-/*
-==============================================================
-STORAGE CONTENT ITEM CARD
-==============================================================
+/* ==========================================================
+   STORAGE CONTENT ITEM
+   FILE:
+       views/update/content-item.ejs
 
-FILE:
-    views/update/content-item.ejs
+   PURPOSE:
+       Display one storage content item and its update history.
 
-PURPOSE:
-    Reusable CARD for displaying one storage content item.
+   IMPORTANT:
+   ----------------------------------------------------------
+       This is an INCLUDE.
 
-IMPORTANT:
-    THIS IS AN INCLUDE.
-    THIS FILE HANDLES ITEM INFORMATION ONLY.
+       It is NOT a standalone page.
 
-STOCK UPDATES:
-    Handled separately by:
+   UPDATE ROUTE:
+       POST /dairy/:contentItemId/:dwellNumber
 
-        content-item-update.ejs
-==============================================================
-*/
+   UPDATE HISTORY:
+       item.stockUpdates[]
+
+   EACH UPDATE:
+       quantity
+       stockUpdateNote
+       images
+       recordedBy
+       recordedAt
+
+   CURRENT STOCK:
+       item.quantity
+========================================================== */
 
 
-/* ============================================================
+/* ==========================================================
    SAFE DATA
-============================================================ */
+========================================================== */
 
 const contentItem =
     item || {};
@@ -36,9 +45,9 @@ const currentDairy =
     dairy || {};
 
 
-/* ============================================================
+/* ==========================================================
    CONTENT ITEM ID
-============================================================ */
+========================================================== */
 
 const contentItemId =
     contentItem._id
@@ -46,9 +55,9 @@ const contentItemId =
         : "";
 
 
-/* ============================================================
+/* ==========================================================
    DWELL NUMBER
-============================================================ */
+========================================================== */
 
 const dwellNumber =
     contentItem.dwellNumber !== null &&
@@ -57,36 +66,29 @@ const dwellNumber =
         : "";
 
 
-/* ============================================================
-   SAFE OPTIONAL MESSAGES
-============================================================ */
+/* ==========================================================
+   UPDATE ROUTE
+========================================================== */
 
-const safeSuccessMessage =
-    typeof successMessage !== "undefined"
-        ? successMessage
-        : null;
-
-const safePageError =
-    typeof pageError !== "undefined"
-        ? pageError
-        : null;
+const stockUpdateAction =
+    contentItemId && dwellNumber
+        ? `/dairy/${encodeURIComponent(contentItemId)}/${encodeURIComponent(dwellNumber)}`
+        : "";
 
 
-/* ============================================================
+/* ==========================================================
    ITEM CLASSIFICATION
-============================================================ */
+========================================================== */
 
 const itemType =
     String(
         contentItem.type || ""
     ).trim();
 
-
 const itemCode =
     Number(
         contentItem.code
     );
-
 
 const itemIsAnimal =
     contentItem.code !== null &&
@@ -94,18 +96,12 @@ const itemIsAnimal =
     !Number.isNaN(itemCode) &&
     itemCode > 0;
 
-
 const itemIsFeed =
     itemType === "feeds";
-
 
 const itemIsAgroStore =
     itemType === "agroStore";
 
-
-/* ============================================================
-   DISPLAY CLASSIFICATION
-============================================================ */
 
 let itemCategory =
     "Asset";
@@ -145,7 +141,7 @@ if (itemIsFeed) {
         "AgroStore";
 
     itemIcon =
-        "🌾";
+        "🏪";
 
     itemCategoryClass =
         "feed-badge";
@@ -153,14 +149,24 @@ if (itemIsFeed) {
 }
 
 
-/* ============================================================
-   QUANTITY
-============================================================ */
+/* ==========================================================
+   ITEM DETAILS
+========================================================== */
+
+const itemName =
+    contentItem.name ||
+    "Unnamed Item";
+
+const itemUnit =
+    contentItem.unit
+        ? String(
+            contentItem.unit
+        ).trim()
+        : "";
 
 const hasQuantity =
     contentItem.quantity !== null &&
     contentItem.quantity !== undefined;
-
 
 const quantityValue =
     hasQuantity
@@ -169,15 +175,9 @@ const quantityValue =
         )
         : null;
 
-
-/* ============================================================
-   CURRENT WORTH
-============================================================ */
-
 const hasCurrentWorth =
     contentItem.currentWorth !== null &&
     contentItem.currentWorth !== undefined;
-
 
 const currentWorthValue =
     hasCurrentWorth
@@ -187,911 +187,871 @@ const currentWorthValue =
         : null;
 
 
-/* ============================================================
-   UNIT
-============================================================ */
+/* ==========================================================
+   UPDATE HISTORY
+========================================================== */
 
-const itemUnit =
-    contentItem.unit
-        ? String(
-            contentItem.unit
-        ).trim()
-        : "";
+const updateHistory =
+    Array.isArray(
+        contentItem.stockUpdates
+    )
+        ? contentItem.stockUpdates
+        : [];
 
 
-/* ============================================================
-   ITEM NAME
-============================================================ */
+/* ==========================================================
+   SAFE OPTIONAL MESSAGES
+========================================================== */
 
-const itemName =
-    contentItem.name ||
-    "Unnamed Item";
+const safeSuccessMessage =
+    typeof successMessage !== "undefined"
+        ? successMessage
+        : null;
+
+const safePageError =
+    typeof pageError !== "undefined"
+        ? pageError
+        : null;
 
 %>
 
 
-<style>
+<!-- ========================================================
+     SUCCESS MESSAGE
+========================================================= -->
 
-/* ============================================================
-   CARD CONTAINER
-============================================================ */
+<% if (safeSuccessMessage) { %>
 
-.storage-content-item-page{
+    <div
+        class="content-item-message content-item-success"
+        role="status"
+    >
 
-    width:100%;
+        <span class="message-icon">
+            ✓
+        </span>
 
-    box-sizing:border-box;
+        <span>
+            <%= safeSuccessMessage %>
+        </span>
 
-}
+    </div>
 
+<% } %>
 
-/* ============================================================
-   MAIN CARD
-============================================================ */
 
-.content-item-card{
+<!-- ========================================================
+     ERROR MESSAGE
+========================================================= -->
 
-    width:100%;
+<% if (safePageError) { %>
 
-    overflow:hidden;
+    <div
+        class="content-item-message content-item-error"
+        role="alert"
+    >
 
-    background:#ffffff;
+        <span class="message-icon">
+            !
+        </span>
 
-    border:1px solid #e1e9e3;
+        <span>
+            <%= safePageError %>
+        </span>
 
-    border-radius:20px;
+    </div>
 
-    box-shadow:
-        0 10px 35px rgba(24,45,31,.07),
-        0 2px 8px rgba(24,45,31,.035);
+<% } %>
 
-}
 
+<!-- ========================================================
+     MAIN ITEM CARD
+========================================================= -->
 
-/* ============================================================
-   HEADER
-============================================================ */
+<article class="content-item-card">
 
-.content-item-hero{
 
-    display:flex;
+    <!-- ====================================================
+         ITEM HEADER
+    ===================================================== -->
 
-    align-items:center;
+    <header class="content-item-header">
 
-    gap:18px;
-
-    padding:25px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #f3f9f5 0%,
-            #ffffff 72%
-        );
-
-    border-bottom:1px solid #e4ebe6;
-
-}
-
-
-/* ============================================================
-   ICON
-============================================================ */
-
-.content-item-icon{
-
-    flex:none;
-
-    width:72px;
-
-    height:72px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    border-radius:19px;
-
-    background:#e7f2ea;
-
-    box-shadow:
-        inset 0 0 0 1px rgba(45,123,72,.06);
-
-    font-size:34px;
-
-}
-
-
-/* ============================================================
-   HEADER INFORMATION
-============================================================ */
-
-.content-item-hero-information{
-
-    min-width:0;
-
-    flex:1;
-
-}
-
-
-.content-item-eyebrow{
-
-    margin:0 0 5px;
-
-    color:#7b8a81;
-
-    font-size:9px;
-
-    line-height:1.2;
-
-    font-weight:850;
-
-    letter-spacing:.12em;
-
-    text-transform:uppercase;
-
-}
-
-
-.content-item-title{
-
-    margin:0;
-
-    color:#203328;
-
-    font-size:27px;
-
-    line-height:1.2;
-
-    font-weight:850;
-
-    letter-spacing:-.035em;
-
-    word-break:break-word;
-
-}
-
-
-/* ============================================================
-   BADGES
-============================================================ */
-
-.content-item-badges{
-
-    display:flex;
-
-    align-items:center;
-
-    flex-wrap:wrap;
-
-    gap:7px;
-
-    margin-top:12px;
-
-}
-
-
-.content-item-badge{
-
-    display:inline-flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    min-height:24px;
-
-    padding:0 10px;
-
-    border-radius:999px;
-
-    font-size:9px;
-
-    line-height:1;
-
-    font-weight:850;
-
-    letter-spacing:.06em;
-
-    text-transform:uppercase;
-
-}
-
-
-.animal-badge{
-
-    background:#edf7ef;
-
-    color:#347148;
-
-}
-
-
-.feed-badge{
-
-    background:#eaf6ed;
-
-    color:#2d7243;
-
-}
-
-
-.asset-badge{
-
-    background:#f1f3f3;
-
-    color:#68746d;
-
-}
-
-
-.status-badge{
-
-    background:#f4f7f5;
-
-    color:#536359;
-
-}
-
-
-/* ============================================================
-   BODY
-============================================================ */
-
-.content-item-body{
-
-    padding:25px;
-
-}
-
-
-/* ============================================================
-   SECTION
-============================================================ */
-
-.detail-section{
-
-    margin:0;
-
-}
-
-
-.detail-section-heading{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:12px;
-
-    margin-bottom:14px;
-
-}
-
-
-.detail-section-title{
-
-    flex:none;
-
-    margin:0;
-
-    color:#263a2c;
-
-    font-size:15px;
-
-    line-height:1.3;
-
-    font-weight:850;
-
-    letter-spacing:-.015em;
-
-}
-
-
-.detail-section-line{
-
-    flex:1;
-
-    height:1px;
-
-    background:#e6ece8;
-
-}
-
-
-/* ============================================================
-   QUANTITY / VALUE
-============================================================ */
-
-.highlight-grid{
-
-    display:grid;
-
-    grid-template-columns:
-        repeat(
-            3,
-            minmax(0,1fr)
-        );
-
-    gap:12px;
-
-}
-
-
-.highlight-box{
-
-    position:relative;
-
-    min-width:0;
-
-    padding:17px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #f8fbf9 0%,
-            #f4f9f5 100%
-        );
-
-    border:1px solid #dfe9e2;
-
-    border-radius:14px;
-
-}
-
-
-.highlight-label{
-
-    display:block;
-
-    margin-bottom:8px;
-
-    color:#849188;
-
-    font-size:9px;
-
-    line-height:1.2;
-
-    font-weight:800;
-
-    text-transform:uppercase;
-
-    letter-spacing:.06em;
-
-}
-
-
-.highlight-value{
-
-    display:block;
-
-    color:#294333;
-
-    font-size:20px;
-
-    line-height:1.25;
-
-    font-weight:850;
-
-    word-break:break-word;
-
-}
-
-
-.highlight-unit{
-
-    margin-left:3px;
-
-    color:#738078;
-
-    font-size:10px;
-
-    font-weight:700;
-
-}
-
-
-/* ============================================================
-   DESCRIPTION
-============================================================ */
-
-.description-section{
-
-    margin-top:27px;
-
-}
-
-
-.description-box{
-
-    min-height:90px;
-
-    padding:17px;
-
-    background:#fafcfb;
-
-    border:1px solid #e4ebe6;
-
-    border-radius:14px;
-
-}
-
-
-.description-text{
-
-    margin:0;
-
-    color:#526259;
-
-    font-size:12px;
-
-    line-height:1.75;
-
-    font-weight:500;
-
-    white-space:pre-wrap;
-
-    word-break:break-word;
-
-}
-
-
-.no-description{
-
-    display:block;
-
-    color:#8a958e;
-
-    font-size:11px;
-
-    line-height:1.6;
-
-    font-style:italic;
-
-}
-
-
-/* ============================================================
-   MESSAGES
-============================================================ */
-
-.content-item-message{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:9px;
-
-    margin-bottom:15px;
-
-    padding:11px 13px;
-
-    border-radius:10px;
-
-    font-size:12px;
-
-    font-weight:650;
-
-}
-
-
-.content-item-success{
-
-    background:#f1f8f3;
-
-    border:1px solid #d8e9dc;
-
-    color:#28603a;
-
-}
-
-
-.content-item-error{
-
-    background:#fff5f4;
-
-    border:1px solid #efd9d6;
-
-    color:#9a443b;
-
-}
-
-
-/* ============================================================
-   MOBILE
-============================================================ */
-
-@media (max-width:700px){
-
-    .content-item-hero{
-
-        align-items:flex-start;
-
-        gap:13px;
-
-        padding:18px;
-
-    }
-
-
-    .content-item-icon{
-
-        width:57px;
-
-        height:57px;
-
-        border-radius:15px;
-
-        font-size:27px;
-
-    }
-
-
-    .content-item-title{
-
-        font-size:22px;
-
-    }
-
-
-    .content-item-body{
-
-        padding:18px;
-
-    }
-
-
-    .highlight-grid{
-
-        grid-template-columns:
-            repeat(
-                2,
-                minmax(0,1fr)
-            );
-
-    }
-
-}
-
-
-@media (max-width:470px){
-
-    .content-item-hero{
-
-        gap:11px;
-
-        padding:16px;
-
-    }
-
-
-    .content-item-icon{
-
-        width:49px;
-
-        height:49px;
-
-        border-radius:13px;
-
-        font-size:23px;
-
-    }
-
-
-    .content-item-eyebrow{
-
-        font-size:8px;
-
-    }
-
-
-    .content-item-title{
-
-        font-size:19px;
-
-    }
-
-
-    .content-item-badge{
-
-        min-height:22px;
-
-        padding:0 8px;
-
-        font-size:8px;
-
-    }
-
-
-    .content-item-body{
-
-        padding:16px;
-
-    }
-
-
-    .highlight-grid{
-
-        grid-template-columns:1fr;
-
-    }
-
-
-    .highlight-box{
-
-        padding:15px;
-
-    }
-
-
-    .highlight-value{
-
-        font-size:18px;
-
-    }
-
-}
-
-</style>
-
-
-<!-- ============================================================
-     STORAGE CONTENT ITEM CARD
-============================================================= -->
-
-<div class="storage-content-item-page">
-
-
-    <!-- ========================================================
-         SUCCESS MESSAGE
-    ========================================================= -->
-
-    <% if (safeSuccessMessage) { %>
-
-        <div class="content-item-message content-item-success">
-
-            <span>✓</span>
-
-            <span>
-                <%= safeSuccessMessage %>
-            </span>
-
+        <div class="content-item-icon">
+            <%= itemIcon %>
         </div>
 
-    <% } %>
 
+        <div class="content-item-heading">
 
-    <!-- ========================================================
-         ERROR MESSAGE
-    ========================================================= -->
-
-    <% if (safePageError) { %>
-
-        <div class="content-item-message content-item-error">
-
-            <span>!</span>
-
-            <span>
-                <%= safePageError %>
+            <span class="content-item-eyebrow">
+                STORAGE CONTENT
             </span>
 
-        </div>
-
-    <% } %>
-
-
-    <!-- ========================================================
-         MAIN CARD
-    ========================================================= -->
-
-    <article class="content-item-card">
+            <h1 class="content-item-title">
+                <%= itemName %>
+            </h1>
 
 
-        <!-- ====================================================
-             HEADER
-        ==================================================== -->
+            <div class="content-item-badges">
 
-        <header class="content-item-hero">
-
-            <div class="content-item-icon">
-
-                <%= itemIcon %>
-
-            </div>
+                <span
+                    class="content-item-badge <%= itemCategoryClass %>"
+                >
+                    <%= itemCategory %>
+                </span>
 
 
-            <div class="content-item-hero-information">
+                <% if (contentItem.status) { %>
 
-                <p class="content-item-eyebrow">
-                    Storage Content
-                </p>
-
-
-                <h1 class="content-item-title">
-                    <%= itemName %>
-                </h1>
-
-
-                <div class="content-item-badges">
-
-                    <span
-                        class="content-item-badge <%= itemCategoryClass %>"
-                    >
-                        <%= itemCategory %>
+                    <span class="content-item-badge status-badge">
+                        <%= contentItem.status %>
                     </span>
 
-
-                    <% if (contentItem.status) { %>
-
-                        <span
-                            class="content-item-badge status-badge"
-                        >
-                            <%= contentItem.status %>
-                        </span>
-
-                    <% } %>
-
-                </div>
+                <% } %>
 
             </div>
 
-        </header>
+        </div>
+
+    </header>
 
 
-        <!-- ====================================================
-             BODY
-        ==================================================== -->
 
-        <div class="content-item-body">
+    <!-- ====================================================
+         CURRENT STOCK
+    ===================================================== -->
 
+    <section class="content-item-section">
 
-            <!-- ==================================================
-                 QUANTITY & VALUE
-            ================================================== -->
+        <div class="section-heading">
 
-            <section class="detail-section">
+            <div>
 
-                <div class="detail-section-heading">
+                <span class="section-kicker">
+                    CURRENT POSITION
+                </span>
 
-                    <h2 class="detail-section-title">
-                        Quantity & Value
-                    </h2>
+                <h2>
+                    Stock Overview
+                </h2>
 
-                    <span class="detail-section-line"></span>
+            </div>
 
-                </div>
+            <span class="section-line"></span>
 
-
-                <div class="highlight-grid">
-
-
-                    <div class="highlight-box">
-
-                        <span class="highlight-label">
-                            Quantity
-                        </span>
+        </div>
 
 
-                        <span class="highlight-value">
+        <div class="stock-overview">
 
-                            <% if (hasQuantity) { %>
+            <div class="stock-stat">
 
-                                <%= quantityValue.toLocaleString() %>
+                <span class="stock-stat-label">
+                    Quantity
+                </span>
 
-                                <% if (itemUnit) { %>
+                <strong class="stock-stat-value">
 
-                                    <span class="highlight-unit">
-                                        <%= itemUnit %>
-                                    </span>
+                    <% if (hasQuantity) { %>
 
-                                <% } %>
+                        <%= quantityValue.toLocaleString() %>
 
-                            <% } else { %>
+                        <% if (itemUnit) { %>
 
-                                —
+                            <small>
+                                <%= itemUnit %>
+                            </small>
 
-                            <% } %>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="highlight-box">
-
-                        <span class="highlight-label">
-                            Unit
-                        </span>
-
-                        <span class="highlight-value">
-                            <%= itemUnit || "—" %>
-                        </span>
-
-                    </div>
-
-
-                    <div class="highlight-box">
-
-                        <span class="highlight-label">
-                            Current Worth
-                        </span>
-
-                        <span class="highlight-value">
-
-                            <% if (hasCurrentWorth) { %>
-
-                                <%= currentWorthValue.toLocaleString() %>
-
-                            <% } else { %>
-
-                                —
-
-                            <% } %>
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- ==================================================
-                 DESCRIPTION
-            ================================================== -->
-
-            <section
-                class="detail-section description-section"
-            >
-
-                <div class="detail-section-heading">
-
-                    <h2 class="detail-section-title">
-                        Description
-                    </h2>
-
-                    <span class="detail-section-line"></span>
-
-                </div>
-
-
-                <div class="description-box">
-
-                    <% if (
-                        contentItem.description &&
-                        String(
-                            contentItem.description
-                        ).trim() !== ""
-                    ) { %>
-
-                        <p class="description-text">
-                            <%= contentItem.description %>
-                        </p>
+                        <% } %>
 
                     <% } else { %>
 
-                        <span class="no-description">
-                            No description has been provided
-                            for this item.
+                        —
+
+                    <% } %>
+
+                </strong>
+
+            </div>
+
+
+            <div class="stock-stat">
+
+                <span class="stock-stat-label">
+                    Unit
+                </span>
+
+                <strong class="stock-stat-value">
+                    <%= itemUnit || "—" %>
+                </strong>
+
+            </div>
+
+
+            <div class="stock-stat">
+
+                <span class="stock-stat-label">
+                    Current Worth
+                </span>
+
+                <strong class="stock-stat-value">
+
+                    <% if (hasCurrentWorth) { %>
+
+                        <%= currentWorthValue.toLocaleString() %>
+
+                    <% } else { %>
+
+                        —
+
+                    <% } %>
+
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ====================================================
+         DESCRIPTION
+    ===================================================== -->
+
+    <% if (
+        contentItem.description &&
+        String(
+            contentItem.description
+        ).trim()
+    ) { %>
+
+        <section class="content-item-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <span class="section-kicker">
+                        INFORMATION
+                    </span>
+
+                    <h2>
+                        Description
+                    </h2>
+
+                </div>
+
+                <span class="section-line"></span>
+
+            </div>
+
+
+            <div class="description-box">
+
+                <%= contentItem.description %>
+
+            </div>
+
+        </section>
+
+    <% } %>
+
+
+
+    <!-- ====================================================
+         UPDATE HISTORY
+    ===================================================== -->
+
+    <section class="content-item-section history-section">
+
+        <div class="section-heading">
+
+            <div>
+
+                <span class="section-kicker">
+                    ACTIVITY
+                </span>
+
+                <h2>
+                    Update History
+                </h2>
+
+            </div>
+
+            <span class="history-count">
+                <%= updateHistory.length %>
+                <%= updateHistory.length === 1
+                    ? "update"
+                    : "updates"
+                %>
+            </span>
+
+        </div>
+
+
+        <!-- ==================================================
+             SWIPEABLE HISTORY
+        =================================================== -->
+
+        <div
+            class="update-history-scroll"
+            aria-label="Stock update history"
+        >
+
+
+            <!-- ==============================================
+                 FIRST CARD — UPDATE
+            =============================================== -->
+
+            <button
+                type="button"
+                class="history-card history-update-card"
+                data-open-composer
+                aria-label="Create a stock update"
+            >
+
+                <span class="history-update-icon">
+                    +
+                </span>
+
+                <span class="history-update-title">
+                    Update Stock
+                </span>
+
+                <span class="history-update-text">
+                    Record a new quantity,
+                    note or image.
+                </span>
+
+                <span class="history-update-action">
+                    Open composer →
+                </span>
+
+            </button>
+
+
+
+            <!-- ==============================================
+                 EXISTING HISTORY
+            =============================================== -->
+
+            <% updateHistory.forEach(function (update, index) { %>
+
+                <%
+
+                    const historyUpdate =
+                        update || {};
+
+
+                    /* ------------------------------------------
+                       QUANTITY
+                    ------------------------------------------ */
+
+                    const historyQuantity =
+                        historyUpdate.quantity !== null &&
+                        historyUpdate.quantity !== undefined
+                            ? Number(
+                                historyUpdate.quantity
+                            )
+                            : null;
+
+
+                    /* ------------------------------------------
+                       NOTE
+                    ------------------------------------------ */
+
+                    const historyNote =
+                        historyUpdate.stockUpdateNote
+                            ? String(
+                                historyUpdate.stockUpdateNote
+                            ).trim()
+                            : "";
+
+
+                    /* ------------------------------------------
+                       IMAGES
+                    ------------------------------------------ */
+
+                    const historyImages =
+                        Array.isArray(
+                            historyUpdate.images
+                        )
+                            ? historyUpdate.images
+                            : [];
+
+
+                    /* ------------------------------------------
+                       RECORDED BY
+                    ------------------------------------------ */
+
+                    const recordedBy =
+                        historyUpdate.recordedBy;
+
+
+                    let recordedByName =
+                        "Unknown user";
+
+
+                    if (recordedBy) {
+
+                        if (
+                            typeof recordedBy === "object" &&
+                            recordedBy.name
+                        ) {
+
+                            recordedByName =
+                                String(
+                                    recordedBy.name
+                                );
+
+                        } else if (
+                            typeof recordedBy === "object" &&
+                            recordedBy.email
+                        ) {
+
+                            recordedByName =
+                                String(
+                                    recordedBy.email
+                                );
+
+                        } else {
+
+                            recordedByName =
+                                String(
+                                    recordedBy
+                                );
+
+                        }
+
+                    }
+
+
+                    /* ------------------------------------------
+                       DATE
+                    ------------------------------------------ */
+
+                    let historyDate =
+                        "Unknown date";
+
+
+                    if (historyUpdate.recordedAt) {
+
+                        const date =
+                            new Date(
+                                historyUpdate.recordedAt
+                            );
+
+
+                        if (
+                            !Number.isNaN(
+                                date.getTime()
+                            )
+                        ) {
+
+                            historyDate =
+                                date.toLocaleString(
+                                    undefined,
+                                    {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                        hour: "numeric",
+                                        minute: "2-digit"
+                                    }
+                                );
+
+                        }
+
+                    }
+
+
+                    /* ------------------------------------------
+                       PREVIEW
+                    ------------------------------------------ */
+
+                    const historyPreview =
+                        historyNote ||
+                        (
+                            historyQuantity !== null
+                                ? `Quantity updated to ${historyQuantity.toLocaleString()}${itemUnit ? " " + itemUnit : ""}.`
+                                : "Stock information updated."
+                        );
+
+
+                    /* ------------------------------------------
+                       SERIALIZED DATA FOR MODAL
+                    ------------------------------------------ */
+
+                    const historyData = {
+
+                        quantity:
+                            historyQuantity,
+
+                        unit:
+                            itemUnit,
+
+                        note:
+                            historyNote,
+
+                        user:
+                            recordedByName,
+
+                        date:
+                            historyDate,
+
+                        images:
+                            historyImages.map(
+                                function(image) {
+
+                                    if (
+                                        typeof image === "string"
+                                    ) {
+
+                                        return image;
+
+                                    }
+
+                                    return image &&
+                                        (
+                                            image.url ||
+                                            image.path ||
+                                            image.location
+                                        );
+
+                                }
+                            ).filter(Boolean)
+
+                    };
+
+                %>
+
+
+                <button
+                    type="button"
+                    class="history-card"
+                    role="button"
+                    data-history="<%= encodeURIComponent(JSON.stringify(historyData)) %>"
+                    aria-label="View stock update <%= index + 1 %>"
+                >
+
+
+                    <!-- ----------------------------------------
+                         HISTORY NUMBER
+                    ----------------------------------------- -->
+
+                    <span class="history-number">
+                        <%= updateHistory.length - index %>
+                    </span>
+
+
+                    <!-- ----------------------------------------
+                         HISTORY ICON
+                    ----------------------------------------- -->
+
+                    <span class="history-card-icon">
+                        ↻
+                    </span>
+
+
+                    <!-- ----------------------------------------
+                         DATE
+                    ----------------------------------------- -->
+
+                    <span class="history-date">
+                        <%= historyDate %>
+                    </span>
+
+
+                    <!-- ----------------------------------------
+                         QUANTITY
+                    ----------------------------------------- -->
+
+                    <% if (historyQuantity !== null) { %>
+
+                        <strong class="history-quantity">
+
+                            <%= historyQuantity.toLocaleString() %>
+
+                            <% if (itemUnit) { %>
+
+                                <small>
+                                    <%= itemUnit %>
+                                </small>
+
+                            <% } %>
+
+                        </strong>
+
+                    <% } else { %>
+
+                        <strong class="history-quantity">
+                            Updated
+                        </strong>
+
+                    <% } %>
+
+
+                    <!-- ----------------------------------------
+                         NOTE
+                    ----------------------------------------- -->
+
+                    <span class="history-preview">
+                        <%= historyPreview %>
+                    </span>
+
+
+                    <!-- ----------------------------------------
+                         USER
+                    ----------------------------------------- -->
+
+                    <span class="history-user">
+
+                        <span class="history-user-dot"></span>
+
+                        <%= recordedByName %>
+
+                    </span>
+
+
+                    <!-- ----------------------------------------
+                         IMAGE INDICATOR
+                    ----------------------------------------- -->
+
+                    <% if (historyImages.length) { %>
+
+                        <span class="history-images">
+
+                            📷
+                            <%= historyImages.length %>
+
                         </span>
 
                     <% } %>
 
+                </button>
+
+            <% }); %>
+
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ====================================================
+         FOOTER
+    ===================================================== -->
+
+    <footer class="content-item-footer">
+
+        <span class="footer-status">
+
+            <span class="footer-status-dot"></span>
+
+            Stock history active
+
+        </span>
+
+
+        <span class="footer-history-hint">
+
+            Swipe to view updates
+
+        </span>
+
+    </footer>
+
+</article>
+
+
+
+<!-- ========================================================
+     UPDATE DETAILS MODAL
+========================================================= -->
+
+<div
+    class="history-modal"
+    data-history-modal
+    aria-hidden="true"
+>
+
+    <div
+        class="history-modal-backdrop"
+        data-close-history
+    ></div>
+
+
+    <div
+        class="history-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="history-modal-title"
+    >
+
+        <button
+            type="button"
+            class="history-modal-close"
+            data-close-history
+            aria-label="Close update"
+        >
+            ×
+        </button>
+
+
+        <div class="history-modal-header">
+
+            <span class="modal-kicker">
+                STOCK UPDATE
+            </span>
+
+            <h2 id="history-modal-title">
+                Update details
+            </h2>
+
+        </div>
+
+
+        <div class="history-modal-body">
+
+
+            <div class="modal-update-grid">
+
+                <div class="modal-stat">
+
+                    <span>
+                        Quantity
+                    </span>
+
+                    <strong data-modal-quantity>
+                        —
+                    </strong>
+
                 </div>
 
-            </section>
+
+                <div class="modal-stat">
+
+                    <span>
+                        Recorded by
+                    </span>
+
+                    <strong data-modal-user>
+                        —
+                    </strong>
+
+                </div>
 
 
-            <!-- ==================================================
-                 STOCK UPDATE SECTION
-                 
-                 KEPT SEPARATE FROM THE ITEM INFORMATION.
-            ================================================== -->
+                <div class="modal-stat">
+
+                    <span>
+                        Recorded at
+                    </span>
+
+                    <strong data-modal-date>
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="modal-note"
+                data-modal-note-container
+            >
+
+                <span>
+                    Note
+                </span>
+
+                <p data-modal-note></p>
+
+            </div>
+
+
+            <div
+                class="modal-images"
+                data-modal-images
+            ></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ========================================================
+     UPDATE COMPOSER
+========================================================= -->
+
+<div
+    class="history-composer"
+    data-history-composer
+    aria-hidden="true"
+>
+
+    <div
+        class="history-composer-backdrop"
+        data-close-composer
+    ></div>
+
+
+    <div
+        class="history-composer-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="composer-title"
+    >
+
+        <button
+            type="button"
+            class="history-composer-close"
+            data-close-composer
+            aria-label="Close update composer"
+        >
+            ×
+        </button>
+
+
+        <div class="composer-header">
+
+            <span class="composer-kicker">
+                STOCK MANAGEMENT
+            </span>
+
+            <h2 id="composer-title">
+                Update Stock
+            </h2>
+
+            <p>
+                Record the current stock position
+                and add any useful information.
+            </p>
+
+        </div>
+
+
+        <div class="composer-content">
+
+            <%
+                /*
+                    Existing update form.
+
+                    The form itself remains in:
+                        content-item-update.ejs
+
+                    This avoids duplicating the update
+                    form implementation here.
+                */
+            %>
 
             <%- include(
                 "content-item-update",
@@ -1109,14 +1069,1899 @@ const itemName =
                         contentItemId,
 
                     dwellNumber:
-                        dwellNumber
+                        dwellNumber,
+
+                    stockUpdateAction:
+                        stockUpdateAction
                 }
             ) %>
 
-
         </div>
 
-    </article>
-
+    </div>
 
 </div>
+
+
+
+<style>
+
+/* ==========================================================
+   BASE
+========================================================== */
+
+.content-item-card {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    overflow: hidden;
+
+    border:
+        1px solid
+        #e5e9e6;
+
+    border-radius: 24px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 12px 35px
+        rgba(28, 48, 34, .07);
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+}
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.content-item-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 17px;
+
+    padding:
+        25px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f7fbf7,
+            #ffffff
+        );
+
+    border-bottom:
+        1px solid
+        #edf0ed;
+
+}
+
+
+.content-item-icon {
+
+    width: 58px;
+    height: 58px;
+
+    flex:
+        0 0
+        58px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 17px;
+
+    background:
+        #eef7f0;
+
+    font-size: 28px;
+
+}
+
+
+.content-item-heading {
+
+    min-width: 0;
+
+}
+
+
+.content-item-eyebrow {
+
+    display: block;
+
+    margin-bottom: 4px;
+
+    color:
+        #7b887f;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing:
+        2px;
+
+}
+
+
+.content-item-title {
+
+    margin: 0;
+
+    color:
+        #213126;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:
+        clamp(25px, 5vw, 38px);
+
+    line-height: 1.05;
+
+}
+
+
+.content-item-badges {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 6px;
+
+    margin-top: 9px;
+
+}
+
+
+.content-item-badge {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    padding:
+        5px
+        9px;
+
+    border-radius:
+        999px;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing:
+        .7px;
+
+}
+
+
+.asset-badge {
+
+    color:
+        #41604a;
+
+    background:
+        #edf4ee;
+
+}
+
+
+.feed-badge {
+
+    color:
+        #287245;
+
+    background:
+        #e8f5eb;
+
+}
+
+
+.animal-badge {
+
+    color:
+        #795c26;
+
+    background:
+        #faf3df;
+
+}
+
+
+.status-badge {
+
+    color:
+        #637067;
+
+    background:
+        #f2f4f2;
+
+}
+
+
+/* ==========================================================
+   SECTIONS
+========================================================== */
+
+.content-item-section {
+
+    padding:
+        24px 25px;
+
+    border-bottom:
+        1px solid
+        #edf0ed;
+
+}
+
+
+.section-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    margin-bottom: 15px;
+
+}
+
+
+.section-heading > div {
+
+    flex:
+        0 0
+        auto;
+
+}
+
+
+.section-kicker {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    color:
+        #849088;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing:
+        1.8px;
+
+}
+
+
+.section-heading h2 {
+
+    margin: 0;
+
+    color:
+        #29382e;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+}
+
+
+.section-line {
+
+    flex: 1;
+
+    height: 1px;
+
+    background:
+        #e5ebe6;
+
+}
+
+
+.history-count {
+
+    flex:
+        0 0
+        auto;
+
+    padding:
+        5px 9px;
+
+    border-radius:
+        999px;
+
+    color:
+        #477154;
+
+    background:
+        #eef7f0;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+}
+
+
+/* ==========================================================
+   STOCK OVERVIEW
+========================================================== */
+
+.stock-overview {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 10px;
+
+}
+
+
+.stock-stat {
+
+    min-width: 0;
+
+    padding:
+        15px;
+
+    border:
+        1px solid
+        #e7ece8;
+
+    border-radius: 15px;
+
+    background:
+        #fbfcfb;
+
+}
+
+
+.stock-stat-label {
+
+    display: block;
+
+    margin-bottom: 6px;
+
+    color:
+        #849088;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        1px;
+
+}
+
+
+.stock-stat-value {
+
+    display: block;
+
+    color:
+        #24372a;
+
+    font-size: 19px;
+
+    line-height: 1.2;
+
+}
+
+
+.stock-stat-value small {
+
+    color:
+        #708078;
+
+    font-size: 10px;
+
+    font-weight: 600;
+
+}
+
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.description-box {
+
+    padding:
+        15px 17px;
+
+    border-left:
+        3px solid
+        #4c8a59;
+
+    border-radius:
+        0 12px 12px 0;
+
+    background:
+        #f6faf6;
+
+    color:
+        #526057;
+
+    font-size:
+        12px;
+
+    line-height:
+        1.65;
+
+}
+
+
+/* ==========================================================
+   HISTORY SCROLL
+========================================================== */
+
+.update-history-scroll {
+
+    display: flex;
+
+    gap: 10px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding:
+        3px
+        2px
+        9px;
+
+    scroll-snap-type:
+        x mandatory;
+
+    -webkit-overflow-scrolling:
+        touch;
+
+    scrollbar-width:
+        none;
+
+}
+
+
+.update-history-scroll::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+/* ==========================================================
+   HISTORY CARD
+========================================================== */
+
+.history-card {
+
+    position: relative;
+
+    flex:
+        0 0
+        172px;
+
+    width: 172px;
+
+    min-height: 158px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    padding:
+        15px;
+
+    box-sizing: border-box;
+
+    scroll-snap-align:
+        start;
+
+    overflow: hidden;
+
+    border:
+        1px solid
+        #e2e9e3;
+
+    border-radius:
+        17px;
+
+    background:
+        #ffffff;
+
+    color:
+        #26352b;
+
+    text-align:
+        left;
+
+    cursor:
+        pointer;
+
+    box-shadow:
+        0 3px 12px
+        rgba(27, 55, 35, .055);
+
+    transition:
+        transform .16s ease,
+        box-shadow .16s ease,
+        border-color .16s ease;
+
+}
+
+
+.history-card:hover {
+
+    transform:
+        translateY(-2px);
+
+    border-color:
+        #bdd5c2;
+
+    box-shadow:
+        0 7px 18px
+        rgba(27, 55, 35, .09);
+
+}
+
+
+.history-card:active {
+
+    transform:
+        scale(.97);
+
+}
+
+
+.history-card:focus-visible {
+
+    outline:
+        2px solid
+        #39834b;
+
+    outline-offset:
+        2px;
+
+}
+
+
+/* ==========================================================
+   UPDATE CARD
+========================================================== */
+
+.history-update-card {
+
+    justify-content:
+        center;
+
+    border:
+        1px dashed
+        #9dbda4;
+
+    background:
+        linear-gradient(
+            145deg,
+            #f4faf5,
+            #ffffff
+        );
+
+}
+
+
+.history-update-icon {
+
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 10px;
+
+    border-radius:
+        11px;
+
+    background:
+        #dfefdf;
+
+    color:
+        #28733a;
+
+    font-size:
+        23px;
+
+    font-weight:
+        300;
+
+}
+
+
+.history-update-title {
+
+    color:
+        #25472d;
+
+    font-size:
+        13px;
+
+    font-weight:
+        800;
+
+}
+
+
+.history-update-text {
+
+    margin-top:
+        5px;
+
+    color:
+        #758279;
+
+    font-size:
+        9px;
+
+    line-height:
+        1.45;
+
+}
+
+
+.history-update-action {
+
+    margin-top:
+        auto;
+
+    padding-top:
+        9px;
+
+    color:
+        #388148;
+
+    font-size:
+        8px;
+
+    font-weight:
+        800;
+
+}
+
+
+/* ==========================================================
+   HISTORY DETAILS
+========================================================== */
+
+.history-number {
+
+    position: absolute;
+
+    top: 10px;
+    right: 10px;
+
+    min-width: 19px;
+    height: 19px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius:
+        50%;
+
+    background:
+        #f0f5f1;
+
+    color:
+        #67806d;
+
+    font-size:
+        8px;
+
+    font-weight:
+        800;
+
+}
+
+
+.history-card-icon {
+
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom:
+        9px;
+
+    border-radius:
+        9px;
+
+    background:
+        #eef5ef;
+
+    color:
+        #4b7e55;
+
+    font-size:
+        14px;
+
+}
+
+
+.history-date {
+
+    color:
+        #8a958d;
+
+    font-size:
+        8px;
+
+    line-height:
+        1.3;
+
+}
+
+
+.history-quantity {
+
+    display: block;
+
+    margin-top:
+        5px;
+
+    color:
+        #263e2c;
+
+    font-size:
+        17px;
+
+    line-height:
+        1.2;
+
+}
+
+
+.history-quantity small {
+
+    color:
+        #718077;
+
+    font-size:
+        9px;
+
+}
+
+
+.history-preview {
+
+    display: -webkit-box;
+
+    margin-top:
+        5px;
+
+    color:
+        #66736a;
+
+    font-size:
+        9px;
+
+    line-height:
+        1.4;
+
+    overflow:
+        hidden;
+
+    -webkit-box-orient:
+        vertical;
+
+    -webkit-line-clamp:
+        2;
+
+}
+
+
+.history-user {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    max-width:
+        100%;
+
+    margin-top:
+        auto;
+
+    padding-top:
+        8px;
+
+    color:
+        #738078;
+
+    font-size:
+        8px;
+
+    white-space:
+        nowrap;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+}
+
+
+.history-user-dot {
+
+    width: 5px;
+    height: 5px;
+
+    flex:
+        0 0
+        5px;
+
+    border-radius:
+        50%;
+
+    background:
+        #5a9766;
+
+}
+
+
+.history-images {
+
+    position: absolute;
+
+    right: 10px;
+    bottom: 10px;
+
+    color:
+        #718177;
+
+    font-size:
+        8px;
+
+}
+
+
+/* ==========================================================
+   FOOTER
+========================================================== */
+
+.content-item-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 10px;
+
+    padding:
+        14px 20px;
+
+    background:
+        #fafcfb;
+
+}
+
+
+.footer-status {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    color:
+        #748178;
+
+    font-size:
+        8px;
+
+    font-weight:
+        700;
+
+}
+
+
+.footer-status-dot {
+
+    width: 6px;
+    height: 6px;
+
+    border-radius:
+        50%;
+
+    background:
+        #4c9660;
+
+}
+
+
+.footer-history-hint {
+
+    color:
+        #9aa49d;
+
+    font-size:
+        8px;
+
+}
+
+
+/* ==========================================================
+   MODALS
+========================================================== */
+
+.history-modal,
+.history-composer {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 9999;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    padding:
+        18px;
+
+}
+
+
+.history-modal.is-open,
+.history-composer.is-open {
+
+    display: flex;
+
+}
+
+
+.history-modal-backdrop,
+.history-composer-backdrop {
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        rgba(19, 31, 23, .55);
+
+    backdrop-filter:
+        blur(5px);
+
+}
+
+
+.history-modal-panel,
+.history-composer-panel {
+
+    position: relative;
+
+    z-index: 2;
+
+    width:
+        min(100%, 560px);
+
+    max-height:
+        90vh;
+
+    overflow-y:
+        auto;
+
+    border-radius:
+        22px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 25px 70px
+        rgba(0, 0, 0, .2);
+
+}
+
+
+.history-modal-close,
+.history-composer-close {
+
+    position: absolute;
+
+    top: 12px;
+    right: 12px;
+
+    width: 32px;
+    height: 32px;
+
+    border: 0;
+
+    border-radius:
+        50%;
+
+    background:
+        #f0f3f1;
+
+    color:
+        #4f5e54;
+
+    font-size:
+        20px;
+
+    line-height:
+        1;
+
+    cursor:
+        pointer;
+
+}
+
+
+.history-modal-header,
+.composer-header {
+
+    padding:
+        24px;
+
+    border-bottom:
+        1px solid
+        #edf0ed;
+
+}
+
+
+.modal-kicker,
+.composer-kicker {
+
+    color:
+        #4b8a59;
+
+    font-size:
+        8px;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        1.7px;
+
+}
+
+
+.history-modal-header h2,
+.composer-header h2 {
+
+    margin:
+        5px 0 0;
+
+    color:
+        #26372b;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:
+        25px;
+
+}
+
+
+.composer-header p {
+
+    margin:
+        7px 0 0;
+
+    color:
+        #748078;
+
+    font-size:
+        11px;
+
+    line-height:
+        1.5;
+
+}
+
+
+.history-modal-body {
+
+    padding:
+        22px 24px 25px;
+
+}
+
+
+.modal-update-grid {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap:
+        8px;
+
+}
+
+
+.modal-stat {
+
+    padding:
+        12px;
+
+    border-radius:
+        12px;
+
+    background:
+        #f7faf7;
+
+}
+
+
+.modal-stat span {
+
+    display: block;
+
+    margin-bottom:
+        5px;
+
+    color:
+        #89938c;
+
+    font-size:
+        7px;
+
+    font-weight:
+        800;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        .8px;
+
+}
+
+
+.modal-stat strong {
+
+    display: block;
+
+    color:
+        #304436;
+
+    font-size:
+        11px;
+
+    line-height:
+        1.35;
+
+    word-break:
+        break-word;
+
+}
+
+
+.modal-note {
+
+    margin-top:
+        12px;
+
+    padding:
+        14px;
+
+    border-left:
+        3px solid
+        #4c8b58;
+
+    border-radius:
+        0 12px 12px 0;
+
+    background:
+        #f7faf7;
+
+}
+
+
+.modal-note > span {
+
+    color:
+        #829087;
+
+    font-size:
+        8px;
+
+    font-weight:
+        800;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        1px;
+
+}
+
+
+.modal-note p {
+
+    margin:
+        6px 0 0;
+
+    color:
+        #526057;
+
+    font-size:
+        11px;
+
+    line-height:
+        1.55;
+
+}
+
+
+.modal-images {
+
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap:
+        7px;
+
+    margin-top:
+        12px;
+
+}
+
+
+.modal-images:empty {
+
+    display:
+        none;
+
+}
+
+
+.modal-images img {
+
+    width:
+        100%;
+
+    aspect-ratio:
+        1;
+
+    object-fit:
+        cover;
+
+    border-radius:
+        10px;
+
+}
+
+
+/* ==========================================================
+   COMPOSER
+========================================================== */
+
+.history-composer-panel {
+
+    width:
+        min(100%, 650px);
+
+}
+
+
+.composer-content {
+
+    padding:
+        0 20px 20px;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 650px) {
+
+    .content-item-header {
+
+        padding:
+            20px;
+
+    }
+
+
+    .content-item-icon {
+
+        width: 48px;
+        height: 48px;
+
+        flex-basis:
+            48px;
+
+        border-radius:
+            14px;
+
+        font-size:
+            23px;
+
+    }
+
+
+    .content-item-section {
+
+        padding:
+            20px;
+
+    }
+
+
+    .stock-overview {
+
+        grid-template-columns:
+            1fr 1fr;
+
+    }
+
+
+    .stock-stat:last-child {
+
+        grid-column:
+            1 / -1;
+
+    }
+
+
+    .history-card {
+
+        flex-basis:
+            160px;
+
+        width:
+            160px;
+
+        min-height:
+            153px;
+
+    }
+
+
+    .modal-update-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .modal-images {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+    }
+
+}
+
+
+/* ==========================================================
+   SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .content-item-title {
+
+        font-size:
+            25px;
+
+    }
+
+
+    .content-item-header {
+
+        gap:
+            12px;
+
+    }
+
+
+    .stock-overview {
+
+        gap:
+            7px;
+
+    }
+
+
+    .stock-stat {
+
+        padding:
+            12px;
+
+    }
+
+
+    .history-card {
+
+        flex-basis:
+            150px;
+
+        width:
+            150px;
+
+    }
+
+}
+
+</style>
+
+
+
+<script>
+
+(function () {
+
+    "use strict";
+
+
+    /* ======================================================
+       UPDATE COMPOSER
+    ======================================================= */
+
+    const composer =
+        document.querySelector(
+            "[data-history-composer]"
+        );
+
+
+    const openComposerButtons =
+        document.querySelectorAll(
+            "[data-open-composer]"
+        );
+
+
+    const closeComposerButtons =
+        document.querySelectorAll(
+            "[data-close-composer]"
+        );
+
+
+    function openComposer() {
+
+        if (!composer) {
+
+            return;
+
+        }
+
+        composer.classList.add(
+            "is-open"
+        );
+
+        composer.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+        document.body.style.overflow =
+            "hidden";
+
+    }
+
+
+    function closeComposer() {
+
+        if (!composer) {
+
+            return;
+
+        }
+
+        composer.classList.remove(
+            "is-open"
+        );
+
+        composer.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+        document.body.style.overflow =
+            "";
+
+    }
+
+
+    openComposerButtons.forEach(
+        function (button) {
+
+            button.addEventListener(
+                "click",
+                openComposer
+            );
+
+        }
+    );
+
+
+    closeComposerButtons.forEach(
+        function (button) {
+
+            button.addEventListener(
+                "click",
+                closeComposer
+            );
+
+        }
+    );
+
+
+
+    /* ======================================================
+       HISTORY MODAL
+    ======================================================= */
+
+    const historyModal =
+        document.querySelector(
+            "[data-history-modal]"
+        );
+
+
+    const historyCards =
+        document.querySelectorAll(
+            "[data-history]"
+        );
+
+
+    const closeHistoryButtons =
+        document.querySelectorAll(
+            "[data-close-history]"
+        );
+
+
+    const modalQuantity =
+        document.querySelector(
+            "[data-modal-quantity]"
+        );
+
+
+    const modalUser =
+        document.querySelector(
+            "[data-modal-user]"
+        );
+
+
+    const modalDate =
+        document.querySelector(
+            "[data-modal-date]"
+        );
+
+
+    const modalNote =
+        document.querySelector(
+            "[data-modal-note]"
+        );
+
+
+    const modalNoteContainer =
+        document.querySelector(
+            "[data-modal-note-container]"
+        );
+
+
+    const modalImages =
+        document.querySelector(
+            "[data-modal-images]"
+        );
+
+
+    function openHistory(data) {
+
+        if (!historyModal) {
+
+            return;
+
+        }
+
+
+        const quantity =
+            data.quantity !== null &&
+            data.quantity !== undefined
+                ? Number(
+                    data.quantity
+                ).toLocaleString() +
+                  (
+                      data.unit
+                          ? " " + data.unit
+                          : ""
+                  )
+                : "—";
+
+
+        if (modalQuantity) {
+
+            modalQuantity.textContent =
+                quantity;
+
+        }
+
+
+        if (modalUser) {
+
+            modalUser.textContent =
+                data.user || "Unknown user";
+
+        }
+
+
+        if (modalDate) {
+
+            modalDate.textContent =
+                data.date || "Unknown date";
+
+        }
+
+
+        if (
+            modalNote &&
+            modalNoteContainer
+        ) {
+
+            if (
+                data.note &&
+                String(
+                    data.note
+                ).trim()
+            ) {
+
+                modalNote.textContent =
+                    data.note;
+
+                modalNoteContainer.style.display =
+                    "";
+
+            } else {
+
+                modalNote.textContent =
+                    "";
+
+                modalNoteContainer.style.display =
+                    "none";
+
+            }
+
+        }
+
+
+        if (modalImages) {
+
+            modalImages.innerHTML =
+                "";
+
+
+            (
+                Array.isArray(
+                    data.images
+                )
+                    ? data.images
+                    : []
+            ).forEach(
+                function (imageUrl) {
+
+                    if (!imageUrl) {
+
+                        return;
+
+                    }
+
+
+                    const image =
+                        document.createElement(
+                            "img"
+                        );
+
+                    image.src =
+                        imageUrl;
+
+                    image.alt =
+                        "Stock update image";
+
+                    image.loading =
+                        "lazy";
+
+                    modalImages.appendChild(
+                        image
+                    );
+
+                }
+            );
+
+        }
+
+
+        historyModal.classList.add(
+            "is-open"
+        );
+
+        historyModal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+        document.body.style.overflow =
+            "hidden";
+
+    }
+
+
+    function closeHistory() {
+
+        if (!historyModal) {
+
+            return;
+
+        }
+
+
+        historyModal.classList.remove(
+            "is-open"
+        );
+
+        historyModal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+        document.body.style.overflow =
+            "";
+
+    }
+
+
+    historyCards.forEach(
+        function (card) {
+
+            card.addEventListener(
+                "click",
+                function () {
+
+                    try {
+
+                        const encoded =
+                            card.getAttribute(
+                                "data-history"
+                            );
+
+
+                        if (!encoded) {
+
+                            return;
+
+                        }
+
+
+                        const data =
+                            JSON.parse(
+                                decodeURIComponent(
+                                    encoded
+                                )
+                            );
+
+
+                        openHistory(
+                            data
+                        );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Unable to open stock update:",
+                            error
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+
+    closeHistoryButtons.forEach(
+        function (button) {
+
+            button.addEventListener(
+                "click",
+                closeHistory
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       ESCAPE KEY
+    ======================================================= */
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (
+                event.key !==
+                "Escape"
+            ) {
+
+                return;
+
+            }
+
+
+            closeComposer();
+
+            closeHistory();
+
+        }
+    );
+
+})();
+
+</script>
