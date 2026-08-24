@@ -24,7 +24,7 @@
 // An unrelated URL must NEVER be interpreted as a
 // dwellNumber request.
 //
-// =========================================================
+// ==========================================================
 
 
 const express =
@@ -69,8 +69,12 @@ function isAuth(
         return res
             .status(401)
             .json({
+
                 success: false,
-                message: "Unauthorized"
+
+                message:
+                    "Unauthorized"
+
             });
 
     }
@@ -240,6 +244,42 @@ router.get(
 router.get(
     "/dairy/:id",
     controller.viewPage
+);
+
+
+// =========================================================
+// GENERAL DAIRY FEED
+// =========================================================
+//
+// GET:
+//
+//     /dairy/:id/general
+//
+// PURPOSE:
+//
+//     Render the feed-only General page:
+//
+//         views/updateGeneral.ejs
+//
+// IMPORTANT:
+//
+// This route MUST be defined before the generic:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// route.
+//
+// /general is not a dwellNumber.
+//
+// The content-item guard will also reject "general" because
+// it is not numeric, but defining this route explicitly here
+// makes the intended routing unambiguous.
+//
+// =========================================================
+
+router.get(
+    "/dairy/:id/general",
+    controller.viewGeneral
 );
 
 
@@ -472,6 +512,7 @@ router.post(
 //
 //     /dairy/abc123/post
 //     /dairy/abc123/maintenance
+//     /dairy/abc123/general
 //     /dairy/abc123/anything
 //
 // are NOT treated as content-item requests.
