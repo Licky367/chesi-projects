@@ -1,7 +1,7 @@
 <style>
 
   /* =========================================================
-     PAGE
+     SALES PAGE
   ========================================================= */
 
   .sales-page{
@@ -25,7 +25,7 @@
 
 
   /* =========================================================
-     TITLES
+     TITLE
   ========================================================= */
 
   .sales-title{
@@ -46,6 +46,7 @@
     display:flex;
     align-items:center;
     justify-content:center;
+    flex-shrink:0;
   }
 
   .sales-title-icon i{
@@ -154,7 +155,7 @@
 
   .sales-table{
     width:100%;
-    min-width:650px;
+    min-width:700px;
     border-collapse:collapse;
   }
 
@@ -208,9 +209,62 @@
     color:#6b7280;
   }
 
+  .badge-orange{
+    background:#ffedd5;
+    color:#c2410c;
+  }
+
 
   /* =========================================================
-     PRICE / INFO
+     FARM SELECT
+  ========================================================= */
+
+  .farm-select{
+    width:100%;
+    padding:12px 14px;
+    border:1px solid #d1d5db;
+    border-radius:9px;
+    background:#f9fafb;
+    font-size:14px;
+    outline:none;
+    cursor:pointer;
+  }
+
+  .farm-select:focus{
+    border-color:#16a34a;
+    background:#fff;
+    box-shadow:0 0 0 4px rgba(22,163,74,.10);
+  }
+
+
+  /* =========================================================
+     FARM AVAILABILITY
+  ========================================================= */
+
+  .farm-availability{
+    margin-top:18px;
+    padding:15px;
+    border-radius:12px;
+    background:#f0fdf4;
+    border:1px solid #dcfce7;
+  }
+
+  .farm-availability-title{
+    font-size:12px;
+    color:#166534;
+    font-weight:700;
+    margin-bottom:8px;
+  }
+
+  .farm-availability-value{
+    font-size:24px;
+    font-weight:800;
+    color:#15803d;
+  }
+
+
+  /* =========================================================
+     PRICE INFO
   ========================================================= */
 
   .price-info{
@@ -228,7 +282,7 @@
 
 
   /* =========================================================
-     STANDING ORDER SALE FORM
+     STANDING ORDER FORM
   ========================================================= */
 
   .standing-sale-form{
@@ -244,7 +298,7 @@
 
 
   /* =========================================================
-     TOTAL
+     TOTAL BOX
   ========================================================= */
 
   .total-box{
@@ -264,6 +318,46 @@
 
 
   /* =========================================================
+     FARM TOTALS
+  ========================================================= */
+
+  .farm-total-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:14px;
+  }
+
+  .farm-total{
+    padding:16px;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    background:#fafafa;
+  }
+
+  .farm-total-name{
+    font-weight:700;
+    color:#166534;
+    margin-bottom:12px;
+  }
+
+  .farm-total-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    font-size:13px;
+    padding:5px 0;
+  }
+
+  .farm-total-row span:first-child{
+    color:#6b7280;
+  }
+
+  .farm-total-row strong{
+    color:#111827;
+  }
+
+
+  /* =========================================================
      EMPTY
   ========================================================= */
 
@@ -279,6 +373,10 @@
   ========================================================= */
 
   @media(max-width:650px){
+
+    .sales-page{
+      padding:15px 10px 30px;
+    }
 
     .sales-card{
       padding:18px;
@@ -338,7 +436,7 @@
             name="price"
             min="0"
             step="0.1"
-            value="<%= currentPrice %>"
+            value="<%= Number(currentPrice || 0) %>"
             <%= user?.role === "admin" ? "" : "readonly" %>
           >
 
@@ -380,7 +478,105 @@
 
 
   <!-- =======================================================
-       2. STANDING ORDERS
+       2. FARM MILK POSITION
+  ======================================================= -->
+
+  <div class="sales-card">
+
+    <div class="sales-title">
+
+      <div class="sales-title-icon">
+        <i class="fas fa-cow"></i>
+      </div>
+
+      <span>Farm Milk Position</span>
+
+    </div>
+
+
+    <% if (farmTotals && farmTotals.length) { %>
+
+      <div class="farm-total-grid">
+
+        <% farmTotals.forEach(farm => { %>
+
+          <div class="farm-total">
+
+            <div class="farm-total-name">
+
+              <%= farm.farmName %>
+
+            </div>
+
+
+            <div class="farm-total-row">
+
+              <span>Production</span>
+
+              <strong>
+                <%= Number(farm.production || 0).toFixed(2) %> L
+              </strong>
+
+            </div>
+
+
+            <div class="farm-total-row">
+
+              <span>Sold</span>
+
+              <strong>
+                <%= Number(farm.sold || 0).toFixed(2) %> L
+              </strong>
+
+            </div>
+
+
+            <div class="farm-total-row">
+
+              <span>Available</span>
+
+              <strong>
+                <%= Number(farm.available || 0).toFixed(2) %> L
+              </strong>
+
+            </div>
+
+
+            <div class="farm-total-row">
+
+              <span>Revenue</span>
+
+              <strong>
+                KES <%= Number(farm.revenue || 0).toFixed(2) %>
+              </strong>
+
+            </div>
+
+          </div>
+
+        <% }) %>
+
+      </div>
+
+
+    <% } else { %>
+
+      <div class="empty">
+
+        <i class="fas fa-warehouse"></i>
+
+        No dairy farms are available for your account.
+
+      </div>
+
+    <% } %>
+
+  </div>
+
+
+
+  <!-- =======================================================
+       3. STANDING ORDERS
   ======================================================= -->
 
   <div class="sales-card">
@@ -398,7 +594,7 @@
     </div>
 
 
-    <% if (standingOrders.length) { %>
+    <% if (standingOrders && standingOrders.length) { %>
 
       <div class="sales-table-wrapper">
 
@@ -408,27 +604,19 @@
 
             <tr>
 
-              <th>
-                Customer
-              </th>
+              <th>Customer</th>
 
-              <th>
-                Liters Today
-              </th>
+              <th>Liters</th>
 
-              <th>
-                Status
-              </th>
+              <th>Status</th>
 
-              <th>
-                Daily Sale
-              </th>
+              <th>Farm</th>
+
+              <th>Daily Sale</th>
 
               <% if (user?.role === "admin") { %>
 
-                <th>
-                  Action
-                </th>
+                <th>Action</th>
 
               <% } %>
 
@@ -441,9 +629,7 @@
 
             <% standingOrders.forEach(order => { %>
 
-              <tr
-                class="<%= order.isFuture ? 'future' : '' %>"
-              >
+              <tr>
 
                 <td>
 
@@ -457,7 +643,7 @@
                 <td>
 
                   <%= Number(
-                    order.liters
+                    order.liters || 0
                   ).toFixed(2) %> L
 
                 </td>
@@ -500,6 +686,45 @@
                 </td>
 
 
+                <!-- =================================================
+                     FARM SELECTION
+                ================================================== -->
+
+                <td>
+
+                  <select
+                    class="farm-select standing-farm-select"
+                    required
+                  >
+
+                    <option value="">
+                      Select farm
+                    </option>
+
+                    <% farmTotals.forEach(farm => { %>
+
+                      <option
+                        value="<%= farm.farmId %>"
+                        data-available="<%= Number(farm.available || 0) %>"
+                      >
+
+                        <%= farm.farmName %>
+                        —
+                        <%= Number(farm.available || 0).toFixed(2) %> L available
+
+                      </option>
+
+                    <% }) %>
+
+                  </select>
+
+                </td>
+
+
+                <!-- =================================================
+                     STANDING ORDER SALE
+                ================================================== -->
+
                 <td>
 
                   <form
@@ -517,8 +742,8 @@
 
                     <input
                       type="hidden"
-                      name="customerName"
-                      value="<%= order.customerName %>"
+                      name="farmId"
+                      value=""
                     >
 
 
@@ -528,10 +753,8 @@
                       name="liters"
                       step="0.1"
                       min="0"
-                      value="<%= order.liters %>"
-                      <%= order.saleRecordedToday || order.isFuture
-                        ? "readonly"
-                        : "" %>
+                      value="<%= Number(order.liters || 0) %>"
+                      readonly
                     >
 
 
@@ -647,7 +870,7 @@
 
 
   <!-- =======================================================
-       3. ADD STANDING ORDER
+       4. ADD STANDING ORDER
   ======================================================= -->
 
   <div class="sales-card">
@@ -729,7 +952,7 @@
 
 
   <!-- =======================================================
-       4. MANUAL ORDER
+       5. MANUAL SALE
   ======================================================= -->
 
   <div class="sales-card">
@@ -741,76 +964,154 @@
       </div>
 
       <span>
-        Manual Order
+        Manual Sale
       </span>
 
     </div>
 
 
-    <form
-      method="POST"
-      action="/sales/manual"
-      class="manual-sale-form"
-    >
+    <% if (farmTotals && farmTotals.length) { %>
 
-      <div class="sales-row">
+      <form
+        method="POST"
+        action="/sales/manual"
+        class="manual-sale-form"
+      >
 
-        <div class="sales-field">
+        <div class="sales-row">
 
-          <label>
-            Customer Name
-          </label>
+          <div class="sales-field">
 
-          <input
-            class="sales-input"
-            type="text"
-            name="customerName"
-            required
-          >
+            <label>
+              Dairy Farm
+            </label>
+
+            <select
+              class="farm-select"
+              name="farmId"
+              id="manualFarmId"
+              required
+            >
+
+              <option value="">
+                Select farm
+              </option>
+
+              <% farmTotals.forEach(farm => { %>
+
+                <option
+                  value="<%= farm.farmId %>"
+                  data-available="<%= Number(farm.available || 0) %>"
+                >
+
+                  <%= farm.farmName %>
+                  —
+                  <%= Number(farm.available || 0).toFixed(2) %> L available
+
+                </option>
+
+              <% }) %>
+
+            </select>
+
+          </div>
+
+
+          <div class="sales-field">
+
+            <label>
+              Customer Name
+            </label>
+
+            <input
+              class="sales-input"
+              type="text"
+              name="customerName"
+              placeholder="Customer name"
+              required
+            >
+
+          </div>
+
+
+          <div class="sales-field">
+
+            <label>
+              Liters
+            </label>
+
+            <input
+              class="sales-input"
+              type="number"
+              name="liters"
+              step="0.1"
+              min="0"
+              required
+            >
+
+          </div>
 
         </div>
 
 
-        <div class="sales-field">
+        <div
+          class="farm-availability"
+          id="manualFarmAvailability"
+          style="display:none;"
+        >
 
-          <label>
-            Liters
-          </label>
+          <div class="farm-availability-title">
 
-          <input
-            class="sales-input"
-            type="number"
-            name="liters"
-            step="0.1"
-            min="0"
-            required
+            Available Milk For Selected Farm
+
+          </div>
+
+
+          <div
+            class="farm-availability-value"
+            id="manualAvailableValue"
           >
 
+            0.00 L
+
+          </div>
+
         </div>
+
+
+        <button
+          type="submit"
+          class="sales-btn"
+          style="margin-top:18px;"
+        >
+
+          <i class="fas fa-circle-plus"></i>
+
+          Record Manual Sale
+
+        </button>
+
+      </form>
+
+
+    <% } else { %>
+
+      <div class="empty">
+
+        <i class="fas fa-cow"></i>
+
+        No dairy farm is available for recording a sale.
 
       </div>
 
-
-      <button
-        type="submit"
-        class="sales-btn"
-        style="margin-top:18px;"
-      >
-
-        <i class="fas fa-circle-plus"></i>
-
-        Record Manual Sale
-
-      </button>
-
-    </form>
+    <% } %>
 
   </div>
 
 
 
   <!-- =======================================================
-       5. TODAY'S MANUAL SALES
+       6. TODAY'S MANUAL SALES
   ======================================================= -->
 
   <div class="sales-card">
@@ -828,7 +1129,7 @@
     </div>
 
 
-    <% if (manualSales.length) { %>
+    <% if (manualSales && manualSales.length) { %>
 
       <div class="sales-table-wrapper">
 
@@ -847,7 +1148,15 @@
               </th>
 
               <th>
-                Status
+                Price
+              </th>
+
+              <th>
+                Cash
+              </th>
+
+              <th>
+                Farm
               </th>
 
             </tr>
@@ -873,8 +1182,32 @@
                 <td>
 
                   <%= Number(
-                    sale.liters
+                    sale.liters || 0
                   ).toFixed(2) %> L
+
+                </td>
+
+
+                <td>
+
+                  KES
+                  <%= Number(
+                    sale.price || currentPrice || 0
+                  ).toFixed(2) %>
+
+                </td>
+
+
+                <td>
+
+                  <strong>
+
+                    KES
+                    <%= Number(
+                      sale.cash || 0
+                    ).toFixed(2) %>
+
+                  </strong>
 
                 </td>
 
@@ -883,9 +1216,21 @@
 
                   <span class="badge badge-green">
 
-                    <i class="fas fa-circle-check"></i>
+                    <i class="fas fa-cow"></i>
 
-                    Recorded
+                    <% 
+                      const saleFarm =
+                        farmTotals.find(
+                          farm =>
+                            String(farm.farmId) ===
+                            String(sale.farm)
+                        );
+                    %>
+
+                    <%= saleFarm
+                      ? saleFarm.farmName
+                      : "Farm"
+                    %>
 
                   </span>
 
@@ -919,7 +1264,118 @@
 
 
   <!-- =======================================================
-       6. AVAILABLE MILK
+       7. DAILY SUMMARY
+  ======================================================= -->
+
+  <div class="sales-card">
+
+    <div class="sales-title">
+
+      <div class="sales-title-icon">
+        <i class="fas fa-chart-column"></i>
+      </div>
+
+      <span>
+        Today's Milk Summary
+      </span>
+
+    </div>
+
+
+    <div class="farm-total-grid">
+
+      <div class="farm-total">
+
+        <div class="farm-total-name">
+          Total Production
+        </div>
+
+        <div class="farm-total-row">
+
+          <span>Milk produced</span>
+
+          <strong>
+            <%= Number(
+              totalProduction || 0
+            ).toFixed(2) %> L
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <div class="farm-total">
+
+        <div class="farm-total-name">
+          Total Sold
+        </div>
+
+        <div class="farm-total-row">
+
+          <span>Milk sold</span>
+
+          <strong>
+            <%= Number(
+              totalSales || 0
+            ).toFixed(2) %> L
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <div class="farm-total">
+
+        <div class="farm-total-name">
+          Available Milk
+        </div>
+
+        <div class="farm-total-row">
+
+          <span>Remaining</span>
+
+          <strong>
+            <%= Number(
+              availableMilk || 0
+            ).toFixed(2) %> L
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <div class="farm-total">
+
+        <div class="farm-total-name">
+          Revenue
+        </div>
+
+        <div class="farm-total-row">
+
+          <span>Cash collected</span>
+
+          <strong>
+            KES
+            <%= Number(
+              totalRevenue || 0
+            ).toFixed(2) %>
+          </strong>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =======================================================
+       8. AVAILABLE MILK
   ======================================================= -->
 
   <div class="price-info">
@@ -931,7 +1387,7 @@
     <strong>
 
       <%= Number(
-        availableMilk
+        availableMilk || 0
       ).toFixed(2) %> L
 
     </strong>
@@ -941,7 +1397,7 @@
 
 
   <!-- =======================================================
-       7. TOTAL SALES
+       9. TOTAL SALES
   ======================================================= -->
 
   <div class="sales-card total-box">
@@ -958,7 +1414,7 @@
     <span class="total-number">
 
       <%= Number(
-        totalSales
+        totalSales || 0
       ).toFixed(2) %> L
 
     </span>
@@ -973,24 +1429,140 @@
 <script>
 
   /* =========================================================
-     SERVICE-PROVIDED SALES STATE
+     FARM DATA FROM milkService.getSalesPageData()
   ========================================================= */
 
-  const availableMilk =
-    Number("<%= availableMilk %>");
+  const farmTotals =
+    <%- JSON.stringify(
+      (farmTotals || []).map(farm => ({
+        farmId: String(farm.farmId),
+        farmCode: farm.farmCode,
+        farmName: farm.farmName,
+        production: Number(farm.production || 0),
+        sold: Number(farm.sold || 0),
+        available: Number(farm.available || 0),
+        revenue: Number(farm.revenue || 0)
+      }))
+    ) %>;
 
 
   /* =========================================================
      MANUAL SALE
   ========================================================= */
 
-  document
-    .querySelector(
+  const manualForm =
+    document.querySelector(
       "form[action='/sales/manual']"
-    )
-    ?.addEventListener(
+    );
+
+
+  const manualFarm =
+    document.getElementById(
+      "manualFarmId"
+    );
+
+
+  const manualAvailableBox =
+    document.getElementById(
+      "manualFarmAvailability"
+    );
+
+
+  const manualAvailableValue =
+    document.getElementById(
+      "manualAvailableValue"
+    );
+
+
+  function getSelectedFarmAvailability(
+    select
+  ){
+
+    if (!select){
+      return 0;
+    }
+
+
+    const option =
+      select.options[
+        select.selectedIndex
+      ];
+
+
+    if (!option){
+      return 0;
+    }
+
+
+    return Number(
+      option.dataset.available || 0
+    );
+
+  }
+
+
+  if (manualFarm){
+
+    manualFarm.addEventListener(
+      "change",
+      function(){
+
+        const available =
+          getSelectedFarmAvailability(
+            this
+          );
+
+
+        if (
+          !this.value
+        ){
+
+          manualAvailableBox.style.display =
+            "none";
+
+          return;
+
+        }
+
+
+        manualAvailableBox.style.display =
+          "block";
+
+
+        manualAvailableValue.textContent =
+          available.toFixed(2) +
+          " L";
+
+      }
+    );
+
+  }
+
+
+  if (manualForm){
+
+    manualForm.addEventListener(
       "submit",
       function(e){
+
+        const farmId =
+          this.querySelector(
+            "[name='farmId']"
+          ).value;
+
+
+        if (!farmId){
+
+          e.preventDefault();
+
+          alert(
+            "Please select the dairy farm."
+          );
+
+          return;
+
+        }
+
 
         const liters =
           Number(
@@ -1000,16 +1572,41 @@
           );
 
 
+        const available =
+          getSelectedFarmAvailability(
+            manualFarm
+          );
+
+
         if (
-          liters > availableMilk
+          !Number.isFinite(liters) ||
+          liters <= 0
         ){
 
           e.preventDefault();
 
           alert(
-            "❌ Insufficient milk available.\n\n" +
-            "Available Milk: " +
-            availableMilk.toFixed(2) +
+            "Please enter a valid milk quantity."
+          );
+
+          return;
+
+        }
+
+
+        if (
+          liters > available
+        ){
+
+          e.preventDefault();
+
+          alert(
+            "❌ Insufficient milk available for this farm.\n\n" +
+            "Available: " +
+            available.toFixed(2) +
+            " L\n" +
+            "Requested: " +
+            liters.toFixed(2) +
             " L"
           );
 
@@ -1029,11 +1626,14 @@
             "🛒 Confirm Manual Sale\n\n" +
             "Customer: " +
             customer +
-            "\nMilk: " +
+            "\n" +
+            "Milk: " +
             liters.toFixed(2) +
+            " L\n" +
+            "Available after sale: " +
+            (available - liters).toFixed(2) +
             " L\n\n" +
-            "You are about to submit this sale.\n\n" +
-            "Press OK to continue or Cancel to abort."
+            "Press OK to continue."
           );
 
 
@@ -1046,17 +1646,18 @@
         }
 
 
-        const btn =
+        const button =
           this.querySelector(
             "button[type='submit']"
           );
 
 
-        if (btn){
+        if (button){
 
-          btn.disabled = true;
+          button.disabled =
+            true;
 
-          btn.innerHTML =
+          button.innerHTML =
             '<i class="fas fa-spinner fa-spin"></i> Recording...';
 
         }
@@ -1064,10 +1665,12 @@
       }
     );
 
+  }
+
 
 
   /* =========================================================
-     STANDING ORDER SALE
+     STANDING ORDER SALES
   ========================================================= */
 
   document
@@ -1077,9 +1680,57 @@
     .forEach(
       form => {
 
+        const row =
+          form.closest("tr");
+
+
+        const farmSelect =
+          row?.querySelector(
+            ".standing-farm-select"
+          );
+
+
+        const farmIdInput =
+          form.querySelector(
+            "[name='farmId']"
+          );
+
+
+        if (farmSelect){
+
+          farmSelect.addEventListener(
+            "change",
+            function(){
+
+              farmIdInput.value =
+                this.value || "";
+
+            }
+          );
+
+        }
+
+
         form.addEventListener(
           "submit",
           function(e){
+
+            const farmId =
+              farmIdInput.value;
+
+
+            if (!farmId){
+
+              e.preventDefault();
+
+              alert(
+                "Please select the dairy farm."
+              );
+
+              return;
+
+            }
+
 
             const liters =
               Number(
@@ -1089,16 +1740,41 @@
               );
 
 
+            const available =
+              getSelectedFarmAvailability(
+                farmSelect
+              );
+
+
             if (
-              liters > availableMilk
+              !Number.isFinite(liters) ||
+              liters <= 0
             ){
 
               e.preventDefault();
 
               alert(
-                "❌ Insufficient milk available.\n\n" +
-                "Available Milk: " +
-                availableMilk.toFixed(2) +
+                "Invalid standing order quantity."
+              );
+
+              return;
+
+            }
+
+
+            if (
+              liters > available
+            ){
+
+              e.preventDefault();
+
+              alert(
+                "❌ Insufficient milk available for this farm.\n\n" +
+                "Available: " +
+                available.toFixed(2) +
+                " L\n" +
+                "Required: " +
+                liters.toFixed(2) +
                 " L"
               );
 
@@ -1108,9 +1784,10 @@
 
 
             const customer =
-              this.querySelector(
-                "[name='customerName']"
-              ).value;
+              row.querySelector(
+                "td:first-child strong"
+              )?.textContent.trim() ||
+              "Customer";
 
 
             const proceed =
@@ -1118,11 +1795,14 @@
                 "🔄 Confirm Standing Order Sale\n\n" +
                 "Customer: " +
                 customer +
-                "\nMilk: " +
+                "\n" +
+                "Milk: " +
                 liters.toFixed(2) +
+                " L\n" +
+                "Available after sale: " +
+                (available - liters).toFixed(2) +
                 " L\n\n" +
-                "You are about to submit this standing order sale.\n\n" +
-                "Press OK to continue or Cancel to abort."
+                "Press OK to continue."
               );
 
 
@@ -1135,24 +1815,25 @@
             }
 
 
-            const btn =
+            const button =
               this.querySelector(
                 "button[type='submit']"
               );
 
 
-            if (btn){
+            if (button){
 
-              btn.disabled = true;
+              button.disabled =
+                true;
 
-              btn.style.background =
+              button.style.background =
                 "#9ca3af";
 
-              btn.style.cursor =
+              button.style.cursor =
                 "not-allowed";
 
-              btn.innerHTML =
-                '<i class="fas fa-circle-check"></i> Recorded';
+              button.innerHTML =
+                '<i class="fas fa-spinner fa-spin"></i> Recording...';
 
             }
 
