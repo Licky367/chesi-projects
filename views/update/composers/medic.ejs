@@ -1,0 +1,1877 @@
+<%
+/*
+============================================================
+MEDICAL UPDATE COMPOSER
+
+FILE:
+    views/update/composers/medical.ejs
+
+PURPOSE:
+    Display a horizontally scrollable collection of dairy
+    animals that have NOT yet been marked for medical
+    attention.
+
+FILTER:
+    --------------------------------------------------------
+    1. Positive animal code
+           Number(dairy.code) > 0
+
+    2. Medical attention is NOT currently marked
+           dairy.medicalAttention.isMarked !== true
+
+    3. Animal belongs to the CURRENT Dairy Farm
+           dairy.assetCode === current farm code
+
+CARD:
+    108px × 150px
+
+CLICK:
+    Opens a medical recording modal for that animal.
+
+FORM:
+    POST /dairy/:id/medical-mark
+
+AUTHORIZED USERS:
+    admin
+    dairyWorker
+
+EXPECTED DATA:
+    dairies
+    dairy
+    user
+
+IMPORTANT:
+    `dairy` represents the CURRENT Dairy Farm.
+
+    `dairies` represents the records available to this
+    composer.
+
+    The composer performs a second safety filter so that
+    animals belonging to another Dairy Farm cannot appear.
+============================================================
+*/
+
+
+<%
+/* =========================================================
+   CURRENT FARM CODE
+========================================================= */
+
+const currentFarmCode =
+    dairy &&
+    dairy.recordType === "farm"
+        ? Number(dairy.code)
+        : (
+            dairy &&
+            Number(dairy.code) < 0
+                ? Number(dairy.code)
+                : (
+                    dairy &&
+                    dairy.assetCode !== null &&
+                    dairy.assetCode !== undefined
+                        ? Number(dairy.assetCode)
+                        : null
+                )
+        );
+
+
+/* =========================================================
+   AUTHORIZATION
+========================================================= */
+
+const canRecordMedical =
+    user &&
+    (
+        user.role === "admin" ||
+        user.role === "dairyWorker"
+    );
+
+
+/* =========================================================
+   MEDICAL CANDIDATES
+========================================================= */
+
+const medicalCandidates =
+    Array.isArray(dairies)
+        ? dairies.filter(function (animal) {
+
+            if (!animal) {
+                return false;
+            }
+
+
+            /* ---------------------------------------------
+               MUST BE AN ANIMAL
+            --------------------------------------------- */
+
+            if (
+                Number(animal.code) <= 0
+            ) {
+                return false;
+            }
+
+
+            /* ---------------------------------------------
+               MUST BELONG TO CURRENT FARM
+            --------------------------------------------- */
+
+            if (
+                currentFarmCode === null ||
+                Number(animal.assetCode) !== currentFarmCode
+            ) {
+                return false;
+            }
+
+
+            /* ---------------------------------------------
+               MUST NOT ALREADY BE MARKED
+            --------------------------------------------- */
+
+            if (
+                animal.medicalAttention &&
+                animal.medicalAttention.isMarked === true
+            ) {
+                return false;
+            }
+
+
+            return true;
+
+        })
+        : [];
+%>
+
+
+<% if (canRecordMedical && medicalCandidates.length > 0) { %>
+
+
+<!-- =======================================================
+     MEDICAL UPDATE COMPOSER
+======================================================== -->
+
+<section
+    class="medical-composer"
+    aria-labelledby="medicalComposerHeading"
+>
+
+
+    <!-- ===================================================
+         HEADING
+    ==================================================== -->
+
+    <header class="medical-composer__header">
+
+        <h2
+            id="medicalComposerHeading"
+            class="medical-composer__heading"
+        >
+            Update us about the Health of our Livestock.
+        </h2>
+
+    </header>
+
+
+
+    <!-- ===================================================
+         HORIZONTAL CARD SCROLLER
+    ==================================================== -->
+
+    <div
+        class="medical-composer__scroller"
+        role="list"
+        aria-label="Livestock requiring health updates"
+    >
+
+
+        <% medicalCandidates.forEach(function (animal, index) { %>
+
+
+        <!-- ===============================================
+             ANIMAL CARD
+        ================================================ -->
+
+        <article
+            class="medical-composer__item"
+            role="listitem"
+        >
+
+
+            <button
+                type="button"
+                class="medical-composer__card"
+                data-medical-open="<%= index %>"
+                aria-label="Record health information for <%= animal.name %>"
+            >
+
+
+                <!-- =========================================
+                     IMAGE / AVATAR
+                ========================================== -->
+
+                <span
+                    class="medical-composer__avatar"
+                >
+
+                    <% if (
+                        animal.profileImage &&
+                        String(animal.profileImage).trim() !== ""
+                    ) { %>
+
+                        <img
+                            src="<%= animal.profileImage %>"
+                            alt="<%= animal.name %>"
+                            loading="lazy"
+                        >
+
+                    <% } else if (
+                        animal.profileImages &&
+                        Array.isArray(animal.profileImages) &&
+                        animal.profileImages.length > 0 &&
+                        animal.profileImages[0]
+                    ) { %>
+
+                        <img
+                            src="<%= animal.profileImages[0] %>"
+                            alt="<%= animal.name %>"
+                            loading="lazy"
+                        >
+
+                    <% } else { %>
+
+                        <span
+                            class="medical-composer__avatar-fallback"
+                            aria-hidden="true"
+                        >
+                            <i class="bi bi-heart-pulse"></i>
+                        </span>
+
+                    <% } %>
+
+                </span>
+
+
+
+                <!-- =========================================
+                     ANIMAL NAME
+                ========================================== -->
+
+                <span
+                    class="medical-composer__name"
+                    title="<%= animal.name %>"
+                >
+                    <%= animal.name %>
+                </span>
+
+
+
+                <!-- =========================================
+                     ACTION INDICATOR
+                ========================================== -->
+
+                <span
+                    class="medical-composer__indicator"
+                    aria-hidden="true"
+                >
+                    +
+                </span>
+
+
+            </button>
+
+        </article>
+
+
+        <% }); %>
+
+
+    </div>
+
+</section>
+
+
+
+<!-- =======================================================
+     MEDICAL RECORDING MODALS
+======================================================== -->
+
+<% medicalCandidates.forEach(function (animal, index) { %>
+
+
+<div
+    id="medicalComposerModal-<%= index %>"
+    class="medical-composer-modal"
+    aria-hidden="true"
+>
+
+
+    <div
+        class="medical-composer-modal__content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="medicalComposerModalTitle-<%= index %>"
+    >
+
+
+        <!-- ===============================================
+             MODAL HEADER
+        ================================================ -->
+
+        <header class="medical-composer-modal__header">
+
+
+            <button
+                type="button"
+                class="medical-composer-modal__back"
+                data-medical-close="<%= index %>"
+                aria-label="Close medical recording"
+            >
+                &#8592;
+            </button>
+
+
+            <div
+                class="medical-composer-modal__title"
+            >
+
+                <strong
+                    id="medicalComposerModalTitle-<%= index %>"
+                >
+                    Health Update
+                </strong>
+
+                <span>
+                    <%= animal.name %>
+                </span>
+
+            </div>
+
+
+            <span
+                class="medical-composer-modal__spacer"
+                aria-hidden="true"
+            ></span>
+
+
+        </header>
+
+
+
+        <!-- ===============================================
+             MODAL BODY
+        ================================================ -->
+
+        <main class="medical-composer-modal__body">
+
+
+            <div class="medical-composer-modal__inner">
+
+
+                <!-- =========================================
+                     QUESTION
+                ========================================== -->
+
+                <div class="medical-composer__question">
+
+                    <strong>
+                        <%= user.name.split(" ")[0] %>
+                    </strong>,
+
+                    tell us about the health of
+                    <strong>
+                        <%= animal.name %>
+                    </strong>.
+
+                </div>
+
+
+
+                <!-- =========================================
+                     ANIMAL TARGET
+                ========================================== -->
+
+                <section
+                    class="medical-composer__target"
+                    aria-label="Animal being updated"
+                >
+
+
+                    <span
+                        class="medical-composer__target-image"
+                    >
+
+                        <% if (
+                            animal.profileImage &&
+                            String(animal.profileImage).trim() !== ""
+                        ) { %>
+
+                            <img
+                                src="<%= animal.profileImage %>"
+                                alt="<%= animal.name %>"
+                            >
+
+                        <% } else if (
+                            animal.profileImages &&
+                            Array.isArray(animal.profileImages) &&
+                            animal.profileImages.length > 0 &&
+                            animal.profileImages[0]
+                        ) { %>
+
+                            <img
+                                src="<%= animal.profileImages[0] %>"
+                                alt="<%= animal.name %>"
+                            >
+
+                        <% } else { %>
+
+                            <span
+                                class="medical-composer__target-fallback"
+                                aria-hidden="true"
+                            >
+                                <i class="bi bi-heart-pulse"></i>
+                            </span>
+
+                        <% } %>
+
+                    </span>
+
+
+                    <span
+                        class="medical-composer__target-info"
+                    >
+
+                        <small>
+                            Livestock health update
+                        </small>
+
+                        <strong>
+                            <%= animal.name %>
+                        </strong>
+
+                    </span>
+
+
+                </section>
+
+
+
+                <!-- =========================================
+                     MEDICAL FORM
+                ========================================== -->
+
+                <form
+                    class="medical-composer__form"
+                    action="/dairy/<%= animal._id %>/medical-mark"
+                    method="POST"
+                    autocomplete="off"
+                    data-medical-form="<%= index %>"
+                >
+
+
+                    <!-- =====================================
+                         MEDICAL TYPE
+                    ====================================== -->
+
+                    <div
+                        class="medical-composer__field"
+                    >
+
+                        <label
+                            for="medicalType-<%= index %>"
+                        >
+                            Medical type
+                        </label>
+
+
+                        <input
+                            type="text"
+                            id="medicalType-<%= index %>"
+                            name="type"
+                            maxlength="200"
+                            placeholder="e.g. Mastitis"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- =====================================
+                         DETAILS
+                    ====================================== -->
+
+                    <div
+                        class="medical-composer__field"
+                    >
+
+                        <label
+                            for="medicalDetails-<%= index %>"
+                        >
+                            Details
+                        </label>
+
+
+                        <textarea
+                            id="medicalDetails-<%= index %>"
+                            name="details"
+                            maxlength="1000"
+                            rows="5"
+                            placeholder="Describe the condition or concern..."
+                            required
+                        ></textarea>
+
+
+                        <span
+                            class="medical-composer__counter"
+                            data-medical-counter="<%= index %>"
+                        >
+                            0/1000
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- =====================================
+                         SUBMIT
+                    ====================================== -->
+
+                    <button
+                        type="submit"
+                        class="medical-composer__submit"
+                        data-medical-submit="<%= index %>"
+                        disabled
+                    >
+
+                        <i
+                            class="bi bi-heart-pulse"
+                            aria-hidden="true"
+                        ></i>
+
+                        <span>
+                            Record Health Update
+                        </span>
+
+                    </button>
+
+
+                </form>
+
+
+            </div>
+
+        </main>
+
+
+    </div>
+
+</div>
+
+
+<% }); %>
+
+
+
+<!-- =======================================================
+     CSS
+======================================================== -->
+
+<style>
+
+.medical-composer,
+.medical-composer *,
+.medical-composer-modal,
+.medical-composer-modal * {
+
+    box-sizing: border-box;
+
+}
+
+
+
+/* =========================================================
+   COMPOSER
+========================================================= */
+
+.medical-composer {
+
+    width: 100%;
+
+    margin: 0 0 18px;
+
+}
+
+
+
+/* =========================================================
+   HEADING
+========================================================= */
+
+.medical-composer__header {
+
+    width: 100%;
+
+    margin-bottom: 12px;
+
+}
+
+
+.medical-composer__heading {
+
+    margin: 0;
+
+    color: #35422f;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    line-height: 1.3;
+
+}
+
+
+
+/* =========================================================
+   HORIZONTAL SCROLLER
+========================================================= */
+
+.medical-composer__scroller {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding: 2px 2px 12px;
+
+    scroll-behavior: smooth;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: thin;
+
+}
+
+
+.medical-composer__scroller::-webkit-scrollbar {
+
+    height: 5px;
+
+}
+
+
+.medical-composer__scroller::-webkit-scrollbar-track {
+
+    background: #f1eee8;
+
+    border-radius: 10px;
+
+}
+
+
+.medical-composer__scroller::-webkit-scrollbar-thumb {
+
+    background: #d58a43;
+
+    border-radius: 10px;
+
+}
+
+
+
+/* =========================================================
+   CARD ITEM
+========================================================= */
+
+.medical-composer__item {
+
+    width: 108px;
+
+    min-width: 108px;
+
+    max-width: 108px;
+
+    height: 150px;
+
+    flex: 0 0 108px;
+
+}
+
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.medical-composer__card {
+
+    position: relative;
+
+    width: 108px;
+
+    height: 150px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 9px;
+
+    padding: 10px 7px;
+
+    overflow: hidden;
+
+    border: 1px solid #ead9c8;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fffdf9,
+            #f7f3ec
+        );
+
+    color: #405039;
+
+    font-family: inherit;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition:
+        transform .15s ease,
+        box-shadow .15s ease,
+        border-color .15s ease;
+
+}
+
+
+.medical-composer__card:hover {
+
+    border-color: #d58a43;
+
+    box-shadow:
+        0 5px 16px
+        rgba(154, 96, 42, .14);
+
+}
+
+
+.medical-composer__card:active {
+
+    transform: scale(.95);
+
+}
+
+
+.medical-composer__card:focus-visible {
+
+    outline: 2px solid #d58a43;
+
+    outline-offset: 2px;
+
+}
+
+
+
+/* =========================================================
+   AVATAR
+========================================================= */
+
+.medical-composer__avatar {
+
+    width: 70px;
+
+    height: 70px;
+
+    flex: 0 0 70px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    overflow: hidden;
+
+    border: 3px solid #f0c28d;
+
+    border-radius: 50%;
+
+    background: #f4eadb;
+
+}
+
+
+.medical-composer__avatar img {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+.medical-composer__avatar-fallback {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: #d58a43;
+
+    color: #ffffff;
+
+    font-size: 27px;
+
+}
+
+
+
+/* =========================================================
+   NAME
+========================================================= */
+
+.medical-composer__name {
+
+    display: block;
+
+    width: 94px;
+
+    overflow: hidden;
+
+    color: #35422f;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    line-height: 1.25;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+
+/* =========================================================
+   PLUS INDICATOR
+========================================================= */
+
+.medical-composer__indicator {
+
+    position: absolute;
+
+    right: 7px;
+
+    top: 7px;
+
+    width: 22px;
+
+    height: 22px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #d58a43;
+
+    color: #ffffff;
+
+    font-size: 17px;
+
+    line-height: 1;
+
+}
+
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.medical-composer-modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 99999;
+
+    display: none;
+
+    width: 100vw;
+
+    height: 100dvh;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+}
+
+
+.medical-composer-modal.active {
+
+    display: block;
+
+}
+
+
+.medical-composer-modal__content {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    background: #ffffff;
+
+}
+
+
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.medical-composer-modal__header {
+
+    width: 100%;
+
+    height: 64px;
+
+    flex: 0 0 64px;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 15px;
+
+    border-bottom: 1px solid #eee4d8;
+
+    background: #ffffff;
+
+}
+
+
+.medical-composer-modal__back {
+
+    width: 44px;
+
+    height: 44px;
+
+    flex: 0 0 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #c87932;
+
+    font-size: 27px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+}
+
+
+.medical-composer-modal__back:active {
+
+    background: #fff3e5;
+
+}
+
+
+.medical-composer-modal__title {
+
+    min-width: 0;
+
+    margin-left: 8px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    line-height: 1.25;
+
+}
+
+
+.medical-composer-modal__title strong {
+
+    color: #35422f;
+
+    font-size: 17px;
+
+}
+
+
+.medical-composer-modal__title span {
+
+    max-width: 72vw;
+
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    color: #858078;
+
+    font-size: 12px;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+.medical-composer-modal__spacer {
+
+    flex: 1;
+
+}
+
+
+
+/* =========================================================
+   MODAL BODY
+========================================================= */
+
+.medical-composer-modal__body {
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    padding: 20px;
+
+}
+
+
+.medical-composer-modal__inner {
+
+    width: 100%;
+
+    max-width: 700px;
+
+    margin: 0 auto;
+
+}
+
+
+
+/* =========================================================
+   QUESTION
+========================================================= */
+
+.medical-composer__question {
+
+    margin-bottom: 20px;
+
+    color: #30382d;
+
+    font-size: 20px;
+
+    line-height: 1.45;
+
+}
+
+
+.medical-composer__question strong {
+
+    color: #c87932;
+
+}
+
+
+
+/* =========================================================
+   TARGET
+========================================================= */
+
+.medical-composer__target {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 24px;
+
+    padding: 12px 13px;
+
+    border: 1px solid #ead9c8;
+
+    border-radius: 13px;
+
+    background: #fffaf3;
+
+}
+
+
+.medical-composer__target-image {
+
+    width: 52px;
+
+    height: 52px;
+
+    flex: 0 0 52px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    overflow: hidden;
+
+    border-radius: 50%;
+
+    background: #f1dfc8;
+
+}
+
+
+.medical-composer__target-image img {
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+}
+
+
+.medical-composer__target-fallback {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: #d58a43;
+
+    color: #ffffff;
+
+    font-size: 20px;
+
+}
+
+
+.medical-composer__target-info {
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+.medical-composer__target-info small {
+
+    color: #888077;
+
+    font-size: 10px;
+
+}
+
+
+.medical-composer__target-info strong {
+
+    margin-top: 3px;
+
+    overflow: hidden;
+
+    color: #8b5425;
+
+    font-size: 14px;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.medical-composer__form {
+
+    width: 100%;
+
+    margin: 0;
+
+}
+
+
+.medical-composer__field {
+
+    position: relative;
+
+    width: 100%;
+
+    margin-bottom: 20px;
+
+}
+
+
+.medical-composer__field label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #77716a;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: .04em;
+
+    text-transform: uppercase;
+
+}
+
+
+.medical-composer__field input,
+.medical-composer__field textarea {
+
+    width: 100%;
+
+    border: 1px solid #e4ddd4;
+
+    border-radius: 12px;
+
+    outline: none;
+
+    background: #faf9f6;
+
+    color: #30382d;
+
+    font: inherit;
+
+    font-size: 15px;
+
+}
+
+
+.medical-composer__field input {
+
+    height: 48px;
+
+    padding: 0 13px;
+
+}
+
+
+.medical-composer__field textarea {
+
+    min-height: 130px;
+
+    max-height: 300px;
+
+    resize: vertical;
+
+    padding: 13px 14px 30px;
+
+    line-height: 1.5;
+
+}
+
+
+.medical-composer__field input:focus,
+.medical-composer__field textarea:focus {
+
+    border-color: #d58a43;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(213, 138, 67, .12);
+
+}
+
+
+
+/* =========================================================
+   COUNTER
+========================================================= */
+
+.medical-composer__counter {
+
+    position: absolute;
+
+    right: 11px;
+
+    bottom: 9px;
+
+    padding-left: 3px;
+
+    background: #faf9f6;
+
+    color: #918a82;
+
+    font-size: 10px;
+
+    pointer-events: none;
+
+}
+
+
+
+/* =========================================================
+   SUBMIT
+========================================================= */
+
+.medical-composer__submit {
+
+    width: 100%;
+
+    min-height: 50px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 10px 14px;
+
+    border: none;
+
+    border-radius: 13px;
+
+    background: #d58a43;
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+}
+
+
+.medical-composer__submit:not(:disabled):hover {
+
+    background: #bc7130;
+
+}
+
+
+.medical-composer__submit:disabled {
+
+    background: #c8c4bd;
+
+    cursor: default;
+
+}
+
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .medical-composer__heading {
+
+        font-size: 17px;
+
+    }
+
+
+    .medical-composer-modal__header {
+
+        height: 60px;
+
+        flex-basis: 60px;
+
+        padding: 0 10px;
+
+    }
+
+
+    .medical-composer-modal__body {
+
+        padding: 14px;
+
+    }
+
+
+    .medical-composer__question {
+
+        font-size: 19px;
+
+    }
+
+}
+
+</style>
+
+
+
+<!-- =======================================================
+     JAVASCRIPT
+======================================================== -->
+
+<script>
+
+(function () {
+
+    "use strict";
+
+
+    function initializeMedicalComposer() {
+
+
+        /* =====================================================
+           OPEN BUTTONS
+        ====================================================== */
+
+        const openButtons =
+            document.querySelectorAll(
+                "[data-medical-open]"
+            );
+
+
+        const closeButtons =
+            document.querySelectorAll(
+                "[data-medical-close]"
+            );
+
+
+        if (!openButtons.length) {
+
+            return;
+
+        }
+
+
+
+        /* =====================================================
+           OPEN MODAL
+        ====================================================== */
+
+        function openModal(index) {
+
+            const modal =
+                document.getElementById(
+                    "medicalComposerModal-" + index
+                );
+
+
+            if (!modal) {
+
+                return;
+
+            }
+
+
+            modal.classList.add(
+                "active"
+            );
+
+
+            modal.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+
+            document.body.style.overflow =
+                "hidden";
+
+
+            const typeInput =
+                document.getElementById(
+                    "medicalType-" + index
+                );
+
+
+            if (typeInput) {
+
+                window.setTimeout(
+                    function () {
+
+                        typeInput.focus();
+
+                    },
+                    100
+                );
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           CLOSE MODAL
+        ====================================================== */
+
+        function closeModal(index) {
+
+            const modal =
+                document.getElementById(
+                    "medicalComposerModal-" + index
+                );
+
+
+            if (!modal) {
+
+                return;
+
+            }
+
+
+            modal.classList.remove(
+                "active"
+            );
+
+
+            modal.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+            const activeModal =
+                document.querySelector(
+                    ".medical-composer-modal.active"
+                );
+
+
+            if (!activeModal) {
+
+                document.body.style.overflow =
+                    "";
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           OPEN EVENTS
+        ====================================================== */
+
+        openButtons.forEach(
+            function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        openModal(
+                            button.dataset.medicalOpen
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+
+        /* =====================================================
+           CLOSE EVENTS
+        ====================================================== */
+
+        closeButtons.forEach(
+            function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        closeModal(
+                            button.dataset.medicalClose
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+
+        /* =====================================================
+           ESCAPE
+        ====================================================== */
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key !== "Escape"
+                ) {
+
+                    return;
+
+                }
+
+
+                const modal =
+                    document.querySelector(
+                        ".medical-composer-modal.active"
+                    );
+
+
+                if (!modal) {
+
+                    return;
+
+                }
+
+
+                const id =
+                    modal.id.replace(
+                        "medicalComposerModal-",
+                        ""
+                    );
+
+
+                closeModal(id);
+
+            }
+        );
+
+
+
+        /* =====================================================
+           FORM INITIALIZATION
+        ====================================================== */
+
+        document
+            .querySelectorAll(
+                "[data-medical-form]"
+            )
+            .forEach(
+                function (form) {
+
+                    const index =
+                        form.dataset.medicalForm;
+
+
+                    const typeInput =
+                        document.getElementById(
+                            "medicalType-" + index
+                        );
+
+
+                    const detailsInput =
+                        document.getElementById(
+                            "medicalDetails-" + index
+                        );
+
+
+                    const counter =
+                        document.querySelector(
+                            '[data-medical-counter="' +
+                            index +
+                            '"]'
+                        );
+
+
+                    const submitButton =
+                        document.querySelector(
+                            '[data-medical-submit="' +
+                            index +
+                            '"]'
+                        );
+
+
+                    if (
+                        !typeInput ||
+                        !detailsInput ||
+                        !counter ||
+                        !submitButton
+                    ) {
+
+                        return;
+
+                    }
+
+
+
+                    /* =========================================
+                       VALIDATION
+                    ========================================== */
+
+                    function updateSubmit() {
+
+                        submitButton.disabled =
+                            !(
+                                typeInput.value.trim() &&
+                                detailsInput.value.trim()
+                            );
+
+                    }
+
+
+
+                    /* =========================================
+                       COUNTER
+                    ========================================== */
+
+                    function updateCounter() {
+
+                        counter.textContent =
+                            detailsInput.value.length +
+                            "/1000";
+
+                    }
+
+
+
+                    typeInput.addEventListener(
+                        "input",
+                        updateSubmit
+                    );
+
+
+                    detailsInput.addEventListener(
+                        "input",
+                        function () {
+
+                            updateCounter();
+
+                            updateSubmit();
+
+                        }
+                    );
+
+
+
+                    /* =========================================
+                       SUBMIT
+                    ========================================== */
+
+                    form.addEventListener(
+                        "submit",
+                        function () {
+
+                            submitButton.disabled =
+                                true;
+
+
+                            submitButton.innerHTML =
+                                '<i class="bi bi-hourglass-split"></i>' +
+                                '<span>Submitting...</span>';
+
+                        }
+                    );
+
+
+                    updateCounter();
+
+                    updateSubmit();
+
+                }
+            );
+
+    }
+
+
+
+    /* =========================================================
+       DOM READY
+    ========================================================== */
+
+    if (
+        document.readyState === "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeMedicalComposer
+        );
+
+    } else {
+
+        initializeMedicalComposer();
+
+    }
+
+})();
+
+</script>
+
+
+<% } %>
