@@ -1,52 +1,36 @@
 <%
 /*
 ============================================================
-MEDICAL UPDATE COMPOSER
+MEDICAL HEALTH COMPOSER
 
 FILE:
-    views/update/composers/medical.ejs
+    views/update/composers/medic.ejs
 
 PURPOSE:
-    Display compact horizontal cards for livestock belonging
-    to the CURRENT DAIRY FARM that:
+    Display livestock that can be updated medically.
 
-        1. have a positive code
-        2. have medicalAttention.isMarked === false
-
-    Clicking a livestock card opens a medical recording modal.
-
-CARD:
-    108px × 150px
-
-LAYOUT:
-    Horizontal scrolling
-
-TARGET:
-    Only livestock belonging to the current Dairy Farm.
-
-EXPECTED DATA:
+DATA:
     medicalDairies
-    user
     dairy
+    user
 
-IMPORTANT:
-    The backend/controller should already ensure that
-    medicalDairies belongs to the current Dairy Farm.
-
-    This view additionally performs defensive filtering
-    using the positive-code and medicalAttention rules.
+RULES:
+    --------------------------------------------------------
+    1. Only positive-code Dairy records are displayed.
+    2. Only animals belonging to the CURRENT Dairy Farm
+       are supplied by the controller.
+    3. Only animals whose medicalAttention.isMarked is false
+       are displayed.
+    4. Clicking an animal opens its medical recording modal.
 ============================================================
 */
 %>
 
-<%
-    const sourceDairies =
-        Array.isArray(medicalDairies)
-            ? medicalDairies
-            : [];
 
-    const eligibleDairies =
-        sourceDairies.filter(function (animal) {
+<%
+const medicalList =
+    Array.isArray(medicalDairies)
+        ? medicalDairies.filter(function (animal) {
 
             if (!animal) {
                 return false;
@@ -55,425 +39,349 @@ IMPORTANT:
             const code =
                 Number(animal.code);
 
-            const isPositiveCode =
-                Number.isFinite(code) &&
-                code > 0;
+            if (
+                !Number.isFinite(code) ||
+                code <= 0
+            ) {
+                return false;
+            }
 
-            const isNotMarked =
-                !(
-                    animal.medicalAttention &&
-                    animal.medicalAttention.isMarked === true
-                );
-
-            return (
-                isPositiveCode &&
-                isNotMarked
+            return !(
+                animal.medicalAttention &&
+                animal.medicalAttention.isMarked === true
             );
 
-        });
+        })
+        : [];
 %>
 
 
-<% if (eligibleDairies.length > 0) { %>
+<% if (medicalList.length > 0) { %>
 
 <section
-    class="medical-update-composer"
-    aria-labelledby="medicalUpdateComposerHeading"
+    class="medical-health-composer"
+    aria-labelledby="medicalHealthComposerHeading"
 >
 
-    <!-- =====================================================
-         HEADING
-    ====================================================== -->
+    <div class="medical-health-composer__heading">
 
-    <header class="medical-update-composer__header">
-
-        <h2
-            id="medicalUpdateComposerHeading"
-            class="medical-update-composer__heading"
-        >
+        <h2 id="medicalHealthComposerHeading">
             Update us about the Health of our Livestock.
         </h2>
 
-    </header>
+    </div>
 
-
-    <!-- =====================================================
-         HORIZONTAL CARDS
-    ====================================================== -->
 
     <div
-        class="medical-update-composer__scroller"
-        role="list"
-        aria-label="Livestock requiring health updates"
+        class="medical-health-composer__scroller"
+        role="region"
+        aria-label="Livestock health updates"
     >
 
-        <% eligibleDairies.forEach(function (animal, index) { %>
+        <div class="medical-health-composer__track">
 
-            <article
-                class="medical-update-composer__item"
-                role="listitem"
-            >
 
-                <button
-                    type="button"
-                    class="medical-update-composer__card"
-                    data-medical-card="<%= index %>"
-                    aria-label="Update health information for <%= animal.name || 'livestock' %>"
+            <% medicalList.forEach(function (animal) { %>
+
+                <%
+                const animalId =
+                    animal._id;
+
+                const animalName =
+                    animal.name ||
+                    animal.code ||
+                    "Livestock";
+
+                const image =
+                    typeof animal.profileImage === "string"
+                        ? animal.profileImage.trim()
+                        : "";
+
+                const firstLetter =
+                    String(animalName)
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase() || "?";
+
+                const modalId =
+                    "medicalComposerModal_" +
+                    String(animalId);
+                %>
+
+
+                <!-- =================================================
+                     LIVESTOCK CARD
+                ================================================== -->
+
+                <article
+                    class="medical-health-card"
                 >
 
-                    <!-- =====================================
-                         IMAGE / AVATAR
-                    ====================================== -->
+                    <button
+                        type="button"
+                        class="medical-health-card__button"
+                        data-medical-open="<%= modalId %>"
+                        aria-label="Update health of <%= animalName %>"
+                    >
 
-                    <div class="medical-update-composer__avatar">
-
-                        <% if (
-                            animal.profileImage &&
-                            String(animal.profileImage).trim() !== ""
-                        ) { %>
+                        <% if (image) { %>
 
                             <img
-                                src="<%= animal.profileImage %>"
-                                alt="<%= animal.name || 'Livestock' %>"
-                                class="medical-update-composer__image"
+                                src="<%= image %>"
+                                class="medical-health-card__image"
+                                alt="<%= animalName %>"
                                 loading="lazy"
                             >
 
                         <% } else { %>
 
                             <span
-                                class="medical-update-composer__avatar-fallback"
+                                class="medical-health-card__avatar"
                                 aria-hidden="true"
                             >
-                                <i class="bi bi-heart-pulse"></i>
+                                <%= firstLetter %>
                             </span>
 
                         <% } %>
 
+
+                        <span
+                            class="medical-health-card__name"
+                        >
+                            <%= animalName %>
+                        </span>
+
+                    </button>
+
+                </article>
+
+
+                <!-- =================================================
+                     MEDICAL RECORDING MODAL
+                ================================================== -->
+
+                <div
+                    id="<%= modalId %>"
+                    class="medical-health-modal"
+                    aria-hidden="true"
+                >
+
+                    <div
+                        class="medical-health-modal__content"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="<%= modalId %>_title"
+                    >
+
+                        <header
+                            class="medical-health-modal__header"
+                        >
+
+                            <button
+                                type="button"
+                                class="medical-health-modal__close"
+                                data-medical-close="<%= modalId %>"
+                                aria-label="Close medical recording"
+                            >
+                                &#8592;
+                            </button>
+
+
+                            <div
+                                class="medical-health-modal__title"
+                                id="<%= modalId %>_title"
+                            >
+
+                                <strong>
+                                    Livestock Health
+                                </strong>
+
+                                <span>
+                                    <%= animalName %>
+                                </span>
+
+                            </div>
+
+                        </header>
+
+
+                        <main
+                            class="medical-health-modal__body"
+                        >
+
+                            <div
+                                class="medical-health-modal__animal"
+                            >
+
+                                <% if (image) { %>
+
+                                    <img
+                                        src="<%= image %>"
+                                        alt="<%= animalName %>"
+                                    >
+
+                                <% } else { %>
+
+                                    <span
+                                        class="medical-health-modal__animal-avatar"
+                                    >
+                                        <%= firstLetter %>
+                                    </span>
+
+                                <% } %>
+
+
+                                <div>
+
+                                    <span>
+                                        Livestock
+                                    </span>
+
+                                    <strong>
+                                        <%= animalName %>
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+                            <form
+                                class="medical-health-form"
+                                action="/dairy/<%= animalId %>/medical-mark"
+                                method="POST"
+                                autocomplete="off"
+                            >
+
+                                <div
+                                    class="medical-health-field"
+                                >
+
+                                    <label
+                                        for="<%= modalId %>_type"
+                                    >
+                                        Medical type
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="<%= modalId %>_type"
+                                        name="type"
+                                        maxlength="200"
+                                        placeholder="e.g. Mastitis"
+                                        required
+                                    >
+
+                                </div>
+
+
+                                <div
+                                    class="medical-health-field"
+                                >
+
+                                    <label
+                                        for="<%= modalId %>_details"
+                                    >
+                                        Details
+                                    </label>
+
+                                    <textarea
+                                        id="<%= modalId %>_details"
+                                        name="details"
+                                        maxlength="1000"
+                                        rows="5"
+                                        placeholder="Describe the health condition or concern..."
+                                        required
+                                    ></textarea>
+
+                                    <span>
+                                        0/1000
+                                    </span>
+
+                                </div>
+
+
+                                <button
+                                    type="submit"
+                                    class="medical-health-submit"
+                                >
+
+                                    <i
+                                        class="bi bi-heart-pulse"
+                                        aria-hidden="true"
+                                    ></i>
+
+                                    <span>
+                                        Mark for Medical Attention
+                                    </span>
+
+                                </button>
+
+                            </form>
+
+                        </main>
+
                     </div>
 
+                </div>
 
-                    <!-- =====================================
-                         NAME
-                    ====================================== -->
-
-                    <span
-                        class="medical-update-composer__name"
-                    >
-                        <%= animal.name || "Livestock" %>
-                    </span>
+            <% }); %>
 
 
-                    <!-- =====================================
-                         ACTION
-                    ====================================== -->
-
-                    <span
-                        class="medical-update-composer__action"
-                    >
-                        Update Health
-                    </span>
-
-                </button>
-
-            </article>
-
-        <% }); %>
+        </div>
 
     </div>
 
 </section>
 
+<% } %>
 
 
-<!-- =========================================================
-     MODALS
-========================================================= -->
-
-<% eligibleDairies.forEach(function (animal, index) { %>
-
-<div
-    class="medical-update-modal"
-    id="medicalUpdateModal_<%= index %>"
-    aria-hidden="true"
-    data-medical-modal="<%= index %>"
->
-
-    <div
-        class="medical-update-modal__content"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="medicalUpdateTitle_<%= index %>"
-    >
-
-        <!-- =============================================
-             HEADER
-        ============================================== -->
-
-        <header class="medical-update-modal__header">
-
-            <button
-                type="button"
-                class="medical-update-modal__close"
-                data-medical-close="<%= index %>"
-                aria-label="Close health update"
-            >
-                &#8592;
-            </button>
-
-
-            <div class="medical-update-modal__title">
-
-                <strong id="medicalUpdateTitle_<%= index %>">
-                    Livestock Health
-                </strong>
-
-                <span>
-                    <%= animal.name || "Livestock" %>
-                </span>
-
-            </div>
-
-
-            <span
-                class="medical-update-modal__spacer"
-                aria-hidden="true"
-            ></span>
-
-        </header>
-
-
-        <!-- =============================================
-             BODY
-        ============================================== -->
-
-        <main class="medical-update-modal__body">
-
-            <div class="medical-update-modal__inner">
-
-
-                <!-- =====================================
-                     QUESTION
-                ====================================== -->
-
-                <div class="medical-update-modal__question">
-
-                    <% if (user && user.name) { %>
-
-                        <strong>
-                            <%= user.name.split(" ")[0] %>
-                        </strong>,
-
-                    <% } %>
-
-                    tell us about the health of
-
-                    <strong>
-                        <%= animal.name || "this livestock" %>
-                    </strong>.
-
-                </div>
-
-
-                <!-- =====================================
-                     TARGET
-                ====================================== -->
-
-                <section
-                    class="medical-update-target"
-                    aria-label="Livestock being updated"
-                >
-
-                    <div class="medical-update-target__avatar">
-
-                        <% if (
-                            animal.profileImage &&
-                            String(animal.profileImage).trim() !== ""
-                        ) { %>
-
-                            <img
-                                src="<%= animal.profileImage %>"
-                                alt="<%= animal.name || 'Livestock' %>"
-                                class="medical-update-target__image"
-                            >
-
-                        <% } else { %>
-
-                            <span
-                                class="medical-update-target__fallback"
-                                aria-hidden="true"
-                            >
-                                <i class="bi bi-heart-pulse"></i>
-                            </span>
-
-                        <% } %>
-
-                    </div>
-
-
-                    <div class="medical-update-target__info">
-
-                        <span>
-                            Health update for
-                        </span>
-
-                        <strong>
-                            <%= animal.name || "Livestock" %>
-                        </strong>
-
-                    </div>
-
-                </section>
-
-
-                <!-- =====================================
-                     MEDICAL FORM
-                ====================================== -->
-
-                <form
-                    class="medical-update-form"
-                    action="/dairy/<%= animal._id %>/medical-mark"
-                    method="POST"
-                    autocomplete="off"
-                >
-
-                    <div class="medical-update-field">
-
-                        <label
-                            for="medicalType_<%= index %>"
-                        >
-                            Medical type
-                        </label>
-
-                        <input
-                            type="text"
-                            id="medicalType_<%= index %>"
-                            name="type"
-                            maxlength="200"
-                            placeholder="e.g. Mastitis"
-                            required
-                        >
-
-                    </div>
-
-
-                    <div class="medical-update-field">
-
-                        <label
-                            for="medicalDetails_<%= index %>"
-                        >
-                            Details
-                        </label>
-
-                        <textarea
-                            id="medicalDetails_<%= index %>"
-                            name="details"
-                            maxlength="1000"
-                            rows="6"
-                            placeholder="Describe the health condition, symptoms or concern..."
-                            required
-                        ></textarea>
-
-                        <span class="medical-update-counter">
-                            0/1000
-                        </span>
-
-                    </div>
-
-
-                    <button
-                        type="submit"
-                        class="medical-update-submit"
-                        disabled
-                    >
-
-                        <i
-                            class="bi bi-heart-pulse"
-                            aria-hidden="true"
-                        ></i>
-
-                        <span>
-                            Record Health Update
-                        </span>
-
-                    </button>
-
-                </form>
-
-            </div>
-
-        </main>
-
-    </div>
-
-</div>
-
-<% }); %>
-
-
-
-<!-- =========================================================
-     CSS
-========================================================= -->
 
 <style>
 
-.medical-update-composer,
-.medical-update-composer *,
-.medical-update-modal,
-.medical-update-modal * {
+/* =========================================================
+   MEDICAL HEALTH COMPOSER
+========================================================= */
+
+.medical-health-composer,
+.medical-health-composer *,
+.medical-health-modal,
+.medical-health-modal * {
     box-sizing: border-box;
 }
 
 
-/* =========================================================
-   SECTION
-========================================================= */
-
-.medical-update-composer {
+.medical-health-composer {
     width: 100%;
     margin: 0 0 20px;
 }
 
 
-/* =========================================================
-   HEADING
-========================================================= */
-
-.medical-update-composer__header {
+.medical-health-composer__heading {
     width: 100%;
-    margin: 0 0 12px;
+    margin-bottom: 12px;
 }
 
 
-.medical-update-composer__heading {
+.medical-health-composer__heading h2 {
     margin: 0;
-    color: #37422e;
+    color: #3d392d;
     font-size: 18px;
     font-weight: 700;
     line-height: 1.3;
 }
 
 
+
 /* =========================================================
    HORIZONTAL SCROLLER
 ========================================================= */
 
-.medical-update-composer__scroller {
+.medical-health-composer__scroller {
     width: 100%;
-
-    display: flex;
-
-    flex-direction: row;
-
-    gap: 10px;
-
     overflow-x: auto;
     overflow-y: hidden;
-
-    padding: 2px 2px 12px;
-
-    scroll-behavior: smooth;
 
     -webkit-overflow-scrolling: touch;
 
@@ -481,162 +389,160 @@ IMPORTANT:
 }
 
 
-.medical-update-composer__scroller::-webkit-scrollbar {
+.medical-health-composer__scroller::-webkit-scrollbar {
     display: none;
 }
 
 
-/* =========================================================
-   CARD ITEM
-========================================================= */
+.medical-health-composer__track {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
 
-.medical-update-composer__item {
-    width: 108px;
-    min-width: 108px;
-    max-width: 108px;
+    width: max-content;
 
-    height: 150px;
-
-    flex: 0 0 108px;
+    padding: 2px 2px 8px;
 }
+
 
 
 /* =========================================================
    CARD
 ========================================================= */
 
-.medical-update-composer__card {
+.medical-health-card {
     width: 108px;
     height: 150px;
 
-    padding: 12px 7px;
+    flex: 0 0 108px;
+}
+
+
+.medical-health-card__button {
+    width: 108px;
+    height: 150px;
 
     display: flex;
-
     flex-direction: column;
-
     align-items: center;
     justify-content: center;
 
-    gap: 7px;
+    gap: 10px;
 
-    overflow: hidden;
+    padding: 10px 6px;
 
-    border: 1px solid #eadfce;
-
+    border: 1px solid #e2dfd2;
     border-radius: 15px;
 
     background:
         linear-gradient(
             145deg,
-            #fffdf8,
-            #f7f4e9
+            #ffffff,
+            #faf7ed
         );
 
-    color: #46522f;
+    color: #3d392d;
+
+    cursor: pointer;
 
     font-family: inherit;
 
     text-align: center;
 
-    cursor: pointer;
-
     transition:
         transform .15s ease,
-        box-shadow .15s ease,
-        border-color .15s ease;
+        border-color .15s ease,
+        box-shadow .15s ease;
 }
 
 
-.medical-update-composer__card:hover {
-    border-color: #c47b32;
+.medical-health-card__button:hover {
+    border-color: #c87932;
 
     box-shadow:
-        0 6px 16px
-        rgba(180, 105, 35, .14);
+        0 5px 16px
+        rgba(200, 121, 50, .14);
 }
 
 
-.medical-update-composer__card:active {
+.medical-health-card__button:active {
     transform: scale(.95);
 }
 
 
-.medical-update-composer__card:focus-visible {
-    outline: 2px solid #c47b32;
+.medical-health-card__button:focus-visible {
+    outline: 2px solid #c87932;
     outline-offset: 2px;
 }
 
 
+
 /* =========================================================
-   AVATAR
+   IMAGE
 ========================================================= */
 
-.medical-update-composer__avatar {
+.medical-health-card__image,
+.medical-health-card__avatar {
     width: 64px;
     height: 64px;
 
     flex: 0 0 64px;
 
-    overflow: hidden;
-
-    border: 2px solid #e8cda9;
-
     border-radius: 50%;
 
-    background: #f0eadb;
-
-    box-shadow:
-        0 3px 10px
-        rgba(120, 90, 40, .10);
+    overflow: hidden;
 }
 
 
-.medical-update-composer__image {
-    width: 100%;
-    height: 100%;
-
+.medical-health-card__image {
     display: block;
 
     object-fit: cover;
+
+    border: 2px solid #e5c49e;
 }
 
 
-.medical-update-composer__avatar-fallback {
-    width: 100%;
-    height: 100%;
-
+.medical-health-card__avatar {
     display: flex;
 
     align-items: center;
     justify-content: center;
 
-    background: #6f7d3d;
+    background:
+        linear-gradient(
+            145deg,
+            #198754,
+            #c87932
+        );
 
     color: #ffffff;
 
     font-size: 25px;
+    font-weight: 700;
+
+    border: 2px solid #ead4b9;
 }
+
 
 
 /* =========================================================
    NAME
 ========================================================= */
 
-.medical-update-composer__name {
-    display: block;
-
-    width: 100%;
-    max-width: 94px;
+.medical-health-card__name {
+    width: 94px;
 
     overflow: hidden;
 
-    color: #3c4435;
+    color: #39372f;
 
     font-size: 12px;
     font-weight: 700;
 
-    line-height: 1.2;
+    line-height: 1.25;
+
+    text-align: center;
 
     white-space: nowrap;
 
@@ -644,41 +550,22 @@ IMPORTANT:
 }
 
 
-/* =========================================================
-   ACTION
-========================================================= */
-
-.medical-update-composer__action {
-    display: block;
-
-    max-width: 94px;
-
-    color: #b46c2c;
-
-    font-size: 9px;
-    font-weight: 700;
-
-    line-height: 1.2;
-
-    text-transform: uppercase;
-}
-
 
 /* =========================================================
    MODAL
 ========================================================= */
 
-.medical-update-modal {
+.medical-health-modal {
     position: fixed;
 
     inset: 0;
 
-    width: 100vw;
-    height: 100dvh;
-
     z-index: 99999;
 
     display: none;
+
+    width: 100vw;
+    height: 100dvh;
 
     overflow: hidden;
 
@@ -686,69 +573,51 @@ IMPORTANT:
 }
 
 
-.medical-update-modal.active {
+.medical-health-modal.active {
     display: block;
 }
 
 
-/* =========================================================
-   MODAL CONTENT
-========================================================= */
-
-.medical-update-modal__content {
+.medical-health-modal__content {
     width: 100%;
     height: 100%;
 
     display: flex;
-
     flex-direction: column;
 
     background: #ffffff;
 }
 
 
-/* =========================================================
-   MODAL HEADER
-========================================================= */
-
-.medical-update-modal__header {
+.medical-health-modal__header {
     width: 100%;
     height: 64px;
 
     flex: 0 0 64px;
 
     display: flex;
-
     align-items: center;
 
-    padding: 0 14px;
+    padding: 0 12px;
 
-    border-bottom: 1px solid #ece8de;
+    border-bottom: 1px solid #ebe7dc;
 
     background: #ffffff;
 }
 
 
-.medical-update-modal__close {
+.medical-health-modal__close {
     width: 44px;
     height: 44px;
 
     flex: 0 0 44px;
 
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 0;
-
     border: none;
-
     border-radius: 50%;
 
     background: transparent;
 
-    color: #6f7d3d;
+    color: #198754;
 
     font-size: 27px;
 
@@ -756,38 +625,34 @@ IMPORTANT:
 }
 
 
-.medical-update-modal__close:active {
-    background: #f3efe5;
+.medical-health-modal__close:active {
+    background: #f4eee5;
 }
 
 
-.medical-update-modal__title {
+.medical-health-modal__title {
     min-width: 0;
 
     margin-left: 8px;
 
     display: flex;
-
     flex-direction: column;
-
-    line-height: 1.25;
 }
 
 
-.medical-update-modal__title strong {
-    color: #33382d;
+.medical-health-modal__title strong {
+    color: #292820;
+
     font-size: 17px;
 }
 
 
-.medical-update-modal__title span {
-    max-width: 70vw;
-
-    margin-top: 2px;
+.medical-health-modal__title span {
+    max-width: 75vw;
 
     overflow: hidden;
 
-    color: #858477;
+    color: #7c786d;
 
     font-size: 12px;
 
@@ -797,16 +662,12 @@ IMPORTANT:
 }
 
 
-.medical-update-modal__spacer {
-    flex: 1;
-}
-
 
 /* =========================================================
    MODAL BODY
 ========================================================= */
 
-.medical-update-modal__body {
+.medical-health-modal__body {
     flex: 1 1 auto;
 
     min-height: 0;
@@ -817,43 +678,10 @@ IMPORTANT:
 }
 
 
-.medical-update-modal__inner {
-    width: 100%;
-    max-width: 700px;
-
-    margin: 0 auto;
-}
-
-
-/* =========================================================
-   QUESTION
-========================================================= */
-
-.medical-update-modal__question {
-    margin-bottom: 20px;
-
-    color: #33382d;
-
-    font-size: 20px;
-
-    line-height: 1.45;
-}
-
-
-.medical-update-modal__question strong {
-    color: #6f7d3d;
-}
-
-
-/* =========================================================
-   TARGET
-========================================================= */
-
-.medical-update-target {
+.medical-health-modal__animal {
     width: 100%;
 
     display: flex;
-
     align-items: center;
 
     gap: 12px;
@@ -862,75 +690,73 @@ IMPORTANT:
 
     padding: 12px;
 
-    border: 1px solid #e6ddc9;
-
+    border: 1px solid #e8dfd1;
     border-radius: 14px;
 
-    background: #faf7ef;
+    background: #faf8f2;
 }
 
 
-.medical-update-target__avatar {
+.medical-health-modal__animal img,
+.medical-health-modal__animal-avatar {
     width: 54px;
     height: 54px;
 
     flex: 0 0 54px;
 
-    overflow: hidden;
-
     border-radius: 50%;
+
+    overflow: hidden;
 }
 
 
-.medical-update-target__image {
-    width: 100%;
-    height: 100%;
-
+.medical-health-modal__animal img {
     display: block;
-
     object-fit: cover;
 }
 
 
-.medical-update-target__fallback {
-    width: 100%;
-    height: 100%;
-
+.medical-health-modal__animal-avatar {
     display: flex;
 
     align-items: center;
     justify-content: center;
 
-    background: #6f7d3d;
+    background:
+        linear-gradient(
+            145deg,
+            #198754,
+            #c87932
+        );
 
     color: #ffffff;
 
     font-size: 21px;
+    font-weight: 700;
 }
 
 
-.medical-update-target__info {
+.medical-health-modal__animal div {
     min-width: 0;
 
     display: flex;
-
     flex-direction: column;
 }
 
 
-.medical-update-target__info span {
-    color: #898879;
+.medical-health-modal__animal div span {
+    color: #817b6f;
 
     font-size: 10px;
 }
 
 
-.medical-update-target__info strong {
+.medical-health-modal__animal div strong {
     margin-top: 3px;
 
     overflow: hidden;
 
-    color: #59652f;
+    color: #3d392d;
 
     font-size: 15px;
 
@@ -940,17 +766,21 @@ IMPORTANT:
 }
 
 
+
 /* =========================================================
    FORM
 ========================================================= */
 
-.medical-update-form {
+.medical-health-form {
     width: 100%;
-    margin: 0;
+
+    max-width: 700px;
+
+    margin: 0 auto;
 }
 
 
-.medical-update-field {
+.medical-health-field {
     position: relative;
 
     width: 100%;
@@ -959,15 +789,14 @@ IMPORTANT:
 }
 
 
-.medical-update-field label {
+.medical-health-field label {
     display: block;
 
     margin-bottom: 7px;
 
-    color: #777667;
+    color: #6f6b60;
 
     font-size: 11px;
-
     font-weight: 700;
 
     letter-spacing: .04em;
@@ -976,34 +805,32 @@ IMPORTANT:
 }
 
 
-.medical-update-field input,
-.medical-update-field textarea {
+.medical-health-field input,
+.medical-health-field textarea {
     width: 100%;
 
     border: 1px solid #dfddd4;
-
     border-radius: 12px;
 
     outline: none;
 
-    background: #fafaf7;
+    background: #fafaf8;
 
-    color: #30352e;
+    color: #292820;
 
-    font: inherit;
-
+    font-family: inherit;
     font-size: 15px;
 }
 
 
-.medical-update-field input {
+.medical-health-field input {
     height: 48px;
 
     padding: 0 13px;
 }
 
 
-.medical-update-field textarea {
+.medical-health-field textarea {
     min-height: 130px;
 
     padding: 13px 14px 30px;
@@ -1014,29 +841,25 @@ IMPORTANT:
 }
 
 
-.medical-update-field input:focus,
-.medical-update-field textarea:focus {
-    border-color: #c47b32;
+.medical-health-field input:focus,
+.medical-health-field textarea:focus {
+    border-color: #c87932;
 
     background: #ffffff;
 
     box-shadow:
         0 0 0 3px
-        rgba(196, 123, 50, .10);
+        rgba(200, 121, 50, .10);
 }
 
 
-/* =========================================================
-   COUNTER
-========================================================= */
-
-.medical-update-counter {
+.medical-health-field span {
     position: absolute;
 
     right: 11px;
     bottom: 9px;
 
-    color: #99978b;
+    color: #8b877c;
 
     font-size: 10px;
 
@@ -1044,17 +867,17 @@ IMPORTANT:
 }
 
 
+
 /* =========================================================
    SUBMIT
 ========================================================= */
 
-.medical-update-submit {
+.medical-health-submit {
     width: 100%;
 
     min-height: 50px;
 
     display: flex;
-
     align-items: center;
     justify-content: center;
 
@@ -1063,33 +886,30 @@ IMPORTANT:
     padding: 10px 14px;
 
     border: none;
-
     border-radius: 13px;
 
-    background: #6f7d3d;
+    background: #198754;
 
     color: #ffffff;
 
     font-family: inherit;
 
     font-size: 14px;
-
     font-weight: 700;
 
     cursor: pointer;
 }
 
 
-.medical-update-submit:not(:disabled):active {
+.medical-health-submit:hover {
+    background: #146c43;
+}
+
+
+.medical-health-submit:active {
     transform: scale(.99);
 }
 
-
-.medical-update-submit:disabled {
-    background: #c3c5ba;
-
-    cursor: default;
-}
 
 
 /* =========================================================
@@ -1098,41 +918,19 @@ IMPORTANT:
 
 @media (max-width: 600px) {
 
-    .medical-update-composer__heading {
+    .medical-health-composer__heading h2 {
         font-size: 17px;
     }
 
-    .medical-update-modal__header {
+
+    .medical-health-modal__header {
         height: 60px;
-
         flex-basis: 60px;
-
-        padding: 0 10px;
     }
 
-    .medical-update-modal__body {
+
+    .medical-health-modal__body {
         padding: 14px;
-    }
-
-    .medical-update-modal__question {
-        font-size: 19px;
-    }
-
-}
-
-
-/* =========================================================
-   SMALL PHONES
-========================================================= */
-
-@media (max-width: 380px) {
-
-    .medical-update-modal__body {
-        padding: 10px;
-    }
-
-    .medical-update-modal__title span {
-        display: none;
     }
 
 }
@@ -1140,10 +938,6 @@ IMPORTANT:
 </style>
 
 
-
-<!-- =========================================================
-     JAVASCRIPT
-========================================================= -->
 
 <script>
 
@@ -1154,15 +948,9 @@ IMPORTANT:
 
     function initializeMedicalComposer() {
 
-        const cards =
+        const openButtons =
             document.querySelectorAll(
-                "[data-medical-card]"
-            );
-
-
-        const modals =
-            document.querySelectorAll(
-                "[data-medical-modal]"
+                "[data-medical-open]"
             );
 
 
@@ -1172,128 +960,125 @@ IMPORTANT:
             );
 
 
-        if (!cards.length) {
+        if (!openButtons.length) {
             return;
         }
 
 
         function closeAllModals() {
 
-            modals.forEach(function (modal) {
+            document
+                .querySelectorAll(
+                    ".medical-health-modal.active"
+                )
+                .forEach(function (modal) {
 
-                modal.classList.remove("active");
+                    modal.classList.remove(
+                        "active"
+                    );
 
-                modal.setAttribute(
-                    "aria-hidden",
-                    "true"
-                );
+                    modal.setAttribute(
+                        "aria-hidden",
+                        "true"
+                    );
 
-            });
-
-            document.body.style.overflow = "";
-
-        }
-
-
-        function openModal(index) {
-
-            const modal =
-                document.querySelector(
-                    '[data-medical-modal="' +
-                    index +
-                    '"]'
-                );
-
-
-            if (!modal) {
-                return;
-            }
-
-
-            modal.classList.add("active");
-
-            modal.setAttribute(
-                "aria-hidden",
-                "false"
-            );
+                });
 
 
             document.body.style.overflow =
-                "hidden";
-
-
-            const input =
-                modal.querySelector(
-                    'input[name="type"]'
-                );
-
-
-            if (input) {
-
-                window.setTimeout(
-                    function () {
-                        input.focus();
-                    },
-                    100
-                );
-
-            }
+                "";
 
         }
 
 
-        cards.forEach(function (card) {
+        openButtons.forEach(
+            function (button) {
 
-            card.addEventListener(
-                "click",
-                function () {
+                button.addEventListener(
+                    "click",
+                    function () {
 
-                    const index =
-                        card.getAttribute(
-                            "data-medical-card"
+                        const modalId =
+                            button.getAttribute(
+                                "data-medical-open"
+                            );
+
+
+                        const modal =
+                            document.getElementById(
+                                modalId
+                            );
+
+
+                        if (!modal) {
+                            return;
+                        }
+
+
+                        modal.classList.add(
+                            "active"
                         );
 
 
-                    openModal(index);
-
-                }
-            );
-
-        });
+                        modal.setAttribute(
+                            "aria-hidden",
+                            "false"
+                        );
 
 
-        closeButtons.forEach(function (button) {
-
-            button.addEventListener(
-                "click",
-                function () {
-
-                    closeAllModals();
-
-                }
-            );
-
-        });
-
-
-        modals.forEach(function (modal) {
-
-            modal.addEventListener(
-                "click",
-                function (event) {
-
-                    if (
-                        event.target === modal
-                    ) {
-
-                        closeAllModals();
+                        document.body.style.overflow =
+                            "hidden";
 
                     }
+                );
 
-                }
-            );
+            }
+        );
 
-        });
+
+        closeButtons.forEach(
+            function (button) {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        const modalId =
+                            button.getAttribute(
+                                "data-medical-close"
+                            );
+
+
+                        const modal =
+                            document.getElementById(
+                                modalId
+                            );
+
+
+                        if (!modal) {
+                            return;
+                        }
+
+
+                        modal.classList.remove(
+                            "active"
+                        );
+
+
+                        modal.setAttribute(
+                            "aria-hidden",
+                            "true"
+                        );
+
+
+                        document.body.style.overflow =
+                            "";
+
+                    }
+                );
+
+            }
+        );
 
 
         document.addEventListener(
@@ -1312,121 +1097,70 @@ IMPORTANT:
         );
 
 
-        /* =====================================================
-           FORM VALIDATION / COUNTERS
-        ====================================================== */
+        document
+            .querySelectorAll(
+                ".medical-health-form"
+            )
+            .forEach(function (form) {
 
-        modals.forEach(function (modal) {
-
-            const form =
-                modal.querySelector(
-                    ".medical-update-form"
-                );
-
-
-            const typeInput =
-                modal.querySelector(
-                    'input[name="type"]'
-                );
-
-
-            const detailsInput =
-                modal.querySelector(
-                    'textarea[name="details"]'
-                );
-
-
-            const counter =
-                modal.querySelector(
-                    ".medical-update-counter"
-                );
-
-
-            const submitButton =
-                modal.querySelector(
-                    ".medical-update-submit"
-                );
-
-
-            if (
-                !form ||
-                !typeInput ||
-                !detailsInput ||
-                !counter ||
-                !submitButton
-            ) {
-
-                return;
-
-            }
-
-
-            function validate() {
-
-                const hasType =
-                    typeInput.value.trim().length > 0;
-
-
-                const hasDetails =
-                    detailsInput.value.trim().length > 0;
-
-
-                submitButton.disabled =
-                    !(
-                        hasType &&
-                        hasDetails
+                const textarea =
+                    form.querySelector(
+                        "textarea"
                     );
 
-            }
+
+                const counter =
+                    form.querySelector(
+                        ".medical-health-field span"
+                    );
 
 
-            function updateCounter() {
+                if (
+                    textarea &&
+                    counter
+                ) {
 
-                counter.textContent =
-                    detailsInput.value.length +
-                    "/1000";
+                    textarea.addEventListener(
+                        "input",
+                        function () {
 
-            }
+                            counter.textContent =
+                                textarea.value.length +
+                                "/1000";
 
-
-            typeInput.addEventListener(
-                "input",
-                validate
-            );
-
-
-            detailsInput.addEventListener(
-                "input",
-                function () {
-
-                    updateCounter();
-
-                    validate();
+                        }
+                    );
 
                 }
-            );
 
 
-            form.addEventListener(
-                "submit",
-                function () {
+                form.addEventListener(
+                    "submit",
+                    function () {
 
-                    submitButton.disabled =
-                        true;
-
-                    submitButton.innerHTML =
-                        '<i class="bi bi-hourglass-split"></i>' +
-                        '<span>Submitting...</span>';
-
-                }
-            );
+                        const submit =
+                            form.querySelector(
+                                "button[type='submit']"
+                            );
 
 
-            updateCounter();
+                        if (!submit) {
+                            return;
+                        }
 
-            validate();
 
-        });
+                        submit.disabled =
+                            true;
+
+
+                        submit.innerHTML =
+                            '<i class="bi bi-hourglass-split"></i>' +
+                            '<span>Submitting...</span>';
+
+                    }
+                );
+
+            });
 
     }
 
