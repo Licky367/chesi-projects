@@ -178,6 +178,35 @@ const hasDwellNumber =
         }) %>
 
     <% } %>
+  <% if (hasDwellNumber) { %>
+
+
+        <!-- =============================================
+             CONTENT UPDATE HISTORY + UPDATE MODAL
+        ============================================== -->
+
+        <%- include(
+            "update/content-update",
+            {
+                dairy:
+                    dairy,
+
+                storage:
+                    safeStorage,
+
+                item:
+                    safeContentItem,
+
+                user:
+                    user,
+
+                latestStockUpdate:
+                    safeLatestStockUpdate
+            }
+        ) %>
+
+
+    <% } %>
 
 
 </div>
