@@ -14,43 +14,41 @@
    DATA RECEIVED FROM PARENT:
        booleanAnimals
        booleanFields
+       dairy
 
    ELIGIBLE ANIMAL:
    ----------------------------------------------------------
-       1. code > 0 AND code is even
+       1. recordType === "animal"
 
-       OR
+       2. assetCode === current Dairy Farm code
 
-       2. gender === female
+       3. code > 0
 
-   FIRST CARD:
+       4. code is EVEN
+
+   FARM OWNERSHIP:
    ----------------------------------------------------------
-       Boolean selector.
+       Parent Dairy Farm:
 
-       Tapping it opens/closes the available Boolean fields.
+           dairy.recordType === "farm"
+           dairy.code < 0
 
-   REMAINING CARDS:
-   ----------------------------------------------------------
-       One card per eligible female animal.
+       Child Animal:
 
-       Each Boolean field can be toggled independently.
+           animal.recordType === "animal"
+           animal.assetCode === dairy.code
 
    IMPORTANT:
    ----------------------------------------------------------
-       This file MUST NOT expect:
+       This file MUST NOT display female animals from other
+       Dairy Farms.
 
-           animals
-           dairies
-           fields
+       The parent farm relationship is determined by:
 
-       directly from Express.
+           animal.assetCode === dairy.code
 
-       The parent passes:
+       NOT by gender, animal code, or array position.
 
-           booleanAnimals
-           booleanFields
-
-       and they are normalized below.
 ========================================================== */
 
 
@@ -71,13 +69,221 @@ const fields =
 
 
 /* ==========================================================
-   SAFE DAIRY ID
+   CURRENT DAIRY ID
 ========================================================== */
 
 const currentDairyId =
-    dairy && dairy._id
+    dairy &&
+    dairy._id
         ? String(dairy._id)
         : "";
+
+
+/* ==========================================================
+   CURRENT PARENT FARM CODE
+   ----------------------------------------------------------
+   Normally the parent page supplies the Dairy Farm itself.
+
+       dairy.recordType === "farm"
+       dairy.code < 0
+
+   Therefore:
+
+       dairy.code
+
+   is the parent farm identifier.
+
+   The fallback to assetCode makes this safer if the parent
+   happens to provide a child record whose assetCode points
+   back to the farm.
+========================================================== */
+
+let currentFarmCode = null;
+
+
+if (
+    dairy &&
+    dairy.recordType === "farm" &&
+    dairy.code !== null &&
+    dairy.code !== undefined
+) {
+
+    const farmCode =
+        Number(dairy.code);
+
+
+    if (
+        Number.isInteger(farmCode) &&
+        farmCode < 0
+    ) {
+
+        currentFarmCode =
+            farmCode;
+
+    }
+
+}
+
+
+/* ==========================================================
+   FALLBACK PARENT FARM CODE
+========================================================== */
+
+if (
+    currentFarmCode === null &&
+    dairy &&
+    dairy.assetCode !== null &&
+    dairy.assetCode !== undefined
+) {
+
+    const farmCode =
+        Number(dairy.assetCode);
+
+
+    if (
+        Number.isInteger(farmCode) &&
+        farmCode < 0
+    ) {
+
+        currentFarmCode =
+            farmCode;
+
+    }
+
+}
+
+
+/* ==========================================================
+   FILTER FEMALE ANIMALS
+   ----------------------------------------------------------
+   ONLY animals belonging to the CURRENT Dairy Farm survive.
+
+   Relationship:
+
+       animal.assetCode
+              ===
+       currentFarmCode
+
+   Female rule:
+
+       code > 0
+       code % 2 === 0
+========================================================== */
+
+const eligibleAnimals =
+    animals.filter(function (animal) {
+
+        /* ----------------------------------------------
+           Invalid record
+        ---------------------------------------------- */
+
+        if (
+            !animal ||
+            !animal._id
+        ) {
+
+            return false;
+
+        }
+
+
+        /* ----------------------------------------------
+           Must be an animal
+        ---------------------------------------------- */
+
+        if (
+            animal.recordType &&
+            animal.recordType !== "animal"
+        ) {
+
+            return false;
+
+        }
+
+
+        /* ----------------------------------------------
+           A valid parent farm is required
+        ---------------------------------------------- */
+
+        if (
+            currentFarmCode === null
+        ) {
+
+            return false;
+
+        }
+
+
+        /* ----------------------------------------------
+           Animal must belong to CURRENT FARM
+        ---------------------------------------------- */
+
+        if (
+            animal.assetCode === null ||
+            animal.assetCode === undefined
+        ) {
+
+            return false;
+
+        }
+
+
+        const animalFarmCode =
+            Number(
+                animal.assetCode
+            );
+
+
+        if (
+            !Number.isInteger(
+                animalFarmCode
+            )
+        ) {
+
+            return false;
+
+        }
+
+
+        if (
+            animalFarmCode !== currentFarmCode
+        ) {
+
+            return false;
+
+        }
+
+
+        /* ----------------------------------------------
+           Animal code
+        ---------------------------------------------- */
+
+        const animalCode =
+            Number(
+                animal.code
+            );
+
+
+        /* ----------------------------------------------
+           Female:
+
+               positive
+               even
+        ---------------------------------------------- */
+
+        return (
+
+            Number.isInteger(
+                animalCode
+            ) &&
+
+            animalCode > 0 &&
+
+            animalCode % 2 === 0
+
+        );
+
+    });
 
 
 /* ==========================================================
@@ -87,13 +293,27 @@ const currentDairyId =
 function booleanLabel(field) {
 
     return String(field || "")
-        .replace(/([a-z])([A-Z])/g, "$1 $2")
-        .replace(/[_-]+/g, " ")
-        .replace(/\s+/g, " ")
+        .replace(
+            /([a-z])([A-Z])/g,
+            "$1 $2"
+        )
+        .replace(
+            /[_-]+/g,
+            " "
+        )
+        .replace(
+            /\s+/g,
+            " "
+        )
         .trim()
-        .replace(/\b\w/g, function (letter) {
-            return letter.toUpperCase();
-        });
+        .replace(
+            /\b\w/g,
+            function (letter) {
+
+                return letter.toUpperCase();
+
+            }
+        );
 
 }
 
@@ -128,7 +348,8 @@ function booleanLabel(field) {
         <div class="update-boolean-description">
 
             Tap the first card to choose a Boolean field,
-            then toggle it directly on any eligible animal.
+            then toggle it directly on any eligible female
+            animal belonging to this Dairy Farm.
 
         </div>
 
@@ -216,21 +437,27 @@ function booleanLabel(field) {
                             data-boolean-field="<%= field %>"
                         >
 
-                            <span class="update-boolean-field-option-icon">
+                            <span
+                                class="update-boolean-field-option-icon"
+                            >
 
                                 <i class="fas fa-toggle-on"></i>
 
                             </span>
 
 
-                            <span class="update-boolean-field-option-label">
+                            <span
+                                class="update-boolean-field-option-label"
+                            >
 
                                 <%= booleanLabel(field) %>
 
                             </span>
 
 
-                            <span class="update-boolean-field-option-check">
+                            <span
+                                class="update-boolean-field-option-check"
+                            >
 
                                 <i class="fas fa-check"></i>
 
@@ -257,22 +484,24 @@ function booleanLabel(field) {
 
 
         <!-- ==================================================
-             ELIGIBLE ANIMALS
+             ELIGIBLE FEMALE ANIMALS
+             --------------------------------------------------
+             IMPORTANT:
+
+                 eligibleAnimals
+
+             has already been filtered by:
+
+                 animal.assetCode === currentFarmCode
+
+             AND:
+
+                 positive even animal code
         =================================================== -->
 
-        <% animals.forEach(function(animal) { %>
+        <% eligibleAnimals.forEach(function(animal) { %>
 
             <%
-
-                if (
-                    !animal ||
-                    !animal._id
-                ) {
-
-                    return;
-
-                }
-
 
                 /* ============================================
                    ANIMAL NAME
@@ -296,13 +525,23 @@ function booleanLabel(field) {
 
 
                 /* ============================================
+                   ANIMAL FARM CODE
+                ============================================ */
+
+                const animalFarmCode =
+                    Number(
+                        animal.assetCode
+                    );
+
+
+                /* ============================================
                    GENDER
                 ============================================ */
 
                 const animalGender =
                     String(
                         animal.gender ||
-                        ""
+                        "Female"
                     );
 
 
@@ -332,6 +571,7 @@ function booleanLabel(field) {
                 class="update-boolean-card update-boolean-animal-card"
                 role="listitem"
                 data-animal-id="<%= animal._id %>"
+                data-farm-code="<%= animalFarmCode %>"
             >
 
 
@@ -414,7 +654,7 @@ function booleanLabel(field) {
 
                         <i class="fas fa-venus"></i>
 
-                        <%= animalGender || "Female" %>
+                        <%= animalGender %>
 
                     </div>
 
@@ -454,7 +694,9 @@ function booleanLabel(field) {
                                     <span
                                         class="update-boolean-toggle-label"
                                     >
+
                                         <%= booleanLabel(field) %>
+
                                     </span>
 
 
@@ -505,10 +747,10 @@ function booleanLabel(field) {
 
 
         <!-- ==================================================
-             NO ANIMALS
+             NO ELIGIBLE FEMALE ANIMALS
         =================================================== -->
 
-        <% if (animals.length === 0) { %>
+        <% if (eligibleAnimals.length === 0) { %>
 
             <div class="update-boolean-empty-card">
 
@@ -525,8 +767,8 @@ function booleanLabel(field) {
 
 
                 <span>
-                    No positive-even-code or female animals
-                    are currently available.
+                    This Dairy Farm has no active female
+                    animals available for Boolean management.
                 </span>
 
             </div>
@@ -592,39 +834,51 @@ function booleanLabel(field) {
 
     margin-bottom: 3px;
 
-    color: #b96a27;
+    color:
+        #b96a27;
 
-    font-size: 8px;
+    font-size:
+        8px;
 
-    font-weight: 800;
+    font-weight:
+        800;
 
-    letter-spacing: 2px;
+    letter-spacing:
+        2px;
 
 }
 
 
 .update-boolean-heading strong {
 
-    color: #26382d;
+    color:
+        #26382d;
 
-    font-size: 19px;
+    font-size:
+        19px;
 
-    font-weight: 750;
+    font-weight:
+        750;
 
 }
 
 
 .update-boolean-description {
 
-    max-width: 620px;
+    max-width:
+        620px;
 
-    margin-top: 4px;
+    margin-top:
+        4px;
 
-    color: #778078;
+    color:
+        #778078;
 
-    font-size: 11px;
+    font-size:
+        11px;
 
-    line-height: 1.45;
+    line-height:
+        1.45;
 
 }
 
@@ -635,33 +889,42 @@ function booleanLabel(field) {
 
 .update-boolean-scroll {
 
-    width: 100%;
+    width:
+        100%;
 
-    display: flex;
+    display:
+        flex;
 
-    gap: 11px;
+    gap:
+        11px;
 
-    overflow-x: auto;
+    overflow-x:
+        auto;
 
-    overflow-y: visible;
+    overflow-y:
+        visible;
 
     padding:
         5px
         5px
         12px;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
 
-    scrollbar-width: none;
+    scrollbar-width:
+        none;
 
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling:
+        touch;
 
 }
 
 
 .update-boolean-scroll::-webkit-scrollbar {
 
-    display: none;
+    display:
+        none;
 
 }
 
@@ -672,27 +935,34 @@ function booleanLabel(field) {
 
 .update-boolean-card {
 
-    position: relative;
+    position:
+        relative;
 
     flex:
         0 0
         124px;
 
-    width: 124px;
+    width:
+        124px;
 
-    height: 197px;
+    height:
+        197px;
 
-    overflow: visible;
+    overflow:
+        visible;
 
-    flex-shrink: 0;
+    flex-shrink:
+        0;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
 
     border:
         1px solid
         #e1e6de;
 
-    border-radius: 18px;
+    border-radius:
+        18px;
 
     background:
         linear-gradient(
@@ -717,22 +987,31 @@ function booleanLabel(field) {
 
 .update-boolean-animal-card {
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
 }
 
 
 .update-boolean-card-accent {
 
-    position: absolute;
+    position:
+        absolute;
 
-    top: 0;
-    left: 0;
-    bottom: 0;
+    top:
+        0;
 
-    width: 4px;
+    left:
+        0;
 
-    z-index: 5;
+    bottom:
+        0;
+
+    width:
+        4px;
+
+    z-index:
+        5;
 
     border-radius:
         18px
@@ -757,13 +1036,17 @@ function booleanLabel(field) {
 
 .update-boolean-image-wrap {
 
-    position: relative;
+    position:
+        relative;
 
-    width: 100%;
+    width:
+        100%;
 
-    height: 112px;
+    height:
+        112px;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
     border-radius:
         18px
@@ -779,22 +1062,28 @@ function booleanLabel(field) {
 
 .update-boolean-image {
 
-    width: 100%;
+    width:
+        100%;
 
-    height: 100%;
+    height:
+        100%;
 
-    display: block;
+    display:
+        block;
 
-    object-fit: cover;
+    object-fit:
+        cover;
 
 }
 
 
 .update-boolean-image-overlay {
 
-    position: absolute;
+    position:
+        absolute;
 
-    inset: 0;
+    inset:
+        0;
 
     background:
         linear-gradient(
@@ -812,22 +1101,30 @@ function booleanLabel(field) {
 
 .update-boolean-female-badge {
 
-    position: absolute;
+    position:
+        absolute;
 
-    top: 8px;
-    left: 9px;
+    top:
+        8px;
 
-    display: flex;
+    left:
+        9px;
 
-    align-items: center;
+    display:
+        flex;
 
-    gap: 4px;
+    align-items:
+        center;
+
+    gap:
+        4px;
 
     padding:
         4px
         7px;
 
-    border-radius: 999px;
+    border-radius:
+        999px;
 
     background:
         rgba(255,255,255,.88);
@@ -835,11 +1132,14 @@ function booleanLabel(field) {
     color:
         #47724a;
 
-    font-size: 7px;
+    font-size:
+        7px;
 
-    font-weight: 800;
+    font-weight:
+        800;
 
-    letter-spacing: .8px;
+    letter-spacing:
+        .8px;
 
 }
 
@@ -858,16 +1158,21 @@ function booleanLabel(field) {
 
 .update-boolean-code {
 
-    position: absolute;
+    position:
+        absolute;
 
-    right: 8px;
-    bottom: 8px;
+    right:
+        8px;
+
+    bottom:
+        8px;
 
     padding:
         4px
         7px;
 
-    border-radius: 7px;
+    border-radius:
+        7px;
 
     background:
         rgba(255,255,255,.9);
@@ -875,9 +1180,11 @@ function booleanLabel(field) {
     color:
         #47724a;
 
-    font-size: 8px;
+    font-size:
+        8px;
 
-    font-weight: 800;
+    font-weight:
+        800;
 
 }
 
@@ -888,7 +1195,8 @@ function booleanLabel(field) {
 
 .update-boolean-content {
 
-    height: 82px;
+    height:
+        82px;
 
     padding:
         8px
@@ -896,43 +1204,54 @@ function booleanLabel(field) {
         6px
         11px;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
 
 }
 
 
 .update-boolean-name {
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
     color:
         #26352b;
 
-    font-size: 12px;
+    font-size:
+        12px;
 
-    font-weight: 750;
+    font-weight:
+        750;
 
-    white-space: nowrap;
+    white-space:
+        nowrap;
 
-    text-overflow: ellipsis;
+    text-overflow:
+        ellipsis;
 
 }
 
 
 .update-boolean-gender {
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    gap: 4px;
+    gap:
+        4px;
 
-    margin-top: 3px;
+    margin-top:
+        3px;
 
     color:
         #7b847c;
 
-    font-size: 8px;
+    font-size:
+        8px;
 
 }
 
@@ -943,43 +1262,57 @@ function booleanLabel(field) {
 
 .update-boolean-controls {
 
-    display: flex;
+    display:
+        flex;
 
-    flex-direction: column;
+    flex-direction:
+        column;
 
-    gap: 3px;
+    gap:
+        3px;
 
-    margin-top: 5px;
+    margin-top:
+        5px;
 
-    max-height: 40px;
+    max-height:
+        40px;
 
-    overflow-y: auto;
+    overflow-y:
+        auto;
 
-    scrollbar-width: none;
+    scrollbar-width:
+        none;
 
 }
 
 
 .update-boolean-controls::-webkit-scrollbar {
 
-    display: none;
+    display:
+        none;
 
 }
 
 
 .update-boolean-toggle {
 
-    width: 100%;
+    width:
+        100%;
 
-    min-height: 22px;
+    min-height:
+        22px;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: space-between;
+    justify-content:
+        space-between;
 
-    gap: 4px;
+    gap:
+        4px;
 
     padding:
         2px
@@ -991,7 +1324,8 @@ function booleanLabel(field) {
         1px solid
         #e4e9e1;
 
-    border-radius: 7px;
+    border-radius:
+        7px;
 
     background:
         #f8faf7;
@@ -999,65 +1333,86 @@ function booleanLabel(field) {
     color:
         #69736c;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 
 }
 
 
 .update-boolean-toggle-label {
 
-    min-width: 0;
+    min-width:
+        0;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
-    text-align: left;
+    text-align:
+        left;
 
-    text-overflow: ellipsis;
+    text-overflow:
+        ellipsis;
 
-    white-space: nowrap;
+    white-space:
+        nowrap;
 
-    font-size: 7px;
+    font-size:
+        7px;
 
-    font-weight: 700;
+    font-weight:
+        700;
 
 }
 
 
 .update-boolean-toggle-switch {
 
-    position: relative;
+    position:
+        relative;
 
-    width: 25px;
+    width:
+        25px;
 
-    height: 14px;
+    height:
+        14px;
 
     flex:
         0 0
         25px;
 
-    border-radius: 999px;
+    border-radius:
+        999px;
 
     background:
         #cdd4cd;
 
     transition:
-        background .18s ease;
+        background
+        .18s
+        ease;
 
 }
 
 
 .update-boolean-toggle-knob {
 
-    position: absolute;
+    position:
+        absolute;
 
-    top: 2px;
-    left: 2px;
+    top:
+        2px;
 
-    width: 10px;
+    left:
+        2px;
 
-    height: 10px;
+    width:
+        10px;
 
-    border-radius: 50%;
+    height:
+        10px;
+
+    border-radius:
+        50%;
 
     background:
         #ffffff;
@@ -1067,7 +1422,9 @@ function booleanLabel(field) {
         rgba(0,0,0,.18);
 
     transition:
-        transform .18s ease;
+        transform
+        .18s
+        ease;
 
 }
 
@@ -1110,13 +1467,20 @@ function booleanLabel(field) {
 
 .update-boolean-bottom-line {
 
-    position: absolute;
+    position:
+        absolute;
 
-    right: 0;
-    bottom: 0;
-    left: 0;
+    right:
+        0;
 
-    height: 3px;
+    bottom:
+        0;
+
+    left:
+        0;
+
+    height:
+        3px;
 
     background:
         linear-gradient(
@@ -1135,11 +1499,14 @@ function booleanLabel(field) {
 
 .update-boolean-selector-card {
 
-    z-index: 30;
+    z-index:
+        30;
 
-    display: flex;
+    display:
+        flex;
 
-    flex-direction: column;
+    flex-direction:
+        column;
 
     background:
         linear-gradient(
@@ -1154,53 +1521,71 @@ function booleanLabel(field) {
 
 .update-boolean-selector {
 
-    width: 100%;
+    width:
+        100%;
 
-    height: 100%;
+    height:
+        100%;
 
-    display: flex;
+    display:
+        flex;
 
-    flex-direction: column;
+    flex-direction:
+        column;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    padding: 13px;
+    padding:
+        13px;
 
-    border: 0;
+    border:
+        0;
 
-    border-radius: 18px;
+    border-radius:
+        18px;
 
-    background: transparent;
+    background:
+        transparent;
 
     color:
         #29382d;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 
 }
 
 
 .update-boolean-selector-icon {
 
-    width: 44px;
+    width:
+        44px;
 
-    height: 44px;
+    height:
+        44px;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    margin-bottom: 10px;
+    margin-bottom:
+        10px;
 
     border:
         1px solid
         #e7d7c2;
 
-    border-radius: 14px;
+    border-radius:
+        14px;
 
     background:
         linear-gradient(
@@ -1212,55 +1597,71 @@ function booleanLabel(field) {
     color:
         #b96825;
 
-    font-size: 17px;
+    font-size:
+        17px;
 
 }
 
 
 .update-boolean-selector-title {
 
-    font-size: 12px;
+    font-size:
+        12px;
 
-    font-weight: 750;
+    font-weight:
+        750;
 
-    text-align: center;
+    text-align:
+        center;
 
 }
 
 
 .update-boolean-selector-text {
 
-    max-width: 95px;
+    max-width:
+        95px;
 
-    margin-top: 5px;
+    margin-top:
+        5px;
 
     color:
         #7c847d;
 
-    font-size: 8px;
+    font-size:
+        8px;
 
-    line-height: 12px;
+    line-height:
+        12px;
 
-    text-align: center;
+    text-align:
+        center;
 
 }
 
 
 .update-boolean-selector-arrow {
 
-    width: 24px;
+    width:
+        24px;
 
-    height: 24px;
+    height:
+        24px;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    margin-top: 10px;
+    margin-top:
+        10px;
 
-    border-radius: 50%;
+    border-radius:
+        50%;
 
     background:
         #f9eadb;
@@ -1268,7 +1669,8 @@ function booleanLabel(field) {
     color:
         #b96825;
 
-    font-size: 8px;
+    font-size:
+        8px;
 
 }
 
@@ -1279,27 +1681,36 @@ function booleanLabel(field) {
 
 .update-boolean-dropdown {
 
-    position: absolute;
+    position:
+        absolute;
 
-    top: calc(100% + 6px);
+    top:
+        calc(100% + 6px);
 
-    left: 0;
+    left:
+        0;
 
-    width: 180px;
+    width:
+        180px;
 
-    max-height: 230px;
+    max-height:
+        230px;
 
-    overflow-y: auto;
+    overflow-y:
+        auto;
 
-    padding: 6px;
+    padding:
+        6px;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
 
     border:
         1px solid
         #dfe6dc;
 
-    border-radius: 13px;
+    border-radius:
+        13px;
 
     background:
         #ffffff;
@@ -1308,27 +1719,34 @@ function booleanLabel(field) {
         0 10px 28px
         rgba(30,50,35,.16);
 
-    z-index: 100;
+    z-index:
+        100;
 
 }
 
 
 .update-boolean-field-option {
 
-    width: 100%;
+    width:
+        100%;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    gap: 7px;
+    gap:
+        7px;
 
     padding:
         8px;
 
-    border: 0;
+    border:
+        0;
 
-    border-radius: 8px;
+    border-radius:
+        8px;
 
     background:
         transparent;
@@ -1336,9 +1754,11 @@ function booleanLabel(field) {
     color:
         #526158;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 
-    text-align: left;
+    text-align:
+        left;
 
 }
 
@@ -1353,19 +1773,27 @@ function booleanLabel(field) {
 
 .update-boolean-field-option-icon {
 
-    width: 22px;
+    width:
+        22px;
 
-    height: 22px;
+    height:
+        22px;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    flex: 0 0 22px;
+    flex:
+        0 0
+        22px;
 
-    border-radius: 7px;
+    border-radius:
+        7px;
 
     background:
         #eef5e9;
@@ -1373,32 +1801,39 @@ function booleanLabel(field) {
     color:
         #52723d;
 
-    font-size: 8px;
+    font-size:
+        8px;
 
 }
 
 
 .update-boolean-field-option-label {
 
-    min-width: 0;
+    min-width:
+        0;
 
-    flex: 1;
+    flex:
+        1;
 
-    font-size: 9px;
+    font-size:
+        9px;
 
-    font-weight: 700;
+    font-weight:
+        700;
 
 }
 
 
 .update-boolean-field-option-check {
 
-    display: none;
+    display:
+        none;
 
     color:
         #47724a;
 
-    font-size: 8px;
+    font-size:
+        8px;
 
 }
 
@@ -1406,27 +1841,52 @@ function booleanLabel(field) {
 .update-boolean-field-option.selected
 .update-boolean-field-option-check {
 
-    display: block;
+    display:
+        block;
 
 }
 
 
 .update-boolean-no-fields {
 
-    padding: 12px;
+    padding:
+        12px;
 
     color:
         #858d86;
 
-    font-size: 9px;
+    font-size:
+        9px;
 
-    text-align: center;
+    text-align:
+        center;
 
 }
 
 
 /* ==========================================================
-   EMPTY
+   EMPTY BOOLEAN CONTROLS
+========================================================== */
+
+.update-boolean-empty {
+
+    padding:
+        5px;
+
+    color:
+        #89918a;
+
+    font-size:
+        7px;
+
+    text-align:
+        center;
+
+}
+
+
+/* ==========================================================
+   EMPTY ANIMAL CARD
 ========================================================== */
 
 .update-boolean-empty-card {
@@ -1435,48 +1895,65 @@ function booleanLabel(field) {
         0 0
         124px;
 
-    width: 124px;
+    width:
+        124px;
 
-    height: 197px;
+    height:
+        197px;
 
-    display: flex;
+    display:
+        flex;
 
-    flex-direction: column;
+    flex-direction:
+        column;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    padding: 12px;
+    padding:
+        12px;
 
-    box-sizing: border-box;
+    box-sizing:
+        border-box;
 
     border:
         1px dashed
         #cbd5c6;
 
-    border-radius: 18px;
+    border-radius:
+        18px;
 
-    text-align: center;
+    text-align:
+        center;
 
 }
 
 
 .update-boolean-empty-card-icon {
 
-    width: 40px;
+    width:
+        40px;
 
-    height: 40px;
+    height:
+        40px;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    margin-bottom: 9px;
+    margin-bottom:
+        9px;
 
-    border-radius: 12px;
+    border-radius:
+        12px;
 
     background:
         #eef3e7;
@@ -1492,21 +1969,25 @@ function booleanLabel(field) {
     color:
         #536057;
 
-    font-size: 10px;
+    font-size:
+        10px;
 
 }
 
 
 .update-boolean-empty-card span {
 
-    margin-top: 5px;
+    margin-top:
+        5px;
 
     color:
         #89918a;
 
-    font-size: 8px;
+    font-size:
+        8px;
 
-    line-height: 12px;
+    line-height:
+        12px;
 
 }
 
@@ -1519,27 +2000,33 @@ function booleanLabel(field) {
 
     .update-boolean-card {
 
-        flex-basis: 116px;
+        flex-basis:
+            116px;
 
-        width: 116px;
+        width:
+            116px;
 
-        height: 187px;
+        height:
+            187px;
 
-        border-radius: 16px;
+        border-radius:
+            16px;
 
     }
 
 
     .update-boolean-image-wrap {
 
-        height: 106px;
+        height:
+            106px;
 
     }
 
 
     .update-boolean-content {
 
-        height: 78px;
+        height:
+            78px;
 
         padding:
             7px
@@ -1552,25 +2039,30 @@ function booleanLabel(field) {
 
     .update-boolean-name {
 
-        font-size: 11px;
+        font-size:
+            11px;
 
     }
 
 
     .update-boolean-dropdown {
 
-        width: 170px;
+        width:
+            170px;
 
     }
 
 
     .update-boolean-empty-card {
 
-        flex-basis: 116px;
+        flex-basis:
+            116px;
 
-        width: 116px;
+        width:
+            116px;
 
-        height: 187px;
+        height:
+            187px;
 
     }
 
@@ -1585,25 +2077,30 @@ function booleanLabel(field) {
 
     .update-boolean-card {
 
-        flex-basis: 110px;
+        flex-basis:
+            110px;
 
-        width: 110px;
+        width:
+            110px;
 
-        height: 181px;
+        height:
+            181px;
 
     }
 
 
     .update-boolean-image-wrap {
 
-        height: 102px;
+        height:
+            102px;
 
     }
 
 
     .update-boolean-name {
 
-        font-size: 10.5px;
+        font-size:
+            10.5px;
 
     }
 
@@ -1689,7 +2186,10 @@ function booleanLabel(field) {
        DROPDOWN
     ======================================================= */
 
-    if (selector && dropdown) {
+    if (
+        selector &&
+        dropdown
+    ) {
 
         selector.addEventListener(
             "click",
@@ -1790,7 +2290,7 @@ function booleanLabel(field) {
        ------------------------------------------------------
        Route:
 
-           PUT /dairy/:animalId/boolean/:field
+           POST /dairy/:animalId/boolean/:field
     ======================================================= */
 
     document
