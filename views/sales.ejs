@@ -338,7 +338,7 @@
             name="price"
             min="0"
             step="0.1"
-            value="<%= currentPrice ?? 50 %>"
+            value="<%= currentPrice %>"
             <%= user?.role === "admin" ? "" : "readonly" %>
           >
 
@@ -378,8 +378,9 @@
   </div>
 
 
+
   <!-- =======================================================
-       2. STANDING ORDERS TABLE
+       2. STANDING ORDERS
   ======================================================= -->
 
   <div class="sales-card">
@@ -397,7 +398,7 @@
     </div>
 
 
-    <% if (standingOrders && standingOrders.length) { %>
+    <% if (standingOrders.length) { %>
 
       <div class="sales-table-wrapper">
 
@@ -456,7 +457,7 @@
                 <td>
 
                   <%= Number(
-                    order.liters || 0
+                    order.liters
                   ).toFixed(2) %> L
 
                 </td>
@@ -498,10 +499,6 @@
 
                 </td>
 
-
-                <!-- =================================================
-                     STANDING ORDER DAILY SALE
-                ================================================== -->
 
                 <td>
 
@@ -588,10 +585,6 @@
                 </td>
 
 
-                <!-- =================================================
-                     ADMIN OMIT
-                ================================================== -->
-
                 <% if (user?.role === "admin") { %>
 
                   <td>
@@ -652,8 +645,9 @@
   </div>
 
 
+
   <!-- =======================================================
-       3. STANDING ORDER FORM
+       3. ADD STANDING ORDER
   ======================================================= -->
 
   <div class="sales-card">
@@ -733,8 +727,9 @@
   </div>
 
 
+
   <!-- =======================================================
-       4. MANUAL ORDER FORM
+       4. MANUAL ORDER
   ======================================================= -->
 
   <div class="sales-card">
@@ -813,8 +808,9 @@
   </div>
 
 
+
   <!-- =======================================================
-       5. TODAY'S MANUAL SALES TABLE
+       5. TODAY'S MANUAL SALES
   ======================================================= -->
 
   <div class="sales-card">
@@ -832,7 +828,7 @@
     </div>
 
 
-    <% if (manualSales && manualSales.length) { %>
+    <% if (manualSales.length) { %>
 
       <div class="sales-table-wrapper">
 
@@ -921,6 +917,7 @@
   </div>
 
 
+
   <!-- =======================================================
        6. AVAILABLE MILK
   ======================================================= -->
@@ -934,7 +931,7 @@
     <strong>
 
       <%= Number(
-        availableMilk || 0
+        availableMilk
       ).toFixed(2) %> L
 
     </strong>
@@ -942,49 +939,45 @@
   </div>
 
 
+
   <!-- =======================================================
        7. TOTAL SALES
   ======================================================= -->
 
-  <% if (
-    typeof totalSales !== "undefined"
-  ) { %>
+  <div class="sales-card total-box">
 
-    <div class="sales-card total-box">
+    <span>
 
-      <span>
+      <i class="fas fa-bottle-water"></i>
 
-        <i class="fas fa-bottle-water"></i>
+      Total Sold Today
 
-        Total Sold Today
-
-      </span>
+    </span>
 
 
-      <span class="total-number">
+    <span class="total-number">
 
-        <%= Number(
-          totalSales || 0
-        ).toFixed(2) %> L
+      <%= Number(
+        totalSales
+      ).toFixed(2) %> L
 
-      </span>
+    </span>
 
-    </div>
-
-  <% } %>
+  </div>
 
 
 </div>
 
 
-<!-- =========================================================
-     JAVASCRIPT
-========================================================= -->
 
 <script>
 
+  /* =========================================================
+     SERVICE-PROVIDED SALES STATE
+  ========================================================= */
+
   const availableMilk =
-    Number("<%= availableMilk || 0 %>");
+    Number("<%= availableMilk %>");
 
 
   /* =========================================================
@@ -1072,10 +1065,9 @@
     );
 
 
+
   /* =========================================================
      STANDING ORDER SALE
-     CONTROLLER ROUTE:
-     POST /sales/standing-order
   ========================================================= */
 
   document
