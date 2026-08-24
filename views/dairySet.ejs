@@ -186,39 +186,6 @@ const hasNegativeDwellNumber =
             }
         ) %>
 
-
-
-        <!-- =============================================
-             CONTENT UPDATE
-
-             ONLY INCLUDED FOR NEGATIVE DWELL NUMBERS
-        ============================================== -->
-
-        <%- include(
-            "update/content-update",
-            {
-                dairy:
-                    dairy,
-
-                storage:
-                    safeStorage,
-
-                item:
-                    safeContentItem,
-
-                user:
-                    user,
-
-                latestStockUpdate:
-                    safeLatestStockUpdate
-            }
-        ) %>
-
-
-    <% } %>
-
-
-
     <!-- =================================================
          PROFILE
     ================================================== -->
