@@ -203,4 +203,30 @@ async function clearDatabase() {
 // RUN
 // ==========================================================
 
-clearDatabase();
+// ==========================================================
+// EXPORT
+// ==========================================================
+
+module.exports = clearDatabase;
+
+
+// ==========================================================
+// DIRECT EXECUTION
+// ==========================================================
+//
+// Allows:
+//
+//     node utils/store.js
+//
+// while also allowing server.js to:
+//
+//     require("./utils/store")
+//
+// without automatically executing the cleanup.
+//
+
+if (require.main === module) {
+
+    clearDatabase();
+
+}
