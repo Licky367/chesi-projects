@@ -6,33 +6,39 @@
 // ----------------------------------------------------------
 // Stores one complete daily milk summary.
 //
-// A summary contains:
+// THE SUMMARY STORES:
 //
 // • Total milk produced
-// • Total farm milk production
-// • Total milk consumed/sold
-// • Available milk
+// • Total farm production
+// • Total milk consumed / sold
+// • Total milk available
 // • Total cash collected
-// • Milk price for the day
+// • Daily milk price
 // • Individual cow production
 // • Individual farm production
-// • Daily sales
+// • Individual sales
+// • Farm-level sale allocations
 // • Daily lock/finalization state
 //
 // IMPORTANT
 // ----------------------------------------------------------
-// `day` is always:
+// day   = YYYY-MM-DD
+// month = YYYY-MM
 //
-//     YYYY-MM-DD
+// FARM AVAILABILITY
+// ----------------------------------------------------------
+// A farm's available milk is:
 //
-// and `month` is always:
+//     farm production
+//     - milk allocated/sold from that farm
 //
-//     YYYY-MM
+// Overall availability is:
 //
-// `month` is derived from `day`.
+//     produced
+//     - consumed
 //
-// `farmTotal` represents the total liters represented by
-// `farmProduction` for the summary day.
+// `farmAllocations` is therefore an essential part of every
+// sale record.
 //
 // ==========================================================
 
@@ -53,7 +59,7 @@ const MONTH_PATTERN =
 
 
 // ==========================================================
-// DATE KEY HELPERS
+// DATE HELPERS
 // ==========================================================
 
 function getMonthFromDay(day) {
@@ -112,10 +118,12 @@ function getMonthFromDay(day) {
 
 
 // ==========================================================
-// FINITE NUMBER VALIDATOR
+// NUMBER VALIDATOR
 // ==========================================================
 
-function isFiniteNumber(value) {
+function isFiniteNumber(
+    value
+) {
 
     return Number.isFinite(
         value
@@ -134,7 +142,7 @@ const cowProductionSchema =
         {
 
             // ==================================================
-            // COW / ANIMAL
+            // ANIMAL
             // ==================================================
 
             dairy: {
@@ -303,7 +311,7 @@ const farmProductionSchema =
 
 
             // ==================================================
-            // FARM MILK PRODUCTION
+            // MILK PRODUCED BY FARM
             // ==================================================
 
             liters: {
@@ -343,19 +351,26 @@ const farmProductionSchema =
 
     );
 
+
 // ==========================================================
 // SALE FARM ALLOCATION
 // ==========================================================
 //
-// Records exactly how much milk was deducted from each farm
-// for one sale.
+// Every sale explicitly records which farm supplied the milk.
 //
 // Example:
 //
-//     Customer wants 20L
+//     Customer = 20L
 //
-//     Farm A -> 10L
-//     Farm B -> 10L
+//     Farm A = 12L
+//     Farm B = 8L
+//
+// This is what allows the system to calculate:
+//
+//     Farm A available
+//     Farm B available
+//
+// independently.
 //
 // ==========================================================
 
@@ -449,6 +464,18 @@ const farmAllocationSchema =
 // ==========================================================
 // DAILY SALE
 // ==========================================================
+//
+// A sale contains:
+//
+// • Customer
+// • Total liters sold
+// • Price
+// • Cash
+// • Farm allocations
+// • Optional standing order
+// • Creation time
+//
+// ==========================================================
 
 const saleSchema =
     new mongoose.Schema(
@@ -477,7 +504,7 @@ const saleSchema =
 
 
             // ==================================================
-            // LITERS SOLD
+            // TOTAL LITERS SOLD
             // ==================================================
 
             liters: {
@@ -562,6 +589,31 @@ const saleSchema =
                         "Sale cash must be a valid number."
 
                 }
+
+            },
+
+
+            // ==================================================
+            // FARM ALLOCATIONS
+            // ==========================================================
+            //
+            // THIS FIELD IS ESSENTIAL.
+            //
+            // It records exactly how many liters came from
+            // each farm.
+            //
+            // The milk-sales service uses this information to
+            // calculate farm-level availability.
+            //
+            // ==========================================================
+
+            farmAllocations: {
+
+                type:
+                    [farmAllocationSchema],
+
+                default:
+                    []
 
             },
 
@@ -741,13 +793,16 @@ const milkSummarySchema =
 
 
             // ==================================================
-            // TOTAL PRODUCED
-            // ==================================================
+            // TOTAL MILK PRODUCED
+            // ==========================================================
             //
-            // Total milk produced by all cows across all farms
-            // during this day.
+            // Total production from all cows.
             //
-            // ==================================================
+            // Normally equals:
+            //
+            // cowProduction.reduce(...)
+            //
+            // ==========================================================
 
             produced: {
 
@@ -775,21 +830,11 @@ const milkSummarySchema =
 
             // ==================================================
             // TOTAL FARM PRODUCTION
-            // ==================================================
+            // ==========================================================
             //
-            // Total liters represented by all entries in
-            // `farmProduction`.
+            // Sum of farmProduction[].liters.
             //
-            // Normally:
-            //
-            //     farmTotal =
-            //         farmProduction.reduce(...)
-            //
-            // This is stored separately so farm-level totals
-            // can be accessed directly without rebuilding the
-            // embedded farmProduction array.
-            //
-            // ==================================================
+            // ==========================================================
 
             farmTotal: {
 
@@ -816,8 +861,12 @@ const milkSummarySchema =
 
 
             // ==================================================
-            // TOTAL CONSUMED / SOLD
-            // ==================================================
+            // TOTAL MILK SOLD / CONSUMED
+            // ==========================================================
+            //
+            // Sum of sales[].liters.
+            //
+            // ==========================================================
 
             consumed: {
 
@@ -844,8 +893,17 @@ const milkSummarySchema =
 
 
             // ==================================================
-            // AVAILABLE MILK
-            // ==================================================
+            // TOTAL MILK AVAILABLE
+            // ==========================================================
+            //
+            // Overall available milk:
+            //
+            //     produced - consumed
+            //
+            // This is the value used by the sales page as the
+            // overall available milk.
+            //
+            // ==========================================================
 
             available: {
 
@@ -873,7 +931,7 @@ const milkSummarySchema =
 
             // ==================================================
             // TOTAL CASH
-            // ==================================================
+            // ==========================================================
 
             cash: {
 
@@ -900,8 +958,8 @@ const milkSummarySchema =
 
 
             // ==================================================
-            // LOCK / FINALIZATION
-            // ==================================================
+            // DAILY LOCK
+            // ==========================================================
 
             locked: {
 
@@ -918,8 +976,8 @@ const milkSummarySchema =
 
 
             // ==================================================
-            // COW PRODUCTION
-            // ==================================================
+            // INDIVIDUAL COW PRODUCTION
+            // ==========================================================
 
             cowProduction: {
 
@@ -934,7 +992,7 @@ const milkSummarySchema =
 
             // ==================================================
             // FARM PRODUCTION
-            // ==================================================
+            // ==========================================================
 
             farmProduction: {
 
@@ -948,8 +1006,8 @@ const milkSummarySchema =
 
 
             // ==================================================
-            // SALES
-            // ==================================================
+            // DAILY SALES
+            // ==========================================================
 
             sales: {
 
@@ -977,7 +1035,7 @@ const milkSummarySchema =
 
 
 // ==========================================================
-// NORMALIZE MONTH
+// NORMALIZE MONTH FROM DAY
 // ==========================================================
 
 milkSummarySchema.pre(
@@ -1013,7 +1071,7 @@ milkSummarySchema.pre(
 
 
 // ==========================================================
-// UPDATE MONTH WHEN DAY CHANGES
+// NORMALIZE MONTH ON UPDATE
 // ==========================================================
 
 function normalizeSummaryUpdate(
@@ -1103,14 +1161,9 @@ milkSummarySchema.pre(
 
         try {
 
-            const update =
-                this.getUpdate();
-
-
             normalizeSummaryUpdate(
-                update
+                this.getUpdate()
             );
-
 
             next();
 
@@ -1136,14 +1189,9 @@ milkSummarySchema.pre(
 
         try {
 
-            const update =
-                this.getUpdate();
-
-
             normalizeSummaryUpdate(
-                update
+                this.getUpdate()
             );
-
 
             next();
 
@@ -1169,14 +1217,9 @@ milkSummarySchema.pre(
 
         try {
 
-            const update =
-                this.getUpdate();
-
-
             normalizeSummaryUpdate(
-                update
+                this.getUpdate()
             );
-
 
             next();
 
@@ -1193,7 +1236,16 @@ milkSummarySchema.pre(
 
 
 // ==========================================================
-// DAILY SALES TOTAL HELPER
+// CALCULATE SALES TOTALS
+// ==========================================================
+//
+// Returns:
+//
+//     {
+//         liters,
+//         cash
+//     }
+//
 // ==========================================================
 
 milkSummarySchema.methods.calculateSalesTotals =
@@ -1268,7 +1320,7 @@ function() {
 
 
 // ==========================================================
-// PRODUCTION TOTAL HELPER
+// CALCULATE COW PRODUCTION
 // ==========================================================
 
 milkSummarySchema.methods.calculateProductionTotal =
@@ -1291,7 +1343,7 @@ function() {
 
             const liters =
                 Number(
-                    entry.liters
+                    entry?.liters
                 );
 
 
@@ -1321,13 +1373,7 @@ function() {
 
 
 // ==========================================================
-// FARM TOTAL HELPER
-// ==========================================================
-//
-// Calculates total liters represented by farmProduction.
-//
-// This corresponds to the stored `farmTotal` field.
-//
+// CALCULATE FARM PRODUCTION
 // ==========================================================
 
 milkSummarySchema.methods.calculateFarmTotal =
@@ -1350,7 +1396,7 @@ function() {
 
             const liters =
                 Number(
-                    entry.liters
+                    entry?.liters
                 );
 
 
@@ -1380,7 +1426,301 @@ function() {
 
 
 // ==========================================================
-// AVAILABLE MILK HELPER
+// GET FARM PRODUCED LITERS
+// ==========================================================
+//
+// Returns the production belonging to one farm.
+//
+// ==========================================================
+
+milkSummarySchema.methods.getFarmProduced =
+function(
+    farmId
+) {
+
+    if (
+        !farmId ||
+        !Array.isArray(
+            this.farmProduction
+        )
+    ) {
+
+        return 0;
+
+    }
+
+
+    const targetId =
+        farmId.toString();
+
+
+    const entry =
+        this.farmProduction.find(
+            item =>
+                item?.farm &&
+                item.farm.toString() ===
+                    targetId
+        );
+
+
+    if (!entry) {
+
+        return 0;
+
+    }
+
+
+    const liters =
+        Number(
+            entry.liters
+        );
+
+
+    return Number.isFinite(
+        liters
+    )
+        ? liters
+        : 0;
+
+};
+
+
+// ==========================================================
+// GET FARM SOLD LITERS
+// ==========================================================
+//
+// Calculates how much milk has already been allocated from
+// one farm across ALL sales.
+//
+// ==========================================================
+
+milkSummarySchema.methods.getFarmSold =
+function(
+    farmId
+) {
+
+    if (
+        !farmId ||
+        !Array.isArray(
+            this.sales
+        )
+    ) {
+
+        return 0;
+
+    }
+
+
+    const targetId =
+        farmId.toString();
+
+
+    let total =
+        0;
+
+
+    for (
+        const sale
+        of this.sales
+    ) {
+
+        if (
+            !Array.isArray(
+                sale?.farmAllocations
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        for (
+            const allocation
+            of sale.farmAllocations
+        ) {
+
+            if (
+                !allocation?.farm
+            ) {
+
+                continue;
+
+            }
+
+
+            if (
+                allocation.farm.toString() !==
+                targetId
+            ) {
+
+                continue;
+
+            }
+
+
+            const liters =
+                Number(
+                    allocation.liters
+                );
+
+
+            if (
+                Number.isFinite(
+                    liters
+                ) &&
+                liters >= 0
+            ) {
+
+                total +=
+                    liters;
+
+            }
+
+        }
+
+    }
+
+
+    return total;
+
+};
+
+
+// ==========================================================
+// GET FARM AVAILABLE LITERS
+// ==========================================================
+//
+// Farm available:
+//
+//     farmProduction - all farm allocations
+//
+// Never returns a negative number.
+//
+// ==========================================================
+
+milkSummarySchema.methods.getFarmAvailable =
+function(
+    farmId
+) {
+
+    const produced =
+        this.getFarmProduced(
+            farmId
+        );
+
+
+    const sold =
+        this.getFarmSold(
+            farmId
+        );
+
+
+    return Math.max(
+
+        0,
+
+        produced -
+        sold
+
+    );
+
+};
+
+
+// ==========================================================
+// GET ALL FARM AVAILABILITY
+// ==========================================================
+//
+// Returns:
+//
+// [
+//     {
+//         farm,
+//         farmCode,
+//         produced,
+//         sold,
+//         available
+//     }
+// ]
+//
+// ==========================================================
+
+milkSummarySchema.methods.getFarmAvailability =
+function() {
+
+    const production =
+        Array.isArray(
+            this.farmProduction
+        )
+            ? this.farmProduction
+            : [];
+
+
+    return production.map(
+        entry => {
+
+            const farmId =
+                entry?.farm
+                    ? entry.farm
+                    : null;
+
+
+            const produced =
+                Number(
+                    entry?.liters
+                );
+
+
+            const safeProduced =
+                Number.isFinite(
+                    produced
+                )
+                    ? produced
+                    : 0;
+
+
+            const sold =
+                farmId
+                    ? this.getFarmSold(
+                        farmId
+                    )
+                    : 0;
+
+
+            return {
+
+                farm:
+                    farmId,
+
+                farmCode:
+                    entry?.farmCode ?? null,
+
+                produced:
+                    safeProduced,
+
+                sold,
+
+                available:
+                    Math.max(
+                        0,
+                        safeProduced - sold
+                    )
+
+            };
+
+        }
+    );
+
+};
+
+
+// ==========================================================
+// CALCULATE OVERALL AVAILABLE
+// ==========================================================
+//
+//     produced - consumed
+//
 // ==========================================================
 
 milkSummarySchema.methods.calculateAvailable =
@@ -1409,9 +1749,69 @@ function() {
 
 
     return Math.max(
+
         0,
-        produced - consumed
+
+        produced -
+        consumed
+
     );
+
+};
+
+
+// ==========================================================
+// RECALCULATE TOTALS
+// ==========================================================
+//
+// Keeps:
+//
+//     produced
+//     farmTotal
+//     consumed
+//     available
+//     cash
+//
+// synchronized with the embedded records.
+//
+// ==========================================================
+
+milkSummarySchema.methods.recalculateTotals =
+function() {
+
+    const productionTotal =
+        this.calculateProductionTotal();
+
+
+    const farmTotal =
+        this.calculateFarmTotal();
+
+
+    const salesTotals =
+        this.calculateSalesTotals();
+
+
+    this.produced =
+        productionTotal;
+
+
+    this.farmTotal =
+        farmTotal;
+
+
+    this.consumed =
+        salesTotals.liters;
+
+
+    this.cash =
+        salesTotals.cash;
+
+
+    this.available =
+        this.calculateAvailable();
+
+
+    return this;
 
 };
 
@@ -1462,6 +1862,68 @@ milkSummarySchema.index(
 
         name:
             "locked_day_lookup"
+
+    }
+
+);
+
+
+// ==========================================================
+// FARM PRODUCTION LOOKUP INDEX
+// ==========================================================
+//
+// Helps MongoDB when querying embedded farm production
+// references.
+//
+// ==========================================================
+
+milkSummarySchema.index(
+
+    {
+
+        "farmProduction.farm":
+            1,
+
+        day:
+            1
+
+    },
+
+    {
+
+        name:
+            "farm_production_day_lookup"
+
+    }
+
+);
+
+
+// ==========================================================
+// FARM ALLOCATION LOOKUP INDEX
+// ==========================================================
+//
+// Useful when querying summaries containing allocations
+// belonging to a particular farm.
+//
+// ==========================================================
+
+milkSummarySchema.index(
+
+    {
+
+        "sales.farmAllocations.farm":
+            1,
+
+        day:
+            1
+
+    },
+
+    {
+
+        name:
+            "farm_sales_allocation_day_lookup"
 
     }
 
