@@ -10,50 +10,15 @@
     content="width=device-width, initial-scale=1.0"
 >
 
-
-<!-- =========================================================
-   PAGE TITLE
-========================================================= -->
-
 <title>
     <%= typeof title !== "undefined" ? title : "Chesi Projects" %>
 </title>
-
-
-<!-- =========================================================
-   FAVICON
-   ---------------------------------------------------------
-   This is the small logo shown in the browser tab.
-========================================================= -->
 
 <link
     rel="icon"
     type="image/png"
     href="/images/cfp-logo.png"
 >
-
-
-<!-- =========================================================
-   OPEN GRAPH
-   ---------------------------------------------------------
-   These tags control the image, title and description shown
-   when a website URL is shared on platforms such as:
-
-       WhatsApp
-       Facebook
-       LinkedIn
-       Telegram
-       and other Open Graph readers.
-
-   IMPORTANT:
-   ---------------------------------------------------------
-   og:image MUST be an absolute PUBLIC URL.
-
-   Replace:
-       https://YOUR-DOMAIN.com
-
-   with your real production domain.
-========================================================= -->
 
 <meta
     property="og:title"
@@ -84,11 +49,6 @@
     property="og:site_name"
     content="Chesi Projects"
 >
-
-
-<!-- =========================================================
-   X / TWITTER LINK PREVIEW
-========================================================= -->
 
 <meta
     name="twitter:card"
@@ -1540,6 +1500,26 @@ const isPoultryWorker =
         </a>
 
 
+        <% if(user && user.role !== "admin"){ %>
+
+        <a href="/extra/<%= user._id %>">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                ✨
+            </span>
+
+            <span class="nav-label">
+                Extras
+            </span>
+
+        </a>
+
+        <% } %>
+
+
     </div>
 
 
@@ -1645,6 +1625,34 @@ const isPoultryWorker =
         ☰
 
     </button>
+
+
+    <!-- =====================================================
+       NON-ADMIN EXTRAS
+    ====================================================== -->
+
+    <% if(user && user.role !== "admin"){ %>
+
+    <div class="dairy-worker-nav">
+
+        <a href="/extra/<%= user._id %>">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                ✨
+            </span>
+
+            <span class="nav-label">
+                Extras
+            </span>
+
+        </a>
+
+    </div>
+
+    <% } %>
 
 
 <% } %>
