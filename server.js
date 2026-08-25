@@ -159,6 +159,29 @@ try {
 
 }
 
+// ----------------------------------------------------------
+// EXTRA ALLOCATIONS
+// ----------------------------------------------------------
+
+let extrasRoutes;
+
+try {
+
+    extrasRoutes =
+        require("./routes/extrasRoutes");
+
+} catch (err) {
+
+    console.warn(
+        "Warning: failed to load index routes:",
+        err.message
+    );
+
+}
+
+
+
+
 
 // ----------------------------------------------------------
 // UPDATE
@@ -1010,6 +1033,19 @@ if (profileRoutes) {
     app.use(
         "/",
         profileRoutes
+    );
+
+}
+
+// ----------------------------------------------------------
+// EXTRA ALLOCATIONS
+// ----------------------------------------------------------
+
+if (extrasRoutes) {
+
+    app.use(
+        "/",
+        extrasRoutes
     );
 
 }
