@@ -3,7 +3,10 @@
 // ==========================================================
 //
 // PURPOSE:
-//     Seed a single admin user into the "users" collection.
+//     Seed the default administrator user.
+//
+//     This utility is designed to be called by server.js
+//     AFTER MongoDB has successfully connected.
 //
 // USER:
 //     name     = Licky
@@ -11,22 +14,13 @@
 //     password = 123456
 //     role     = admin
 //
-// USAGE:
-//     node utils/seedUser.js
+// IMPORTANT:
+//     This file does NOT create its own MongoDB connection.
+//     server.js is responsible for connecting to MongoDB.
 //
 // ==========================================================
 
-require("dotenv").config();
-
 const mongoose = require("mongoose");
-
-
-// ==========================================================
-// CONFIGURATION
-// ==========================================================
-
-const MONGO_URI =
-    process.env.MONGO_URI;
 
 
 // ==========================================================
@@ -52,156 +46,151 @@ const USER_DATA = {
 
 async function seedUser() {
 
-    try {
+    // ------------------------------------------------------
+    // VERIFY MONGOOSE CONNECTION
+    // ------------------------------------------------------
 
-        if (!MONGO_URI) {
+    if (
+        mongoose.connection.readyState !== 1
+    ) {
 
-            throw new Error(
-                "MONGO_URI is not defined in .env"
-            );
-
-        }
-
-
-        console.log(
-            "Connecting to MongoDB..."
-        );
-
-
-        await mongoose.connect(
-            MONGO_URI
-        );
-
-
-        const db =
-            mongoose.connection.db;
-
-
-        console.log(
-            `Connected to database: ${db.databaseName}`
-        );
-
-
-        // --------------------------------------------------
-        // CHECK WHETHER USER ALREADY EXISTS
-        // --------------------------------------------------
-
-        const existingUser =
-            await db
-                .collection("users")
-                .findOne({
-
-                    email:
-                        USER_DATA.email
-
-                });
-
-
-        if (existingUser) {
-
-            console.log(
-                `⚠️ User already exists: ${USER_DATA.email}`
-            );
-
-            return;
-
-        }
-
-
-        // --------------------------------------------------
-        // CREATE ADMIN USER
-        // --------------------------------------------------
-
-        const now =
-            new Date();
-
-
-        const result =
-            await db
-                .collection("users")
-                .insertOne({
-
-                    name:
-                        USER_DATA.name,
-
-                    email:
-                        USER_DATA.email,
-
-                    password:
-                        USER_DATA.password,
-
-                    role:
-                        USER_DATA.role,
-
-                    createdAt:
-                        now,
-
-                    updatedAt:
-                        now
-
-                });
-
-
-        // --------------------------------------------------
-        // SUCCESS
-        // --------------------------------------------------
-
-        console.log(
-            "\n=========================================="
-        );
-
-        console.log(
-            "ADMIN USER SEEDED SUCCESSFULLY"
-        );
-
-        console.log(
-            "=========================================="
-        );
-
-        console.log(
-            `Name: ${USER_DATA.name}`
-        );
-
-        console.log(
-            `Email: ${USER_DATA.email}`
-        );
-
-        console.log(
-            `Role: ${USER_DATA.role}`
-        );
-
-        console.log(
-            `ID: ${result.insertedId}`
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "\n❌ Failed to seed user:"
-        );
-
-        console.error(
-            error
-        );
-
-        process.exitCode = 1;
-
-    } finally {
-
-        await mongoose.disconnect();
-
-        console.log(
-            "\nMongoDB connection closed."
+        throw new Error(
+            "Cannot seed user: MongoDB is not connected."
         );
 
     }
+
+
+    // ------------------------------------------------------
+    // GET DATABASE
+    // ------------------------------------------------------
+
+    const db =
+        mongoose.connection.db;
+
+
+    // ------------------------------------------------------
+    // CHECK WHETHER USER ALREADY EXISTS
+    // ------------------------------------------------------
+
+    const existingUser =
+        await db
+            .collection("users")
+            .findOne({
+
+                email:
+                    USER_DATA.email
+
+            });
+
+
+    // ------------------------------------------------------
+    // USER ALREADY EXISTS
+    // ------------------------------------------------------
+
+    if (existingUser) {
+
+        console.log(
+            `🛡️ Default user already exists: ${USER_DATA.email}`
+        );
+
+        return {
+
+            created: false,
+
+            existing: true,
+
+            user: existingUser
+
+        };
+
+    }
+
+
+    // ------------------------------------------------------
+    // CREATE USER
+    // ------------------------------------------------------
+
+    const now =
+        new Date();
+
+
+    const result =
+        await db
+            .collection("users")
+            .insertOne({
+
+                name:
+                    USER_DATA.name,
+
+                email:
+                    USER_DATA.email,
+
+                password:
+                    USER_DATA.password,
+
+                role:
+                    USER_DATA.role,
+
+                createdAt:
+                    now,
+
+                updatedAt:
+                    now
+
+            });
+
+
+    // ------------------------------------------------------
+    // SUCCESS
+    // ------------------------------------------------------
+
+    console.log(
+        "\n=========================================="
+    );
+
+    console.log(
+        "DEFAULT ADMIN USER CREATED"
+    );
+
+    console.log(
+        "=========================================="
+    );
+
+    console.log(
+        `Name: ${USER_DATA.name}`
+    );
+
+    console.log(
+        `Email: ${USER_DATA.email}`
+    );
+
+    console.log(
+        `Role: ${USER_DATA.role}`
+    );
+
+    console.log(
+        `ID: ${result.insertedId}`
+    );
+
+
+    return {
+
+        created: true,
+
+        existing: false,
+
+        insertedId:
+            result.insertedId
+
+    };
 
 }
 
 
 // ==========================================================
-// RUN
+// EXPORT
 // ==========================================================
 
-seedUser();
+module.exports =
+    seedUser;
