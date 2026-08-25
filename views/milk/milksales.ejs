@@ -1,236 +1,637 @@
 <!-- =========================================================
      MILK SALES
-     FILE: views/milk/milksales.ejs
+     FILE:
+         views/milk/milksales.ejs
 
      STANDALONE PAGE
      ---------------------------------------------------------
-     - No external CSS required
-     - All CSS is contained in this file
-     - Original server-side functionality preserved
-     - Original milk allocation functionality preserved
-     - Modern green + warm orange UI
+     - No external CSS
+     - All CSS contained in this file
+     - Uses backend summary data
+     - Uses backend farm availability where supplied
+     - Client-side validation prevents over-allocation
+     - Server-side validation remains authoritative
 ========================================================= -->
 
+
 <%
-    // ========================================================
-    // SAFE USER
-    // ========================================================
+/* =========================================================
+   SAFE PAGE DATA
+========================================================= */
 
-    const pageUser =
-        typeof user !== "undefined" && user
-            ? user
-            : null;
+const pageUser =
+    typeof user !== "undefined" && user
+        ? user
+        : null;
 
-    const pageIsAdmin =
-        Boolean(
-            pageUser &&
-            pageUser.role === "admin"
+
+const pageIsAdmin =
+    Boolean(
+        pageUser &&
+        pageUser.role === "admin"
+    );
+
+
+const pageSuccess =
+    typeof success !== "undefined" && success
+        ? success
+        : "";
+
+
+const pageError =
+    typeof error !== "undefined" && error
+        ? error
+        : "";
+
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+const pageSummary =
+    typeof summary !== "undefined" && summary
+        ? summary
+        : {};
+
+
+const pageDay =
+    pageSummary.day ||
+    (
+        typeof day !== "undefined" && day
+            ? day
+            : new Date()
+                .toISOString()
+                .slice(0, 10)
+    );
+
+
+const pagePrice =
+    Number.isFinite(
+        Number(
+            typeof price !== "undefined"
+                ? price
+                : pageSummary.price
+        )
+    )
+        ? Number(
+            typeof price !== "undefined"
+                ? price
+                : pageSummary.price
+        )
+        : 50;
+
+
+/* =========================================================
+   BACKEND TOTALS
+========================================================= */
+
+const backendProduced =
+    Number.isFinite(
+        Number(
+            typeof produced !== "undefined"
+                ? produced
+                : pageSummary.produced
+        )
+    )
+        ? Number(
+            typeof produced !== "undefined"
+                ? produced
+                : pageSummary.produced
+        )
+        : 0;
+
+
+const backendConsumed =
+    Number.isFinite(
+        Number(
+            typeof consumed !== "undefined"
+                ? consumed
+                : pageSummary.consumed
+        )
+    )
+        ? Number(
+            typeof consumed !== "undefined"
+                ? consumed
+                : pageSummary.consumed
+        )
+        : 0;
+
+
+const backendCash =
+    Number.isFinite(
+        Number(
+            typeof cash !== "undefined"
+                ? cash
+                : pageSummary.cash
+        )
+    )
+        ? Number(
+            typeof cash !== "undefined"
+                ? cash
+                : pageSummary.cash
+        )
+        : 0;
+
+
+/*
+ * IMPORTANT:
+ *
+ * `available` should come from the controller once we align it.
+ *
+ * Fallback:
+ *
+ * produced - consumed
+ *
+ * This fallback is only for compatibility.
+ */
+
+const backendAvailable =
+    Number.isFinite(
+        Number(
+            typeof available !== "undefined"
+                ? available
+                : pageSummary.available
+        )
+    )
+        ? Math.max(
+            0,
+            Number(
+                typeof available !== "undefined"
+                    ? available
+                    : pageSummary.available
+            )
+        )
+        : Math.max(
+            0,
+            backendProduced -
+            backendConsumed
         );
 
 
-    // ========================================================
-    // MESSAGES
-    // ========================================================
+/* =========================================================
+   FARMS
+========================================================= */
 
-    const pageSuccess =
-        typeof success !== "undefined" && success
-            ? success
-            : "";
-
-    const pageError =
-        typeof error !== "undefined" && error
-            ? error
-            : "";
+const pageFarms =
+    Array.isArray(farms)
+        ? farms
+        : [];
 
 
-    // ========================================================
-    // SUMMARY
-    // ========================================================
+/* =========================================================
+   FARM PRODUCTION
+========================================================= */
 
-    const pageSummary =
-        typeof summary !== "undefined" && summary
-            ? summary
-            : null;
-
-    const pageDay =
-        pageSummary?.day ||
-        new Date()
-            .toISOString()
-            .slice(0, 10);
-
-    const pagePrice =
-        Number.isFinite(
-            Number(pageSummary?.price)
-        )
-            ? Number(pageSummary.price)
-            : 50;
+const farmProduction =
+    Array.isArray(
+        pageSummary.farmProduction
+    )
+        ? pageSummary.farmProduction
+        : [];
 
 
-    // ========================================================
-    // FARMS
-    // ========================================================
+/* =========================================================
+   SALES
+========================================================= */
 
-    const pageFarms =
-        Array.isArray(farms)
-            ? farms
-            : [];
-
-    const farmProduction =
-        Array.isArray(
-            pageSummary?.farmProduction
-        )
-            ? pageSummary.farmProduction
-            : [];
-
-    const sales =
-        Array.isArray(
-            pageSummary?.sales
-        )
-            ? pageSummary.sales
-            : [];
+const sales =
+    Array.isArray(
+        pageSummary.sales
+    )
+        ? pageSummary.sales
+        : [];
 
 
-    // ========================================================
-    // FARM SALES MAP
-    // ========================================================
+/* =========================================================
+   FARM SALES MAP
+========================================================= */
 
-    const farmSalesMap =
-        new Map();
+const farmSalesMap =
+    new Map();
 
-    sales.forEach(
-        sale => {
 
-            if (
-                !sale ||
-                !Array.isArray(
-                    sale.farmAllocations
-                )
-            ) {
-                return;
-            }
+sales.forEach(
+    sale => {
 
-            sale.farmAllocations.forEach(
-                allocation => {
+        if (
+            !sale ||
+            !Array.isArray(
+                sale.farmAllocations
+            )
+        ) {
+            return;
+        }
 
-                    if (
-                        !allocation ||
-                        !allocation.farm
-                    ) {
-                        return;
-                    }
 
-                    const farmId =
-                        allocation.farm.toString();
+        sale.farmAllocations.forEach(
+            allocation => {
 
-                    const liters =
-                        Number(
-                            allocation.liters
-                        );
+                if (
+                    !allocation ||
+                    !allocation.farm
+                ) {
+                    return;
+                }
 
-                    if (
-                        !Number.isFinite(liters) ||
-                        liters < 0
-                    ) {
-                        return;
-                    }
 
-                    farmSalesMap.set(
-                        farmId,
-                        (
-                            farmSalesMap.get(farmId) ||
-                            0
-                        ) + liters
+                const farmId =
+                    allocation.farm.toString();
+
+
+                const liters =
+                    Number(
+                        allocation.liters
                     );
+
+
+                if (
+                    !Number.isFinite(liters) ||
+                    liters < 0
+                ) {
+                    return;
+                }
+
+
+                farmSalesMap.set(
+                    farmId,
+                    (
+                        farmSalesMap.get(
+                            farmId
+                        ) || 0
+                    ) + liters
+                );
+
+            }
+        );
+
+    }
+);
+
+
+/* =========================================================
+   BACKEND FARM AVAILABILITY
+=========================================================
+
+   The controller may provide:
+
+       farmAvailability
+
+   Supported forms:
+
+       Map
+       Array
+       Object
+
+   Each item may contain:
+
+       farm
+       farmId
+       _id
+       produced
+       sold
+       available
+========================================================= */
+
+const rawFarmAvailability =
+    typeof farmAvailability !== "undefined"
+        ? farmAvailability
+        : null;
+
+
+function getBackendFarmAvailability(
+    farmId
+) {
+
+    if (!rawFarmAvailability) {
+        return null;
+    }
+
+
+    const id =
+        farmId.toString();
+
+
+    /* -----------------------------------------------------
+       ARRAY
+    ----------------------------------------------------- */
+
+    if (
+        Array.isArray(
+            rawFarmAvailability
+        )
+    ) {
+
+        const item =
+            rawFarmAvailability.find(
+                entry => {
+
+                    if (!entry) {
+                        return false;
+                    }
+
+
+                    const entryId =
+                        entry.farm ||
+                        entry.farmId ||
+                        entry._id;
+
+
+                    return (
+                        entryId &&
+                        entryId.toString() === id
+                    );
+
                 }
             );
+
+
+        if (item) {
+
+            const value =
+                Number(
+                    item.available
+                );
+
+
+            if (
+                Number.isFinite(value)
+            ) {
+
+                return Math.max(
+                    0,
+                    value
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /* -----------------------------------------------------
+       OBJECT
+    ----------------------------------------------------- */
+
+    if (
+        typeof rawFarmAvailability ===
+        "object" &&
+        !Array.isArray(
+            rawFarmAvailability
+        )
+    ) {
+
+        const value =
+            rawFarmAvailability[id];
+
+
+        if (
+            value !== undefined
+        ) {
+
+            if (
+                typeof value === "object"
+            ) {
+
+                const available =
+                    Number(
+                        value.available
+                    );
+
+
+                if (
+                    Number.isFinite(
+                        available
+                    )
+                ) {
+
+                    return Math.max(
+                        0,
+                        available
+                    );
+
+                }
+
+            }
+
+
+            const numeric =
+                Number(
+                    value
+                );
+
+
+            if (
+                Number.isFinite(
+                    numeric
+                )
+            ) {
+
+                return Math.max(
+                    0,
+                    numeric
+                );
+
+            }
+
+        }
+
+    }
+
+
+    return null;
+
+}
+
+
+/* =========================================================
+   VISIBLE FARM DATA
+========================================================= */
+
+const visibleFarmData =
+    pageFarms.map(
+        farm => {
+
+            const farmId =
+                farm?._id
+                    ? farm._id.toString()
+                    : "";
+
+
+            const productionEntry =
+                farmProduction.find(
+                    entry =>
+                        entry?.farm &&
+                        entry.farm.toString() ===
+                            farmId
+                );
+
+
+            const produced =
+                Number.isFinite(
+                    Number(
+                        productionEntry?.liters
+                    )
+                )
+                    ? Number(
+                        productionEntry.liters
+                    )
+                    : 0;
+
+
+            const sold =
+                Number(
+                    farmSalesMap.get(
+                        farmId
+                    )
+                ) || 0;
+
+
+            /*
+             * Prefer backend farm availability.
+             *
+             * Only fall back to local calculation
+             * when the controller has not supplied it.
+             */
+
+            const backendFarmAvailable =
+                getBackendFarmAvailability(
+                    farmId
+                );
+
+
+            const calculatedAvailable =
+                Math.max(
+                    0,
+                    produced -
+                    sold
+                );
+
+
+            const available =
+                backendFarmAvailable !== null
+                    ? backendFarmAvailable
+                    : calculatedAvailable;
+
+
+            return {
+
+                _id:
+                    farm._id,
+
+                name:
+                    farm.name ||
+                    "Unnamed Farm",
+
+                code:
+                    farm.code,
+
+                produced,
+
+                sold,
+
+                available:
+                    Math.max(
+                        0,
+                        Number(
+                            available
+                        ) || 0
+                    )
+
+            };
+
         }
     );
 
 
-    // ========================================================
-    // VISIBLE FARM DATA
-    // ========================================================
+/* =========================================================
+   TOTALS
+========================================================= */
 
-    const visibleFarmData =
-        pageFarms.map(
-            farm => {
-
-                const farmId =
-                    farm?._id
-                        ? farm._id.toString()
-                        : "";
-
-                const productionEntry =
-                    farmProduction.find(
-                        entry =>
-                            entry?.farm &&
-                            entry.farm.toString() ===
-                                farmId
-                    );
-
-                const produced =
-                    Number.isFinite(
-                        Number(
-                            productionEntry?.liters
-                        )
-                    )
-                        ? Number(
-                            productionEntry.liters
-                        )
-                        : 0;
-
-                const sold =
-                    Number(
-                        farmSalesMap.get(
-                            farmId
-                        )
-                    ) || 0;
-
-                const available =
-                    Math.max(
-                        0,
-                        produced - sold
-                    );
-
-                return {
-                    _id: farm._id,
-                    name:
-                        farm.name ||
-                        "Unnamed Farm",
-                    produced,
-                    sold,
-                    available
-                };
-            }
-        );
+const visibleFarmProduction =
+    visibleFarmData.reduce(
+        (
+            total,
+            farm
+        ) =>
+            total +
+            farm.produced,
+        0
+    );
 
 
-    // ========================================================
-    // TOTALS
-    // ========================================================
+const visibleFarmSold =
+    visibleFarmData.reduce(
+        (
+            total,
+            farm
+        ) =>
+            total +
+            farm.sold,
+        0
+    );
 
-    const totalProduction =
-        visibleFarmData.reduce(
-            (total, farm) =>
-                total + farm.produced,
-            0
-        );
 
-    const totalAvailable =
-        visibleFarmData.reduce(
-            (total, farm) =>
-                total + farm.available,
-            0
-        );
+const visibleFarmAvailable =
+    visibleFarmData.reduce(
+        (
+            total,
+            farm
+        ) =>
+            total +
+            farm.available,
+        0
+    );
+
+
+/*
+ * IMPORTANT:
+ *
+ * Overall available must come from the backend.
+ *
+ * The farm total is useful for displaying the
+ * breakdown, but `pageAvailable` is the authoritative
+ * page-level limit.
+ */
+
+const pageAvailable =
+    Math.max(
+        0,
+        Number(
+            backendAvailable
+        ) || 0
+    );
+
+
+/* =========================================================
+   SALES TOTALS
+========================================================= */
+
+const salesCount =
+    sales.length;
+
+
+const pageAvailablePercentage =
+    backendProduced > 0
+        ? Math.min(
+            100,
+            Math.max(
+                0,
+                (
+                    pageAvailable /
+                    backendProduced
+                ) * 100
+            )
+        )
+        : 0;
+
 %>
 
 
 <style>
 
 /* =========================================================
-   MILK SALES
-   STANDALONE CSS
-   GREEN + WARM ORANGE
+   PAGE
 ========================================================= */
 
 .milk-sales-page,
@@ -238,7 +639,9 @@
     box-sizing: border-box;
 }
 
+
 .milk-sales-page {
+
     --green-950: #123c29;
     --green-900: #174b32;
     --green-800: #21633f;
@@ -254,17 +657,28 @@
     --orange-100: #fff0e3;
     --orange-50: #fff8f2;
 
+    --red-700: #b33d3d;
+    --red-100: #fff0f0;
+
     --ink: #213129;
     --muted: #748078;
     --border: #e2e9e4;
-    --white: #ffffff;
-    --page: #f6f8f6;
+    --white: #fff;
 
-    width: min(1120px, calc(100% - 28px));
-    margin: 0 auto;
-    padding: 26px 0 60px;
+    width:
+        min(
+            1120px,
+            calc(100% - 28px)
+        );
 
-    color: var(--ink);
+    margin:
+        0 auto;
+
+    padding:
+        26px 0 60px;
+
+    color:
+        var(--ink);
 
     font-family:
         Inter,
@@ -278,13 +692,15 @@
 
 
 /* =========================================================
-   HEADER
+   HERO
 ========================================================= */
 
 .milk-sales-page .sales-hero {
+
     position: relative;
 
     display: flex;
+
     align-items: center;
     justify-content: space-between;
 
@@ -293,6 +709,7 @@
     min-height: 155px;
 
     margin-bottom: 18px;
+
     padding: 30px;
 
     overflow: hidden;
@@ -307,10 +724,13 @@
         );
 
     box-shadow:
-        0 18px 45px rgba(18, 60, 41, .18);
+        0 18px 45px
+        rgba(18,60,41,.18);
 }
 
+
 .milk-sales-page .sales-hero::before {
+
     content: "";
 
     position: absolute;
@@ -324,10 +744,17 @@
     border-radius: 50%;
 
     background:
-        rgba(237, 145, 72, .20);
+        rgba(
+            237,
+            145,
+            72,
+            .20
+        );
 }
 
+
 .milk-sales-page .sales-hero::after {
+
     content: "";
 
     position: absolute;
@@ -341,56 +768,98 @@
     border-radius: 50%;
 
     background:
-        rgba(255,255,255,.045);
+        rgba(
+            255,
+            255,
+            255,
+            .045
+        );
 }
+
 
 .milk-sales-page .hero-content,
 .milk-sales-page .hero-date {
+
     position: relative;
+
     z-index: 2;
 }
 
+
 .milk-sales-page .hero-kicker {
+
     margin-bottom: 7px;
 
     color:
-        rgba(255,255,255,.55);
+        rgba(
+            255,
+            255,
+            255,
+            .55
+        );
 
     font-size: 10px;
+
     font-weight: 800;
 
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
+    letter-spacing:
+        1.5px;
+
+    text-transform:
+        uppercase;
 }
 
+
 .milk-sales-page .sales-hero h1 {
+
     margin: 0;
 
     color: #fff;
 
-    font-size: clamp(28px, 5vw, 40px);
+    font-size:
+        clamp(
+            28px,
+            5vw,
+            40px
+        );
+
     line-height: 1;
 
     font-weight: 850;
 
-    letter-spacing: -1.3px;
+    letter-spacing:
+        -1.3px;
 }
 
-.milk-sales-page .hero-description {
-    margin: 9px 0 0;
 
-    max-width: 580px;
+.milk-sales-page .hero-description {
+
+    margin:
+        9px 0 0;
+
+    max-width:
+        580px;
 
     color:
-        rgba(255,255,255,.70);
+        rgba(
+            255,
+            255,
+            255,
+            .70
+        );
 
     font-size: 13px;
+
     line-height: 1.5;
 }
 
+
 .milk-sales-page .hero-date {
+
     display: flex;
+
     flex-direction: column;
+
     align-items: flex-end;
 
     gap: 6px;
@@ -398,30 +867,53 @@
     min-width: 145px;
 }
 
+
 .milk-sales-page .hero-date span {
+
     color:
-        rgba(255,255,255,.52);
+        rgba(
+            255,
+            255,
+            255,
+            .52
+        );
 
     font-size: 9px;
+
     font-weight: 800;
 
     letter-spacing: 1px;
-    text-transform: uppercase;
+
+    text-transform:
+        uppercase;
 }
 
+
 .milk-sales-page .hero-date strong {
-    padding: 10px 13px;
+
+    padding:
+        10px 13px;
 
     border:
         1px solid
-        rgba(255,255,255,.14);
+        rgba(
+            255,
+            255,
+            255,
+            .14
+        );
 
     border-radius: 11px;
 
     color: #fff;
 
     background:
-        rgba(255,255,255,.08);
+        rgba(
+            255,
+            255,
+            255,
+            .08
+        );
 
     font-size: 13px;
 }
@@ -432,42 +924,67 @@
 ========================================================= */
 
 .milk-sales-page .message {
+
     display: flex;
+
     align-items: center;
 
     gap: 10px;
 
     margin-bottom: 17px;
-    padding: 13px 15px;
+
+    padding:
+        13px 15px;
 
     border-radius: 13px;
 
     font-size: 12px;
+
     font-weight: 700;
 }
 
+
 .milk-sales-page .message.success {
+
     color: #28754b;
 
-    background: #eaf7ef;
+    background:
+        #eaf7ef;
 
     border:
         1px solid
-        rgba(40,117,75,.15);
+        rgba(
+            40,
+            117,
+            75,
+            .15
+        );
 }
+
 
 .milk-sales-page .message.error {
-    color: #b33d3d;
 
-    background: #fff0f0;
+    color:
+        var(--red-700);
+
+    background:
+        var(--red-100);
 
     border:
         1px solid
-        rgba(179,61,61,.15);
+        rgba(
+            179,
+            61,
+            61,
+            .15
+        );
 }
 
+
 .milk-sales-page .message-icon {
+
     display: flex;
+
     align-items: center;
     justify-content: center;
 
@@ -481,15 +998,22 @@
     color: #fff;
 
     font-size: 13px;
+
     font-weight: 900;
 }
 
+
 .milk-sales-page .success .message-icon {
-    background: #28754b;
+
+    background:
+        #28754b;
 }
 
+
 .milk-sales-page .error .message-icon {
-    background: #b33d3d;
+
+    background:
+        var(--red-700);
 }
 
 
@@ -498,18 +1022,25 @@
 ========================================================= */
 
 .milk-sales-page .overview-grid {
+
     display: grid;
 
     grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+        repeat(
+            4,
+            minmax(0,1fr)
+        );
 
     gap: 13px;
 
     margin-bottom: 20px;
 }
 
+
 .milk-sales-page .overview-card {
+
     display: flex;
+
     align-items: center;
 
     gap: 13px;
@@ -518,7 +1049,8 @@
 
     padding: 17px;
 
-    background: #fff;
+    background:
+        #fff;
 
     border:
         1px solid
@@ -528,11 +1060,19 @@
 
     box-shadow:
         0 8px 25px
-        rgba(18,60,41,.055);
+        rgba(
+            18,
+            60,
+            41,
+            .055
+        );
 }
 
+
 .milk-sales-page .overview-icon {
+
     display: flex;
+
     align-items: center;
     justify-content: center;
 
@@ -546,39 +1086,160 @@
     font-size: 19px;
 }
 
+
 .milk-sales-page .overview-icon.green {
-    color: var(--green-800);
-    background: var(--green-100);
+
+    color:
+        var(--green-800);
+
+    background:
+        var(--green-100);
 }
+
 
 .milk-sales-page .overview-icon.orange {
-    color: var(--orange-700);
-    background: var(--orange-100);
+
+    color:
+        var(--orange-700);
+
+    background:
+        var(--orange-100);
 }
 
+
 .milk-sales-page .overview-text {
+
     min-width: 0;
 }
 
+
 .milk-sales-page .overview-text span {
+
     display: block;
 
     margin-bottom: 4px;
 
-    color: var(--muted);
+    color:
+        var(--muted);
 
     font-size: 9px;
+
     font-weight: 800;
 
     letter-spacing: .65px;
-    text-transform: uppercase;
+
+    text-transform:
+        uppercase;
 }
 
+
 .milk-sales-page .overview-text strong {
-    color: var(--green-950);
+
+    color:
+        var(--green-950);
 
     font-size: 20px;
+
     font-weight: 850;
+}
+
+
+/* =========================================================
+   AVAILABILITY BAR
+========================================================= */
+
+.milk-sales-page .availability-card {
+
+    margin-bottom: 20px;
+
+    padding: 19px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #fff,
+            var(--green-50)
+        );
+
+    border:
+        1px solid
+        var(--border);
+
+    border-radius: 17px;
+}
+
+
+.milk-sales-page .availability-top {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 10px;
+}
+
+
+.milk-sales-page .availability-top span {
+
+    color:
+        var(--muted);
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        .7px;
+}
+
+
+.milk-sales-page .availability-top strong {
+
+    color:
+        var(--green-800);
+
+    font-size: 14px;
+
+    font-weight: 900;
+}
+
+
+.milk-sales-page .availability-track {
+
+    height: 9px;
+
+    overflow: hidden;
+
+    border-radius: 20px;
+
+    background:
+        #e7eee9;
+}
+
+
+.milk-sales-page .availability-fill {
+
+    height: 100%;
+
+    width:
+        <%= pageAvailablePercentage.toFixed(2) %>%;
+
+    border-radius: inherit;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--green-700),
+            var(--orange-500)
+        );
+
+    transition:
+        width .25s ease;
 }
 
 
@@ -587,10 +1248,13 @@
 ========================================================= */
 
 .milk-sales-page .milk-card {
+
     margin-bottom: 20px;
+
     padding: 25px;
 
-    background: #fff;
+    background:
+        #fff;
 
     border:
         1px solid
@@ -600,17 +1264,25 @@
 
     box-shadow:
         0 9px 28px
-        rgba(18,60,41,.055);
+        rgba(
+            18,
+            60,
+            41,
+            .055
+        );
 }
 
 
 /* =========================================================
-   SECTION HEADER
+   SECTION HEADING
 ========================================================= */
 
 .milk-sales-page .section-heading {
+
     display: flex;
+
     align-items: flex-start;
+
     justify-content: space-between;
 
     gap: 15px;
@@ -618,47 +1290,70 @@
     margin-bottom: 20px;
 }
 
+
 .milk-sales-page .section-heading-left {
+
     min-width: 0;
 }
 
+
 .milk-sales-page .section-kicker {
+
     margin-bottom: 5px;
 
-    color: var(--orange-700);
+    color:
+        var(--orange-700);
 
     font-size: 9px;
+
     font-weight: 850;
 
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
+    letter-spacing:
+        1.2px;
+
+    text-transform:
+        uppercase;
 }
 
+
 .milk-sales-page .section-heading h2 {
+
     margin: 0;
 
-    color: var(--green-950);
+    color:
+        var(--green-950);
 
     font-size: 20px;
+
     line-height: 1.2;
 
     font-weight: 850;
 
-    letter-spacing: -.4px;
+    letter-spacing:
+        -.4px;
 }
 
-.milk-sales-page .section-heading p {
-    margin: 5px 0 0;
 
-    color: var(--muted);
+.milk-sales-page .section-heading p {
+
+    margin:
+        5px 0 0;
+
+    color:
+        var(--muted);
 
     font-size: 12px;
+
     line-height: 1.5;
 }
 
+
 .milk-sales-page .section-badge {
+
     display: flex;
+
     align-items: center;
+
     justify-content: center;
 
     flex-shrink: 0;
@@ -668,8 +1363,11 @@
 
     border-radius: 12px;
 
-    color: var(--green-800);
-    background: var(--green-100);
+    color:
+        var(--green-800);
+
+    background:
+        var(--green-100);
 
     font-size: 18px;
 }
@@ -680,7 +1378,9 @@
 ========================================================= */
 
 .milk-sales-page .form-group {
+
     display: flex;
+
     flex-direction: column;
 
     gap: 7px;
@@ -688,18 +1388,26 @@
     min-width: 0;
 }
 
+
 .milk-sales-page label {
-    color: var(--green-950);
+
+    color:
+        var(--green-950);
 
     font-size: 11px;
+
     font-weight: 800;
 }
 
+
 .milk-sales-page .form-control {
+
     width: 100%;
+
     min-height: 46px;
 
-    padding: 11px 13px;
+    padding:
+        11px 13px;
 
     outline: none;
 
@@ -709,10 +1417,15 @@
 
     border-radius: 11px;
 
-    color: var(--ink);
-    background: #fcfdfc;
+    color:
+        var(--ink);
 
-    font-family: inherit;
+    background:
+        #fcfdfc;
+
+    font-family:
+        inherit;
+
     font-size: 13px;
 
     transition:
@@ -721,32 +1434,73 @@
         background .18s ease;
 }
 
+
 .milk-sales-page .form-control:hover {
-    border-color: #cad7cf;
+
+    border-color:
+        #cad7cf;
 }
 
+
 .milk-sales-page .form-control:focus {
-    background: #fff;
+
+    background:
+        #fff;
 
     border-color:
         var(--green-600);
 
     box-shadow:
         0 0 0 4px
-        rgba(66,147,95,.11);
+        rgba(
+            66,
+            147,
+            95,
+            .11
+        );
 }
+
 
 .milk-sales-page .form-control::placeholder {
-    color: #a4ada8;
+
+    color:
+        #a4ada8;
 }
 
+
 .milk-sales-page input[readonly] {
-    color: var(--green-900);
+
+    color:
+        var(--green-900);
 
     background:
         var(--green-50);
 
-    font-weight: 800;
+    font-weight:
+        800;
+}
+
+
+/* =========================================================
+   INVALID INPUT
+========================================================= */
+
+.milk-sales-page .form-control.invalid {
+
+    border-color:
+        #d45b5b;
+
+    background:
+        #fff8f8;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(
+            212,
+            91,
+            91,
+            .08
+        );
 }
 
 
@@ -755,10 +1509,11 @@
 ========================================================= */
 
 .milk-sales-page .price-form {
+
     display: grid;
 
     grid-template-columns:
-        minmax(180px, 300px)
+        minmax(180px,300px)
         auto;
 
     align-items: end;
@@ -768,21 +1523,26 @@
 
 
 /* =========================================================
-   BUTTONS
+   BUTTON
 ========================================================= */
 
 .milk-sales-page .milk-button {
+
     display: inline-flex;
+
     align-items: center;
+
     justify-content: center;
 
     gap: 8px;
 
     min-height: 46px;
 
-    padding: 11px 19px;
+    padding:
+        11px 19px;
 
     border: 0;
+
     border-radius: 11px;
 
     color: #fff;
@@ -796,13 +1556,22 @@
 
     box-shadow:
         0 7px 17px
-        rgba(33,99,63,.18);
+        rgba(
+            33,
+            99,
+            63,
+            .18
+        );
 
     cursor: pointer;
 
-    font-family: inherit;
+    font-family:
+        inherit;
+
     font-size: 12px;
-    font-weight: 850;
+
+    font-weight:
+        850;
 
     transition:
         transform .18s ease,
@@ -810,22 +1579,56 @@
         filter .18s ease;
 }
 
+
 .milk-sales-page .milk-button:hover {
-    transform: translateY(-1px);
+
+    transform:
+        translateY(-1px);
 
     box-shadow:
         0 10px 23px
-        rgba(33,99,63,.23);
+        rgba(
+            33,
+            99,
+            63,
+            .23
+        );
 
-    filter: brightness(1.03);
+    filter:
+        brightness(1.03);
 }
+
 
 .milk-sales-page .milk-button:active {
-    transform: translateY(0);
+
+    transform:
+        translateY(0);
 }
 
+
+.milk-sales-page .milk-button:disabled {
+
+    opacity:
+        .48;
+
+    cursor:
+        not-allowed;
+
+    transform:
+        none;
+
+    box-shadow:
+        none;
+
+    filter:
+        none;
+}
+
+
 .milk-sales-page .secondary-button {
-    color: var(--orange-700);
+
+    color:
+        var(--orange-700);
 
     background:
         var(--orange-50);
@@ -834,18 +1637,24 @@
         1px solid
         #f0d2ba;
 
-    box-shadow: none;
+    box-shadow:
+        none;
 }
 
+
 .milk-sales-page .secondary-button:hover {
-    color: var(--orange-800);
+
+    color:
+        var(--orange-800);
 
     background:
         var(--orange-100);
 
-    box-shadow: none;
+    box-shadow:
+        none;
 
-    filter: none;
+    filter:
+        none;
 }
 
 
@@ -854,6 +1663,7 @@
 ========================================================= */
 
 .milk-sales-page .table-wrapper {
+
     width: 100%;
 
     overflow-x: auto;
@@ -865,20 +1675,28 @@
     border-radius: 14px;
 }
 
+
 .milk-sales-page .milk-table {
+
     width: 100%;
 
-    min-width: 480px;
+    min-width: 650px;
 
-    border-collapse: collapse;
+    border-collapse:
+        collapse;
 }
 
+
 .milk-sales-page .milk-table th {
-    padding: 13px 16px;
 
-    text-align: left;
+    padding:
+        13px 16px;
 
-    color: var(--green-950);
+    text-align:
+        left;
+
+    color:
+        var(--green-950);
 
     background:
         var(--green-50);
@@ -888,14 +1706,22 @@
         var(--border);
 
     font-size: 9px;
-    font-weight: 850;
 
-    letter-spacing: .7px;
-    text-transform: uppercase;
+    font-weight:
+        850;
+
+    letter-spacing:
+        .7px;
+
+    text-transform:
+        uppercase;
 }
 
+
 .milk-sales-page .milk-table td {
-    padding: 15px 16px;
+
+    padding:
+        15px 16px;
 
     border-bottom:
         1px solid
@@ -904,24 +1730,37 @@
     font-size: 13px;
 }
 
+
 .milk-sales-page .milk-table tbody tr:last-child td {
-    border-bottom: 0;
+
+    border-bottom:
+        0;
 }
+
 
 .milk-sales-page .milk-table tbody tr:not(.total-row):hover {
-    background: #fafcfb;
+
+    background:
+        #fafcfb;
 }
 
+
 .milk-sales-page .farm-name {
+
     display: flex;
-    align-items: center;
+
+    align-items:
+        center;
 
     gap: 9px;
 
-    font-weight: 750;
+    font-weight:
+        750;
 }
 
+
 .milk-sales-page .farm-dot {
+
     width: 7px;
     height: 7px;
 
@@ -933,25 +1772,55 @@
         var(--green-600);
 }
 
-.milk-sales-page .liter-value {
-    color: var(--green-800);
 
-    font-weight: 850;
+.milk-sales-page .liter-value {
+
+    color:
+        var(--green-800);
+
+    font-weight:
+        850;
 }
 
+
+.milk-sales-page .available-value {
+
+    color:
+        var(--orange-700);
+
+    font-weight:
+        850;
+}
+
+
+.milk-sales-page .sold-value {
+
+    color:
+        var(--muted);
+
+    font-weight:
+        750;
+}
+
+
 .milk-sales-page .total-row {
+
     background:
         var(--orange-50);
 }
 
+
 .milk-sales-page .total-row td {
-    color: var(--orange-700);
+
+    color:
+        var(--orange-700);
 
     border-top:
         1px solid
         #f1dcc9;
 
-    font-weight: 850;
+    font-weight:
+        850;
 }
 
 
@@ -960,13 +1829,17 @@
 ========================================================= */
 
 .milk-sales-page .empty-state {
+
     margin: 0;
 
-    padding: 30px 20px;
+    padding:
+        30px 20px;
 
-    text-align: center;
+    text-align:
+        center;
 
-    color: var(--muted);
+    color:
+        var(--muted);
 
     background:
         var(--green-50);
@@ -975,9 +1848,11 @@
         1px dashed
         #cbd9d0;
 
-    border-radius: 14px;
+    border-radius:
+        14px;
 
-    font-size: 12px;
+    font-size:
+        12px;
 }
 
 
@@ -986,70 +1861,109 @@
 ========================================================= */
 
 .milk-sales-page .sales-step {
-    margin-top: 3px;
-    padding-bottom: 25px;
+
+    margin-top:
+        3px;
+
+    padding-bottom:
+        25px;
 }
 
+
 .milk-sales-page .sales-step + .sales-step {
-    padding-top: 25px;
+
+    padding-top:
+        25px;
 
     border-top:
         1px solid
         var(--border);
 }
 
+
 .milk-sales-page .step-heading {
+
     display: flex;
 
-    gap: 11px;
+    gap:
+        11px;
 
-    margin-bottom: 18px;
+    margin-bottom:
+        18px;
 }
 
+
 .milk-sales-page .step-number {
+
     display: flex;
-    align-items: center;
-    justify-content: center;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
 
     flex-shrink: 0;
 
     width: 31px;
     height: 31px;
 
-    border-radius: 9px;
+    border-radius:
+        9px;
 
-    color: var(--green-800);
+    color:
+        var(--green-800);
 
     background:
         var(--green-100);
 
-    font-size: 10px;
-    font-weight: 900;
+    font-size:
+        10px;
+
+    font-weight:
+        900;
 }
 
+
 .milk-sales-page .step-number.orange {
-    color: var(--orange-700);
+
+    color:
+        var(--orange-700);
 
     background:
         var(--orange-100);
 }
 
+
 .milk-sales-page .step-heading h3 {
-    margin: 1px 0 0;
 
-    color: var(--green-950);
+    margin:
+        1px 0 0;
 
-    font-size: 15px;
-    font-weight: 850;
+    color:
+        var(--green-950);
+
+    font-size:
+        15px;
+
+    font-weight:
+        850;
 }
 
+
 .milk-sales-page .step-heading p {
-    margin: 4px 0 0;
 
-    color: var(--muted);
+    margin:
+        4px 0 0;
 
-    font-size: 11px;
-    line-height: 1.45;
+    color:
+        var(--muted);
+
+    font-size:
+        11px;
+
+    line-height:
+        1.45;
 }
 
 
@@ -1058,6 +1972,7 @@
 ========================================================= */
 
 .milk-sales-page .sales-grid {
+
     display: grid;
 
     grid-template-columns:
@@ -1065,69 +1980,167 @@
         1fr
         1fr;
 
-    gap: 14px;
+    gap:
+        14px;
 }
 
 
 /* =========================================================
-   ALLOCATION HEADER
+   ALLOCATION
 ========================================================= */
 
 .milk-sales-page .allocation-heading {
+
     display: flex;
-    align-items: center;
-    justify-content: space-between;
 
-    gap: 15px;
+    align-items:
+        center;
 
-    margin-bottom: 13px;
+    justify-content:
+        space-between;
+
+    gap:
+        15px;
+
+    margin-bottom:
+        13px;
 }
+
 
 .milk-sales-page .allocation-heading h3 {
+
     margin: 0;
 
-    color: var(--green-950);
+    color:
+        var(--green-950);
 
-    font-size: 14px;
-    font-weight: 850;
+    font-size:
+        14px;
+
+    font-weight:
+        850;
 }
+
 
 .milk-sales-page .allocation-heading p {
-    margin: 4px 0 0;
 
-    color: var(--muted);
+    margin:
+        4px 0 0;
 
-    font-size: 11px;
+    color:
+        var(--muted);
+
+    font-size:
+        11px;
 }
 
+
 .milk-sales-page .available-pill {
+
     display: flex;
-    align-items: center;
 
-    gap: 7px;
+    align-items:
+        center;
 
-    flex-shrink: 0;
+    gap:
+        7px;
 
-    padding: 8px 11px;
+    flex-shrink:
+        0;
 
-    border-radius: 9px;
+    padding:
+        8px 11px;
+
+    border-radius:
+        9px;
 
     background:
         var(--orange-50);
 }
 
-.milk-sales-page .available-pill span {
-    color: var(--muted);
 
-    font-size: 9px;
-    font-weight: 750;
+.milk-sales-page .available-pill span {
+
+    color:
+        var(--muted);
+
+    font-size:
+        9px;
+
+    font-weight:
+        750;
 }
 
-.milk-sales-page .available-pill strong {
-    color: var(--orange-700);
 
-    font-size: 12px;
-    font-weight: 900;
+.milk-sales-page .available-pill strong {
+
+    color:
+        var(--orange-700);
+
+    font-size:
+        12px;
+
+    font-weight:
+        900;
+}
+
+
+/* =========================================================
+   ALLOCATION TOTAL STATUS
+========================================================= */
+
+.milk-sales-page .allocation-status {
+
+    margin:
+        0 0 13px;
+
+    padding:
+        10px 12px;
+
+    border-radius:
+        10px;
+
+    color:
+        var(--muted);
+
+    background:
+        #f7f9f7;
+
+    font-size:
+        11px;
+
+    font-weight:
+        700;
+}
+
+
+.milk-sales-page .allocation-status.good {
+
+    color:
+        var(--green-800);
+
+    background:
+        var(--green-50);
+}
+
+
+.milk-sales-page .allocation-status.warning {
+
+    color:
+        var(--orange-800);
+
+    background:
+        var(--orange-50);
+}
+
+
+.milk-sales-page .allocation-status.danger {
+
+    color:
+        var(--red-700);
+
+    background:
+        var(--red-100);
 }
 
 
@@ -1136,16 +2149,21 @@
 ========================================================= */
 
 .milk-sales-page .allocation-row {
+
     display: grid;
 
     grid-template-columns:
-        minmax(0, 1fr)
+        minmax(0,1fr)
         170px;
 
-    gap: 14px;
+    gap:
+        14px;
 
-    margin-bottom: 11px;
-    padding: 14px;
+    margin-bottom:
+        11px;
+
+    padding:
+        14px;
 
     background:
         #fbfcfb;
@@ -1154,19 +2172,63 @@
         1px solid
         var(--border);
 
-    border-radius: 14px;
+    border-radius:
+        14px;
 
     transition:
         border-color .18s ease,
         box-shadow .18s ease;
 }
 
+
 .milk-sales-page .allocation-row:hover {
-    border-color: #d2ded6;
+
+    border-color:
+        #d2ded6;
 
     box-shadow:
         0 5px 16px
-        rgba(18,60,41,.035);
+        rgba(
+            18,
+            60,
+            41,
+            .035
+        );
+}
+
+
+/* =========================================================
+   FARM AVAILABILITY NOTE
+========================================================= */
+
+.milk-sales-page .farm-availability {
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    gap:
+        10px;
+
+    margin-top:
+        6px;
+
+    color:
+        var(--muted);
+
+    font-size:
+        10px;
+}
+
+
+.milk-sales-page .farm-availability strong {
+
+    color:
+        var(--green-800);
+
+    font-weight:
+        850;
 }
 
 
@@ -1175,7 +2237,9 @@
 ========================================================= */
 
 .milk-sales-page .add-farm-wrap {
-    margin-top: 5px;
+
+    margin-top:
+        5px;
 }
 
 
@@ -1184,65 +2248,102 @@
 ========================================================= */
 
 .milk-sales-page .sale-summary {
+
     display: grid;
 
     grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+        repeat(
+            3,
+            minmax(0,1fr)
+        );
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
-    margin-top: 4px;
+    margin-top:
+        4px;
 
     border:
         1px solid
         var(--border);
 
-    border-radius: 15px;
+    border-radius:
+        15px;
 
-    background: #fff;
+    background:
+        #fff;
 }
 
+
 .milk-sales-page .summary-item {
+
     display: flex;
-    flex-direction: column;
 
-    gap: 5px;
+    flex-direction:
+        column;
 
-    padding: 16px 18px;
+    gap:
+        5px;
+
+    padding:
+        16px 18px;
 
     border-right:
         1px solid
         var(--border);
 }
 
+
 .milk-sales-page .summary-item:last-child {
-    border-right: 0;
+
+    border-right:
+        0;
 }
+
 
 .milk-sales-page .summary-item span {
-    color: var(--muted);
 
-    font-size: 9px;
-    font-weight: 850;
+    color:
+        var(--muted);
 
-    letter-spacing: .55px;
-    text-transform: uppercase;
+    font-size:
+        9px;
+
+    font-weight:
+        850;
+
+    letter-spacing:
+        .55px;
+
+    text-transform:
+        uppercase;
 }
+
 
 .milk-sales-page .summary-item strong {
-    color: var(--green-900);
 
-    font-size: 19px;
-    font-weight: 900;
+    color:
+        var(--green-900);
+
+    font-size:
+        19px;
+
+    font-weight:
+        900;
 }
 
+
 .milk-sales-page .cash-item {
+
     background:
         var(--orange-50);
 }
 
+
 .milk-sales-page .cash-item strong {
-    color: var(--orange-700);
+
+    color:
+        var(--orange-700);
 }
 
 
@@ -1251,40 +2352,46 @@
 ========================================================= */
 
 .milk-sales-page .form-action {
-    display: flex;
-    justify-content: flex-end;
 
-    margin-top: 20px;
-    padding-top: 20px;
+    display: flex;
+
+    justify-content:
+        flex-end;
+
+    margin-top:
+        20px;
+
+    padding-top:
+        20px;
 
     border-top:
         1px solid
         var(--border);
 }
 
+
 .milk-sales-page .complete-button {
-    min-width: 180px;
+
+    min-width:
+        180px;
 }
 
+
 .milk-sales-page .complete-arrow {
-    font-size: 17px;
+
+    font-size:
+        17px;
 
     transition:
         transform .18s ease;
 }
 
+
 .milk-sales-page .complete-button:hover
 .complete-arrow {
-    transform: translateX(3px);
-}
 
-
-/* =========================================================
-   SELECT
-========================================================= */
-
-.milk-sales-page select.form-control {
-    cursor: pointer;
+    transform:
+        translateX(3px);
 }
 
 
@@ -1292,132 +2399,226 @@
    MOBILE
 ========================================================= */
 
+@media (max-width: 900px) {
+
+    .milk-sales-page .overview-grid {
+
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0,1fr)
+            );
+    }
+
+}
+
+
 @media (max-width: 760px) {
 
     .milk-sales-page {
-        width: calc(100% - 20px);
-        padding-top: 15px;
+
+        width:
+            calc(100% - 20px);
+
+        padding-top:
+            15px;
     }
+
 
     .milk-sales-page .sales-hero {
-        flex-direction: column;
-        align-items: flex-start;
 
-        min-height: 0;
+        flex-direction:
+            column;
 
-        padding: 23px 20px;
+        align-items:
+            flex-start;
 
-        border-radius: 19px;
+        min-height:
+            0;
+
+        padding:
+            23px 20px;
+
+        border-radius:
+            19px;
     }
+
 
     .milk-sales-page .hero-date {
-        align-items: flex-start;
 
-        width: 100%;
+        align-items:
+            flex-start;
+
+        width:
+            100%;
     }
+
 
     .milk-sales-page .overview-grid {
-        grid-template-columns: 1fr;
 
-        gap: 9px;
+        grid-template-columns:
+            1fr;
+
+        gap:
+            9px;
     }
+
 
     .milk-sales-page .milk-card {
-        padding: 18px;
 
-        border-radius: 17px;
+        padding:
+            18px;
+
+        border-radius:
+            17px;
     }
+
 
     .milk-sales-page .price-form {
-        grid-template-columns: 1fr;
+
+        grid-template-columns:
+            1fr;
     }
+
 
     .milk-sales-page .price-form .milk-button {
-        width: 100%;
+
+        width:
+            100%;
     }
+
 
     .milk-sales-page .sales-grid {
-        grid-template-columns: 1fr;
+
+        grid-template-columns:
+            1fr;
     }
+
 
     .milk-sales-page .allocation-heading {
-        align-items: flex-start;
 
-        flex-direction: column;
+        align-items:
+            flex-start;
+
+        flex-direction:
+            column;
     }
+
 
     .milk-sales-page .available-pill {
-        width: 100%;
 
-        justify-content: space-between;
+        width:
+            100%;
+
+        justify-content:
+            space-between;
     }
+
 
     .milk-sales-page .allocation-row {
-        grid-template-columns: 1fr;
 
-        padding: 13px;
+        grid-template-columns:
+            1fr;
+
+        padding:
+            13px;
     }
+
 
     .milk-sales-page .secondary-button {
-        width: 100%;
+
+        width:
+            100%;
     }
+
 
     .milk-sales-page .sale-summary {
-        grid-template-columns: 1fr;
+
+        grid-template-columns:
+            1fr;
     }
 
+
     .milk-sales-page .summary-item {
-        border-right: 0;
+
+        border-right:
+            0;
 
         border-bottom:
             1px solid
             var(--border);
     }
 
+
     .milk-sales-page .summary-item:last-child {
-        border-bottom: 0;
+
+        border-bottom:
+            0;
     }
+
 
     .milk-sales-page .form-action {
-        display: block;
+
+        display:
+            block;
     }
+
 
     .milk-sales-page .complete-button {
-        width: 100%;
+
+        width:
+            100%;
     }
+
 }
 
-
-/* =========================================================
-   SMALL MOBILE
-========================================================= */
 
 @media (max-width: 400px) {
 
     .milk-sales-page {
-        width: calc(100% - 12px);
+
+        width:
+            calc(100% - 12px);
     }
+
 
     .milk-sales-page .milk-card {
-        padding: 14px;
+
+        padding:
+            14px;
     }
+
 
     .milk-sales-page .sales-hero {
-        padding: 20px 17px;
+
+        padding:
+            20px 17px;
     }
+
 
     .milk-sales-page .sales-hero h1 {
-        font-size: 27px;
+
+        font-size:
+            27px;
     }
+
 
     .milk-sales-page .form-control {
-        min-height: 44px;
-        font-size: 12px;
+
+        min-height:
+            44px;
+
+        font-size:
+            12px;
     }
 
+
     .milk-sales-page .allocation-row {
-        padding: 11px;
+
+        padding:
+            11px;
     }
+
 }
 
 </style>
@@ -1426,6 +2627,7 @@
 <div
     class="milk-sales-page"
     data-price="<%= pagePrice %>"
+    data-total-available="<%= pageAvailable %>"
 >
 
 
@@ -1446,8 +2648,8 @@
             </h1>
 
             <p class="hero-description">
-                Manage today's farm production,
-                available milk and customer sales.
+                Manage today's production, available milk,
+                customers and farm allocations.
             </p>
 
         </div>
@@ -1514,6 +2716,7 @@
 
     <div class="overview-grid">
 
+
         <div class="overview-card">
 
             <div class="overview-icon green">
@@ -1523,11 +2726,11 @@
             <div class="overview-text">
 
                 <span>
-                    Total Production
+                    Produced
                 </span>
 
                 <strong>
-                    <%= totalProduction.toFixed(2) %> L
+                    <%= backendProduced.toFixed(2) %> L
                 </strong>
 
             </div>
@@ -1544,11 +2747,32 @@
             <div class="overview-text">
 
                 <span>
-                    Available for Sale
+                    Available
                 </span>
 
                 <strong>
-                    <%= totalAvailable.toFixed(2) %> L
+                    <%= pageAvailable.toFixed(2) %> L
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="overview-card">
+
+            <div class="overview-icon green">
+                ↗
+            </div>
+
+            <div class="overview-text">
+
+                <span>
+                    Sold
+                </span>
+
+                <strong>
+                    <%= backendConsumed.toFixed(2) %> L
                 </strong>
 
             </div>
@@ -1565,11 +2789,11 @@
             <div class="overview-text">
 
                 <span>
-                    Price Per Liter
+                    Sales Value
                 </span>
 
                 <strong>
-                    <%= pagePrice.toFixed(2) %>
+                    KSh <%= backendCash.toFixed(2) %>
                 </strong>
 
             </div>
@@ -1577,6 +2801,36 @@
         </div>
 
     </div>
+
+
+
+    <!-- =====================================================
+         AVAILABILITY
+    ====================================================== -->
+
+    <section class="availability-card">
+
+        <div class="availability-top">
+
+            <span>
+                Milk Available For Sale
+            </span>
+
+            <strong>
+                <%= pageAvailable.toFixed(2) %>
+                L
+            </strong>
+
+        </div>
+
+
+        <div class="availability-track">
+
+            <div class="availability-fill"></div>
+
+        </div>
+
+    </section>
 
 
 
@@ -1681,7 +2935,8 @@
                 </h2>
 
                 <p>
-                    Milk produced by each visible farm today.
+                    Production, sold milk and remaining
+                    availability for every visible farm.
                 </p>
 
             </div>
@@ -1714,7 +2969,15 @@
                             </th>
 
                             <th>
-                                Production
+                                Produced
+                            </th>
+
+                            <th>
+                                Sold
+                            </th>
+
+                            <th>
+                                Available
                             </th>
 
                         </tr>
@@ -1751,6 +3014,24 @@
 
                                 </td>
 
+
+                                <td>
+
+                                    <span class="sold-value">
+                                        <%= farm.sold.toFixed(2) %> L
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+
+                                    <span class="available-value">
+                                        <%= farm.available.toFixed(2) %> L
+                                    </span>
+
+                                </td>
+
                             </tr>
 
                         <% }); %>
@@ -1759,11 +3040,19 @@
                         <tr class="total-row">
 
                             <td>
-                                Total Production
+                                Farm Totals
                             </td>
 
                             <td>
-                                <%= totalProduction.toFixed(2) %> L
+                                <%= visibleFarmProduction.toFixed(2) %> L
+                            </td>
+
+                            <td>
+                                <%= visibleFarmSold.toFixed(2) %> L
+                            </td>
+
+                            <td>
+                                <%= visibleFarmAvailable.toFixed(2) %> L
                             </td>
 
                         </tr>
@@ -1800,7 +3089,7 @@
 
                 <p>
                     Record a customer sale and allocate
-                    the milk to the supplying farm or farms.
+                    the milk to one or more supplying farms.
                 </p>
 
             </div>
@@ -1812,7 +3101,13 @@
         </div>
 
 
-        <% if (visibleFarmData.length === 0) { %>
+        <% if (pageAvailable <= 0) { %>
+
+            <p class="empty-state">
+                There is currently no milk available for sale.
+            </p>
+
+        <% } else if (visibleFarmData.length === 0) { %>
 
             <p class="empty-state">
                 No milk-producing farms are available for sale.
@@ -1825,6 +3120,7 @@
                 action="/milk/sales/sell"
                 method="POST"
                 id="milkSaleForm"
+                novalidate
             >
 
                 <input
@@ -1853,8 +3149,8 @@
                             </h3>
 
                             <p>
-                                Enter the customer's information
-                                and required quantity.
+                                Enter the customer and
+                                required quantity.
                             </p>
 
                         </div>
@@ -1897,6 +3193,7 @@
                                     name="liters"
                                     class="form-control"
                                     min="0.01"
+                                    max="<%= pageAvailable %>"
                                     step="0.01"
                                     placeholder="0.00"
                                     style="padding-right:42px;"
@@ -1984,8 +3281,8 @@
                             </h3>
 
                             <p>
-                                Select which farm or farms are
-                                supplying this customer's milk.
+                                Select the farms supplying this
+                                sale. Each farm can only be used once.
                             </p>
 
                         </div>
@@ -2002,7 +3299,8 @@
                             </h3>
 
                             <p>
-                                Each farm can only be selected once.
+                                Farm availability is calculated
+                                from today's production and sales.
                             </p>
 
                         </div>
@@ -2011,15 +3309,23 @@
                         <div class="available-pill">
 
                             <span>
-                                Total milk available
+                                Total available
                             </span>
 
                             <strong id="totalAvailable">
-                                <%= totalAvailable.toFixed(2) %> L
+                                <%= pageAvailable.toFixed(2) %> L
                             </strong>
 
                         </div>
 
+                    </div>
+
+
+                    <div
+                        id="allocationStatus"
+                        class="allocation-status"
+                    >
+                        Enter the customer's required quantity.
                     </div>
 
 
@@ -2048,7 +3354,7 @@
 
                                         <option
                                             value="<%= farm._id %>"
-                                            data-available="<%= farm.available %>"
+                                            data-available="<%= farm.available.toFixed(2) %>"
                                         >
 
                                             <%= farm.name %>
@@ -2061,6 +3367,19 @@
                                     <% }); %>
 
                                 </select>
+
+
+                                <div class="farm-availability">
+
+                                    <span>
+                                        Available from farm
+                                    </span>
+
+                                    <strong class="row-available">
+                                        0.00 L
+                                    </strong>
+
+                                </div>
 
                             </div>
 
@@ -2181,6 +3500,8 @@
                     <button
                         type="submit"
                         class="milk-button complete-button"
+                        id="completeSaleButton"
+                        disabled
                     >
 
                         Complete Sale
@@ -2214,10 +3535,15 @@ document.addEventListener(
                 "milkSaleForm"
             );
 
+
         if (!form) {
             return;
         }
 
+
+        /* =================================================
+           PAGE DATA
+        ================================================= */
 
         const page =
             document.querySelector(
@@ -2230,6 +3556,19 @@ document.addEventListener(
                 page.dataset.price
             ) || 0;
 
+
+        const totalAvailable =
+            Math.max(
+                0,
+                Number(
+                    page.dataset.totalAvailable
+                ) || 0
+            );
+
+
+        /* =================================================
+           ELEMENTS
+        ================================================= */
 
         const container =
             document.getElementById(
@@ -2267,34 +3606,587 @@ document.addEventListener(
             );
 
 
-        // ==================================================
-        // UPDATE SUMMARY
-        // ==================================================
+        const statusOutput =
+            document.getElementById(
+                "allocationStatus"
+            );
 
-        function updateSummary() {
 
-            const required =
+        const submitButton =
+            document.getElementById(
+                "completeSaleButton"
+            );
+
+
+        /* =================================================
+           ROUND
+        ================================================= */
+
+        function round(value) {
+
+            return Math.round(
+                (
+                    Number(value) || 0
+                ) * 100
+            ) / 100;
+
+        }
+
+
+        /* =================================================
+           GET REQUIRED
+        ================================================= */
+
+        function getRequired() {
+
+            return Math.max(
+                0,
                 Number(
                     saleLitersInput.value
-                ) || 0;
+                ) || 0
+            );
+
+        }
 
 
-            let allocated = 0;
+        /* =================================================
+           GET ALLOCATED
+        ================================================= */
+
+        function getAllocated() {
+
+            let total = 0;
 
 
-            form
+            container
                 .querySelectorAll(
                     ".allocation-liters"
                 )
                 .forEach(
                     input => {
 
-                        allocated +=
+                        total +=
                             Number(
                                 input.value
                             ) || 0;
 
                     }
+                );
+
+
+            return round(total);
+
+        }
+
+
+        /* =================================================
+           GET SELECTED FARMS
+        ================================================= */
+
+        function getRows() {
+
+            return Array.from(
+                container.querySelectorAll(
+                    ".allocation-row"
+                )
+            );
+
+        }
+
+
+        /* =================================================
+           UPDATE FARM AVAILABILITY
+        ================================================= */
+
+        function updateRowAvailability(
+            row
+        ) {
+
+            const select =
+                row.querySelector(
+                    ".farm-select"
+                );
+
+
+            const input =
+                row.querySelector(
+                    ".allocation-liters"
+                );
+
+
+            const output =
+                row.querySelector(
+                    ".row-available"
+                );
+
+
+            if (
+                !select ||
+                !input
+            ) {
+
+                return;
+
+            }
+
+
+            const option =
+                select.options[
+                    select.selectedIndex
+                ];
+
+
+            const available =
+                Math.max(
+                    0,
+                    Number(
+                        option?.dataset?.available
+                    ) || 0
+                );
+
+
+            if (output) {
+
+                output.textContent =
+                    available.toFixed(2) +
+                    " L";
+
+            }
+
+
+            if (available > 0) {
+
+                input.max =
+                    available.toFixed(2);
+
+            } else {
+
+                input.removeAttribute(
+                    "max"
+                );
+
+            }
+
+
+            /*
+             * If the farm changes and the existing
+             * liters exceed the newly selected farm,
+             * immediately cap the value.
+             */
+
+            const current =
+                Number(
+                    input.value
+                ) || 0;
+
+
+            if (
+                current > available
+            ) {
+
+                input.value =
+                    available > 0
+                        ? available.toFixed(2)
+                        : "";
+
+            }
+
+        }
+
+
+        /* =================================================
+           VALIDATE FORM STATE
+        ================================================= */
+
+        function validateState() {
+
+            const required =
+                round(
+                    getRequired()
+                );
+
+
+            const allocated =
+                round(
+                    getAllocated()
+                );
+
+
+            let valid =
+                true;
+
+
+            let message =
+                "Enter the customer's required quantity.";
+
+
+            /*
+             * ---------------------------------------------
+             * REQUIRED QUANTITY
+             * ---------------------------------------------
+             */
+
+            if (
+                required <= 0
+            ) {
+
+                valid =
+                    false;
+
+                message =
+                    "Enter the customer's required quantity.";
+
+            }
+
+
+            /*
+             * ---------------------------------------------
+             * TOTAL AVAILABLE
+             * ---------------------------------------------
+             */
+
+            else if (
+                required >
+                totalAvailable + 0.001
+            ) {
+
+                valid =
+                    false;
+
+                message =
+                    "The customer's requested quantity exceeds the total milk available.";
+
+            }
+
+
+            /*
+             * ---------------------------------------------
+             * ALLOCATIONS
+             * ---------------------------------------------
+             */
+
+            const usedFarms =
+                new Set();
+
+
+            for (
+                const row
+                of getRows()
+            ) {
+
+                const select =
+                    row.querySelector(
+                        ".farm-select"
+                    );
+
+
+                const input =
+                    row.querySelector(
+                        ".allocation-liters"
+                    );
+
+
+                if (
+                    !select ||
+                    !input
+                ) {
+
+                    continue;
+
+                }
+
+
+                const farmId =
+                    select.value;
+
+
+                const liters =
+                    round(
+                        Number(
+                            input.value
+                        ) || 0
+                    );
+
+
+                if (
+                    !farmId &&
+                    liters <= 0
+                ) {
+
+                    valid =
+                        false;
+
+                    message =
+                        "Every allocation row must contain a farm and quantity.";
+
+                    break;
+
+                }
+
+
+                if (
+                    !farmId
+                ) {
+
+                    valid =
+                        false;
+
+                    message =
+                        "Select a farm for every allocation.";
+
+                    break;
+
+                }
+
+
+                if (
+                    liters <= 0
+                ) {
+
+                    valid =
+                        false;
+
+                    message =
+                        "Every selected farm must have a positive allocation.";
+
+                    break;
+
+                }
+
+
+                /*
+                 * Duplicate farm
+                 */
+
+                if (
+                    usedFarms.has(
+                        farmId
+                    )
+                ) {
+
+                    valid =
+                        false;
+
+                    message =
+                        "The same farm cannot be allocated more than once.";
+
+                    break;
+
+                }
+
+
+                usedFarms.add(
+                    farmId
+                );
+
+
+                /*
+                 * Farm-specific availability
+                 */
+
+                const option =
+                    select.options[
+                        select.selectedIndex
+                    ];
+
+
+                const farmAvailable =
+                    Math.max(
+                        0,
+                        Number(
+                            option?.dataset?.available
+                        ) || 0
+                    );
+
+
+                if (
+                    liters >
+                    farmAvailable + 0.001
+                ) {
+
+                    valid =
+                        false;
+
+                    message =
+                        "One of the farm allocations exceeds that farm's available milk.";
+
+                    break;
+
+                }
+
+            }
+
+
+            /*
+             * ---------------------------------------------
+             * TOTAL ALLOCATION
+             * ---------------------------------------------
+             */
+
+            if (
+                valid &&
+                allocated >
+                totalAvailable + 0.001
+            ) {
+
+                valid =
+                    false;
+
+                message =
+                    "The total allocated milk exceeds the total milk available.";
+
+            }
+
+
+            /*
+             * ---------------------------------------------
+             * EXACT MATCH
+             * ---------------------------------------------
+             */
+
+            if (
+                valid &&
+                Math.abs(
+                    allocated -
+                    required
+                ) > 0.001
+            ) {
+
+                valid =
+                    false;
+
+
+                if (
+                    allocated <
+                    required
+                ) {
+
+                    message =
+                        (
+                            required -
+                            allocated
+                        ).toFixed(2) +
+                        " L still needs to be allocated.";
+
+                } else {
+
+                    message =
+                        (
+                            allocated -
+                            required
+                        ).toFixed(2) +
+                        " L has been allocated too much.";
+
+                }
+
+            }
+
+
+            /*
+             * ---------------------------------------------
+             * UPDATE STATUS
+             * ---------------------------------------------
+             */
+
+            statusOutput.classList.remove(
+                "good",
+                "warning",
+                "danger"
+            );
+
+
+            if (
+                required >
+                totalAvailable + 0.001
+            ) {
+
+                statusOutput.classList.add(
+                    "danger"
+                );
+
+            }
+
+            else if (
+                allocated >
+                totalAvailable + 0.001
+            ) {
+
+                statusOutput.classList.add(
+                    "danger"
+                );
+
+            }
+
+            else if (
+                allocated >
+                required
+            ) {
+
+                statusOutput.classList.add(
+                    "danger"
+                );
+
+            }
+
+            else if (
+                allocated <
+                required
+            ) {
+
+                statusOutput.classList.add(
+                    "warning"
+                );
+
+            }
+
+            else if (
+                required > 0 &&
+                allocated === required
+            ) {
+
+                statusOutput.classList.add(
+                    "good"
+                );
+
+            }
+
+
+            statusOutput.textContent =
+                valid
+                    ? "Allocation is ready. The sale can be submitted."
+                    : message;
+
+
+            /*
+             * ---------------------------------------------
+             * SUBMIT BUTTON
+             * ---------------------------------------------
+             */
+
+            submitButton.disabled =
+                !valid;
+
+
+            return valid;
+
+        }
+
+
+        /* =================================================
+           UPDATE SUMMARY
+        ================================================= */
+
+        function updateSummary() {
+
+            const required =
+                round(
+                    getRequired()
+                );
+
+
+            const allocated =
+                round(
+                    getAllocated()
                 );
 
 
@@ -2315,12 +4207,15 @@ document.addEventListener(
                     price
                 ).toFixed(2);
 
+
+            validateState();
+
         }
 
 
-        // ==================================================
-        // BIND ALLOCATION ROW
-        // ==================================================
+        /* =================================================
+           BIND ROW
+        ================================================= */
 
         function bindRow(row) {
 
@@ -2336,13 +4231,32 @@ document.addEventListener(
                 );
 
 
-            if (!select || !input) {
+            if (
+                !select ||
+                !input
+            ) {
+
                 return;
+
             }
 
 
             select.addEventListener(
                 "change",
+                function() {
+
+                    updateRowAvailability(
+                        row
+                    );
+
+                    updateSummary();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "input",
                 function() {
 
                     const option =
@@ -2352,21 +4266,33 @@ document.addEventListener(
 
 
                     const available =
+                        Math.max(
+                            0,
+                            Number(
+                                option?.dataset?.available
+                            ) || 0
+                        );
+
+
+                    const value =
                         Number(
-                            option?.dataset?.available
+                            input.value
                         ) || 0;
 
 
-                    if (available > 0) {
+                    /*
+                     * Immediately prevent an individual
+                     * farm allocation from exceeding its
+                     * available milk.
+                     */
 
-                        input.max =
-                            available;
+                    if (
+                        value >
+                        available
+                    ) {
 
-                    } else {
-
-                        input.removeAttribute(
-                            "max"
-                        );
+                        input.value =
+                            available.toFixed(2);
 
                     }
 
@@ -2377,13 +4303,16 @@ document.addEventListener(
             );
 
 
-            input.addEventListener(
-                "input",
-                updateSummary
+            updateRowAvailability(
+                row
             );
 
         }
 
+
+        /* =================================================
+           INITIAL ROWS
+        ================================================= */
 
         container
             .querySelectorAll(
@@ -2394,24 +4323,56 @@ document.addEventListener(
             );
 
 
+        /* =================================================
+           CUSTOMER INPUT
+        ================================================= */
+
         saleLitersInput.addEventListener(
             "input",
-            updateSummary
+            function() {
+
+                const required =
+                    getRequired();
+
+
+                /*
+                 * Browser-level maximum enforcement.
+                 */
+
+                if (
+                    required >
+                    totalAvailable
+                ) {
+
+                    saleLitersInput.classList.add(
+                        "invalid"
+                    );
+
+                } else {
+
+                    saleLitersInput.classList.remove(
+                        "invalid"
+                    );
+
+                }
+
+
+                updateSummary();
+
+            }
         );
 
 
-        // ==================================================
-        // ADD FARM
-        // ==================================================
+        /* =================================================
+           ADD FARM
+        ================================================= */
 
         addButton.addEventListener(
             "click",
             function() {
 
                 const rows =
-                    container.querySelectorAll(
-                        ".allocation-row"
-                    );
+                    getRows();
 
 
                 const index =
@@ -2423,7 +4384,27 @@ document.addEventListener(
 
 
                 if (!firstRow) {
+
                     return;
+
+                }
+
+
+                /*
+                 * Do not allow more rows than farms.
+                 */
+
+                if (
+                    index >=
+                    <%= visibleFarmData.length %>
+                ) {
+
+                    alert(
+                        "All available farms have already been added."
+                    );
+
+                    return;
+
                 }
 
 
@@ -2442,6 +4423,12 @@ document.addEventListener(
                 const input =
                     row.querySelector(
                         ".allocation-liters"
+                    );
+
+
+                const availability =
+                    row.querySelector(
+                        ".row-available"
                     );
 
 
@@ -2466,6 +4453,33 @@ document.addEventListener(
                 );
 
 
+                if (availability) {
+
+                    availability.textContent =
+                        "0.00 L";
+
+                }
+
+
+                /*
+                 * Disable farms already selected
+                 * in other rows.
+                 */
+
+                select
+                    .querySelectorAll(
+                        "option"
+                    )
+                    .forEach(
+                        option => {
+
+                            option.disabled =
+                                false;
+
+                        }
+                    );
+
+
                 container.appendChild(
                     row
                 );
@@ -2476,152 +4490,186 @@ document.addEventListener(
                 );
 
 
+                updateSelectedFarmOptions();
+
                 updateSummary();
 
             }
         );
 
 
-        // ==================================================
-        // SUBMIT VALIDATION
-        // ==================================================
+        /* =================================================
+           PREVENT DUPLICATE FARM SELECTIONS
+        ================================================= */
+
+        function updateSelectedFarmOptions() {
+
+            const selects =
+                container.querySelectorAll(
+                    ".farm-select"
+                );
+
+
+            const selected =
+                new Set();
+
+
+            selects.forEach(
+                select => {
+
+                    if (
+                        select.value
+                    ) {
+
+                        selected.add(
+                            select.value
+                        );
+
+                    }
+
+                }
+            );
+
+
+            selects.forEach(
+                select => {
+
+                    const current =
+                        select.value;
+
+
+                    select
+                        .querySelectorAll(
+                            "option"
+                        )
+                        .forEach(
+                            option => {
+
+                                if (
+                                    !option.value
+                                ) {
+
+                                    return;
+
+                                }
+
+
+                                option.disabled =
+                                    option.value !==
+                                    current &&
+                                    selected.has(
+                                        option.value
+                                    );
+
+                            }
+                        );
+
+                }
+            );
+
+        }
+
+
+        /* =================================================
+           UPDATE SELECTS WHEN FARM CHANGES
+        ================================================= */
+
+        container.addEventListener(
+            "change",
+            function(event) {
+
+                if (
+                    event.target.classList.contains(
+                        "farm-select"
+                    )
+                ) {
+
+                    updateSelectedFarmOptions();
+
+                }
+
+            }
+        );
+
+
+        /* =================================================
+           FINAL SUBMIT VALIDATION
+           -----------------------------------------------
+           This is intentionally repeated here.
+           The server remains authoritative.
+        ================================================= */
 
         form.addEventListener(
             "submit",
             function(event) {
 
-                const required =
-                    Number(
-                        saleLitersInput.value
-                    ) || 0;
+                /*
+                 * Never allow submission if the complete
+                 * client-side validation fails.
+                 */
 
-
-                let allocated = 0;
-
-
-                const usedFarms =
-                    new Set();
-
-
-                const rows =
-                    container.querySelectorAll(
-                        ".allocation-row"
-                    );
-
-
-                for (
-                    const row
-                    of rows
+                if (
+                    !validateState()
                 ) {
 
-                    const select =
-                        row.querySelector(
-                            ".farm-select"
-                        );
+                    event.preventDefault();
 
-
-                    const input =
-                        row.querySelector(
-                            ".allocation-liters"
-                        );
-
-
-                    const farmId =
-                        select.value;
-
-
-                    const liters =
-                        Number(
-                            input.value
-                        ) || 0;
-
-
-                    if (
-                        !farmId ||
-                        liters <= 0
-                    ) {
-
-                        event.preventDefault();
-
-                        alert(
-                            "Every allocation requires a farm and liters."
-                        );
-
-                        return;
-
-                    }
-
-
-                    if (
-                        usedFarms.has(
-                            farmId
-                        )
-                    ) {
-
-                        event.preventDefault();
-
-                        alert(
-                            "The same farm cannot be allocated twice."
-                        );
-
-                        return;
-
-                    }
-
-
-                    usedFarms.add(
-                        farmId
-                    );
-
-
-                    const option =
-                        select.options[
-                            select.selectedIndex
-                        ];
-
-
-                    const available =
-                        Number(
-                            option?.dataset?.available
-                        ) || 0;
-
-
-                    if (
-                        liters >
-                        available
-                    ) {
-
-                        event.preventDefault();
-
-                        alert(
-                            "Allocated liters exceed the available milk for a selected farm."
-                        );
-
-                        return;
-
-                    }
-
-
-                    allocated +=
-                        liters;
+                    return;
 
                 }
 
 
+                const required =
+                    round(
+                        getRequired()
+                    );
+
+
+                const allocated =
+                    round(
+                        getAllocated()
+                    );
+
+
+                /*
+                 * HARD TOTAL AVAILABLE CHECK
+                 */
+
                 if (
-                    required <= 0
+                    required >
+                    totalAvailable + 0.001
                 ) {
 
                     event.preventDefault();
 
                     alert(
-                        "Enter the amount of milk required."
+                        "The customer's requested milk exceeds the total available milk."
                     );
 
                     return;
 
                 }
 
+
+                if (
+                    allocated >
+                    totalAvailable + 0.001
+                ) {
+
+                    event.preventDefault();
+
+                    alert(
+                        "The total allocated milk exceeds the total available milk."
+                    );
+
+                    return;
+
+                }
+
+
+                /*
+                 * EXACT MATCH
+                 */
 
                 if (
                     Math.abs(
@@ -2641,18 +4689,110 @@ document.addEventListener(
                 }
 
 
-                if (
-                    allocated >
-                    <%= totalAvailable %>
+                /*
+                 * FARM CHECK
+                 */
+
+                const usedFarms =
+                    new Set();
+
+
+                for (
+                    const row
+                    of getRows()
                 ) {
 
-                    event.preventDefault();
+                    const select =
+                        row.querySelector(
+                            ".farm-select"
+                        );
 
-                    alert(
-                        "The allocated milk exceeds the total milk available."
+
+                    const input =
+                        row.querySelector(
+                            ".allocation-liters"
+                        );
+
+
+                    const farmId =
+                        select.value;
+
+
+                    const liters =
+                        round(
+                            Number(
+                                input.value
+                            ) || 0
+                        );
+
+
+                    if (
+                        !farmId ||
+                        liters <= 0
+                    ) {
+
+                        event.preventDefault();
+
+                        alert(
+                            "Every allocation requires a farm and a positive quantity."
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        usedFarms.has(
+                            farmId
+                        )
+                    ) {
+
+                        event.preventDefault();
+
+                        alert(
+                            "The same farm cannot be allocated more than once."
+                        );
+
+                        return;
+
+                    }
+
+
+                    usedFarms.add(
+                        farmId
                     );
 
-                    return;
+
+                    const option =
+                        select.options[
+                            select.selectedIndex
+                        ];
+
+
+                    const farmAvailable =
+                        Math.max(
+                            0,
+                            Number(
+                                option?.dataset?.available
+                            ) || 0
+                        );
+
+
+                    if (
+                        liters >
+                        farmAvailable + 0.001
+                    ) {
+
+                        event.preventDefault();
+
+                        alert(
+                            "One of the farm allocations exceeds that farm's available milk."
+                        );
+
+                        return;
+
+                    }
 
                 }
 
@@ -2660,9 +4800,11 @@ document.addEventListener(
         );
 
 
-        // ==================================================
-        // INITIAL SUMMARY
-        // ==================================================
+        /* =================================================
+           INITIAL STATE
+        ================================================= */
+
+        updateSelectedFarmOptions();
 
         updateSummary();
 
