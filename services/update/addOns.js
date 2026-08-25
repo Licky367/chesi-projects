@@ -1,14 +1,12 @@
 // ==========================================================
 // services/update/addOnsService.js
-// =========================================================
-//
 // ADD-ONS FINANCIAL SERVICE
 // ==========================================================
 //
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Handles:
+// Handles financial transactions for a Dairy:
 //
 //     1. Loading financial add-ons page data
 //
@@ -16,21 +14,30 @@
 //
 //     3. Recording liabilities
 //
+// ROUTES
+// ----------------------------------------------------------
+//
+// Revenue:
+//
+//     POST /dairy/:id/revenue
+//
+// Liability:
+//
+//     POST /dairy/:id/liability
+//
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// Financial transaction types:
+// The transaction type is NEVER taken from the request.
 //
-//     revenue
+// The service explicitly creates:
 //
-//     liability
+//     revenue   → type: "revenue"
+//     liability → type: "liability"
 //
-// The transaction type is NEVER trusted from the client.
+// The Dairy ID comes from:
 //
-// The service determines:
-//
-//     - revenue → "revenue"
-//     - liability → "liability"
+//     req.params.id
 //
 // ==========================================================
 
@@ -48,37 +55,233 @@ const Financials =
 
 
 // ==========================================================
+// INTERNAL ERROR HELPER
+// ==========================================================
+
+function createError(
+    message,
+    statusCode
+) {
+
+    const error =
+        new Error(message);
+
+    error.statusCode =
+        statusCode;
+
+    return error;
+
+}
+
+
+// ==========================================================
+// INTERNAL DAIRY VALIDATION
+// ==========================================================
+
+async function getDairy(
+    dairyId
+) {
+
+    // ======================================================
+    // VALIDATE ID
+    // ======================================================
+
+    if (
+        !dairyId ||
+        !mongoose.Types.ObjectId.isValid(
+            dairyId
+        )
+    ) {
+
+        throw createError(
+            "Invalid Dairy ID.",
+            400
+        );
+
+    }
+
+
+    // ======================================================
+    // FIND DAIRY
+    // ======================================================
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
+        );
+
+
+    if (!dairy) {
+
+        throw createError(
+            "Dairy record not found.",
+            404
+        );
+
+    }
+
+
+    return dairy;
+
+}
+
+
+// ==========================================================
+// INTERNAL USER VALIDATION
+// ==========================================================
+
+function validateUser(
+    user,
+    transactionName
+) {
+
+    if (!user) {
+
+        throw createError(
+            `You must be logged in to record ${transactionName}.`,
+            401
+        );
+
+    }
+
+}
+
+
+// ==========================================================
+// INTERNAL AMOUNT VALIDATION
+// ==========================================================
+
+function validateAmount(
+    amount,
+    transactionName
+) {
+
+    const numericAmount =
+        Number(amount);
+
+
+    if (
+        !Number.isFinite(
+            numericAmount
+        ) ||
+        numericAmount < 0
+    ) {
+
+        throw createError(
+            `${transactionName} amount must be a valid positive number.`,
+            400
+        );
+
+    }
+
+
+    return numericAmount;
+
+}
+
+
+// ==========================================================
+// INTERNAL DESCRIPTION VALIDATION
+// ==========================================================
+
+function validateDescription(
+    description,
+    transactionName
+) {
+
+    const cleanDescription =
+        String(
+            description || ""
+        )
+            .trim();
+
+
+    if (!cleanDescription) {
+
+        throw createError(
+            `${transactionName} description is required.`,
+            400
+        );
+
+    }
+
+
+    return cleanDescription;
+
+}
+
+
+// ==========================================================
+// INTERNAL DATE VALIDATION
+// ==========================================================
+//
+// The HTML form sends:
+//
+//     YYYY-MM-DD
+//
+// If no date is supplied, the current date/time is used.
+//
+// ==========================================================
+
+function resolveTransactionDate(
+    date,
+    transactionName
+) {
+
+    if (!date) {
+
+        return new Date();
+
+    }
+
+
+    const parsedDate =
+        new Date(date);
+
+
+    if (
+        Number.isNaN(
+            parsedDate.getTime()
+        )
+    ) {
+
+        throw createError(
+            `Invalid ${transactionName} date.`,
+            400
+        );
+
+    }
+
+
+    return parsedDate;
+
+}
+
+
+// ==========================================================
 // GET ADD-ONS PAGE DATA
 // ==========================================================
 //
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Resolves:
+// Resolves the Dairy used by:
 //
-//     dairy
+//     GET /dairy/:id/addOns
 //
-// and returns:
+// Returns:
 //
 //     {
 //         dairy,
 //         user
 //     }
 //
-// The user is taken from:
-//
-//     req.user
-//
-// or:
-//
-//     req.session.user
-//
-// depending on the application's authentication structure.
-//
 // ==========================================================
 
 exports.getAddOnsPageData =
-async function(req) {
+async function(
+    req
+) {
 
     // ======================================================
     // USER
@@ -93,34 +296,9 @@ async function(req) {
     // ======================================================
     // DAIRY ID
     // ======================================================
-    //
-    // Supports:
-    //
-    //     req.params.id
-    //
-    // ======================================================
 
     const dairyId =
         req.params?.id;
-
-
-    if (
-        !dairyId ||
-        !mongoose.Types.ObjectId.isValid(
-            dairyId
-        )
-    ) {
-
-        const error =
-            new Error(
-                "Invalid Dairy ID."
-            );
-
-        error.statusCode = 400;
-
-        throw error;
-
-    }
 
 
     // ======================================================
@@ -128,27 +306,13 @@ async function(req) {
     // ======================================================
 
     const dairy =
-        await Dairy.findById(
+        await getDairy(
             dairyId
-        ).lean();
-
-
-    if (!dairy) {
-
-        const error =
-            new Error(
-                "Dairy record not found."
-            );
-
-        error.statusCode = 404;
-
-        throw error;
-
-    }
+        );
 
 
     // ======================================================
-    // RETURN PAGE DATA
+    // RETURN
     // ======================================================
 
     return {
@@ -166,188 +330,96 @@ async function(req) {
 // RECORD REVENUE
 // ==========================================================
 //
-// Creates:
+// ROUTE:
 //
-//     type = "revenue"
+//     POST /dairy/:id/revenue
+//
+// EXPECTED REQUEST:
+//
+//     req.params.id
+//
+//     req.body.amount
+//
+//     req.body.description
+//
+//     req.body.date
+//
+// The transaction type is ALWAYS:
+//
+//     "revenue"
 //
 // ==========================================================
 
 exports.recordRevenue =
-async function(
+async function({
 
-    {
+    dairyId,
 
-        dairyId,
+    amount,
 
-        amount,
+    description,
 
-        description,
+    date,
 
-        date,
+    user
 
-        user
-
-    }
-
-) {
+}) {
 
     // ======================================================
-    // VALIDATE USER
+    // USER
     // ======================================================
 
-    if (!user) {
-
-        const error =
-            new Error(
-                "You must be logged in to record revenue."
-            );
-
-        error.statusCode = 401;
-
-        throw error;
-
-    }
+    validateUser(
+        user,
+        "revenue"
+    );
 
 
     // ======================================================
-    // VALIDATE DAIRY ID
-    // ======================================================
-
-    if (
-        !dairyId ||
-        !mongoose.Types.ObjectId.isValid(
-            dairyId
-        )
-    ) {
-
-        const error =
-            new Error(
-                "Invalid Dairy ID."
-            );
-
-        error.statusCode = 400;
-
-        throw error;
-
-    }
-
-
-    // ======================================================
-    // FIND DAIRY
+    // DAIRY
     // ======================================================
 
     const dairy =
-        await Dairy.findById(
+        await getDairy(
             dairyId
         );
 
 
-    if (!dairy) {
-
-        const error =
-            new Error(
-                "Dairy record not found."
-            );
-
-        error.statusCode = 404;
-
-        throw error;
-
-    }
-
-
     // ======================================================
-    // VALIDATE AMOUNT
+    // AMOUNT
     // ======================================================
 
     const numericAmount =
-        Number(amount);
-
-
-    if (
-        !Number.isFinite(
-            numericAmount
-        ) ||
-        numericAmount < 0
-    ) {
-
-        const error =
-            new Error(
-                "Revenue amount must be a valid positive number."
-            );
-
-        error.statusCode = 400;
-
-        throw error;
-
-    }
+        validateAmount(
+            amount,
+            "Revenue"
+        );
 
 
     // ======================================================
-    // VALIDATE DESCRIPTION
+    // DESCRIPTION
     // ======================================================
 
     const cleanDescription =
-        String(
-            description || ""
-        )
-            .trim();
-
-
-    if (!cleanDescription) {
-
-        const error =
-            new Error(
-                "Revenue description is required."
-            );
-
-        error.statusCode = 400;
-
-        throw error;
-
-    }
+        validateDescription(
+            description,
+            "Revenue"
+        );
 
 
     // ======================================================
-    // TRANSACTION DATE
+    // DATE
     // ======================================================
 
-    let createdAt =
-        new Date();
-
-
-    if (date) {
-
-        const parsedDate =
-            new Date(date);
-
-
-        if (
-            Number.isNaN(
-                parsedDate.getTime()
-            )
-        ) {
-
-            const error =
-                new Error(
-                    "Invalid revenue date."
-                );
-
-            error.statusCode = 400;
-
-            throw error;
-
-        }
-
-
-        createdAt =
-            parsedDate;
-
-    }
+    const createdAt =
+        resolveTransactionDate(
+            date,
+            "revenue"
+        );
 
 
     // ======================================================
-    // CREATE REVENUE
+    // CREATE FINANCIAL RECORD
     // ======================================================
 
     const revenue =
@@ -382,6 +454,10 @@ async function(
         });
 
 
+    // ======================================================
+    // RETURN CREATED RECORD
+    // ======================================================
+
     return revenue;
 
 };
@@ -391,188 +467,96 @@ async function(
 // RECORD LIABILITY
 // ==========================================================
 //
-// Creates:
+// ROUTE:
 //
-//     type = "liability"
+//     POST /dairy/:id/liability
+//
+// EXPECTED REQUEST:
+//
+//     req.params.id
+//
+//     req.body.amount
+//
+//     req.body.description
+//
+//     req.body.date
+//
+// The transaction type is ALWAYS:
+//
+//     "liability"
 //
 // ==========================================================
 
 exports.recordLiability =
-async function(
+async function({
 
-    {
+    dairyId,
 
-        dairyId,
+    amount,
 
-        amount,
+    description,
 
-        description,
+    date,
 
-        date,
+    user
 
-        user
-
-    }
-
-) {
+}) {
 
     // ======================================================
-    // VALIDATE USER
+    // USER
     // ======================================================
 
-    if (!user) {
-
-        const error =
-            new Error(
-                "You must be logged in to record a liability."
-            );
-
-        error.statusCode = 401;
-
-        throw error;
-
-    }
+    validateUser(
+        user,
+        "liability"
+    );
 
 
     // ======================================================
-    // VALIDATE DAIRY ID
-    // ======================================================
-
-    if (
-        !dairyId ||
-        !mongoose.Types.ObjectId.isValid(
-            dairyId
-        )
-    ) {
-
-        const error =
-            new Error(
-                "Invalid Dairy ID."
-            );
-
-        error.statusCode = 400;
-
-        throw error;
-
-    }
-
-
-    // ======================================================
-    // FIND DAIRY
+    // DAIRY
     // ======================================================
 
     const dairy =
-        await Dairy.findById(
+        await getDairy(
             dairyId
         );
 
 
-    if (!dairy) {
-
-        const error =
-            new Error(
-                "Dairy record not found."
-            );
-
-        error.statusCode = 404;
-
-        throw error;
-
-    }
-
-
     // ======================================================
-    // VALIDATE AMOUNT
+    // AMOUNT
     // ======================================================
 
     const numericAmount =
-        Number(amount);
-
-
-    if (
-        !Number.isFinite(
-            numericAmount
-        ) ||
-        numericAmount < 0
-    ) {
-
-        const error =
-            new Error(
-                "Liability amount must be a valid positive number."
-            );
-
-        error.statusCode = 400;
-
-        throw error;
-
-    }
+        validateAmount(
+            amount,
+            "Liability"
+        );
 
 
     // ======================================================
-    // VALIDATE DESCRIPTION
+    // DESCRIPTION
     // ======================================================
 
     const cleanDescription =
-        String(
-            description || ""
-        )
-            .trim();
-
-
-    if (!cleanDescription) {
-
-        const error =
-            new Error(
-                "Liability description is required."
-            );
-
-        error.statusCode = 400;
-
-        throw error;
-
-    }
+        validateDescription(
+            description,
+            "Liability"
+        );
 
 
     // ======================================================
-    // TRANSACTION DATE
+    // DATE
     // ======================================================
 
-    let createdAt =
-        new Date();
-
-
-    if (date) {
-
-        const parsedDate =
-            new Date(date);
-
-
-        if (
-            Number.isNaN(
-                parsedDate.getTime()
-            )
-        ) {
-
-            const error =
-                new Error(
-                    "Invalid liability date."
-                );
-
-            error.statusCode = 400;
-
-            throw error;
-
-        }
-
-
-        createdAt =
-            parsedDate;
-
-    }
+    const createdAt =
+        resolveTransactionDate(
+            date,
+            "liability"
+        );
 
 
     // ======================================================
-    // CREATE LIABILITY
+    // CREATE FINANCIAL RECORD
     // ======================================================
 
     const liability =
@@ -607,6 +591,36 @@ async function(
         });
 
 
+    // ======================================================
+    // RETURN CREATED RECORD
+    // ======================================================
+
     return liability;
 
 };
+
+
+// ==========================================================
+// EXPORT SUMMARY
+// ==========================================================
+//
+// AVAILABLE METHODS:
+//
+//     getAddOnsPageData(req)
+//
+//     recordRevenue({...})
+//
+//     recordLiability({...})
+//
+// ROUTES:
+//
+//     GET
+//         /dairy/:id/addOns
+//
+//     POST
+//         /dairy/:id/revenue
+//
+//     POST
+//         /dairy/:id/liability
+//
+// ==========================================================
