@@ -1,6 +1,47 @@
 // ==========================================================
 // server.js
 // ==========================================================
+//
+// APPLICATION ENTRY POINT
+//
+// Responsibilities:
+//
+//     - Load environment
+//     - Connect MongoDB
+//     - Seed default admin
+//     - Configure Express
+//     - Configure sessions
+//     - Configure Socket.IO
+//     - Mount application routes
+//     - Serve static files
+//     - Handle 404 / errors
+//     - Start HTTP server
+//
+// IMPORTANT USER / DAIRY ARCHITECTURE
+// ----------------------------------------------------------
+//
+// User.assignedFarm
+//     = Dairy Farm documents assigned to a dairyWorker.
+//
+// User.assignedAsset
+//     = code-less Dairy assets assigned to a user.
+//
+// Assigned Asset eligibility:
+//
+//     Dairy.code === null
+//     Dairy.assetCode === null
+//     Dairy.recordType === "structure"
+//
+// Farm ownership remains represented by:
+//
+//     Dairy.assetCode = negative Dairy Farm code
+//
+// This server does NOT implement assignment logic itself.
+// Assignment and retrieval belong to their respective
+// controllers/services/routes.
+//
+// ==========================================================
+
 
 const express = require("express");
 const http = require("http");
@@ -24,17 +65,16 @@ require("dotenv").config();
 // CONNECT-MONGO
 // ==========================================================
 
-let MongoStore;
+let MongoStore = null;
 
 try {
 
-    MongoStore =
-        require("connect-mongo");
+    MongoStore = require("connect-mongo");
 
 } catch (error) {
 
     console.warn(
-        "⚠️ connect-mongo is not installed; falling back to default session storage"
+        "⚠️ connect-mongo is not installed; falling back to default session storage."
     );
 
 }
@@ -51,22 +91,26 @@ const isProduction =
 if (isProduction) {
 
     const requiredEnvVars = [
+
         "MONGO_URI",
         "SESSION_SECRET",
         "FRONTEND_URL"
+
     ];
 
 
     const missing =
         requiredEnvVars.filter(
-            (key) => !process.env[key]
+            key => !process.env[key]
         );
 
 
-    if (missing.length) {
+    if (missing.length > 0) {
 
         console.error(
-            `❌ Production startup failed: missing required environment variables: ${missing.join(", ")}`
+            "❌ Production startup failed. " +
+            "Missing required environment variables: " +
+            missing.join(", ")
         );
 
         process.exit(1);
@@ -93,7 +137,41 @@ const seedUser =
 
 
 // ==========================================================
-// ROUTES
+// ROUTE LOADER
+// ==========================================================
+//
+// Route loading is centralized here.
+//
+// A missing optional route module does not prevent the rest
+// of the application from starting.
+//
+// ==========================================================
+
+function loadRoute(
+    routePath,
+    routeName
+) {
+
+    try {
+
+        return require(routePath);
+
+    } catch (error) {
+
+        console.warn(
+            `⚠️ Failed to load ${routeName} routes:`,
+            error.message
+        );
+
+        return null;
+
+    }
+
+}
+
+
+// ==========================================================
+// APPLICATION ROUTES
 // ==========================================================
 
 
@@ -101,443 +179,245 @@ const seedUser =
 // INDEX
 // ----------------------------------------------------------
 
-let indexRoutes;
-
-try {
-
-    indexRoutes =
-        require("./routes/index");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load index routes:",
-        err.message
+const indexRoutes =
+    loadRoute(
+        "./routes/index",
+        "index"
     );
-
-}
 
 
 // ----------------------------------------------------------
 // AUTH
 // ----------------------------------------------------------
 
-let authRoutes;
-
-try {
-
-    authRoutes =
-        require("./routes/auth");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load auth routes:",
-        err.message
+const authRoutes =
+    loadRoute(
+        "./routes/auth",
+        "auth"
     );
-
-}
 
 
 // ----------------------------------------------------------
 // CREATE INVITE
 // ----------------------------------------------------------
 
-let createRoutes;
-
-try {
-
-    createRoutes =
-        require("./routes/create");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load create routes:",
-        err.message
+const createRoutes =
+    loadRoute(
+        "./routes/create",
+        "create"
     );
 
-}
 
 // ----------------------------------------------------------
-// EXTRA ALLOCATIONS
+// EXTRA / ASSIGNED ASSETS
+// ----------------------------------------------------------
+//
+// Handles the new assignedAsset system.
+//
+// User:
+//
+//     assignedAsset[]
+//
+// references:
+//
+//     Dairy._id
+//
+// for code-less standalone assets.
+//
 // ----------------------------------------------------------
 
-let extrasRoutes;
-
-try {
-
-    extrasRoutes =
-        require("./routes/extrasRoutes");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load index routes:",
-        err.message
+const extrasRoutes =
+    loadRoute(
+        "./routes/extrasRoutes",
+        "extras"
     );
-
-}
-
-
-
 
 
 // ----------------------------------------------------------
 // UPDATE
 // ----------------------------------------------------------
 
-let updateRoutes;
-
-try {
-
-    updateRoutes =
-        require("./routes/update");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load update routes:",
-        err.message
+const updateRoutes =
+    loadRoute(
+        "./routes/update",
+        "update"
     );
-
-}
 
 
 // ----------------------------------------------------------
 // ADD DAIRY / ASSET
 // ----------------------------------------------------------
 
-let addRoutes;
-
-try {
-
-    addRoutes =
-        require("./routes/add");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load add routes:",
-        err.message
+const addRoutes =
+    loadRoute(
+        "./routes/add",
+        "add"
     );
-
-}
 
 
 // ----------------------------------------------------------
 // PROFILE
 // ----------------------------------------------------------
 
-let profileRoutes;
-
-try {
-
-    profileRoutes =
-        require("./routes/profile");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load profile routes:",
-        err.message
+const profileRoutes =
+    loadRoute(
+        "./routes/profile",
+        "profile"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // MILK
-// ==========================================================
+// ----------------------------------------------------------
 
-let milkRoutes;
-
-try {
-
-    milkRoutes =
-        require("./routes/milk");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load milk routes:",
-        err.message
+const milkRoutes =
+    loadRoute(
+        "./routes/milk",
+        "milk"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // MILK SALES
-// ==========================================================
+// ----------------------------------------------------------
 
-let milkSalesRoutes;
-
-try {
-
-    milkSalesRoutes =
-        require("./routes/milkSales");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load milkSales routes:",
-        err.message
+const milkSalesRoutes =
+    loadRoute(
+        "./routes/milkSales",
+        "milkSales"
     );
-
-}
 
 
 // ----------------------------------------------------------
 // ACCOUNTS
 // ----------------------------------------------------------
 
-let accountsRoutes;
-
-try {
-
-    accountsRoutes =
-        require("./routes/accounts");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load accounts routes:",
-        err.message
+const accountsRoutes =
+    loadRoute(
+        "./routes/accounts",
+        "accounts"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // NET WORTH
-// ==========================================================
+// ----------------------------------------------------------
 
-let networthRoutes;
-
-try {
-
-    networthRoutes =
-        require("./routes/networth");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load networth routes:",
-        err.message
+const networthRoutes =
+    loadRoute(
+        "./routes/networth",
+        "networth"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // FINANCIALS
-// ==========================================================
+// ----------------------------------------------------------
 
-let financialsRoutes;
-
-try {
-
-    financialsRoutes =
-        require("./routes/financials");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load financials routes:",
-        err.message
+const financialsRoutes =
+    loadRoute(
+        "./routes/financials",
+        "financials"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // STORAGE
-// ==========================================================
+// ----------------------------------------------------------
 
-let storageRoutes;
-
-try {
-
-    storageRoutes =
-        require("./routes/storage");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load storage routes:",
-        err.message
+const storageRoutes =
+    loadRoute(
+        "./routes/storage",
+        "storage"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // POULTRY STATS
-// ==========================================================
+// ----------------------------------------------------------
 
-let poultryStatsRoutes;
-
-try {
-
-    poultryStatsRoutes =
-        require("./routes/poultryStats");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load poultryStats routes:",
-        err.message
+const poultryStatsRoutes =
+    loadRoute(
+        "./routes/poultryStats",
+        "poultryStats"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // EGGS
-// ==========================================================
+// ----------------------------------------------------------
 
-let eggRoutes;
-
-try {
-
-    eggRoutes =
-        require("./routes/poultryEgg");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load poultryEgg routes:",
-        err.message
+const eggRoutes =
+    loadRoute(
+        "./routes/poultryEgg",
+        "poultryEgg"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // CAGE
-// ==========================================================
+// ----------------------------------------------------------
 
-let cageRoutes;
-
-try {
-
-    cageRoutes =
-        require("./routes/poultryCage");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load poultryCage routes:",
-        err.message
+const cageRoutes =
+    loadRoute(
+        "./routes/poultryCage",
+        "poultryCage"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // NURSING
-// ==========================================================
+// ----------------------------------------------------------
 
-let nursingRoutes;
-
-try {
-
-    nursingRoutes =
-        require("./routes/poultryNursing");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load poultryNursing routes:",
-        err.message
+const nursingRoutes =
+    loadRoute(
+        "./routes/poultryNursing",
+        "poultryNursing"
     );
 
-}
 
+// ----------------------------------------------------------
+// POULTRY FINANCE
+// ----------------------------------------------------------
 
-// ==========================================================
-// FINANCE
-// ==========================================================
-
-let financeRoutes;
-
-try {
-
-    financeRoutes =
-        require("./routes/poultryFinance");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load poultryFinance routes:",
-        err.message
+const financeRoutes =
+    loadRoute(
+        "./routes/poultryFinance",
+        "poultryFinance"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // INCUBATION
-// ==========================================================
+// ----------------------------------------------------------
 
-let incubationRoutes;
-
-try {
-
-    incubationRoutes =
-        require("./routes/poultryIncubation");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load poultryIncubation routes:",
-        err.message
+const incubationRoutes =
+    loadRoute(
+        "./routes/poultryIncubation",
+        "poultryIncubation"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // DASHBOARD
-// ==========================================================
+// ----------------------------------------------------------
 
-let dashboardRoutes;
-
-try {
-
-    dashboardRoutes =
-        require("./routes/dashboard");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load dashboard routes:",
-        err.message
+const dashboardRoutes =
+    loadRoute(
+        "./routes/dashboard",
+        "dashboard"
     );
 
-}
 
-
-// ==========================================================
+// ----------------------------------------------------------
 // AGRICULTURE
-// ==========================================================
+// ----------------------------------------------------------
 
-let farmRoutes;
-
-try {
-
-    farmRoutes =
-        require("./routes/farm");
-
-} catch (err) {
-
-    console.warn(
-        "Warning: failed to load farm routes:",
-        err.message
+const farmRoutes =
+    loadRoute(
+        "./routes/farm",
+        "farm"
     );
-
-}
 
 
 // ==========================================================
@@ -549,7 +429,7 @@ const socketHandler =
 
 
 // ==========================================================
-// APP
+// EXPRESS APPLICATION
 // ==========================================================
 
 const app =
@@ -599,7 +479,7 @@ app.use(
 
 
 // ==========================================================
-// RATE LIMIT
+// GLOBAL RATE LIMIT
 // ==========================================================
 
 app.use(
@@ -642,7 +522,7 @@ app.use(
 
 
 // ==========================================================
-// LOGGING
+// HTTP LOGGING
 // ==========================================================
 
 app.use(
@@ -711,11 +591,9 @@ app.use(
 
     express.urlencoded({
 
-        extended:
-            true,
+        extended: true,
 
-        limit:
-            "10mb"
+        limit: "10mb"
 
     })
 
@@ -726,8 +604,7 @@ app.use(
 
     express.json({
 
-        limit:
-            "10mb"
+        limit: "10mb"
 
     })
 
@@ -744,7 +621,7 @@ app.use(
 
 
 // ==========================================================
-// SESSION
+// SESSION STORE
 // ==========================================================
 
 const sessionStore =
@@ -768,6 +645,10 @@ const sessionStore =
 
         : undefined;
 
+
+// ==========================================================
+// SESSION
+// ==========================================================
 
 app.use(
 
@@ -817,7 +698,17 @@ app.use(
 
 
 // ==========================================================
-// GLOBAL USER
+// GLOBAL REQUEST USER
+// ==========================================================
+//
+// req.session.user remains the authentication source.
+//
+// req.user and res.locals.user provide convenient access
+// throughout controllers and EJS views.
+//
+// assignedFarm and assignedAsset remain properties of the
+// authenticated User document/session.
+//
 // ==========================================================
 
 app.use(
@@ -864,8 +755,7 @@ app.get(
 
         return res.status(200).json({
 
-            status:
-                "ok",
+            status: "ok",
 
             environment:
                 process.env.NODE_ENV ||
@@ -954,9 +844,9 @@ app.set(
 // ==========================================================
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // INDEX
-// ----------------------------------------------------------
+// ==========================================================
 
 if (indexRoutes) {
 
@@ -968,23 +858,9 @@ if (indexRoutes) {
 }
 
 
-// ----------------------------------------------------------
-// CREATE INVITE
-// ----------------------------------------------------------
-
-if (createRoutes) {
-
-    app.use(
-        "/create-invite",
-        createRoutes
-    );
-
-}
-
-
-// ----------------------------------------------------------
+// ==========================================================
 // AUTH
-// ----------------------------------------------------------
+// ==========================================================
 
 if (authRoutes) {
 
@@ -996,9 +872,50 @@ if (authRoutes) {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
+// CREATE INVITE
+// ==========================================================
+
+if (createRoutes) {
+
+    app.use(
+        "/create-invite",
+        createRoutes
+    );
+
+}
+
+
+// ==========================================================
+// EXTRA / ASSIGNED ASSETS
+// ==========================================================
+//
+// The extras router owns the assignedAsset UI/API.
+//
+// Example architecture:
+//
+//     routes/extrasRoutes.js
+//
+// The router itself defines the exact endpoints.
+//
+// Mounting at "/" preserves the route definitions inside
+// extrasRoutes and avoids duplicating route prefixes here.
+//
+// ==========================================================
+
+if (extrasRoutes) {
+
+    app.use(
+        "/",
+        extrasRoutes
+    );
+
+}
+
+
+// ==========================================================
 // UPDATE
-// ----------------------------------------------------------
+// ==========================================================
 
 if (updateRoutes) {
 
@@ -1010,9 +927,9 @@ if (updateRoutes) {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // ADD DAIRY / ASSET
-// ----------------------------------------------------------
+// ==========================================================
 
 if (addRoutes) {
 
@@ -1024,28 +941,15 @@ if (addRoutes) {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // PROFILE
-// ----------------------------------------------------------
+// ==========================================================
 
 if (profileRoutes) {
 
     app.use(
         "/",
         profileRoutes
-    );
-
-}
-
-// ----------------------------------------------------------
-// EXTRA ALLOCATIONS
-// ----------------------------------------------------------
-
-if (extrasRoutes) {
-
-    app.use(
-        "/",
-        extrasRoutes
     );
 
 }
@@ -1079,9 +983,9 @@ if (milkSalesRoutes) {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // ACCOUNTS
-// ----------------------------------------------------------
+// ==========================================================
 
 if (accountsRoutes) {
 
@@ -1136,7 +1040,7 @@ if (storageRoutes) {
 
 
 // ==========================================================
-// POULTRY
+// POULTRY STATS
 // ==========================================================
 
 if (poultryStatsRoutes) {
@@ -1149,6 +1053,10 @@ if (poultryStatsRoutes) {
 }
 
 
+// ==========================================================
+// EGGS
+// ==========================================================
+
 if (eggRoutes) {
 
     app.use(
@@ -1158,6 +1066,10 @@ if (eggRoutes) {
 
 }
 
+
+// ==========================================================
+// CAGE
+// ==========================================================
 
 if (cageRoutes) {
 
@@ -1169,6 +1081,10 @@ if (cageRoutes) {
 }
 
 
+// ==========================================================
+// NURSING
+// ==========================================================
+
 if (nursingRoutes) {
 
     app.use(
@@ -1179,6 +1095,10 @@ if (nursingRoutes) {
 }
 
 
+// ==========================================================
+// INCUBATION
+// ==========================================================
+
 if (incubationRoutes) {
 
     app.use(
@@ -1188,6 +1108,10 @@ if (incubationRoutes) {
 
 }
 
+
+// ==========================================================
+// POULTRY FINANCE
+// ==========================================================
 
 if (financeRoutes) {
 
@@ -1228,7 +1152,7 @@ if (farmRoutes) {
 
 
 // ==========================================================
-// 404
+// 404 HANDLER
 // ==========================================================
 
 app.use(
@@ -1286,14 +1210,19 @@ app.use(
             );
 
 
+        // --------------------------------------------------
+        // MULTER FILE SIZE
+        // --------------------------------------------------
+
         if (
+
             err &&
             err.name === "MulterError" &&
             err.code === "LIMIT_FILE_SIZE"
+
         ) {
 
-            statusCode =
-                400;
+            statusCode = 400;
 
             err.message =
                 "The uploaded image is too large. Maximum size is 5MB.";
@@ -1301,32 +1230,23 @@ app.use(
         }
 
 
+        // --------------------------------------------------
+        // HTML RESPONSE
+        // --------------------------------------------------
+
         if (
             req.accepts("html")
         ) {
 
             const views = {
 
-                400:
-                    "400",
-
-                401:
-                    "401",
-
-                403:
-                    "403",
-
-                404:
-                    "404",
-
-                409:
-                    "409",
-
-                422:
-                    "422",
-
-                500:
-                    "500"
+                400: "400",
+                401: "401",
+                403: "403",
+                404: "404",
+                409: "409",
+                422: "422",
+                500: "500"
 
             };
 
@@ -1361,12 +1281,15 @@ app.use(
         }
 
 
+        // --------------------------------------------------
+        // JSON RESPONSE
+        // --------------------------------------------------
+
         return res.status(
             statusCode
         ).json({
 
-            success:
-                false,
+            success: false,
 
             message:
 
@@ -1399,7 +1322,7 @@ const PORT =
 // START SERVER
 // ==========================================================
 
-const startServer = (port) => {
+function startServer(port) {
 
     server.listen(
 
@@ -1415,7 +1338,7 @@ const startServer = (port) => {
 
     );
 
-};
+}
 
 
 // ==========================================================
@@ -1426,15 +1349,15 @@ server.on(
 
     "error",
 
-    (error) => {
+    error => {
 
         if (
-            error.code ===
-            "EADDRINUSE"
+            error.code === "EADDRINUSE"
         ) {
 
             console.error(
-                `❌ Port ${PORT} is already in use. Free it or set a different port in the environment.`
+                `❌ Port ${PORT} is already in use. ` +
+                "Free it or set a different PORT."
             );
 
             process.exit(1);
@@ -1459,43 +1382,37 @@ server.on(
 // GRACEFUL SHUTDOWN
 // ==========================================================
 
+function gracefulShutdown(signal) {
+
+    console.log(
+        `🛑 Received ${signal}. Shutting down gracefully...`
+    );
+
+
+    server.close(
+        () => {
+
+            console.log(
+                "✅ HTTP server closed."
+            );
+
+            process.exit(0);
+
+        }
+    );
+
+}
+
+
 process.on(
-
     "SIGTERM",
-
-    () => {
-
-        console.log(
-            "🛑 Received SIGTERM. Shutting down gracefully..."
-        );
-
-
-        server.close(
-            () => process.exit(0)
-        );
-
-    }
-
+    () => gracefulShutdown("SIGTERM")
 );
 
 
 process.on(
-
     "SIGINT",
-
-    () => {
-
-        console.log(
-            "🛑 Received SIGINT. Shutting down gracefully..."
-        );
-
-
-        server.close(
-            () => process.exit(0)
-        );
-
-    }
-
+    () => gracefulShutdown("SIGINT")
 );
 
 
@@ -1503,12 +1420,12 @@ process.on(
 // DATABASE BOOTSTRAP
 // ==========================================================
 
-const bootstrap = async () => {
+async function bootstrap() {
 
     try {
 
         // --------------------------------------------------
-        // CONNECT TO DATABASE
+        // DATABASE
         // --------------------------------------------------
 
         const dbConnected =
@@ -1538,28 +1455,16 @@ const bootstrap = async () => {
         else {
 
             console.warn(
-                "⚠️ MongoDB is unavailable. Starting server without database initialization."
+                "⚠️ MongoDB is unavailable. " +
+                "Starting server without database initialization."
             );
 
         }
 
 
         // --------------------------------------------------
-        // SEED DEFAULT ADMIN USER
+        // DEFAULT ADMIN
         // --------------------------------------------------
-        //
-        // This runs only after MongoDB successfully connects.
-        //
-        // Running:
-        //
-        //     node server.js
-        //
-        // therefore automatically ensures that the default
-        // admin user exists.
-        //
-        // It will NOT create duplicates if the user already
-        // exists.
-        //
 
         if (dbConnected) {
 
@@ -1584,22 +1489,17 @@ const bootstrap = async () => {
 
         startServer(PORT);
 
-
     } catch (error) {
 
         console.error(
             "\n❌ Application bootstrap failed:"
         );
 
+
         console.error(
             error
         );
 
-
-        // --------------------------------------------------
-        // DO NOT START SERVER IF DATABASE INITIALIZATION
-        // FAILS
-        // --------------------------------------------------
 
         if (isProduction) {
 
@@ -1613,7 +1513,8 @@ const bootstrap = async () => {
 
 
         console.warn(
-            "\n⚠️ Database initialization failed. Starting server in development mode."
+            "\n⚠️ Database initialization failed. " +
+            "Starting server in development mode."
         );
 
 
@@ -1621,7 +1522,7 @@ const bootstrap = async () => {
 
     }
 
-};
+}
 
 
 // ==========================================================
