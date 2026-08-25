@@ -8,11 +8,19 @@
 //
 // Handles:
 //
-//     GET /dairy/:id
+//     GET  /dairy/:id
 //
-//     GET /dairy/:id/general
+//     GET  /dairy/:id/general
 //
-//     GET /dairy/:id/addOns
+//     GET  /dairy/:id/addOns
+//
+//     POST /dairy/:id/toggle-milking
+//
+//     GET  /dairy/:id/switch
+//
+//     POST /dairy/:id/liability
+//
+//     POST /dairy/:id/revenue
 //
 // The normal Dairy Farm page renders:
 //
@@ -659,6 +667,346 @@ async (req, res) => {
             .status(500)
             .send(
                 "Failed to load financial information."
+            );
+
+    }
+
+};
+
+
+// ==========================================================
+// RECORD LIABILITY
+// ==========================================================
+//
+// POST:
+//
+//     /dairy/:id/liability
+//
+// FORM:
+//
+//     action="/dairy/<%= dairy._id %>/liability"
+//
+// EXPECTED BODY:
+//
+//     amount
+//     description
+//     date
+//
+// ==========================================================
+
+exports.recordLiability =
+async (req, res) => {
+
+    try {
+
+        // ==================================================
+        // DAIRY ID
+        // ==================================================
+
+        const dairyId =
+            req.params.id;
+
+
+        if (!dairyId) {
+
+            return res
+                .status(400)
+                .send(
+                    "Dairy ID is required."
+                );
+
+        }
+
+
+        // ==================================================
+        // FORM DATA
+        // ==================================================
+
+        const {
+            amount,
+            description,
+            date
+        } = req.body;
+
+
+        if (
+            amount === undefined ||
+            amount === null ||
+            amount === ""
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Liability amount is required."
+                );
+
+        }
+
+
+        if (
+            !description ||
+            !String(description).trim()
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Liability description is required."
+                );
+
+        }
+
+
+        if (
+            !date ||
+            !String(date).trim()
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Liability date is required."
+                );
+
+        }
+
+
+        // ==================================================
+        // CONVERT AMOUNT
+        // ==================================================
+
+        const liabilityAmount =
+            Number(amount);
+
+
+        if (
+            !Number.isFinite(
+                liabilityAmount
+            ) ||
+            liabilityAmount < 0
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Invalid liability amount."
+                );
+
+        }
+
+
+        // ==================================================
+        // SAVE LIABILITY
+        // ==================================================
+
+        await updateService.recordLiability({
+
+            dairyId:
+                dairyId,
+
+            amount:
+                liabilityAmount,
+
+            description:
+                String(description).trim(),
+
+            date:
+                String(date).trim()
+
+        });
+
+
+        // ==================================================
+        // RETURN TO DAIRY
+        // ==================================================
+
+        return res.redirect(
+            `/dairy/${dairyId}/addOns`
+        );
+
+    } catch (err) {
+
+        console.error(
+            "RECORD LIABILITY ERROR:",
+            err
+        );
+
+
+        return res
+            .status(500)
+            .send(
+                "Failed to record liability."
+            );
+
+    }
+
+};
+
+
+// ==========================================================
+// RECORD REVENUE
+// ==========================================================
+//
+// POST:
+//
+//     /dairy/:id/revenue
+//
+// FORM:
+//
+//     action="/dairy/<%= dairy._id %>/revenue"
+//
+// EXPECTED BODY:
+//
+//     amount
+//     description
+//     date
+//
+// ==========================================================
+
+exports.recordRevenue =
+async (req, res) => {
+
+    try {
+
+        // ==================================================
+        // DAIRY ID
+        // ==================================================
+
+        const dairyId =
+            req.params.id;
+
+
+        if (!dairyId) {
+
+            return res
+                .status(400)
+                .send(
+                    "Dairy ID is required."
+                );
+
+        }
+
+
+        // ==================================================
+        // FORM DATA
+        // ==================================================
+
+        const {
+            amount,
+            description,
+            date
+        } = req.body;
+
+
+        if (
+            amount === undefined ||
+            amount === null ||
+            amount === ""
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Revenue amount is required."
+                );
+
+        }
+
+
+        if (
+            !description ||
+            !String(description).trim()
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Revenue description is required."
+                );
+
+        }
+
+
+        if (
+            !date ||
+            !String(date).trim()
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Revenue date is required."
+                );
+
+        }
+
+
+        // ==================================================
+        // CONVERT AMOUNT
+        // ==================================================
+
+        const revenueAmount =
+            Number(amount);
+
+
+        if (
+            !Number.isFinite(
+                revenueAmount
+            ) ||
+            revenueAmount < 0
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Invalid revenue amount."
+                );
+
+        }
+
+
+        // ==================================================
+        // SAVE REVENUE
+        // ==================================================
+
+        await updateService.recordRevenue({
+
+            dairyId:
+                dairyId,
+
+            amount:
+                revenueAmount,
+
+            description:
+                String(description).trim(),
+
+            date:
+                String(date).trim()
+
+        });
+
+
+        // ==================================================
+        // RETURN TO DAIRY
+        // ==================================================
+
+        return res.redirect(
+            `/dairy/${dairyId}/addOns`
+        );
+
+    } catch (err) {
+
+        console.error(
+            "RECORD REVENUE ERROR:",
+            err
+        );
+
+
+        return res
+            .status(500)
+            .send(
+                "Failed to record revenue."
             );
 
     }
