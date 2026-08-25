@@ -1,22 +1,471 @@
-<link
-    rel="stylesheet"
-    href="/css/update/addOns.css"
+<style>
+  /* ==========================================================
+     FINANCIAL WELCOME CARD
+     ========================================================== */
+
+  .financial-card.financial-welcome-card {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 900px;
+    margin: 24px auto;
+    padding: 0;
+    border-radius: 24px;
+    background:
+      linear-gradient(
+        145deg,
+        #ffffff 0%,
+        #f8fafc 55%,
+        #f1f5f9 100%
+      );
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow:
+      0 20px 45px rgba(15, 23, 42, 0.08),
+      0 5px 15px rgba(15, 23, 42, 0.04);
+  }
+
+
+  /* ==========================================================
+     DECORATIVE GLOW
+     ========================================================== */
+
+  .financial-card-glow {
+    position: absolute;
+    top: -100px;
+    right: -80px;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.12);
+    filter: blur(10px);
+    pointer-events: none;
+  }
+
+  .financial-card-glow::after {
+    content: "";
+    position: absolute;
+    left: -180px;
+    top: 180px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.06);
+  }
+
+
+  /* ==========================================================
+     HEADER
+     ========================================================== */
+
+  .financial-welcome-header {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    padding: 28px 30px 24px;
+  }
+
+
+  /* ==========================================================
+     ICON
+     ========================================================== */
+
+  .financial-welcome-icon {
+    flex: 0 0 auto;
+
+    width: 64px;
+    height: 64px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 18px;
+
+    background:
+      linear-gradient(
+        145deg,
+        #059669,
+        #047857
+      );
+
+    color: #ffffff;
+
+    box-shadow:
+      0 10px 22px rgba(5, 150, 105, 0.25);
+
+    position: relative;
+  }
+
+  .financial-welcome-icon::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .financial-welcome-icon span {
+    position: relative;
+    z-index: 1;
+
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+
+  /* ==========================================================
+     TITLE
+     ========================================================== */
+
+  .financial-welcome-title {
+    min-width: 0;
+  }
+
+  .financial-eyebrow {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #059669;
+
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .financial-welcome-title .dairy-name {
+    margin: 0;
+
+    color: #0f172a;
+
+    font-size: clamp(21px, 4vw, 28px);
+    font-weight: 800;
+    line-height: 1.2;
+
+    word-break: break-word;
+  }
+
+  .financial-header-subtitle {
+    margin: 6px 0 0;
+
+    color: #64748b;
+
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+
+  /* ==========================================================
+     DIVIDER
+     ========================================================== */
+
+  .financial-welcome-divider {
+    position: relative;
+    height: 1px;
+    margin: 0 30px;
+
+    background:
+      linear-gradient(
+        to right,
+        rgba(15, 23, 42, 0.08),
+        rgba(15, 23, 42, 0.03),
+        transparent
+      );
+  }
+
+
+  /* ==========================================================
+     CONTENT
+     ========================================================== */
+
+  .welcome-content {
+    position: relative;
+    z-index: 1;
+
+    padding: 28px 30px 30px;
+  }
+
+  .welcome-message {
+    max-width: 760px;
+  }
+
+  .financial-content-label {
+    display: inline-flex;
+    align-items: center;
+
+    margin-bottom: 9px;
+    padding: 6px 10px;
+
+    border-radius: 999px;
+
+    background: #ecfdf5;
+    color: #047857;
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+
+  .welcome-message h3 {
+    margin: 0 0 12px;
+
+    color: #111827;
+
+    font-size: clamp(20px, 4vw, 25px);
+    font-weight: 750;
+    line-height: 1.3;
+  }
+
+  .welcome-message p {
+    margin: 0 0 12px;
+
+    color: #475569;
+
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .welcome-message p:last-child {
+    margin-bottom: 0;
+  }
+
+  .welcome-message strong {
+    color: #1e293b;
+    font-weight: 700;
+  }
+
+
+  /* ==========================================================
+     INFORMATION NOTE
+     ========================================================== */
+
+  .financial-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+
+    margin-top: 26px;
+    padding: 17px 18px;
+
+    border-radius: 16px;
+
+    background:
+      linear-gradient(
+        135deg,
+        #f0fdf4,
+        #ecfdf5
+      );
+
+    border: 1px solid rgba(16, 185, 129, 0.14);
+  }
+
+
+  /* ==========================================================
+     NOTE ICON
+     ========================================================== */
+
+  .financial-note-icon {
+    flex: 0 0 auto;
+
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #059669;
+    color: #ffffff;
+
+    font-size: 17px;
+    font-weight: 800;
+
+    box-shadow:
+      0 5px 12px rgba(5, 150, 105, 0.18);
+  }
+
+
+  /* ==========================================================
+     NOTE CONTENT
+     ========================================================== */
+
+  .financial-note-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    min-width: 0;
+  }
+
+  .financial-note-content strong {
+    color: #065f46;
+
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .financial-note-content span {
+    color: #4b635c;
+
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+
+  /* ==========================================================
+     HOVER
+     ========================================================== */
+
+  .financial-card.financial-welcome-card {
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .financial-card.financial-welcome-card:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+      0 25px 55px rgba(15, 23, 42, 0.10),
+      0 7px 18px rgba(15, 23, 42, 0.05);
+  }
+
+
+  /* ==========================================================
+     MOBILE
+     ========================================================== */
+
+  @media (max-width: 600px) {
+
+    .financial-card.financial-welcome-card {
+      margin: 16px auto;
+      border-radius: 20px;
+    }
+
+    .financial-welcome-header {
+      gap: 14px;
+      padding: 22px 20px 20px;
+    }
+
+    .financial-welcome-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 15px;
+    }
+
+    .financial-welcome-icon span {
+      font-size: 24px;
+    }
+
+    .financial-welcome-title .dairy-name {
+      font-size: 20px;
+    }
+
+    .financial-header-subtitle {
+      font-size: 13px;
+    }
+
+    .financial-welcome-divider {
+      margin: 0 20px;
+    }
+
+    .welcome-content {
+      padding: 23px 20px 22px;
+    }
+
+    .welcome-message h3 {
+      font-size: 20px;
+    }
+
+    .welcome-message p {
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .financial-note {
+      padding: 15px;
+      gap: 11px;
+    }
+
+    .financial-note-icon {
+      width: 31px;
+      height: 31px;
+      font-size: 15px;
+    }
+
+    .financial-note-content span {
+      font-size: 12.5px;
+    }
+  }
+
+
+  /* ==========================================================
+     VERY SMALL SCREENS
+     ========================================================== */
+
+  @media (max-width: 380px) {
+
+    .financial-welcome-header {
+      align-items: flex-start;
+    }
+
+    .financial-welcome-icon {
+      width: 48px;
+      height: 48px;
+    }
+
+    .financial-welcome-icon span {
+      font-size: 21px;
+    }
+
+    .financial-eyebrow {
+      font-size: 9px;
+      letter-spacing: 1px;
+    }
+
+    .financial-welcome-title .dairy-name {
+      font-size: 18px;
+    }
+
+    .financial-header-subtitle {
+      font-size: 12px;
+    }
+  }
+</style>
+
 
 <div class="financial-card financial-welcome-card">
 
   <div class="financial-card-glow"></div>
 
-  <!-- HEADER -->
+
+  <!-- ========================================================
+       HEADER
+       ======================================================== -->
+
   <div class="financial-welcome-header">
 
-    <div class="financial-welcome-icon" aria-hidden="true">
+    <div
+      class="financial-welcome-icon"
+      aria-hidden="true"
+    >
       <span>₵</span>
     </div>
+
 
     <div class="financial-welcome-title">
 
       <span class="financial-eyebrow">
-        FINANCIAL RECORDS
+        Financial Records
       </span>
 
       <h2 class="dairy-name">
@@ -35,13 +484,16 @@
   <div class="financial-welcome-divider"></div>
 
 
-  <!-- CONTENT -->
+  <!-- ========================================================
+       CONTENT
+       ======================================================== -->
+
   <div class="welcome-content">
 
     <div class="welcome-message">
 
       <span class="financial-content-label">
-        GET STARTED
+        Get Started
       </span>
 
       <h3>
@@ -49,36 +501,44 @@
       </h3>
 
       <p>
-        Keep a clear record of the financial activity
-        associated with <strong><%= dairy.name %></strong>.
+        Keep a clear and organized record of the financial
+        activity associated with
+        <strong><%= dairy.name %></strong>.
       </p>
 
       <p>
-        Recording revenue and liabilities helps us
-        understand the dairy's financial position,
-        monitor performance, and make better planning
+        Recording revenue and liabilities helps build an
+        accurate picture of the dairy's financial position,
+        monitor performance, and support better planning
         decisions.
       </p>
 
     </div>
 
 
-    <!-- INFORMATION NOTE -->
+    <!-- ======================================================
+         INFORMATION NOTE
+         ====================================================== -->
+
     <div class="financial-note">
 
-      <div class="financial-note-icon" aria-hidden="true">
+      <div
+        class="financial-note-icon"
+        aria-hidden="true"
+      >
         ✓
       </div>
 
       <div class="financial-note-content">
 
         <strong>
-          Keep records current
+          Keep your records current
         </strong>
 
         <span>
-          Every financial record contributes to a more
-          accurate picture of the dairy's performance.
+          Every financial record contributes to a clearer
+          and more accurate picture of the dairy's
+          financial performance.
         </span>
 
       </div>
