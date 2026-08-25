@@ -1,11 +1,15 @@
 <div class="financial-card liability-card">
 
-  <!-- Soft green visual accent -->
   <div class="financial-card-glow"></div>
 
+
+  <!-- HEADER -->
   <div class="financial-section-header">
 
-    <div class="financial-section-icon liability-icon">
+    <div
+      class="financial-section-icon liability-icon"
+      aria-hidden="true"
+    >
       <span>−</span>
     </div>
 
@@ -28,9 +32,11 @@
 
   </div>
 
+
   <div class="financial-welcome-divider"></div>
 
 
+  <!-- FORM -->
   <form
     action="/financials/liability"
     method="POST"
@@ -44,7 +50,7 @@
     >
 
 
-    <!-- LIABILITY AMOUNT -->
+    <!-- AMOUNT -->
     <div class="form-group">
 
       <label for="liabilityAmount">
@@ -53,7 +59,10 @@
 
       <div class="financial-input-wrapper">
 
-        <span class="financial-input-prefix">
+        <span
+          class="financial-input-prefix"
+          aria-hidden="true"
+        >
           KSh
         </span>
 
@@ -64,15 +73,21 @@
           placeholder="0.00"
           min="0"
           step="0.01"
+          inputmode="decimal"
+          autocomplete="off"
           required
         >
 
       </div>
 
+      <small class="financial-field-hint">
+        Enter the amount currently owed.
+      </small>
+
     </div>
 
 
-    <!-- LIABILITY DESCRIPTION -->
+    <!-- DESCRIPTION -->
     <div class="form-group">
 
       <label for="liabilityDescription">
@@ -82,7 +97,7 @@
       <textarea
         id="liabilityDescription"
         name="description"
-        placeholder="Describe the liability or financial obligation..."
+        placeholder="e.g. Supplier debt, equipment purchase, loan..."
         rows="4"
         required
       ></textarea>
@@ -108,17 +123,35 @@
         required
       >
 
+      <small class="financial-field-hint">
+        Select the date the liability was incurred.
+      </small>
+
     </div>
 
 
-    <!-- SUBMIT -->
-    <button
-      type="submit"
-      class="financial-btn liability-btn"
-    >
-      <span class="financial-btn-icon">✓</span>
-      <span>Record Liability</span>
-    </button>
+    <!-- ACTION -->
+    <div class="financial-form-action">
+
+      <button
+        type="submit"
+        class="financial-btn liability-btn"
+      >
+
+        <span
+          class="financial-btn-icon"
+          aria-hidden="true"
+        >
+          ✓
+        </span>
+
+        <span>
+          Record Liability
+        </span>
+
+      </button>
+
+    </div>
 
   </form>
 
