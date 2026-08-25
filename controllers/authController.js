@@ -32,7 +32,7 @@ exports.renderLogin = (req, res) => {
   res.render(
     "login",
     {
-      title: "Login",
+      title: "Dr.Chesi E.W",
       error: null
     }
   );
