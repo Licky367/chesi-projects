@@ -28,7 +28,7 @@ const mongoose =
     require("mongoose");
 
 const User =
-    require("../models/User");
+    require("../models/projectUser");
 
 const Dairy =
     require("../models/dairy");
