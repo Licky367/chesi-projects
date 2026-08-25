@@ -109,6 +109,54 @@ const userSchema = new mongoose.Schema(
 
 
   // ==========================================================
+  // ASSIGNED ASSETS
+  //
+  // Assets that may be assigned to a user.
+  //
+  // An assigned asset references a Dairy document that:
+  //
+  //     - has no assetCode
+  //     - does NOT have a negative code
+  //
+  // Therefore:
+  //
+  //     code < 0
+  //         = Dairy Farm
+  //
+  //     code >= 0
+  //         = eligible for asset assignment
+  //
+  //     assetCode absent/empty
+  //         = assignable asset
+  //
+  // The actual eligibility validation should be performed
+  // by the assignment service/controller when an admin
+  // assigns an asset.
+  //
+  // One user may have:
+  //
+  //     - No assigned assets
+  //     - One assigned asset
+  //     - Several assigned assets
+  //
+  // Each value references a Dairy document.
+  // ==========================================================
+
+  assignedAsset: {
+
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Dairy",
+      }
+    ],
+
+    default: [],
+
+  },
+
+
+  // ==========================================================
   // LAST LOGIN
   // ==========================================================
 
