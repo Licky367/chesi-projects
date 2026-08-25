@@ -1,5 +1,3 @@
-Styled Liability Financial Card
-
 <style>
   /* ==========================================================
      LIABILITY CARD
@@ -570,184 +568,160 @@ Styled Liability Financial Card
       font-size: 14px;
     }
   }
-</style>
-
-
-<div class="financial-card liability-card">
-
-  <div class="financial-card-glow"></div>
-
-
-  <!-- ========================================================
+</style><div class="financial-card liability-card">  <div class="financial-card-glow"></div>  <!-- ========================================================
        HEADER
-       ======================================================== -->
+       ======================================================== -->  <div class="financial-section-header"><div
+  class="financial-section-icon liability-icon"
+  aria-hidden="true"
+>
+  <span>−</span>
+</div>
 
-  <div class="financial-section-header">
 
-    <div
-      class="financial-section-icon liability-icon"
+<div class="financial-section-title">
+
+  <span class="financial-eyebrow">
+    Liabilities
+  </span>
+
+  <h2>
+    Record Liability
+  </h2>
+
+  <p>
+    Add an amount owed or financial obligation
+    associated with
+    <strong><%= dairy.name %></strong>.
+  </p>
+
+</div>
+
+  </div>  <div class="financial-welcome-divider"></div>  <!-- ========================================================
+       FORM
+       ======================================================== -->  <form
+    action="/dairy/<%= dairy._id %>/liability"
+    method="POST"
+    class="financial-form"
+  ><input
+  type="hidden"
+  name="dairy"
+  value="<%= dairy._id %>"
+>
+
+
+<!-- ======================================================
+     AMOUNT
+     ====================================================== -->
+
+<div class="form-group">
+
+  <label for="liabilityAmount">
+    Liability Amount
+  </label>
+
+  <div class="financial-input-wrapper">
+
+    <span
+      class="financial-input-prefix"
       aria-hidden="true"
     >
-      <span>−</span>
-    </div>
+      KSh
+    </span>
 
-
-    <div class="financial-section-title">
-
-      <span class="financial-eyebrow">
-        Liabilities
-      </span>
-
-      <h2>
-        Record Liability
-      </h2>
-
-      <p>
-        Add an amount owed or financial obligation
-        associated with
-        <strong><%= dairy.name %></strong>.
-      </p>
-
-    </div>
+    <input
+      type="number"
+      id="liabilityAmount"
+      name="amount"
+      placeholder="0.00"
+      min="0"
+      step="0.01"
+      inputmode="decimal"
+      autocomplete="off"
+      required
+    >
 
   </div>
 
-
-  <div class="financial-welcome-divider"></div>
-
-
-  <!-- ========================================================
-       FORM
-       ======================================================== -->
-
-  <form
-    action="/financials/liability"
-    method="POST"
-    class="financial-form"
-  >
-
-    <input
-      type="hidden"
-      name="dairy"
-      value="<%= dairy._id %>"
-    >
-
-
-    <!-- ======================================================
-         AMOUNT
-         ====================================================== -->
-
-    <div class="form-group">
-
-      <label for="liabilityAmount">
-        Liability Amount
-      </label>
-
-      <div class="financial-input-wrapper">
-
-        <span
-          class="financial-input-prefix"
-          aria-hidden="true"
-        >
-          KSh
-        </span>
-
-        <input
-          type="number"
-          id="liabilityAmount"
-          name="amount"
-          placeholder="0.00"
-          min="0"
-          step="0.01"
-          inputmode="decimal"
-          autocomplete="off"
-          required
-        >
-
-      </div>
-
-      <small class="financial-field-hint">
-        Enter the amount currently owed.
-      </small>
-
-    </div>
-
-
-    <!-- ======================================================
-         DESCRIPTION
-         ====================================================== -->
-
-    <div class="form-group">
-
-      <label for="liabilityDescription">
-        Description
-      </label>
-
-      <textarea
-        id="liabilityDescription"
-        name="description"
-        placeholder="e.g. Supplier debt, equipment purchase, loan..."
-        rows="4"
-        required
-      ></textarea>
-
-      <small class="financial-field-hint">
-        Briefly explain what this amount is owed for.
-      </small>
-
-    </div>
-
-
-    <!-- ======================================================
-         DATE
-         ====================================================== -->
-
-    <div class="form-group">
-
-      <label for="liabilityDate">
-        Liability Date
-      </label>
-
-      <input
-        type="date"
-        id="liabilityDate"
-        name="date"
-        required
-      >
-
-      <small class="financial-field-hint">
-        Select the date the liability was incurred.
-      </small>
-
-    </div>
-
-
-    <!-- ======================================================
-         ACTION
-         ====================================================== -->
-
-    <div class="financial-form-action">
-
-      <button
-        type="submit"
-        class="financial-btn liability-btn"
-      >
-
-        <span
-          class="financial-btn-icon"
-          aria-hidden="true"
-        >
-          ✓
-        </span>
-
-        <span>
-          Record Liability
-        </span>
-
-      </button>
-
-    </div>
-
-  </form>
+  <small class="financial-field-hint">
+    Enter the amount currently owed.
+  </small>
 
 </div>
+
+
+<!-- ======================================================
+     DESCRIPTION
+     ====================================================== -->
+
+<div class="form-group">
+
+  <label for="liabilityDescription">
+    Description
+  </label>
+
+  <textarea
+    id="liabilityDescription"
+    name="description"
+    placeholder="e.g. Supplier debt, equipment purchase, loan..."
+    rows="4"
+    required
+  ></textarea>
+
+  <small class="financial-field-hint">
+    Briefly explain what this amount is owed for.
+  </small>
+
+</div>
+
+
+<!-- ======================================================
+     DATE
+     ====================================================== -->
+
+<div class="form-group">
+
+  <label for="liabilityDate">
+    Liability Date
+  </label>
+
+  <input
+    type="date"
+    id="liabilityDate"
+    name="date"
+    required
+  >
+
+  <small class="financial-field-hint">
+    Select the date the liability was incurred.
+  </small>
+
+</div>
+
+
+<!-- ======================================================
+     ACTION
+     ====================================================== -->
+
+<div class="financial-form-action">
+
+  <button
+    type="submit"
+    class="financial-btn liability-btn"
+  >
+
+    <span
+      class="financial-btn-icon"
+      aria-hidden="true"
+    >
+      ✓
+    </span>
+
+    <span>
+      Record Liability
+    </span>
+
+  </button>
+
+</div>
+
+  </form></div>
