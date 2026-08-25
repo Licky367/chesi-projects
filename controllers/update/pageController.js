@@ -12,6 +12,8 @@
 //
 //     GET /dairy/:id/general
 //
+//     GET /dairy/:id/addOns
+//
 // The normal Dairy Farm page renders:
 //
 //     views/update.ejs
@@ -19,6 +21,10 @@
 // The General page renders:
 //
 //     views/updateGeneral.ejs
+//
+// The Add-Ons page renders:
+//
+//     views/update/addOns.ejs
 //
 // ==========================================================
 
@@ -202,20 +208,6 @@ async (req, res) => {
         // ==================================================
         // DETERMINE CURRENT PAGE TYPE
         // ==================================================
-        //
-        // Dairy Farm:
-        //
-        //     code < 0
-        //
-        // Animal:
-        //
-        //     code > 0
-        //
-        // Structure / facility:
-        //
-        //     code === null
-        //
-        // ==================================================
 
         const isDairyFarm =
             data.dairy.code !== null &&
@@ -229,14 +221,6 @@ async (req, res) => {
 
         // ==================================================
         // FARM-OWNED ASSETS
-        // ==================================================
-        //
-        // getDairyPage() already supplies assetDairies for
-        // the current Dairy Farm.
-        //
-        // We deliberately derive the medical collections
-        // from THIS collection.
-        //
         // ==================================================
 
         const farmAssets =
@@ -253,7 +237,7 @@ async (req, res) => {
 
         const medicalDairies =
             farmAssets.filter(
-                function (animal) {
+                function(animal) {
 
                     return (
                         isPositiveCode(animal) &&
@@ -270,7 +254,7 @@ async (req, res) => {
 
         const medicalAnimals =
             farmAssets.filter(
-                function (animal) {
+                function(animal) {
 
                     return (
                         isPositiveCode(animal) &&
@@ -335,105 +319,44 @@ async (req, res) => {
             view,
             {
 
-                // ------------------------------------------
-                // PAGE TITLE
-                // ------------------------------------------
-
                 title:
                     "Dairy Profile",
-
-
-                // ------------------------------------------
-                // CURRENT DAIRY / FARM
-                // ------------------------------------------
 
                 dairy:
                     data.dairy,
 
-
-                // ------------------------------------------
-                // MAIN FEED
-                // ------------------------------------------
-
                 feed:
                     feed,
-
-
-                // ------------------------------------------
-                // WEEKLY FEED
-                // ------------------------------------------
 
                 weeklyFeed:
                     weeklyFeed,
 
-
-                // ------------------------------------------
-                // COMMENTS
-                // ------------------------------------------
-
                 commentCount:
                     commentCount,
-
-
-                // ------------------------------------------
-                // CURRENT FARM ASSETS
-                // ------------------------------------------
 
                 assetDairies:
                     farmAssets,
 
-
-                // ------------------------------------------
-                // ASSIGNED FARMS
-                // ------------------------------------------
-
                 assignedFarms:
                     assignedFarms,
-
-
-                // ------------------------------------------
-                // ANIMAL FEEDS
-                // ------------------------------------------
 
                 animalFeeds:
                     animalFeeds,
 
-
-                // ------------------------------------------
-                // ITEM LINKS
-                // ------------------------------------------
-
                 itemLinks:
                     itemLinks,
-
-
-                // ------------------------------------------
-                // BOOLEAN DATA
-                // ------------------------------------------
 
                 booleanAnimals:
                     booleanAnimals,
 
-
                 booleanFields:
                     booleanFields,
-
-
-                // =================================================
-                // MEDICAL COMPOSER DATA
-                // =================================================
 
                 medicalDairies:
                     medicalDairies,
 
-
                 medicalAnimals:
                     medicalAnimals,
-
-
-                // ------------------------------------------
-                // LOGGED-IN USER
-                // ------------------------------------------
 
                 user:
                     sessionUser
@@ -468,13 +391,160 @@ async (req, res) => {
 //
 //     /dairy/:id/general
 //
-// PURPOSE:
-//
-//     Render ONLY the chronological General feed.
-//
 // ==========================================================
 
 exports.viewGeneral =
+async (req, res) => {
+
+    try {
+
+        const {
+            id
+        } = req.params;
+
+
+        if (!id) {
+
+            return res
+                .status(400)
+                .send(
+                    "Dairy ID is required."
+                );
+
+        }
+
+
+        const sessionUser =
+            req.session.user || null;
+
+
+        const userId =
+            sessionUser
+                ? sessionUser._id
+                : null;
+
+
+        const data =
+            await updateService.getDairyPage(
+                id,
+                userId
+            );
+
+
+        if (
+            !data ||
+            !data.dairy
+        ) {
+
+            return res
+                .status(404)
+                .send(
+                    "Dairy Farm not found."
+                );
+
+        }
+
+
+        const isDairyFarm =
+            data.dairy.code !== null &&
+
+            data.dairy.code !== undefined &&
+
+            Number(
+                data.dairy.code
+            ) < 0;
+
+
+        if (!isDairyFarm) {
+
+            return res
+                .status(400)
+                .send(
+                    "General feed is only available to a Dairy Farm."
+                );
+
+        }
+
+
+        const assetDairies =
+            Array.isArray(
+                data.assetDairies
+            )
+                ? data.assetDairies
+                : [];
+
+
+        return res.render(
+            "updateGeneral",
+            {
+
+                title:
+                    "General Updates",
+
+                dairy:
+                    data.dairy,
+
+                feed:
+                    Array.isArray(
+                        data.feed
+                    )
+                        ? data.feed
+                        : [],
+
+                assetDairies:
+                    assetDairies,
+
+                user:
+                    sessionUser
+
+            }
+        );
+
+    } catch (err) {
+
+        console.error(
+            "VIEW GENERAL FEED ERROR:",
+            err
+        );
+
+
+        return res
+            .status(500)
+            .send(
+                "Failed to load general dairy feed."
+            );
+
+    }
+
+};
+
+
+// ==========================================================
+// VIEW FINANCIAL ADD-ONS
+// ==========================================================
+//
+// GET:
+//
+//     /dairy/:id/addOns
+//
+// PURPOSE
+// ----------------------------------------------------------
+//
+// Renders:
+//
+//     views/update/addOns.ejs
+//
+// Provides:
+//
+//     dairy
+//
+//     assetDairies
+//
+//     user
+//
+// ==========================================================
+
+exports.viewAddOns =
 async (req, res) => {
 
     try {
@@ -514,7 +584,7 @@ async (req, res) => {
 
 
         // ==================================================
-        // GET DAIRY PAGE DATA
+        // GET COMPLETE DAIRY PAGE DATA
         // ==================================================
 
         const data =
@@ -543,39 +613,7 @@ async (req, res) => {
 
 
         // ==================================================
-        // VERIFY CURRENT RECORD IS A DAIRY FARM
-        // ==================================================
-
-        const isDairyFarm =
-            data.dairy.code !== null &&
-
-            data.dairy.code !== undefined &&
-
-            Number(
-                data.dairy.code
-            ) < 0;
-
-
-        if (!isDairyFarm) {
-
-            return res
-                .status(400)
-                .send(
-                    "General feed is only available to a Dairy Farm."
-                );
-
-        }
-
-
-        // ==================================================
-        // FARM-OWNED ASSETS
-        // ==================================================
-        //
-        // getDairyPage() already supplies assetDairies.
-        //
-        // This is the same assetDairies collection used
-        // by update.ejs.
-        //
+        // ASSET DAIRIES
         // ==================================================
 
         const assetDairies =
@@ -587,52 +625,21 @@ async (req, res) => {
 
 
         // ==================================================
-        // RENDER GENERAL FEED
+        // RENDER PAGE
         // ==================================================
 
         return res.render(
-            "updateGeneral",
+            "update/addOns",
             {
 
-                // ------------------------------------------
-                // PAGE TITLE
-                // ------------------------------------------
-
                 title:
-                    "General Updates",
-
-
-                // ------------------------------------------
-                // CURRENT DAIRY FARM
-                // ------------------------------------------
+                    "Financial Information",
 
                 dairy:
                     data.dairy,
 
-
-                // ------------------------------------------
-                // MAIN FEED
-                // ------------------------------------------
-
-                feed:
-                    Array.isArray(
-                        data.feed
-                    )
-                        ? data.feed
-                        : [],
-
-
-                // ------------------------------------------
-                // FARM-OWNED ASSETS
-                // ------------------------------------------
-
                 assetDairies:
                     assetDairies,
-
-
-                // ------------------------------------------
-                // LOGGED-IN USER
-                // ------------------------------------------
 
                 user:
                     sessionUser
@@ -643,7 +650,7 @@ async (req, res) => {
     } catch (err) {
 
         console.error(
-            "VIEW GENERAL FEED ERROR:",
+            "VIEW ADD-ONS ERROR:",
             err
         );
 
@@ -651,7 +658,7 @@ async (req, res) => {
         return res
             .status(500)
             .send(
-                "Failed to load general dairy feed."
+                "Failed to load financial information."
             );
 
     }
@@ -674,10 +681,6 @@ async (req, res) => {
 
     try {
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (
             !req.session.user
         ) {
@@ -695,10 +698,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // DAIRY ID
-        // ==================================================
 
         const dairyId =
             req.params.id;
@@ -720,19 +719,11 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // TOGGLE
-        // ==================================================
-
         const dairy =
             await updateService.toggleMilking(
                 dairyId
             );
 
-
-        // ==================================================
-        // RESPONSE
-        // ==================================================
 
         return res
             .status(200)
@@ -753,10 +744,6 @@ async (req, res) => {
         );
 
 
-        // ==================================================
-        // NOT FOUND
-        // ==================================================
-
         if (
             err.message ===
             "Dairy asset not found."
@@ -776,10 +763,6 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // BAD ID
-        // ==================================================
-
         if (
             err.message ===
             "Dairy ID is required."
@@ -798,10 +781,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // SERVER ERROR
-        // ==================================================
 
         return res
             .status(500)
@@ -834,10 +813,6 @@ async (req, res) => {
 
     try {
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (
             !req.session.user
         ) {
@@ -851,17 +826,9 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // USER
-        // ==================================================
-
         const user =
             req.session.user;
 
-
-        // ==================================================
-        // ROLE
-        // ==================================================
 
         if (
             user.role !== "dairyWorker"
@@ -875,10 +842,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // FARM ID
-        // ==================================================
 
         const farmId =
             req.params.id;
@@ -894,10 +857,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // VERIFY ASSIGNMENT
-        // ==================================================
 
         const farm =
             await updateService
@@ -917,10 +876,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // REDIRECT
-        // ==================================================
 
         return res.redirect(
             `/dairy/${farm._id}`
