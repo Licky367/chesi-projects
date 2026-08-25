@@ -1,4 +1,3 @@
-
 <!-- =====================================================
      UPDATE PAGE ASSETS
 ===================================================== -->
@@ -15,283 +14,92 @@
 
 
 <!-- =====================================================
+     FIXED UPDATE NAVIGATION
+===================================================== -->
+
+<nav
+    class="update-fixed-nav"
+    aria-label="Dairy update navigation"
+>
+
+
+    <!-- =================================================
+         VIEW UPDATES
+    ================================================== -->
+
+    <a
+        href="/dairy/<%= dairy._id %>/general"
+        class="update-nav-link"
+        title="View Updates"
+        aria-label="View Updates"
+    >
+
+        <span
+            class="update-nav-icon"
+            aria-hidden="true"
+        >
+            +
+        </span>
+
+    </a>
+
+
+
+    <!-- =================================================
+         VIEW ASSETS
+    ================================================== -->
+
+    <button
+        type="button"
+        id="viewPropertyButton"
+        class="update-nav-link update-nav-button"
+        aria-controls="assetBar"
+        aria-expanded="false"
+        title="View Assets"
+        aria-label="View Assets"
+    >
+
+        <span
+            class="update-nav-icon"
+            aria-hidden="true"
+        >
+            ◉
+        </span>
+
+    </button>
+
+
+
+    <!-- =================================================
+         STORAGE
+    ================================================== -->
+
+    <a
+        href="/storage/<%= dairy._id %>"
+        class="update-nav-link"
+        title="Storage"
+        aria-label="Storage"
+    >
+
+        <span
+            class="update-nav-icon"
+            aria-hidden="true"
+        >
+            📦
+        </span>
+
+    </a>
+
+
+</nav>
+
+
+
+<!-- =====================================================
      UPDATE PAGE
 ===================================================== -->
 
-<div class="dairy-page">
-
-
-    <!-- =================================================
-         TOP PAGE ACTIONS
-
-         THREE EQUAL BUTTON SPACES
-    ================================================== -->
-
-    <div class="dairy-page-actions">
-
-
-        <!-- =============================================
-             VIEW UPDATES
-        ============================================== -->
-
-        <a
-            href="/dairy/<%= dairy._id %>/general"
-            class="asset-bar-trigger top-page-action"
-        >
-
-            <span
-                class="asset-bar-trigger-icon"
-                aria-hidden="true"
-            >
-                +
-            </span>
-
-            <span class="asset-bar-trigger-text">
-                View Updates
-            </span>
-
-        </a>
-
-
-
-        <!-- =============================================
-             VIEW ASSETS
-        ============================================== -->
-
-        <button
-            type="button"
-            id="viewPropertyButton"
-            class="asset-bar-trigger top-page-action"
-            aria-controls="assetBar"
-            aria-expanded="false"
-        >
-
-            <span
-                class="asset-bar-trigger-icon"
-                aria-hidden="true"
-            >
-                ◉
-            </span>
-
-            <span class="asset-bar-trigger-text">
-                View Assets
-            </span>
-
-        </button>
-
-
-
-        <!-- =============================================
-             FEED STORE
-        ============================================== -->
-
-        <a
-            href="/storage/<%= dairy._id %>"
-            class="asset-bar-trigger top-page-action"
-            title="View Feed Store"
-        >
-
-            <span
-                class="asset-bar-trigger-icon"
-                aria-hidden="true"
-            >
-                📦
-            </span>
-
-            <span class="asset-bar-trigger-text">
-                STORAGE
-            </span>
-
-        </a>
-
-
-    </div>
-
-
-
-    <!-- =================================================
-         TOP ACTION LAYOUT
-    ================================================== -->
-
-    <style>
-
-        .dairy-page-actions {
-
-            width: 100%;
-
-            display: grid;
-
-            grid-template-columns:
-                repeat(3, minmax(0, 1fr));
-
-            align-items: stretch;
-
-            gap: 8px;
-
-            margin-bottom: 12px;
-
-            box-sizing: border-box;
-
-        }
-
-
-        .dairy-page-actions > .top-page-action,
-        .dairy-page-actions > .top-page-action-placeholder {
-
-            width: 100%;
-
-            min-width: 0;
-
-            max-width: 100%;
-
-            box-sizing: border-box;
-
-        }
-
-
-        .dairy-page-actions
-        .top-page-action {
-
-            min-height: 42px;
-
-            margin: 0;
-
-            padding: 7px 8px;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            gap: 5px;
-
-            text-align: center;
-
-            white-space: nowrap;
-
-            overflow: hidden;
-
-            text-decoration: none;
-
-            box-sizing: border-box;
-
-        }
-
-
-        .dairy-page-actions
-        .top-page-action
-        .asset-bar-trigger-text {
-
-            min-width: 0;
-
-            overflow: hidden;
-
-            text-overflow: ellipsis;
-
-            white-space: nowrap;
-
-        }
-
-
-        .dairy-page-actions
-        .top-page-action
-        .asset-bar-trigger-icon {
-
-            flex: 0 0 auto;
-
-        }
-
-
-        .top-page-action-placeholder {
-
-            min-height: 42px;
-
-            visibility: hidden;
-
-        }
-
-
-        @media (max-width: 600px) {
-
-            .dairy-page-actions {
-
-                grid-template-columns:
-                    repeat(3, minmax(0, 1fr));
-
-                gap: 5px;
-
-            }
-
-
-            .dairy-page-actions
-            .top-page-action {
-
-                min-height: 40px;
-
-                padding: 6px 4px;
-
-                gap: 3px;
-
-                font-size: 10px;
-
-            }
-
-
-            .dairy-page-actions
-            .asset-bar-trigger-icon {
-
-                font-size: 13px;
-
-            }
-
-
-            .dairy-page-actions
-            .asset-bar-trigger-text {
-
-                font-size: 9px;
-
-            }
-
-        }
-
-
-        @media (max-width: 380px) {
-
-            .dairy-page-actions {
-
-                gap: 4px;
-
-            }
-
-
-            .dairy-page-actions
-            .top-page-action {
-
-                padding: 6px 2px;
-
-            }
-
-
-            .dairy-page-actions
-            .asset-bar-trigger-icon {
-
-                font-size: 12px;
-
-            }
-
-
-            .dairy-page-actions
-            .asset-bar-trigger-text {
-
-                font-size: 8px;
-
-            }
-
-        }
-
-    </style>
-
+<div class="dairy-page update-page-with-fixed-nav">
 
 
     <!-- =================================================
@@ -330,8 +138,6 @@
              views/update/boolean.ejs
 
          RENDERED EXACTLY ONCE.
-
-         Rendered directly below asset-cards.ejs.
     ================================================== -->
 
     <%- include(
@@ -348,7 +154,7 @@
 
 
     <!-- =================================================
-         VIEW MILKING HISTORY 
+         VIEW MILKING HISTORY
     ================================================== -->
 
     <%- include(
@@ -376,6 +182,248 @@
 
 
 </div>
+
+
+
+<!-- =====================================================
+     FIXED NAVIGATION STYLES
+===================================================== -->
+
+<style>
+
+    /* =====================================================
+       FIXED TOP NAVIGATION
+    ===================================================== */
+
+    .update-fixed-nav {
+
+        position: fixed;
+
+        top: 0;
+        left: 0;
+        right: 0;
+
+        height: 46px;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        gap: 6px;
+
+        z-index: 9999;
+
+        box-sizing: border-box;
+
+        background: var(--background-color, #ffffff);
+
+        border-bottom:
+            1px solid
+            var(--border-color, #e5e5e5);
+
+        box-shadow:
+            0 2px 8px
+            rgba(0, 0, 0, 0.08);
+
+    }
+
+
+
+    /* =====================================================
+       NAV LINKS
+    ===================================================== */
+
+    .update-nav-link {
+
+        width: 42px;
+        height: 40px;
+
+        flex: 0 0 42px;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        padding: 0;
+        margin: 0;
+
+        border: 0;
+
+        border-radius: 7px;
+
+        background: transparent;
+
+        color: inherit;
+
+        text-decoration: none;
+
+        cursor: pointer;
+
+        box-sizing: border-box;
+
+        -webkit-tap-highlight-color: transparent;
+
+    }
+
+
+
+    /* =====================================================
+       NAV ICON
+    ===================================================== */
+
+    .update-nav-icon {
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        width: 100%;
+        height: 100%;
+
+        font-size: 21px;
+
+        line-height: 1;
+
+        font-weight: 600;
+
+    }
+
+
+
+    /* =====================================================
+       BUTTON RESET
+    ===================================================== */
+
+    .update-nav-button {
+
+        font-family: inherit;
+
+        appearance: none;
+        -webkit-appearance: none;
+
+    }
+
+
+
+    /* =====================================================
+       HOVER / ACTIVE
+    ===================================================== */
+
+    .update-nav-link:hover {
+
+        background:
+            rgba(0, 0, 0, 0.06);
+
+    }
+
+
+    .update-nav-link:active {
+
+        transform: scale(0.94);
+
+    }
+
+
+
+    /* =====================================================
+       PAGE OFFSET
+
+       Prevents the fixed navigation from covering
+       the beginning of the page.
+    ===================================================== */
+
+    .update-page-with-fixed-nav {
+
+        padding-top: 46px;
+
+    }
+
+
+
+    /* =====================================================
+       SMALL SCREENS
+    ===================================================== */
+
+    @media (max-width: 600px) {
+
+        .update-fixed-nav {
+
+            height: 44px;
+
+            gap: 4px;
+
+        }
+
+
+        .update-nav-link {
+
+            width: 40px;
+            height: 38px;
+
+            flex-basis: 40px;
+
+        }
+
+
+        .update-nav-icon {
+
+            font-size: 19px;
+
+        }
+
+
+        .update-page-with-fixed-nav {
+
+            padding-top: 44px;
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       VERY SMALL SCREENS
+    ===================================================== */
+
+    @media (max-width: 380px) {
+
+        .update-fixed-nav {
+
+            height: 42px;
+
+        }
+
+
+        .update-nav-link {
+
+            width: 38px;
+            height: 36px;
+
+            flex-basis: 38px;
+
+        }
+
+
+        .update-nav-icon {
+
+            font-size: 18px;
+
+        }
+
+
+        .update-page-with-fixed-nav {
+
+            padding-top: 42px;
+
+        }
+
+    }
+
+</style>
 
 
 
