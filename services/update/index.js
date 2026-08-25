@@ -30,6 +30,8 @@ module.exports = {
 
     ...require("./contentItemService"),
 
-    ...require("./booleanService")
+    ...require("./booleanService"),
+
+    ...require("./addOns")
 
 };
