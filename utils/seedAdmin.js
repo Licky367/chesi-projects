@@ -8,7 +8,7 @@ const seedAdmin = async () => {
         profileImage: "",
         name: "Project Admin",
         phone: "0700000000",
-        password: "Admin@123",
+        password: "123456",
         role: "admin",
       },
       {
