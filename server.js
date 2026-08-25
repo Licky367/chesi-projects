@@ -228,7 +228,7 @@ const createRoutes =
 
 const extrasRoutes =
     loadRoute(
-        "./routes/extrasRoutes",
+        "./routes/extras",
         "extras"
     );
 
