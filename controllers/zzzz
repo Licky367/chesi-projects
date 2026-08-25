@@ -1,569 +1,50 @@
 // ==========================================================
-// controllers/milkController.js
-// ==========================================================
-//
-// PURPOSE
-// ----------------------------------------------------------
-// General controller for the milk module.
-//
-// Handles:
-//
-// • Milk statistics
-// • Daily statistics
-// • Milk sales
-// • Standing orders
-// • Milk pricing
-// • Milking history
-// • Milking status
-//
-// DOES NOT HANDLE:
-//
-// • GET  /milk
-// • POST /milk
-// • GET  /milk/edit/:id
-// • POST /milk/:id
-//
-// Those belong exclusively to:
-//
-//     controllers/milkCollectController.js
-//
+// controllers/milkSalesController.js
 // ==========================================================
 
 
-const mongoose =
-    require("mongoose");
-
-
-const milkService =
-    require("../services/milkService");
-
-
-const Dairy =
-    require("../models/dairy");
+const milkSalesService =
+    require("../services/milkSalesService");
 
 
 // ==========================================================
-// AUTHENTICATED USER
-// ==========================================================
-//
-// The application uses:
-//
-//     req.session.user
-//
-// Some middleware may also expose:
-//
-//     req.user
-//
-// Support both.
-//
+// GET MILK SALES PAGE
 // ==========================================================
 
-function getUser(
-    req
-) {
-
-    return (
-        req.session?.user ||
-        req.user ||
-        null
-    );
-
-}
-
-
-// ==========================================================
-// ADMIN CHECK
-// ==========================================================
-
-function isAdmin(
-    req
-) {
-
-    const user =
-        getUser(req);
-
-
-    return Boolean(
-        user &&
-        user.role === "admin"
-    );
-
-}
-
-
-// ==========================================================
-// OBJECT ID VALIDATION
-// ==========================================================
-
-function isValidObjectId(
-    value
-) {
-
-    return mongoose.Types.ObjectId.isValid(
-        value
-    );
-
-}
-
-
-// ==========================================================
-// ERROR RESPONSE
-// ==========================================================
-
-function sendError(
+exports.getMilkSalesPage =
+async function(
+    req,
     res,
-    error,
-    fallback
-) {
-
-    console.error(
-        error
-    );
-
-
-    return res
-        .status(500)
-        .send(
-            error?.message ||
-            fallback ||
-            "An error occurred."
-        );
-
-}
-
-
-// ==========================================================
-// GET MILK STATISTICS
-// ==========================================================
-//
-// GET /stats
-//
-// Supported:
-//
-// /stats
-//
-// /stats?type=day&date=2026-08-13
-//
-// /stats?type=month&month=2026-08
-//
-// ==========================================================
-
-exports.getMilkStats =
-async function(
-    req,
-    res
+    next
 ) {
 
     try {
-
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
-        const user =
-            getUser(req);
-
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        // ==================================================
-        // TYPE
-        // ==================================================
-
-        const type =
-            req.query?.type ||
-            "day";
-
-
-        // ==================================================
-        // DAILY STATISTICS
-        // ==================================================
-
-        if (
-            type === "day"
-        ) {
-
-            const kenyaParts =
-                milkService.getKenyaDateParts();
-
-
-            const selectedDate =
-                req.query?.date ||
-                kenyaParts.date;
-
-
-            const data =
-                await milkService.getDailyStats(
-                    selectedDate
-                );
-
-
-            return res.render(
-                "milkStats",
-                {
-
-                    type:
-                        "day",
-
-                    date:
-                        selectedDate,
-
-                    month:
-                        "",
-
-                    records:
-                        Array.isArray(
-                            data?.records
-                        )
-                            ? data.records
-                            : [],
-
-                    stats:
-                        data?.stats ||
-                        {},
-
-                    sales:
-                        Array.isArray(
-                            data?.sales
-                        )
-                            ? data.sales
-                            : [],
-
-                    user
-
-                }
-            );
-
-        }
-
-
-        // ==================================================
-        // MONTHLY STATISTICS
-        // ==================================================
-
-        if (
-            type === "month"
-        ) {
-
-            const kenyaParts =
-                milkService.getKenyaDateParts();
-
-
-            const selectedMonth =
-                req.query?.month ||
-                kenyaParts.monthKey;
-
-
-            const data =
-                await milkService.getMonthlyStats(
-                    selectedMonth
-                );
-
-
-            return res.render(
-                "milkStats",
-                {
-
-                    type:
-                        "month",
-
-                    date:
-                        "",
-
-                    month:
-                        selectedMonth,
-
-                    records:
-                        Array.isArray(
-                            data?.records
-                        )
-                            ? data.records
-                            : [],
-
-                    stats:
-                        data?.stats ||
-                        {},
-
-                    sales:
-                        Array.isArray(
-                            data?.sales
-                        )
-                            ? data.sales
-                            : [],
-
-                    user
-
-                }
-            );
-
-        }
-
-
-        // ==================================================
-        // INVALID TYPE
-        // ==================================================
-
-        return res.status(
-            400
-        ).render(
-            "milkStats",
-            {
-
-                type:
-                    "",
-
-                date:
-                    "",
-
-                month:
-                    "",
-
-                records:
-                    [],
-
-                stats: {
-
-                    total:
-                        0,
-
-                    consumed:
-                        0,
-
-                    available:
-                        0,
-
-                    price:
-                        0,
-
-                    cash:
-                        0,
-
-                    locked:
-                        false,
-
-                    avg:
-                        0
-
-                },
-
-                sales:
-                    [],
-
-                user
-
-            }
-        );
-
-    }
-
-    catch (error) {
-
-        return sendError(
-            res,
-            error,
-            "Unable to load milk statistics."
-        );
-
-    }
-
-};
-
-
-// ==========================================================
-// SAVE DAILY STATISTICS
-// ==========================================================
-//
-// POST /stats/day
-//
-// ADMIN ONLY.
-//
-// ==========================================================
-
-exports.saveDailyStats =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        const user =
-            getUser(req);
-
-
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        // ==================================================
-        // ADMIN ONLY
-        // ==================================================
-
-        if (
-            user.role !== "admin"
-        ) {
-
-            return res.status(
-                403
-            ).send(
-                "Only administrators can save daily statistics."
-            );
-
-        }
-
-
-        // ==================================================
-        // REQUEST DATA
-        // ==================================================
-
-        const day =
-            req.body?.day;
-
-
-        const price =
-            req.body?.price;
-
-
-        if (!day) {
-
-            throw new Error(
-                "Day is required."
-            );
-
-        }
-
-
-        // ==================================================
-        // SAVE
-        // ==================================================
-
-        await milkService.saveDailyStats({
-
-            day,
-
-            price
-
-        });
-
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
-
-        return res.redirect(
-            `/stats?type=day&date=${encodeURIComponent(day)}`
-        );
-
-    }
-
-    catch (error) {
-
-        return sendError(
-            res,
-            error,
-            "Unable to save daily statistics."
-        );
-
-    }
-
-};
-
-
-// ==========================================================
-// GET SALES PAGE
-// ==========================================================
-//
-// GET /sales
-//
-// ==========================================================
-
-exports.getSalesPage =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        const user =
-            getUser(req);
-
-
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        // ==================================================
-        // PAGE DATA
-        // ==================================================
 
         const data =
-            await milkService.getSalesPageData();
+            await milkSalesService.getMilkSalesPageData(
+                req.user
+            );
 
-
-        // ==================================================
-        // RENDER
-        // ==================================================
 
         return res.render(
-            "sales",
+            "milk/milksales",
             {
 
-                standingOrders:
-                    Array.isArray(
-                        data?.standingOrders
-                    )
-                        ? data.standingOrders
-                        : [],
+                title:
+                    "Milk Sales",
 
-                manualSales:
-                    Array.isArray(
-                        data?.manualSales
-                    )
-                        ? data.manualSales
-                        : [],
+                user:
+                    req.user,
 
-                currentPrice:
-                    Number(
-                        data?.currentPrice ?? 50
-                    ),
+                ...data,
 
-                totalSales:
-                    Number(
-                        data?.totalSales || 0
-                    ),
+                success:
+                    req.query.success ||
+                    "",
 
-                availableMilk:
-                    Number(
-                        data?.availableMilk || 0
-                    ),
-
-                user
+                error:
+                    req.query.error ||
+                    ""
 
             }
         );
@@ -572,201 +53,7 @@ async function(
 
     catch (error) {
 
-        return sendError(
-            res,
-            error,
-            "Unable to load sales page."
-        );
-
-    }
-
-};
-
-
-// ==========================================================
-// SUBMIT MANUAL SALE
-// ==========================================================
-//
-// POST /sales/manual
-//
-// ==========================================================
-
-exports.submitManualSale =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        const user =
-            getUser(req);
-
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        const customerName =
-            typeof req.body?.customerName === "string"
-
-                ? req.body.customerName.trim()
-
-                : "";
-
-
-        if (!customerName) {
-
-            throw new Error(
-                "Customer name is required."
-            );
-
-        }
-
-
-        const rawLiters =
-            req.body?.liters;
-
-
-        if (
-            rawLiters === undefined ||
-            rawLiters === null ||
-            rawLiters === ""
-        ) {
-
-            throw new Error(
-                "Liters are required."
-            );
-
-        }
-
-
-        const liters =
-            Number(
-                rawLiters
-            );
-
-
-        if (
-            !Number.isFinite(liters) ||
-            liters <= 0
-        ) {
-
-            throw new Error(
-                "Liters must be a valid number greater than zero."
-            );
-
-        }
-
-
-        await milkService.submitManualSale({
-
-            customerName,
-
-            liters
-
-        });
-
-
-        return res.redirect(
-            "/sales?success=Sale%20recorded%20successfully."
-        );
-
-    }
-
-    catch (error) {
-
-        return sendError(
-            res,
-            error,
-            "Unable to save manual sale."
-        );
-
-    }
-
-};
-
-
-// ==========================================================
-// SUBMIT STANDING ORDER SALE
-// ==========================================================
-//
-// POST /sales/standing-order
-//
-// ==========================================================
-
-exports.submitStandingOrderSale =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        const user =
-            getUser(req);
-
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        const standingOrderId =
-            req.body?.standingOrderId;
-
-
-        if (!standingOrderId) {
-
-            throw new Error(
-                "Standing order was not specified."
-            );
-
-        }
-
-
-        if (
-            !isValidObjectId(
-                standingOrderId
-            )
-        ) {
-
-            throw new Error(
-                "Invalid standing order."
-            );
-
-        }
-
-
-        await milkService.submitStandingOrderSale({
-
-            standingOrderId
-
-        });
-
-
-        return res.redirect(
-            "/sales?success=Standing%20order%20sale%20recorded."
-        );
-
-    }
-
-    catch (error) {
-
-        return sendError(
-            res,
-            error,
-            "Unable to save standing order sale."
-        );
+        next(error);
 
     }
 
@@ -776,560 +63,46 @@ async function(
 // ==========================================================
 // UPDATE MILK PRICE
 // ==========================================================
-//
-// POST /sales/price
-//
-// ADMIN ONLY.
-//
-// ==========================================================
 
 exports.updateMilkPrice =
 async function(
     req,
-    res
+    res,
+    next
 ) {
 
     try {
 
-        const user =
-            getUser(req);
-
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        if (
-            user.role !== "admin"
-        ) {
-
-            return res.status(
-                403
-            ).send(
-                "Only administrators can update the milk price."
-            );
-
-        }
-
-
-        const rawPrice =
-            req.body?.price;
-
-
-        const price =
-            Number(
-                rawPrice
-            );
-
-
-        if (
-            !Number.isFinite(price) ||
-            price < 0
-        ) {
-
-            throw new Error(
-                "Milk price must be a valid number."
-            );
-
-        }
-
-
-        await milkService.updateMilkPrice(
-            price
-        );
-
-
-        return res.redirect(
-            "/sales?success=Milk%20price%20updated%20successfully."
-        );
-
-    }
-
-    catch (error) {
-
-        return sendError(
-            res,
-            error,
-            "Unable to update milk price."
-        );
-
-    }
-
-};
-
-
-// ==========================================================
-// ADD STANDING ORDER
-// ==========================================================
-//
-// POST /sales/standing-order/add
-//
-// ==========================================================
-
-exports.addStandingOrder =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        const user =
-            getUser(req);
-
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        const customerName =
-            typeof req.body?.customerName === "string"
-
-                ? req.body.customerName.trim()
-
-                : "";
-
-
-        if (!customerName) {
-
-            throw new Error(
-                "Customer name is required."
-            );
-
-        }
-
-
-        const liters =
-            Number(
-                req.body?.liters
-            );
-
-
-        if (
-            !Number.isFinite(liters) ||
-            liters <= 0
-        ) {
-
-            throw new Error(
-                "Liters must be a valid number greater than zero."
-            );
-
-        }
-
-
-        await milkService.addStandingOrder({
-
-            customerName,
-
-            liters
-
-        });
-
-
-        return res.redirect(
-            "/sales?success=Standing%20order%20added%20successfully."
-        );
-
-    }
-
-    catch (error) {
-
-        return sendError(
-            res,
-            error,
-            "Unable to add standing order."
-        );
-
-    }
-
-};
-
-
-// ==========================================================
-// OMIT STANDING ORDER
-// ==========================================================
-//
-// POST /sales/standing-order/omit
-//
-// ==========================================================
-
-exports.omitStandingOrder =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        const user =
-            getUser(req);
-
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        const id =
-            req.body?.id;
-
-
-        if (!id) {
-
-            throw new Error(
-                "Standing order was not specified."
-            );
-
-        }
-
-
-        if (
-            !isValidObjectId(id)
-        ) {
-
-            throw new Error(
-                "Invalid standing order."
-            );
-
-        }
-
-
-        await milkService.omitStandingOrder({
-
-            orderId:
-                id,
-
-            user
-
-        });
-
-
-        return res.redirect(
-            "/sales?success=Standing%20order%20omitted."
-        );
-
-    }
-
-    catch (error) {
-
-        return sendError(
-            res,
-            error,
-            "Unable to omit standing order."
-        );
-
-    }
-
-};
-
-
-// ==========================================================
-// GET MILKING HISTORY
-// ==========================================================
-//
-// GET:
-//
-//     /milk/history/:dairyId
-//
-// ==========================================================
-//
-// IMPORTANT BUSINESS RULE
-// ----------------------------------------------------------
-//
-// Milking history belongs to the FEMALE ANIMAL.
-//
-// It does NOT depend on:
-//
-//     • isMilking
-//     • current milking status
-//     • dairy-farm assignment
-//     • dairy-worker assignment
-//
-// Therefore:
-//
-//     female + not currently milking
-//
-// MUST still be allowed to view her historical milk records.
-//
-// Likewise:
-//
-//     female + currently milking
-//
-// is allowed.
-//
-// `isMilking` is only a CURRENT STATUS flag. It must never
-// determine whether historical records can be viewed.
-//
-// ==========================================================
-
-exports.getMilkingHistory =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
-        const user =
-            getUser(req);
-
-
-        if (!user) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        // ==================================================
-        // DAIRY ID
-        // ==================================================
-
-        const dairyId =
-            req.params?.dairyId;
-
-
-        if (!dairyId) {
-
-            return res.status(
-                400
-            ).send(
-                "Dairy animal was not specified."
-            );
-
-        }
-
-
-        if (
-            !isValidObjectId(
-                dairyId
-            )
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                "Invalid dairy animal."
-            );
-
-        }
-
-
-        // ==================================================
-        // FIND ANIMAL
-        // ==================================================
-        //
-        // This is deliberately done here instead of relying
-        // on isMilking.
-        //
-        // There is NO farm-assignment check.
-        //
-        // ==================================================
-
-        const dairy =
-            await Dairy.findById(
-                dairyId
-            );
-
-
-        if (!dairy) {
-
-            return res.status(
-                404
-            ).send(
-                "Dairy animal not found."
-            );
-
-        }
-
-
-        // ==================================================
-        // FEMALE CHECK
-        // ==================================================
-        //
-        // Milking history is available for female animals.
-        //
-        // It is NOT restricted by:
-        //
-        //     dairy.isMilking
-        //
-        // A female animal that has stopped milking can still
-        // have historical records.
-        //
-        // ==================================================
-
-        let isFemale =
-            false;
-
-
-        // --------------------------------------------------
-        // Use the Dairy model's isFemale virtual if present.
-        // --------------------------------------------------
-
-        if (
-            typeof dairy.isFemale === "boolean"
-        ) {
-
-            isFemale =
-                dairy.isFemale;
-
-        }
-
-        // --------------------------------------------------
-        // Fallback to gender if available.
-        // --------------------------------------------------
-
-        else if (
-            typeof dairy.gender === "string"
-        ) {
-
-            isFemale =
-                dairy.gender.toLowerCase() ===
-                "female";
-
-        }
-
-        // --------------------------------------------------
-        // Fallback to sex if the schema uses sex.
-        // --------------------------------------------------
-
-        else if (
-            typeof dairy.sex === "string"
-        ) {
-
-            isFemale =
-                dairy.sex.toLowerCase() ===
-                "female";
-
-        }
-
-
-        if (!isFemale) {
-
-            return res.status(
-                400
-            ).send(
-                "Milking history is available only for female dairy animals."
-            );
-
-        }
-
-
-        // ==================================================
-        // MONTH
-        // ==================================================
-
-        const month =
-            typeof req.query?.month === "string"
-
-                ? req.query.month.trim()
-
-                : "";
-
-
-        // ==================================================
-        // HISTORY
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // We pass the actual Dairy document/user to the
-        // service.
-        //
-        // The service MUST NOT reject the animal because:
-        //
-        //     • isMilking === false
-        //     • it has no farm assignment
-        //
-        // ==================================================
-
-        const data =
-            await milkService.getMilkingHistory({
-
-                dairyId,
-
-                month,
-
-                user
-
-            });
-
-
-        // ==================================================
-        // RENDER
-        // ==================================================
-
-        return res.render(
-            "milkingHistory",
+        await milkSalesService.updateMilkPrice(
+            req.user,
             {
 
-                dairy:
-                    data?.dairy ||
-                    dairy,
+                day:
+                    req.body.day,
 
-                records:
-                    Array.isArray(
-                        data?.records
-                    )
-                        ? data.records
-                        : [],
-
-                grouped:
-                    data?.grouped ||
-                    {},
-
-                monthlyTotal:
-                    Number(
-                        data?.monthlyTotal || 0
-                    ),
-
-                hasData:
-                    Boolean(
-                        data?.hasData
-                    ),
-
-                selectedMonth:
-                    month,
-
-                user
+                price:
+                    req.body.price
 
             }
         );
 
+
+        return res.redirect(
+            "/milk/sales?success=" +
+            encodeURIComponent(
+                "Milk price updated successfully."
+            )
+        );
+
     }
 
     catch (error) {
 
-        console.error(
-            "GET MILKING HISTORY ERROR:",
-            error
-        );
-
-
-        return sendError(
-            res,
-            error,
-            "Unable to load milking history."
+        return res.redirect(
+            "/milk/sales?error=" +
+            encodeURIComponent(
+                error.message
+            )
         );
 
     }
@@ -1338,160 +111,56 @@ async function(
 
 
 // ==========================================================
-// TOGGLE MILKING STATUS
-// ==========================================================
-//
-// POST /milk/history/:id/status
-//
-// ADMIN ONLY.
-//
-// IMPORTANT:
-//
-// This changes ONLY the current `isMilking` status.
-//
-// It does NOT determine whether the animal can view
-// historical records.
-//
+// SELL MILK
 // ==========================================================
 
-exports.toggleMilkingStatus =
+exports.sellMilk =
 async function(
     req,
-    res
+    res,
+    next
 ) {
 
     try {
 
-        const user =
-            getUser(req);
+        await milkSalesService.sellMilk(
+            req.user,
+            {
 
+                day:
+                    req.body.day,
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
+                customerName:
+                    req.body.customerName,
 
-        if (!user) {
+                liters:
+                    req.body.liters,
 
-            return res.redirect(
-                "/login"
-            );
+                allocations:
+                    req.body.allocations
 
-        }
+            }
+        );
 
-
-        // ==================================================
-        // ADMIN ONLY
-        // ==================================================
-
-        if (
-            user.role !== "admin"
-        ) {
-
-            return res.status(
-                403
-            ).send(
-                "Only administrators can change milking status."
-            );
-
-        }
-
-
-        // ==================================================
-        // DAIRY ID
-        // ==================================================
-
-        const id =
-            req.params?.id;
-
-
-        if (!id) {
-
-            throw new Error(
-                "Dairy animal was not specified."
-            );
-
-        }
-
-
-        if (
-            !isValidObjectId(id)
-        ) {
-
-            throw new Error(
-                "Invalid dairy animal."
-            );
-
-        }
-
-
-        // ==================================================
-        // TOGGLE
-        // ==================================================
-
-        await milkService.toggleMilkingStatus({
-
-            dairyId:
-                id,
-
-            user
-
-        });
-
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
 
         return res.redirect(
-            `/milk/history/${encodeURIComponent(id)}`
+            "/milk/sales?success=" +
+            encodeURIComponent(
+                "Milk sale completed successfully."
+            )
         );
 
     }
 
     catch (error) {
 
-        return sendError(
-            res,
-            error,
-            "Unable to change milking status."
+        return res.redirect(
+            "/milk/sales?error=" +
+            encodeURIComponent(
+                error.message
+            )
         );
 
     }
 
 };
-
-
-// ==========================================================
-// CONTROLLER EXPORT SUMMARY
-// ==========================================================
-//
-// The following functions intentionally belong here:
-//
-//     getMilkStats
-//     saveDailyStats
-//
-//     getSalesPage
-//     submitManualSale
-//     submitStandingOrderSale
-//     updateMilkPrice
-//
-//     addStandingOrder
-//     omitStandingOrder
-//
-//     getMilkingHistory
-//     toggleMilkingStatus
-//
-// ----------------------------------------------------------
-//
-// The following functions DO NOT belong here:
-//
-//     getMilkPage
-//     submitMilk
-//     getEditMilk
-//     updateMilkRecord
-//
-// Those belong to:
-//
-//     controllers/milkCollectController.js
-//
-// ==========================================================
