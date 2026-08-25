@@ -54,10 +54,8 @@
              ADMIN ONLY
         ============================================== -->
 
-        <% if (user && user.role === "admin") { %>
-
             <a
-                href="/networth/structure/<%= dairy._id %>/add"
+                href="/dairy/<%= dairy._id %>/general"
                 class="asset-bar-trigger top-page-action"
             >
 
@@ -69,7 +67,7 @@
                 </span>
 
                 <span class="asset-bar-trigger-text">
-                    Add Assets
+                    View Updates
                 </span>
 
             </a>
