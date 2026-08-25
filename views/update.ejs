@@ -323,24 +323,25 @@
 
     </style>
 
-
-
     <!-- =================================================
-         FIXED CREATE POST
+         BOOLEAN MANAGEMENT
 
-         ALWAYS FIRST
+         FILE:
+             views/update/boolean.ejs
+
+         RENDERED EXACTLY ONCE.
     ================================================== -->
 
     <%- include(
-        "update/create-post",
+        "update/boolean",
         {
             dairy: dairy,
-            user: user,
-            assetDairies: assetDairies || []
+            assetDairies: assetDairies || [],
+            booleanFields: booleanFields || [],
+            booleanAnimals: booleanAnimals || [],
+            user: user
         }
     ) %>
-
-
 
     <!-- =================================================
          FIXED H1
@@ -368,6 +369,19 @@
         "update/asset-cards",
         {
             dairy: dairy,
+            assetDairies: assetDairies || []
+        }
+    ) %>
+
+<!-- =================================================
+         FIXED CREATE POST
+    ================================================== -->
+
+    <%- include(
+        "update/create-post",
+        {
+            dairy: dairy,
+            user: user,
             assetDairies: assetDairies || []
         }
     ) %>
