@@ -35,12 +35,776 @@ IMPORTANT:
 */ %>
 
 
+<style>
+
+/* =========================================================
+   EXTRAS PAGE
+========================================================= */
+
+.extras-section{
+
+    width:100%;
+
+    max-width:1200px;
+
+    margin:0 auto;
+
+    padding:10px 0 30px;
+}
+
+
+/* =========================================================
+   PAGE HEADER
+========================================================= */
+
+.extras-header{
+
+    position:relative;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+    margin-bottom:24px;
+
+    padding:22px 24px;
+
+    background:#ffffff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:16px;
+
+    box-shadow:
+        0 4px 16px rgba(0,0,0,.06);
+
+    overflow:hidden;
+}
+
+
+/* Decorative green strip */
+
+.extras-header::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+
+    left:0;
+
+    bottom:0;
+
+    width:5px;
+
+    background:#0b5d1e;
+}
+
+
+/* =========================================================
+   HEADER ICON
+========================================================= */
+
+.extras-header-icon{
+
+    width:58px;
+
+    min-width:58px;
+
+    height:58px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:14px;
+
+    background:#eaf7ee;
+
+    color:#0b5d1e;
+
+    font-size:32px;
+
+    font-weight:700;
+
+    line-height:1;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(11,93,30,.08);
+}
+
+
+/* =========================================================
+   HEADER CONTENT
+========================================================= */
+
+.extras-header-content{
+
+    min-width:0;
+
+    flex:1;
+}
+
+.extras-eyebrow{
+
+    display:block;
+
+    margin-bottom:3px;
+
+    color:#0b5d1e;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    letter-spacing:1.4px;
+
+    line-height:14px;
+}
+
+.extras-title{
+
+    margin:0;
+
+    color:#263238;
+
+    font-size:26px;
+
+    font-weight:700;
+
+    line-height:32px;
+}
+
+.extras-description{
+
+    margin:5px 0 0;
+
+    color:#667085;
+
+    font-size:14px;
+
+    line-height:20px;
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+.extras-message{
+
+    width:100%;
+
+    padding:15px 18px;
+
+    margin-bottom:20px;
+
+    border-radius:10px;
+
+    font-size:14px;
+
+    line-height:20px;
+}
+
+.extras-error{
+
+    background:#fff1f1;
+
+    color:#a12828;
+
+    border:1px solid #f0caca;
+
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.extras-empty{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    min-height:300px;
+
+    padding:35px 25px;
+
+    background:#ffffff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:16px;
+
+    text-align:center;
+
+    box-shadow:
+        0 4px 16px rgba(0,0,0,.05);
+}
+
+.extras-empty-icon{
+
+    width:70px;
+
+    height:70px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    margin-bottom:15px;
+
+    border-radius:50%;
+
+    background:#eaf7ee;
+
+    color:#0b5d1e;
+
+    font-size:36px;
+
+    font-weight:700;
+}
+
+.extras-empty h2{
+
+    margin:0 0 7px;
+
+    color:#263238;
+
+    font-size:20px;
+
+    line-height:26px;
+}
+
+.extras-empty p{
+
+    max-width:450px;
+
+    margin:0;
+
+    color:#667085;
+
+    font-size:14px;
+
+    line-height:21px;
+}
+
+
+/* =========================================================
+   ASSET LIST
+========================================================= */
+
+.extras-list{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap:20px;
+}
+
+
+/* =========================================================
+   ASSET CARD
+========================================================= */
+
+.extra-card{
+
+    display:flex;
+
+    flex-direction:column;
+
+    min-width:0;
+
+    overflow:hidden;
+
+    background:#ffffff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:16px;
+
+    box-shadow:
+        0 4px 16px rgba(0,0,0,.06);
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease,
+        border-color .2s ease;
+}
+
+.extra-card:hover{
+
+    transform:translateY(-3px);
+
+    border-color:#cfe5d5;
+
+    box-shadow:
+        0 9px 25px rgba(0,0,0,.10);
+}
+
+
+/* =========================================================
+   IMAGE
+========================================================= */
+
+.extra-card-image-wrapper{
+
+    position:relative;
+
+    width:100%;
+
+    height:220px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f3faf5,
+            #eaf7ee
+        );
+
+    overflow:hidden;
+}
+
+.extra-card-image{
+
+    width:100%;
+
+    height:100%;
+
+    display:block;
+
+    object-fit:cover;
+
+    transition:
+        transform .35s ease;
+}
+
+.extra-card:hover
+.extra-card-image{
+
+    transform:scale(1.03);
+}
+
+
+/* =========================================================
+   IMAGE OVERLAY
+========================================================= */
+
+.extra-card-image-wrapper::after{
+
+    content:"";
+
+    position:absolute;
+
+    left:0;
+
+    right:0;
+
+    bottom:0;
+
+    height:70px;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(0,0,0,.20),
+            transparent
+        );
+
+    pointer-events:none;
+}
+
+
+/* =========================================================
+   CARD CONTENT
+========================================================= */
+
+.extra-card-content{
+
+    display:flex;
+
+    flex-direction:column;
+
+    flex:1;
+
+    padding:20px;
+}
+
+
+/* =========================================================
+   CARD HEADING
+========================================================= */
+
+.extra-card-heading{
+
+    margin-bottom:15px;
+
+    padding-bottom:13px;
+
+    border-bottom:
+        1px solid #edf0ee;
+}
+
+.extra-card-eyebrow{
+
+    display:block;
+
+    margin-bottom:4px;
+
+    color:#0b5d1e;
+
+    font-size:10px;
+
+    font-weight:700;
+
+    letter-spacing:1.1px;
+
+    line-height:13px;
+}
+
+.extra-card-title{
+
+    margin:0;
+
+    color:#263238;
+
+    font-size:20px;
+
+    font-weight:700;
+
+    line-height:26px;
+
+    word-break:break-word;
+}
+
+
+/* =========================================================
+   CARD INFORMATION ROW
+========================================================= */
+
+.extra-card-row{
+
+    display:flex;
+
+    align-items:flex-start;
+
+    justify-content:space-between;
+
+    gap:15px;
+
+    padding:9px 0;
+
+    border-bottom:
+        1px solid #f0f2f1;
+}
+
+.extra-card-label{
+
+    flex:0 0 auto;
+
+    color:#667085;
+
+    font-size:12px;
+
+    font-weight:600;
+
+    line-height:18px;
+}
+
+.extra-card-value{
+
+    min-width:0;
+
+    color:#263238;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    line-height:18px;
+
+    text-align:right;
+
+    word-break:break-word;
+}
+
+
+/* =========================================================
+   DESCRIPTION
+========================================================= */
+
+.extra-card-description{
+
+    margin-top:14px;
+
+    padding:12px 13px;
+
+    background:#f7fbf8;
+
+    border-left:
+        3px solid #0b5d1e;
+
+    border-radius:7px;
+
+    color:#59666b;
+
+    font-size:13px;
+
+    line-height:20px;
+
+    word-break:break-word;
+}
+
+
+/* =========================================================
+   VIEW ASSET BUTTON
+========================================================= */
+
+.extra-card-link{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    width:100%;
+
+    min-height:44px;
+
+    margin-top:auto;
+
+    padding:10px 15px;
+
+    border-radius:9px;
+
+    background:#0b5d1e;
+
+    color:#ffffff;
+
+    text-decoration:none;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    line-height:18px;
+
+    transition:
+        background .2s ease,
+        transform .15s ease;
+}
+
+.extra-card-link:hover{
+
+    background:#084814;
+}
+
+.extra-card-link:active{
+
+    transform:scale(.98);
+}
+
+
+/* =========================================================
+   RESPONSIVE — TABLET
+========================================================= */
+
+@media(max-width:850px){
+
+    .extras-list{
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap:15px;
+    }
+
+    .extra-card-image-wrapper{
+
+        height:190px;
+    }
+
+    .extra-card-content{
+
+        padding:17px;
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE — MOBILE
+========================================================= */
+
+@media(max-width:600px){
+
+    .extras-section{
+
+        padding:
+            4px 0 25px;
+    }
+
+    .extras-header{
+
+        gap:13px;
+
+        margin-bottom:17px;
+
+        padding:17px 16px;
+
+        border-radius:13px;
+    }
+
+    .extras-header-icon{
+
+        width:48px;
+
+        min-width:48px;
+
+        height:48px;
+
+        border-radius:12px;
+
+        font-size:27px;
+    }
+
+    .extras-title{
+
+        font-size:21px;
+
+        line-height:27px;
+    }
+
+    .extras-description{
+
+        font-size:13px;
+
+        line-height:18px;
+    }
+
+    .extras-list{
+
+        grid-template-columns:1fr;
+
+        gap:15px;
+    }
+
+    .extra-card-image-wrapper{
+
+        height:210px;
+    }
+
+    .extra-card-content{
+
+        padding:17px;
+    }
+
+    .extra-card-title{
+
+        font-size:19px;
+
+        line-height:25px;
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE — VERY SMALL SCREENS
+========================================================= */
+
+@media(max-width:380px){
+
+    .extras-header{
+
+        padding:15px 13px;
+    }
+
+    .extras-header-icon{
+
+        width:44px;
+
+        min-width:44px;
+
+        height:44px;
+
+        font-size:24px;
+    }
+
+    .extras-title{
+
+        font-size:19px;
+
+        line-height:24px;
+    }
+
+    .extras-eyebrow{
+
+        font-size:10px;
+    }
+
+    .extra-card-image-wrapper{
+
+        height:185px;
+    }
+
+    .extra-card-content{
+
+        padding:15px;
+    }
+
+    .extra-card-row{
+
+        gap:10px;
+    }
+
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+.extra-card-link:focus-visible{
+
+    outline:
+        3px solid rgba(11,93,30,.30);
+
+    outline-offset:3px;
+}
+
+</style>
+
+
 <section class="extras-section">
+
+
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
 
     <div class="extras-header">
 
-        <div class="extras-header-icon" aria-hidden="true">
-            +
+        <div
+            class="extras-header-icon"
+            aria-hidden="true"
+        >
+            ✨
         </div>
 
         <div class="extras-header-content">
@@ -54,7 +818,7 @@ IMPORTANT:
             </h1>
 
             <p class="extras-description">
-                Assets assigned to you.
+                Assets assigned directly to you.
             </p>
 
         </div>
@@ -62,7 +826,14 @@ IMPORTANT:
     </div>
 
 
-    <% if (typeof error !== "undefined" && error) { %>
+    <!-- =====================================================
+         ERROR MESSAGE
+    ====================================================== -->
+
+    <% if (
+        typeof error !== "undefined" &&
+        error
+    ) { %>
 
         <div
             class="extras-message extras-error"
@@ -74,7 +845,14 @@ IMPORTANT:
     <% } %>
 
 
-    <% if (!extras || extras.length === 0) { %>
+    <!-- =====================================================
+         EMPTY STATE
+    ====================================================== -->
+
+    <% if (
+        !extras ||
+        extras.length === 0
+    ) { %>
 
         <div class="extras-empty">
 
@@ -82,7 +860,7 @@ IMPORTANT:
                 class="extras-empty-icon"
                 aria-hidden="true"
             >
-                +
+                ✨
             </div>
 
             <h2>
@@ -90,58 +868,75 @@ IMPORTANT:
             </h2>
 
             <p>
-                You currently have no standalone assets assigned to you.
+                You currently have no standalone assets assigned
+                to you.
             </p>
 
         </div>
 
+
     <% } else { %>
 
 
+        <!-- =================================================
+             ASSET CARDS
+        ================================================== -->
+
         <div class="extras-list">
+
 
             <% extras.forEach(function(asset) { %>
 
+
                 <article class="extra-card">
 
-                    <!-- ======================================
+
+                    <!-- =====================================
                          IMAGE
-                    ======================================= -->
+                    ====================================== -->
 
                     <div class="extra-card-image-wrapper">
 
                         <img
                             class="extra-card-image"
+
                             src="<%= asset.displayImage %>"
+
                             alt="<%= asset.name %>"
+
                             loading="lazy"
                         >
 
                     </div>
 
 
-                    <!-- ======================================
+                    <!-- =====================================
                          CONTENT
-                    ======================================= -->
+                    ====================================== -->
 
                     <div class="extra-card-content">
 
+
+                        <!-- =================================
+                             HEADING
+                        ================================== -->
+
                         <div class="extra-card-heading">
 
-                            <div>
+                            <span class="extra-card-eyebrow">
+                                ASSET
+                            </span>
 
-                                <span class="extra-card-eyebrow">
-                                    ASSET
-                                </span>
-
-                                <h2 class="extra-card-title">
-                                    <%= asset.name %>
-                                </h2>
-
-                            </div>
+                            <h2 class="extra-card-title">
+                                <%= asset.name %>
+                            </h2>
 
                         </div>
 
+
+                        <!-- =================================
+                             REFERENCE
+                        ================================== -->
 
                         <% if (asset.refNo) { %>
 
@@ -160,6 +955,10 @@ IMPORTANT:
                         <% } %>
 
 
+                        <!-- =================================
+                             TYPE
+                        ================================== -->
+
                         <% if (asset.type) { %>
 
                             <div class="extra-card-row">
@@ -176,6 +975,10 @@ IMPORTANT:
 
                         <% } %>
 
+
+                        <!-- =================================
+                             CONDITION
+                        ================================== -->
 
                         <% if (asset.condition) { %>
 
@@ -194,6 +997,10 @@ IMPORTANT:
                         <% } %>
 
 
+                        <!-- =================================
+                             LOCATION
+                        ================================== -->
+
                         <% if (asset.location) { %>
 
                             <div class="extra-card-row">
@@ -211,6 +1018,10 @@ IMPORTANT:
                         <% } %>
 
 
+                        <!-- =================================
+                             DESCRIPTION
+                        ================================== -->
+
                         <% if (asset.description) { %>
 
                             <div class="extra-card-description">
@@ -222,25 +1033,32 @@ IMPORTANT:
                         <% } %>
 
 
-                        <!-- ==================================
-                             OPEN ASSET
-                        =================================== -->
+                        <!-- =================================
+                             VIEW ASSET
+                        ================================== -->
 
                         <a
                             class="extra-card-link"
+
                             href="/dairy/<%= asset._id %>"
                         >
                             View Asset
                         </a>
 
+
                     </div>
+
 
                 </article>
 
+
             <% }); %>
+
 
         </div>
 
+
     <% } %>
+
 
 </section>
