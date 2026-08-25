@@ -1,0 +1,76 @@
+<%
+// ==========================================================
+// views/addOns.ejs
+// ==========================================================
+//
+// FINANCIAL ADD-ONS PAGE
+//
+// DATA PROVIDED:
+//
+//     dairy
+//     assetDairies
+//     user
+//
+// ==========================================================
+%>
+
+
+<link
+    rel="stylesheet"
+    href="/css/update/addOns.css"
+>
+
+
+<div class="addons-page">
+
+
+    <!-- ================================================ -->
+    <!-- WELCOME CARD -->
+    <!-- ================================================ -->
+
+    <section class="addons-section">
+
+        <%- include(
+            "addOns/s1.ejs",
+            {
+                dairy: dairy,
+                user: user
+            }
+        ) %>
+
+    </section>
+
+
+    <!-- ================================================ -->
+    <!-- FINANCIAL CARDS -->
+    <!-- ================================================ -->
+
+    <section class="addons-financial-grid">
+
+
+        <!-- REVENUE -->
+
+        <%- include(
+            "addOns/s.revenue.ejs",
+            {
+                dairy: dairy,
+                user: user
+            }
+        ) %>
+
+
+        <!-- LIABILITY -->
+
+        <%- include(
+            "addOns/s.liability.ejs",
+            {
+                dairy: dairy,
+                user: user
+            }
+        ) %>
+
+
+    </section>
+
+
+</div>
