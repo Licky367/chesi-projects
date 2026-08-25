@@ -79,414 +79,17 @@ if (isProduction) {
 // DATABASE
 // ==========================================================
 
-const mongoose = require("mongoose");
-
 const connectDB = require("./db");
-
-
-// ==========================================================
-// DATABASE CLEANUP
-// ==========================================================
-//
-// This operation is intentionally explicit.
-//
-// To perform the cleanup:
-//
-//     CLEAR_DATABASE=true node server.js
-//
-// The cleanup will:
-//
-//     PRESERVE:
-//         users
-//         projectUsers
-//
-//         dairies where:
-//             code      === -13
-//             OR
-//             assetCode === -13
-//             OR
-//             farmCode  === -13
-//
-//     DELETE:
-//         all other dairy documents
-//         all documents from every other collection
-//
-// Collections themselves are NOT dropped.
-//
-// After cleanup, the process exits.
-// The application server does NOT start.
-//
-// ==========================================================
-
-const PROTECTED_COLLECTIONS = [
-  "users",
-  "projectUsers"
-];
-
-const PROTECTED_DAIRY_CODE = -13;
-
-
-async function clearDatabase() {
-
-  if (!process.env.MONGO_URI) {
-
-    throw new Error(
-      "MONGO_URI is not defined in the environment."
-    );
-
-  }
-
-
-  console.log("");
-  console.log("==============================================");
-  console.log("🧹 DATABASE CLEANUP REQUESTED");
-  console.log("==============================================");
-  console.log("");
-
-
-  await mongoose.connect(
-    process.env.MONGO_URI
-  );
-
-
-  const db =
-    mongoose.connection.db;
-
-
-  console.log(
-    `📦 Database: ${db.databaseName}`
-  );
-
-  console.log("");
-
-
-  const collections =
-    await db.listCollections().toArray();
-
-
-  if (!collections.length) {
-
-    console.log(
-      "ℹ️ No collections found."
-    );
-
-    return;
-
-  }
-
-
-  // ========================================================
-  // SHOW WHAT WILL HAPPEN
-  // ========================================================
-
-  console.log(
-    "The following rules will be applied:"
-  );
-
-  console.log(
-    "🛡️ users → PRESERVED"
-  );
-
-  console.log(
-    "🛡️ projectUsers → PRESERVED"
-  );
-
-  console.log(
-    "🛡️ dairies where code = -13 → PRESERVED"
-  );
-
-  console.log(
-    "🛡️ dairies where assetCode = -13 → PRESERVED"
-  );
-
-  console.log(
-    "🛡️ dairies where farmCode = -13 → PRESERVED"
-  );
-
-  console.log(
-    "🗑️ everything else → CLEARED"
-  );
-
-  console.log("");
-
-
-  // ========================================================
-  // PROCESS COLLECTIONS
-  // ========================================================
-
-  for (const collection of collections) {
-
-    const name =
-      collection.name;
-
-
-    // ------------------------------------------------------
-    // PROTECTED COLLECTIONS
-    // ------------------------------------------------------
-
-    if (
-      PROTECTED_COLLECTIONS.includes(name)
-    ) {
-
-      const count =
-        await db
-          .collection(name)
-          .countDocuments();
-
-
-      console.log(
-        `🛡️ PRESERVED: ${name} (${count} document(s))`
-      );
-
-      continue;
-
-    }
-
-
-    // ------------------------------------------------------
-    // DAIRIES
-    // ------------------------------------------------------
-
-    if (name === "dairies") {
-
-      console.log("");
-      console.log(
-        "🐄 Processing dairies..."
-      );
-
-
-      // ----------------------------------------------------
-      // Count protected dairies BEFORE deletion
-      // ----------------------------------------------------
-
-      const protectedQuery = {
-
-        $or: [
-
-          {
-            code:
-              PROTECTED_DAIRY_CODE
-          },
-
-          {
-            assetCode:
-              PROTECTED_DAIRY_CODE
-          },
-
-          {
-            farmCode:
-              PROTECTED_DAIRY_CODE
-          }
-
-        ]
-
-      };
-
-
-      const protectedCount =
-        await db
-          .collection("dairies")
-          .countDocuments(
-            protectedQuery
-          );
-
-
-      // ----------------------------------------------------
-      // Delete every dairy that does NOT satisfy
-      // any of the protection rules.
-      // ----------------------------------------------------
-
-      const deleteResult =
-        await db
-          .collection("dairies")
-          .deleteMany({
-
-            $nor: [
-
-              {
-                code:
-                  PROTECTED_DAIRY_CODE
-              },
-
-              {
-                assetCode:
-                  PROTECTED_DAIRY_CODE
-              },
-
-              {
-                farmCode:
-                  PROTECTED_DAIRY_CODE
-              }
-
-            ]
-
-          });
-
-
-      console.log(
-        `🗑️ Dairies deleted: ${deleteResult.deletedCount}`
-      );
-
-      console.log(
-        `🛡️ Dairies preserved: ${protectedCount}`
-      );
-
-
-      continue;
-
-    }
-
-
-    // ------------------------------------------------------
-    // EVERY OTHER COLLECTION
-    // ------------------------------------------------------
-
-    const result =
-      await db
-        .collection(name)
-        .deleteMany({});
-
-
-    console.log(
-      `🗑️ CLEARED: ${name} (${result.deletedCount} document(s) deleted)`
-    );
-
-  }
-
-
-  // ========================================================
-  // VERIFY DAIRIES
-  // ========================================================
-
-  console.log("");
-  console.log(
-    "🔍 Verifying protected dairies..."
-  );
-
-
-  const remainingDairies =
-    await db
-      .collection("dairies")
-      .countDocuments({
-
-        $or: [
-
-          {
-            code:
-              PROTECTED_DAIRY_CODE
-          },
-
-          {
-            assetCode:
-              PROTECTED_DAIRY_CODE
-          },
-
-          {
-            farmCode:
-              PROTECTED_DAIRY_CODE
-          }
-
-        ]
-
-      });
-
-
-  console.log(
-    `🛡️ Protected dairies remaining: ${remainingDairies}`
-  );
-
-
-  // ========================================================
-  // COMPLETE
-  // ========================================================
-
-  console.log("");
-  console.log("==============================================");
-  console.log("✅ DATABASE CLEANUP COMPLETE");
-  console.log("==============================================");
-  console.log("");
-
-}
-
-
-// ==========================================================
-// DATABASE CLEANUP MODE
-// ==========================================================
-//
-// IMPORTANT:
-//
-// This is checked BEFORE loading routes and starting
-// the HTTP server.
-//
-// Therefore:
-//
-//     CLEAR_DATABASE=true node server.js
-//
-// performs the cleanup and exits.
-//
-// A normal:
-//
-//     node server.js
-//
-// behaves exactly like the normal application.
-//
-// ==========================================================
-
-const cleanupRequested =
-  String(
-    process.env.CLEAR_DATABASE || ""
-  ).toLowerCase() === "true";
-
-
-if (cleanupRequested) {
-
-  (async () => {
-
-    try {
-
-      await clearDatabase();
-
-      console.log(
-        "🛑 Cleanup mode complete. Server will not start."
-      );
-
-      process.exit(0);
-
-    } catch (error) {
-
-      console.error("");
-      console.error(
-        "❌ DATABASE CLEANUP FAILED"
-      );
-
-      console.error(
-        error
-      );
-
-      process.exit(1);
-
-    } finally {
-
-      try {
-
-        await mongoose.disconnect();
-
-      } catch (error) {
-
-        // Ignore disconnect errors during cleanup shutdown.
-
-      }
-
-    }
-
-  })();
-
-}
 
 
 // ==========================================================
 // ROUTES
 // ==========================================================
+
+
+// ----------------------------------------------------------
+// INDEX
+// ----------------------------------------------------------
 
 let indexRoutes;
 
@@ -505,6 +108,10 @@ try {
 }
 
 
+// ----------------------------------------------------------
+// AUTH
+// ----------------------------------------------------------
+
 let authRoutes;
 
 try {
@@ -521,6 +128,10 @@ try {
 
 }
 
+
+// ----------------------------------------------------------
+// CREATE INVITE
+// ----------------------------------------------------------
 
 let createRoutes;
 
@@ -539,6 +150,10 @@ try {
 }
 
 
+// ----------------------------------------------------------
+// UPDATE
+// ----------------------------------------------------------
+
 let updateRoutes;
 
 try {
@@ -556,6 +171,10 @@ try {
 }
 
 
+// ----------------------------------------------------------
+// ADD DAIRY / ASSET
+// ----------------------------------------------------------
+
 let addRoutes;
 
 try {
@@ -572,6 +191,10 @@ try {
 
 }
 
+
+// ----------------------------------------------------------
+// PROFILE
+// ----------------------------------------------------------
 
 let profileRoutes;
 
@@ -632,9 +255,9 @@ try {
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // ACCOUNTS
-// ==========================================================
+// ----------------------------------------------------------
 
 let accountsRoutes;
 
@@ -898,6 +521,7 @@ const socketHandler =
 
 const app =
   express();
+
 
 const server =
   http.createServer(app);
@@ -1296,6 +920,11 @@ app.set(
 // ROUTE MOUNTING
 // ==========================================================
 
+
+// ----------------------------------------------------------
+// INDEX
+// ----------------------------------------------------------
+
 if (indexRoutes) {
 
   app.use(
@@ -1305,6 +934,10 @@ if (indexRoutes) {
 
 }
 
+
+// ----------------------------------------------------------
+// CREATE INVITE
+// ----------------------------------------------------------
 
 if (createRoutes) {
 
@@ -1316,6 +949,10 @@ if (createRoutes) {
 }
 
 
+// ----------------------------------------------------------
+// AUTH
+// ----------------------------------------------------------
+
 if (authRoutes) {
 
   app.use(
@@ -1325,6 +962,10 @@ if (authRoutes) {
 
 }
 
+
+// ----------------------------------------------------------
+// UPDATE
+// ----------------------------------------------------------
 
 if (updateRoutes) {
 
@@ -1336,6 +977,10 @@ if (updateRoutes) {
 }
 
 
+// ----------------------------------------------------------
+// ADD DAIRY / ASSET
+// ----------------------------------------------------------
+
 if (addRoutes) {
 
   app.use(
@@ -1345,6 +990,10 @@ if (addRoutes) {
 
 }
 
+
+// ----------------------------------------------------------
+// PROFILE
+// ----------------------------------------------------------
 
 if (profileRoutes) {
 
@@ -1384,9 +1033,9 @@ if (milkSalesRoutes) {
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // ACCOUNTS
-// ==========================================================
+// ----------------------------------------------------------
 
 if (accountsRoutes) {
 
@@ -1866,14 +1515,5 @@ const bootstrap = async () => {
 // ==========================================================
 // START APPLICATION
 // ==========================================================
-//
-// Cleanup mode exits before reaching this point.
-// Normal mode starts the application normally.
-//
-// ==========================================================
 
-if (!cleanupRequested) {
-
-  bootstrap();
-
-}
+bootstrap();
