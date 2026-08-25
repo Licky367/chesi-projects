@@ -372,6 +372,18 @@
             assetDairies: assetDairies || []
         }
     ) %>
+<!-- =================================================
+         FIXED CREATE POST
+    ================================================== -->
+
+    <%- include(
+        "update/asset-cards",
+        {
+            dairy: dairy,
+            user: user,
+            assetDairies: assetDairies || []
+        }
+    ) %>
 
 <!-- =================================================
          FIXED CREATE POST
@@ -407,24 +419,6 @@
             user: user
         }
     ) %>
-
-
-
-    <!-- =================================================
-         ANIMAL FEED ITEM LINKS
-    ================================================== -->
-
-    <%- include(
-        "update/storage/itemLink",
-        {
-            dairy: dairy,
-            user: user,
-            itemLinks: itemLinks || []
-        }
-    ) %>
-
-
-
     <!-- =================================================
          ASSET SIDEBAR
     ================================================== -->
