@@ -1,26 +1,53 @@
 <div class="financial-card financial-welcome-card">
 
-  <div class="card-accent"></div>
+  <!-- Soft green visual accent -->
+  <div class="financial-card-glow"></div>
 
-  <h2 class="dairy-name">
-    <%= dairy.name %>
-  </h2>
+  <div class="financial-welcome-header">
+
+    <div class="financial-welcome-icon">
+      <span>₦</span>
+    </div>
+
+    <div class="financial-welcome-title">
+      <span class="financial-eyebrow">FINANCIAL RECORDS</span>
+
+      <h2 class="dairy-name">
+        <%= dairy.name %>
+      </h2>
+    </div>
+
+  </div>
+
+  <div class="financial-welcome-divider"></div>
 
   <div class="welcome-content">
 
-    <h3>
-      Welcome, <%= user.name %>.
-    </h3>
+    <div class="welcome-message">
+      <h3>
+        Welcome, <%= user.name %>.
+      </h3>
 
-    <h3>
-      Record any financial information about
-      <%= dairy.name %>.
-    </h3>
+      <p>
+        Record any financial information related to
+        <strong><%= dairy.name %></strong>.
+      </p>
 
-    <h3>
-      Any information is very useful for our financial planning.
-      Thank you.
-    </h3>
+      <p>
+        Every financial record helps us understand the
+        dairy's performance and make better financial
+        planning decisions.
+      </p>
+    </div>
+
+    <div class="financial-note">
+      <span class="financial-note-icon">✓</span>
+
+      <span>
+        Every record matters. Thank you for keeping the
+        financial information up to date.
+      </span>
+    </div>
 
   </div>
 
