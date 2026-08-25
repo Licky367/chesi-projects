@@ -1,12 +1,14 @@
-// ========================================================== 
+// ==========================================================
 // models/dairy.js
 // DAIRY / ANIMAL / FACILITY / ASSET MODEL
 // ==========================================================
 //
 // SINGLE SOURCE OF TRUTH
 //
-// recordType
-// -----------------------------------------------------
+// ==========================================================
+//
+// RECORD TYPE
+// ----------------------------------------------------------
 //
 //     "farm"
 //         = Dairy Farm
@@ -21,170 +23,129 @@
 //
 //     recordType MUST NOT be confused with type.
 //
-// ----------------------------------------------------------
-//
-// type
-// ----------------------------------------------------------
-//
-//     farm
-//         = ranch / zeroGrazing / etc.
-//
-//     animal
-//         = Friesian / Ayrshire / Jersey / etc.
-//
-//     structure
-//         = room / agroStore / building / machine / feeds / etc.
-//
 // ==========================================================
 //
 // ENTITY CODE
 // ----------------------------------------------------------
 //
-// code < 0
-//     = Dairy Farm
+//     code < 0
+//         = Dairy Farm
 //
-// code > 0
-//     = Identified Animal
+//     code > 0
+//         = Identified Animal
 //
-// code === null
-//     = Structure / Facility / Manual Asset
+//     code === null
+//         = Code-less Structure / Facility / Asset
 //
 // ==========================================================
 //
 // REFERENCE NUMBER
 // ----------------------------------------------------------
 //
-// refNo
+//     code === null
+//         = refNo may contain a value
 //
-//     Used by records that do NOT have an entity code.
-//
-// code === null
-//     = refNo may contain a value
-//
-// code !== null
-//     = refNo is automatically forced to null
-//
-// ==========================================================
-//
-// CODE-LESS DAIRY INFORMATION
-// ----------------------------------------------------------
-//
-// Code-less records may contain:
-//
-//     about
-//     mission
-//     vision
-//
-// These fields are intended for descriptive/profile information
-// on records that do not use an entity code.
-//
-// ==========================================================
-//
-// ANIMAL GENDER
-// ----------------------------------------------------------
-//
-// Positive animal code:
-//
-//     EVEN
-//         = Female
-//
-//     ODD
-//         = Male
-//
-// ==========================================================
-//
-// FEMALE ANIMAL BOOLEAN FIELDS
-// ----------------------------------------------------------
-//
-// isMilking
-// isBred
-// isInCalf
-// isComingIntoHeat
-// isInHeat
-// isDry
-// isCloseToCalving
-// hasCalved
-// isLactating
-// isWeaned
-// isSick
-// isUnderTreatment
-// isOnMedication
-// isQuarantined
-// isForSale
-// isSold
-//
-// All default to false.
-//
-// Male animals are always forced to false for these fields.
+//     code !== null
+//         = refNo is automatically forced to null
 //
 // ==========================================================
 //
 // ASSET OWNERSHIP
 // ----------------------------------------------------------
 //
-// assetCode
-//     = negative code of parent Dairy Farm
+//     assetCode
+//         = negative code of parent Dairy Farm
 //
-// Dairy Farm:
-//     assetCode = null
+//     Dairy Farm
+//         assetCode = null
 //
-// Animal:
-//     assetCode = negative Dairy Farm code
+//     Animal
+//         assetCode = negative Dairy Farm code
 //
-// Assigned Structure / Asset:
-//     assetCode = negative Dairy Farm code
+//     Farm-owned Structure / Asset
+//         assetCode = negative Dairy Farm code
 //
-// Standalone Structure / Asset:
-//     assetCode = null
+//     Standalone / Assignable Asset
+//         assetCode = null
+//
+// IMPORTANT:
+//
+//     User assignment is NOT represented by assetCode.
+//
+//     A standalone asset assigned to a user remains:
+//
+//         code       = null
+//         assetCode  = null
+//
+//     The assignment is stored in:
+//
+//         User.assignedAsset[]
+//
+// ==========================================================
+//
+// ASSIGNABLE ASSET
+// ----------------------------------------------------------
+//
+// An asset is assignable when:
+//
+//     recordType === "structure"
+//     code === null
+//     assetCode === null
+//
+// Therefore:
+//
+//     isAssignableAsset === true
+//
+// These assets may be assigned by an admin to a User through:
+//
+//     User.assignedAsset
 //
 // ==========================================================
 //
 // STORAGE FACILITY
 // ----------------------------------------------------------
 //
-// recordType = "structure"
-// type       = "room"
-// roomNumber = positive integer
+//     recordType = "structure"
+//     type       = "room"
+//     roomNumber = positive integer
 //
-// recordType = "structure"
-// type       = "agroStore"
-// roomNumber = negative integer
+//     recordType = "structure"
+//     type       = "agroStore"
+//     roomNumber = negative integer
 //
 // ==========================================================
 //
 // STORAGE CONTENT
 // ----------------------------------------------------------
 //
-// dwellNumber
+//     dwellNumber >= 0
+//         = allocated to normal Room
 //
-//     >= 0
-//         = item allocated to a normal Room
+//     dwellNumber < 0
+//         = allocated to AgroStore
 //
-//     < 0
-//         = item allocated to an AgroStore
-//
-//     null
-//         = item is not currently allocated
+//     dwellNumber === null
+//         = not currently allocated
 //
 // ==========================================================
 //
 // FEED
 // ----------------------------------------------------------
 //
-// recordType = "structure"
-// type       = "feeds"
+//     recordType = "structure"
+//     type       = "feeds"
 //
-// quantity
-//     = current stock quantity
+//     quantity
+//         = current stock quantity
 //
-// unit
-//     = unit of measurement
+//     unit
+//         = unit of measurement
 //
-// stockUpdateNote
-//     = latest information supplied when stock is updated
+//     stockUpdateNote
+//         = latest stock update information
 //
-// description
-//     = permanent/general description
+//     stockUpdates
+//         = stock update history
 //
 // ==========================================================
 
@@ -476,7 +437,7 @@ function isFemaleAnimalCode(code) {
 
 
 // ==========================================================
-// HELPER: FEMALE-ONLY BOOLEAN FIELDS
+// FEMALE-ONLY BOOLEAN FIELDS
 // ==========================================================
 
 const FEMALE_BOOLEAN_FIELDS = [
@@ -499,26 +460,6 @@ const FEMALE_BOOLEAN_FIELDS = [
     "isSold"
 
 ];
-
-
-// ==========================================================
-// STOCK UPDATE IMAGE SCHEMA
-// ==========================================================
-
-const stockUpdateImageSchema =
-    new mongoose.Schema(
-
-        {},
-
-        {
-
-            _id: false,
-
-            strict: false
-
-        }
-
-    );
 
 
 // ==========================================================
@@ -718,13 +659,6 @@ const dairySchema =
             // ==================================================
             // REFERENCE NUMBER
             // ==================================================
-            //
-            // A code-less record may have a refNo.
-            //
-            // Any record with a code is automatically stripped
-            // of its refNo during validation/save.
-            //
-            // ==================================================
 
             refNo: {
 
@@ -741,10 +675,6 @@ const dairySchema =
 
             // ==================================================
             // ABOUT
-            // ==================================================
-            //
-            // Descriptive information for code-less records.
-            //
             // ==================================================
 
             about: {
@@ -974,6 +904,17 @@ const dairySchema =
 
             // ==================================================
             // PARENT FARM CODE
+            // ==================================================
+            //
+            // IMPORTANT:
+            //
+            // This is ownership/location relationship.
+            //
+            // It is NOT user assignment.
+            //
+            // A standalone asset assigned to a worker still
+            // keeps assetCode = null.
+            //
             // ==================================================
 
             assetCode: {
@@ -1623,7 +1564,34 @@ dairySchema.virtual(
 
 
 // ==========================================================
+// VIRTUAL: IS CODE-LESS
+// ==========================================================
+
+dairySchema.virtual(
+    "isCodeLess"
+).get(function () {
+
+    return (
+
+        this.code === null ||
+        this.code === undefined
+
+    );
+
+});
+
+
+// ==========================================================
 // VIRTUAL: IS MANUAL ASSET
+// ==========================================================
+//
+// Legacy-compatible name.
+//
+// A manual/standalone asset is a structure with:
+//
+//     code      = null
+//     assetCode = null
+//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1633,6 +1601,45 @@ dairySchema.virtual(
     return (
 
         this.isStructure &&
+        this.isCodeLess &&
+        (
+            this.assetCode === null ||
+            this.assetCode === undefined
+        )
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS ASSIGNABLE ASSET
+// ==========================================================
+//
+// THIS IS THE NEW ARCHITECTURAL DEFINITION.
+//
+// An assignable asset:
+//
+//     - is a structure
+//     - has no entity code
+//     - has no parent farm assetCode
+//
+// Assignment to a user is stored separately in:
+//
+//     User.assignedAsset[]
+//
+// Assigning it to a user does NOT modify this Dairy document.
+//
+// ==========================================================
+
+dairySchema.virtual(
+    "isAssignableAsset"
+).get(function () {
+
+    return (
+
+        this.isStructure &&
+        this.isCodeLess &&
         (
             this.assetCode === null ||
             this.assetCode === undefined
@@ -1645,6 +1652,16 @@ dairySchema.virtual(
 
 // ==========================================================
 // VIRTUAL: IS ASSIGNED ASSET
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This means the asset is associated with a parent farm.
+//
+// It does NOT mean User.assignedAsset.
+//
+// User assignment is determined from the User document.
+//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1665,30 +1682,16 @@ dairySchema.virtual(
 // ==========================================================
 // VIRTUAL: IS STANDALONE ASSET
 // ==========================================================
+//
+// Compatibility alias for existing code.
+//
+// ==========================================================
 
 dairySchema.virtual(
     "isStandaloneAsset"
 ).get(function () {
 
-    return this.isManualAsset;
-
-});
-
-
-// ==========================================================
-// VIRTUAL: IS CODE-LESS
-// ==========================================================
-
-dairySchema.virtual(
-    "isCodeLess"
-).get(function () {
-
-    return (
-
-        this.code === null ||
-        this.code === undefined
-
-    );
+    return this.isAssignableAsset;
 
 });
 
@@ -2554,13 +2557,6 @@ dairySchema.pre(
         // ======================================================
         // CODE / REFERENCE NUMBER RULE
         // ======================================================
-        //
-        // Once a record has an entity code, it cannot also
-        // have a refNo.
-        //
-        // Code-less records may have refNo.
-        //
-        // ======================================================
 
         if (
             this.code !== null &&
@@ -2573,7 +2569,7 @@ dairySchema.pre(
 
 
         // ======================================================
-        // NORMALIZE ABOUT
+        // NORMALIZE ABOUT / MISSION / VISION
         // ======================================================
 
         this.about =
@@ -2582,19 +2578,11 @@ dairySchema.pre(
             ).trim();
 
 
-        // ======================================================
-        // NORMALIZE MISSION
-        // ======================================================
-
         this.mission =
             String(
                 this.mission || ""
             ).trim();
 
-
-        // ======================================================
-        // NORMALIZE VISION
-        // ======================================================
 
         this.vision =
             String(
@@ -2809,12 +2797,7 @@ dairySchema.pre(
             }
 
 
-            // --------------------------------------------------
-            // Farms have codes, therefore no refNo.
-            // --------------------------------------------------
-
             this.refNo = null;
-
 
             this.assetCode = null;
 
@@ -2875,10 +2858,6 @@ dairySchema.pre(
             }
 
 
-            // --------------------------------------------------
-            // Animals have codes, therefore no refNo.
-            // --------------------------------------------------
-
             this.refNo = null;
 
 
@@ -2926,28 +2905,16 @@ dairySchema.pre(
                 );
 
 
-            if (!female) {
+            FEMALE_BOOLEAN_FIELDS.forEach(
+                field => {
 
-                FEMALE_BOOLEAN_FIELDS.forEach(
-                    field => {
+                    this[field] =
+                        female
+                            ? !!this[field]
+                            : false;
 
-                        this[field] = false;
-
-                    }
-                );
-
-            } else {
-
-                FEMALE_BOOLEAN_FIELDS.forEach(
-                    field => {
-
-                        this[field] =
-                            !!this[field];
-
-                    }
-                );
-
-            }
+                }
+            );
 
 
             this.roomNumber = null;
@@ -2988,12 +2955,6 @@ dairySchema.pre(
             }
 
 
-            // --------------------------------------------------
-            // Structures are code-less.
-            // Therefore refNo is permitted.
-            // --------------------------------------------------
-
-
             this.dateOfBirth = null;
 
             this.mass = 0;
@@ -3026,6 +2987,10 @@ dairySchema.pre(
 
             }
 
+
+            // --------------------------------------------------
+            // Farm-owned structure
+            // --------------------------------------------------
 
             if (
                 this.assetCode !== null &&
@@ -3406,12 +3371,6 @@ dairySchema.pre(
         // ======================================================
         // REFERENCE NUMBER FINAL RULE
         // ======================================================
-        //
-        // Coded records can NEVER retain a refNo.
-        //
-        // Code-less records may retain their refNo.
-        //
-        // ======================================================
 
         if (
             this.code !== null &&
@@ -3631,28 +3590,16 @@ dairySchema.pre(
                 );
 
 
-            if (!female) {
+            FEMALE_BOOLEAN_FIELDS.forEach(
+                field => {
 
-                FEMALE_BOOLEAN_FIELDS.forEach(
-                    field => {
+                    this[field] =
+                        female
+                            ? !!this[field]
+                            : false;
 
-                        this[field] = false;
-
-                    }
-                );
-
-            } else {
-
-                FEMALE_BOOLEAN_FIELDS.forEach(
-                    field => {
-
-                        this[field] =
-                            !!this[field];
-
-                    }
-                );
-
-            }
+                }
+            );
 
         }
 
@@ -3999,15 +3946,6 @@ dairySchema.index({
 });
 
 
-// ==========================================================
-// REFERENCE NUMBER INDEX
-// ==========================================================
-//
-// refNo belongs to code-less records.
-//
-// It is intentionally NOT unique.
-//
-
 dairySchema.index({
 
     refNo: 1,
@@ -4069,7 +4007,7 @@ dairySchema.index({
 
 
 // ==========================================================
-// STOCK UPDATE INDEX
+// STOCK UPDATE INDEXES
 // ==========================================================
 
 dairySchema.index({
@@ -4144,6 +4082,70 @@ dairySchema.statics.getFarmAssets =
                     "structure"
                 ]
             }
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET ASSIGNABLE ASSETS
+// ==========================================================
+//
+// Returns standalone assets that an admin may assign to a User.
+//
+// Eligibility:
+//
+//     recordType = structure
+//     code       = null
+//     assetCode  = null
+//
+// Assignment itself is stored in:
+//
+//     User.assignedAsset[]
+//
+// This query DOES NOT modify the Dairy document.
+//
+// ==========================================================
+
+dairySchema.statics.getAssignableAssets =
+    function () {
+
+        return this.find({
+
+            recordType: "structure",
+
+            code: null,
+
+            assetCode: null,
+
+            status: "active"
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET UNASSIGNED / STANDALONE ASSETS
+// ==========================================================
+//
+// Compatibility alias.
+//
+// ==========================================================
+
+dairySchema.statics.getStandaloneAssets =
+    function () {
+
+        return this.find({
+
+            recordType: "structure",
+
+            code: null,
+
+            assetCode: null,
+
+            status: "active"
 
         });
 
@@ -4633,38 +4635,7 @@ dairySchema.statics.getAgroStoreFeeds =
 
 
 // ==========================================================
-// STATIC: GET STANDALONE ASSETS
-// ==========================================================
-
-dairySchema.statics.getStandaloneAssets =
-    function () {
-
-        return this.find({
-
-            recordType: "structure",
-
-            code: null,
-
-            assetCode: null
-
-        });
-
-    };
-
-
-// ==========================================================
 // STATIC: GET CODE-LESS RECORDS
-// ==========================================================
-//
-// Returns every Dairy record whose code is null.
-//
-// These records may use:
-//
-//     refNo
-//     about
-//     mission
-//     vision
-//
 // ==========================================================
 
 dairySchema.statics.getCodeLessRecords =
