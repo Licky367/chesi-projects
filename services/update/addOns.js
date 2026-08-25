@@ -40,11 +40,11 @@ const mongoose =
 
 
 const Dairy =
-    require("../models/dairy");
+    require("../../models/dairy");
 
 
 const Financials =
-    require("../models/financials");
+    require("../../models/financials");
 
 
 // ==========================================================
