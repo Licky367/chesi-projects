@@ -51,6 +51,35 @@
 //
 // ==========================================================
 //
+// REFERENCE NUMBER
+// ----------------------------------------------------------
+//
+// refNo
+//
+//     Used by records that do NOT have an entity code.
+//
+// code === null
+//     = refNo may contain a value
+//
+// code !== null
+//     = refNo is automatically forced to null
+//
+// ==========================================================
+//
+// CODE-LESS DAIRY INFORMATION
+// ----------------------------------------------------------
+//
+// Code-less records may contain:
+//
+//     about
+//     mission
+//     vision
+//
+// These fields are intended for descriptive/profile information
+// on records that do not use an entity code.
+//
+// ==========================================================
+//
 // ANIMAL GENDER
 // ----------------------------------------------------------
 //
@@ -60,14 +89,6 @@
 //         = Female
 //
 //     ODD
-//         = Male
-//
-// Therefore:
-//
-//     code % 2 === 0
-//         = Female
-//
-//     code % 2 !== 0
 //         = Male
 //
 // ==========================================================
@@ -128,8 +149,6 @@
 // recordType = "structure"
 // type       = "agroStore"
 // roomNumber = negative integer
-//
-// roomNumber identifies the STORAGE FACILITY.
 //
 // ==========================================================
 //
@@ -442,16 +461,6 @@ function normalizeProfileImage(
 // ==========================================================
 // HELPER: FEMALE ANIMAL
 // ==========================================================
-//
-// Female:
-//
-//     positive even code
-//
-// Male:
-//
-//     positive odd code
-//
-// ==========================================================
 
 function isFemaleAnimalCode(code) {
 
@@ -468,13 +477,6 @@ function isFemaleAnimalCode(code) {
 
 // ==========================================================
 // HELPER: FEMALE-ONLY BOOLEAN FIELDS
-// ==========================================================
-//
-// These fields are meaningful for female cattle in the
-// current dairy model.
-//
-// Male animals are always forced to false.
-//
 // ==========================================================
 
 const FEMALE_BOOLEAN_FIELDS = [
@@ -528,10 +530,6 @@ const stockUpdateSchema =
 
         {
 
-            // ==================================================
-            // STOCK QUANTITY AT TIME OF UPDATE
-            // ==================================================
-
             quantity: {
 
                 type: Number,
@@ -542,10 +540,6 @@ const stockUpdateSchema =
 
             },
 
-
-            // ==================================================
-            // STOCK UPDATE NOTE
-            // ==================================================
 
             stockUpdateNote: {
 
@@ -560,10 +554,6 @@ const stockUpdateSchema =
             },
 
 
-            // ==================================================
-            // STOCK UPDATE IMAGES
-            // ==================================================
-
             images: {
 
                 type: [
@@ -577,10 +567,6 @@ const stockUpdateSchema =
             },
 
 
-            // ==================================================
-            // USER WHO RECORDED THE UPDATE
-            // ==================================================
-
             recordedBy: {
 
                 type:
@@ -592,10 +578,6 @@ const stockUpdateSchema =
 
             },
 
-
-            // ==================================================
-            // DATE / TIME OF UPDATE
-            // ==================================================
 
             recordedAt: {
 
@@ -734,6 +716,85 @@ const dairySchema =
 
 
             // ==================================================
+            // REFERENCE NUMBER
+            // ==================================================
+            //
+            // A code-less record may have a refNo.
+            //
+            // Any record with a code is automatically stripped
+            // of its refNo during validation/save.
+            //
+            // ==================================================
+
+            refNo: {
+
+                type: String,
+
+                trim: true,
+
+                default: null,
+
+                maxlength: 100
+
+            },
+
+
+            // ==================================================
+            // ABOUT
+            // ==================================================
+            //
+            // Descriptive information for code-less records.
+            //
+            // ==================================================
+
+            about: {
+
+                type: String,
+
+                trim: true,
+
+                default: "",
+
+                maxlength: 10000
+
+            },
+
+
+            // ==================================================
+            // MISSION
+            // ==================================================
+
+            mission: {
+
+                type: String,
+
+                trim: true,
+
+                default: "",
+
+                maxlength: 10000
+
+            },
+
+
+            // ==================================================
+            // VISION
+            // ==================================================
+
+            vision: {
+
+                type: String,
+
+                trim: true,
+
+                default: "",
+
+                maxlength: 10000
+
+            },
+
+
+            // ==================================================
             // NAME
             // ==================================================
 
@@ -779,7 +840,7 @@ const dairySchema =
 
 
             // ==================================================
-            // MILKING STATUS
+            // FEMALE / ANIMAL STATUS FIELDS
             // ==================================================
 
             isMilking: {
@@ -790,11 +851,6 @@ const dairySchema =
 
             },
 
-
-            // ==================================================
-            // BREEDING STATUS
-            // ==================================================
-
             isBred: {
 
                 type: Boolean,
@@ -802,11 +858,6 @@ const dairySchema =
                 default: false
 
             },
-
-
-            // ==================================================
-            // PREGNANCY / IN-CALF STATUS
-            // ==================================================
 
             isInCalf: {
 
@@ -816,11 +867,6 @@ const dairySchema =
 
             },
 
-
-            // ==================================================
-            // APPROACHING HEAT
-            // ==================================================
-
             isComingIntoHeat: {
 
                 type: Boolean,
@@ -828,11 +874,6 @@ const dairySchema =
                 default: false
 
             },
-
-
-            // ==================================================
-            // CURRENT HEAT
-            // ==================================================
 
             isInHeat: {
 
@@ -842,11 +883,6 @@ const dairySchema =
 
             },
 
-
-            // ==================================================
-            // DRY PERIOD
-            // ==================================================
-
             isDry: {
 
                 type: Boolean,
@@ -854,11 +890,6 @@ const dairySchema =
                 default: false
 
             },
-
-
-            // ==================================================
-            // CLOSE TO CALVING
-            // ==================================================
 
             isCloseToCalving: {
 
@@ -868,11 +899,6 @@ const dairySchema =
 
             },
 
-
-            // ==================================================
-            // HAS CALVED
-            // ==================================================
-
             hasCalved: {
 
                 type: Boolean,
@@ -880,11 +906,6 @@ const dairySchema =
                 default: false
 
             },
-
-
-            // ==================================================
-            // LACTATION STATUS
-            // ==================================================
 
             isLactating: {
 
@@ -894,11 +915,6 @@ const dairySchema =
 
             },
 
-
-            // ==================================================
-            // WEANING STATUS
-            // ==================================================
-
             isWeaned: {
 
                 type: Boolean,
@@ -906,11 +922,6 @@ const dairySchema =
                 default: false
 
             },
-
-
-            // ==================================================
-            // HEALTH STATUS
-            // ==================================================
 
             isSick: {
 
@@ -920,11 +931,6 @@ const dairySchema =
 
             },
 
-
-            // ==================================================
-            // TREATMENT STATUS
-            // ==================================================
-
             isUnderTreatment: {
 
                 type: Boolean,
@@ -932,11 +938,6 @@ const dairySchema =
                 default: false
 
             },
-
-
-            // ==================================================
-            // MEDICATION STATUS
-            // ==================================================
 
             isOnMedication: {
 
@@ -946,11 +947,6 @@ const dairySchema =
 
             },
 
-
-            // ==================================================
-            // QUARANTINE STATUS
-            // ==================================================
-
             isQuarantined: {
 
                 type: Boolean,
@@ -959,11 +955,6 @@ const dairySchema =
 
             },
 
-
-            // ==================================================
-            // SALE STATUS
-            // ==================================================
-
             isForSale: {
 
                 type: Boolean,
@@ -971,11 +962,6 @@ const dairySchema =
                 default: false
 
             },
-
-
-            // ==================================================
-            // SOLD STATUS
-            // ==================================================
 
             isSold: {
 
@@ -1685,6 +1671,44 @@ dairySchema.virtual(
 ).get(function () {
 
     return this.isManualAsset;
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS CODE-LESS
+// ==========================================================
+
+dairySchema.virtual(
+    "isCodeLess"
+).get(function () {
+
+    return (
+
+        this.code === null ||
+        this.code === undefined
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: HAS REFERENCE NUMBER
+// ==========================================================
+
+dairySchema.virtual(
+    "hasRefNo"
+).get(function () {
+
+    return (
+
+        this.isCodeLess &&
+        !!String(
+            this.refNo || ""
+        ).trim()
+
+    );
 
 });
 
@@ -2500,6 +2524,85 @@ dairySchema.pre(
 
 
         // ======================================================
+        // NORMALIZE REFERENCE NUMBER
+        // ======================================================
+
+        if (
+            this.refNo === undefined ||
+            this.refNo === null
+        ) {
+
+            this.refNo = null;
+
+        } else {
+
+            this.refNo =
+                String(
+                    this.refNo
+                ).trim();
+
+
+            if (!this.refNo) {
+
+                this.refNo = null;
+
+            }
+
+        }
+
+
+        // ======================================================
+        // CODE / REFERENCE NUMBER RULE
+        // ======================================================
+        //
+        // Once a record has an entity code, it cannot also
+        // have a refNo.
+        //
+        // Code-less records may have refNo.
+        //
+        // ======================================================
+
+        if (
+            this.code !== null &&
+            this.code !== undefined
+        ) {
+
+            this.refNo = null;
+
+        }
+
+
+        // ======================================================
+        // NORMALIZE ABOUT
+        // ======================================================
+
+        this.about =
+            String(
+                this.about || ""
+            ).trim();
+
+
+        // ======================================================
+        // NORMALIZE MISSION
+        // ======================================================
+
+        this.mission =
+            String(
+                this.mission || ""
+            ).trim();
+
+
+        // ======================================================
+        // NORMALIZE VISION
+        // ======================================================
+
+        this.vision =
+            String(
+                this.vision || ""
+            ).trim();
+
+
+        // ======================================================
         // NORMALIZE TYPE
         // ======================================================
 
@@ -2706,6 +2809,13 @@ dairySchema.pre(
             }
 
 
+            // --------------------------------------------------
+            // Farms have codes, therefore no refNo.
+            // --------------------------------------------------
+
+            this.refNo = null;
+
+
             this.assetCode = null;
 
             this.roomNumber = null;
@@ -2724,10 +2834,6 @@ dairySchema.pre(
 
             this.stockUpdates = [];
 
-
-            // ----------------------------------------------
-            // Animal-only boolean fields
-            // ----------------------------------------------
 
             FEMALE_BOOLEAN_FIELDS.forEach(
                 field => {
@@ -2769,6 +2875,13 @@ dairySchema.pre(
             }
 
 
+            // --------------------------------------------------
+            // Animals have codes, therefore no refNo.
+            // --------------------------------------------------
+
+            this.refNo = null;
+
+
             if (
                 !this.assetCode ||
                 !isValidFarmCode(
@@ -2807,21 +2920,6 @@ dairySchema.pre(
             }
 
 
-            // ==================================================
-            // GENDER ENFORCEMENT
-            // ==================================================
-            //
-            // EVEN CODE
-            //     = Female
-            //
-            // ODD CODE
-            //     = Male
-            //
-            // Male animals can never have the female boolean
-            // fields set to true.
-            //
-            // ==================================================
-
             const female =
                 isFemaleAnimalCode(
                     Number(this.code)
@@ -2840,10 +2938,6 @@ dairySchema.pre(
 
             } else {
 
-                // ----------------------------------------------
-                // Normalize all female boolean values.
-                // ----------------------------------------------
-
                 FEMALE_BOOLEAN_FIELDS.forEach(
                     field => {
 
@@ -2856,16 +2950,7 @@ dairySchema.pre(
             }
 
 
-            // ----------------------------------------------
-            // Animal cannot be a storage facility.
-            // ----------------------------------------------
-
             this.roomNumber = null;
-
-
-            // ----------------------------------------------
-            // Feed fields do not belong to animals.
-            // ----------------------------------------------
 
             this.quantity = null;
 
@@ -2903,18 +2988,16 @@ dairySchema.pre(
             }
 
 
-            // ----------------------------------------------
-            // Structures are never animals.
-            // ----------------------------------------------
+            // --------------------------------------------------
+            // Structures are code-less.
+            // Therefore refNo is permitted.
+            // --------------------------------------------------
+
 
             this.dateOfBirth = null;
 
             this.mass = 0;
 
-
-            // ----------------------------------------------
-            // All animal booleans are false.
-            // ----------------------------------------------
 
             FEMALE_BOOLEAN_FIELDS.forEach(
                 field => {
@@ -2924,10 +3007,6 @@ dairySchema.pre(
                 }
             );
 
-
-            // ----------------------------------------------
-            // Validate structure type.
-            // ----------------------------------------------
 
             if (
                 this.type &&
@@ -2947,10 +3026,6 @@ dairySchema.pre(
 
             }
 
-
-            // ----------------------------------------------
-            // Assigned structure ownership.
-            // ----------------------------------------------
 
             if (
                 this.assetCode !== null &&
@@ -3329,6 +3404,69 @@ dairySchema.pre(
     function (next) {
 
         // ======================================================
+        // REFERENCE NUMBER FINAL RULE
+        // ======================================================
+        //
+        // Coded records can NEVER retain a refNo.
+        //
+        // Code-less records may retain their refNo.
+        //
+        // ======================================================
+
+        if (
+            this.code !== null &&
+            this.code !== undefined
+        ) {
+
+            this.refNo = null;
+
+        } else {
+
+            if (
+                this.refNo !== null &&
+                this.refNo !== undefined
+            ) {
+
+                this.refNo =
+                    String(
+                        this.refNo
+                    ).trim();
+
+
+                if (!this.refNo) {
+
+                    this.refNo = null;
+
+                }
+
+            }
+
+        }
+
+
+        // ======================================================
+        // ABOUT / MISSION / VISION
+        // ======================================================
+
+        this.about =
+            String(
+                this.about || ""
+            ).trim();
+
+
+        this.mission =
+            String(
+                this.mission || ""
+            ).trim();
+
+
+        this.vision =
+            String(
+                this.vision || ""
+            ).trim();
+
+
+        // ======================================================
         // MEDICAL UPDATED DATE
         // ======================================================
 
@@ -3371,7 +3509,7 @@ dairySchema.pre(
 
 
         // ======================================================
-        // STOCK UPDATE HISTORY NORMALIZATION
+        // STOCK UPDATE HISTORY
         // ======================================================
 
         if (
@@ -3434,6 +3572,8 @@ dairySchema.pre(
             this.recordType === "farm"
         ) {
 
+            this.refNo = null;
+
             this.assetCode = null;
 
             this.roomNumber = null;
@@ -3472,6 +3612,8 @@ dairySchema.pre(
             this.recordType === "animal"
         ) {
 
+            this.refNo = null;
+
             this.roomNumber = null;
 
             this.quantity = null;
@@ -3482,10 +3624,6 @@ dairySchema.pre(
 
             this.stockUpdates = [];
 
-
-            // ----------------------------------------------
-            // Enforce female/male rule again at save time.
-            // ----------------------------------------------
 
             const female =
                 isFemaleAnimalCode(
@@ -3856,6 +3994,23 @@ dairySchema.index({
 
     recordType: 1,
     type: 1,
+    status: 1
+
+});
+
+
+// ==========================================================
+// REFERENCE NUMBER INDEX
+// ==========================================================
+//
+// refNo belongs to code-less records.
+//
+// It is intentionally NOT unique.
+//
+
+dairySchema.index({
+
+    refNo: 1,
     status: 1
 
 });
@@ -4491,6 +4646,53 @@ dairySchema.statics.getStandaloneAssets =
             code: null,
 
             assetCode: null
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET CODE-LESS RECORDS
+// ==========================================================
+//
+// Returns every Dairy record whose code is null.
+//
+// These records may use:
+//
+//     refNo
+//     about
+//     mission
+//     vision
+//
+// ==========================================================
+
+dairySchema.statics.getCodeLessRecords =
+    function () {
+
+        return this.find({
+
+            code: null
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET CODE-LESS RECORDS WITH REF NO
+// ==========================================================
+
+dairySchema.statics.getRecordsWithRefNo =
+    function () {
+
+        return this.find({
+
+            code: null,
+
+            refNo: {
+                $ne: null
+            }
 
         });
 
