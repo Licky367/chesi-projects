@@ -5,37 +5,45 @@
 // PURPOSE:
 //     Seed the default administrator user.
 //
-//     This utility is designed to be called by server.js
-//     AFTER MongoDB has successfully connected.
+// IMPORTANT:
+//     This utility is called by server.js AFTER MongoDB
+//     has successfully connected.
+//
+//     The User model is used so that:
+//         • Mongoose validation runs
+//         • Password middleware runs
+//         • Password is bcrypt-hashed automatically
+//         • The correct collection is used
 //
 // USER:
 //     name     = Licky
-//     email    = licky1@gmail.com
+//     email    = licky367@gmail.com
 //     password = 123456
 //     role     = admin
 //
-// IMPORTANT:
-//     This file does NOT create its own MongoDB connection.
-//     server.js is responsible for connecting to MongoDB.
-//
 // ==========================================================
 
-const mongoose = require("mongoose");
+const User =
+    require("../models/user");
 
 
 // ==========================================================
-// USER DATA
+// DEFAULT ADMIN USER
 // ==========================================================
 
 const USER_DATA = {
 
-    name: "Licky",
+    name:
+        "Licky",
 
-    email: "licky1@gmail.com",
+    email:
+        "licky367@gmail.com",
 
-    password: "123456",
+    password:
+        "123456",
 
-    role: "admin"
+    role:
+        "admin"
 
 };
 
@@ -46,37 +54,14 @@ const USER_DATA = {
 
 async function seedUser() {
 
-    // ------------------------------------------------------
-    // VERIFY MONGOOSE CONNECTION
-    // ------------------------------------------------------
+    try {
 
-    if (
-        mongoose.connection.readyState !== 1
-    ) {
+        // --------------------------------------------------
+        // CHECK WHETHER USER ALREADY EXISTS
+        // --------------------------------------------------
 
-        throw new Error(
-            "Cannot seed user: MongoDB is not connected."
-        );
-
-    }
-
-
-    // ------------------------------------------------------
-    // GET DATABASE
-    // ------------------------------------------------------
-
-    const db =
-        mongoose.connection.db;
-
-
-    // ------------------------------------------------------
-    // CHECK WHETHER USER ALREADY EXISTS
-    // ------------------------------------------------------
-
-    const existingUser =
-        await db
-            .collection("users")
-            .findOne({
+        const existingUser =
+            await User.findOne({
 
                 email:
                     USER_DATA.email
@@ -84,41 +69,48 @@ async function seedUser() {
             });
 
 
-    // ------------------------------------------------------
-    // USER ALREADY EXISTS
-    // ------------------------------------------------------
+        // --------------------------------------------------
+        // USER ALREADY EXISTS
+        // --------------------------------------------------
 
-    if (existingUser) {
+        if (existingUser) {
 
-        console.log(
-            `🛡️ Default user already exists: ${USER_DATA.email}`
-        );
+            console.log(
+                `🛡️ Default admin user already exists: ${USER_DATA.email}`
+            );
 
-        return {
+            return {
 
-            created: false,
+                created:
+                    false,
 
-            existing: true,
+                existing:
+                    true,
 
-            user: existingUser
+                user:
+                    existingUser
 
-        };
+            };
 
-    }
-
-
-    // ------------------------------------------------------
-    // CREATE USER
-    // ------------------------------------------------------
-
-    const now =
-        new Date();
+        }
 
 
-    const result =
-        await db
-            .collection("users")
-            .insertOne({
+        // --------------------------------------------------
+        // CREATE USER
+        // --------------------------------------------------
+        //
+        // DO NOT HASH THE PASSWORD HERE.
+        //
+        // The User model contains:
+        //
+        //     userSchema.pre("save", ...)
+        //
+        // which automatically bcrypt-hashes the password.
+        //
+        // --------------------------------------------------
+
+        const user =
+            new User({
 
                 name:
                     USER_DATA.name,
@@ -130,60 +122,76 @@ async function seedUser() {
                     USER_DATA.password,
 
                 role:
-                    USER_DATA.role,
-
-                createdAt:
-                    now,
-
-                updatedAt:
-                    now
+                    USER_DATA.role
 
             });
 
 
-    // ------------------------------------------------------
-    // SUCCESS
-    // ------------------------------------------------------
-
-    console.log(
-        "\n=========================================="
-    );
-
-    console.log(
-        "DEFAULT ADMIN USER CREATED"
-    );
-
-    console.log(
-        "=========================================="
-    );
-
-    console.log(
-        `Name: ${USER_DATA.name}`
-    );
-
-    console.log(
-        `Email: ${USER_DATA.email}`
-    );
-
-    console.log(
-        `Role: ${USER_DATA.role}`
-    );
-
-    console.log(
-        `ID: ${result.insertedId}`
-    );
+        await user.save();
 
 
-    return {
+        // --------------------------------------------------
+        // SUCCESS
+        // --------------------------------------------------
 
-        created: true,
+        console.log(
+            "\n=========================================="
+        );
 
-        existing: false,
+        console.log(
+            "DEFAULT ADMIN USER CREATED"
+        );
 
-        insertedId:
-            result.insertedId
+        console.log(
+            "=========================================="
+        );
 
-    };
+        console.log(
+            `Name: ${user.name}`
+        );
+
+        console.log(
+            `Email: ${user.email}`
+        );
+
+        console.log(
+            `Role: ${user.role}`
+        );
+
+        console.log(
+            `ID: ${user._id}`
+        );
+
+        console.log(
+            "Password: bcrypt hashed automatically"
+        );
+
+
+        return {
+
+            created:
+                true,
+
+            existing:
+                false,
+
+            user
+
+        };
+
+    } catch (error) {
+
+        console.error(
+            "\n❌ Failed to seed default admin user:"
+        );
+
+        console.error(
+            error
+        );
+
+        throw error;
+
+    }
 
 }
 
