@@ -1,0 +1,246 @@
+<% /*
+==============================================================
+EXTRAS
+FILE:
+    views/extras.ejs
+
+PURPOSE:
+    Displays all code-less, standalone Dairy assets assigned
+    to the current user.
+
+ASSIGNMENT RULE:
+
+    User.assignedAsset
+        → Array of Dairy ObjectIds
+
+    Assigned Dairy must have:
+
+        code      = null
+        assetCode = null
+
+    These are standalone/code-less assets.
+
+IMPORTANT:
+
+    This view does NOT display:
+        - Dairy farms
+        - Identified animals
+        - Farm-owned assets
+        - Farm-owned structures
+        - Storage facilities
+        - Feeds
+
+    It only displays assets assigned directly to the user.
+==============================================================
+*/ %>
+
+
+<section class="extras-section">
+
+    <div class="extras-header">
+
+        <div class="extras-header-icon" aria-hidden="true">
+            +
+        </div>
+
+        <div class="extras-header-content">
+
+            <span class="extras-eyebrow">
+                EXTRAS
+            </span>
+
+            <h1 class="extras-title">
+                Assigned Assets
+            </h1>
+
+            <p class="extras-description">
+                Assets assigned to you.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <% if (typeof error !== "undefined" && error) { %>
+
+        <div
+            class="extras-message extras-error"
+            role="alert"
+        >
+            <%= error %>
+        </div>
+
+    <% } %>
+
+
+    <% if (!extras || extras.length === 0) { %>
+
+        <div class="extras-empty">
+
+            <div
+                class="extras-empty-icon"
+                aria-hidden="true"
+            >
+                +
+            </div>
+
+            <h2>
+                No Assigned Assets
+            </h2>
+
+            <p>
+                You currently have no standalone assets assigned to you.
+            </p>
+
+        </div>
+
+    <% } else { %>
+
+
+        <div class="extras-list">
+
+            <% extras.forEach(function(asset) { %>
+
+                <article class="extra-card">
+
+                    <!-- ======================================
+                         IMAGE
+                    ======================================= -->
+
+                    <div class="extra-card-image-wrapper">
+
+                        <img
+                            class="extra-card-image"
+                            src="<%= asset.displayImage %>"
+                            alt="<%= asset.name %>"
+                            loading="lazy"
+                        >
+
+                    </div>
+
+
+                    <!-- ======================================
+                         CONTENT
+                    ======================================= -->
+
+                    <div class="extra-card-content">
+
+                        <div class="extra-card-heading">
+
+                            <div>
+
+                                <span class="extra-card-eyebrow">
+                                    ASSET
+                                </span>
+
+                                <h2 class="extra-card-title">
+                                    <%= asset.name %>
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+
+                        <% if (asset.refNo) { %>
+
+                            <div class="extra-card-row">
+
+                                <span class="extra-card-label">
+                                    Reference
+                                </span>
+
+                                <span class="extra-card-value">
+                                    <%= asset.refNo %>
+                                </span>
+
+                            </div>
+
+                        <% } %>
+
+
+                        <% if (asset.type) { %>
+
+                            <div class="extra-card-row">
+
+                                <span class="extra-card-label">
+                                    Type
+                                </span>
+
+                                <span class="extra-card-value">
+                                    <%= asset.type %>
+                                </span>
+
+                            </div>
+
+                        <% } %>
+
+
+                        <% if (asset.condition) { %>
+
+                            <div class="extra-card-row">
+
+                                <span class="extra-card-label">
+                                    Condition
+                                </span>
+
+                                <span class="extra-card-value">
+                                    <%= asset.condition %>
+                                </span>
+
+                            </div>
+
+                        <% } %>
+
+
+                        <% if (asset.location) { %>
+
+                            <div class="extra-card-row">
+
+                                <span class="extra-card-label">
+                                    Location
+                                </span>
+
+                                <span class="extra-card-value">
+                                    <%= asset.location %>
+                                </span>
+
+                            </div>
+
+                        <% } %>
+
+
+                        <% if (asset.description) { %>
+
+                            <div class="extra-card-description">
+
+                                <%= asset.description %>
+
+                            </div>
+
+                        <% } %>
+
+
+                        <!-- ==================================
+                             OPEN ASSET
+                        =================================== -->
+
+                        <a
+                            class="extra-card-link"
+                            href="/dairy/<%= asset._id %>"
+                        >
+                            View Asset
+                        </a>
+
+                    </div>
+
+                </article>
+
+            <% }); %>
+
+        </div>
+
+    <% } %>
+
+</section>
