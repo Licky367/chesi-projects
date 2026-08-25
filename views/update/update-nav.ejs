@@ -1,0 +1,340 @@
+<!-- =====================================================
+     UPDATE NAVIGATION
+     
+     FILE:
+         views/update/update-nav.ejs
+
+     PURPOSE:
+         Fixed navigation bar for the update page.
+
+     layout.ejs already contains a 120px header.
+
+     Therefore:
+
+         top  = 120px
+
+     Navigation height:
+
+         40px
+
+     The content below starts immediately after this
+     40px navigation area.
+===================================================== -->
+
+
+
+<!-- =====================================================
+     UPDATE NAV
+===================================================== -->
+
+<nav
+    class="update-fixed-nav"
+    aria-label="Dairy update navigation"
+>
+
+
+    <!-- =================================================
+         VIEW UPDATES
+    ================================================== -->
+
+    <a
+        href="/dairy/<%= dairy._id %>/general"
+        class="update-nav-link"
+        title="View Updates"
+        aria-label="View Updates"
+    >
+
+        <span
+            class="update-nav-icon"
+            aria-hidden="true"
+        >
+            +
+        </span>
+
+    </a>
+
+
+
+    <!-- =================================================
+         VIEW ASSETS
+    ================================================== -->
+
+    <button
+        type="button"
+        id="viewPropertyButton"
+        class="update-nav-link update-nav-button"
+        aria-controls="assetBar"
+        aria-expanded="false"
+        title="View Assets"
+        aria-label="View Assets"
+    >
+
+        <span
+            class="update-nav-icon"
+            aria-hidden="true"
+        >
+            ◉
+        </span>
+
+    </button>
+
+
+
+    <!-- =================================================
+         STORAGE
+    ================================================== -->
+
+    <a
+        href="/storage/<%= dairy._id %>"
+        class="update-nav-link"
+        title="Storage"
+        aria-label="Storage"
+    >
+
+        <span
+            class="update-nav-icon"
+            aria-hidden="true"
+        >
+            📦
+        </span>
+
+    </a>
+
+
+</nav>
+
+
+
+<!-- =====================================================
+     UPDATE NAVIGATION STYLES
+===================================================== -->
+
+<style>
+
+    /* =====================================================
+       FIXED NAVIGATION
+
+       layout.ejs header:
+           120px
+
+       update navigation:
+           40px
+
+       Therefore navigation occupies:
+
+           120px → 160px
+    ===================================================== */
+
+    .update-fixed-nav {
+
+        position: fixed;
+
+        top: 120px;
+
+        left: 0;
+        right: 0;
+
+        width: 100%;
+
+        height: 40px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        gap: 6px;
+
+        margin: 0;
+        padding: 0;
+
+        box-sizing: border-box;
+
+        z-index: 9999;
+
+        background:
+            var(
+                --background-color,
+                #ffffff
+            );
+
+        border-bottom:
+            1px solid
+            var(
+                --border-color,
+                #e5e5e5
+            );
+
+        box-shadow:
+            0 2px 6px
+            rgba(0, 0, 0, 0.08);
+
+    }
+
+
+
+    /* =====================================================
+       NAVIGATION LINKS
+    ===================================================== */
+
+    .update-nav-link {
+
+        width: 40px;
+
+        height: 40px;
+
+        flex: 0 0 40px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        margin: 0;
+        padding: 0;
+
+        border: 0;
+
+        border-radius: 0;
+
+        background: transparent;
+
+        color: inherit;
+
+        text-decoration: none;
+
+        cursor: pointer;
+
+        box-sizing: border-box;
+
+        -webkit-tap-highlight-color: transparent;
+
+    }
+
+
+
+    /* =====================================================
+       ICON
+    ===================================================== */
+
+    .update-nav-icon {
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        width: 100%;
+        height: 100%;
+
+        font-size: 20px;
+
+        line-height: 1;
+
+    }
+
+
+
+    /* =====================================================
+       BUTTON RESET
+    ===================================================== */
+
+    .update-nav-button {
+
+        font-family: inherit;
+
+        appearance: none;
+
+        -webkit-appearance: none;
+
+    }
+
+
+
+    /* =====================================================
+       HOVER
+    ===================================================== */
+
+    .update-nav-link:hover {
+
+        background:
+            rgba(0, 0, 0, 0.06);
+
+    }
+
+
+
+    /* =====================================================
+       ACTIVE
+    ===================================================== */
+
+    .update-nav-link:active {
+
+        transform: scale(0.94);
+
+    }
+
+
+
+    /* =====================================================
+       CONTENT POSITIONING
+       
+       The navigation is fixed, so it does not occupy
+       normal document flow.
+
+       The .dairy-page therefore receives EXACTLY
+       the navigation height here.
+
+       Navigation = 40px
+
+       No additional padding is required.
+    ===================================================== */
+
+    .dairy-page {
+
+        margin-top: 40px;
+
+    }
+
+
+
+    /* =====================================================
+       MOBILE
+       
+       Navigation remains exactly 40px high.
+       Therefore content remains exactly 40px below
+       the navigation's top position.
+    ===================================================== */
+
+    @media (max-width: 600px) {
+
+        .update-fixed-nav {
+
+            height: 40px;
+
+        }
+
+
+        .update-nav-link {
+
+            width: 40px;
+
+            height: 40px;
+
+            flex-basis: 40px;
+
+        }
+
+
+        .update-nav-icon {
+
+            font-size: 19px;
+
+        }
+
+    }
+
+</style>
