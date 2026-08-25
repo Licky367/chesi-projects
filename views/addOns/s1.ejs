@@ -1,52 +1,84 @@
 <div class="financial-card financial-welcome-card">
 
-  <!-- Soft green visual accent -->
   <div class="financial-card-glow"></div>
 
+  <!-- HEADER -->
   <div class="financial-welcome-header">
 
-    <div class="financial-welcome-icon">
-      <span>₦</span>
+    <div class="financial-welcome-icon" aria-hidden="true">
+      <span>₵</span>
     </div>
 
     <div class="financial-welcome-title">
-      <span class="financial-eyebrow">FINANCIAL RECORDS</span>
+
+      <span class="financial-eyebrow">
+        FINANCIAL RECORDS
+      </span>
 
       <h2 class="dairy-name">
         <%= dairy.name %>
       </h2>
+
+      <p class="financial-header-subtitle">
+        Financial management and record keeping
+      </p>
+
     </div>
 
   </div>
 
+
   <div class="financial-welcome-divider"></div>
 
+
+  <!-- CONTENT -->
   <div class="welcome-content">
 
     <div class="welcome-message">
+
+      <span class="financial-content-label">
+        GET STARTED
+      </span>
+
       <h3>
         Welcome, <%= user.name %>.
       </h3>
 
       <p>
-        Record any financial information related to
-        <strong><%= dairy.name %></strong>.
+        Keep a clear record of the financial activity
+        associated with <strong><%= dairy.name %></strong>.
       </p>
 
       <p>
-        Every financial record helps us understand the
-        dairy's performance and make better financial
-        planning decisions.
+        Recording revenue and liabilities helps us
+        understand the dairy's financial position,
+        monitor performance, and make better planning
+        decisions.
       </p>
+
     </div>
 
-    <div class="financial-note">
-      <span class="financial-note-icon">✓</span>
 
-      <span>
-        Every record matters. Thank you for keeping the
-        financial information up to date.
-      </span>
+    <!-- INFORMATION NOTE -->
+    <div class="financial-note">
+
+      <div class="financial-note-icon" aria-hidden="true">
+        ✓
+      </div>
+
+      <div class="financial-note-content">
+
+        <strong>
+          Keep records current
+        </strong>
+
+        <span>
+          Every financial record contributes to a more
+          accurate picture of the dairy's performance.
+        </span>
+
+      </div>
+
     </div>
 
   </div>
