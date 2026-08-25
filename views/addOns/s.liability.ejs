@@ -1,12 +1,587 @@
-<link
-    rel="stylesheet"
-    href="/css/update/financial.css"
+Styled Liability Financial Card
+
+<style>
+  /* ==========================================================
+     LIABILITY CARD
+     ========================================================== */
+
+  .financial-card.liability-card {
+    position: relative;
+    overflow: hidden;
+
+    width: 100%;
+    max-width: 900px;
+    margin: 24px auto;
+    padding: 0;
+
+    border-radius: 24px;
+
+    background:
+      linear-gradient(
+        145deg,
+        #ffffff 0%,
+        #f8fafc 55%,
+        #fff7f7 100%
+      );
+
+    border: 1px solid rgba(15, 23, 42, 0.08);
+
+    box-shadow:
+      0 20px 45px rgba(15, 23, 42, 0.08),
+      0 5px 15px rgba(15, 23, 42, 0.04);
+
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .financial-card.liability-card:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+      0 25px 55px rgba(15, 23, 42, 0.10),
+      0 7px 18px rgba(15, 23, 42, 0.05);
+  }
+
+
+  /* ==========================================================
+     DECORATIVE GLOW
+     ========================================================== */
+
+  .liability-card .financial-card-glow {
+    position: absolute;
+
+    top: -110px;
+    right: -80px;
+
+    width: 280px;
+    height: 280px;
+
+    border-radius: 50%;
+
+    background: rgba(239, 68, 68, 0.09);
+
+    filter: blur(8px);
+
+    pointer-events: none;
+  }
+
+  .liability-card .financial-card-glow::after {
+    content: "";
+
+    position: absolute;
+
+    left: -190px;
+    top: 200px;
+
+    width: 190px;
+    height: 190px;
+
+    border-radius: 50%;
+
+    background: rgba(245, 158, 11, 0.05);
+  }
+
+
+  /* ==========================================================
+     HEADER
+     ========================================================== */
+
+  .liability-card .financial-section-header {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+
+    gap: 18px;
+
+    padding: 28px 30px 24px;
+  }
+
+
+  /* ==========================================================
+     LIABILITY ICON
+     ========================================================== */
+
+  .liability-card .financial-section-icon {
+    position: relative;
+
+    flex: 0 0 auto;
+
+    width: 64px;
+    height: 64px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 18px;
+
+    background:
+      linear-gradient(
+        145deg,
+        #ef4444,
+        #b91c1c
+      );
+
+    color: #ffffff;
+
+    box-shadow:
+      0 10px 22px rgba(220, 38, 38, 0.22);
+  }
+
+  .liability-card .financial-section-icon::before {
+    content: "";
+
+    position: absolute;
+    inset: 5px;
+
+    border-radius: 14px;
+
+    border: 1px solid rgba(255, 255, 255, 0.20);
+  }
+
+  .liability-card .liability-icon span {
+    position: relative;
+    z-index: 1;
+
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+
+  /* ==========================================================
+     HEADER TEXT
+     ========================================================== */
+
+  .liability-card .financial-section-title {
+    min-width: 0;
+  }
+
+  .liability-card .financial-eyebrow {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #dc2626;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .liability-card .financial-section-title h2 {
+    margin: 0;
+
+    color: #0f172a;
+
+    font-size: clamp(21px, 4vw, 28px);
+    font-weight: 800;
+
+    line-height: 1.2;
+  }
+
+  .liability-card .financial-section-title p {
+    margin: 7px 0 0;
+
+    color: #64748b;
+
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .liability-card .financial-section-title strong {
+    color: #334155;
+    font-weight: 700;
+  }
+
+
+  /* ==========================================================
+     DIVIDER
+     ========================================================== */
+
+  .liability-card .financial-welcome-divider {
+    position: relative;
+
+    height: 1px;
+
+    margin: 0 30px;
+
+    background:
+      linear-gradient(
+        to right,
+        rgba(15, 23, 42, 0.08),
+        rgba(15, 23, 42, 0.03),
+        transparent
+      );
+  }
+
+
+  /* ==========================================================
+     FORM
+     ========================================================== */
+
+  .liability-card .financial-form {
+    position: relative;
+    z-index: 1;
+
+    padding: 28px 30px 30px;
+  }
+
+
+  /* ==========================================================
+     FORM GROUP
+     ========================================================== */
+
+  .liability-card .form-group {
+    margin-bottom: 23px;
+  }
+
+  .liability-card .form-group:last-of-type {
+    margin-bottom: 0;
+  }
+
+  .liability-card .form-group label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #1e293b;
+
+    font-size: 13px;
+    font-weight: 750;
+  }
+
+
+  /* ==========================================================
+     INPUTS
+     ========================================================== */
+
+  .liability-card input,
+  .liability-card textarea {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    border: 1px solid #dbe2ea;
+
+    border-radius: 13px;
+
+    background: rgba(255, 255, 255, 0.94);
+
+    color: #0f172a;
+
+    font-family: inherit;
+    font-size: 15px;
+
+    outline: none;
+
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .liability-card input {
+    min-height: 50px;
+
+    padding: 0 15px;
+  }
+
+  .liability-card textarea {
+    display: block;
+
+    min-height: 112px;
+
+    padding: 14px 15px;
+
+    resize: vertical;
+
+    line-height: 1.55;
+  }
+
+  .liability-card input::placeholder,
+  .liability-card textarea::placeholder {
+    color: #94a3b8;
+  }
+
+  .liability-card input:focus,
+  .liability-card textarea:focus {
+    border-color: #ef4444;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 0 0 4px rgba(239, 68, 68, 0.09);
+  }
+
+
+  /* ==========================================================
+     AMOUNT INPUT
+     ========================================================== */
+
+  .liability-card .financial-input-wrapper {
+    position: relative;
+  }
+
+  .liability-card .financial-input-prefix {
+    position: absolute;
+
+    left: 15px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: #dc2626;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    pointer-events: none;
+
+    z-index: 2;
+  }
+
+  .liability-card .financial-input-wrapper input {
+    padding-left: 55px;
+  }
+
+
+  /* ==========================================================
+     FIELD HINT
+     ========================================================== */
+
+  .liability-card .financial-field-hint {
+    display: block;
+
+    margin-top: 7px;
+
+    color: #64748b;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+  }
+
+
+  /* ==========================================================
+     ACTION
+     ========================================================== */
+
+  .liability-card .financial-form-action {
+    display: flex;
+    justify-content: flex-end;
+
+    margin-top: 28px;
+
+    padding-top: 22px;
+
+    border-top: 1px solid rgba(15, 23, 42, 0.06);
+  }
+
+
+  /* ==========================================================
+     BUTTON
+     ========================================================== */
+
+  .liability-card .financial-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    min-height: 50px;
+
+    padding: 0 20px;
+
+    border: 0;
+    border-radius: 13px;
+
+    background:
+      linear-gradient(
+        135deg,
+        #ef4444,
+        #b91c1c
+      );
+
+    color: #ffffff;
+
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+
+    cursor: pointer;
+
+    box-shadow:
+      0 9px 18px rgba(220, 38, 38, 0.20);
+
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      filter 0.2s ease;
+  }
+
+  .liability-card .financial-btn:hover {
+    transform: translateY(-1px);
+
+    filter: brightness(1.03);
+
+    box-shadow:
+      0 12px 24px rgba(220, 38, 38, 0.25);
+  }
+
+  .liability-card .financial-btn:active {
+    transform: translateY(0);
+
+    box-shadow:
+      0 5px 12px rgba(220, 38, 38, 0.18);
+  }
+
+  .liability-card .financial-btn:focus-visible {
+    outline: none;
+
+    box-shadow:
+      0 0 0 4px rgba(239, 68, 68, 0.13),
+      0 9px 18px rgba(220, 38, 38, 0.20);
+  }
+
+
+  /* ==========================================================
+     BUTTON ICON
+     ========================================================== */
+
+  .liability-card .financial-btn-icon {
+    width: 27px;
+    height: 27px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background: rgba(255, 255, 255, 0.17);
+
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+
+  /* ==========================================================
+     MOBILE
+     ========================================================== */
+
+  @media (max-width: 600px) {
+
+    .financial-card.liability-card {
+      margin: 16px auto;
+
+      border-radius: 20px;
+    }
+
+    .liability-card .financial-section-header {
+      gap: 14px;
+
+      padding: 22px 20px 20px;
+    }
+
+    .liability-card .financial-section-icon {
+      width: 54px;
+      height: 54px;
+
+      border-radius: 15px;
+    }
+
+    .liability-card .financial-section-icon::before {
+      border-radius: 11px;
+    }
+
+    .liability-card .liability-icon span {
+      font-size: 25px;
+    }
+
+    .liability-card .financial-eyebrow {
+      font-size: 9px;
+      letter-spacing: 1.2px;
+    }
+
+    .liability-card .financial-section-title h2 {
+      font-size: 20px;
+    }
+
+    .liability-card .financial-section-title p {
+      font-size: 13px;
+    }
+
+    .liability-card .financial-welcome-divider {
+      margin: 0 20px;
+    }
+
+    .liability-card .financial-form {
+      padding: 23px 20px 22px;
+    }
+
+    .liability-card .financial-form-action {
+      margin-top: 24px;
+
+      padding-top: 20px;
+    }
+
+    .liability-card .financial-btn {
+      width: 100%;
+    }
+  }
+
+
+  /* ==========================================================
+     VERY SMALL SCREENS
+     ========================================================== */
+
+  @media (max-width: 380px) {
+
+    .liability-card .financial-section-icon {
+      width: 48px;
+      height: 48px;
+    }
+
+    .liability-card .liability-icon span {
+      font-size: 22px;
+    }
+
+    .liability-card .financial-section-title h2 {
+      font-size: 18px;
+    }
+
+    .liability-card .financial-section-title p {
+      font-size: 12px;
+    }
+
+    .liability-card .form-group label {
+      font-size: 12px;
+    }
+
+    .liability-card input,
+    .liability-card textarea {
+      font-size: 14px;
+    }
+  }
+</style>
+
+
 <div class="financial-card liability-card">
 
   <div class="financial-card-glow"></div>
 
 
-  <!-- HEADER -->
+  <!-- ========================================================
+       HEADER
+       ======================================================== -->
+
   <div class="financial-section-header">
 
     <div
@@ -16,10 +591,11 @@
       <span>−</span>
     </div>
 
+
     <div class="financial-section-title">
 
       <span class="financial-eyebrow">
-        LIABILITIES
+        Liabilities
       </span>
 
       <h2>
@@ -28,7 +604,8 @@
 
       <p>
         Add an amount owed or financial obligation
-        associated with <strong><%= dairy.name %></strong>.
+        associated with
+        <strong><%= dairy.name %></strong>.
       </p>
 
     </div>
@@ -39,7 +616,10 @@
   <div class="financial-welcome-divider"></div>
 
 
-  <!-- FORM -->
+  <!-- ========================================================
+       FORM
+       ======================================================== -->
+
   <form
     action="/financials/liability"
     method="POST"
@@ -53,7 +633,10 @@
     >
 
 
-    <!-- AMOUNT -->
+    <!-- ======================================================
+         AMOUNT
+         ====================================================== -->
+
     <div class="form-group">
 
       <label for="liabilityAmount">
@@ -90,7 +673,10 @@
     </div>
 
 
-    <!-- DESCRIPTION -->
+    <!-- ======================================================
+         DESCRIPTION
+         ====================================================== -->
+
     <div class="form-group">
 
       <label for="liabilityDescription">
@@ -112,7 +698,10 @@
     </div>
 
 
-    <!-- DATE -->
+    <!-- ======================================================
+         DATE
+         ====================================================== -->
+
     <div class="form-group">
 
       <label for="liabilityDate">
@@ -133,7 +722,10 @@
     </div>
 
 
-    <!-- ACTION -->
+    <!-- ======================================================
+         ACTION
+         ====================================================== -->
+
     <div class="financial-form-action">
 
       <button
