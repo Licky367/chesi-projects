@@ -629,7 +629,7 @@ async (req, res) => {
         // ==================================================
 
         return res.render(
-            "update/addOns",
+            "addOns",
             {
 
                 title:
