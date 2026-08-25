@@ -17,11 +17,8 @@ const ALLOWED_STATUSES =
     Dairy.DAIRY_STATUSES || [
 
         "active",
-
         "sold",
-
         "disposed",
-
         "inactive"
 
     ];
@@ -1098,29 +1095,17 @@ async function getNetWorth() {
             .lean();
 
 
-    // ======================================================
-    // STANDALONE STRUCTURES
-    // ======================================================
-
     const standaloneAssets =
         allDairy.filter(
             isStandaloneAsset
         );
 
 
-    // ======================================================
-    // DAIRY FARMS
-    // ======================================================
-
     const structures =
         allDairy.filter(
             isDairyFarm
         );
 
-
-    // ======================================================
-    // TOTAL NET WORTH
-    // ======================================================
 
     const totalNetWorth =
         allDairy.reduce(
@@ -1195,10 +1180,6 @@ async function getDairyFarm(
         );
 
 
-    // ======================================================
-    // FARM ASSETS
-    // ======================================================
-
     const assets =
         await Dairy
             .find({
@@ -1215,10 +1196,6 @@ async function getDairyFarm(
             })
             .lean();
 
-
-    // ======================================================
-    // FARM TOTAL
-    // ======================================================
 
     const dairyTotal =
         assets.reduce(
@@ -1282,24 +1259,6 @@ async function getDairyFarm(
 // ==========================================================
 // GET ADD ASSET
 // ==========================================================
-//
-// Route:
-//
-//     GET /networth/structure/:id/add
-//
-// The :id is the parent Dairy Farm.
-//
-// The returned dairy object is used by:
-//
-//     networth-add.ejs
-//
-// The browser does NOT need to submit:
-//
-//     code
-//     assetCode
-//
-// The backend derives assetCode from dairy.code.
-//
 
 async function getAddAsset(
     id
@@ -1349,11 +1308,16 @@ async function getAddAsset(
 //
 //     assetCode = negative Dairy Farm code
 //
+// Dairy information fields:
+//
+//     about
+//     regNo
+//     mission
+//     vision
+//
 // IMPORTANT:
-//
-// The parent is determined exclusively from :id.
-//
-// The browser cannot choose assetCode.
+//     `regNo` is a normal Dairy schema field.
+//     It is NOT the same thing as `code`.
 //
 
 async function addAsset(
@@ -1502,7 +1466,7 @@ async function addAsset(
     const assetData = {
 
         // --------------------------------------------------
-        // USER DATA
+        // BASIC DATA
         // --------------------------------------------------
 
         name,
@@ -1525,6 +1489,36 @@ async function addAsset(
             ),
 
         // --------------------------------------------------
+        // DAIRY INFORMATION
+        // --------------------------------------------------
+        //
+        // These are actual schema fields.
+        //
+        // `regNo` is the Dairy registration number.
+        // It is deliberately NOT assigned to `code`.
+        //
+
+        about:
+            parseText(
+                body.about
+            ),
+
+        regNo:
+            parseText(
+                body.regNo
+            ),
+
+        mission:
+            parseText(
+                body.mission
+            ),
+
+        vision:
+            parseText(
+                body.vision
+            ),
+
+        // --------------------------------------------------
         // STATUS
         // --------------------------------------------------
 
@@ -1535,15 +1529,13 @@ async function addAsset(
         // SYSTEM IDENTITY
         // --------------------------------------------------
         //
-        // STRUCTURE:
+        // Structure:
         //
         //     code = null
         //
         // Parent:
         //
-        //     assetCode = farmCode
-        //
-        // Both values are determined by the backend.
+        //     assetCode = negative farm code
         //
 
         code:
@@ -1701,21 +1693,6 @@ async function addAsset(
 // ==========================================================
 // GET ASSET
 // ==========================================================
-//
-// Valid asset records:
-//
-//     Animal
-//         code > 0
-//
-//     Structure
-//         code === null
-//
-// Dairy Farm:
-//
-//     code < 0
-//
-// is rejected.
-//
 
 async function getAsset(
     id
@@ -1822,17 +1799,27 @@ async function getAsset(
 //
 //     _id
 //     code
-//
-// The controller also removes:
-//
 //     assetCode
 //
-// before reaching this service.
+// Editable schema fields include:
 //
-// Therefore the existing parent relationship remains intact
-// unless a future explicit parent-selection mechanism is
-// introduced.
+//     name
+//     type
+//     about
+//     regNo
+//     mission
+//     vision
+//     description
+//     condition
+//     location
+//     status
+//     buyingPrice
+//     currentWorth
+//     valuationDate
+//     acquisitionDate
+//     profileImage
 //
+// ==========================================================
 
 async function updateAsset(
     id,
@@ -2071,6 +2058,82 @@ async function updateAsset(
 
 
     // ======================================================
+    // ABOUT
+    // ======================================================
+
+    if (
+        body.about !== undefined
+    ) {
+
+        dairy.about =
+            parseText(
+                body.about
+            );
+
+    }
+
+
+    // ======================================================
+    // REGISTRATION NUMBER
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // `regNo` is the schema's Dairy registration identity.
+    //
+    // It is completely separate from:
+    //
+    //     code
+    //
+    // `code` continues to represent the system's
+    // numeric record identity.
+    //
+
+    if (
+        body.regNo !== undefined
+    ) {
+
+        dairy.regNo =
+            parseText(
+                body.regNo
+            );
+
+    }
+
+
+    // ======================================================
+    // MISSION
+    // ======================================================
+
+    if (
+        body.mission !== undefined
+    ) {
+
+        dairy.mission =
+            parseText(
+                body.mission
+            );
+
+    }
+
+
+    // ======================================================
+    // VISION
+    // ======================================================
+
+    if (
+        body.vision !== undefined
+    ) {
+
+        dairy.vision =
+            parseText(
+                body.vision
+            );
+
+    }
+
+
+    // ======================================================
     // DATE OF BIRTH
     // ======================================================
 
@@ -2292,8 +2355,6 @@ async function updateAsset(
     if (
         identified
     ) {
-
-        // Animals must always have a parent farm.
 
         if (
             dairy.assetCode === null ||
