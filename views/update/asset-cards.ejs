@@ -1,40 +1,40 @@
 <% /*
 =========================================================
-DAIRY FEED HORIZONTAL CARDS
+DAIRY HORIZONTAL CARDS
 
 FILE:
     views/update/asset-cards.ejs
 
 PURPOSE:
-    Compact horizontal feed navigator.
+    Compact horizontal Dairy navigator.
 
     The section:
-        - Displays ONLY Dairy records whose type is "feeds"
-        - Shows the feed profile image
-        - Shows the feed name
-        - Shows the feed quantity and unit when available
+        - Displays ONLY Dairy records whose dwellNumber is negative
+        - Shows the Dairy profile image
+        - Shows the Dairy name
+        - Shows quantity and unit when available
         - Links directly to /dairy/:id
-        - Provides a feed-specific update heading
+        - Provides a Dairy-specific update heading
 
-FEED RULES:
+DAIRY RULES:
 ----------------------------------------------------------
-    recordType === "structure"
-        AND
-    type === "feeds"
+    dwellNumber < 0
 
 IMPORTANT:
-    "feeds" is a TYPE.
+    dwellNumber is the selection criterion.
 
-    It is NOT a recordType.
+    DO NOT use:
+        recordType
+        type
+        code
 
-    Therefore:
+    A card is displayed ONLY when:
 
-        recordType = "structure"
-        type       = "feeds"
+        Number(dwellNumber) < 0
 
 Cards DO NOT open the post modal.
 
-Clicking a feed takes the user directly to:
+Clicking a Dairy takes the user directly to:
 
     /dairy/:id
 ==========================================================
@@ -53,17 +53,17 @@ Clicking a feed takes the user directly to:
 
 
     /* ======================================================
-       ONLY FEED RECORDS
-       
-       According to models/dairy.js:
+       ONLY DAIRIES WITH NEGATIVE DWELL NUMBER
 
-           recordType = "structure"
-           type       = "feeds"
+       Selection is based ONLY on dwellNumber.
 
-       Do NOT use code to determine this.
+       Do NOT use:
+           recordType
+           type
+           code
     ====================================================== */
 
-    const feeds =
+    const dairies =
         assets.filter(function (asset) {
 
             if (!asset) {
@@ -71,36 +71,26 @@ Clicking a feed takes the user directly to:
             }
 
 
-            const recordType =
-                String(
-                    asset.recordType || ""
-                )
-                    .trim()
-                    .toLowerCase();
-
-
-            const type =
-                String(
-                    asset.type || ""
-                )
-                    .trim()
-                    .toLowerCase();
+            const dwellNumber =
+                Number(
+                    asset.dwellNumber
+                );
 
 
             return (
-                recordType === "structure" &&
-                type === "feeds"
+                Number.isFinite(dwellNumber) &&
+                dwellNumber < 0
             );
 
         });
 %>
 
 
-<% if (feeds.length) { %>
+<% if (dairies.length) { %>
 
 <section
     class="dairy-feed-strip"
-    aria-label="Dairy animal feeds"
+    aria-label="Dairies with negative dwell numbers"
 >
 
 
@@ -114,7 +104,7 @@ Clicking a feed takes the user directly to:
         <div class="dairy-feed-strip-title">
 
             <strong>
-                Give updates about the animal feeds present in
+                Give updates about the dairies present in
                 <%= dairy.name %>
             </strong>
 
@@ -123,9 +113,9 @@ Clicking a feed takes the user directly to:
 
         <div class="dairy-feed-strip-description">
 
-            Select a feed below to view its details and give
-            updates about the animal feeds currently present
-            in <strong><%= dairy.name %></strong>.
+            Select a Dairy below to view its details and give
+            updates about the dairies currently present in
+            <strong><%= dairy.name %></strong>.
 
         </div>
 
@@ -135,17 +125,17 @@ Clicking a feed takes the user directly to:
 
 
     <!-- =====================================================
-         HORIZONTAL FEED SCROLL
+         HORIZONTAL DAIRY SCROLL
     ====================================================== -->
 
     <div
         class="dairy-feed-scroll"
         role="list"
-        aria-label="Animal feeds in <%= dairy.name %>"
+        aria-label="Dairies with negative dwell numbers in <%= dairy.name %>"
     >
 
 
-        <% feeds.forEach(function (feed) { %>
+        <% dairies.forEach(function (asset) { %>
 
             <%
                 /* =================================================
@@ -153,53 +143,53 @@ Clicking a feed takes the user directly to:
                 ================================================= */
 
                 if (
-                    !feed ||
-                    !feed._id
+                    !asset ||
+                    !asset._id
                 ) {
                     return;
                 }
 
 
                 /* =================================================
-                   FEED NAME
+                   DAIRY NAME
                 ================================================= */
 
-                const feedName =
-                    feed.name ||
-                    "Unnamed Feed";
+                const dairyName =
+                    asset.name ||
+                    "Unnamed Dairy";
 
 
                 /* =================================================
-                   FEED IMAGE
+                   DAIRY IMAGE
                 ================================================= */
 
-                const feedImage =
-                    feed.displayImage ||
-                    feed.profileImage ||
+                const dairyImage =
+                    asset.displayImage ||
+                    asset.profileImage ||
                     (
                         "https://ui-avatars.com/api/?name=" +
                         encodeURIComponent(
-                            feedName
+                            dairyName
                         ) +
                         "&background=e8f5ee&color=198754"
                     );
 
 
                 /* =================================================
-                   FEED QUANTITY
+                   QUANTITY
                 ================================================= */
 
-                let feedQuantityText = "";
+                let dairyQuantityText = "";
 
 
                 if (
-                    feed.quantity !== null &&
-                    feed.quantity !== undefined &&
-                    feed.quantity !== ""
+                    asset.quantity !== null &&
+                    asset.quantity !== undefined &&
+                    asset.quantity !== ""
                 ) {
 
                     const quantity =
-                        Number(feed.quantity);
+                        Number(asset.quantity);
 
 
                     if (
@@ -208,11 +198,11 @@ Clicking a feed takes the user directly to:
                         )
                     ) {
 
-                        feedQuantityText =
+                        dairyQuantityText =
                             `${quantity}` +
                             (
-                                feed.unit
-                                    ? ` ${feed.unit}`
+                                asset.unit
+                                    ? ` ${asset.unit}`
                                     : ""
                             );
 
@@ -224,14 +214,14 @@ Clicking a feed takes the user directly to:
 
 
             <!-- =================================================
-                 FEED CARD
+                 DAIRY CARD
             ================================================== -->
 
             <a
-                href="/dairy/<%= feed._id %>"
+                href="/dairy/<%= asset._id %>"
                 class="dairy-feed-card"
                 role="listitem"
-                aria-label="Give updates about <%= feedName %>"
+                aria-label="Give updates about <%= dairyName %>"
             >
 
 
@@ -242,8 +232,8 @@ Clicking a feed takes the user directly to:
                 <div class="dairy-feed-image-wrap">
 
                     <img
-                        src="<%= feedImage %>"
-                        alt="<%= feedName %>"
+                        src="<%= dairyImage %>"
+                        alt="<%= dairyName %>"
                         class="dairy-feed-image"
                         loading="lazy"
                     >
@@ -253,26 +243,26 @@ Clicking a feed takes the user directly to:
 
 
                 <!-- =============================================
-                     FEED INFORMATION
+                     DAIRY INFORMATION
                 ============================================== -->
 
                 <div class="dairy-feed-content">
 
 
                     <!-- =========================================
-                         FEED NAME
+                         DAIRY NAME
                     ========================================== -->
 
                     <div class="dairy-feed-name">
 
-                        <%= feedName %>
+                        <%= dairyName %>
 
                     </div>
 
 
 
                     <!-- =========================================
-                         FEED TYPE
+                         DAIRY TYPE
                     ========================================== -->
 
                     <div class="dairy-feed-type">
@@ -281,11 +271,11 @@ Clicking a feed takes the user directly to:
                             class="dairy-feed-type-icon"
                             aria-hidden="true"
                         >
-                            🌾
+                            🐄
                         </span>
 
                         <span>
-                            Animal Feed
+                            Dairy
                         </span>
 
                     </div>
@@ -296,7 +286,7 @@ Clicking a feed takes the user directly to:
                          QUANTITY
                     ========================================== -->
 
-                    <% if (feedQuantityText) { %>
+                    <% if (dairyQuantityText) { %>
 
                         <div class="dairy-feed-quantity">
 
@@ -307,7 +297,7 @@ Clicking a feed takes the user directly to:
                             </span>
 
                             <span>
-                                <%= feedQuantityText %>
+                                <%= dairyQuantityText %>
                             </span>
 
                         </div>
@@ -334,7 +324,7 @@ Clicking a feed takes the user directly to:
 <style>
 
 /* ==========================================================
-   DAIRY FEED STRIP
+   DAIRY STRIP
 
    Namespaced specifically for this component.
 ========================================================== */
@@ -499,7 +489,7 @@ Clicking a feed takes the user directly to:
 
 
 /* ==========================================================
-   FEED CARD
+   DAIRY CARD
 ========================================================== */
 
 .dairy-feed-card {
@@ -633,7 +623,7 @@ Clicking a feed takes the user directly to:
 
 
 /* ==========================================================
-   FEED CONTENT
+   DAIRY CONTENT
 ========================================================== */
 
 .dairy-feed-content {
@@ -658,7 +648,7 @@ Clicking a feed takes the user directly to:
 
 
 /* ==========================================================
-   FEED NAME
+   DAIRY NAME
 ========================================================== */
 
 .dairy-feed-name {
@@ -700,7 +690,7 @@ Clicking a feed takes the user directly to:
 
 
 /* ==========================================================
-   FEED TYPE
+   DAIRY TYPE
 ========================================================== */
 
 .dairy-feed-type {
@@ -778,7 +768,7 @@ Clicking a feed takes the user directly to:
 
 
 /* ==========================================================
-   FEED QUANTITY
+   QUANTITY
 ========================================================== */
 
 .dairy-feed-quantity {
