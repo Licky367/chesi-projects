@@ -28,7 +28,8 @@ let MongoStore;
 
 try {
 
-  MongoStore = require("connect-mongo");
+  MongoStore =
+    require("connect-mongo");
 
 } catch (error) {
 
@@ -81,29 +82,6 @@ if (isProduction) {
 
 const connectDB =
   require("./db");
-
-
-// ==========================================================
-// DATABASE CLEANUP
-// ==========================================================
-//
-// utils/store.js preserves:
-//
-// 1. users
-// 2. projectUsers
-// 3. dairies where:
-//      code      = -13
-//      OR assetCode = -13
-//      OR farmCode  = -13
-//
-// Everything else is deleted.
-//
-// IMPORTANT:
-// This is intentionally executed during application startup.
-//
-
-const clearDatabase =
-  require("./utils/store");
 
 
 // ==========================================================
@@ -944,6 +922,11 @@ app.set(
 // ROUTE MOUNTING
 // ==========================================================
 
+
+// ----------------------------------------------------------
+// INDEX
+// ----------------------------------------------------------
+
 if (indexRoutes) {
 
   app.use(
@@ -953,6 +936,10 @@ if (indexRoutes) {
 
 }
 
+
+// ----------------------------------------------------------
+// CREATE INVITE
+// ----------------------------------------------------------
 
 if (createRoutes) {
 
@@ -964,6 +951,10 @@ if (createRoutes) {
 }
 
 
+// ----------------------------------------------------------
+// AUTH
+// ----------------------------------------------------------
+
 if (authRoutes) {
 
   app.use(
@@ -973,6 +964,10 @@ if (authRoutes) {
 
 }
 
+
+// ----------------------------------------------------------
+// UPDATE
+// ----------------------------------------------------------
 
 if (updateRoutes) {
 
@@ -984,6 +979,10 @@ if (updateRoutes) {
 }
 
 
+// ----------------------------------------------------------
+// ADD DAIRY / ASSET
+// ----------------------------------------------------------
+
 if (addRoutes) {
 
   app.use(
@@ -993,6 +992,10 @@ if (addRoutes) {
 
 }
 
+
+// ----------------------------------------------------------
+// PROFILE
+// ----------------------------------------------------------
 
 if (profileRoutes) {
 
@@ -1004,6 +1007,10 @@ if (profileRoutes) {
 }
 
 
+// ==========================================================
+// MILK
+// ==========================================================
+
 if (milkRoutes) {
 
   app.use(
@@ -1013,6 +1020,10 @@ if (milkRoutes) {
 
 }
 
+
+// ==========================================================
+// MILK SALES
+// ==========================================================
 
 if (milkSalesRoutes) {
 
@@ -1024,6 +1035,10 @@ if (milkSalesRoutes) {
 }
 
 
+// ----------------------------------------------------------
+// ACCOUNTS
+// ----------------------------------------------------------
+
 if (accountsRoutes) {
 
   app.use(
@@ -1033,6 +1048,10 @@ if (accountsRoutes) {
 
 }
 
+
+// ==========================================================
+// NET WORTH
+// ==========================================================
 
 if (networthRoutes) {
 
@@ -1044,6 +1063,10 @@ if (networthRoutes) {
 }
 
 
+// ==========================================================
+// FINANCIALS
+// ==========================================================
+
 if (financialsRoutes) {
 
   app.use(
@@ -1054,6 +1077,10 @@ if (financialsRoutes) {
 }
 
 
+// ==========================================================
+// STORAGE
+// ==========================================================
+
 if (storageRoutes) {
 
   app.use(
@@ -1063,6 +1090,10 @@ if (storageRoutes) {
 
 }
 
+
+// ==========================================================
+// POULTRY
+// ==========================================================
 
 if (poultryStatsRoutes) {
 
@@ -1124,6 +1155,10 @@ if (financeRoutes) {
 }
 
 
+// ==========================================================
+// DASHBOARD
+// ==========================================================
+
 if (dashboardRoutes) {
 
   app.use(
@@ -1133,6 +1168,10 @@ if (dashboardRoutes) {
 
 }
 
+
+// ==========================================================
+// AGRICULTURE
+// ==========================================================
 
 if (farmRoutes) {
 
@@ -1424,10 +1463,6 @@ const bootstrap = async () => {
 
   try {
 
-    // ------------------------------------------------------
-    // CONNECT TO DATABASE
-    // ------------------------------------------------------
-
     const dbConnected =
       await connectDB();
 
@@ -1440,78 +1475,43 @@ const bootstrap = async () => {
 
     }
 
-    else {
+    else if (isProduction) {
 
       console.error(
-        "❌ MongoDB connection failed."
+        "❌ Production startup failed: MongoDB is unavailable."
       );
 
-      if (isProduction) {
+      process.exit(1);
 
-        process.exit(1);
+    }
 
-      }
+    else {
 
       console.warn(
-        "⚠️ MongoDB is unavailable. Database cleanup will NOT run."
+        "⚠️ MongoDB is unavailable. Starting server without database initialization."
       );
 
     }
 
-
-    // ------------------------------------------------------
-    // DATABASE CLEANUP
-    // ------------------------------------------------------
-    //
-    // IMPORTANT:
-    //
-    // The cleanup happens only after MongoDB has
-    // successfully connected.
-    //
-    // The HTTP server does not start until cleanup
-    // has completed.
-    //
-
-    if (dbConnected) {
-
-      console.log(
-        "\n🧹 Starting database cleanup..."
-      );
-
-      await clearDatabase();
-
-      console.log(
-        "✅ Database cleanup completed successfully."
-      );
-
-    }
-
-
-    // ------------------------------------------------------
-    // START HTTP SERVER
-    // ------------------------------------------------------
 
     startServer(PORT);
 
   } catch (error) {
 
     console.error(
-      "\n❌ Application bootstrap failed:"
-    );
-
-    console.error(error);
-
-
-    // ------------------------------------------------------
-    // DO NOT START SERVER IF DATABASE CLEANUP FAILS
-    // ------------------------------------------------------
-
-    console.error(
-      "\n🛑 Server startup aborted."
+      "❌ Application bootstrap failed:",
+      error
     );
 
 
-    process.exit(1);
+    if (isProduction) {
+
+      process.exit(1);
+
+    }
+
+
+    startServer(PORT);
 
   }
 
