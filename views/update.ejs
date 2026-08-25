@@ -1,21 +1,3 @@
-<!-- =====================================================
-     UPDATE PAGE
-
-     FILE:
-         views/update.ejs
-
-     PURPOSE:
-         Dairy update/feed page.
-
-     BOOLEAN MANAGEMENT:
-     -----------------------------------------------------
-     boolean.ejs is an INCLUDE.
-
-     It is rendered directly below asset-cards.ejs.
-
-     The MAIN FEED is currently COMMENTED OUT.
-===================================================== -->
-
 
 <!-- =====================================================
      UPDATE PAGE ASSETS
@@ -49,27 +31,26 @@
 
 
         <!-- =============================================
-            VIEW UPDATES 
+             VIEW UPDATES
         ============================================== -->
-            <a
-                href="/dairy/<%= dairy._id %>/general"
-                class="asset-bar-trigger top-page-action"
+
+        <a
+            href="/dairy/<%= dairy._id %>/general"
+            class="asset-bar-trigger top-page-action"
+        >
+
+            <span
+                class="asset-bar-trigger-icon"
+                aria-hidden="true"
             >
+                +
+            </span>
 
-                <span
-                    class="asset-bar-trigger-icon"
-                    aria-hidden="true"
-                >
-                    +
-                </span>
+            <span class="asset-bar-trigger-text">
+                View Updates
+            </span>
 
-                <span class="asset-bar-trigger-text">
-                    View Updates
-                </span>
-
-            </a>
-
-        <% } %>
+        </a>
 
 
 
@@ -311,6 +292,37 @@
 
     </style>
 
+
+
+    <!-- =================================================
+         FIXED H1
+    ================================================== -->
+
+    <%- include(
+        "update/h1",
+        {
+            dairy: dairy,
+            user: user
+        }
+    ) %>
+
+
+
+    <!-- =================================================
+         FIXED ASSET CARDS
+    ================================================== -->
+
+    <%- include(
+        "update/asset-cards",
+        {
+            dairy: dairy,
+            user: user,
+            assetDairies: assetDairies || []
+        }
+    ) %>
+
+
+
     <!-- =================================================
          BOOLEAN MANAGEMENT
 
@@ -318,6 +330,8 @@
              views/update/boolean.ejs
 
          RENDERED EXACTLY ONCE.
+
+         Rendered directly below asset-cards.ejs.
     ================================================== -->
 
     <%- include(
@@ -331,33 +345,9 @@
         }
     ) %>
 
+
+
     <!-- =================================================
-         FIXED H1
-
-         ALWAYS SECOND
-    ================================================== -->
-
-    <%- include(
-        "update/h1",
-        {
-            dairy: dairy,
-            user: user
-        }
-    ) %>
-<!-- =================================================
-         FIXED CREATE POST
-    ================================================== -->
-
-    <%- include(
-        "update/asset-cards",
-        {
-            dairy: dairy,
-            user: user,
-            assetDairies: assetDairies || []
-        }
-    ) %>
-
-<!-- =================================================
          FIXED CREATE POST
     ================================================== -->
 
@@ -373,25 +363,6 @@
 
 
     <!-- =================================================
-         BOOLEAN MANAGEMENT
-
-         FILE:
-             views/update/boolean.ejs
-
-         RENDERED EXACTLY ONCE.
-    ================================================== -->
-
-    <%- include(
-        "update/boolean",
-        {
-            dairy: dairy,
-            assetDairies: assetDairies || [],
-            booleanFields: booleanFields || [],
-            booleanAnimals: booleanAnimals || [],
-            user: user
-        }
-    ) %>
-    <!-- =================================================
          ASSET SIDEBAR
     ================================================== -->
 
@@ -402,6 +373,7 @@
             assetDairies: assetDairies || []
         }
     ) %>
+
 
 </div>
 
