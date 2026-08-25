@@ -232,18 +232,37 @@ router.get(
 
 
 // =========================================================
-// DAIRY PROFILE
+// DAIRY ADD-ONS
 // =========================================================
 //
 // GET:
 //
-//     /dairy/:id
+//     /dairy/:id/addOns
+//
+// PURPOSE:
+//
+//     Render:
+//
+//         views/update/addOns.ejs
+//
+// IMPORTANT:
+//
+// This explicit route MUST be defined before:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// Otherwise:
+//
+//     addOns
+//
+// could be interpreted as a dwellNumber parameter.
 //
 // =========================================================
 
 router.get(
-    "/dairy/:id",
-    controller.viewPage
+    "/dairy/:id/addOns",
+    isAuth,
+    controller.viewAddOns
 );
 
 
@@ -280,6 +299,22 @@ router.get(
 router.get(
     "/dairy/:id/general",
     controller.viewGeneral
+);
+
+
+// =========================================================
+// DAIRY PROFILE
+// =========================================================
+//
+// GET:
+//
+//     /dairy/:id
+//
+// =========================================================
+
+router.get(
+    "/dairy/:id",
+    controller.viewPage
 );
 
 
@@ -513,6 +548,7 @@ router.post(
 //     /dairy/abc123/post
 //     /dairy/abc123/maintenance
 //     /dairy/abc123/general
+//     /dairy/abc123/addOns
 //     /dairy/abc123/anything
 //
 // are NOT treated as content-item requests.
