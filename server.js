@@ -79,23 +79,421 @@ if (isProduction) {
 // DATABASE
 // ==========================================================
 
+const mongoose = require("mongoose");
+
 const connectDB = require("./db");
+
+
+// ==========================================================
+// DATABASE CLEANUP
+// ==========================================================
+//
+// This operation is intentionally explicit.
+//
+// To perform the cleanup:
+//
+//     CLEAR_DATABASE=true node server.js
+//
+// The cleanup will:
+//
+//     PRESERVE:
+//         users
+//         projectUsers
+//
+//         dairies where:
+//             code      === -13
+//             OR
+//             assetCode === -13
+//             OR
+//             farmCode  === -13
+//
+//     DELETE:
+//         all other dairy documents
+//         all documents from every other collection
+//
+// Collections themselves are NOT dropped.
+//
+// After cleanup, the process exits.
+// The application server does NOT start.
+//
+// ==========================================================
+
+const PROTECTED_COLLECTIONS = [
+  "users",
+  "projectUsers"
+];
+
+const PROTECTED_DAIRY_CODE = -13;
+
+
+async function clearDatabase() {
+
+  if (!process.env.MONGO_URI) {
+
+    throw new Error(
+      "MONGO_URI is not defined in the environment."
+    );
+
+  }
+
+
+  console.log("");
+  console.log("==============================================");
+  console.log("🧹 DATABASE CLEANUP REQUESTED");
+  console.log("==============================================");
+  console.log("");
+
+
+  await mongoose.connect(
+    process.env.MONGO_URI
+  );
+
+
+  const db =
+    mongoose.connection.db;
+
+
+  console.log(
+    `📦 Database: ${db.databaseName}`
+  );
+
+  console.log("");
+
+
+  const collections =
+    await db.listCollections().toArray();
+
+
+  if (!collections.length) {
+
+    console.log(
+      "ℹ️ No collections found."
+    );
+
+    return;
+
+  }
+
+
+  // ========================================================
+  // SHOW WHAT WILL HAPPEN
+  // ========================================================
+
+  console.log(
+    "The following rules will be applied:"
+  );
+
+  console.log(
+    "🛡️ users → PRESERVED"
+  );
+
+  console.log(
+    "🛡️ projectUsers → PRESERVED"
+  );
+
+  console.log(
+    "🛡️ dairies where code = -13 → PRESERVED"
+  );
+
+  console.log(
+    "🛡️ dairies where assetCode = -13 → PRESERVED"
+  );
+
+  console.log(
+    "🛡️ dairies where farmCode = -13 → PRESERVED"
+  );
+
+  console.log(
+    "🗑️ everything else → CLEARED"
+  );
+
+  console.log("");
+
+
+  // ========================================================
+  // PROCESS COLLECTIONS
+  // ========================================================
+
+  for (const collection of collections) {
+
+    const name =
+      collection.name;
+
+
+    // ------------------------------------------------------
+    // PROTECTED COLLECTIONS
+    // ------------------------------------------------------
+
+    if (
+      PROTECTED_COLLECTIONS.includes(name)
+    ) {
+
+      const count =
+        await db
+          .collection(name)
+          .countDocuments();
+
+
+      console.log(
+        `🛡️ PRESERVED: ${name} (${count} document(s))`
+      );
+
+      continue;
+
+    }
+
+
+    // ------------------------------------------------------
+    // DAIRIES
+    // ------------------------------------------------------
+
+    if (name === "dairies") {
+
+      console.log("");
+      console.log(
+        "🐄 Processing dairies..."
+      );
+
+
+      // ----------------------------------------------------
+      // Count protected dairies BEFORE deletion
+      // ----------------------------------------------------
+
+      const protectedQuery = {
+
+        $or: [
+
+          {
+            code:
+              PROTECTED_DAIRY_CODE
+          },
+
+          {
+            assetCode:
+              PROTECTED_DAIRY_CODE
+          },
+
+          {
+            farmCode:
+              PROTECTED_DAIRY_CODE
+          }
+
+        ]
+
+      };
+
+
+      const protectedCount =
+        await db
+          .collection("dairies")
+          .countDocuments(
+            protectedQuery
+          );
+
+
+      // ----------------------------------------------------
+      // Delete every dairy that does NOT satisfy
+      // any of the protection rules.
+      // ----------------------------------------------------
+
+      const deleteResult =
+        await db
+          .collection("dairies")
+          .deleteMany({
+
+            $nor: [
+
+              {
+                code:
+                  PROTECTED_DAIRY_CODE
+              },
+
+              {
+                assetCode:
+                  PROTECTED_DAIRY_CODE
+              },
+
+              {
+                farmCode:
+                  PROTECTED_DAIRY_CODE
+              }
+
+            ]
+
+          });
+
+
+      console.log(
+        `🗑️ Dairies deleted: ${deleteResult.deletedCount}`
+      );
+
+      console.log(
+        `🛡️ Dairies preserved: ${protectedCount}`
+      );
+
+
+      continue;
+
+    }
+
+
+    // ------------------------------------------------------
+    // EVERY OTHER COLLECTION
+    // ------------------------------------------------------
+
+    const result =
+      await db
+        .collection(name)
+        .deleteMany({});
+
+
+    console.log(
+      `🗑️ CLEARED: ${name} (${result.deletedCount} document(s) deleted)`
+    );
+
+  }
+
+
+  // ========================================================
+  // VERIFY DAIRIES
+  // ========================================================
+
+  console.log("");
+  console.log(
+    "🔍 Verifying protected dairies..."
+  );
+
+
+  const remainingDairies =
+    await db
+      .collection("dairies")
+      .countDocuments({
+
+        $or: [
+
+          {
+            code:
+              PROTECTED_DAIRY_CODE
+          },
+
+          {
+            assetCode:
+              PROTECTED_DAIRY_CODE
+          },
+
+          {
+            farmCode:
+              PROTECTED_DAIRY_CODE
+          }
+
+        ]
+
+      });
+
+
+  console.log(
+    `🛡️ Protected dairies remaining: ${remainingDairies}`
+  );
+
+
+  // ========================================================
+  // COMPLETE
+  // ========================================================
+
+  console.log("");
+  console.log("==============================================");
+  console.log("✅ DATABASE CLEANUP COMPLETE");
+  console.log("==============================================");
+  console.log("");
+
+}
+
+
+// ==========================================================
+// DATABASE CLEANUP MODE
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This is checked BEFORE loading routes and starting
+// the HTTP server.
+//
+// Therefore:
+//
+//     CLEAR_DATABASE=true node server.js
+//
+// performs the cleanup and exits.
+//
+// A normal:
+//
+//     node server.js
+//
+// behaves exactly like the normal application.
+//
+// ==========================================================
+
+const cleanupRequested =
+  String(
+    process.env.CLEAR_DATABASE || ""
+  ).toLowerCase() === "true";
+
+
+if (cleanupRequested) {
+
+  (async () => {
+
+    try {
+
+      await clearDatabase();
+
+      console.log(
+        "🛑 Cleanup mode complete. Server will not start."
+      );
+
+      process.exit(0);
+
+    } catch (error) {
+
+      console.error("");
+      console.error(
+        "❌ DATABASE CLEANUP FAILED"
+      );
+
+      console.error(
+        error
+      );
+
+      process.exit(1);
+
+    } finally {
+
+      try {
+
+        await mongoose.disconnect();
+
+      } catch (error) {
+
+        // Ignore disconnect errors during cleanup shutdown.
+
+      }
+
+    }
+
+  })();
+
+}
 
 
 // ==========================================================
 // ROUTES
 // ==========================================================
 
-
-// ----------------------------------------------------------
-// INDEX
-// ----------------------------------------------------------
-
 let indexRoutes;
 
 try {
 
-  indexRoutes = require("./routes/index");
+  indexRoutes =
+    require("./routes/index");
 
 } catch (err) {
 
@@ -107,15 +505,12 @@ try {
 }
 
 
-// ----------------------------------------------------------
-// AUTH
-// ----------------------------------------------------------
-
 let authRoutes;
 
 try {
 
-  authRoutes = require("./routes/auth");
+  authRoutes =
+    require("./routes/auth");
 
 } catch (err) {
 
@@ -127,15 +522,12 @@ try {
 }
 
 
-// ----------------------------------------------------------
-// CREATE INVITE
-// ----------------------------------------------------------
-
 let createRoutes;
 
 try {
 
-  createRoutes = require("./routes/create");
+  createRoutes =
+    require("./routes/create");
 
 } catch (err) {
 
@@ -147,15 +539,12 @@ try {
 }
 
 
-// ----------------------------------------------------------
-// UPDATE
-// ----------------------------------------------------------
-
 let updateRoutes;
 
 try {
 
-  updateRoutes = require("./routes/update");
+  updateRoutes =
+    require("./routes/update");
 
 } catch (err) {
 
@@ -167,15 +556,12 @@ try {
 }
 
 
-// ----------------------------------------------------------
-// ADD DAIRY / ASSET
-// ----------------------------------------------------------
-
 let addRoutes;
 
 try {
 
-  addRoutes = require("./routes/add");
+  addRoutes =
+    require("./routes/add");
 
 } catch (err) {
 
@@ -187,15 +573,12 @@ try {
 }
 
 
-// ----------------------------------------------------------
-// PROFILE
-// ----------------------------------------------------------
-
 let profileRoutes;
 
 try {
 
-  profileRoutes = require("./routes/profile");
+  profileRoutes =
+    require("./routes/profile");
 
 } catch (err) {
 
@@ -210,22 +593,13 @@ try {
 // ==========================================================
 // MILK
 // ==========================================================
-//
-// Existing milk router.
-//
-// FILE:
-//
-//     routes/milk.js
-//
-// Keep this router separate from milkSales.js.
-//
-// ==========================================================
 
 let milkRoutes;
 
 try {
 
-  milkRoutes = require("./routes/milk");
+  milkRoutes =
+    require("./routes/milk");
 
 } catch (err) {
 
@@ -239,32 +613,6 @@ try {
 
 // ==========================================================
 // MILK SALES
-// ==========================================================
-//
-// Separate router.
-//
-// FILE:
-//
-//     routes/milkSales.js
-//
-// This is NOT routes/milk.js.
-//
-// ROUTER CONTRACT:
-//
-//     router.get("/", ...)
-//     router.post("/price", ...)
-//     router.post("/sell", ...)
-//
-// Mounted at:
-//
-//     /milk
-//
-// Final URLs:
-//
-//     GET  /milk/sales
-//     POST /milk/sales/price
-//     POST /milk/sales/sell
-//
 // ==========================================================
 
 let milkSalesRoutes;
@@ -284,15 +632,16 @@ try {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // ACCOUNTS
-// ----------------------------------------------------------
+// ==========================================================
 
 let accountsRoutes;
 
 try {
 
-  accountsRoutes = require("./routes/accounts");
+  accountsRoutes =
+    require("./routes/accounts");
 
 } catch (err) {
 
@@ -312,7 +661,8 @@ let networthRoutes;
 
 try {
 
-  networthRoutes = require("./routes/networth");
+  networthRoutes =
+    require("./routes/networth");
 
 } catch (err) {
 
@@ -332,7 +682,8 @@ let financialsRoutes;
 
 try {
 
-  financialsRoutes = require("./routes/financials");
+  financialsRoutes =
+    require("./routes/financials");
 
 } catch (err) {
 
@@ -352,7 +703,8 @@ let storageRoutes;
 
 try {
 
-  storageRoutes = require("./routes/storage");
+  storageRoutes =
+    require("./routes/storage");
 
 } catch (err) {
 
@@ -544,7 +896,8 @@ const socketHandler =
 // APP
 // ==========================================================
 
-const app = express();
+const app =
+  express();
 
 const server =
   http.createServer(app);
@@ -604,9 +957,11 @@ app.use(
         ? 200
         : 1000,
 
-    standardHeaders: true,
+    standardHeaders:
+      true,
 
-    legacyHeaders: false,
+    legacyHeaders:
+      false,
 
     message: {
 
@@ -682,7 +1037,11 @@ const io =
   );
 
 
-app.set("io", io);
+app.set(
+  "io",
+  io
+);
+
 
 socketHandler(io);
 
@@ -695,9 +1054,11 @@ app.use(
 
   express.urlencoded({
 
-    extended: true,
+    extended:
+      true,
 
-    limit: "10mb"
+    limit:
+      "10mb"
 
   })
 
@@ -708,7 +1069,8 @@ app.use(
 
   express.json({
 
-    limit: "10mb"
+    limit:
+      "10mb"
 
   })
 
@@ -775,11 +1137,14 @@ app.use(
 
     cookie: {
 
-      httpOnly: true,
+      httpOnly:
+        true,
 
-      secure: isProduction,
+      secure:
+        isProduction,
 
-      sameSite: "lax",
+      sameSite:
+        "lax",
 
       maxAge:
         1000 *
@@ -842,7 +1207,8 @@ app.get(
 
     return res.status(200).json({
 
-      status: "ok",
+      status:
+        "ok",
 
       environment:
         process.env.NODE_ENV ||
@@ -930,11 +1296,6 @@ app.set(
 // ROUTE MOUNTING
 // ==========================================================
 
-
-// ----------------------------------------------------------
-// INDEX
-// ----------------------------------------------------------
-
 if (indexRoutes) {
 
   app.use(
@@ -944,10 +1305,6 @@ if (indexRoutes) {
 
 }
 
-
-// ----------------------------------------------------------
-// CREATE INVITE
-// ----------------------------------------------------------
 
 if (createRoutes) {
 
@@ -959,10 +1316,6 @@ if (createRoutes) {
 }
 
 
-// ----------------------------------------------------------
-// AUTH
-// ----------------------------------------------------------
-
 if (authRoutes) {
 
   app.use(
@@ -972,10 +1325,6 @@ if (authRoutes) {
 
 }
 
-
-// ----------------------------------------------------------
-// UPDATE
-// ----------------------------------------------------------
 
 if (updateRoutes) {
 
@@ -987,10 +1336,6 @@ if (updateRoutes) {
 }
 
 
-// ----------------------------------------------------------
-// ADD DAIRY / ASSET
-// ----------------------------------------------------------
-
 if (addRoutes) {
 
   app.use(
@@ -1000,10 +1345,6 @@ if (addRoutes) {
 
 }
 
-
-// ----------------------------------------------------------
-// PROFILE
-// ----------------------------------------------------------
 
 if (profileRoutes) {
 
@@ -1017,12 +1358,6 @@ if (profileRoutes) {
 
 // ==========================================================
 // MILK
-// ==========================================================
-//
-// Existing routes/milk.js.
-//
-// Left exactly as its own independent router.
-//
 // ==========================================================
 
 if (milkRoutes) {
@@ -1038,28 +1373,6 @@ if (milkRoutes) {
 // ==========================================================
 // MILK SALES
 // ==========================================================
-//
-// FILE:
-//
-//     routes/milkSales.js
-//
-// IMPORTANT:
-//
-// This is a separate router from:
-//
-//     routes/milk.js
-//
-// MOUNT:
-//
-//     /milk
-//
-// Final URLs:
-//
-//     GET  /milk-sales
-//     POST /milk-sales/price
-//     POST /milk-sales/sell
-//
-// ==========================================================
 
 if (milkSalesRoutes) {
 
@@ -1071,9 +1384,9 @@ if (milkSalesRoutes) {
 }
 
 
-// ----------------------------------------------------------
+// ==========================================================
 // ACCOUNTS
-// ----------------------------------------------------------
+// ==========================================================
 
 if (accountsRoutes) {
 
@@ -1280,7 +1593,8 @@ app.use(
       err.code === "LIMIT_FILE_SIZE"
     ) {
 
-      statusCode = 400;
+      statusCode =
+        400;
 
       err.message =
         "The uploaded image is too large. Maximum size is 5MB.";
@@ -1294,13 +1608,26 @@ app.use(
 
       const views = {
 
-        400: "400",
-        401: "401",
-        403: "403",
-        404: "404",
-        409: "409",
-        422: "422",
-        500: "500"
+        400:
+          "400",
+
+        401:
+          "401",
+
+        403:
+          "403",
+
+        404:
+          "404",
+
+        409:
+          "409",
+
+        422:
+          "422",
+
+        500:
+          "500"
 
       };
 
@@ -1339,7 +1666,8 @@ app.use(
       statusCode
     ).json({
 
-      success: false,
+      success:
+        false,
 
       message:
 
@@ -1538,5 +1866,14 @@ const bootstrap = async () => {
 // ==========================================================
 // START APPLICATION
 // ==========================================================
+//
+// Cleanup mode exits before reaching this point.
+// Normal mode starts the application normally.
+//
+// ==========================================================
 
-bootstrap();
+if (!cleanupRequested) {
+
+  bootstrap();
+
+}
