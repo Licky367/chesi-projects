@@ -1043,7 +1043,7 @@ if (profileRoutes) {
 if (extrasRoutes) {
 
     app.use(
-        "/extras",
+        "/extra",
         extrasRoutes
     );
 
