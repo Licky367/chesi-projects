@@ -1,6 +1,48 @@
 // ==========================================================
 // services/networthService.js
 // ==========================================================
+//
+// NET WORTH SERVICE
+//
+// Handles:
+//
+//     • Net Worth dashboard
+//     • Dairy Farm structures
+//     • Manual structure / facility assets
+//     • Individual asset retrieval
+//     • Asset updates
+//
+// RECORD IDENTITY:
+//
+//     code < 0
+//         Dairy Farm
+//
+//     code > 0
+//         Animal
+//
+//     code === null
+//         Structure / Facility / Equipment
+//
+// IMPORTANT:
+//
+//     _id
+//     code
+//     assetCode
+//
+// are system-controlled and are NEVER changed by updateAsset().
+//
+// STRUCTURE INFORMATION:
+//
+//     about
+//     mission
+//     refNo
+//     vision
+//
+// `refNo` is the canonical field name used throughout this
+// service. It matches the Net Worth edit form and controller.
+//
+// ==========================================================
+
 
 const mongoose =
     require("mongoose");
@@ -1308,17 +1350,18 @@ async function getAddAsset(
 //
 //     assetCode = negative Dairy Farm code
 //
-// Dairy information fields:
+// Structure information:
 //
 //     about
-//     regNo
 //     mission
+//     refNo
 //     vision
 //
 // IMPORTANT:
-//     `regNo` is a normal Dairy schema field.
-//     It is NOT the same thing as `code`.
 //
+//     `refNo` is the canonical reference-number field.
+//
+// ==========================================================
 
 async function addAsset(
     id,
@@ -1488,24 +1531,14 @@ async function addAsset(
                 body.location
             ),
 
+
         // --------------------------------------------------
-        // DAIRY INFORMATION
+        // STRUCTURE / DAIRY INFORMATION
         // --------------------------------------------------
-        //
-        // These are actual schema fields.
-        //
-        // `regNo` is the Dairy registration number.
-        // It is deliberately NOT assigned to `code`.
-        //
 
         about:
             parseText(
                 body.about
-            ),
-
-        regNo:
-            parseText(
-                body.regNo
             ),
 
         mission:
@@ -1513,10 +1546,16 @@ async function addAsset(
                 body.mission
             ),
 
+        refNo:
+            parseText(
+                body.refNo
+            ),
+
         vision:
             parseText(
                 body.vision
             ),
+
 
         // --------------------------------------------------
         // STATUS
@@ -1525,24 +1564,17 @@ async function addAsset(
         status:
             submittedStatus,
 
+
         // --------------------------------------------------
         // SYSTEM IDENTITY
         // --------------------------------------------------
-        //
-        // Structure:
-        //
-        //     code = null
-        //
-        // Parent:
-        //
-        //     assetCode = negative farm code
-        //
 
         code:
             null,
 
         assetCode:
             farmCode,
+
 
         // --------------------------------------------------
         // ACQUISITION
@@ -1801,13 +1833,13 @@ async function getAsset(
 //     code
 //     assetCode
 //
-// Editable schema fields include:
+// Editable fields:
 //
 //     name
 //     type
 //     about
-//     regNo
 //     mission
+//     refNo
 //     vision
 //     description
 //     condition
@@ -1818,6 +1850,9 @@ async function getAsset(
 //     valuationDate
 //     acquisitionDate
 //     profileImage
+//     dateOfBirth
+//     mass
+//     isMilking
 //
 // ==========================================================
 
@@ -2074,34 +2109,6 @@ async function updateAsset(
 
 
     // ======================================================
-    // REGISTRATION NUMBER
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // `regNo` is the schema's Dairy registration identity.
-    //
-    // It is completely separate from:
-    //
-    //     code
-    //
-    // `code` continues to represent the system's
-    // numeric record identity.
-    //
-
-    if (
-        body.regNo !== undefined
-    ) {
-
-        dairy.regNo =
-            parseText(
-                body.regNo
-            );
-
-    }
-
-
-    // ======================================================
     // MISSION
     // ======================================================
 
@@ -2112,6 +2119,34 @@ async function updateAsset(
         dairy.mission =
             parseText(
                 body.mission
+            );
+
+    }
+
+
+    // ======================================================
+    // REFERENCE NUMBER
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // The application now uses:
+    //
+    //     refNo
+    //
+    // consistently.
+    //
+    // Do NOT use regNo here.
+    //
+    // ======================================================
+
+    if (
+        body.refNo !== undefined
+    ) {
+
+        dairy.refNo =
+            parseText(
+                body.refNo
             );
 
     }
