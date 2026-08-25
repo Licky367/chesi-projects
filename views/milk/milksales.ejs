@@ -5,12 +5,22 @@
 
      STANDALONE PAGE
      ---------------------------------------------------------
-     - No external CSS
-     - All CSS contained in this file
-     - Uses backend summary data
-     - Uses backend farm availability where supplied
-     - Client-side validation prevents over-allocation
-     - Server-side validation remains authoritative
+     IMPORTANT DATA RULE
+
+     The visible farms are the scope of this page.
+
+     Therefore:
+
+         Produced  = sum of visible farm production
+         Sold      = sum of sales allocated to visible farms
+         Available = sum of visible farm availability
+         Sales     = sold milk from visible farms × price
+
+     Page-level/global backend totals are NOT used for the
+     overview when they can include farms outside this table.
+
+     No external CSS.
+     All styling is contained in this file.
 ========================================================= -->
 
 
@@ -65,107 +75,18 @@ const pageDay =
     );
 
 
+const rawPrice =
+    typeof price !== "undefined"
+        ? price
+        : pageSummary.price;
+
+
 const pagePrice =
     Number.isFinite(
-        Number(
-            typeof price !== "undefined"
-                ? price
-                : pageSummary.price
-        )
+        Number(rawPrice)
     )
-        ? Number(
-            typeof price !== "undefined"
-                ? price
-                : pageSummary.price
-        )
+        ? Number(rawPrice)
         : 50;
-
-
-/* =========================================================
-   BACKEND TOTALS
-========================================================= */
-
-const backendProduced =
-    Number.isFinite(
-        Number(
-            typeof produced !== "undefined"
-                ? produced
-                : pageSummary.produced
-        )
-    )
-        ? Number(
-            typeof produced !== "undefined"
-                ? produced
-                : pageSummary.produced
-        )
-        : 0;
-
-
-const backendConsumed =
-    Number.isFinite(
-        Number(
-            typeof consumed !== "undefined"
-                ? consumed
-                : pageSummary.consumed
-        )
-    )
-        ? Number(
-            typeof consumed !== "undefined"
-                ? consumed
-                : pageSummary.consumed
-        )
-        : 0;
-
-
-const backendCash =
-    Number.isFinite(
-        Number(
-            typeof cash !== "undefined"
-                ? cash
-                : pageSummary.cash
-        )
-    )
-        ? Number(
-            typeof cash !== "undefined"
-                ? cash
-                : pageSummary.cash
-        )
-        : 0;
-
-
-/*
- * IMPORTANT:
- *
- * `available` should come from the controller once we align it.
- *
- * Fallback:
- *
- * produced - consumed
- *
- * This fallback is only for compatibility.
- */
-
-const backendAvailable =
-    Number.isFinite(
-        Number(
-            typeof available !== "undefined"
-                ? available
-                : pageSummary.available
-        )
-    )
-        ? Math.max(
-            0,
-            Number(
-                typeof available !== "undefined"
-                    ? available
-                    : pageSummary.available
-            )
-        )
-        : Math.max(
-            0,
-            backendProduced -
-            backendConsumed
-        );
 
 
 /* =========================================================
@@ -173,6 +94,7 @@ const backendAvailable =
 ========================================================= */
 
 const pageFarms =
+    typeof farms !== "undefined" &&
     Array.isArray(farms)
         ? farms
         : [];
@@ -204,6 +126,16 @@ const sales =
 
 /* =========================================================
    FARM SALES MAP
+   ---------------------------------------------------------
+   Every sale can contain allocations such as:
+
+       {
+           farm: ObjectId,
+           liters: Number
+       }
+
+   We aggregate ONLY allocations belonging to farms that
+   are actually visible in `pageFarms`.
 ========================================================= */
 
 const farmSalesMap =
@@ -270,26 +202,29 @@ sales.forEach(
 
 /* =========================================================
    BACKEND FARM AVAILABILITY
-=========================================================
-
-   The controller may provide:
-
-       farmAvailability
-
-   Supported forms:
+   ---------------------------------------------------------
+   Supported:
 
        Map
        Array
        Object
 
-   Each item may contain:
+   Examples:
 
-       farm
-       farmId
-       _id
-       produced
-       sold
-       available
+       farmAvailability = Map(...)
+
+       farmAvailability = [
+           {
+               farm: "...",
+               available: 120
+           }
+       ]
+
+       farmAvailability = {
+           "farmId": {
+               available: 120
+           }
+       }
 ========================================================= */
 
 const rawFarmAvailability =
@@ -309,6 +244,76 @@ function getBackendFarmAvailability(
 
     const id =
         farmId.toString();
+
+
+    /* -----------------------------------------------------
+       MAP
+    ----------------------------------------------------- */
+
+    if (
+        rawFarmAvailability instanceof Map
+    ) {
+
+        const value =
+            rawFarmAvailability.get(
+                id
+            ) ||
+            rawFarmAvailability.get(
+                farmId
+            );
+
+
+        if (
+            value !== undefined &&
+            value !== null
+        ) {
+
+            if (
+                typeof value === "object"
+            ) {
+
+                const available =
+                    Number(
+                        value.available
+                    );
+
+
+                if (
+                    Number.isFinite(
+                        available
+                    )
+                ) {
+
+                    return Math.max(
+                        0,
+                        available
+                    );
+
+                }
+
+            }
+
+
+            const numeric =
+                Number(value);
+
+
+            if (
+                Number.isFinite(
+                    numeric
+                )
+            ) {
+
+                return Math.max(
+                    0,
+                    numeric
+                );
+
+            }
+
+        }
+
+    }
 
 
     /* -----------------------------------------------------
@@ -347,19 +352,21 @@ function getBackendFarmAvailability(
 
         if (item) {
 
-            const value =
+            const available =
                 Number(
                     item.available
                 );
 
 
             if (
-                Number.isFinite(value)
+                Number.isFinite(
+                    available
+                )
             ) {
 
                 return Math.max(
                     0,
-                    value
+                    available
                 );
 
             }
@@ -374,8 +381,7 @@ function getBackendFarmAvailability(
     ----------------------------------------------------- */
 
     if (
-        typeof rawFarmAvailability ===
-        "object" &&
+        typeof rawFarmAvailability === "object" &&
         !Array.isArray(
             rawFarmAvailability
         )
@@ -386,7 +392,8 @@ function getBackendFarmAvailability(
 
 
         if (
-            value !== undefined
+            value !== undefined &&
+            value !== null
         ) {
 
             if (
@@ -416,9 +423,7 @@ function getBackendFarmAvailability(
 
 
             const numeric =
-                Number(
-                    value
-                );
+                Number(value);
 
 
             if (
@@ -446,6 +451,11 @@ function getBackendFarmAvailability(
 
 /* =========================================================
    VISIBLE FARM DATA
+   ---------------------------------------------------------
+   THIS is now the authoritative dataset for the page.
+
+   Every figure shown in the overview and every figure used
+   by the allocation system comes from these visible farms.
 ========================================================= */
 
 const visibleFarmData =
@@ -457,6 +467,10 @@ const visibleFarmData =
                     ? farm._id.toString()
                     : "";
 
+
+            /* ---------------------------------------------
+               PRODUCTION
+            --------------------------------------------- */
 
             const productionEntry =
                 farmProduction.find(
@@ -473,32 +487,45 @@ const visibleFarmData =
                         productionEntry?.liters
                     )
                 )
-                    ? Number(
-                        productionEntry.liters
+                    ? Math.max(
+                        0,
+                        Number(
+                            productionEntry.liters
+                        )
                     )
                     : 0;
 
 
+            /* ---------------------------------------------
+               SOLD
+            --------------------------------------------- */
+
             const sold =
-                Number(
-                    farmSalesMap.get(
-                        farmId
-                    )
-                ) || 0;
+                Math.max(
+                    0,
+                    Number(
+                        farmSalesMap.get(
+                            farmId
+                        )
+                    ) || 0
+                );
 
 
-            /*
-             * Prefer backend farm availability.
-             *
-             * Only fall back to local calculation
-             * when the controller has not supplied it.
-             */
+            /* ---------------------------------------------
+               AVAILABLE
+            --------------------------------------------- */
 
             const backendFarmAvailable =
                 getBackendFarmAvailability(
                     farmId
                 );
 
+
+            /*
+             * Only use local calculation as a compatibility
+             * fallback when the backend did not provide
+             * farm-specific availability.
+             */
 
             const calculatedAvailable =
                 Math.max(
@@ -545,7 +572,9 @@ const visibleFarmData =
 
 
 /* =========================================================
-   TOTALS
+   VISIBLE FARM TOTALS
+   ---------------------------------------------------------
+   THESE ARE THE TOTALS USED EVERYWHERE ON THIS PAGE.
 ========================================================= */
 
 const visibleFarmProduction =
@@ -584,42 +613,83 @@ const visibleFarmAvailable =
     );
 
 
-/*
- * IMPORTANT:
- *
- * Overall available must come from the backend.
- *
- * The farm total is useful for displaying the
- * breakdown, but `pageAvailable` is the authoritative
- * page-level limit.
- */
+/* =========================================================
+   PAGE TOTALS
+   ---------------------------------------------------------
+   IMPORTANT:
+
+       pageProduced  = visibleFarmProduction
+       pageSold      = visibleFarmSold
+       pageAvailable = visibleFarmAvailable
+
+   Nothing outside the visible farm table contributes here.
+========================================================= */
+
+const pageProduced =
+    Math.max(
+        0,
+        Number(
+            visibleFarmProduction
+        ) || 0
+    );
+
+
+const pageSold =
+    Math.max(
+        0,
+        Number(
+            visibleFarmSold
+        ) || 0
+    );
+
 
 const pageAvailable =
     Math.max(
         0,
         Number(
-            backendAvailable
+            visibleFarmAvailable
         ) || 0
     );
 
 
 /* =========================================================
-   SALES TOTALS
+   PAGE SALES VALUE
+   ---------------------------------------------------------
+   Sales value is based ONLY on milk sold by the visible
+   farms.
+
+   This keeps the amount card aligned with the farm table.
+========================================================= */
+
+const pageSalesValue =
+    Math.max(
+        0,
+        pageSold *
+        pagePrice
+    );
+
+
+/* =========================================================
+   SALES COUNT
 ========================================================= */
 
 const salesCount =
     sales.length;
 
 
+/* =========================================================
+   AVAILABILITY PERCENTAGE
+========================================================= */
+
 const pageAvailablePercentage =
-    backendProduced > 0
+    pageProduced > 0
         ? Math.min(
             100,
             Math.max(
                 0,
                 (
                     pageAvailable /
-                    backendProduced
+                    pageProduced
                 ) * 100
             )
         )
@@ -1481,10 +1551,6 @@ const pageAvailablePercentage =
 }
 
 
-/* =========================================================
-   INVALID INPUT
-========================================================= */
-
 .milk-sales-page .form-control.invalid {
 
     border-color:
@@ -2086,7 +2152,7 @@ const pageAvailablePercentage =
 
 
 /* =========================================================
-   ALLOCATION TOTAL STATUS
+   ALLOCATION STATUS
 ========================================================= */
 
 .milk-sales-page .allocation-status {
@@ -2198,7 +2264,7 @@ const pageAvailablePercentage =
 
 
 /* =========================================================
-   FARM AVAILABILITY NOTE
+   FARM AVAILABILITY
 ========================================================= */
 
 .milk-sales-page .farm-availability {
@@ -2244,7 +2310,7 @@ const pageAvailablePercentage =
 
 
 /* =========================================================
-   SUMMARY
+   SALE SUMMARY
 ========================================================= */
 
 .milk-sales-page .sale-summary {
@@ -2712,6 +2778,15 @@ const pageAvailablePercentage =
 
     <!-- =====================================================
          OVERVIEW
+
+         IMPORTANT:
+         These four values come from visibleFarmData.
+
+         They are intentionally NOT using:
+             backendProduced
+             backendConsumed
+             backendCash
+             backendAvailable
     ====================================================== -->
 
     <div class="overview-grid">
@@ -2730,7 +2805,7 @@ const pageAvailablePercentage =
                 </span>
 
                 <strong>
-                    <%= backendProduced.toFixed(2) %> L
+                    <%= pageProduced.toFixed(2) %> L
                 </strong>
 
             </div>
@@ -2772,7 +2847,7 @@ const pageAvailablePercentage =
                 </span>
 
                 <strong>
-                    <%= backendConsumed.toFixed(2) %> L
+                    <%= pageSold.toFixed(2) %> L
                 </strong>
 
             </div>
@@ -2793,7 +2868,7 @@ const pageAvailablePercentage =
                 </span>
 
                 <strong>
-                    KSh <%= backendCash.toFixed(2) %>
+                    KSh <%= pageSalesValue.toFixed(2) %>
                 </strong>
 
             </div>
@@ -3036,6 +3111,10 @@ const pageAvailablePercentage =
 
                         <% }); %>
 
+
+                        <!-- =================================
+                             AUTHORITATIVE FARM TOTALS
+                        ================================== -->
 
                         <tr class="total-row">
 
@@ -3299,8 +3378,8 @@ const pageAvailablePercentage =
                             </h3>
 
                             <p>
-                                Farm availability is calculated
-                                from today's production and sales.
+                                Availability is based only on
+                                the farms shown in the table above.
                             </p>
 
                         </div>
@@ -3543,6 +3622,10 @@ document.addEventListener(
 
         /* =================================================
            PAGE DATA
+
+           IMPORTANT:
+           totalAvailable is the sum of the visible farms,
+           not a global backend availability figure.
         ================================================= */
 
         const page =
@@ -3634,7 +3717,7 @@ document.addEventListener(
 
 
         /* =================================================
-           GET REQUIRED
+           REQUIRED
         ================================================= */
 
         function getRequired() {
@@ -3650,7 +3733,7 @@ document.addEventListener(
 
 
         /* =================================================
-           GET ALLOCATED
+           ALLOCATED
         ================================================= */
 
         function getAllocated() {
@@ -3680,7 +3763,7 @@ document.addEventListener(
 
 
         /* =================================================
-           GET SELECTED FARMS
+           ROWS
         ================================================= */
 
         function getRows() {
@@ -3768,12 +3851,6 @@ document.addEventListener(
             }
 
 
-            /*
-             * If the farm changes and the existing
-             * liters exceed the newly selected farm,
-             * immediately cap the value.
-             */
-
             const current =
                 Number(
                     input.value
@@ -3781,7 +3858,8 @@ document.addEventListener(
 
 
             if (
-                current > available
+                current >
+                available
             ) {
 
                 input.value =
@@ -3795,7 +3873,7 @@ document.addEventListener(
 
 
         /* =================================================
-           VALIDATE FORM STATE
+           VALIDATE
         ================================================= */
 
         function validateState() {
@@ -3820,11 +3898,9 @@ document.addEventListener(
                 "Enter the customer's required quantity.";
 
 
-            /*
-             * ---------------------------------------------
-             * REQUIRED QUANTITY
-             * ---------------------------------------------
-             */
+            /* ---------------------------------------------
+               REQUIRED QUANTITY
+            --------------------------------------------- */
 
             if (
                 required <= 0
@@ -3839,11 +3915,9 @@ document.addEventListener(
             }
 
 
-            /*
-             * ---------------------------------------------
-             * TOTAL AVAILABLE
-             * ---------------------------------------------
-             */
+            /* ---------------------------------------------
+               VISIBLE FARM TOTAL AVAILABILITY
+            --------------------------------------------- */
 
             else if (
                 required >
@@ -3854,16 +3928,14 @@ document.addEventListener(
                     false;
 
                 message =
-                    "The customer's requested quantity exceeds the total milk available.";
+                    "The customer's requested quantity exceeds the milk available from the farms shown above.";
 
             }
 
 
-            /*
-             * ---------------------------------------------
-             * ALLOCATIONS
-             * ---------------------------------------------
-             */
+            /* ---------------------------------------------
+               FARM VALIDATION
+            --------------------------------------------- */
 
             const usedFarms =
                 new Set();
@@ -3954,10 +4026,6 @@ document.addEventListener(
                 }
 
 
-                /*
-                 * Duplicate farm
-                 */
-
                 if (
                     usedFarms.has(
                         farmId
@@ -3979,10 +4047,6 @@ document.addEventListener(
                     farmId
                 );
 
-
-                /*
-                 * Farm-specific availability
-                 */
 
                 const option =
                     select.options[
@@ -4017,11 +4081,9 @@ document.addEventListener(
             }
 
 
-            /*
-             * ---------------------------------------------
-             * TOTAL ALLOCATION
-             * ---------------------------------------------
-             */
+            /* ---------------------------------------------
+               TOTAL ALLOCATION
+            --------------------------------------------- */
 
             if (
                 valid &&
@@ -4033,16 +4095,14 @@ document.addEventListener(
                     false;
 
                 message =
-                    "The total allocated milk exceeds the total milk available.";
+                    "The total allocated milk exceeds the milk available from the visible farms.";
 
             }
 
 
-            /*
-             * ---------------------------------------------
-             * EXACT MATCH
-             * ---------------------------------------------
-             */
+            /* ---------------------------------------------
+               EXACT MATCH
+            --------------------------------------------- */
 
             if (
                 valid &&
@@ -4082,11 +4142,9 @@ document.addEventListener(
             }
 
 
-            /*
-             * ---------------------------------------------
-             * UPDATE STATUS
-             * ---------------------------------------------
-             */
+            /* ---------------------------------------------
+               STATUS
+            --------------------------------------------- */
 
             statusOutput.classList.remove(
                 "good",
@@ -4141,7 +4199,10 @@ document.addEventListener(
 
             else if (
                 required > 0 &&
-                allocated === required
+                Math.abs(
+                    allocated -
+                    required
+                ) <= 0.001
             ) {
 
                 statusOutput.classList.add(
@@ -4157,12 +4218,6 @@ document.addEventListener(
                     : message;
 
 
-            /*
-             * ---------------------------------------------
-             * SUBMIT BUTTON
-             * ---------------------------------------------
-             */
-
             submitButton.disabled =
                 !valid;
 
@@ -4173,7 +4228,7 @@ document.addEventListener(
 
 
         /* =================================================
-           UPDATE SUMMARY
+           UPDATE SALE SUMMARY
         ================================================= */
 
         function updateSummary() {
@@ -4249,6 +4304,8 @@ document.addEventListener(
                         row
                     );
 
+                    updateSelectedFarmOptions();
+
                     updateSummary();
 
                 }
@@ -4280,12 +4337,6 @@ document.addEventListener(
                         ) || 0;
 
 
-                    /*
-                     * Immediately prevent an individual
-                     * farm allocation from exceeding its
-                     * available milk.
-                     */
-
                     if (
                         value >
                         available
@@ -4311,7 +4362,7 @@ document.addEventListener(
 
 
         /* =================================================
-           INITIAL ROWS
+           INITIAL ROW
         ================================================= */
 
         container
@@ -4334,10 +4385,6 @@ document.addEventListener(
                 const required =
                     getRequired();
 
-
-                /*
-                 * Browser-level maximum enforcement.
-                 */
 
                 if (
                     required >
@@ -4384,15 +4431,9 @@ document.addEventListener(
 
 
                 if (!firstRow) {
-
                     return;
-
                 }
 
-
-                /*
-                 * Do not allow more rows than farms.
-                 */
 
                 if (
                     index >=
@@ -4461,11 +4502,6 @@ document.addEventListener(
                 }
 
 
-                /*
-                 * Disable farms already selected
-                 * in other rows.
-                 */
-
                 select
                     .querySelectorAll(
                         "option"
@@ -4499,7 +4535,7 @@ document.addEventListener(
 
 
         /* =================================================
-           PREVENT DUPLICATE FARM SELECTIONS
+           PREVENT DUPLICATE FARMS
         ================================================= */
 
         function updateSelectedFarmOptions() {
@@ -4571,42 +4607,12 @@ document.addEventListener(
 
 
         /* =================================================
-           UPDATE SELECTS WHEN FARM CHANGES
-        ================================================= */
-
-        container.addEventListener(
-            "change",
-            function(event) {
-
-                if (
-                    event.target.classList.contains(
-                        "farm-select"
-                    )
-                ) {
-
-                    updateSelectedFarmOptions();
-
-                }
-
-            }
-        );
-
-
-        /* =================================================
            FINAL SUBMIT VALIDATION
-           -----------------------------------------------
-           This is intentionally repeated here.
-           The server remains authoritative.
         ================================================= */
 
         form.addEventListener(
             "submit",
             function(event) {
-
-                /*
-                 * Never allow submission if the complete
-                 * client-side validation fails.
-                 */
 
                 if (
                     !validateState()
@@ -4631,9 +4637,9 @@ document.addEventListener(
                     );
 
 
-                /*
-                 * HARD TOTAL AVAILABLE CHECK
-                 */
+                /* -----------------------------------------
+                   VISIBLE FARM TOTAL
+                ----------------------------------------- */
 
                 if (
                     required >
@@ -4643,7 +4649,7 @@ document.addEventListener(
                     event.preventDefault();
 
                     alert(
-                        "The customer's requested milk exceeds the total available milk."
+                        "The customer's requested milk exceeds the total available milk from the visible farms."
                     );
 
                     return;
@@ -4659,7 +4665,7 @@ document.addEventListener(
                     event.preventDefault();
 
                     alert(
-                        "The total allocated milk exceeds the total available milk."
+                        "The total allocated milk exceeds the total available milk from the visible farms."
                     );
 
                     return;
@@ -4667,9 +4673,9 @@ document.addEventListener(
                 }
 
 
-                /*
-                 * EXACT MATCH
-                 */
+                /* -----------------------------------------
+                   EXACT MATCH
+                ----------------------------------------- */
 
                 if (
                     Math.abs(
@@ -4689,9 +4695,9 @@ document.addEventListener(
                 }
 
 
-                /*
-                 * FARM CHECK
-                 */
+                /* -----------------------------------------
+                   FARM CHECK
+                ----------------------------------------- */
 
                 const usedFarms =
                     new Set();
