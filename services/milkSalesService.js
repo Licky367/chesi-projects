@@ -1,6 +1,34 @@
 // ==========================================================
 // services/milkSalesService.js
 // ==========================================================
+//
+// PURPOSE
+// ----------------------------------------------------------
+// Handles milk sales business logic.
+//
+// IMPORTANT AVAILABILITY RULE
+// ----------------------------------------------------------
+//
+// Overall:
+//     available = total production - total sold
+//
+// Farm:
+//     available = farm production - farm sold
+//
+// Farm sold is NOT stored as farmProduction[].sold in MongoDB.
+//
+// It is calculated from:
+//
+//     summary.sales[].farmAllocations[]
+//
+// The service enriches farmProduction for the sales page with:
+//
+//     sold
+//     available
+//
+// so the view does not need to reconstruct farm availability.
+//
+// ==========================================================
 
 
 const mongoose =
@@ -391,6 +419,18 @@ async function getSummary(
 // ==========================================================
 // FARM SOLD MAP
 // ==========================================================
+//
+// Builds:
+//
+//     farmId -> total liters sold
+//
+// from:
+//
+//     summary.sales[].farmAllocations[]
+//
+// This is the authoritative source for farm-level sold milk.
+//
+// ==========================================================
 
 function getFarmSalesMap(
     summary
@@ -402,7 +442,7 @@ function getFarmSalesMap(
 
     const sales =
         Array.isArray(
-            summary.sales
+            summary?.sales
         )
 
             ? summary.sales
@@ -416,6 +456,7 @@ function getFarmSalesMap(
     ) {
 
         if (
+            !sale ||
             !Array.isArray(
                 sale.farmAllocations
             )
@@ -465,14 +506,18 @@ function getFarmSalesMap(
 
                 farmId,
 
-                (
-                    map.get(farmId) ||
-                    0
+                round(
+
+                    (
+                        map.get(
+                            farmId
+                        ) ||
+                        0
+                    ) +
+
+                    liters
+
                 )
-
-                +
-
-                liters
 
             );
 
@@ -497,12 +542,26 @@ function getFarmProducedLiters(
 
     const production =
         Array.isArray(
-            summary.farmProduction
+            summary?.farmProduction
         )
 
             ? summary.farmProduction
 
             : [];
+
+
+    const targetFarmId =
+        farmId &&
+        farmId.toString
+            ? farmId.toString()
+            : "";
+
+
+    if (!targetFarmId) {
+
+        return 0;
+
+    }
 
 
     const entry =
@@ -521,7 +580,7 @@ function getFarmProducedLiters(
 
                 return (
                     item.farm.toString() ===
-                    farmId.toString()
+                    targetFarmId
                 );
 
             }
@@ -543,13 +602,68 @@ function getFarmProducedLiters(
 
     return liters === null
         ? 0
-        : liters;
+        : round(
+            liters
+        );
+
+}
+
+
+// ==========================================================
+// GET FARM SOLD LITERS
+// ==========================================================
+
+function getFarmSoldLiters(
+    summary,
+    farmId
+) {
+
+    if (
+        !farmId
+    ) {
+
+        return 0;
+
+    }
+
+
+    const salesMap =
+        getFarmSalesMap(
+            summary
+        );
+
+
+    const farmIdString =
+        farmId.toString();
+
+
+    const sold =
+        salesMap.get(
+            farmIdString
+        );
+
+
+    return sold === undefined
+        ? 0
+        : round(
+            sold
+        );
 
 }
 
 
 // ==========================================================
 // GET FARM AVAILABLE
+// ==========================================================
+//
+// RULE:
+//
+//     farm.available
+//         = farm.production
+//         - farm.sold
+//
+// Never return a negative value.
+//
 // ==========================================================
 
 function getFarmAvailable(
@@ -564,16 +678,11 @@ function getFarmAvailable(
         );
 
 
-    const salesMap =
-        getFarmSalesMap(
-            summary
-        );
-
-
     const sold =
-        salesMap.get(
-            farmId.toString()
-        ) || 0;
+        getFarmSoldLiters(
+            summary,
+            farmId
+        );
 
 
     return Math.max(
@@ -586,6 +695,453 @@ function getFarmAvailable(
         )
 
     );
+
+}
+
+
+// ==========================================================
+// ENRICH FARM PRODUCTION
+// ==========================================================
+//
+// Converts:
+//
+//     farmProduction[]
+//
+// from:
+//
+//     {
+//         farm,
+//         farmCode,
+//         liters
+//     }
+//
+// into:
+//
+//     {
+//         farm,
+//         farmCode,
+//         liters,
+//         sold,
+//         available
+//     }
+//
+// `sold` and `available` are derived values.
+// They are NOT persisted into MongoDB.
+//
+// ==========================================================
+
+function buildFarmProductionWithAvailability(
+    summary
+) {
+
+    const production =
+        Array.isArray(
+            summary?.farmProduction
+        )
+
+            ? summary.farmProduction
+
+            : [];
+
+
+    const salesMap =
+        getFarmSalesMap(
+            summary
+        );
+
+
+    return production.map(
+        entry => {
+
+            if (
+                !entry
+            ) {
+
+                return null;
+
+            }
+
+
+            const farmId =
+                entry.farm &&
+                entry.farm.toString
+                    ? entry.farm.toString()
+                    : "";
+
+
+            const producedValue =
+                toNumber(
+                    entry.liters
+                );
+
+
+            const produced =
+                producedValue === null
+                    ? 0
+                    : round(
+                        producedValue
+                    );
+
+
+            const sold =
+                farmId
+                    ? round(
+                        salesMap.get(
+                            farmId
+                        ) || 0
+                    )
+                    : 0;
+
+
+            const available =
+                Math.max(
+
+                    0,
+
+                    round(
+                        produced -
+                        sold
+                    )
+
+                );
+
+
+            return {
+
+                ...entry,
+
+                liters:
+                    produced,
+
+                sold,
+
+                available
+
+            };
+
+        }
+    )
+
+    .filter(
+        Boolean
+    );
+
+}
+
+
+// ==========================================================
+// GET TOTAL PRODUCTION
+// ==========================================================
+//
+// Uses farm production when available.
+//
+// This is especially useful for the sales page because
+// farm-level production is exactly what is being allocated.
+//
+// ==========================================================
+
+function getTotalFarmProduction(
+    summary
+) {
+
+    const production =
+        Array.isArray(
+            summary?.farmProduction
+        )
+
+            ? summary.farmProduction
+
+            : [];
+
+
+    return round(
+
+        production.reduce(
+
+            (
+                total,
+                entry
+            ) => {
+
+                const liters =
+                    toNumber(
+                        entry?.liters
+                    );
+
+
+                if (
+                    liters === null
+                ) {
+
+                    return total;
+
+                }
+
+
+                return (
+                    total +
+                    liters
+                );
+
+            },
+
+            0
+
+        )
+
+    );
+
+}
+
+
+// ==========================================================
+// GET TOTAL SOLD
+// ==========================================================
+//
+// Uses the actual sales records.
+//
+// ==========================================================
+
+function getTotalSold(
+    summary
+) {
+
+    const sales =
+        Array.isArray(
+            summary?.sales
+        )
+
+            ? summary.sales
+
+            : [];
+
+
+    return round(
+
+        sales.reduce(
+
+            (
+                total,
+                sale
+            ) => {
+
+                const liters =
+                    toNumber(
+                        sale?.liters
+                    );
+
+
+                if (
+                    liters === null ||
+                    liters < 0
+                ) {
+
+                    return total;
+
+                }
+
+
+                return (
+                    total +
+                    liters
+                );
+
+            },
+
+            0
+
+        )
+
+    );
+
+}
+
+
+// ==========================================================
+// GET TOTAL CASH
+// ==========================================================
+
+function getTotalCash(
+    summary
+) {
+
+    const sales =
+        Array.isArray(
+            summary?.sales
+        )
+
+            ? summary.sales
+
+            : [];
+
+
+    return round(
+
+        sales.reduce(
+
+            (
+                total,
+                sale
+            ) => {
+
+                const cash =
+                    toNumber(
+                        sale?.cash
+                    );
+
+
+                if (
+                    cash === null ||
+                    cash < 0
+                ) {
+
+                    return total;
+
+                }
+
+
+                return (
+                    total +
+                    cash
+                );
+
+            },
+
+            0
+
+        )
+
+    );
+
+}
+
+
+// ==========================================================
+// RECALCULATE SUMMARY AVAILABILITY
+// ==========================================================
+//
+// Overall rule:
+//
+//     available
+//         = production
+//         - sold
+//
+// Production source:
+//
+//     farmProduction
+//
+// Sold source:
+//
+//     sales
+//
+// ==========================================================
+
+function calculateSummaryAvailability(
+    summary
+) {
+
+    const farmProduction =
+        getTotalFarmProduction(
+            summary
+        );
+
+
+    const totalSold =
+        getTotalSold(
+            summary
+        );
+
+
+    const available =
+        Math.max(
+
+            0,
+
+            round(
+
+                farmProduction -
+                totalSold
+
+            )
+
+        );
+
+
+    return {
+
+        produced:
+            farmProduction,
+
+        consumed:
+            totalSold,
+
+        available
+
+    };
+
+}
+
+
+// ==========================================================
+// PREPARE SALES SUMMARY
+// ==========================================================
+//
+// This creates the complete summary object used by the
+// milk sales page.
+//
+// It does NOT save the calculated values.
+//
+// ==========================================================
+
+function prepareSalesSummary(
+    summary
+) {
+
+    const farmProduction =
+        buildFarmProductionWithAvailability(
+            summary
+        );
+
+
+    const totals =
+        calculateSummaryAvailability(
+            summary
+        );
+
+
+    const totalCash =
+        getTotalCash(
+            summary
+        );
+
+
+    return {
+
+        ...summary,
+
+        // --------------------------------------------------
+        // AUTHORITATIVE TOTALS
+        // --------------------------------------------------
+
+        produced:
+            totals.produced,
+
+        consumed:
+            totals.consumed,
+
+        available:
+            totals.available,
+
+        cash:
+            totalCash,
+
+        // --------------------------------------------------
+        // FARM PRODUCTION WITH DERIVED VALUES
+        // --------------------------------------------------
+
+        farmProduction
+
+    };
 
 }
 
@@ -618,11 +1174,25 @@ async function(
         );
 
 
-    const summary =
+    const rawSummary =
         await getSummary(
             day
         );
 
+
+    // ======================================================
+    // PREPARE AUTHORITATIVE SALES SUMMARY
+    // ======================================================
+
+    const summary =
+        prepareSalesSummary(
+            rawSummary
+        );
+
+
+    // ======================================================
+    // RETURN PAGE DATA
+    // ======================================================
 
     return {
 
@@ -1150,6 +1720,12 @@ async function(
         }
 
 
+        // ==================================================
+        // CURRENT FARM AVAILABILITY
+        //
+        // production - all previous allocations
+        // ==================================================
+
         const available =
             getFarmAvailable(
 
@@ -1332,17 +1908,23 @@ async function(
     // ======================================================
     // AVAILABLE
     //
-    // Overall available milk.
+    // Overall:
     //
-    // Farm-level availability is calculated from:
-    //
-    // farmProduction
-    //
-    // minus
-    //
-    // farmAllocations
+    //     total production - total sold
     //
     // ======================================================
+
+    const totalProduction =
+        getTotalFarmProduction(
+            summary
+        );
+
+
+    summary.produced =
+        round(
+            totalProduction
+        );
+
 
     summary.available =
         Math.max(
@@ -1351,10 +1933,7 @@ async function(
 
             round(
 
-                Number(
-                    summary.produced
-                ) -
-
+                totalProduction -
                 summary.consumed
 
             )
@@ -1402,6 +1981,18 @@ exports.getVisibleFarms =
 
 exports.getFarmAvailable =
     getFarmAvailable;
+
+
+exports.getFarmSoldLiters =
+    getFarmSoldLiters;
+
+
+exports.getFarmProducedLiters =
+    getFarmProducedLiters;
+
+
+exports.getFarmSalesMap =
+    getFarmSalesMap;
 
 
 exports.getNairobiDay =
