@@ -241,6 +241,132 @@ async (req, res) => {
 
 
 // ==========================================================
+// ASSIGN STANDALONE ASSETS
+// ==========================================================
+//
+// ASSIGNMENT FIELD:
+//
+//     user.assignedAsset
+//
+// ELIGIBLE DAIRY:
+//
+//     dairy.assetCode === null
+//     dairy.code      === null
+//
+// These are standalone / code-less assets.
+//
+// A standalone asset may be assigned to:
+//     - dairyWorker
+//     - poultryWorker
+//     - other non-admin users
+//
+// It MUST NOT be assigned to:
+//     - admin
+//
+// ==========================================================
+
+exports.assignDairyAssets =
+async (req, res) => {
+
+  try {
+
+    let {
+      assignedAssets
+    } = req.body;
+
+
+    if (
+      !assignedAssets
+    ) {
+
+      return res.redirect(
+        `/accounts/${req.params.id}`
+      );
+
+    }
+
+
+    if (
+      !Array.isArray(assignedAssets)
+    ) {
+
+      assignedAssets = [
+        assignedAssets
+      ];
+
+    }
+
+
+    await accountsService.assignDairyAssets(
+
+      req.params.id,
+
+      assignedAssets
+
+    );
+
+
+    res.redirect(
+      `/accounts/${req.params.id}`
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).send(
+      err.message ||
+      "Failed to assign assets"
+    );
+
+  }
+
+};
+
+
+// ==========================================================
+// UNASSIGN STANDALONE ASSET
+// ==========================================================
+//
+// Removes the Dairy ObjectId from:
+//
+//     user.assignedAsset
+//
+// ==========================================================
+
+exports.unassignDairyAsset =
+async (req, res) => {
+
+  try {
+
+    await accountsService.unassignDairyAsset(
+
+      req.params.id,
+
+      req.params.assetId
+
+    );
+
+
+    res.redirect(
+      `/accounts/${req.params.id}`
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).send(
+      err.message ||
+      "Failed to unassign asset"
+    );
+
+  }
+
+};
+
+
+// ==========================================================
 // DELETE USER
 // ==========================================================
 
