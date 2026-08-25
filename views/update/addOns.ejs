@@ -1,0 +1,99 @@
+<%
+// ==========================================================
+// views/update/addOns.ejs
+// ==========================================================
+//
+// FINANCIAL ADD-ONS PAGE
+//
+// DATA PROVIDED:
+//
+//     dairy
+//     assetDairies
+//     user
+//
+// CARDS:
+//
+//     addOns/s1.ejs
+//     addOns/s.revenue.ejs
+//     addOns/s.liability.ejs
+//
+// ==========================================================
+%>
+
+
+<link
+    rel="stylesheet"
+    href="/css/update/addOns.css"
+>
+
+
+<div class="addons-page">
+
+
+    <!-- ================================================ -->
+    <!-- PAGE HEADER / WELCOME CARD -->
+    <!-- ================================================ -->
+
+    <section class="addons-section">
+
+        <%- include(
+            "addOns/s1",
+            {
+                dairy: dairy,
+                user: user
+            }
+        ) %>
+
+    </section>
+
+
+    <!-- ================================================ -->
+    <!-- FINANCIAL RECORDING CARDS -->
+    <!-- ================================================ -->
+
+    <section class="addons-financial-grid">
+
+
+        <!-- ============================================ -->
+        <!-- REVENUE -->
+        <!-- ============================================ -->
+
+        <%- include(
+            "addOns/s.revenue",
+            {
+                dairy: dairy,
+                user: user
+            }
+        ) %>
+
+
+        <!-- ============================================ -->
+        <!-- LIABILITY -->
+        <!-- ============================================ -->
+
+        <%- include(
+            "addOns/s.liability",
+            {
+                dairy: dairy,
+                user: user
+            }
+        ) %>
+
+
+    </section>
+
+
+    <!-- ================================================ -->
+    <!-- ASSET DAIRIES -->
+    <!-- ================================================ -->
+    <!--
+        assetDairies is intentionally available here
+        because the controller passes it to this view.
+
+        No asset card is rendered yet because the current
+        page specification only contains the three cards.
+    -->
+    <!-- ================================================ -->
+
+
+</div>
