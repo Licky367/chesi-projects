@@ -15,6 +15,12 @@
 
 <!-- =====================================================
      FIXED UPDATE NAVIGATION
+     
+     layout.ejs already contains:
+         HEADER = 120px
+
+     Therefore this navigation starts at:
+         top: 120px
 ===================================================== -->
 
 <nav
@@ -133,7 +139,7 @@
 
     <!-- =================================================
          BOOLEAN MANAGEMENT
-
+         
          FILE:
              views/update/boolean.ejs
 
@@ -186,24 +192,44 @@
 
 
 <!-- =====================================================
-     FIXED NAVIGATION STYLES
+     UPDATE NAVIGATION STYLES
 ===================================================== -->
 
 <style>
 
     /* =====================================================
-       FIXED TOP NAVIGATION
+       LAYOUT HEADER
+       
+       layout.ejs header height:
+           120px
+    ===================================================== */
+
+    :root {
+
+        --layout-header-height: 120px;
+
+        --update-nav-height: 46px;
+
+    }
+
+
+
+    /* =====================================================
+       FIXED UPDATE NAVIGATION
+       
+       Sits immediately below layout.ejs header.
     ===================================================== */
 
     .update-fixed-nav {
 
         position: fixed;
 
-        top: 0;
+        top: var(--layout-header-height);
+
         left: 0;
         right: 0;
 
-        height: 46px;
+        height: var(--update-nav-height);
 
         display: flex;
 
@@ -216,11 +242,18 @@
 
         box-sizing: border-box;
 
-        background: var(--background-color, #ffffff);
+        background:
+            var(
+                --background-color,
+                #ffffff
+            );
 
         border-bottom:
             1px solid
-            var(--border-color, #e5e5e5);
+            var(
+                --border-color,
+                #e5e5e5
+            );
 
         box-shadow:
             0 2px 8px
@@ -231,12 +264,13 @@
 
 
     /* =====================================================
-       NAV LINKS
+       NAVIGATION LINKS
     ===================================================== */
 
     .update-nav-link {
 
         width: 42px;
+
         height: 40px;
 
         flex: 0 0 42px;
@@ -244,9 +278,11 @@
         display: flex;
 
         align-items: center;
+
         justify-content: center;
 
         padding: 0;
+
         margin: 0;
 
         border: 0;
@@ -270,7 +306,7 @@
 
 
     /* =====================================================
-       NAV ICON
+       NAVIGATION ICON
     ===================================================== */
 
     .update-nav-icon {
@@ -278,9 +314,11 @@
         display: flex;
 
         align-items: center;
+
         justify-content: center;
 
         width: 100%;
+
         height: 100%;
 
         font-size: 21px;
@@ -302,6 +340,7 @@
         font-family: inherit;
 
         appearance: none;
+
         -webkit-appearance: none;
 
     }
@@ -309,7 +348,7 @@
 
 
     /* =====================================================
-       HOVER / ACTIVE
+       HOVER
     ===================================================== */
 
     .update-nav-link:hover {
@@ -319,6 +358,11 @@
 
     }
 
+
+
+    /* =====================================================
+       ACTIVE / PRESS
+    ===================================================== */
 
     .update-nav-link:active {
 
@@ -330,28 +374,40 @@
 
     /* =====================================================
        PAGE OFFSET
-
-       Prevents the fixed navigation from covering
-       the beginning of the page.
+       
+       The page must begin below BOTH:
+       
+           1. 120px layout header
+           2. 46px update navigation
+       
+       The layout normally already accounts for the
+       header, so only the navigation height is added here.
     ===================================================== */
 
     .update-page-with-fixed-nav {
 
-        padding-top: 46px;
+        padding-top: var(--update-nav-height);
 
     }
 
 
 
     /* =====================================================
-       SMALL SCREENS
+       MOBILE
     ===================================================== */
 
     @media (max-width: 600px) {
 
-        .update-fixed-nav {
+        :root {
 
-            height: 44px;
+            --layout-header-height: 120px;
+
+            --update-nav-height: 44px;
+
+        }
+
+
+        .update-fixed-nav {
 
             gap: 4px;
 
@@ -361,6 +417,7 @@
         .update-nav-link {
 
             width: 40px;
+
             height: 38px;
 
             flex-basis: 40px;
@@ -374,13 +431,6 @@
 
         }
 
-
-        .update-page-with-fixed-nav {
-
-            padding-top: 44px;
-
-        }
-
     }
 
 
@@ -391,9 +441,9 @@
 
     @media (max-width: 380px) {
 
-        .update-fixed-nav {
+        :root {
 
-            height: 42px;
+            --update-nav-height: 42px;
 
         }
 
@@ -401,6 +451,7 @@
         .update-nav-link {
 
             width: 38px;
+
             height: 36px;
 
             flex-basis: 38px;
@@ -411,13 +462,6 @@
         .update-nav-icon {
 
             font-size: 18px;
-
-        }
-
-
-        .update-page-with-fixed-nav {
-
-            padding-top: 42px;
 
         }
 
