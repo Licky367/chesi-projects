@@ -123,9 +123,6 @@ function isAuth(
 // If it is not numeric, we call next() instead of returning
 // "Invalid dwell number".
 //
-// This allows another matching router to handle the request
-// rather than forcing it through getContentItem().
-//
 // =========================================================
 
 function isValidDwellNumber(
@@ -208,9 +205,6 @@ router.get(
 //
 //     /dairy/64abc123/boolean/milking
 //
-// This is explicitly defined before the generic content-item
-// route.
-//
 // =========================================================
 
 router.post(
@@ -239,24 +233,6 @@ router.get(
 //
 //     /dairy/:id/addOns
 //
-// PURPOSE:
-//
-//     Render:
-//
-//         views/update/addOns.ejs
-//
-// IMPORTANT:
-//
-// This explicit route MUST be defined before:
-//
-//     /dairy/:contentItemId/:dwellNumber
-//
-// Otherwise:
-//
-//     addOns
-//
-// could be interpreted as a dwellNumber parameter.
-//
 // =========================================================
 
 router.get(
@@ -273,26 +249,6 @@ router.get(
 // GET:
 //
 //     /dairy/:id/general
-//
-// PURPOSE:
-//
-//     Render the feed-only General page:
-//
-//         views/updateGeneral.ejs
-//
-// IMPORTANT:
-//
-// This route MUST be defined before the generic:
-//
-//     /dairy/:contentItemId/:dwellNumber
-//
-// route.
-//
-// /general is not a dwellNumber.
-//
-// The content-item guard will also reject "general" because
-// it is not numeric, but defining this route explicitly here
-// makes the intended routing unambiguous.
 //
 // =========================================================
 
@@ -325,12 +281,6 @@ router.get(
 // POST:
 //
 //     /dairy/:id/toggle-milking
-//
-// IMPORTANT:
-//
-// This is NOT a content-item route.
-//
-// dwellNumber is not involved.
 //
 // =========================================================
 
@@ -421,11 +371,6 @@ router.put(
 //
 //     /dairy/:id/post
 //
-// IMPORTANT:
-//
-// This route must remain independent from storage
-// content-item handling.
-//
 // =========================================================
 
 router.post(
@@ -441,12 +386,6 @@ router.post(
 
 // =========================================================
 // MEDICAL
-// =========================================================
-//
-// These routes are explicit.
-//
-// They do NOT contain dwellNumber.
-//
 // =========================================================
 
 
@@ -475,12 +414,6 @@ router.post(
 // =========================================================
 // MAINTENANCE
 // =========================================================
-//
-// These routes are explicit.
-//
-// They do NOT contain dwellNumber.
-//
-// =========================================================
 
 
 // ---------------------------------------------------------
@@ -506,6 +439,76 @@ router.post(
 
 
 // =========================================================
+// DAIRY FINANCIAL ROUTES
+// =========================================================
+//
+// These routes match the financial cards:
+//
+// LIABILITY:
+//
+//     POST /dairy/:id/liability
+//
+// REVENUE:
+//
+//     POST /dairy/:id/revenue
+//
+// The :id is the Dairy._id.
+//
+// These are explicit Dairy routes and therefore MUST be
+// defined before the generic:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// route.
+//
+// =========================================================
+
+
+// ---------------------------------------------------------
+// RECORD LIABILITY
+// ---------------------------------------------------------
+//
+// POST:
+//
+//     /dairy/:id/liability
+//
+// Form:
+//
+//     action="/dairy/<%= dairy._id %>/liability"
+//     method="POST"
+//
+// ---------------------------------------------------------
+
+router.post(
+    "/dairy/:id/liability",
+    isAuth,
+    controller.recordLiability
+);
+
+
+// ---------------------------------------------------------
+// RECORD REVENUE
+// ---------------------------------------------------------
+//
+// POST:
+//
+//     /dairy/:id/revenue
+//
+// Form:
+//
+//     action="/dairy/<%= dairy._id %>/revenue"
+//     method="POST"
+//
+// ---------------------------------------------------------
+
+router.post(
+    "/dairy/:id/revenue",
+    isAuth,
+    controller.recordRevenue
+);
+
+
+// =========================================================
 // STORAGE CONTENT ITEM
 // =========================================================
 //
@@ -522,36 +525,7 @@ router.post(
 // This is intentionally placed AFTER all known explicit
 // Dairy routes.
 //
-// More importantly:
-//
-//     isValidDwellNumber
-//
-// prevents an arbitrary second URL segment from being
-// treated as a dwellNumber.
-//
-//
-//
-// NEGATIVE DWELL NUMBERS ARE VALID.
-//
-// Examples:
-//
-//     /dairy/abc123/-1
-//     /dairy/abc123/-5
-//     /dairy/abc123/10
-//
-// are allowed to reach getContentItem/updateContentItem.
-//
-//
-//
-// But:
-//
-//     /dairy/abc123/post
-//     /dairy/abc123/maintenance
-//     /dairy/abc123/general
-//     /dairy/abc123/addOns
-//     /dairy/abc123/anything
-//
-// are NOT treated as content-item requests.
+// Negative dwell numbers remain valid.
 //
 // =========================================================
 
@@ -586,10 +560,6 @@ router.post(
 
 // =========================================================
 // POST INTERACTIONS
-// =========================================================
-//
-// These routes are independent of dwellNumber.
-//
 // =========================================================
 
 
@@ -663,7 +633,7 @@ router.delete(
 // DELETE DAIRY
 // =========================================================
 //
-// This is deliberately after the more specific:
+// This remains after the more specific:
 //
 //     /dairy/:id/...
 //
