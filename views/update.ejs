@@ -1,4 +1,18 @@
 <!-- =====================================================
+     UPDATE PAGE
+     
+     FILE:
+         views/update.ejs
+
+     NOTE:
+         The navigation bar is rendered separately through:
+             views/update/update-nav.ejs
+
+         layout.ejs already provides the 120px header.
+===================================================== -->
+
+
+<!-- =====================================================
      UPDATE PAGE ASSETS
 ===================================================== -->
 
@@ -14,102 +28,33 @@
 
 
 <!-- =====================================================
-     FIXED UPDATE NAVIGATION
-     
-     layout.ejs already contains:
-         HEADER = 120px
-
-     Therefore this navigation starts at:
-         top: 120px
+     UPDATE NAVIGATION
 ===================================================== -->
 
-<nav
-    class="update-fixed-nav"
-    aria-label="Dairy update navigation"
->
-
-
-    <!-- =================================================
-         VIEW UPDATES
-    ================================================== -->
-
-    <a
-        href="/dairy/<%= dairy._id %>/general"
-        class="update-nav-link"
-        title="View Updates"
-        aria-label="View Updates"
-    >
-
-        <span
-            class="update-nav-icon"
-            aria-hidden="true"
-        >
-            +
-        </span>
-
-    </a>
-
-
-
-    <!-- =================================================
-         VIEW ASSETS
-    ================================================== -->
-
-    <button
-        type="button"
-        id="viewPropertyButton"
-        class="update-nav-link update-nav-button"
-        aria-controls="assetBar"
-        aria-expanded="false"
-        title="View Assets"
-        aria-label="View Assets"
-    >
-
-        <span
-            class="update-nav-icon"
-            aria-hidden="true"
-        >
-            ◉
-        </span>
-
-    </button>
-
-
-
-    <!-- =================================================
-         STORAGE
-    ================================================== -->
-
-    <a
-        href="/storage/<%= dairy._id %>"
-        class="update-nav-link"
-        title="Storage"
-        aria-label="Storage"
-    >
-
-        <span
-            class="update-nav-icon"
-            aria-hidden="true"
-        >
-            📦
-        </span>
-
-    </a>
-
-
-</nav>
+<%- include(
+    "update/update-nav",
+    {
+        dairy: dairy,
+        user: user
+    }
+) %>
 
 
 
 <!-- =====================================================
-     UPDATE PAGE
+     UPDATE PAGE CONTENT
+     
+     The navigation component controls the exact space
+     required beneath the fixed navigation.
+
+     No additional top padding is applied here.
 ===================================================== -->
 
-<div class="dairy-page update-page-with-fixed-nav">
+<div class="dairy-page">
 
 
     <!-- =================================================
-         FIXED H1
+         PAGE HEADING
     ================================================== -->
 
     <%- include(
@@ -123,7 +68,7 @@
 
 
     <!-- =================================================
-         FIXED ASSET CARDS
+         ASSET CARDS
     ================================================== -->
 
     <%- include(
@@ -143,7 +88,7 @@
          FILE:
              views/update/boolean.ejs
 
-         RENDERED EXACTLY ONCE.
+         Rendered exactly once.
     ================================================== -->
 
     <%- include(
@@ -160,7 +105,7 @@
 
 
     <!-- =================================================
-         VIEW MILKING HISTORY
+         MILKING HISTORY
     ================================================== -->
 
     <%- include(
@@ -188,286 +133,6 @@
 
 
 </div>
-
-
-
-<!-- =====================================================
-     UPDATE NAVIGATION STYLES
-===================================================== -->
-
-<style>
-
-    /* =====================================================
-       LAYOUT HEADER
-       
-       layout.ejs header height:
-           120px
-    ===================================================== */
-
-    :root {
-
-        --layout-header-height: 120px;
-
-        --update-nav-height: 46px;
-
-    }
-
-
-
-    /* =====================================================
-       FIXED UPDATE NAVIGATION
-       
-       Sits immediately below layout.ejs header.
-    ===================================================== */
-
-    .update-fixed-nav {
-
-        position: fixed;
-
-        top: var(--layout-header-height);
-
-        left: 0;
-        right: 0;
-
-        height: var(--update-nav-height);
-
-        display: flex;
-
-        align-items: center;
-        justify-content: center;
-
-        gap: 6px;
-
-        z-index: 9999;
-
-        box-sizing: border-box;
-
-        background:
-            var(
-                --background-color,
-                #ffffff
-            );
-
-        border-bottom:
-            1px solid
-            var(
-                --border-color,
-                #e5e5e5
-            );
-
-        box-shadow:
-            0 2px 8px
-            rgba(0, 0, 0, 0.08);
-
-    }
-
-
-
-    /* =====================================================
-       NAVIGATION LINKS
-    ===================================================== */
-
-    .update-nav-link {
-
-        width: 42px;
-
-        height: 40px;
-
-        flex: 0 0 42px;
-
-        display: flex;
-
-        align-items: center;
-
-        justify-content: center;
-
-        padding: 0;
-
-        margin: 0;
-
-        border: 0;
-
-        border-radius: 7px;
-
-        background: transparent;
-
-        color: inherit;
-
-        text-decoration: none;
-
-        cursor: pointer;
-
-        box-sizing: border-box;
-
-        -webkit-tap-highlight-color: transparent;
-
-    }
-
-
-
-    /* =====================================================
-       NAVIGATION ICON
-    ===================================================== */
-
-    .update-nav-icon {
-
-        display: flex;
-
-        align-items: center;
-
-        justify-content: center;
-
-        width: 100%;
-
-        height: 100%;
-
-        font-size: 21px;
-
-        line-height: 1;
-
-        font-weight: 600;
-
-    }
-
-
-
-    /* =====================================================
-       BUTTON RESET
-    ===================================================== */
-
-    .update-nav-button {
-
-        font-family: inherit;
-
-        appearance: none;
-
-        -webkit-appearance: none;
-
-    }
-
-
-
-    /* =====================================================
-       HOVER
-    ===================================================== */
-
-    .update-nav-link:hover {
-
-        background:
-            rgba(0, 0, 0, 0.06);
-
-    }
-
-
-
-    /* =====================================================
-       ACTIVE / PRESS
-    ===================================================== */
-
-    .update-nav-link:active {
-
-        transform: scale(0.94);
-
-    }
-
-
-
-    /* =====================================================
-       PAGE OFFSET
-       
-       The page must begin below BOTH:
-       
-           1. 120px layout header
-           2. 46px update navigation
-       
-       The layout normally already accounts for the
-       header, so only the navigation height is added here.
-    ===================================================== */
-
-    .update-page-with-fixed-nav {
-
-        padding-top: var(--update-nav-height);
-
-    }
-
-
-
-    /* =====================================================
-       MOBILE
-    ===================================================== */
-
-    @media (max-width: 600px) {
-
-        :root {
-
-            --layout-header-height: 120px;
-
-            --update-nav-height: 44px;
-
-        }
-
-
-        .update-fixed-nav {
-
-            gap: 4px;
-
-        }
-
-
-        .update-nav-link {
-
-            width: 40px;
-
-            height: 38px;
-
-            flex-basis: 40px;
-
-        }
-
-
-        .update-nav-icon {
-
-            font-size: 19px;
-
-        }
-
-    }
-
-
-
-    /* =====================================================
-       VERY SMALL SCREENS
-    ===================================================== */
-
-    @media (max-width: 380px) {
-
-        :root {
-
-            --update-nav-height: 42px;
-
-        }
-
-
-        .update-nav-link {
-
-            width: 38px;
-
-            height: 36px;
-
-            flex-basis: 38px;
-
-        }
-
-
-        .update-nav-icon {
-
-            font-size: 18px;
-
-        }
-
-    }
-
-</style>
 
 
 
