@@ -1,6 +1,52 @@
 // ==========================================================
 // controllers/networthController.js
 // ==========================================================
+//
+// NET WORTH CONTROLLER
+//
+// Handles:
+//
+//     GET  /networth
+//     GET  /networth/structure/:id
+//     GET  /networth/structure/:id/add
+//     POST /networth/structure/:id/add
+//     GET  /networth/asset/:id
+//     POST /networth/asset/:id
+//     GET  /networth/data
+//     GET  /networth/structure/:id/data
+//
+// SPECIAL STRUCTURE / FACILITY FIELDS
+// ----------------------------------------------------------
+//
+// When a Dairy record has NO numeric code:
+//
+//     code === null
+//
+// it is treated as a structure / facility / equipment record.
+//
+// Such records may now edit:
+//
+//     about
+//     mission
+//     refNo
+//     vision
+//
+// These fields are intentionally preserved and passed to
+// networthService.updateAsset().
+//
+// IMPORTANT:
+//
+// The controller never allows the browser to modify:
+//
+//     _id
+//     code
+//     assetCode
+//     __v
+//     createdAt
+//     updatedAt
+//
+// ==========================================================
+
 
 const networthService =
     require("../services/networthService");
@@ -8,6 +54,11 @@ const networthService =
 
 // ==========================================================
 // HELPERS
+// ==========================================================
+
+
+// ==========================================================
+// DETERMINE WHETHER CLIENT EXPECTS JSON
 // ==========================================================
 
 function wantsJSON(req) {
@@ -29,7 +80,7 @@ function wantsJSON(req) {
 
 
 // ==========================================================
-// ERROR RESPONSE
+// RENDER ERROR
 // ==========================================================
 
 function renderError(
@@ -59,6 +110,10 @@ function renderError(
 
 }
 
+
+// ==========================================================
+// JSON ERROR
+// ==========================================================
 
 function jsonError(
     res,
@@ -124,10 +179,10 @@ function getUploadedImageUrl(file) {
 
 
 // ==========================================================
-// REMOVE PROTECTED SYSTEM FIELDS
+// REMOVE PROTECTED ASSET FIELDS
 // ==========================================================
 //
-// These fields are never trusted from the browser:
+// These fields are controlled by the application:
 //
 //     _id
 //     code
@@ -136,15 +191,17 @@ function getUploadedImageUrl(file) {
 //     createdAt
 //     updatedAt
 //
+// DO NOT allow the browser to change them.
+//
 // code:
 //
-//     Dairy Farm -> negative generated code
-//     Animal     -> positive generated code
-//     Structure  -> null
+//     negative = Dairy Farm
+//     positive = Animal
+//     null     = Structure / Facility
 //
 // assetCode:
 //
-//     Derived from the selected parent Dairy Farm.
+//     derived from the parent Dairy Farm.
 //
 
 function removeProtectedAssetFields(data) {
@@ -180,7 +237,10 @@ function removeProtectedAssetFields(data) {
 
 function normalizeBoolean(value) {
 
-    if (value === undefined || value === null) {
+    if (
+        value === undefined ||
+        value === null
+    ) {
 
         return false;
 
@@ -209,10 +269,152 @@ function normalizeBoolean(value) {
 
 
 // ==========================================================
+// NORMALIZE TEXT
+// ==========================================================
+//
+// Used for:
+//
+//     about
+//     mission
+//     refNo
+//     vision
+//
+// Empty strings are preserved as empty strings so that the
+// user can intentionally clear a field.
+//
+
+function normalizeText(value) {
+
+    if (
+        value === undefined ||
+        value === null
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(value).trim();
+
+}
+
+
+// ==========================================================
+// NORMALIZE STRUCTURE INFORMATION
+// ==========================================================
+//
+// Explicitly prepares the four additional fields.
+//
+// These are only meaningful for records whose code is null.
+// The service/model remains responsible for final validation.
+//
+
+function normalizeStructureFields(data) {
+
+    if (!data) {
+
+        return data;
+
+    }
+
+
+    // ------------------------------------------------------
+    // ABOUT
+    // ------------------------------------------------------
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "about"
+        )
+    ) {
+
+        data.about =
+            normalizeText(
+                data.about
+            );
+
+    }
+
+
+    // ------------------------------------------------------
+    // MISSION
+    // ------------------------------------------------------
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "mission"
+        )
+    ) {
+
+        data.mission =
+            normalizeText(
+                data.mission
+            );
+
+    }
+
+
+    // ------------------------------------------------------
+    // REFERENCE NUMBER
+    //
+    // Database field:
+    //
+    //     refNo
+    //
+    // NOT:
+    //
+    //     ref.no
+    //     refNumber
+    //     referenceNumber
+    // ------------------------------------------------------
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "refNo"
+        )
+    ) {
+
+        data.refNo =
+            normalizeText(
+                data.refNo
+            );
+
+    }
+
+
+    // ------------------------------------------------------
+    // VISION
+    // ------------------------------------------------------
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "vision"
+        )
+    ) {
+
+        data.vision =
+            normalizeText(
+                data.vision
+            );
+
+    }
+
+
+    return data;
+
+}
+
+
+// ==========================================================
 // GET /networth
 // ==========================================================
 //
-// MAIN NET WORTH PAGE
+// MAIN NET WORTH PAGE.
 //
 
 async function getNetWorth(
@@ -322,22 +524,13 @@ async function getDairyFarm(
 // GET /networth/structure/:id/add
 // ==========================================================
 //
-// :id = parent Dairy Farm _id
+// :id = Parent Dairy Farm _id
 //
-// The Add Asset page creates a STRUCTURE.
+// Creates the data required by the Add Asset page.
 //
-// The browser submits:
+// The created record is a STRUCTURE.
 //
-//     name
-//     type
-//     buyingPrice
-//     currentWorth
-//     description
-//     condition
-//     location
-//     status
-//
-// The browser does NOT submit:
+// The browser does NOT control:
 //
 //     code
 //     assetCode
@@ -345,7 +538,7 @@ async function getDairyFarm(
 // The service derives:
 //
 //     code = null
-//     assetCode = parent Dairy Farm's negative code
+//     assetCode = parent Dairy Farm negative code
 //
 
 async function getAddAsset(
@@ -402,20 +595,16 @@ async function getAddAsset(
 //
 // CREATE STRUCTURE ASSET
 //
-// The selected Dairy Farm is identified by:
+// Parent Dairy Farm:
 //
 //     req.params.id
 //
-// The service is responsible for:
+// System-controlled:
 //
-//     1. Finding the Dairy Farm.
-//     2. Verifying that it is actually a Dairy Farm.
-//     3. Obtaining its negative code.
-//     4. Creating the structure with:
-//            code = null
-//            assetCode = parent farm code
+//     code
+//     assetCode
 //
-// The controller never accepts those system fields.
+// The service is responsible for creating the record.
 //
 
 async function addAsset(
@@ -456,6 +645,21 @@ async function addAsset(
 
 
         // ======================================================
+        // NORMALIZE STRUCTURE FIELDS
+        // ======================================================
+        //
+        // These fields are allowed to be created for
+        // structure / facility records.
+        //
+        // They are deliberately retained.
+        //
+
+        normalizeStructureFields(
+            body
+        );
+
+
+        // ======================================================
         // PROFILE IMAGE
         // ======================================================
 
@@ -477,10 +681,10 @@ async function addAsset(
         // MILKING
         // ======================================================
         //
-        // The current networth-add.ejs does not submit this
-        // field because structures cannot be milking animals.
+        // Structures cannot be milking animals.
         //
-        // If an older form still sends it, normalize it.
+        // This normalization remains for compatibility with
+        // older forms that might still submit the field.
         //
 
         if (
@@ -636,24 +840,25 @@ async function getAsset(
 //
 // UPDATE EXISTING ASSET
 //
-// Protected identity fields cannot be changed:
+// Protected:
 //
 //     code
 //     assetCode
 //
-// This is particularly important because:
+// Allowed structure fields:
 //
-//     code > 0
-//         = animal identity
+//     about
+//     mission
+//     refNo
+//     vision
 //
-//     code === null
-//         = structure identity
+// These four fields are explicitly retained and passed to:
 //
-//     code < 0
-//         = Dairy Farm identity
+//     networthService.updateAsset()
 //
-// The update controller therefore only passes editable
-// properties to the service.
+// IMPORTANT:
+//
+// The controller does NOT silently discard them.
 //
 
 async function updateAsset(
@@ -729,6 +934,31 @@ async function updateAsset(
 
 
         // ======================================================
+        // STRUCTURE / FACILITY FIELDS
+        // ======================================================
+        //
+        // IMPORTANT:
+        //
+        // These are the fields requested for records with
+        // no numeric code.
+        //
+        // They are explicitly normalized here and remain
+        // inside updateData.
+        //
+        //     updateData.about
+        //     updateData.mission
+        //     updateData.refNo
+        //     updateData.vision
+        //
+        // They are then sent directly to the service below.
+        //
+
+        normalizeStructureFields(
+            updateData
+        );
+
+
+        // ======================================================
         // UPDATE DATABASE
         // ======================================================
 
@@ -748,7 +978,7 @@ async function updateAsset(
 
 
         // ======================================================
-        // JSON / FETCH
+        // JSON / FETCH RESPONSE
         // ======================================================
 
         if (wantsJSON(req)) {
@@ -814,7 +1044,7 @@ async function updateAsset(
 // GET /networth/data
 // ==========================================================
 //
-// JSON DATA FOR MAIN NET WORTH PAGE
+// JSON DATA FOR MAIN NET WORTH PAGE.
 //
 
 async function getNetWorthData(
@@ -861,7 +1091,7 @@ async function getNetWorthData(
 // GET /networth/structure/:id/data
 // ==========================================================
 //
-// JSON DATA FOR A DAIRY FARM STRUCTURE PAGE
+// JSON DATA FOR A DAIRY FARM STRUCTURE PAGE.
 //
 
 async function getDairyFarmData(
