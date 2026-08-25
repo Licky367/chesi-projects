@@ -1,45 +1,45 @@
 // ==========================================================
-// services/networthService.js
+// services/update/storageService.js
+// STORAGE / ROOM / AGROSTORE SERVICE
 // ==========================================================
 //
-// NET WORTH SERVICE
+// PURPOSE
+// ----------------------------------------------------------
+// Handles storage facilities belonging to ONE Dairy Farm.
 //
-// Handles:
+// STORAGE FACILITIES:
 //
-//     • Net Worth dashboard
-//     • Dairy Farm structures
-//     • Manual structure / facility assets
-//     • Individual asset retrieval
-//     • Asset updates
+//     recordType = "structure"
+//     type       = "room"
+//     roomNumber > 0
 //
-// RECORD IDENTITY:
+// OR:
 //
-//     code < 0
-//         Dairy Farm
+//     recordType = "structure"
+//     type       = "agroStore"
+//     roomNumber < 0
 //
-//     code > 0
-//         Animal
+// STORAGE CONTENT:
 //
-//     code === null
-//         Structure / Facility / Equipment
+//     Dairy.assetCode   = parent Dairy Farm code
+//     Dairy.dwellNumber = storage.roomNumber
 //
 // IMPORTANT:
+// ----------------------------------------------------------
+// The route uses:
 //
-//     _id
-//     code
-//     assetCode
+//     /storage/:dairyId/contents/:storageId
 //
-// are system-controlled and are NEVER changed by updateAsset().
+// where:
 //
-// STRUCTURE INFORMATION:
+//     dairyId
+//         = Dairy._id of the parent Dairy Farm
 //
-//     about
-//     mission
-//     refNo
-//     vision
+//     storageId
+//         = Dairy._id of the Room / AgroStore
 //
-// `refNo` is the canonical field name used throughout this
-// service. It matches the Net Worth edit form and controller.
+// The storage facility itself is therefore found by _id,
+// then verified against the parent Dairy Farm.
 //
 // ==========================================================
 
@@ -48,49 +48,23 @@ const mongoose =
     require("mongoose");
 
 const Dairy =
-    require("../models/dairy");
+    require("../../models/dairy");
 
 
 // ==========================================================
-// CONSTANTS
+// HELPERS
 // ==========================================================
 
-const ALLOWED_STATUSES =
-    Dairy.DAIRY_STATUSES || [
-
-        "active",
-        "sold",
-        "disposed",
-        "inactive"
-
-    ];
-
-
-const DAIRY_BREEDS =
-    Dairy.DAIRY_BREEDS || [];
-
-
-const DAIRY_FARM_TYPES =
-    Dairy.DAIRY_FARM_TYPES || [];
-
-
-const STRUCTURE_TYPES =
-    Dairy.STRUCTURE_TYPES || [];
-
-
-// ==========================================================
-// ERROR HELPER
-// ==========================================================
 
 function createError(
     message,
-    statusCode = 500
+    statusCode = 400
 ) {
 
     const error =
         new Error(message);
 
-    error.statusCode =
+    error.status =
         statusCode;
 
     return error;
@@ -99,12 +73,11 @@ function createError(
 
 
 // ==========================================================
-// OBJECT ID
+// OBJECT ID VALIDATION
 // ==========================================================
 
-function isValidObjectId(
-    id
-) {
+
+function isValidObjectId(id) {
 
     return mongoose.Types.ObjectId.isValid(
         id
@@ -114,936 +87,90 @@ function isValidObjectId(
 
 
 // ==========================================================
-// NUMBER
-// ==========================================================
-
-function toNumber(
-    value
-) {
-
-    const number =
-        Number(value);
-
-    return Number.isFinite(number)
-        ? number
-        : 0;
-
-}
-
-
-// ==========================================================
-// OPTIONAL NUMBER
-// ==========================================================
-
-function parseNumber(
-    value,
-    fieldName,
-    options = {}
-) {
-
-    const {
-        allowNull = true,
-        nonNegative = true
-    } = options;
-
-
-    if (
-        value === undefined
-    ) {
-
-        return undefined;
-
-    }
-
-
-    if (
-        value === null ||
-        value === ""
-    ) {
-
-        return allowNull
-            ? null
-            : undefined;
-
-    }
-
-
-    const number =
-        Number(value);
-
-
-    if (
-        !Number.isFinite(number)
-    ) {
-
-        throw createError(
-            `${fieldName} must be a valid number.`,
-            400
-        );
-
-    }
-
-
-    if (
-        nonNegative &&
-        number < 0
-    ) {
-
-        throw createError(
-            `${fieldName} must be a non-negative number.`,
-            400
-        );
-
-    }
-
-
-    return number;
-
-}
-
-
-// ==========================================================
-// OPTIONAL DATE
-// ==========================================================
-
-function parseDate(
-    value,
-    fieldName
-) {
-
-    if (
-        value === undefined
-    ) {
-
-        return undefined;
-
-    }
-
-
-    if (
-        value === null ||
-        value === ""
-    ) {
-
-        return null;
-
-    }
-
-
-    const date =
-        new Date(value);
-
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        throw createError(
-            `${fieldName} is invalid.`,
-            400
-        );
-
-    }
-
-
-    return date;
-
-}
-
-
-// ==========================================================
-// BOOLEAN
-// ==========================================================
-
-function parseBoolean(
-    value
-) {
-
-    if (
-        typeof value === "boolean"
-    ) {
-
-        return value;
-
-    }
-
-
-    if (
-        value === undefined ||
-        value === null ||
-        value === ""
-    ) {
-
-        return false;
-
-    }
-
-
-    const normalized =
-        String(value)
-            .trim()
-            .toLowerCase();
-
-
-    return (
-
-        normalized === "true" ||
-
-        normalized === "1" ||
-
-        normalized === "yes" ||
-
-        normalized === "on"
-
-    );
-
-}
-
-
-// ==========================================================
-// TEXT
-// ==========================================================
-
-function parseText(
-    value
-) {
-
-    if (
-        value === undefined ||
-        value === null
-    ) {
-
-        return "";
-
-    }
-
-
-    return String(value).trim();
-
-}
-
-
-// ==========================================================
-// AGE
-// ==========================================================
-
-function calculateAge(
-    dateOfBirth
-) {
-
-    if (
-        !dateOfBirth
-    ) {
-
-        return null;
-
-    }
-
-
-    const dob =
-        new Date(
-            dateOfBirth
-        );
-
-
-    if (
-        Number.isNaN(
-            dob.getTime()
-        )
-    ) {
-
-        return null;
-
-    }
-
-
-    const today =
-        new Date();
-
-
-    if (
-        dob > today
-    ) {
-
-        return null;
-
-    }
-
-
-    let age =
-        today.getFullYear() -
-        dob.getFullYear();
-
-
-    const birthdayNotReached =
-
-        today.getMonth() <
-            dob.getMonth()
-
-        ||
-
-        (
-            today.getMonth() ===
-                dob.getMonth()
-
-            &&
-
-            today.getDate() <
-                dob.getDate()
-        );
-
-
-    if (
-        birthdayNotReached
-    ) {
-
-        age--;
-
-    }
-
-
-    return age >= 0
-        ? age
-        : null;
-
-}
-
-
-// ==========================================================
-// AGE TEXT
-// ==========================================================
-
-function calculateAgeText(
-    dateOfBirth
-) {
-
-    if (
-        !dateOfBirth
-    ) {
-
-        return "";
-
-    }
-
-
-    const dob =
-        new Date(
-            dateOfBirth
-        );
-
-
-    if (
-        Number.isNaN(
-            dob.getTime()
-        )
-    ) {
-
-        return "";
-
-    }
-
-
-    const today =
-        new Date();
-
-
-    if (
-        dob > today
-    ) {
-
-        return "";
-
-    }
-
-
-    let years =
-        today.getFullYear() -
-        dob.getFullYear();
-
-
-    let months =
-        today.getMonth() -
-        dob.getMonth();
-
-
-    let days =
-        today.getDate() -
-        dob.getDate();
-
-
-    if (
-        days < 0
-    ) {
-
-        months--;
-
-
-        const previousMonth =
-            new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                0
-            );
-
-
-        days +=
-            previousMonth.getDate();
-
-    }
-
-
-    if (
-        months < 0
-    ) {
-
-        years--;
-
-        months += 12;
-
-    }
-
-
-    if (
-        years < 0
-    ) {
-
-        return "";
-
-    }
-
-
-    return (
-
-        `${years} years, ` +
-
-        `${months} months, ` +
-
-        `${days} days`
-
-    );
-
-}
-
-
-// ==========================================================
-// RECORD TYPE HELPERS
+// NORMALIZE STORAGE TYPE
 // ==========================================================
 //
-// Dairy model identity:
+// Supported:
 //
-//     code < 0
-//         Dairy Farm
+//     all
+//     room
+//     agroStore
 //
-//     code > 0
-//         Animal
+// ==========================================================
+
+
+function normalizeType(type) {
+
+    if (
+        type === null ||
+        type === undefined ||
+        type === ""
+    ) {
+
+        return "all";
+
+    }
+
+
+    const value =
+        String(type)
+            .trim();
+
+
+    if (
+        !value ||
+        value === "all"
+    ) {
+
+        return "all";
+
+    }
+
+
+    if (
+        value === "room"
+    ) {
+
+        return "room";
+
+    }
+
+
+    if (
+        value === "agroStore"
+    ) {
+
+        return "agroStore";
+
+    }
+
+
+    throw createError(
+        `Invalid storage type: ${value}.`,
+        400
+    );
+
+}
+
+
+// ==========================================================
+// NORMALIZE FARM CODE
+// ==========================================================
 //
-//     code === null
-//         Structure / Facility / Equipment
+// Dairy Farm codes are negative integers.
 //
-
-function isDairyFarm(
-    record
-) {
-
-    if (
-        !record
-    ) {
-
-        return false;
-
-    }
-
-
-    if (
-        record.code === null ||
-        record.code === undefined
-    ) {
-
-        return false;
-
-    }
-
-
-    return Number(
-        record.code
-    ) < 0;
-
-}
-
-
-// ==========================================================
-// IS IDENTIFIED DAIRY / ANIMAL
 // ==========================================================
 
-function isIdentifiedDairy(
-    record
-) {
 
-    if (
-        !record
-    ) {
+function normalizeFarmCode(code) {
 
-        return false;
-
-    }
-
-
-    if (
-        record.code === null ||
-        record.code === undefined
-    ) {
-
-        return false;
-
-    }
-
-
-    return Number(
-        record.code
-    ) > 0;
-
-}
-
-
-// ==========================================================
-// IS STRUCTURE
-// ==========================================================
-
-function isStructure(
-    record
-) {
-
-    if (
-        !record
-    ) {
-
-        return false;
-
-    }
-
-
-    return (
-
-        record.code === null ||
-
-        record.code === undefined
-
-    );
-
-}
-
-
-// ==========================================================
-// IS ASSIGNED ASSET
-// ==========================================================
-
-function isAssignedAsset(
-    record
-) {
-
-    if (
-        !record
-    ) {
-
-        return false;
-
-    }
-
-
-    return (
-
-        record.assetCode !== null &&
-
-        record.assetCode !== undefined
-
-    );
-
-}
-
-
-// ==========================================================
-// IS STANDALONE ASSET
-// ==========================================================
-
-function isStandaloneAsset(
-    record
-) {
-
-    if (
-        !record
-    ) {
-
-        return false;
-
-    }
-
-
-    return (
-
-        isStructure(record) &&
-
-        (
-            record.assetCode === null ||
-
-            record.assetCode === undefined
-        )
-
-    );
-
-}
-
-
-// ==========================================================
-// IS MANUAL ASSET
-// ==========================================================
-
-function isManualAsset(
-    record
-) {
-
-    return isStructure(
-        record
-    );
-
-}
-
-
-// ==========================================================
-// DECORATE RECORD
-// ==========================================================
-
-function decorateRecord(
-    record
-) {
-
-    if (
-        !record
-    ) {
-
-        return record;
-
-    }
-
-
-    const object =
-
-        typeof record.toObject === "function"
-
-            ?
-
-        record.toObject({
-            virtuals: true
-        })
-
-            :
-
-        {
-            ...record
-        };
-
-
-    const identified =
-        isIdentifiedDairy(
-            object
-        );
-
-
-    const structure =
-        isStructure(
-            object
-        );
-
-
-    // ======================================================
-    // AGE
-    // ======================================================
-
-    object.age =
-        identified
-
-            ?
-
-        calculateAge(
-            object.dateOfBirth
-        )
-
-            :
-
-        null;
-
-
-    object.ageText =
-        identified
-
-            ?
-
-        calculateAgeText(
-            object.dateOfBirth
-        )
-
-            :
-
-        "";
-
-
-    // ======================================================
-    // GENDER
-    // ======================================================
-
-    object.isFemale =
-
-        identified &&
-
-        Number(object.code) % 2 === 0;
-
-
-    object.gender =
-
-        identified
-
-            ?
-
-        (
-            object.isFemale
-                ? "Female"
-                : "Male"
-        )
-
-            :
-
-        null;
-
-
-    // ======================================================
-    // RECORD FLAGS
-    // ======================================================
-
-    object.isDairyFarm =
-        isDairyFarm(
-            object
-        );
-
-
-    object.isAnimal =
-        identified;
-
-
-    object.isStructure =
-        structure;
-
-
-    object.isManualAsset =
-        structure;
-
-
-    object.isAssignedAsset =
-        isAssignedAsset(
-            object
-        );
-
-
-    object.isStandaloneAsset =
-        isStandaloneAsset(
-            object
-        );
-
-
-    object.hasIdentity =
-        identified;
-
-
-    object.isIdentifiedDairy =
-        identified;
-
-
-    // ======================================================
-    // MILKING
-    // ======================================================
-
-    object.isMilkingText =
-        object.isMilking
-            ? "Yes"
-            : "No";
-
-
-    // ======================================================
-    // ASSET VALUE
-    // ======================================================
-
-    object.assetValue =
-        toNumber(
-            object.currentWorth
-        );
-
-
-    // ======================================================
-    // ACTIVE ASSET
-    // ======================================================
-
-    object.isActiveAsset =
-        object.status === "active";
-
-
-    // ======================================================
-    // DISPLAY IMAGE
-    // ======================================================
-
-    if (
-        !object.displayImage
-    ) {
-
-        if (
-            object.profileImage
-        ) {
-
-            if (
-                /^https?:\/\//i.test(
-                    object.profileImage
-                )
-            ) {
-
-                object.displayImage =
-                    object.profileImage;
-
-            }
-
-            else if (
-                object.profileImage.startsWith("/")
-            ) {
-
-                object.displayImage =
-                    object.profileImage;
-
-            }
-
-            else {
-
-                object.displayImage =
-                    `/uploads/${object.profileImage}`;
-
-            }
-
-        }
-
-        else {
-
-            object.displayImage =
-                `https://ui-avatars.com/api/?name=` +
-                `${encodeURIComponent(
-                    object.name || "Dairy"
-                )}`;
-
-        }
-
-    }
-
-
-    return object;
-
-}
-
-
-// ==========================================================
-// DECORATE ARRAY
-// ==========================================================
-
-function decorateRecords(
-    records
-) {
-
-    if (
-        !Array.isArray(records)
-    ) {
-
-        return [];
-
-    }
-
-
-    return records.map(
-        decorateRecord
-    );
-
-}
-
-
-// ==========================================================
-// FIND DAIRY FARM BY ID
-// ==========================================================
-
-async function findDairyFarmById(
-    id
-) {
-
-    if (
-        !isValidObjectId(id)
-    ) {
-
-        throw createError(
-            "Invalid Dairy Farm id.",
-            400
-        );
-
-    }
-
-
-    const farm =
-        await Dairy
-            .findById(id)
-            .lean();
-
-
-    if (
-        !farm
-    ) {
-
-        throw createError(
-            "Dairy Farm not found.",
-            404
-        );
-
-    }
-
-
-    if (
-        !isDairyFarm(
-            farm
-        )
-    ) {
-
-        throw createError(
-            "The selected record is not a Dairy Farm.",
-            400
-        );
-
-    }
-
-
-    return farm;
-
-}
-
-
-// ==========================================================
-// FIND DAIRY FARM BY CODE
-// ==========================================================
-
-async function findDairyFarmByCode(
-    code
-) {
-
-    const numericCode =
+    const value =
         Number(code);
 
 
     if (
-        !Number.isFinite(
-            numericCode
-        ) ||
-
-        numericCode >= 0
+        !Number.isInteger(value) ||
+        value >= 0
     ) {
 
         throw createError(
@@ -1054,27 +181,68 @@ async function findDairyFarmByCode(
     }
 
 
-    const farm =
-        await Dairy
-            .findOne({
+    return value;
 
-                code:
-                    numericCode,
+}
 
-                assetCode:
-                    null
 
-            })
-            .lean();
+// ==========================================================
+// FIND PARENT DAIRY FARM
+// ==========================================================
+//
+// Route :id is Dairy._id.
+//
+// ==========================================================
 
+
+async function findFarmById(
+    dairyId
+) {
 
     if (
-        !farm
+        !isValidObjectId(dairyId)
     ) {
 
         throw createError(
-            "Selected Dairy Farm was not found.",
+            "Invalid Dairy Farm ID.",
+            400
+        );
+
+    }
+
+
+    const farm =
+        await Dairy.findOne({
+
+            _id: dairyId,
+
+            recordType: "farm",
+
+            status: "active"
+
+        });
+
+
+    if (!farm) {
+
+        throw createError(
+            "Dairy Farm not found.",
             404
+        );
+
+    }
+
+
+    if (
+        !Number.isInteger(
+            Number(farm.code)
+        ) ||
+        Number(farm.code) >= 0
+    ) {
+
+        throw createError(
+            "Invalid Dairy Farm code.",
+            400
         );
 
     }
@@ -1086,1318 +254,985 @@ async function findDairyFarmByCode(
 
 
 // ==========================================================
-// GET DAIRY FARMS
+// FIND STORAGE FACILITY
+// ==========================================================
+//
+// storageId is Dairy._id.
+//
+// The facility must:
+//
+//     recordType = structure
+//
+// AND:
+//
+//     type = room
+//     OR
+//     type = agroStore
+//
+// AND:
+//
+//     belong to the parent farm through assetCode.
+//
 // ==========================================================
 
-async function getDairyFarms() {
 
-    const farms =
-        await Dairy
-            .find({
+async function findStorageById(
+    storageId,
+    farmCode
+) {
 
-                code: {
-                    $lt: 0
-                },
+    if (
+        !isValidObjectId(storageId)
+    ) {
 
-                assetCode:
-                    null
+        throw createError(
+            "Invalid storage ID.",
+            400
+        );
 
-            })
-            .sort({
-
-                name:
-                    1
-
-            })
-            .lean();
+    }
 
 
-    return decorateRecords(
-        farms
-    );
+    const code =
+        normalizeFarmCode(
+            farmCode
+        );
+
+
+    const storage =
+        await Dairy.findOne({
+
+            _id: storageId,
+
+            recordType: "structure",
+
+            assetCode: code,
+
+            type: {
+
+                $in: [
+                    "room",
+                    "agroStore"
+                ]
+
+            },
+
+            roomNumber: {
+                $ne: null
+            },
+
+            dwellNumber: null,
+
+            status: "active"
+
+        });
+
+
+    if (!storage) {
+
+        throw createError(
+            "Storage facility not found or does not belong to this Dairy Farm.",
+            404
+        );
+
+    }
+
+
+    return storage;
 
 }
 
 
 // ==========================================================
-// GET NET WORTH
+// BUILD STORAGE QUERY
 // ==========================================================
 
-async function getNetWorth() {
 
-    const allDairy =
-        await Dairy
-            .find({})
+function buildStorageQuery(
+    farmCode,
+    type
+) {
+
+    const code =
+        normalizeFarmCode(
+            farmCode
+        );
+
+
+    const normalizedType =
+        normalizeType(type);
+
+
+    const query = {
+
+        recordType: "structure",
+
+        assetCode: code,
+
+        roomNumber: {
+            $ne: null
+        },
+
+        dwellNumber: null,
+
+        status: "active"
+
+    };
+
+
+    if (
+        normalizedType !== "all"
+    ) {
+
+        query.type =
+            normalizedType;
+
+    } else {
+
+        query.type = {
+
+            $in: [
+                "room",
+                "agroStore"
+            ]
+
+        };
+
+    }
+
+
+    return query;
+
+}
+
+
+// ==========================================================
+// GET STORAGE FACILITIES
+// ==========================================================
+//
+// Returns all active Rooms and AgroStores belonging to
+// one Dairy Farm.
+//
+// ==========================================================
+
+
+exports.getStorage =
+    async function ({
+        dairyId,
+        type = "all"
+    }) {
+
+        const farm =
+            await findFarmById(
+                dairyId
+            );
+
+
+        const normalizedType =
+            normalizeType(type);
+
+
+        const query =
+            buildStorageQuery(
+                farm.code,
+                normalizedType
+            );
+
+
+        const storage =
+            await Dairy.find(
+                query
+            )
             .sort({
 
-                name:
-                    1
+                type: 1,
+                roomNumber: 1
 
             })
             .lean();
 
 
-    const standaloneAssets =
-        allDairy.filter(
-            isStandaloneAsset
-        );
+        return {
+
+            farm,
+
+            farmCode:
+                farm.code,
+
+            storage,
+
+            type:
+                normalizedType
+
+        };
+
+    };
 
 
-    const structures =
-        allDairy.filter(
-            isDairyFarm
-        );
+// ==========================================================
+// GET ADD STORAGE DATA
+// ==========================================================
+//
+// Used when opening the storage creation form.
+//
+// The service returns:
+//
+//     farm
+//     farmCode
+//     existing rooms
+//     existing AgroStores
+//     storage types
+//
+// ==========================================================
 
 
-    const totalNetWorth =
-        allDairy.reduce(
+exports.getAddStorage =
+    async function ({
+        dairyId
+    }) {
 
-            (
-                total,
-                record
-            ) => {
-
-                if (
-                    record.status !== "active"
-                ) {
-
-                    return total;
-
-                }
+        const farm =
+            await findFarmById(
+                dairyId
+            );
 
 
-                return (
+        const [
+            rooms,
+            agroStores
+        ] = await Promise.all([
 
-                    total +
-
-                    toNumber(
-                        record.currentWorth
-                    )
-
-                );
-
-            },
-
-            0
-
-        );
-
-
-    return {
-
-        totalNetWorth,
-
-        standaloneAssets:
-            decorateRecords(
-                standaloneAssets
+            Dairy.getRooms(
+                farm.code
             ),
 
-        structures:
-            decorateRecords(
-                structures
+            Dairy.getAgroStores(
+                farm.code
             )
 
-    };
-
-}
+        ]);
 
 
-// ==========================================================
-// GET DAIRY FARM
-// ==========================================================
+        return {
 
-async function getDairyFarm(
-    id
-) {
+            farm,
 
-    const farm =
-        await findDairyFarmById(
-            id
-        );
+            farmCode:
+                farm.code,
 
+            rooms:
+                await rooms
+                    .sort({
+                        roomNumber: 1
+                    }),
 
-    const farmCode =
-        Number(
-            farm.code
-        );
+            agroStores:
+                await agroStores
+                    .sort({
+                        roomNumber: -1
+                    }),
 
+            storageTypes: [
 
-    const assets =
-        await Dairy
-            .find({
+                "room",
+                "agroStore"
 
-                assetCode:
-                    farmCode
+            ]
 
-            })
-            .sort({
-
-                name:
-                    1
-
-            })
-            .lean();
-
-
-    const dairyTotal =
-        assets.reduce(
-
-            (
-                total,
-                asset
-            ) => {
-
-                if (
-                    asset.status !== "active"
-                ) {
-
-                    return total;
-
-                }
-
-
-                return (
-
-                    total +
-
-                    toNumber(
-                        asset.currentWorth
-                    )
-
-                );
-
-            },
-
-            0
-
-        );
-
-
-    return {
-
-        dairy:
-            decorateRecord(
-                farm
-            ),
-
-        assets:
-            decorateRecords(
-                assets
-            ),
-
-        dairyTotal,
-
-        dairyBreeds:
-            DAIRY_BREEDS,
-
-        structureTypes:
-            STRUCTURE_TYPES
+        };
 
     };
 
-}
-
 
 // ==========================================================
-// GET ADD ASSET
-// ==========================================================
-
-async function getAddAsset(
-    id
-) {
-
-    const dairy =
-        await findDairyFarmById(
-            id
-        );
-
-
-    const structures =
-        await getDairyFarms();
-
-
-    return {
-
-        dairy:
-            decorateRecord(
-                dairy
-            ),
-
-        structures,
-
-        dairyBreeds:
-            DAIRY_BREEDS,
-
-        structureTypes:
-            STRUCTURE_TYPES
-
-    };
-
-}
-
-
-// ==========================================================
-// ADD ASSET
+// ADD STORAGE
 // ==========================================================
 //
-// Creates a manually-created Structure / Facility.
-//
-// Identity:
-//
-//     code = null
-//
-// Parent:
-//
-//     assetCode = negative Dairy Farm code
-//
-// Structure information:
-//
-//     about
-//     mission
-//     refNo
-//     vision
+// Creates a new Room or AgroStore.
 //
 // IMPORTANT:
 //
-//     `refNo` is the canonical reference-number field.
+//     roomNumber is expected to be generated by the service.
 //
-// ==========================================================
-
-async function addAsset(
-    id,
-    body = {},
-    file = null
-) {
-
-    // ======================================================
-    // FIND PARENT FARM
-    // ======================================================
-
-    const farm =
-        await findDairyFarmById(
-            id
-        );
-
-
-    const farmCode =
-        Number(
-            farm.code
-        );
-
-
-    // ======================================================
-    // NAME
-    // ======================================================
-
-    const suppliedName =
-
-        body.name !== undefined
-
-            ?
-
-        body.name
-
-            :
-
-        body.item;
-
-
-    const name =
-        parseText(
-            suppliedName
-        );
-
-
-    if (
-        !name
-    ) {
-
-        throw createError(
-            "Name is required when creating an asset.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
-    // TYPE
-    // ======================================================
-
-    const type =
-        parseText(
-            body.type
-        );
-
-
-    if (
-        !type
-    ) {
-
-        throw createError(
-            "Asset type is required.",
-            400
-        );
-
-    }
-
-
-    if (
-        STRUCTURE_TYPES.length > 0 &&
-
-        !STRUCTURE_TYPES.includes(
-            type
-        )
-    ) {
-
-        throw createError(
-            "Invalid asset type.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
-    // STATUS
-    // ======================================================
-
-    const submittedStatus =
-        body.status !== undefined
-
-            ?
-
-        parseText(
-            body.status
-        )
-
-            :
-
-        "active";
-
-
-    if (
-        !submittedStatus
-    ) {
-
-        throw createError(
-            "Asset status cannot be empty.",
-            400
-        );
-
-    }
-
-
-    if (
-        !ALLOWED_STATUSES.includes(
-            submittedStatus
-        )
-    ) {
-
-        throw createError(
-            "Invalid asset status.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
-    // BASE ASSET
-    // ======================================================
-
-    const assetData = {
-
-        // --------------------------------------------------
-        // BASIC DATA
-        // --------------------------------------------------
-
-        name,
-
-        type,
-
-        description:
-            parseText(
-                body.description
-            ),
-
-        condition:
-            parseText(
-                body.condition
-            ),
-
-        location:
-            parseText(
-                body.location
-            ),
-
-
-        // --------------------------------------------------
-        // STRUCTURE / DAIRY INFORMATION
-        // --------------------------------------------------
-
-        about:
-            parseText(
-                body.about
-            ),
-
-        mission:
-            parseText(
-                body.mission
-            ),
-
-        refNo:
-            parseText(
-                body.refNo
-            ),
-
-        vision:
-            parseText(
-                body.vision
-            ),
-
-
-        // --------------------------------------------------
-        // STATUS
-        // --------------------------------------------------
-
-        status:
-            submittedStatus,
-
-
-        // --------------------------------------------------
-        // SYSTEM IDENTITY
-        // --------------------------------------------------
-
-        code:
-            null,
-
-        assetCode:
-            farmCode,
-
-
-        // --------------------------------------------------
-        // ACQUISITION
-        // --------------------------------------------------
-
-        acquisitionDate:
-            new Date()
-
-    };
-
-
-    // ======================================================
-    // BUYING PRICE
-    // ======================================================
-
-    if (
-        body.buyingPrice !== undefined
-    ) {
-
-        assetData.buyingPrice =
-            parseNumber(
-                body.buyingPrice,
-                "Buying Price"
-            );
-
-    }
-
-
-    // ======================================================
-    // CURRENT WORTH
-    // ======================================================
-
-    if (
-        body.currentWorth !== undefined
-    ) {
-
-        assetData.currentWorth =
-            parseNumber(
-                body.currentWorth,
-                "Current Worth"
-            );
-
-    }
-
-
-    // ======================================================
-    // VALUATION DATE
-    // ======================================================
-
-    if (
-        body.valuationDate !== undefined
-    ) {
-
-        assetData.valuationDate =
-            parseDate(
-                body.valuationDate,
-                "Valuation Date"
-            );
-
-    }
-
-
-    // ======================================================
-    // PROFILE IMAGE
-    // ======================================================
-
-    if (
-        body.profileImage !== undefined
-    ) {
-
-        const image =
-            parseText(
-                body.profileImage
-            );
-
-
-        if (
-            image
-        ) {
-
-            assetData.profileImage =
-                image;
-
-        }
-
-    }
-
-
-    // ======================================================
-    // MULTER FILE
-    // ======================================================
-
-    if (
-        file &&
-        file.filename
-    ) {
-
-        assetData.profileImage =
-            `/uploads/${file.filename}`;
-
-    }
-
-
-    // ======================================================
-    // SAVE
-    // ======================================================
-
-    const asset =
-        new Dairy(
-            assetData
-        );
-
-
-    await asset.save();
-
-
-    // ======================================================
-    // RELOAD
-    // ======================================================
-
-    const saved =
-        await Dairy
-            .findById(
-                asset._id
-            )
-            .lean();
-
-
-    if (
-        !saved
-    ) {
-
-        throw createError(
-            "Asset could not be retrieved after creation.",
-            500
-        );
-
-    }
-
-
-    return decorateRecord(
-        saved
-    );
-
-}
-
-
-// ==========================================================
-// GET ASSET
-// ==========================================================
-
-async function getAsset(
-    id
-) {
-
-    if (
-        !isValidObjectId(id)
-    ) {
-
-        throw createError(
-            "Invalid asset id.",
-            400
-        );
-
-    }
-
-
-    const dairy =
-        await Dairy
-            .findById(id)
-            .lean();
-
-
-    if (
-        !dairy
-    ) {
-
-        throw createError(
-            "Asset not found.",
-            404
-        );
-
-    }
-
-
-    if (
-        isDairyFarm(
-            dairy
-        )
-    ) {
-
-        throw createError(
-            "The selected record is a Dairy Farm, not an asset.",
-            400
-        );
-
-    }
-
-
-    if (
-        !isIdentifiedDairy(dairy) &&
-        !isStructure(dairy)
-    ) {
-
-        throw createError(
-            "The selected record is not a valid asset.",
-            400
-        );
-
-    }
-
-
-    const structures =
-        await getDairyFarms();
-
-
-    const decorated =
-        decorateRecord(
-            dairy
-        );
-
-
-    return {
-
-        dairy:
-            decorated,
-
-        structures,
-
-        age:
-            decorated.age,
-
-        ageText:
-            decorated.ageText,
-
-        dairyBreeds:
-            DAIRY_BREEDS,
-
-        structureTypes:
-            STRUCTURE_TYPES
-
-    };
-
-}
-
-
-// ==========================================================
-// UPDATE ASSET
-// ==========================================================
+// The caller supplies:
 //
-// Updates an existing animal or structure.
-//
-// NEVER changes:
-//
-//     _id
-//     code
-//     assetCode
-//
-// Editable fields:
-//
-//     name
+//     dairyId
 //     type
-//     about
-//     mission
-//     refNo
-//     vision
+//     name
 //     description
 //     condition
 //     location
-//     status
-//     buyingPrice
-//     currentWorth
-//     valuationDate
-//     acquisitionDate
-//     profileImage
-//     dateOfBirth
-//     mass
-//     isMilking
+//     refNo
+//     etc.
+//
+// The service generates:
+//
+//     room
+//         -> next positive roomNumber
+//
+//     agroStore
+//         -> next negative roomNumber
 //
 // ==========================================================
 
-async function updateAsset(
-    id,
-    body = {},
-    file = null
-) {
 
-    // ======================================================
-    // VALIDATE ID
-    // ======================================================
+exports.addStorage =
+    async function ({
+        dairyId,
+        type,
+        name,
+        description = "",
+        condition = "",
+        location = "",
+        refNo = null,
+        about = "",
+        mission = "",
+        vision = "",
+        buyingPrice = 0,
+        sellingPrice = 0,
+        currentWorth = 0,
+        revenue = 0,
+        acquisitionDate = null,
+        valuationDate = null,
+        profileImages = [],
+        profileImage = ""
+    }) {
 
-    if (
-        !isValidObjectId(id)
-    ) {
-
-        throw createError(
-            "Invalid asset id.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
-    // FIND ASSET
-    // ======================================================
-
-    const dairy =
-        await Dairy.findById(
-            id
-        );
-
-
-    if (
-        !dairy
-    ) {
-
-        throw createError(
-            "Asset not found.",
-            404
-        );
-
-    }
-
-
-    // ======================================================
-    // NEVER EDIT DAIRY FARM HERE
-    // ======================================================
-
-    if (
-        isDairyFarm(
-            dairy
-        )
-    ) {
-
-        throw createError(
-            "A Dairy Farm cannot be edited as an asset.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
-    // DETERMINE TYPE
-    // ======================================================
-
-    const identified =
-        isIdentifiedDairy(
-            dairy
-        );
-
-
-    const structure =
-        isStructure(
-            dairy
-        );
-
-
-    if (
-        !identified &&
-        !structure
-    ) {
-
-        throw createError(
-            "The selected record is not a valid asset.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
-    // PROFILE IMAGE
-    // ======================================================
-
-    if (
-        file &&
-        file.filename
-    ) {
-
-        dairy.profileImage =
-            `/uploads/${file.filename}`;
-
-    }
-
-    else if (
-        body.profileImage !== undefined
-    ) {
-
-        const image =
-            parseText(
-                body.profileImage
+        const farm =
+            await findFarmById(
+                dairyId
             );
 
 
-        if (
-            image
-        ) {
-
-            dairy.profileImage =
-                image;
-
-        }
-
-    }
-
-
-    // ======================================================
-    // NAME
-    // ======================================================
-
-    if (
-        body.name !== undefined
-    ) {
-
-        const name =
-            parseText(
-                body.name
-            );
+        const normalizedType =
+            normalizeType(type);
 
 
         if (
-            !name
+            normalizedType === "all"
         ) {
 
             throw createError(
-                "Name cannot be empty.",
+                "Storage type must be either room or agroStore.",
                 400
             );
 
         }
 
 
-        dairy.name =
-            name;
+        const storageName =
+            String(
+                name || ""
+            ).trim();
 
-    }
 
-    else if (
-        body.item !== undefined
-    ) {
+        if (!storageName) {
+
+            throw createError(
+                "Storage name is required.",
+                400
+            );
+
+        }
+
+
+        // ======================================================
+        // GENERATE ROOM NUMBER
+        // ======================================================
+
+        let roomNumber;
+
+
+        if (
+            normalizedType === "room"
+        ) {
+
+            const result =
+                await Dairy.findOne({
+
+                    recordType: "structure",
+
+                    assetCode: farm.code,
+
+                    type: "room",
+
+                    roomNumber: {
+                        $gt: 0
+                    }
+
+                })
+                .sort({
+
+                    roomNumber: -1
+
+                })
+                .select(
+                    "roomNumber"
+                )
+                .lean();
+
+
+            roomNumber =
+                result &&
+                Number.isInteger(
+                    Number(
+                        result.roomNumber
+                    )
+                )
+
+                    ? Number(
+                        result.roomNumber
+                    ) + 1
+
+                    : 1;
+
+        }
+
+
+        // ======================================================
+        // GENERATE AGROSTORE NUMBER
+        // ======================================================
+
+        if (
+            normalizedType === "agroStore"
+        ) {
+
+            const result =
+                await Dairy.findOne({
+
+                    recordType: "structure",
+
+                    assetCode: farm.code,
+
+                    type: "agroStore",
+
+                    roomNumber: {
+                        $lt: 0
+                    }
+
+                })
+                .sort({
+
+                    roomNumber: 1
+
+                })
+                .select(
+                    "roomNumber"
+                )
+                .lean();
+
+
+            roomNumber =
+                result &&
+                Number.isInteger(
+                    Number(
+                        result.roomNumber
+                    )
+                )
+
+                    ? Number(
+                        result.roomNumber
+                    ) - 1
+
+                    : -1;
+
+        }
+
+
+        // ======================================================
+        // CREATE STORAGE FACILITY
+        // ======================================================
+
+        const storage =
+            new Dairy({
+
+                recordType:
+                    "structure",
+
+                type:
+                    normalizedType,
+
+                name:
+                    storageName,
+
+                code:
+                    null,
+
+                refNo:
+                    refNo || null,
+
+                about:
+                    about || "",
+
+                mission:
+                    mission || "",
+
+                vision:
+                    vision || "",
+
+                assetCode:
+                    farm.code,
+
+                roomNumber,
+
+                dwellNumber:
+                    null,
+
+                description:
+                    description || "",
+
+                condition:
+                    condition || "",
+
+                location:
+                    location || "",
+
+                buyingPrice:
+                    Number(
+                        buyingPrice
+                    ) || 0,
+
+                sellingPrice:
+                    Number(
+                        sellingPrice
+                    ) || 0,
+
+                currentWorth:
+                    Number(
+                        currentWorth
+                    ) || 0,
+
+                revenue:
+                    Number(
+                        revenue
+                    ) || 0,
+
+                acquisitionDate:
+                    acquisitionDate || null,
+
+                valuationDate:
+                    valuationDate || null,
+
+                profileImages:
+                    Array.isArray(
+                        profileImages
+                    )
+                        ? profileImages
+                        : [],
+
+                profileImage:
+                    profileImage || "",
+
+                status:
+                    "active"
+
+            });
+
+
+        await storage.save();
+
+
+        return storage;
+
+    };
+
+
+// ==========================================================
+// GET STORAGE CONTENTS
+// ==========================================================
+//
+// This is the important contents method.
+//
+// Route:
+//
+//     GET /storage/:dairyId/contents/:storageId
+//
+// Steps:
+//
+//     1. Find parent Dairy Farm by _id.
+//
+//     2. Find selected storage by _id.
+//
+//     3. Verify storage belongs to that farm.
+//
+//     4. Read storage.roomNumber.
+//
+//     5. Find all active Dairy records:
+//
+//            assetCode   = farm.code
+//            dwellNumber = storage.roomNumber
+//
+// This works for BOTH:
+//
+//     Room
+//         roomNumber > 0
+//
+//     AgroStore
+//         roomNumber < 0
+//
+// ==========================================================
+
+
+exports.getStorageContents =
+    async function ({
+        dairyId,
+        storageId
+    }) {
+
+        const farm =
+            await findFarmById(
+                dairyId
+            );
+
+
+        const storage =
+            await findStorageById(
+                storageId,
+                farm.code
+            );
+
+
+        const contents =
+            await Dairy.find({
+
+                assetCode:
+                    farm.code,
+
+                dwellNumber:
+                    storage.roomNumber,
+
+                status:
+                    "active",
+
+                _id: {
+                    $ne: storage._id
+                }
+
+            })
+            .sort({
+
+                recordType: 1,
+                name: 1
+
+            })
+            .lean();
+
+
+        return {
+
+            farm,
+
+            farmCode:
+                farm.code,
+
+            storage,
+
+            contents,
+
+            storageType:
+                storage.type,
+
+            storageNumber:
+                storage.roomNumber,
+
+            count:
+                contents.length
+
+        };
+
+    };
+
+
+// ==========================================================
+// ADD ITEM TO STORAGE
+// ==========================================================
+//
+// Allocates an existing Dairy record to a Room or AgroStore.
+//
+// The item's:
+//
+//     assetCode
+//
+// must belong to the same farm.
+//
+// Its:
+//
+//     dwellNumber
+//
+// becomes:
+//
+//     storage.roomNumber
+//
+// ==========================================================
+
+
+exports.addToStorage =
+    async function ({
+        dairyId,
+        storageId,
+        itemId
+    }) {
+
+        const farm =
+            await findFarmById(
+                dairyId
+            );
+
+
+        const storage =
+            await findStorageById(
+                storageId,
+                farm.code
+            );
+
+
+        if (
+            !isValidObjectId(itemId)
+        ) {
+
+            throw createError(
+                "Invalid item ID.",
+                400
+            );
+
+        }
+
 
         const item =
-            parseText(
-                body.item
-            );
+            await Dairy.findOne({
+
+                _id: itemId,
+
+                assetCode:
+                    farm.code,
+
+                status:
+                    "active"
+
+            });
 
 
-        if (
-            !item
-        ) {
-
-            throw createError(
-                "Name cannot be empty.",
-                400
-            );
-
-        }
-
-
-        dairy.name =
-            item;
-
-    }
-
-
-    // ======================================================
-    // TYPE
-    // ======================================================
-
-    if (
-        body.type !== undefined
-    ) {
-
-        const type =
-            parseText(
-                body.type
-            );
-
-
-        if (
-            !type
-        ) {
+        if (!item) {
 
             throw createError(
-                "Asset type cannot be empty.",
-                400
+                "Item not found or does not belong to this Dairy Farm.",
+                404
             );
 
         }
 
 
         if (
-            structure &&
-
-            STRUCTURE_TYPES.length > 0 &&
-
-            !STRUCTURE_TYPES.includes(
-                type
+            item._id.equals(
+                storage._id
             )
         ) {
 
             throw createError(
-                "Invalid structure type.",
+                "A storage facility cannot be placed inside itself.",
                 400
             );
 
         }
 
 
-        dairy.type =
-            type;
-
-    }
-
-
-    // ======================================================
-    // ABOUT
-    // ======================================================
-
-    if (
-        body.about !== undefined
-    ) {
-
-        dairy.about =
-            parseText(
-                body.about
-            );
-
-    }
-
-
-    // ======================================================
-    // MISSION
-    // ======================================================
-
-    if (
-        body.mission !== undefined
-    ) {
-
-        dairy.mission =
-            parseText(
-                body.mission
-            );
-
-    }
-
-
-    // ======================================================
-    // REFERENCE NUMBER
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // The application now uses:
-    //
-    //     refNo
-    //
-    // consistently.
-    //
-    // Do NOT use regNo here.
-    //
-    // ======================================================
-
-    if (
-        body.refNo !== undefined
-    ) {
-
-        dairy.refNo =
-            parseText(
-                body.refNo
-            );
-
-    }
-
-
-    // ======================================================
-    // VISION
-    // ======================================================
-
-    if (
-        body.vision !== undefined
-    ) {
-
-        dairy.vision =
-            parseText(
-                body.vision
-            );
-
-    }
-
-
-    // ======================================================
-    // DATE OF BIRTH
-    // ======================================================
-
-    if (
-        identified &&
-        body.dateOfBirth !== undefined
-    ) {
-
-        dairy.dateOfBirth =
-            parseDate(
-                body.dateOfBirth,
-                "Date of Birth"
-            );
-
-    }
-
-
-    // ======================================================
-    // MASS
-    // ======================================================
-
-    if (
-        identified &&
-        body.mass !== undefined
-    ) {
-
-        dairy.mass =
-            parseNumber(
-                body.mass,
-                "Mass"
-            );
-
-    }
-
-
-    // ======================================================
-    // MILKING
-    // ======================================================
-
-    if (
-        identified &&
-        body.isMilking !== undefined
-    ) {
-
-        dairy.isMilking =
-            parseBoolean(
-                body.isMilking
-            );
-
-    }
-
-
-    // ======================================================
-    // BUYING PRICE
-    // ======================================================
-
-    if (
-        body.buyingPrice !== undefined
-    ) {
-
-        dairy.buyingPrice =
-            parseNumber(
-                body.buyingPrice,
-                "Buying Price"
-            );
-
-    }
-
-
-    // ======================================================
-    // CURRENT WORTH
-    // ======================================================
-
-    if (
-        body.currentWorth !== undefined
-    ) {
-
-        dairy.currentWorth =
-            parseNumber(
-                body.currentWorth,
-                "Current Worth"
-            );
-
-    }
-
-
-    // ======================================================
-    // DESCRIPTION
-    // ======================================================
-
-    if (
-        body.description !== undefined
-    ) {
-
-        dairy.description =
-            parseText(
-                body.description
-            );
-
-    }
-
-
-    // ======================================================
-    // CONDITION
-    // ======================================================
-
-    if (
-        body.condition !== undefined
-    ) {
-
-        dairy.condition =
-            parseText(
-                body.condition
-            );
-
-    }
-
-
-    // ======================================================
-    // LOCATION
-    // ======================================================
-
-    if (
-        body.location !== undefined
-    ) {
-
-        dairy.location =
-            parseText(
-                body.location
-            );
-
-    }
-
-
-    // ======================================================
-    // STATUS
-    // ======================================================
-
-    if (
-        body.status !== undefined
-    ) {
-
-        const status =
-            parseText(
-                body.status
-            );
-
-
         if (
-            !status
+            item.isStorageFacility
         ) {
 
             throw createError(
-                "Asset status cannot be empty.",
+                "A storage facility cannot be allocated as storage content.",
                 400
             );
 
         }
 
 
+        item.dwellNumber =
+            storage.roomNumber;
+
+
+        await item.save();
+
+
+        return {
+
+            farm,
+
+            storage,
+
+            item
+
+        };
+
+    };
+
+
+// ==========================================================
+// REMOVE ITEM FROM STORAGE
+// ==========================================================
+//
+// Sets:
+//
+//     dwellNumber = null
+//
+// ==========================================================
+
+
+exports.removeFromStorage =
+    async function ({
+        dairyId,
+        storageId,
+        itemId
+    }) {
+
+        const farm =
+            await findFarmById(
+                dairyId
+            );
+
+
+        const storage =
+            await findStorageById(
+                storageId,
+                farm.code
+            );
+
+
         if (
-            !ALLOWED_STATUSES.includes(
-                status
+            !isValidObjectId(itemId)
+        ) {
+
+            throw createError(
+                "Invalid item ID.",
+                400
+            );
+
+        }
+
+
+        const item =
+            await Dairy.findOne({
+
+                _id: itemId,
+
+                assetCode:
+                    farm.code,
+
+                dwellNumber:
+                    storage.roomNumber,
+
+                status:
+                    "active"
+
+            });
+
+
+        if (!item) {
+
+            throw createError(
+                "Item is not currently inside this storage facility.",
+                404
+            );
+
+        }
+
+
+        item.dwellNumber =
+            null;
+
+
+        await item.save();
+
+
+        return {
+
+            farm,
+
+            storage,
+
+            item
+
+        };
+
+    };
+
+
+// ==========================================================
+// MOVE ITEM TO ANOTHER STORAGE
+// ==========================================================
+//
+// The item can be moved from one Room/AgroStore to another.
+//
+// The destination must belong to the same Dairy Farm.
+//
+// ==========================================================
+
+
+exports.moveItem =
+    async function ({
+        dairyId,
+        itemId,
+        destinationStorageId
+    }) {
+
+        const farm =
+            await findFarmById(
+                dairyId
+            );
+
+
+        if (
+            !isValidObjectId(itemId)
+        ) {
+
+            throw createError(
+                "Invalid item ID.",
+                400
+            );
+
+        }
+
+
+        const destination =
+            await findStorageById(
+                destinationStorageId,
+                farm.code
+            );
+
+
+        const item =
+            await Dairy.findOne({
+
+                _id: itemId,
+
+                assetCode:
+                    farm.code,
+
+                status:
+                    "active"
+
+            });
+
+
+        if (!item) {
+
+            throw createError(
+                "Item not found or does not belong to this Dairy Farm.",
+                404
+            );
+
+        }
+
+
+        if (
+            item._id.equals(
+                destination._id
             )
         ) {
 
             throw createError(
-                "Invalid asset status.",
-                400
-            );
-
-        }
-
-
-        dairy.status =
-            status;
-
-    }
-
-
-    // ======================================================
-    // VALUATION DATE
-    // ======================================================
-
-    if (
-        body.valuationDate !== undefined
-    ) {
-
-        dairy.valuationDate =
-            parseDate(
-                body.valuationDate,
-                "Valuation Date"
-            );
-
-    }
-
-
-    // ======================================================
-    // ACQUISITION DATE
-    // ======================================================
-
-    if (
-        body.acquisitionDate !== undefined
-    ) {
-
-        dairy.acquisitionDate =
-            parseDate(
-                body.acquisitionDate,
-                "Acquisition Date"
-            );
-
-    }
-
-
-    // ======================================================
-    // FINAL IDENTITY SAFETY
-    // ======================================================
-
-    if (
-        identified
-    ) {
-
-        if (
-            dairy.assetCode === null ||
-            dairy.assetCode === undefined
-        ) {
-
-            throw createError(
-                "An animal must belong to a Dairy Farm.",
+                "An item cannot be moved into itself.",
                 400
             );
 
@@ -2405,147 +1240,488 @@ async function updateAsset(
 
 
         if (
-            Number(
-                dairy.assetCode
-            ) >= 0
+            item.isStorageFacility
         ) {
 
             throw createError(
-                "Animal assetCode must be the negative code of its parent Dairy Farm.",
+                "A storage facility cannot be moved into another storage facility.",
                 400
             );
 
         }
 
-    }
+
+        item.dwellNumber =
+            destination.roomNumber;
 
 
-    // ======================================================
-    // STRUCTURE SAFETY
-    // ======================================================
+        await item.save();
 
-    if (
-        structure
-    ) {
+
+        return {
+
+            farm,
+
+            destination,
+
+            item
+
+        };
+
+    };
+
+
+// ==========================================================
+// GET AVAILABLE ITEMS
+// ==========================================================
+//
+// Returns active farm assets that are NOT currently allocated
+// to a storage facility.
+//
+// ==========================================================
+
+
+exports.getAvailableItems =
+    async function ({
+        dairyId
+    }) {
+
+        const farm =
+            await findFarmById(
+                dairyId
+            );
+
+
+        const items =
+            await Dairy.find({
+
+                assetCode:
+                    farm.code,
+
+                status:
+                    "active",
+
+                $or: [
+
+                    {
+                        dwellNumber:
+                            null
+                    },
+
+                    {
+                        dwellNumber: {
+                            $exists: false
+                        }
+                    }
+
+                ],
+
+                $nor: [
+
+                    {
+                        recordType:
+                            "structure",
+
+                        type: {
+                            $in: [
+                                "room",
+                                "agroStore"
+                            ]
+                        }
+                    }
+
+                ]
+
+            })
+            .sort({
+
+                recordType: 1,
+                name: 1
+
+            })
+            .lean();
+
+
+        return {
+
+            farm,
+
+            farmCode:
+                farm.code,
+
+            items
+
+        };
+
+    };
+
+
+// ==========================================================
+// GET STORAGE BY TYPE
+// ==========================================================
+//
+// Convenience method for controllers that need only:
+//
+//     room
+//
+// OR:
+//
+//     agroStore
+//
+// ==========================================================
+
+
+exports.getStorageByType =
+    async function ({
+        dairyId,
+        type
+    }) {
+
+        return this.getStorage({
+
+            dairyId,
+
+            type
+
+        });
+
+    };
+
+
+// ==========================================================
+// GET ROOMS
+// ==========================================================
+
+
+exports.getRooms =
+    async function ({
+        dairyId
+    }) {
+
+        const farm =
+            await findFarmById(
+                dairyId
+            );
+
+
+        const rooms =
+            await Dairy.find({
+
+                recordType:
+                    "structure",
+
+                assetCode:
+                    farm.code,
+
+                type:
+                    "room",
+
+                roomNumber: {
+                    $gt: 0
+                },
+
+                dwellNumber:
+                    null,
+
+                status:
+                    "active"
+
+            })
+            .sort({
+
+                roomNumber: 1
+
+            })
+            .lean();
+
+
+        return {
+
+            farm,
+
+            farmCode:
+                farm.code,
+
+            rooms
+
+        };
+
+    };
+
+
+// ==========================================================
+// GET AGROSTORES
+// ==========================================================
+
+
+exports.getAgroStores =
+    async function ({
+        dairyId
+    }) {
+
+        const farm =
+            await findFarmById(
+                dairyId
+            );
+
+
+        const agroStores =
+            await Dairy.find({
+
+                recordType:
+                    "structure",
+
+                assetCode:
+                    farm.code,
+
+                type:
+                    "agroStore",
+
+                roomNumber: {
+                    $lt: 0
+                },
+
+                dwellNumber:
+                    null,
+
+                status:
+                    "active"
+
+            })
+            .sort({
+
+                roomNumber: -1
+
+            })
+            .lean();
+
+
+        return {
+
+            farm,
+
+            farmCode:
+                farm.code,
+
+            agroStores
+
+        };
+
+    };
+
+
+// ==========================================================
+// GET STORAGE SUMMARY
+// ==========================================================
+//
+// Returns storage facilities together with the number of
+// items currently inside each one.
+//
+// ==========================================================
+
+
+exports.getStorageSummary =
+    async function ({
+        dairyId,
+        type = "all"
+    }) {
+
+        const farm =
+            await findFarmById(
+                dairyId
+            );
+
+
+        const normalizedType =
+            normalizeType(type);
+
+
+        const query =
+            buildStorageQuery(
+                farm.code,
+                normalizedType
+            );
+
+
+        const storage =
+            await Dairy.find(
+                query
+            )
+            .sort({
+
+                type: 1,
+                roomNumber: 1
+
+            })
+            .lean();
+
 
         if (
-            dairy.assetCode !== null &&
-
-            dairy.assetCode !== undefined &&
-
-            Number(
-                dairy.assetCode
-            ) >= 0
+            storage.length === 0
         ) {
 
-            throw createError(
-                "Structure assetCode must be the negative code of its parent Dairy Farm or null.",
-                400
-            );
+            return {
+
+                farm,
+
+                farmCode:
+                    farm.code,
+
+                storage: [],
+
+                type:
+                    normalizedType
+
+            };
 
         }
 
-    }
+
+        const roomNumbers =
+            storage.map(
+                item =>
+                    item.roomNumber
+            );
 
 
-    // ======================================================
-    // SAVE
-    // ======================================================
+        const contents =
+            await Dairy.find({
 
-    await dairy.save();
+                assetCode:
+                    farm.code,
 
+                dwellNumber: {
+                    $in: roomNumbers
+                },
 
-    // ======================================================
-    // RELOAD
-    // ======================================================
+                status:
+                    "active"
 
-    const updated =
-        await Dairy
-            .findById(
-                dairy._id
+            })
+            .select(
+                "_id dwellNumber"
             )
             .lean();
 
 
-    if (
-        !updated
-    ) {
+        const countMap =
+            new Map();
 
-        throw createError(
-            "Asset could not be retrieved after update.",
-            500
+
+        contents.forEach(
+            item => {
+
+                const key =
+                    Number(
+                        item.dwellNumber
+                    );
+
+
+                countMap.set(
+
+                    key,
+
+                    (
+                        countMap.get(key) ||
+                        0
+                    ) + 1
+
+                );
+
+            }
         );
 
-    }
+
+        const result =
+            storage.map(
+                item => ({
+
+                    ...item,
+
+                    contentCount:
+                        countMap.get(
+                            Number(
+                                item.roomNumber
+                            )
+                        ) || 0
+
+                })
+            );
 
 
-    return decorateRecord(
-        updated
-    );
+        return {
 
-}
+            farm,
+
+            farmCode:
+                farm.code,
+
+            storage:
+                result,
+
+            type:
+                normalizedType
+
+        };
+
+    };
 
 
 // ==========================================================
-// EXPORTS
+// GET ONE STORAGE FACILITY
 // ==========================================================
 
-module.exports = {
 
-    // ------------------------------------------------------
-    // MAIN OPERATIONS
-    // ------------------------------------------------------
+exports.getStorageById =
+    async function ({
+        dairyId,
+        storageId
+    }) {
 
-    getNetWorth,
-
-    getDairyFarm,
-
-    getAddAsset,
-
-    addAsset,
-
-    getAsset,
-
-    updateAsset,
-
-    getDairyFarms,
+        const farm =
+            await findFarmById(
+                dairyId
+            );
 
 
-    // ------------------------------------------------------
-    // CONSTANTS
-    // ------------------------------------------------------
-
-    ALLOWED_STATUSES,
-
-    DAIRY_BREEDS,
-
-    DAIRY_FARM_TYPES,
-
-    STRUCTURE_TYPES,
+        const storage =
+            await findStorageById(
+                storageId,
+                farm.code
+            );
 
 
-    // ------------------------------------------------------
-    // HELPERS
-    // ------------------------------------------------------
+        return {
 
-    calculateAge,
+            farm,
 
-    calculateAgeText,
+            farmCode:
+                farm.code,
 
-    isDairyFarm,
+            storage
 
-    isIdentifiedDairy,
+        };
 
-    isStructure,
+    };
 
-    isManualAsset,
 
-    isAssignedAsset,
+// ==========================================================
+// EXPORT HELPERS
+// ==========================================================
+//
+// These are exported mainly for controller/service testing.
+// They do not change the public storage behaviour.
+//
+// ==========================================================
 
-    isStandaloneAsset,
 
-    decorateRecord,
+exports.normalizeType =
+    normalizeType;
 
-    decorateRecords
 
-};
+exports.findFarmById =
+    findFarmById;
+
+
+exports.findStorageById =
+    findStorageById;
