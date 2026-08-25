@@ -22,7 +22,7 @@ const router =
     express.Router();
 
 const extrasController =
-    require("../controllers/extrasControler");
+    require("../controllers/extrasController");
 
 
 // ==========================================================
