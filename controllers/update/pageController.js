@@ -1,38 +1,45 @@
 // ==========================================================
 // controllers/update/pageController.js
 // DAIRY UPDATE PAGE CONTROLLER
-// =========================================================
+// ==========================================================
 //
 // PURPOSE
 // ----------------------------------------------------------
 //
 // Handles:
 //
-//     GET  /dairy/:id
+//     GET    /dairy/:id
+//     GET    /dairy/:id/general
+//     GET    /dairy/:id/addOns
 //
-//     GET  /dairy/:id/general
+//     POST   /dairy/:id/toggle-milking
+//     GET    /dairy/:id/switch
 //
-//     GET  /dairy/:id/addOns
+//     POST   /dairy/:id/liability
+//     POST   /dairy/:id/revenue
 //
-//     POST /dairy/:id/toggle-milking
+//     POST   /dairy/:id/boolean/:field
+//     GET    /dairy/boolean/fields
 //
-//     GET  /dairy/:id/switch
+//     POST   /dairy/:id/comment
+//     POST   /dairy/:id/post
 //
-//     POST /dairy/:id/liability
+//     PUT    /dairy/:id/image
+//     PUT    /dairy/:id/update
 //
-//     POST /dairy/:id/revenue
+//     POST   /dairy/:id/medical-mark
+//     POST   /dairy/:id/medical-unmark
 //
-// The normal Dairy Farm page renders:
+//     POST   /dairy/:id/maintenance/mark
+//     POST   /dairy/:id/maintenance/clear
 //
-//     views/update.ejs
+//     GET    /dairy/:contentItemId/:dwellNumber
+//     POST   /dairy/:contentItemId/:dwellNumber
 //
-// The General page renders:
-//
-//     views/updateGeneral.ejs
-//
-// The Add-Ons page renders:
-//
-//     views/update/addOns.ejs
+//     POST   /post/:id/like
+//     POST   /post/:id/comment
+//     DELETE /post/:id
+//     DELETE /comment/:id
 //
 // ==========================================================
 
@@ -42,12 +49,30 @@ const updateService =
 
 
 // ==========================================================
-// SMALL INTERNAL HELPERS
+// SMALL HELPERS
 // ==========================================================
-//
-// These helpers keep the controller safe when MongoDB fields
-// are null, undefined, strings, or numbers.
-// ==========================================================
+
+function getSessionUser(req) {
+
+    return (
+        req.user ||
+        req.session?.user ||
+        null
+    );
+
+}
+
+
+function getUserId(req) {
+
+    const user =
+        getSessionUser(req);
+
+    return user
+        ? user._id
+        : null;
+
+}
 
 
 function isPositiveCode(dairy) {
@@ -62,8 +87,9 @@ function isPositiveCode(dairy) {
 
     }
 
-
-    return Number(dairy.code) > 0;
+    return Number(
+        dairy.code
+    ) > 0;
 
 }
 
@@ -79,8 +105,51 @@ function isUnmarkedMedical(dairy) {
 }
 
 
+function sendServiceError(
+    res,
+    err,
+    fallbackMessage
+) {
+
+    console.error(
+        fallbackMessage,
+        err
+    );
+
+
+    const status =
+        Number(
+            err && err.statusCode
+        );
+
+
+    if (
+        Number.isInteger(status) &&
+        status >= 400 &&
+        status <= 599
+    ) {
+
+        return res
+            .status(status)
+            .send(
+                err.message ||
+                fallbackMessage
+            );
+
+    }
+
+
+    return res
+        .status(500)
+        .send(
+            fallbackMessage
+        );
+
+}
+
+
 // ==========================================================
-// VIEW DAIRY PROFILE PAGE
+// VIEW DAIRY PROFILE
 // ==========================================================
 //
 // GET:
@@ -93,10 +162,6 @@ exports.viewPage =
 async (req, res) => {
 
     try {
-
-        // ==================================================
-        // DAIRY ID
-        // ==================================================
 
         const {
             id
@@ -114,23 +179,13 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // LOGGED-IN USER
-        // ==================================================
-
         const sessionUser =
-            req.session.user || null;
+            getSessionUser(req);
 
 
         const userId =
-            sessionUser
-                ? sessionUser._id
-                : null;
+            getUserId(req);
 
-
-        // ==================================================
-        // GET COMPLETE DAIRY PAGE DATA
-        // ==================================================
 
         const data =
             await updateService.getDairyPage(
@@ -138,10 +193,6 @@ async (req, res) => {
                 userId
             );
 
-
-        // ==================================================
-        // VERIFY DAIRY EXISTS
-        // ==================================================
 
         if (
             !data ||
@@ -157,27 +208,29 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // GET ITEM LINKS
-        // ==================================================
-
-        const resolvedItemLinks =
-            await updateService.getItemLinks(
-                id
-            );
+        let itemLinks = [];
 
 
-        const itemLinks =
-            Array.isArray(
-                resolvedItemLinks
-            )
-                ? resolvedItemLinks
-                : [];
+        if (
+            typeof updateService.getItemLinks ===
+            "function"
+        ) {
+
+            const resolvedItemLinks =
+                await updateService.getItemLinks(
+                    id
+                );
 
 
-        // ==================================================
-        // BOOLEAN DATA
-        // ==================================================
+            itemLinks =
+                Array.isArray(
+                    resolvedItemLinks
+                )
+                    ? resolvedItemLinks
+                    : [];
+
+        }
+
 
         let booleanAnimals = [];
 
@@ -195,8 +248,7 @@ async (req, res) => {
 
             booleanAnimals =
                 Array.isArray(
-                    booleanData &&
-                    booleanData.animals
+                    booleanData?.animals
                 )
                     ? booleanData.animals
                     : [];
@@ -204,8 +256,7 @@ async (req, res) => {
 
             booleanFields =
                 Array.isArray(
-                    booleanData &&
-                    booleanData.fields
+                    booleanData?.fields
                 )
                     ? booleanData.fields
                     : [];
@@ -213,23 +264,13 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // DETERMINE CURRENT PAGE TYPE
-        // ==================================================
-
         const isDairyFarm =
             data.dairy.code !== null &&
-
             data.dairy.code !== undefined &&
-
             Number(
                 data.dairy.code
             ) < 0;
 
-
-        // ==================================================
-        // FARM-OWNED ASSETS
-        // ==================================================
 
         const farmAssets =
             Array.isArray(
@@ -238,10 +279,6 @@ async (req, res) => {
                 ? data.assetDairies
                 : [];
 
-
-        // ==================================================
-        // MEDICAL DAIRIES
-        // ==================================================
 
         const medicalDairies =
             farmAssets.filter(
@@ -256,10 +293,6 @@ async (req, res) => {
             );
 
 
-        // ==================================================
-        // MEDICAL ANIMALS
-        // ==================================================
-
         const medicalAnimals =
             farmAssets.filter(
                 function(animal) {
@@ -273,18 +306,17 @@ async (req, res) => {
             );
 
 
-        // ==================================================
-        // OTHER PAGE COLLECTIONS
-        // ==================================================
-
         const feed =
-            Array.isArray(data.feed)
+            Array.isArray(
+                data.feed
+            )
                 ? data.feed
                 : [];
 
 
         const weeklyFeed =
-            data.weeklyFeeds || null;
+            data.weeklyFeeds ||
+            null;
 
 
         const commentCount =
@@ -309,19 +341,11 @@ async (req, res) => {
                 : [];
 
 
-        // ==================================================
-        // SELECT VIEW
-        // ==================================================
-
         const view =
             isDairyFarm
                 ? "update"
                 : "dairySet";
 
-
-        // ==================================================
-        // RENDER PAGE
-        // ==================================================
 
         return res.render(
             view,
@@ -374,17 +398,11 @@ async (req, res) => {
 
     } catch (err) {
 
-        console.error(
-            "VIEW PAGE ERROR:",
-            err
+        return sendServiceError(
+            res,
+            err,
+            "Failed to load dairy profile."
         );
-
-
-        return res
-            .status(500)
-            .send(
-                "Failed to load dairy profile"
-            );
 
     }
 
@@ -392,7 +410,7 @@ async (req, res) => {
 
 
 // ==========================================================
-// VIEW GENERAL FEED
+// VIEW GENERAL
 // ==========================================================
 //
 // GET:
@@ -423,19 +441,13 @@ async (req, res) => {
 
 
         const sessionUser =
-            req.session.user || null;
-
-
-        const userId =
-            sessionUser
-                ? sessionUser._id
-                : null;
+            getSessionUser(req);
 
 
         const data =
             await updateService.getDairyPage(
                 id,
-                userId
+                getUserId(req)
             );
 
 
@@ -455,9 +467,7 @@ async (req, res) => {
 
         const isDairyFarm =
             data.dairy.code !== null &&
-
             data.dairy.code !== undefined &&
-
             Number(
                 data.dairy.code
             ) < 0;
@@ -472,14 +482,6 @@ async (req, res) => {
                 );
 
         }
-
-
-        const assetDairies =
-            Array.isArray(
-                data.assetDairies
-            )
-                ? data.assetDairies
-                : [];
 
 
         return res.render(
@@ -500,7 +502,11 @@ async (req, res) => {
                         : [],
 
                 assetDairies:
-                    assetDairies,
+                    Array.isArray(
+                        data.assetDairies
+                    )
+                        ? data.assetDairies
+                        : [],
 
                 user:
                     sessionUser
@@ -510,17 +516,11 @@ async (req, res) => {
 
     } catch (err) {
 
-        console.error(
-            "VIEW GENERAL FEED ERROR:",
-            err
+        return sendServiceError(
+            res,
+            err,
+            "Failed to load general dairy feed."
         );
-
-
-        return res
-            .status(500)
-            .send(
-                "Failed to load general dairy feed."
-            );
 
     }
 
@@ -528,27 +528,12 @@ async (req, res) => {
 
 
 // ==========================================================
-// VIEW FINANCIAL ADD-ONS
+// VIEW ADD-ONS
 // ==========================================================
 //
 // GET:
 //
 //     /dairy/:id/addOns
-//
-// PURPOSE
-// ----------------------------------------------------------
-//
-// Renders:
-//
-//     views/update/addOns.ejs
-//
-// Provides:
-//
-//     dairy
-//
-//     assetDairies
-//
-//     user
 //
 // ==========================================================
 
@@ -556,10 +541,6 @@ exports.viewAddOns =
 async (req, res) => {
 
     try {
-
-        // ==================================================
-        // DAIRY ID
-        // ==================================================
 
         const {
             id
@@ -577,34 +558,16 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // LOGGED-IN USER
-        // ==================================================
-
         const sessionUser =
-            req.session.user || null;
+            getSessionUser(req);
 
-
-        const userId =
-            sessionUser
-                ? sessionUser._id
-                : null;
-
-
-        // ==================================================
-        // GET COMPLETE DAIRY PAGE DATA
-        // ==================================================
 
         const data =
             await updateService.getDairyPage(
                 id,
-                userId
+                getUserId(req)
             );
 
-
-        // ==================================================
-        // VERIFY DAIRY EXISTS
-        // ==================================================
 
         if (
             !data ||
@@ -620,22 +583,6 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // ASSET DAIRIES
-        // ==================================================
-
-        const assetDairies =
-            Array.isArray(
-                data.assetDairies
-            )
-                ? data.assetDairies
-                : [];
-
-
-        // ==================================================
-        // RENDER PAGE
-        // ==================================================
-
         return res.render(
             "addOns",
             {
@@ -647,7 +594,11 @@ async (req, res) => {
                     data.dairy,
 
                 assetDairies:
-                    assetDairies,
+                    Array.isArray(
+                        data.assetDairies
+                    )
+                        ? data.assetDairies
+                        : [],
 
                 user:
                     sessionUser
@@ -657,17 +608,11 @@ async (req, res) => {
 
     } catch (err) {
 
-        console.error(
-            "VIEW ADD-ONS ERROR:",
-            err
+        return sendServiceError(
+            res,
+            err,
+            "Failed to load financial information."
         );
-
-
-        return res
-            .status(500)
-            .send(
-                "Failed to load financial information."
-            );
 
     }
 
@@ -682,16 +627,6 @@ async (req, res) => {
 //
 //     /dairy/:id/liability
 //
-// FORM:
-//
-//     action="/dairy/<%= dairy._id %>/liability"
-//
-// EXPECTED BODY:
-//
-//     amount
-//     description
-//     date
-//
 // ==========================================================
 
 exports.recordLiability =
@@ -699,12 +634,23 @@ async (req, res) => {
 
     try {
 
-        // ==================================================
-        // DAIRY ID
-        // ==================================================
-
         const dairyId =
             req.params.id;
+
+
+        const user =
+            getSessionUser(req);
+
+
+        if (!user) {
+
+            return res
+                .status(401)
+                .send(
+                    "Unauthorized."
+                );
+
+        }
 
 
         if (!dairyId) {
@@ -717,10 +663,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // FORM DATA
-        // ==================================================
 
         const {
             amount,
@@ -746,7 +688,9 @@ async (req, res) => {
 
         if (
             !description ||
-            !String(description).trim()
+            !String(
+                description
+            ).trim()
         ) {
 
             return res
@@ -760,7 +704,9 @@ async (req, res) => {
 
         if (
             !date ||
-            !String(date).trim()
+            !String(
+                date
+            ).trim()
         ) {
 
             return res
@@ -771,10 +717,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // CONVERT AMOUNT
-        // ==================================================
 
         const liabilityAmount =
             Number(amount);
@@ -796,10 +738,6 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // SAVE LIABILITY
-        // ==================================================
-
         await updateService.recordLiability({
 
             dairyId:
@@ -809,17 +747,20 @@ async (req, res) => {
                 liabilityAmount,
 
             description:
-                String(description).trim(),
+                String(
+                    description
+                ).trim(),
 
             date:
-                String(date).trim()
+                String(
+                    date
+                ).trim(),
+
+            user:
+                user
 
         });
 
-
-        // ==================================================
-        // RETURN TO DAIRY
-        // ==================================================
 
         return res.redirect(
             `/dairy/${dairyId}/addOns`
@@ -827,17 +768,11 @@ async (req, res) => {
 
     } catch (err) {
 
-        console.error(
-            "RECORD LIABILITY ERROR:",
-            err
+        return sendServiceError(
+            res,
+            err,
+            "Failed to record liability."
         );
-
-
-        return res
-            .status(500)
-            .send(
-                "Failed to record liability."
-            );
 
     }
 
@@ -852,16 +787,6 @@ async (req, res) => {
 //
 //     /dairy/:id/revenue
 //
-// FORM:
-//
-//     action="/dairy/<%= dairy._id %>/revenue"
-//
-// EXPECTED BODY:
-//
-//     amount
-//     description
-//     date
-//
 // ==========================================================
 
 exports.recordRevenue =
@@ -869,12 +794,23 @@ async (req, res) => {
 
     try {
 
-        // ==================================================
-        // DAIRY ID
-        // ==================================================
-
         const dairyId =
             req.params.id;
+
+
+        const user =
+            getSessionUser(req);
+
+
+        if (!user) {
+
+            return res
+                .status(401)
+                .send(
+                    "Unauthorized."
+                );
+
+        }
 
 
         if (!dairyId) {
@@ -887,10 +823,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // FORM DATA
-        // ==================================================
 
         const {
             amount,
@@ -916,7 +848,9 @@ async (req, res) => {
 
         if (
             !description ||
-            !String(description).trim()
+            !String(
+                description
+            ).trim()
         ) {
 
             return res
@@ -930,7 +864,9 @@ async (req, res) => {
 
         if (
             !date ||
-            !String(date).trim()
+            !String(
+                date
+            ).trim()
         ) {
 
             return res
@@ -941,10 +877,6 @@ async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // CONVERT AMOUNT
-        // ==================================================
 
         const revenueAmount =
             Number(amount);
@@ -966,10 +898,6 @@ async (req, res) => {
         }
 
 
-        // ==================================================
-        // SAVE REVENUE
-        // ==================================================
-
         await updateService.recordRevenue({
 
             dairyId:
@@ -979,17 +907,20 @@ async (req, res) => {
                 revenueAmount,
 
             description:
-                String(description).trim(),
+                String(
+                    description
+                ).trim(),
 
             date:
-                String(date).trim()
+                String(
+                    date
+                ).trim(),
+
+            user:
+                user
 
         });
 
-
-        // ==================================================
-        // RETURN TO DAIRY
-        // ==================================================
 
         return res.redirect(
             `/dairy/${dairyId}/addOns`
@@ -997,17 +928,11 @@ async (req, res) => {
 
     } catch (err) {
 
-        console.error(
-            "RECORD REVENUE ERROR:",
-            err
+        return sendServiceError(
+            res,
+            err,
+            "Failed to record revenue."
         );
-
-
-        return res
-            .status(500)
-            .send(
-                "Failed to record revenue."
-            );
 
     }
 
@@ -1015,7 +940,7 @@ async (req, res) => {
 
 
 // ==========================================================
-// TOGGLE MILKING STATUS
+// TOGGLE MILKING
 // ==========================================================
 //
 // POST:
@@ -1029,24 +954,6 @@ async (req, res) => {
 
     try {
 
-        if (
-            !req.session.user
-        ) {
-
-            return res
-                .status(401)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Unauthorized"
-
-                });
-
-        }
-
-
         const dairyId =
             req.params.id;
 
@@ -1057,7 +964,8 @@ async (req, res) => {
                 .status(400)
                 .json({
 
-                    success: false,
+                    success:
+                        false,
 
                     message:
                         "Dairy ID is required."
@@ -1077,7 +985,8 @@ async (req, res) => {
             .status(200)
             .json({
 
-                success: true,
+                success:
+                    true,
 
                 isMilking:
                     dairy.isMilking
@@ -1101,7 +1010,8 @@ async (req, res) => {
                 .status(404)
                 .json({
 
-                    success: false,
+                    success:
+                        false,
 
                     message:
                         err.message
@@ -1120,7 +1030,8 @@ async (req, res) => {
                 .status(400)
                 .json({
 
-                    success: false,
+                    success:
+                        false,
 
                     message:
                         err.message
@@ -1134,7 +1045,8 @@ async (req, res) => {
             .status(500)
             .json({
 
-                success: false,
+                success:
+                    false,
 
                 message:
                     "Failed to toggle milking status."
@@ -1147,7 +1059,7 @@ async (req, res) => {
 
 
 // ==========================================================
-// SWITCH DAIRY FARM
+// SWITCH DAIRY
 // ==========================================================
 //
 // GET:
@@ -1161,25 +1073,24 @@ async (req, res) => {
 
     try {
 
-        if (
-            !req.session.user
-        ) {
+        const user =
+            getSessionUser(req);
+
+
+        if (!user) {
 
             return res
                 .status(401)
                 .send(
-                    "Unauthorized"
+                    "Unauthorized."
                 );
 
         }
 
 
-        const user =
-            req.session.user;
-
-
         if (
-            user.role !== "dairyWorker"
+            user.role !==
+            "dairyWorker"
         ) {
 
             return res
@@ -1231,18 +1142,738 @@ async (req, res) => {
 
     } catch (err) {
 
-        console.error(
-            "SWITCH DAIRY ERROR:",
-            err
+        return sendServiceError(
+            res,
+            err,
+            "Failed to switch Dairy Farm."
         );
 
+    }
 
-        return res
-            .status(500)
-            .send(
-                "Failed to switch Dairy Farm."
+};
+
+
+// ==========================================================
+// BOOLEAN MANAGEMENT
+// ==========================================================
+
+exports.toggleBoolean =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.toggleBoolean !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .json({
+
+                    success:
+                        false,
+
+                    message:
+                        "Boolean service is not available."
+
+                });
+
+        }
+
+
+        const result =
+            await updateService.toggleBoolean(
+                req.params.animalId,
+                req.params.field
             );
 
+
+        return res.json({
+
+            success:
+                true,
+
+            data:
+                result
+
+        });
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to update boolean field."
+        );
+
     }
+
+};
+
+
+exports.getBooleanFields =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.getBooleanData !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .json({
+
+                    success:
+                        false,
+
+                    message:
+                        "Boolean service is not available."
+
+                });
+
+        }
+
+
+        const data =
+            await updateService.getBooleanData();
+
+
+        return res.json({
+
+            success:
+                true,
+
+            animals:
+                Array.isArray(data?.animals)
+                    ? data.animals
+                    : [],
+
+            fields:
+                Array.isArray(data?.fields)
+                    ? data.fields
+                    : []
+
+        });
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to load boolean fields."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// GENERAL COMMENT
+// ==========================================================
+
+exports.comment =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.comment !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .send(
+                    "Comment service is not available."
+                );
+
+        }
+
+
+        const result =
+            await updateService.comment(
+                req,
+                res
+            );
+
+
+        return result;
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to add comment."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// CREATE POST
+// ==========================================================
+
+exports.createPost =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.createPost !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .send(
+                    "Post service is not available."
+                );
+
+        }
+
+
+        return await updateService.createPost(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to create post."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// PROFILE IMAGE
+// ==========================================================
+
+exports.image =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.image !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .send(
+                    "Image service is not available."
+                );
+
+        }
+
+
+        return await updateService.image(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to update profile image."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// UPDATE PROFILE
+// ==========================================================
+
+exports.updateProfile =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.updateProfile !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .send(
+                    "Profile update service is not available."
+                );
+
+        }
+
+
+        return await updateService.updateProfile(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to update dairy profile."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// MEDICAL
+// ==========================================================
+
+exports.markMedical =
+async (req, res) => {
+
+    try {
+
+        return await updateService.markMedical(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to mark medical attention."
+        );
+
+    }
+
+};
+
+
+exports.unmarkMedical =
+async (req, res) => {
+
+    try {
+
+        return await updateService.unmarkMedical(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to clear medical attention."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// MAINTENANCE
+// ==========================================================
+
+exports.markMaintenance =
+async (req, res) => {
+
+    try {
+
+        return await updateService.markMaintenance(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to mark maintenance."
+        );
+
+    }
+
+};
+
+
+exports.clearMaintenance =
+async (req, res) => {
+
+    try {
+
+        return await updateService.clearMaintenance(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to clear maintenance."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// STORAGE CONTENT ITEM
+// ==========================================================
+//
+// GET:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// ==========================================================
+
+exports.getContentItem =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.getContentItem !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .send(
+                    "Content-item service is not available."
+                );
+
+        }
+
+
+        return await updateService.getContentItem(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to load content item."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// UPDATE STORAGE CONTENT ITEM
+// ==========================================================
+
+exports.updateContentItem =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.updateContentItem !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .send(
+                    "Content-item update service is not available."
+                );
+
+        }
+
+
+        return await updateService.updateContentItem(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to update content item."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// POST LIKE
+// ==========================================================
+
+exports.likePost =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.likePost !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .json({
+
+                    success:
+                        false,
+
+                    message:
+                        "Post like service is not available."
+
+                });
+
+        }
+
+
+        const result =
+            await updateService.likePost(
+                req,
+                res
+            );
+
+
+        return result;
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to like post."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// POST COMMENT
+// ==========================================================
+
+exports.addPostComment =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.addPostComment !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .send(
+                    "Post comment service is not available."
+                );
+
+        }
+
+
+        return await updateService.addPostComment(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to add post comment."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// DELETE POST
+// ==========================================================
+
+exports.deletePost =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.deletePost !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .send(
+                    "Delete post service is not available."
+                );
+
+        }
+
+
+        return await updateService.deletePost(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to delete post."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// DELETE COMMENT
+// ==========================================================
+
+exports.deleteComment =
+async (req, res) => {
+
+    try {
+
+        if (
+            typeof updateService.deleteComment !==
+            "function"
+        ) {
+
+            return res
+                .status(500)
+                .send(
+                    "Delete comment service is not available."
+                );
+
+        }
+
+
+        return await updateService.deleteComment(
+            req,
+            res
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to delete comment."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// EXPORT
+// ==========================================================
+
+module.exports = {
+
+    viewPage:
+        exports.viewPage,
+
+    viewGeneral:
+        exports.viewGeneral,
+
+    viewAddOns:
+        exports.viewAddOns,
+
+    recordLiability:
+        exports.recordLiability,
+
+    recordRevenue:
+        exports.recordRevenue,
+
+    toggleMilking:
+        exports.toggleMilking,
+
+    switchDairy:
+        exports.switchDairy,
+
+    toggleBoolean:
+        exports.toggleBoolean,
+
+    getBooleanFields:
+        exports.getBooleanFields,
+
+    comment:
+        exports.comment,
+
+    createPost:
+        exports.createPost,
+
+    image:
+        exports.image,
+
+    updateProfile:
+        exports.updateProfile,
+
+    markMedical:
+        exports.markMedical,
+
+    unmarkMedical:
+        exports.unmarkMedical,
+
+    markMaintenance:
+        exports.markMaintenance,
+
+    clearMaintenance:
+        exports.clearMaintenance,
+
+    getContentItem:
+        exports.getContentItem,
+
+    updateContentItem:
+        exports.updateContentItem,
+
+    likePost:
+        exports.likePost,
+
+    addPostComment:
+        exports.addPostComment,
+
+    deletePost:
+        exports.deletePost,
+
+    deleteComment:
+        exports.deleteComment
 
 };
