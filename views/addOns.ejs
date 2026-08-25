@@ -11,9 +11,18 @@
 //     assetDairies
 //     user
 //
+// COMPONENTS:
+//
+//     addOns/s1.ejs
+//     addOns/s.revenue.ejs
+//     addOns/s.liability.ejs
+//
+// STYLES:
+//
+//     /css/update/addOns.css
+//
 // ==========================================================
 %>
-
 
 <link
     rel="stylesheet"
@@ -24,11 +33,14 @@
 <div class="addons-page">
 
 
-    <!-- ================================================ -->
-    <!-- WELCOME CARD -->
-    <!-- ================================================ -->
+    <!-- ==================================================
+         PAGE INTRO / WELCOME
+         ================================================== -->
 
-    <section class="addons-section">
+    <section
+        class="addons-section addons-welcome-section"
+        aria-label="Financial records overview"
+    >
 
         <%- include(
             "addOns/s1.ejs",
@@ -41,34 +53,83 @@
     </section>
 
 
-    <!-- ================================================ -->
-    <!-- FINANCIAL CARDS -->
-    <!-- ================================================ -->
 
-    <section class="addons-financial-grid">
+    <!-- ==================================================
+         FINANCIAL ENTRY AREA
+         ================================================== -->
+
+    <section
+        class="addons-financial-section"
+        aria-label="Financial records"
+    >
+
+        <div class="addons-section-heading">
+
+            <div class="addons-heading-copy">
+
+                <span class="addons-heading-eyebrow">
+                    FINANCIAL ACTIVITY
+                </span>
+
+                <h1>
+                    Record Financial Information
+                </h1>
+
+                <p>
+                    Keep track of income generated and financial
+                    obligations associated with
+                    <strong><%= dairy.name %></strong>.
+                </p>
+
+            </div>
+
+        </div>
 
 
-        <!-- REVENUE -->
 
-        <%- include(
-            "addOns/s.revenue.ejs",
-            {
-                dairy: dairy,
-                user: user
-            }
-        ) %>
+        <!-- ==================================================
+             REVENUE + LIABILITY
+             ================================================== -->
+
+        <div class="addons-financial-grid">
 
 
-        <!-- LIABILITY -->
+            <!-- ============================
+                 REVENUE
+                 ============================ -->
 
-        <%- include(
-            "addOns/s.liability.ejs",
-            {
-                dairy: dairy,
-                user: user
-            }
-        ) %>
+            <article class="addons-financial-item addons-revenue-item">
 
+                <%- include(
+                    "addOns/s.revenue.ejs",
+                    {
+                        dairy: dairy,
+                        user: user
+                    }
+                ) %>
+
+            </article>
+
+
+
+            <!-- ============================
+                 LIABILITY
+                 ============================ -->
+
+            <article class="addons-financial-item addons-liability-item">
+
+                <%- include(
+                    "addOns/s.liability.ejs",
+                    {
+                        dairy: dairy,
+                        user: user
+                    }
+                ) %>
+
+            </article>
+
+
+        </div>
 
     </section>
 
