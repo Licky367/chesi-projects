@@ -1,17 +1,34 @@
 <div class="financial-card liability-card">
 
-  <div class="card-header">
+  <!-- Soft green visual accent -->
+  <div class="financial-card-glow"></div>
 
-    <div>
-      <h2>Record Liability</h2>
+  <div class="financial-section-header">
+
+    <div class="financial-section-icon liability-icon">
+      <span>−</span>
+    </div>
+
+    <div class="financial-section-title">
+
+      <span class="financial-eyebrow">
+        LIABILITIES
+      </span>
+
+      <h2>
+        Record Liability
+      </h2>
 
       <p>
-        Record an amount owed or financial obligation
-        for <%= dairy.name %>.
+        Add an amount owed or financial obligation
+        associated with <strong><%= dairy.name %></strong>.
       </p>
+
     </div>
 
   </div>
+
+  <div class="financial-welcome-divider"></div>
 
 
   <form
@@ -34,15 +51,23 @@
         Liability Amount
       </label>
 
-      <input
-        type="number"
-        id="liabilityAmount"
-        name="amount"
-        placeholder="Enter liability amount"
-        min="0"
-        step="0.01"
-        required
-      >
+      <div class="financial-input-wrapper">
+
+        <span class="financial-input-prefix">
+          KSh
+        </span>
+
+        <input
+          type="number"
+          id="liabilityAmount"
+          name="amount"
+          placeholder="0.00"
+          min="0"
+          step="0.01"
+          required
+        >
+
+      </div>
 
     </div>
 
@@ -57,10 +82,14 @@
       <textarea
         id="liabilityDescription"
         name="description"
-        placeholder="Describe the liability"
+        placeholder="Describe the liability or financial obligation..."
         rows="4"
         required
       ></textarea>
+
+      <small class="financial-field-hint">
+        Briefly explain what this amount is owed for.
+      </small>
 
     </div>
 
@@ -69,7 +98,7 @@
     <div class="form-group">
 
       <label for="liabilityDate">
-        Date
+        Liability Date
       </label>
 
       <input
@@ -82,11 +111,13 @@
     </div>
 
 
+    <!-- SUBMIT -->
     <button
       type="submit"
       class="financial-btn liability-btn"
     >
-      Record Liability
+      <span class="financial-btn-icon">✓</span>
+      <span>Record Liability</span>
     </button>
 
   </form>
