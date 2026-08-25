@@ -1,7 +1,7 @@
 <%
 // ==========================================================
 // views/update/addOns.ejs
-// =========================================================
+// ==========================================================
 //
 // FINANCIAL ADD-ONS PAGE
 //
@@ -10,12 +10,6 @@
 //     dairy
 //     assetDairies
 //     user
-//
-// CARDS:
-//
-//     addOns/s1.ejs
-//     addOns/s.revenue.ejs
-//     addOns/s.liability.ejs
 //
 // ==========================================================
 %>
@@ -31,13 +25,13 @@
 
 
     <!-- ================================================ -->
-    <!-- PAGE HEADER / WELCOME CARD -->
+    <!-- WELCOME CARD -->
     <!-- ================================================ -->
 
     <section class="addons-section">
 
         <%- include(
-            "addOns/s1",
+            "./addOns/s1.ejs",
             {
                 dairy: dairy,
                 user: user
@@ -48,18 +42,16 @@
 
 
     <!-- ================================================ -->
-    <!-- FINANCIAL RECORDING CARDS -->
+    <!-- FINANCIAL CARDS -->
     <!-- ================================================ -->
 
     <section class="addons-financial-grid">
 
 
-        <!-- ============================================ -->
         <!-- REVENUE -->
-        <!-- ============================================ -->
 
         <%- include(
-            "addOns/s.revenue",
+            "./addOns/s.revenue.ejs",
             {
                 dairy: dairy,
                 user: user
@@ -67,12 +59,10 @@
         ) %>
 
 
-        <!-- ============================================ -->
         <!-- LIABILITY -->
-        <!-- ============================================ -->
 
         <%- include(
-            "addOns/s.liability",
+            "./addOns/s.liability.ejs",
             {
                 dairy: dairy,
                 user: user
@@ -81,19 +71,6 @@
 
 
     </section>
-
-
-    <!-- ================================================ -->
-    <!-- ASSET DAIRIES -->
-    <!-- ================================================ -->
-    <!--
-        assetDairies is intentionally available here
-        because the controller passes it to this view.
-
-        No asset card is rendered yet because the current
-        page specification only contains the three cards.
-    -->
-    <!-- ================================================ -->
 
 
 </div>
