@@ -4,7 +4,7 @@
 //
 // NET WORTH CONTROLLER
 //
-// Handles:
+// ROUTES:
 //
 //     GET  /networth
 //     GET  /networth/structure/:id
@@ -15,53 +15,44 @@
 //     GET  /networth/data
 //     GET  /networth/structure/:id/data
 //
-// SPECIAL STRUCTURE / FACILITY FIELDS
+// ==========================================================
+//
+// DATA MODEL
 // ----------------------------------------------------------
 //
-// When a Dairy record has NO numeric code:
+// models/dairy.js is the source of truth for Dairy assets.
 //
-//     code === null
+// CODE:
 //
-// it is treated as a structure / facility / equipment record.
+//     code < 0
+//         = Dairy Farm
 //
-// Such records may edit:
+//     code > 0
+//         = identified animal
 //
-//     about
-//     mission
-//     refNo
-//     vision
+//     code === null / undefined
+//         = structure / facility / equipment / standalone asset
 //
-// ASSIGNED USER
-// ----------------------------------------------------------
+// ASSET CODE:
 //
-// The Net Worth asset edit page may also assign the current
-// Dairy asset to another project user.
+//     assetCode
+//         = parent Dairy Farm code
 //
-// The controller:
-//
-//     1. Loads all users whose role is NOT "admin"
-//     2. Passes them to the asset edit view
-//     3. Accepts assignedUserId from the form
-//     4. Passes assignedUserId to networthService.updateAsset()
-//
-// The controller DOES NOT decide whether this Dairy is an
-// eligible asset. The page is already the standalone-asset
-// editor.
-//
-// The service is responsible for updating:
+// USER ASSIGNMENT:
 //
 //     User.assignedAsset
+//         = Dairy._id
 //
 // IMPORTANT:
 //
-// The controller never allows the browser to modify:
+// Assignment is NOT stored on the Dairy document.
 //
-//     _id
-//     code
-//     assetCode
-//     __v
-//     createdAt
-//     updatedAt
+// The relationship is:
+//
+//     User.assignedAsset -> Dairy._id
+//
+// Therefore the controller determines the current assigned
+// user by querying the User collection.
 //
 // ==========================================================
 
@@ -70,23 +61,8 @@ const networthService =
     require("../services/networthService");
 
 
-// ==========================================================
-// USER MODEL
-// ==========================================================
-//
-// Used only to retrieve users for the assignment dropdown.
-//
-// Assignment itself is handled by networthService.updateAsset().
-//
-// ==========================================================
-
 const User =
     require("../models/projectUser");
-
-
-// ==========================================================
-// HELPERS
-// ==========================================================
 
 
 // ==========================================================
@@ -178,16 +154,15 @@ function jsonError(
 // BUILD IMAGE URL
 // ==========================================================
 //
-// multer stores:
+// multer:
 //
 //     public/uploads/<filename>
 //
-// Browser URL:
+// browser:
 //
 //     /uploads/<filename>
 //
-// Never store req.file.path directly.
-//
+// ==========================================================
 
 function getUploadedImageUrl(file) {
 
@@ -211,20 +186,15 @@ function getUploadedImageUrl(file) {
 
 
 // ==========================================================
-// REMOVE PROTECTED ASSET FIELDS
+// REMOVE PROTECTED DAIRY FIELDS
 // ==========================================================
 //
-// These fields are controlled by the application:
+// These fields are controlled by the application.
 //
-//     _id
-//     code
-//     assetCode
-//     __v
-//     createdAt
-//     updatedAt
+// NEVER accept them from the browser during an ordinary
+// asset update.
 //
-// DO NOT allow the browser to change them.
-//
+// ==========================================================
 
 function removeProtectedAssetFields(data) {
 
@@ -293,17 +263,6 @@ function normalizeBoolean(value) {
 // ==========================================================
 // NORMALIZE TEXT
 // ==========================================================
-//
-// Used for:
-//
-//     about
-//     mission
-//     refNo
-//     vision
-//
-// Empty strings are preserved so the user can intentionally
-// clear a field.
-//
 
 function normalizeText(value) {
 
@@ -323,7 +282,16 @@ function normalizeText(value) {
 
 
 // ==========================================================
-// NORMALIZE STRUCTURE INFORMATION
+// NORMALIZE STRUCTURE FIELDS
+// ==========================================================
+//
+// These fields belong to unnumbered Dairy records:
+//
+//     about
+//     mission
+//     refNo
+//     vision
+//
 // ==========================================================
 
 function normalizeStructureFields(data) {
@@ -334,10 +302,6 @@ function normalizeStructureFields(data) {
 
     }
 
-
-    // ------------------------------------------------------
-    // ABOUT
-    // ------------------------------------------------------
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -354,10 +318,6 @@ function normalizeStructureFields(data) {
     }
 
 
-    // ------------------------------------------------------
-    // MISSION
-    // ------------------------------------------------------
-
     if (
         Object.prototype.hasOwnProperty.call(
             data,
@@ -373,10 +333,6 @@ function normalizeStructureFields(data) {
     }
 
 
-    // ------------------------------------------------------
-    // REFERENCE NUMBER
-    // ------------------------------------------------------
-
     if (
         Object.prototype.hasOwnProperty.call(
             data,
@@ -391,10 +347,6 @@ function normalizeStructureFields(data) {
 
     }
 
-
-    // ------------------------------------------------------
-    // VISION
-    // ------------------------------------------------------
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -417,22 +369,22 @@ function normalizeStructureFields(data) {
 
 
 // ==========================================================
-// NORMALIZE ASSIGNED USER
+// NORMALIZE ASSIGNED USER ID
 // ==========================================================
 //
-// The form sends:
+// Form:
 //
 //     assignedUserId
 //
-// Empty value means:
+// Empty:
 //
-//     remove the current assignment.
+//     null
 //
-// The controller does not determine asset eligibility.
+// Non-empty:
 //
-// It simply normalizes the selected user ID and passes it
-// to the service.
+//     ObjectId string
 //
+// ==========================================================
 
 function normalizeAssignedUserId(value) {
 
@@ -463,14 +415,16 @@ function normalizeAssignedUserId(value) {
 
 
 // ==========================================================
-// GET AVAILABLE ASSIGNMENT USERS
+// GET AVAILABLE USERS
 // ==========================================================
 //
-// Returns every project user whose role is NOT admin.
+// Assignment dropdown:
 //
-// Admin users are intentionally excluded from the dropdown.
+//     admin
+//         excluded
 //
-// The service performs the actual assignedAsset update.
+//     every other project user
+//         included
 //
 // ==========================================================
 
@@ -487,7 +441,8 @@ async function getAvailableAssignmentUsers() {
                 _id: 1,
                 name: 1,
                 email: 1,
-                role: 1
+                role: 1,
+                assignedAsset: 1
             }
         )
         .sort(
@@ -502,11 +457,63 @@ async function getAvailableAssignmentUsers() {
 
 
 // ==========================================================
-// GET /networth
+// GET CURRENT ASSIGNED USER
 // ==========================================================
 //
-// MAIN NET WORTH PAGE.
+// THIS IS THE IMPORTANT FIX.
 //
+// We DO NOT use:
+//
+//     currentAssignedUser
+//
+// from the EJS.
+//
+// We DO NOT assume:
+//
+//     assignedUser
+//
+// is supplied by networthService.
+//
+// Instead:
+//
+//     User.assignedAsset === Dairy._id
+//
+// identifies the current assigned user.
+//
+// ==========================================================
+
+async function getCurrentAssignedUser(
+    dairyId
+) {
+
+    if (!dairyId) {
+
+        return null;
+
+    }
+
+
+    return User
+        .findOne(
+            {
+                assignedAsset: dairyId
+            },
+            {
+                _id: 1,
+                name: 1,
+                email: 1,
+                role: 1,
+                assignedAsset: 1
+            }
+        )
+        .lean();
+
+}
+
+
+// ==========================================================
+// GET /networth
+// ==========================================================
 
 async function getNetWorth(
     req,
@@ -557,11 +564,6 @@ async function getNetWorth(
 // ==========================================================
 // GET /networth/structure/:id
 // ==========================================================
-//
-// :id = Dairy Farm _id
-//
-// The service resolves the Dairy Farm and its assets.
-//
 
 async function getDairyFarm(
     req,
@@ -614,11 +616,6 @@ async function getDairyFarm(
 // ==========================================================
 // GET /networth/structure/:id/add
 // ==========================================================
-//
-// :id = Parent Dairy Farm _id
-//
-// Creates the data required by the Add Asset page.
-//
 
 async function getAddAsset(
     req,
@@ -672,19 +669,11 @@ async function getAddAsset(
 // POST /networth/structure/:id/add
 // ==========================================================
 //
-// CREATE STRUCTURE ASSET
+// CREATE ASSET.
 //
-// Parent Dairy Farm:
+// code and assetCode remain system controlled.
 //
-//     req.params.id
-//
-// System-controlled:
-//
-//     code
-//     assetCode
-//
-// The service is responsible for creating the record.
-//
+// ==========================================================
 
 async function addAsset(
     req,
@@ -697,44 +686,24 @@ async function addAsset(
             req.params.id;
 
 
-        // ======================================================
-        // COPY FORM DATA
-        // ======================================================
-
         const body =
             {
                 ...(req.body || {})
             };
 
 
-        // ======================================================
-        // REMOVE METHOD OVERRIDE
-        // ======================================================
-
         delete body._method;
 
-
-        // ======================================================
-        // REMOVE PROTECTED SYSTEM FIELDS
-        // ======================================================
 
         removeProtectedAssetFields(
             body
         );
 
 
-        // ======================================================
-        // NORMALIZE STRUCTURE FIELDS
-        // ======================================================
-
         normalizeStructureFields(
             body
         );
 
-
-        // ======================================================
-        // PROFILE IMAGE
-        // ======================================================
 
         const uploadedImage =
             getUploadedImageUrl(
@@ -750,10 +719,6 @@ async function addAsset(
         }
 
 
-        // ======================================================
-        // MILKING
-        // ======================================================
-
         if (
             body.isMilking !== undefined
         ) {
@@ -766,10 +731,6 @@ async function addAsset(
         }
 
 
-        // ======================================================
-        // CREATE STRUCTURE
-        // ======================================================
-
         const asset =
             await networthService.addAsset(
                 dairyFarmId,
@@ -777,10 +738,6 @@ async function addAsset(
                 req.file || null
             );
 
-
-        // ======================================================
-        // JSON / FETCH RESPONSE
-        // ======================================================
 
         if (wantsJSON(req)) {
 
@@ -805,10 +762,6 @@ async function addAsset(
 
         }
 
-
-        // ======================================================
-        // NORMAL FORM SUBMISSION
-        // ======================================================
 
         return res.redirect(
             `/networth/structure/${dairyFarmId}`
@@ -848,19 +801,17 @@ async function addAsset(
 // GET /networth/asset/:id
 // ==========================================================
 //
-// :id = Dairy document _id
+// :id = Dairy._id
 //
-// Loads the individual asset page.
+// IMPORTANT:
 //
-// ALSO loads:
+// Current assignment is resolved from:
 //
-//     availableUsers
+//     User.assignedAsset
 //
-// These are all users whose role is NOT admin.
+// not from the Dairy document.
 //
-// The current asset's assigned user is supplied separately
-// by the service data if available.
-//
+// ==========================================================
 
 async function getAsset(
     req,
@@ -869,38 +820,65 @@ async function getAsset(
 
     try {
 
-        // ======================================================
-        // LOAD ASSET DATA
-        // ======================================================
+        const dairyId =
+            req.params.id;
+
+
+        // ------------------------------------------------------
+        // LOAD ASSET
+        // ------------------------------------------------------
 
         const data =
             await networthService.getAsset(
-                req.params.id
+                dairyId
             );
 
 
-        // ======================================================
-        // LOAD AVAILABLE USERS
-        // ======================================================
-        //
-        // Only non-admin users appear in the assignment list.
-        //
+        // ------------------------------------------------------
+        // LOAD ALL NON-ADMIN USERS
+        // ------------------------------------------------------
 
         const availableUsers =
             await getAvailableAssignmentUsers();
 
 
-        // ======================================================
-        // ADD USERS TO VIEW DATA
-        // ======================================================
+        // ------------------------------------------------------
+        // FIND CURRENT USER FROM users.assignedAsset
+        // ------------------------------------------------------
+
+        const assignedUser =
+            await getCurrentAssignedUser(
+                dairyId
+            );
+
+
+        // ------------------------------------------------------
+        // NORMALIZE VIEW VARIABLES
+        // ------------------------------------------------------
+        //
+        // The EJS only needs:
+        //
+        //     availableUsers
+        //
+        //     assignedUser
+        //
+        // It does NOT need:
+        //
+        //     currentAssignedUser
+        //
+        // ------------------------------------------------------
 
         data.availableUsers =
             availableUsers;
 
 
-        // ======================================================
+        data.assignedUser =
+            assignedUser;
+
+
+        // ------------------------------------------------------
         // RENDER
-        // ======================================================
+        // ------------------------------------------------------
 
         return res.render(
             "networth-asset",
@@ -941,38 +919,48 @@ async function getAsset(
 // POST /networth/asset/:id
 // ==========================================================
 //
-// UPDATE EXISTING ASSET
+// UPDATE ASSET
 //
-// Protected:
+// Dairy fields:
 //
-//     code
-//     assetCode
-//
-// Allowed structure fields:
-//
+//     name
+//     type
+//     dateOfBirth
+//     mass
+//     isMilking
+//     buyingPrice
+//     currentWorth
+//     valuationDate
+//     description
+//     condition
+//     location
+//     status
 //     about
 //     mission
 //     refNo
 //     vision
+//     profileImage
 //
-// Assignment:
+// Protected Dairy fields:
+//
+//     _id
+//     code
+//     assetCode
+//     __v
+//     createdAt
+//     updatedAt
+//
+// User assignment:
 //
 //     assignedUserId
 //
-// The controller passes assignedUserId to:
+// is NOT a Dairy field.
 //
-//     networthService.updateAsset()
-//
-// The service is responsible for updating:
+// It updates:
 //
 //     User.assignedAsset
 //
-// IMPORTANT:
-//
-// The controller does NOT decide whether the current Dairy
-// is eligible for assignment. This page is already the
-// standalone asset editor.
-//
+// ==========================================================
 
 async function updateAsset(
     req,
@@ -981,9 +969,8 @@ async function updateAsset(
 
     try {
 
-        const {
-            id
-        } = req.params;
+        const dairyId =
+            req.params.id;
 
 
         // ======================================================
@@ -996,15 +983,39 @@ async function updateAsset(
             };
 
 
-        // ======================================================
-        // REMOVE METHOD OVERRIDE
-        // ======================================================
-
         delete updateData._method;
 
 
         // ======================================================
-        // REMOVE PROTECTED SYSTEM FIELDS
+        // READ ASSIGNMENT BEFORE REMOVING OTHER FIELDS
+        // ======================================================
+        //
+        // assignedUserId belongs to the User collection.
+        //
+        // It must NOT be sent to Dairy.update().
+        //
+        // ======================================================
+
+        const hasAssignmentField =
+            Object.prototype.hasOwnProperty.call(
+                updateData,
+                "assignedUserId"
+            );
+
+
+        const requestedAssignedUserId =
+            hasAssignmentField
+                ? normalizeAssignedUserId(
+                    updateData.assignedUserId
+                )
+                : undefined;
+
+
+        delete updateData.assignedUserId;
+
+
+        // ======================================================
+        // REMOVE PROTECTED DAIRY FIELDS
         // ======================================================
 
         removeProtectedAssetFields(
@@ -1047,7 +1058,7 @@ async function updateAsset(
 
 
         // ======================================================
-        // STRUCTURE / FACILITY FIELDS
+        // STRUCTURE FIELDS
         // ======================================================
 
         normalizeStructureFields(
@@ -1056,77 +1067,120 @@ async function updateAsset(
 
 
         // ======================================================
-        // ASSIGNED USER
+        // UPDATE DAIRY RECORD
         // ======================================================
-        //
-        // Form field:
-        //
-        //     assignedUserId
-        //
-        // This value is deliberately preserved and passed to
-        // the service.
-        //
-        // Possible values:
-        //
-        //     ObjectId string
-        //         = assign asset to selected user
-        //
-        //     null
-        //         = remove assignment
-        //
-        // The service will perform the actual User update.
-        //
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                updateData,
-                "assignedUserId"
-            )
-        ) {
-
-            updateData.assignedUserId =
-                normalizeAssignedUserId(
-                    updateData.assignedUserId
-                );
-
-        } else {
-
-            // --------------------------------------------------
-            // No assignment field submitted.
-            //
-            // Keep this undefined so the service can distinguish
-            // between:
-            //
-            //     "do not change assignment"
-            //
-            // and:
-            //
-            //     "remove assignment"
-            //
-            // --------------------------------------------------
-
-            delete updateData.assignedUserId;
-
-        }
-
-
-        // ======================================================
-        // UPDATE DATABASE
-        // ======================================================
-        //
-        // IMPORTANT:
-        //
-        // assignedUserId is now part of updateData.
-        //
-        // Therefore the service receives the selected user and
-        // can update User.assignedAsset accordingly.
-        //
 
         const updatedAsset =
             await networthService.updateAsset(
-                id,
+                dairyId,
                 updateData
             );
+
+
+        // ======================================================
+        // UPDATE USER ASSIGNMENT
+        // ======================================================
+        //
+        // Only do this when the form actually submitted
+        // assignedUserId.
+        //
+        // Therefore:
+        //
+        // assignedUserId missing
+        //     = do not change assignment
+        //
+        // assignedUserId empty
+        //     = remove assignment
+        //
+        // assignedUserId contains ObjectId
+        //     = assign this Dairy to that user
+        //
+        // ======================================================
+
+        if (hasAssignmentField) {
+
+            // --------------------------------------------------
+            // REMOVE THIS DAIRY FROM EVERY USER
+            // --------------------------------------------------
+            //
+            // This prevents the same standalone asset from
+            // remaining assigned to multiple users.
+            //
+            // --------------------------------------------------
+
+            await User.updateMany(
+                {
+                    assignedAsset: dairyId
+                },
+                {
+                    $set: {
+                        assignedAsset: null
+                    }
+                }
+            );
+
+
+            // --------------------------------------------------
+            // ASSIGN TO SELECTED USER
+            // --------------------------------------------------
+
+            if (requestedAssignedUserId) {
+
+                const selectedUser =
+                    await User.findOne(
+                        {
+                            _id:
+                                requestedAssignedUserId,
+
+                            role: {
+                                $ne: "admin"
+                            }
+                        },
+                        {
+                            _id: 1,
+                            role: 1
+                        }
+                    );
+
+
+                if (!selectedUser) {
+
+                    const error =
+                        new Error(
+                            "Selected user does not exist or is an admin."
+                        );
+
+                    error.statusCode = 400;
+
+                    throw error;
+
+                }
+
+
+                // ------------------------------------------------
+                // IMPORTANT:
+                //
+                // A user can now receive this Dairy asset.
+                //
+                // User.assignedAsset stores the Dairy._id.
+                // ------------------------------------------------
+
+                await User.updateOne(
+                    {
+                        _id:
+                            selectedUser._id
+                    },
+                    {
+                        $set: {
+                            assignedAsset:
+                                dairyId
+                        }
+                    }
+                );
+
+            }
+
+        }
 
 
         // ======================================================
@@ -1138,7 +1192,7 @@ async function updateAsset(
 
 
         // ======================================================
-        // JSON / FETCH RESPONSE
+        // JSON RESPONSE
         // ======================================================
 
         if (wantsJSON(req)) {
@@ -1163,11 +1217,11 @@ async function updateAsset(
 
 
         // ======================================================
-        // NORMAL BROWSER FORM
+        // NORMAL FORM SUBMISSION
         // ======================================================
 
         return res.redirect(
-            `/networth/asset/${id}`
+            `/networth/asset/${dairyId}`
         );
 
     } catch (error) {
@@ -1203,9 +1257,6 @@ async function updateAsset(
 // ==========================================================
 // GET /networth/data
 // ==========================================================
-//
-// JSON DATA FOR MAIN NET WORTH PAGE.
-//
 
 async function getNetWorthData(
     req,
@@ -1250,9 +1301,6 @@ async function getNetWorthData(
 // ==========================================================
 // GET /networth/structure/:id/data
 // ==========================================================
-//
-// JSON DATA FOR A DAIRY FARM STRUCTURE PAGE.
-//
 
 async function getDairyFarmData(
     req,
