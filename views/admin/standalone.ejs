@@ -17,10 +17,20 @@
        assetCode === null
 
    EXISTING ASSET:
-       /dairy/:id
+       /dairy/:id/addOns
 
    FIRST CARD:
        /add
+
+   IMPORTANT:
+       Each standalone card uses the current record's
+       MongoDB _id:
+
+           asset._id
+
+       URL:
+
+           /dairy/<asset._id>/addOns
 ========================================================== */
 
 
@@ -178,11 +188,18 @@ const standaloneRecords =
             %>
 
 
+            <!-- ==================================================
+                 STANDALONE ASSET CARD
+
+                 URL:
+                     /dairy/:asset._id/addOns
+            ================================================== -->
+
             <a
-                href="/dairy/<%= dairy._id/addOns %>"
+                href="/dairy/<%= asset._id %>/addOns"
                 class="admin-standalone-card"
                 role="listitem"
-                aria-label="Open <%= assetName %>"
+                aria-label="Open <%= assetName %> add-ons"
             >
 
                 <div class="admin-standalone-image-wrap">
@@ -224,7 +241,9 @@ const standaloneRecords =
 
                         <div class="admin-standalone-condition">
 
-                            <span class="admin-standalone-condition-label">
+                            <span
+                                class="admin-standalone-condition-label"
+                            >
                                 Condition:
                             </span>
 
