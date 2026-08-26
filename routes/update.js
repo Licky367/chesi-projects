@@ -1,8 +1,7 @@
 // =========================================================
 // routes/update.js
-// ========================================================
-//
 // DAIRY PROFILE / UPDATE ROUTES
+// =========================================================
 //
 // ROUTER MOUNT
 // ---------------------------------------------------------
@@ -18,13 +17,12 @@
 //
 //     /dairy/:contentItemId/:dwellNumber
 //
-// is ONLY allowed to reach getContentItem when the second
-// parameter is an actual numeric dwellNumber.
+// is ONLY allowed to reach getContentItem/updateContentItem
+// when the second parameter is actually numeric.
 //
-// An unrelated URL must NEVER be interpreted as a
-// dwellNumber request.
+// Negative dwellNumbers ARE valid.
 //
-// ==========================================================
+// =========================================================
 
 
 const express =
@@ -70,7 +68,8 @@ function isAuth(
             .status(401)
             .json({
 
-                success: false,
+                success:
+                    false,
 
                 message:
                     "Unauthorized"
@@ -93,18 +92,7 @@ function isAuth(
 // DWELL NUMBER GUARD
 // =========================================================
 //
-// IMPORTANT:
-//
-// This middleware does NOT say that a negative dwellNumber
-// is invalid.
-//
-// Negative dwellNumbers are allowed.
-//
-// The only question here is:
-//
-//     "Is this actually a numeric dwellNumber?"
-//
-// Valid examples:
+// Valid:
 //
 //     -5
 //     -1
@@ -112,16 +100,15 @@ function isAuth(
 //      1
 //      25
 //
-// Invalid examples:
+// Invalid:
 //
 //     post
 //     maintenance
 //     mark
-//     undefined
 //     abc
 //
-// If it is not numeric, we call next() instead of returning
-// "Invalid dwell number".
+// Non-numeric values are passed onward rather than being
+// treated as a storage content-item request.
 //
 // =========================================================
 
@@ -161,13 +148,6 @@ function isValidDwellNumber(
     }
 
 
-    /*
-     * Preserve the numeric value for the controller.
-     *
-     * IMPORTANT:
-     * Negative values remain completely valid.
-     */
-
     req.dwellNumber =
         dwellNumber;
 
@@ -201,10 +181,6 @@ router.get(
 //
 //     /dairy/:animalId/boolean/:field
 //
-// Example:
-//
-//     /dairy/64abc123/boolean/milking
-//
 // =========================================================
 
 router.post(
@@ -216,6 +192,14 @@ router.post(
 
 // =========================================================
 // BOOLEAN FIELD DEFINITIONS
+// =========================================================
+//
+// GET:
+//
+//     /dairy/boolean/fields
+//
+// IMPORTANT:
+// This MUST remain before /dairy/:id.
 // =========================================================
 
 router.get(
@@ -255,22 +239,6 @@ router.get(
 router.get(
     "/dairy/:id/general",
     controller.viewGeneral
-);
-
-
-// =========================================================
-// DAIRY PROFILE
-// =========================================================
-//
-// GET:
-//
-//     /dairy/:id
-//
-// =========================================================
-
-router.get(
-    "/dairy/:id",
-    controller.viewPage
 );
 
 
@@ -442,41 +410,17 @@ router.post(
 // DAIRY FINANCIAL ROUTES
 // =========================================================
 //
-// These routes match the financial cards:
-//
-// LIABILITY:
-//
-//     POST /dairy/:id/liability
-//
-// REVENUE:
-//
-//     POST /dairy/:id/revenue
-//
-// The :id is the Dairy._id.
-//
-// These are explicit Dairy routes and therefore MUST be
-// defined before the generic:
+// These MUST appear before:
 //
 //     /dairy/:contentItemId/:dwellNumber
 //
-// route.
+// because they are explicit Dairy routes.
 //
 // =========================================================
 
 
 // ---------------------------------------------------------
 // RECORD LIABILITY
-// ---------------------------------------------------------
-//
-// POST:
-//
-//     /dairy/:id/liability
-//
-// Form:
-//
-//     action="/dairy/<%= dairy._id %>/liability"
-//     method="POST"
-//
 // ---------------------------------------------------------
 
 router.post(
@@ -489,22 +433,47 @@ router.post(
 // ---------------------------------------------------------
 // RECORD REVENUE
 // ---------------------------------------------------------
-//
-// POST:
-//
-//     /dairy/:id/revenue
-//
-// Form:
-//
-//     action="/dairy/<%= dairy._id %>/revenue"
-//     method="POST"
-//
-// ---------------------------------------------------------
 
 router.post(
     "/dairy/:id/revenue",
     isAuth,
     controller.recordRevenue
+);
+
+
+// =========================================================
+// DAIRY PROFILE PAGE
+// =========================================================
+//
+// GET:
+//
+//     /dairy/:id
+//
+// The controller renders:
+//
+//     views/asset-page.ejs
+//
+// and passes:
+//
+//     dairy
+//     assetDairies
+//     assignedFarms
+//     animalFeeds
+//     feed
+//     weeklyFeed
+//     comments
+//     booleanAnimals
+//     booleanFields
+//     medicalDairies
+//     medicalAnimals
+//     itemLinks
+//     user
+//
+// =========================================================
+
+router.get(
+    "/dairy/:id",
+    controller.viewPage
 );
 
 
@@ -522,10 +491,9 @@ router.post(
 //
 // IMPORTANT:
 //
-// This is intentionally placed AFTER all known explicit
-// Dairy routes.
+// This remains AFTER all explicit /dairy/:id/... routes.
 //
-// Negative dwell numbers remain valid.
+// Negative dwellNumbers remain valid.
 //
 // =========================================================
 
@@ -633,11 +601,7 @@ router.delete(
 // DELETE DAIRY
 // =========================================================
 //
-// This remains after the more specific:
-//
-//     /dairy/:id/...
-//
-// routes.
+// This is intentionally last among the Dairy routes.
 //
 // =========================================================
 
@@ -648,7 +612,7 @@ router.delete(
 );
 
 
-// ========================================================
+// =========================================================
 // EXPORT
 // =========================================================
 
