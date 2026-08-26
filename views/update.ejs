@@ -51,10 +51,29 @@
 ===================================================== -->
 
 <div class="dairy-page">
+    <!-- =================================================
+         BOOLEAN MANAGEMENT
+         
+         FILE:
+             views/update/boolean.ejs
+
+         Rendered exactly once.
+    ================================================== -->
+
+    <%- include(
+        "update/boolean",
+        {
+            dairy: dairy,
+            assetDairies: assetDairies || [],
+            booleanFields: booleanFields || [],
+            booleanAnimals: booleanAnimals || [],
+            user: user
+        }
+    ) %>
 
 
     <!-- =================================================
-         PAGE HEADING
+  PERO SECTION, PLACED SECOND ON PURPOSE
     ================================================== -->
 
     <%- include(
@@ -88,7 +107,7 @@
          FILE:
              views/update/boolean.ejs
 
-         Rendered exactly once.
+         Rendered twice on Purpose
     ================================================== -->
 
     <%- include(
