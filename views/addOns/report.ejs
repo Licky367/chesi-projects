@@ -1,0 +1,1026 @@
+<%
+/*
+==============================================================
+CASH FLOW REPORT
+==============================================================
+
+FILE:
+
+    views/addOns/report.ejs
+
+URL:
+
+    /cash/:id
+
+PURPOSE:
+
+    Display the revenue and liability history for one Dairy.
+
+FINANCIAL RULE:
+
+    revenue
+        positive
+        green
+
+    liability
+        negative
+        red
+
+WEEK FILTER:
+
+    Enter a date.
+
+    The selected date determines the Monday -> Sunday week.
+
+==============================================================
+*/
+%>
+
+
+<style>
+
+/* =========================================================
+   CASH REPORT
+========================================================= */
+
+.cash-report{
+
+    width:100%;
+
+    max-width:1100px;
+
+    margin:0 auto;
+
+    color:#263238;
+
+}
+
+
+/* =========================================================
+   REPORT HEADER
+========================================================= */
+
+.cash-report-header{
+
+    background:#fff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:10px;
+
+    padding:18px;
+
+    margin-bottom:15px;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.06);
+
+}
+
+
+.cash-report-title{
+
+    color:#0b5d1e;
+
+    font-size:22px;
+
+    font-weight:700;
+
+    margin-bottom:6px;
+
+}
+
+
+.cash-report-subtitle{
+
+    color:#667085;
+
+    font-size:14px;
+
+    line-height:1.5;
+
+}
+
+
+/* =========================================================
+   WEEK FILTER
+========================================================= */
+
+.cash-week-filter{
+
+    display:flex;
+
+    align-items:flex-end;
+
+    gap:10px;
+
+    flex-wrap:wrap;
+
+    background:#f3faf5;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:10px;
+
+    padding:15px;
+
+    margin-bottom:15px;
+
+}
+
+
+.cash-filter-field{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:5px;
+
+}
+
+
+.cash-filter-label{
+
+    color:#263238;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+
+.cash-filter-date{
+
+    height:42px;
+
+    min-width:180px;
+
+    padding:0 11px;
+
+    border:1px solid #d8dee4;
+
+    border-radius:7px;
+
+    background:#fff;
+
+    color:#263238;
+
+    font:inherit;
+
+    outline:none;
+}
+
+
+.cash-filter-date:focus{
+
+    border-color:#0b5d1e;
+
+    box-shadow:
+        0 0 0 2px rgba(11,93,30,.10);
+
+}
+
+
+.cash-filter-button{
+
+    height:42px;
+
+    padding:0 18px;
+
+    border:0;
+
+    border-radius:7px;
+
+    background:#0b5d1e;
+
+    color:#fff;
+
+    font:inherit;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:
+        background .2s ease,
+        transform .15s ease;
+}
+
+
+.cash-filter-button:hover{
+
+    background:#084814;
+
+}
+
+
+.cash-filter-button:active{
+
+    transform:scale(.97);
+
+}
+
+
+.cash-current-week{
+
+    width:100%;
+
+    color:#667085;
+
+    font-size:12px;
+
+    margin-top:2px;
+
+}
+
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+.cash-summary{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0,1fr)
+        );
+
+    gap:12px;
+
+    margin-bottom:15px;
+
+}
+
+
+.cash-summary-card{
+
+    background:#fff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:10px;
+
+    padding:15px;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.05);
+
+}
+
+
+.cash-summary-label{
+
+    font-size:12px;
+
+    color:#667085;
+
+    margin-bottom:6px;
+
+}
+
+
+.cash-summary-value{
+
+    font-size:20px;
+
+    font-weight:700;
+
+}
+
+
+.cash-summary-revenue{
+
+    color:#0b5d1e;
+
+}
+
+
+.cash-summary-liability{
+
+    color:#c62828;
+
+}
+
+
+.cash-summary-net{
+
+    color:#263238;
+
+}
+
+
+.cash-summary-net.positive{
+
+    color:#0b5d1e;
+
+}
+
+
+.cash-summary-net.negative{
+
+    color:#c62828;
+
+}
+
+
+/* =========================================================
+   TABLE CONTAINER
+========================================================= */
+
+.cash-table-card{
+
+    background:#fff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:10px;
+
+    overflow:hidden;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.06);
+
+}
+
+
+.cash-table-wrapper{
+
+    width:100%;
+
+    overflow-x:auto;
+
+}
+
+
+.cash-table{
+
+    width:100%;
+
+    min-width:650px;
+
+    border-collapse:collapse;
+
+}
+
+
+.cash-table thead{
+
+    background:#084816;
+
+}
+
+
+.cash-table th{
+
+    padding:13px 15px;
+
+    color:#fff;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    text-align:left;
+
+    white-space:nowrap;
+
+}
+
+
+.cash-table td{
+
+    padding:13px 15px;
+
+    border-bottom:1px solid #e5e7eb;
+
+    font-size:14px;
+
+    vertical-align:middle;
+
+}
+
+
+.cash-table tbody tr:hover{
+
+    background:#f3faf5;
+
+}
+
+
+.cash-table tbody tr:last-child td{
+
+    border-bottom:none;
+
+}
+
+
+/* =========================================================
+   DATE
+========================================================= */
+
+.cash-date{
+
+    color:#667085;
+
+    white-space:nowrap;
+
+}
+
+
+/* =========================================================
+   CASH FLOW
+========================================================= */
+
+.cash-flow{
+
+    font-weight:700;
+
+    white-space:nowrap;
+
+}
+
+
+.cash-flow.revenue{
+
+    color:#0b5d1e;
+
+}
+
+
+.cash-flow.liability{
+
+    color:#c62828;
+
+}
+
+
+/* =========================================================
+   DESCRIPTION
+========================================================= */
+
+.cash-description{
+
+    color:#263238;
+
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.cash-empty{
+
+    padding:35px 20px;
+
+    text-align:center;
+
+    color:#667085;
+
+    font-size:14px;
+
+}
+
+
+/* =========================================================
+   TABLE FOOTER
+========================================================= */
+
+.cash-table-footer{
+
+    background:#f3faf5;
+
+    border-top:1px solid #e5e7eb;
+
+}
+
+
+.cash-table-footer td{
+
+    padding:14px 15px;
+
+    font-size:14px;
+
+    font-weight:700;
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:700px){
+
+    .cash-report-title{
+
+        font-size:19px;
+
+    }
+
+
+    .cash-summary{
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .cash-week-filter{
+
+        align-items:stretch;
+
+    }
+
+
+    .cash-filter-field{
+
+        width:100%;
+
+    }
+
+
+    .cash-filter-date{
+
+        width:100%;
+
+    }
+
+
+    .cash-filter-button{
+
+        width:100%;
+
+    }
+
+}
+
+
+</style>
+
+
+<div class="cash-report">
+
+
+    <!-- =====================================================
+       HEADER
+    ====================================================== -->
+
+    <section class="cash-report-header">
+
+
+        <div class="cash-report-title">
+
+            Cash Flow Report
+
+        </div>
+
+
+        <div class="cash-report-subtitle">
+
+            <% if(dairy){ %>
+
+                Financial history for
+
+                <strong>
+                    <%= dairy.name || dairy.title || "Dairy" %>
+                </strong>
+
+                <% if(
+                    dairy.code !== undefined &&
+                    dairy.code !== null
+                ){ %>
+
+                    — Code:
+                    <strong>
+                        <%= dairy.code %>
+                    </strong>
+
+                <% } %>
+
+            <% }else{ %>
+
+                Dairy Financial History
+
+            <% } %>
+
+        </div>
+
+
+    </section>
+
+
+    <!-- =====================================================
+       WEEK FILTER
+    ====================================================== -->
+
+    <form
+        method="GET"
+        action="/cash/<%= dairy._id %>"
+        class="cash-week-filter"
+    >
+
+
+        <div class="cash-filter-field">
+
+
+            <label
+                for="reportDate"
+                class="cash-filter-label"
+            >
+
+                Select a date
+
+            </label>
+
+
+            <input
+                type="date"
+
+                id="reportDate"
+
+                name="date"
+
+                class="cash-filter-date"
+
+                value="<%= selectedDate %>"
+
+                required
+            >
+
+
+        </div>
+
+
+        <button
+            type="submit"
+            class="cash-filter-button"
+        >
+
+            View Week
+
+        </button>
+
+
+        <div class="cash-current-week">
+
+            Week:
+
+            <strong>
+                <%= weekStart.toLocaleDateString() %>
+            </strong>
+
+            to
+
+            <strong>
+                <%= weekEnd.toLocaleDateString() %>
+            </strong>
+
+        </div>
+
+
+    </form>
+
+
+    <!-- =====================================================
+       WEEKLY SUMMARY
+    ====================================================== -->
+
+    <section class="cash-summary">
+
+
+        <!-- =================================================
+           REVENUE
+        ================================================== -->
+
+        <div class="cash-summary-card">
+
+
+            <div class="cash-summary-label">
+
+                Weekly Revenue
+
+            </div>
+
+
+            <div class="cash-summary-value cash-summary-revenue">
+
+                +
+                <%= Number(
+                    revenueTotal
+                ).toLocaleString(
+                    undefined,
+                    {
+                        minimumFractionDigits:2,
+                        maximumFractionDigits:2
+                    }
+                ) %>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+           LIABILITIES
+        ================================================== -->
+
+        <div class="cash-summary-card">
+
+
+            <div class="cash-summary-label">
+
+                Weekly Liabilities
+
+            </div>
+
+
+            <div class="cash-summary-value cash-summary-liability">
+
+                -
+                <%= Number(
+                    liabilityTotal
+                ).toLocaleString(
+                    undefined,
+                    {
+                        minimumFractionDigits:2,
+                        maximumFractionDigits:2
+                    }
+                ) %>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+           NET
+        ================================================== -->
+
+        <div class="cash-summary-card">
+
+
+            <div class="cash-summary-label">
+
+                Net Cash Flow
+
+            </div>
+
+
+            <div
+                class="
+                    cash-summary-value
+                    cash-summary-net
+                    <%= netCashFlow >= 0
+                        ? 'positive'
+                        : 'negative'
+                    %>
+                "
+            >
+
+                <%= netCashFlow >= 0 ? "+" : "-" %>
+
+                <%= Math.abs(
+                    Number(
+                        netCashFlow
+                    )
+                ).toLocaleString(
+                    undefined,
+                    {
+                        minimumFractionDigits:2,
+                        maximumFractionDigits:2
+                    }
+                ) %>
+
+            </div>
+
+
+        </div>
+
+
+    </section>
+
+
+    <!-- =====================================================
+       TRANSACTIONS TABLE
+    ====================================================== -->
+
+    <section class="cash-table-card">
+
+
+        <div class="cash-table-wrapper">
+
+
+            <table class="cash-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Cash Flow
+                        </th>
+
+                        <th>
+                            Description
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                <% if(
+                    Array.isArray(cashFlows) &&
+                    cashFlows.length > 0
+                ){ %>
+
+
+                    <% cashFlows.forEach(
+                        function(flow)
+                    { %>
+
+
+                        <tr>
+
+
+                            <!-- =================================
+                               DATE
+                            ================================== -->
+
+                            <td class="cash-date">
+
+                                <%= new Date(
+                                    flow.date
+                                ).toLocaleDateString(
+                                    undefined,
+                                    {
+                                        year:"numeric",
+                                        month:"short",
+                                        day:"numeric"
+                                    }
+                                ) %>
+
+                            </td>
+
+
+                            <!-- =================================
+                               CASH FLOW
+                            ================================== -->
+
+                            <td
+                                class="
+                                    cash-flow
+                                    <%= flow.type === 'revenue'
+                                        ? 'revenue'
+                                        : 'liability'
+                                    %>
+                                "
+                            >
+
+                                <%= flow.cashFlow >= 0
+                                    ? "+"
+                                    : "-"
+                                %>
+
+                                <%= Math.abs(
+                                    Number(
+                                        flow.cashFlow
+                                    )
+                                ).toLocaleString(
+                                    undefined,
+                                    {
+                                        minimumFractionDigits:2,
+                                        maximumFractionDigits:2
+                                    }
+                                ) %>
+
+                            </td>
+
+
+                            <!-- =================================
+                               DESCRIPTION
+                            ================================== -->
+
+                            <td class="cash-description">
+
+                                <%= flow.description %>
+
+                            </td>
+
+
+                        </tr>
+
+
+                    <% }); %>
+
+
+                <% }else{ %>
+
+
+                    <tr>
+
+                        <td
+                            colspan="3"
+                            class="cash-empty"
+                        >
+
+                            No financial transactions were recorded
+                            for this week.
+
+                        </td>
+
+                    </tr>
+
+
+                <% } %>
+
+
+                </tbody>
+
+
+                <!-- =================================================
+                   WEEKLY TOTAL
+                ================================================== -->
+
+                <tfoot class="cash-table-footer">
+
+
+                    <tr>
+
+                        <td>
+
+                            Weekly Total
+
+                        </td>
+
+
+                        <td
+                            class="
+                                cash-flow
+                                <%= netCashFlow >= 0
+                                    ? 'revenue'
+                                    : 'liability'
+                                %>
+                            "
+                        >
+
+                            <%= netCashFlow >= 0
+                                ? "+"
+                                : "-"
+                            %>
+
+                            <%= Math.abs(
+                                Number(
+                                    netCashFlow
+                                )
+                            ).toLocaleString(
+                                undefined,
+                                {
+                                    minimumFractionDigits:2,
+                                    maximumFractionDigits:2
+                                }
+                            ) %>
+
+                        </td>
+
+
+                        <td>
+
+                            Revenue less liabilities
+
+                        </td>
+
+
+                    </tr>
+
+
+                </tfoot>
+
+
+            </table>
+
+
+        </div>
+
+
+    </section>
+
+
+</div>
