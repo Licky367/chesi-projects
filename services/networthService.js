@@ -12,57 +12,52 @@
 //
 //     models/projectUser.js
 //
-// RESPONSIBILITIES:
-//
-// 1. Load the main Net Worth page
-// 2. Load one Dairy Farm and its assigned assets
-// 3. Prepare Add Asset page
-// 4. Create a manual / structure asset
-// 5. Load an individual Dairy record
-// 6. Update an individual Dairy record
-// 7. Supply JSON data for Net Worth
-// 8. Supply JSON data for a Dairy Farm
-// 9. Supply available non-admin users for asset assignment
-// 10. Assign a standalone Dairy asset to a non-admin user
-//
 // RECORD CLASSIFICATION
 // ----------------------------------------------------------
 //
 //     code < 0
-//         = Dairy Farm
+//         = Dairy Farm / parent structure
 //
 //     code > 0
-//         = identified animal
+//         = identified Dairy asset / animal
 //
 //     code === null
-//         = structure / facility / manual asset
+//         = manual / standalone asset
 //
-// ASSIGNMENT
+// ASSET RELATIONSHIP
 // ----------------------------------------------------------
 //
-// A standalone asset:
+//     assetCode === parentFarm.code
+//
+// identifies an asset belonging to a Dairy Farm.
+//
+// A TRUE STANDALONE ASSET:
 //
 //     code === null
-//
 //     assetCode === null
 //
-// may be assigned to a User.
+// USER ASSIGNMENT
+// ----------------------------------------------------------
 //
-// User:
+//     User.assignedAsset
 //
-//     assignedAsset
+// stores Dairy document _ids.
 //
-// stores the Dairy document _id.
+// Only non-admin users may receive assignments.
 //
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// The browser never controls:
+// This service NEVER accepts or changes:
 //
+//     _id
 //     code
 //     assetCode
+//     __v
+//     createdAt
+//     updatedAt
 //
-// Assignment is controlled by this service.
+// Assignment is stored ONLY on User.assignedAsset.
 //
 // ==========================================================
 
@@ -87,7 +82,7 @@ const STATUS_VALUES = [
 
 
 // ----------------------------------------------------------
-// These are the asset types exposed by networth-add.ejs.
+// Types exposed by the Net Worth Add Asset view.
 // ----------------------------------------------------------
 
 const ASSET_TYPES = [
@@ -109,7 +104,7 @@ const ASSET_TYPES = [
 
 
 // ==========================================================
-// HELPERS
+// ERROR HELPER
 // ==========================================================
 
 function createError(
@@ -117,18 +112,17 @@ function createError(
     statusCode = 500
 ) {
 
-    const error =
-        new Error(message);
+    const error = new Error(message);
 
-    error.statusCode =
-        statusCode;
+    error.statusCode = statusCode;
 
     return error;
+
 }
 
 
 // ==========================================================
-// VALIDATE OBJECT ID
+// OBJECT ID HELPERS
 // ==========================================================
 
 function isValidObjectId(id) {
@@ -137,10 +131,6 @@ function isValidObjectId(id) {
 
 }
 
-
-// ==========================================================
-// REQUIRE OBJECT ID
-// ==========================================================
 
 function requireObjectId(
     id,
@@ -162,7 +152,7 @@ function requireObjectId(
 
 
 // ==========================================================
-// CONVERT DOCUMENT
+// DOCUMENT HELPERS
 // ==========================================================
 
 function plainDocument(document) {
@@ -174,8 +164,7 @@ function plainDocument(document) {
     }
 
     if (
-        typeof document.toObject ===
-        "function"
+        typeof document.toObject === "function"
     ) {
 
         return document.toObject();
@@ -188,28 +177,19 @@ function plainDocument(document) {
 
 
 // ==========================================================
-// NUMERIC VALUE
+// NUMBER HELPERS
 // ==========================================================
 
 function numericValue(value) {
 
-    const number =
-        Number(value);
+    const number = Number(value);
 
-    if (!Number.isFinite(number)) {
-
-        return 0;
-
-    }
-
-    return number;
+    return Number.isFinite(number)
+        ? number
+        : 0;
 
 }
 
-
-// ==========================================================
-// NORMALIZE NUMBER
-// ==========================================================
 
 function normalizeNumber(
     value,
@@ -226,8 +206,7 @@ function normalizeNumber(
 
     }
 
-    const number =
-        Number(value);
+    const number = Number(value);
 
     return Number.isFinite(number)
         ? number
@@ -237,10 +216,18 @@ function normalizeNumber(
 
 
 // ==========================================================
-// NORMALIZE BOOLEAN
+// BOOLEAN
 // ==========================================================
 
 function normalizeBoolean(value) {
+
+    if (
+        typeof value === "boolean"
+    ) {
+
+        return value;
+
+    }
 
     if (
         value === undefined ||
@@ -248,14 +235,6 @@ function normalizeBoolean(value) {
     ) {
 
         return false;
-
-    }
-
-    if (
-        typeof value === "boolean"
-    ) {
-
-        return value;
 
     }
 
@@ -275,7 +254,7 @@ function normalizeBoolean(value) {
 
 
 // ==========================================================
-// NORMALIZE TEXT
+// TEXT
 // ==========================================================
 
 function normalizeText(value) {
@@ -295,7 +274,7 @@ function normalizeText(value) {
 
 
 // ==========================================================
-// DATE NORMALIZATION
+// DATE
 // ==========================================================
 
 function normalizeDate(value) {
@@ -310,8 +289,7 @@ function normalizeDate(value) {
 
     }
 
-    const date =
-        new Date(value);
+    const date = new Date(value);
 
     if (
         Number.isNaN(
@@ -329,7 +307,7 @@ function normalizeDate(value) {
 
 
 // ==========================================================
-// AGE TEXT
+// AGE
 // ==========================================================
 
 function calculateAgeText(
@@ -342,8 +320,7 @@ function calculateAgeText(
 
     }
 
-    const dob =
-        new Date(dateOfBirth);
+    const dob = new Date(dateOfBirth);
 
     if (
         Number.isNaN(
@@ -355,8 +332,7 @@ function calculateAgeText(
 
     }
 
-    const now =
-        new Date();
+    const now = new Date();
 
     if (dob > now) {
 
@@ -395,7 +371,6 @@ function calculateAgeText(
     if (months < 0) {
 
         years -= 1;
-
         months += 12;
 
     }
@@ -478,46 +453,48 @@ function prepareDairyRecord(record) {
 
 
 // ==========================================================
-// GET ALL DAIRY FARMS
+// GET DAIRY FARMS
+// ==========================================================
 //
-// Dairy Farm:
+// A Dairy Farm is identified exclusively by:
 //
 //     code < 0
 //
-// Returned as `structures` because the EJS expects that
-// variable.
+// MongoDB _id remains the URL identity.
+//
 // ==========================================================
 
 async function getDairyFarms() {
 
-    const farms =
-        await Dairy
-            .find({
-                code: {
-                    $lt: 0
-                }
-            })
-            .sort({
-                name: 1,
-                code: 1
-            })
-            .lean();
-
-    return farms;
+    return Dairy
+        .find({
+            code: {
+                $lt: 0
+            }
+        })
+        .sort({
+            name: 1,
+            code: 1
+        })
+        .lean();
 
 }
 
 
 // ==========================================================
-// GET ALL ASSIGNED ASSETS FOR A FARM
+// GET ASSETS BELONGING TO FARM
+// ==========================================================
 //
-// Farm:
+// Parent:
 //
-//     dairy.code < 0
+//     farm.code < 0
 //
-// Asset:
+// Child:
 //
-//     assetCode === dairy.code
+//     assetCode === farm.code
+//
+// The farm itself is excluded.
+//
 // ==========================================================
 
 async function getAssetsForFarm(
@@ -541,6 +518,7 @@ async function getAssetsForFarm(
     const assets =
         await Dairy
             .find({
+
                 assetCode:
                     numericFarmCode,
 
@@ -548,6 +526,7 @@ async function getAssetsForFarm(
                     $ne:
                         numericFarmCode
                 }
+
             })
             .sort({
                 name: 1,
@@ -563,15 +542,15 @@ async function getAssetsForFarm(
 
 
 // ==========================================================
-// GET STANDALONE ASSETS
+// GET TRUE STANDALONE ASSETS
+// ==========================================================
 //
-// Standalone:
+// A standalone asset MUST have:
 //
+//     code === null
 //     assetCode === null
 //
-// AND:
-//
-//     code is not negative
+// Do not classify records with an assetCode as standalone.
 //
 // ==========================================================
 
@@ -580,17 +559,15 @@ async function getStandaloneAssets() {
     const assets =
         await Dairy
             .find({
-                assetCode: null,
 
-                code: {
-                    $not: {
-                        $lt: 0
-                    }
-                }
+                code: null,
+
+                assetCode: null
+
             })
             .sort({
                 name: 1,
-                code: 1
+                _id: 1
             })
             .lean();
 
@@ -602,22 +579,11 @@ async function getStandaloneAssets() {
 
 
 // ==========================================================
-// GET AVAILABLE USERS FOR ASSET ASSIGNMENT
+// GET AVAILABLE ASSIGNMENT USERS
+// ==========================================================
 //
-// ONLY users whose role is NOT:
+// Only non-admin users are eligible.
 //
-//     admin
-//
-// are returned.
-//
-// This means:
-//
-//     dairyWorker
-//     poultryWorker
-//
-// are eligible.
-//
-// Admin users are deliberately excluded.
 // ==========================================================
 
 async function getAvailableAssetUsers() {
@@ -633,14 +599,15 @@ async function getAvailableAssetUsers() {
                 "_id name email phone role assignedAsset"
             )
             .sort({
-                name: 1
+                name: 1,
+                email: 1
             })
             .lean();
 
     return users.map(
         user => {
 
-            const assignedAssets =
+            const assignedAsset =
                 Array.isArray(
                     user.assignedAsset
                 )
@@ -664,8 +631,7 @@ async function getAvailableAssetUsers() {
                 role:
                     user.role || "",
 
-                assignedAsset:
-                    assignedAssets
+                assignedAsset
 
             };
 
@@ -676,13 +642,7 @@ async function getAvailableAssetUsers() {
 
 
 // ==========================================================
-// FIND CURRENT USER ASSIGNED TO ASSET
-//
-// Looks through assignedAsset arrays.
-//
-// This is intentionally performed against User rather than
-// adding another ownership field to Dairy.
-//
+// FIND USERS ASSIGNED TO ASSET
 // ==========================================================
 
 async function findUsersAssignedToAsset(
@@ -695,60 +655,69 @@ async function findUsersAssignedToAsset(
             "asset"
         );
 
-    const users =
-        await User
-            .find({
-                role: {
-                    $ne: "admin"
-                },
+    return User
+        .find({
 
-                assignedAsset:
-                    objectId
-            })
-            .select(
-                "_id name email phone role"
-            )
-            .lean();
+            role: {
+                $ne: "admin"
+            },
 
-    return users;
+            assignedAsset:
+                objectId
+
+        })
+        .select(
+            "_id name email phone role"
+        )
+        .sort({
+            name: 1
+        })
+        .lean();
 
 }
 
 
 // ==========================================================
-// CALCULATE TOTAL NET WORTH
+// TOTAL NET WORTH
+// ==========================================================
+//
+// Net Worth is explicitly:
+//
+//     SUM(currentWorth)
+//
+// across all Dairy records.
+//
+// No classification is applied here because the requested
+// Net Worth total is the sum of all currentWorth values.
+//
 // ==========================================================
 
 async function calculateTotalNetWorth() {
 
     const result =
         await Dairy.aggregate([
+
             {
                 $group: {
 
                     _id: null,
 
                     total: {
-
                         $sum: {
-
                             $ifNull: [
                                 "$currentWorth",
                                 0
                             ]
-
                         }
-
                     }
 
                 }
-
             }
+
         ]);
 
     if (
-        !Array.isArray(result) ||
-        result.length === 0
+        !result.length
     ) {
 
         return 0;
@@ -801,8 +770,17 @@ async function getNetWorth() {
 // ==========================================================
 // FIND DAIRY FARM BY ID
 // ==========================================================
+//
+// The URL uses MongoDB _id.
+//
+// The negative code only determines whether the record is a
+// Dairy Farm.
+//
+// ==========================================================
 
-async function findDairyFarmById(id) {
+async function findDairyFarmById(
+    id
+) {
 
     const objectId =
         requireObjectId(
@@ -826,10 +804,12 @@ async function findDairyFarmById(id) {
 
     }
 
+    const code =
+        Number(dairy.code);
+
     if (
-        dairy.code === null ||
-        dairy.code === undefined ||
-        Number(dairy.code) >= 0
+        !Number.isFinite(code) ||
+        code >= 0
     ) {
 
         throw createError(
@@ -848,7 +828,9 @@ async function findDairyFarmById(id) {
 // GET DAIRY FARM PAGE
 // ==========================================================
 
-async function getDairyFarm(id) {
+async function getDairyFarm(
+    id
+) {
 
     const dairy =
         await findDairyFarmById(
@@ -905,26 +887,28 @@ async function getDairyFarm(id) {
 // ==========================================================
 // GET STRUCTURE TYPES
 // ==========================================================
+//
+// Structure/facility records are records with code === null.
+//
+// Their `type` values can be used by the view as existing
+// structure types.
+//
+// ==========================================================
 
 async function getStructureTypes() {
 
     const records =
         await Dairy
             .find({
-
                 code: null,
 
                 type: {
-
                     $exists: true,
-
                     $nin: [
                         null,
                         ""
                     ]
-
                 }
-
             })
             .select({
                 type: 1
@@ -952,7 +936,13 @@ async function getStructureTypes() {
 
 
 // ==========================================================
-// GET DAIRY BREEDS
+// GET DAIRY TYPES / BREEDS
+// ==========================================================
+//
+// Positive code records represent identified Dairy
+// animals/assets. Their type values are supplied to the
+// add form as existing Dairy types/breeds.
+//
 // ==========================================================
 
 async function getDairyBreeds() {
@@ -960,22 +950,17 @@ async function getDairyBreeds() {
     const records =
         await Dairy
             .find({
-
                 code: {
                     $gt: 0
                 },
 
                 type: {
-
                     $exists: true,
-
                     $nin: [
                         null,
                         ""
                     ]
-
                 }
-
             })
             .select({
                 type: 1
@@ -1047,9 +1032,8 @@ async function getAddAsset(
 
         structureTypes,
 
-        assetTypes: [
-            ...ASSET_TYPES
-        ]
+        assetTypes:
+            [...ASSET_TYPES]
 
     };
 
@@ -1058,6 +1042,13 @@ async function getAddAsset(
 
 // ==========================================================
 // BUILD CREATE DATA
+// ==========================================================
+//
+// Only fields that the add form is allowed to submit are
+// copied.
+//
+// code and assetCode are deliberately absent.
+//
 // ==========================================================
 
 function buildCreateData(data) {
@@ -1073,39 +1064,22 @@ function buildCreateData(data) {
     const allowedFields = [
 
         "name",
-
         "type",
-
         "buyingPrice",
-
         "currentWorth",
-
         "description",
-
         "condition",
-
         "location",
-
         "status",
-
         "valuationDate",
-
         "acquisitionDate",
-
         "dateOfBirth",
-
         "mass",
-
         "isMilking",
-
         "about",
-
         "mission",
-
         "refNo",
-
         "vision",
-
         "profileImage"
 
     ];
@@ -1129,7 +1103,8 @@ function buildCreateData(data) {
     );
 
 
-    [
+    const textFields = [
+
         "name",
         "type",
         "description",
@@ -1141,7 +1116,10 @@ function buildCreateData(data) {
         "refNo",
         "vision",
         "profileImage"
-    ].forEach(
+
+    ];
+
+    textFields.forEach(
         field => {
 
             if (
@@ -1162,11 +1140,15 @@ function buildCreateData(data) {
     );
 
 
-    [
+    const numberFields = [
+
         "buyingPrice",
         "currentWorth",
         "mass"
-    ].forEach(
+
+    ];
+
+    numberFields.forEach(
         field => {
 
             if (
@@ -1202,11 +1184,15 @@ function buildCreateData(data) {
     }
 
 
-    [
+    const dateFields = [
+
         "valuationDate",
         "acquisitionDate",
         "dateOfBirth"
-    ].forEach(
+
+    ];
+
+    dateFields.forEach(
         field => {
 
             if (
@@ -1234,8 +1220,7 @@ function buildCreateData(data) {
         )
     ) {
 
-        result.status =
-            "active";
+        result.status = "active";
 
     }
 
@@ -1265,12 +1250,30 @@ function buildCreateData(data) {
 
 // ==========================================================
 // ADD ASSET
+// ==========================================================
 //
-// SYSTEM CONTROLLED:
+// IMPORTANT:
 //
-//     code = null
+// Assets created from:
 //
-//     assetCode = parent farm code
+//     /networth/structure/:id/add
+//
+// belong to the selected Dairy Farm.
+//
+// Therefore:
+//
+//     code
+//         remains system controlled.
+//
+//     assetCode
+//         is set to the parent farm's negative code.
+//
+// The asset is NOT a standalone asset.
+//
+// A standalone asset has:
+//
+//     code === null
+//     assetCode === null
 //
 // ==========================================================
 
@@ -1337,11 +1340,30 @@ async function addAsset(
     }
 
 
-    createData.code = null;
-
+    // ------------------------------------------------------
+    // SYSTEM CONTROLLED RELATIONSHIP
+    // ------------------------------------------------------
+    //
+    // This asset belongs to the parent farm.
+    //
+    // The parent farm code is authoritative.
+    //
+    // Do NOT accept these values from the browser.
+    //
     createData.assetCode =
         Number(parentFarm.code);
 
+
+    // ------------------------------------------------------
+    // CODE IS LEFT UNSET.
+    //
+    // The Dairy model/default/application logic is responsible
+    // for determining the correct code for a newly-created
+    // asset.
+    //
+    // This service must not invent a positive animal code.
+    //
+    // ------------------------------------------------------
 
     const asset =
         await Dairy.create(
@@ -1357,23 +1379,11 @@ async function addAsset(
 
 // ==========================================================
 // GET INDIVIDUAL ASSET
-//
-// IMPORTANT:
-//
-// This now additionally supplies:
-//
-//     availableUsers
-//
-// and:
-//
-//     assignedUsers
-//
-// to the EJS.
-//
-// availableUsers contains ONLY users whose role is not admin.
 // ==========================================================
 
-async function getAsset(id) {
+async function getAsset(
+    id
+) {
 
     const objectId =
         requireObjectId(
@@ -1434,33 +1444,17 @@ async function getAsset(id) {
 
         structureTypes,
 
-        // --------------------------------------------------
-        // USERS AVAILABLE FOR ASSIGNMENT
-        // --------------------------------------------------
-
         availableUsers,
-
-        // --------------------------------------------------
-        // USERS CURRENTLY ASSIGNED TO THIS ASSET
-        // --------------------------------------------------
 
         assignedUsers,
 
-        // --------------------------------------------------
-        // CONVENIENT SINGLE USER VALUE
-        //
-        // Normally there should be one assignee.
-        // The array is still retained above so existing
-        // inconsistent data does not disappear.
-        // --------------------------------------------------
-
         assignedUser:
-            assignedUsers.length > 0
+            assignedUsers.length
                 ? assignedUsers[0]
                 : null,
 
         assignedUserId:
-            assignedUsers.length > 0
+            assignedUsers.length
                 ? String(
                     assignedUsers[0]._id
                 )
@@ -1473,19 +1467,21 @@ async function getAsset(id) {
 
 // ==========================================================
 // NORMALIZE ASSIGNED USER ID
+// ==========================================================
 //
-// Accepted service input:
+// undefined
+//     = assignment was not submitted
 //
-//     assignedUserId
+// null
+//     = explicitly remove assignment
 //
-// For compatibility, the service also recognizes:
+// ObjectId
+//     = assign to selected user
+//
+// Compatibility aliases:
 //
 //     assignedUser
 //     userId
-//
-// Empty value means:
-//
-//     remove assignment
 //
 // ==========================================================
 
@@ -1498,13 +1494,11 @@ function normalizeAssignedUserId(
         typeof data !== "object"
     ) {
 
-        return null;
+        return undefined;
 
     }
 
-
     let value;
-
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -1537,13 +1531,6 @@ function normalizeAssignedUserId(
             data.userId;
 
     } else {
-
-        // --------------------------------------------------
-        // Assignment was not part of this update.
-        //
-        // `undefined` tells updateAsset not to change
-        // assignments.
-        // --------------------------------------------------
 
         return undefined;
 
@@ -1586,15 +1573,6 @@ function normalizeAssignedUserId(
 
 // ==========================================================
 // VALIDATE ASSIGNMENT USER
-//
-// User MUST:
-//
-//     exist
-//
-// AND:
-//
-//     role !== "admin"
-//
 // ==========================================================
 
 async function validateAssignmentUser(
@@ -1610,11 +1588,14 @@ async function validateAssignmentUser(
     const user =
         await User
             .findOne({
-                _id: userId,
+
+                _id:
+                    userId,
 
                 role: {
                     $ne: "admin"
                 }
+
             })
             .select(
                 "_id name email phone role"
@@ -1636,25 +1617,15 @@ async function validateAssignmentUser(
 
 // ==========================================================
 // ASSIGN ASSET TO USER
+// ==========================================================
 //
-// THIS IS THE CORE ASSIGNMENT LOGIC.
+// Only TRUE standalone assets can be assigned:
 //
-// Given:
+//     code === null
+//     assetCode === null
 //
-//     assetId
-//
-//     userId
-//
-// The service:
-//
-// 1. Removes the asset from every non-admin user.
-// 2. Adds the asset to the selected user.
-// 3. Does not modify Dairy.code.
-// 4. Does not modify Dairy.assetCode.
-//
-// If userId === null:
-//
-//     the asset becomes unassigned.
+// This prevents a farm-owned asset from accidentally being
+// treated as an independent standalone asset.
 //
 // ==========================================================
 
@@ -1668,11 +1639,6 @@ async function assignAssetToUser(
             assetId,
             "asset"
         );
-
-
-    // ------------------------------------------------------
-    // MAKE SURE THE DAIRY RECORD EXISTS
-    // ------------------------------------------------------
 
     const asset =
         await Dairy
@@ -1695,10 +1661,29 @@ async function assignAssetToUser(
 
 
     // ------------------------------------------------------
-    // THE ASSIGNMENT TARGET MUST BE A USER.
-    //
-    // Admin users are rejected by validateAssignmentUser.
+    // Assignment is only for standalone assets.
     // ------------------------------------------------------
+
+    const isStandalone =
+        (
+            asset.code === null ||
+            asset.code === undefined
+        ) &&
+        (
+            asset.assetCode === null ||
+            asset.assetCode === undefined
+        );
+
+
+    if (!isStandalone) {
+
+        throw createError(
+            "Only standalone assets can be assigned to a project user.",
+            400
+        );
+
+    }
+
 
     const selectedUser =
         await validateAssignmentUser(
@@ -1707,12 +1692,10 @@ async function assignAssetToUser(
 
 
     // ------------------------------------------------------
-    // REMOVE THIS ASSET FROM ALL NON-ADMIN USERS
+    // First remove this asset from every non-admin user.
     //
-    // This prevents the same standalone asset from remaining
-    // assigned to multiple users after reassignment.
-    //
-    // $pull removes the Dairy _id from assignedAsset.
+    // This guarantees one standalone asset cannot remain
+    // assigned to multiple users.
     // ------------------------------------------------------
 
     await User.updateMany(
@@ -1737,9 +1720,7 @@ async function assignAssetToUser(
 
 
     // ------------------------------------------------------
-    // NO USER SELECTED
-    //
-    // The asset is now unassigned.
+    // Explicit unassignment.
     // ------------------------------------------------------
 
     if (!selectedUser) {
@@ -1761,9 +1742,7 @@ async function assignAssetToUser(
 
 
     // ------------------------------------------------------
-    // ADD ASSET TO SELECTED USER
-    //
-    // $addToSet prevents duplicate Dairy IDs.
+    // Assign to selected non-admin user.
     // ------------------------------------------------------
 
     await User.updateOne(
@@ -1779,10 +1758,8 @@ async function assignAssetToUser(
 
         {
             $addToSet: {
-
                 assignedAsset:
                     assetObjectId
-
             }
         }
 
@@ -1809,21 +1786,12 @@ async function assignAssetToUser(
 
 // ==========================================================
 // BUILD UPDATE DATA
+// ==========================================================
 //
-// IMPORTANT:
+// Assignment is NOT included here.
 //
-// Assignment is deliberately handled separately from the
-// Dairy update.
-//
-// It is NOT written into the Dairy document.
-//
-// Instead:
-//
-//     assignedUserId
-//
-// is extracted and applied to:
-//
-//     User.assignedAsset
+// assignedUserId belongs to User.assignedAsset and must never
+// be written into Dairy.
 //
 // ==========================================================
 
@@ -1840,37 +1808,21 @@ function buildUpdateData(data) {
     const allowedFields = [
 
         "name",
-
         "type",
-
         "dateOfBirth",
-
         "mass",
-
         "isMilking",
-
         "description",
-
         "condition",
-
         "location",
-
         "status",
-
         "buyingPrice",
-
         "currentWorth",
-
         "valuationDate",
-
         "about",
-
         "mission",
-
         "refNo",
-
         "vision",
-
         "profileImage"
 
     ];
@@ -1895,7 +1847,8 @@ function buildUpdateData(data) {
     );
 
 
-    [
+    const textFields = [
+
         "name",
         "type",
         "description",
@@ -1907,7 +1860,10 @@ function buildUpdateData(data) {
         "refNo",
         "vision",
         "profileImage"
-    ].forEach(
+
+    ];
+
+    textFields.forEach(
         field => {
 
             if (
@@ -1928,11 +1884,15 @@ function buildUpdateData(data) {
     );
 
 
-    [
+    const numberFields = [
+
         "mass",
         "buyingPrice",
         "currentWorth"
-    ].forEach(
+
+    ];
+
+    numberFields.forEach(
         field => {
 
             if (
@@ -1968,10 +1928,14 @@ function buildUpdateData(data) {
     }
 
 
-    [
+    const dateFields = [
+
         "dateOfBirth",
         "valuationDate"
-    ].forEach(
+
+    ];
+
+    dateFields.forEach(
         field => {
 
             if (
@@ -1999,8 +1963,10 @@ function buildUpdateData(data) {
         )
     ) {
 
-        update.status =
-            "active";
+        throw createError(
+            "Invalid asset status.",
+            400
+        );
 
     }
 
@@ -2038,20 +2004,18 @@ function buildUpdateData(data) {
 
 // ==========================================================
 // UPDATE ASSET
+// ==========================================================
 //
-// This function now handles:
+// Handles:
 //
-//     1. Normal Dairy updates
+//     1. Ordinary Dairy field updates
+//     2. Standalone-user assignment
 //
-//     2. Standalone asset assignment
+// Never modifies:
 //
-// Assignment is only processed when the request actually
-// contains:
+//     code
+//     assetCode
 //
-//     assignedUserId
-//
-// Therefore ordinary asset edits that do not contain the
-// assignment field will not change existing assignments.
 // ==========================================================
 
 async function updateAsset(
@@ -2065,10 +2029,6 @@ async function updateAsset(
             "asset"
         );
 
-
-    // ======================================================
-    // LOAD EXISTING ASSET
-    // ======================================================
 
     const existing =
         await Dairy
@@ -2087,19 +2047,9 @@ async function updateAsset(
     }
 
 
-    // ======================================================
-    // EXTRACT ASSIGNMENT
-    // ======================================================
-    //
-    // undefined:
-    //     assignment field was not submitted.
-    //
-    // null:
-    //     explicitly unassign.
-    //
-    // ObjectId:
-    //     assign to selected user.
-    //
+    // ------------------------------------------------------
+    // Determine whether assignment was actually submitted.
+    // ------------------------------------------------------
 
     const assignedUserId =
         normalizeAssignedUserId(
@@ -2107,9 +2057,9 @@ async function updateAsset(
         );
 
 
-    // ======================================================
-    // BUILD NORMAL DAIRY UPDATE
-    // ======================================================
+    // ------------------------------------------------------
+    // Build safe Dairy update.
+    // ------------------------------------------------------
 
     const update =
         buildUpdateData(
@@ -2117,21 +2067,14 @@ async function updateAsset(
         );
 
 
-    // ======================================================
-    // STRUCTURE / FACILITY FIELDS
+    // ------------------------------------------------------
+    // Animal-specific rule.
     //
-    // about
-    // mission
-    // refNo
-    // vision
+    // Only positive-code records can be milking animals.
     //
-    // are already retained by buildUpdateData().
-    // ======================================================
-
-
-    // ======================================================
-    // ANIMAL RULE
-    // ======================================================
+    // Structures/manual assets cannot become milking animals
+    // through this editor.
+    // ------------------------------------------------------
 
     const existingCode =
         existing.code === null ||
@@ -2139,12 +2082,9 @@ async function updateAsset(
             ? null
             : Number(existing.code);
 
-
     if (
         existingCode === null ||
-        !Number.isFinite(
-            existingCode
-        ) ||
+        !Number.isFinite(existingCode) ||
         existingCode <= 0
     ) {
 
@@ -2155,17 +2095,16 @@ async function updateAsset(
             )
         ) {
 
-            update.isMilking =
-                false;
+            update.isMilking = false;
 
         }
 
     }
 
 
-    // ======================================================
-    // SAVE DAIRY UPDATE
-    // ======================================================
+    // ------------------------------------------------------
+    // Apply only whitelisted fields.
+    // ------------------------------------------------------
 
     Object.keys(update).forEach(
         field => {
@@ -2180,24 +2119,9 @@ async function updateAsset(
     await existing.save();
 
 
-    // ======================================================
-    // UPDATE USER ASSIGNMENT
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // This happens AFTER the Dairy record has successfully
-    // saved.
-    //
-    // The Dairy document itself does NOT receive an
-    // assignedUserId field.
-    //
-    // Instead:
-    //
-    //     User.assignedAsset
-    //
-    // is updated.
-    // ======================================================
+    // ------------------------------------------------------
+    // Assignment is deliberately separate from Dairy update.
+    // ------------------------------------------------------
 
     let assignment = null;
 
@@ -2214,19 +2138,15 @@ async function updateAsset(
     }
 
 
-    // ======================================================
-    // RETURN UPDATED ASSET
-    // ======================================================
+    // ------------------------------------------------------
+    // Prepare response.
+    // ------------------------------------------------------
 
     const prepared =
         prepareDairyRecord(
             existing
         );
 
-
-    // ======================================================
-    // INCLUDE ASSIGNMENT INFORMATION
-    // ======================================================
 
     if (assignment) {
 
@@ -2245,7 +2165,7 @@ async function updateAsset(
 
 
 // ==========================================================
-// GET NET WORTH DATA
+// JSON DATA HELPERS
 // ==========================================================
 
 async function getNetWorthData() {
@@ -2255,11 +2175,9 @@ async function getNetWorthData() {
 }
 
 
-// ==========================================================
-// GET DAIRY FARM DATA
-// ==========================================================
-
-async function getDairyFarmData(id) {
+async function getDairyFarmData(
+    id
+) {
 
     return getDairyFarm(id);
 
