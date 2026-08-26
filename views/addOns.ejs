@@ -27,6 +27,22 @@
 
 <div class="addons-page">
 
+    <!-- =====================================================
+         FIXED EDIT DETAILS
+         ADMIN ONLY
+    ====================================================== -->
+
+    <% if (user.role === "admin") { %>
+
+        <a
+            href="/networth/asset/<%= dairy._id %>"
+            class="fixed-edit-details"
+        >
+            Edit Details
+        </a>
+
+    <% } %>
+
 
     <!-- ==================================================
          PAGE INTRO / WELCOME
