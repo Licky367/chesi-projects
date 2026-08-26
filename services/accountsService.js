@@ -12,12 +12,49 @@ const Dairy =
 
 
 // ==========================================================
+// HELPERS
+// ==========================================================
+
+function normalizeIds(value) {
+
+  if (!Array.isArray(value)) {
+
+    value =
+      value
+        ? [value]
+        : [];
+
+  }
+
+  return [
+    ...new Set(
+      value
+        .filter(
+          id =>
+            id &&
+            String(id).trim()
+        )
+        .map(
+          id =>
+            String(id)
+        )
+    )
+  ];
+
+}
+
+
+// ==========================================================
 // GET ALL USERS
 // ==========================================================
 
-exports.getAllUsers = async () => {
+exports.getAllUsers =
+async () => {
 
-  return await User.find();
+  return await User.find()
+    .sort({
+      name: 1
+    });
 
 };
 
@@ -29,8 +66,29 @@ exports.getAllUsers = async () => {
 exports.getUserProfileData =
 async (userId) => {
 
+  if (
+    !mongoose.Types.ObjectId.isValid(
+      userId
+    )
+  ) {
+
+    return {
+      user: null,
+      dairies: [],
+      assets: []
+    };
+
+  }
+
+
+  // ========================================================
+  // USER
+  // ========================================================
+
   const user =
-    await User.findById(userId)
+    await User.findById(
+      userId
+    )
       .populate({
         path: "assignedFarm",
         select:
@@ -43,14 +101,15 @@ async (userId) => {
       });
 
 
-  // --------------------------------------------------------
-  // Available Dairy Farms
+  // ========================================================
+  // AVAILABLE DAIRY FARMS
+  // ========================================================
   //
-  // Farm rule:
+  // Farm:
   //
   //     code < 0
   //
-  // --------------------------------------------------------
+  // ========================================================
 
   const dairies =
     await Dairy.find({
@@ -68,15 +127,26 @@ async (userId) => {
       });
 
 
-  // --------------------------------------------------------
-  // Available standalone / code-less assets
+  // ========================================================
+  // AVAILABLE STANDALONE ASSETS
+  // ========================================================
   //
-  // Asset rule:
+  // Standalone asset:
   //
-  //     code      === null
-  //     assetCode === null
+  //     code      === null OR missing
+  //     assetCode === null OR missing
   //
-  // --------------------------------------------------------
+  // MongoDB:
+  //
+  //     { code: null }
+  //
+  // matches both:
+  //
+  //     code: null
+  //
+  // and a document where code is absent.
+  //
+  // ========================================================
 
   const assets =
     await Dairy.find({
@@ -87,7 +157,19 @@ async (userId) => {
 
     })
       .select(
-        "name code assetCode type condition location description displayImage profileImage status refNo"
+        [
+          "name",
+          "code",
+          "assetCode",
+          "type",
+          "condition",
+          "location",
+          "description",
+          "displayImage",
+          "profileImage",
+          "status",
+          "refNo"
+        ].join(" ")
       )
       .sort({
         name: 1
@@ -175,7 +257,7 @@ async (
 
 
   // --------------------------------------------------------
-  // Admins cannot have assigned standalone assets.
+  // Admins cannot have standalone assets.
   // --------------------------------------------------------
 
   if (
@@ -187,18 +269,31 @@ async (
   }
 
 
-  return await User.findByIdAndUpdate(
+  const updatedUser =
+    await User.findByIdAndUpdate(
 
-    userId,
+      userId,
 
-    update,
+      update,
 
-    {
-      new: true,
-      runValidators: true
-    }
+      {
+        new: true,
+        runValidators: true
+      }
 
-  );
+    );
+
+
+  if (!updatedUser) {
+
+    throw new Error(
+      "User not found."
+    );
+
+  }
+
+
+  return updatedUser;
 
 };
 
@@ -228,10 +323,6 @@ async (
   }
 
 
-  // --------------------------------------------------------
-  // Only dairyWorker can be assigned Dairy Farms.
-  // --------------------------------------------------------
-
   if (
     user.role !== "dairyWorker"
   ) {
@@ -243,52 +334,17 @@ async (
   }
 
 
-  if (
-    !Array.isArray(assignedFarms)
-  ) {
-
-    assignedFarms =
+  const uniqueIds =
+    normalizeIds(
       assignedFarms
-        ? [assignedFarms]
-        : [];
-
-  }
-
-
-  // --------------------------------------------------------
-  // Remove empty values.
-  // --------------------------------------------------------
-
-  assignedFarms =
-    assignedFarms.filter(
-      id =>
-        id &&
-        String(id).trim()
     );
 
 
-  if (
-    !assignedFarms.length
-  ) {
+  if (!uniqueIds.length) {
 
     return user;
 
   }
-
-
-  // --------------------------------------------------------
-  // Remove duplicate submitted IDs.
-  // --------------------------------------------------------
-
-  const uniqueIds =
-    [
-      ...new Set(
-        assignedFarms.map(
-          id =>
-            String(id)
-        )
-      )
-    ];
 
 
   // --------------------------------------------------------
@@ -331,7 +387,7 @@ async (
 
     })
       .select(
-        "_id code name assetCode"
+        "_id name code assetCode"
       );
 
 
@@ -366,7 +422,7 @@ async (
 
 
   // --------------------------------------------------------
-  // Add only farms that aren't already assigned.
+  // Add only new farms.
   // --------------------------------------------------------
 
   for (
@@ -497,14 +553,14 @@ async (
 //
 //     assignedAsset
 //
-// ELIGIBLE DAIRY:
+// ELIGIBLE ASSET:
 //
-//     code      === null
-//     assetCode === null
+//     code      === null OR missing
+//     assetCode === null OR missing
 //
-// ELIGIBLE USERS:
+// ELIGIBLE USER:
 //
-//     Any user except admin.
+//     any user except admin
 //
 // ==========================================================
 
@@ -530,7 +586,7 @@ async (
 
 
   // --------------------------------------------------------
-  // Admins cannot receive assigned assets.
+  // Admin protection.
   // --------------------------------------------------------
 
   if (
@@ -544,56 +600,17 @@ async (
   }
 
 
-  // --------------------------------------------------------
-  // Normalize submitted values.
-  // --------------------------------------------------------
-
-  if (
-    !Array.isArray(assignedAssets)
-  ) {
-
-    assignedAssets =
+  const uniqueIds =
+    normalizeIds(
       assignedAssets
-        ? [assignedAssets]
-        : [];
-
-  }
-
-
-  // --------------------------------------------------------
-  // Remove empty values.
-  // --------------------------------------------------------
-
-  assignedAssets =
-    assignedAssets.filter(
-      id =>
-        id &&
-        String(id).trim()
     );
 
 
-  if (
-    !assignedAssets.length
-  ) {
+  if (!uniqueIds.length) {
 
     return user;
 
   }
-
-
-  // --------------------------------------------------------
-  // Remove duplicate submitted IDs.
-  // --------------------------------------------------------
-
-  const uniqueIds =
-    [
-      ...new Set(
-        assignedAssets.map(
-          id =>
-            String(id)
-        )
-      )
-    ];
 
 
   // --------------------------------------------------------
@@ -620,12 +637,17 @@ async (
 
 
   // --------------------------------------------------------
-  // Find ONLY standalone/code-less assets.
+  // Find only standalone/code-less assets.
   //
   // IMPORTANT:
   //
-  //     code      must be null
-  //     assetCode must be null
+  //     code: null
+  //     assetCode: null
+  //
+  // MongoDB treats null matching as:
+  //
+  //     explicit null
+  //     OR field does not exist
   //
   // --------------------------------------------------------
 
@@ -642,14 +664,9 @@ async (
 
     })
       .select(
-        "_id name code assetCode type condition location description"
+        "_id name code assetCode type condition location description displayImage profileImage status refNo"
       );
 
-
-  // --------------------------------------------------------
-  // Every submitted ID must correspond to an eligible
-  // standalone asset.
-  // --------------------------------------------------------
 
   if (
     assets.length !==
@@ -667,10 +684,21 @@ async (
   // Existing assignedAsset IDs.
   // --------------------------------------------------------
 
+  if (
+    !Array.isArray(
+      user.assignedAsset
+    )
+  ) {
+
+    user.assignedAsset = [];
+
+  }
+
+
   const existingIds =
     new Set(
 
-      (user.assignedAsset || [])
+      user.assignedAsset
         .map(
           id =>
             String(
@@ -682,7 +710,7 @@ async (
 
 
   // --------------------------------------------------------
-  // Add only assets that are not already assigned.
+  // Add only assets not already assigned.
   // --------------------------------------------------------
 
   for (
@@ -696,17 +724,6 @@ async (
     if (
       !existingIds.has(id)
     ) {
-
-      if (
-        !Array.isArray(
-          user.assignedAsset
-        )
-      ) {
-
-        user.assignedAsset = [];
-
-      }
-
 
       user.assignedAsset.push(
         asset._id
@@ -730,12 +747,6 @@ async (
 // ==========================================================
 // UNASSIGN ONE STANDALONE DAIRY ASSET
 // ==========================================================
-//
-// Removes the Dairy ObjectId from:
-//
-//     user.assignedAsset
-//
-// ==========================================================
 
 exports.unassignDairyAsset =
 async (
@@ -758,10 +769,6 @@ async (
   }
 
 
-  // --------------------------------------------------------
-  // Admins cannot have assigned assets.
-  // --------------------------------------------------------
-
   if (
     user.role === "admin"
   ) {
@@ -772,10 +779,6 @@ async (
 
   }
 
-
-  // --------------------------------------------------------
-  // Validate ObjectId.
-  // --------------------------------------------------------
 
   if (
     !mongoose.Types.ObjectId.isValid(
@@ -789,10 +792,6 @@ async (
 
   }
 
-
-  // --------------------------------------------------------
-  // Confirm that the Dairy is actually a standalone asset.
-  // --------------------------------------------------------
 
   const asset =
     await Dairy.findOne({
@@ -814,10 +813,6 @@ async (
 
   }
 
-
-  // --------------------------------------------------------
-  // Remove asset from assignedAsset.
-  // --------------------------------------------------------
 
   user.assignedAsset =
     (user.assignedAsset || [])
@@ -845,8 +840,21 @@ async (
 exports.deleteUser =
 async (userId) => {
 
-  return await User.findByIdAndDelete(
-    userId
-  );
+  const deletedUser =
+    await User.findByIdAndDelete(
+      userId
+    );
+
+
+  if (!deletedUser) {
+
+    throw new Error(
+      "User not found."
+    );
+
+  }
+
+
+  return deletedUser;
 
 };
