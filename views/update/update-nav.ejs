@@ -14,15 +14,42 @@
          top:    120px
          height: 40px
 
-     FOUR LINKS:
+     LINKS:
          1. Updates
-         2. Assets
+         2. Switch Farm  ← only when more than one assigned farm
          3. Storage
          4. Dairy Assets
 
-     All four links are evenly distributed across
-     the entire navigation width.
+     FARM SWITCHING:
+         • Uses assignedFarms
+         • Only appears when assignedFarms.length > 1
+         • Current farm is identified by dairy._id
+         • Clicking a farm opens /dairy/<farm._id>
 ===================================================== -->
+
+
+<%
+/* =====================================================
+   ASSIGNED FARMS
+
+   Safely normalize assignedFarms so this view cannot
+   crash when the variable is missing or is not an array.
+===================================================== */
+
+const workerAssignedFarms =
+    Array.isArray(assignedFarms)
+        ? assignedFarms.filter(farm => !!farm)
+        : [];
+
+
+/* =====================================================
+   FARM SWITCHING AVAILABILITY
+===================================================== */
+
+const canSwitchFarms =
+    workerAssignedFarms.length > 1;
+%>
+
 
 
 <!-- =====================================================
@@ -30,7 +57,7 @@
 ===================================================== -->
 
 <nav
-    class="update-fixed-nav"
+    class="update-fixed-nav <%= canSwitchFarms ? 'has-farm-switcher' : 'without-farm-switcher' %>"
     aria-label="Dairy update navigation"
 >
 
@@ -86,82 +113,191 @@
 
 
 
-    <!-- =================================================
-         2. ASSETS
-    ================================================== -->
+    <% if (canSwitchFarms) { %>
 
-    <button
-        type="button"
-        id="viewPropertyButton"
-        class="update-nav-link update-nav-assets"
-        aria-controls="assetBar"
-        aria-expanded="false"
-        title="View Assets"
-        aria-label="View Assets"
-    >
+        <!-- =============================================
+             2. SWITCH FARM
+        ============================================== -->
 
-        <span
-            class="update-nav-icon"
-            aria-hidden="true"
+        <div
+            class="update-nav-farm-switcher"
         >
 
-            <!-- Asset Grid -->
-
-            <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+            <button
+                type="button"
+                id="updateFarmSwitchButton"
+                class="update-nav-link update-nav-switch-farm"
+                aria-expanded="false"
+                aria-controls="updateAssignedFarmList"
+                title="Switch Farm"
+                aria-label="Switch Farm"
             >
 
-                <rect
-                    x="4"
-                    y="4"
-                    width="6"
-                    height="6"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                />
+                <span
+                    class="update-nav-icon"
+                    aria-hidden="true"
+                >
 
-                <rect
-                    x="14"
-                    y="4"
-                    width="6"
-                    height="6"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                />
+                    <!-- Farm Swap / Switch Icon -->
 
-                <rect
-                    x="4"
-                    y="14"
-                    width="6"
-                    height="6"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                />
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
 
-                <rect
-                    x="14"
-                    y="14"
-                    width="6"
-                    height="6"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                />
+                        <path
+                            d="M7 7H19"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
 
-            </svg>
+                        <path
+                            d="M16 4L19 7L16 10"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
 
-        </span>
+                        <path
+                            d="M17 17H5"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
 
-        <span class="update-nav-label">
-            Assets
-        </span>
+                        <path
+                            d="M8 14L5 17L8 20"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
 
-    </button>
+                    </svg>
+
+                </span>
+
+                <span class="update-nav-label">
+                    Switch Farm
+                </span>
+
+            </button>
+
+
+
+            <!-- =========================================
+                 ASSIGNED FARM LIST
+            ========================================== -->
+
+            <div
+                id="updateAssignedFarmList"
+                class="update-nav-farm-list"
+                hidden
+            >
+
+                <div
+                    class="update-nav-farm-list-title"
+                >
+                    YOUR ASSIGNED FARMS
+                </div>
+
+
+                <div
+                    class="update-nav-farm-options"
+                >
+
+                    <% workerAssignedFarms.forEach(farm => { %>
+
+                        <a
+                            href="/dairy/<%= farm._id %>"
+                            class="update-nav-farm-option <%= (
+                                dairy &&
+                                dairy._id &&
+                                farm._id &&
+                                dairy._id.toString() ===
+                                farm._id.toString()
+                            ) ? 'is-current' : '' %>"
+                        >
+
+                            <!-- FARM ICON -->
+
+                            <span
+                                class="update-nav-farm-option-icon"
+                                aria-hidden="true"
+                            >
+
+                                <%= (
+                                    dairy &&
+                                    dairy._id &&
+                                    farm._id &&
+                                    dairy._id.toString() ===
+                                    farm._id.toString()
+                                ) ? '✓' : '⌂' %>
+
+                            </span>
+
+
+                            <!-- FARM DETAILS -->
+
+                            <span
+                                class="update-nav-farm-option-details"
+                            >
+
+                                <span
+                                    class="update-nav-farm-option-name"
+                                >
+                                    <%= farm.name %>
+                                </span>
+
+
+                                <% if (
+                                    farm.code !== null &&
+                                    farm.code !== undefined
+                                ) { %>
+
+                                    <span
+                                        class="update-nav-farm-option-code"
+                                    >
+                                        Farm #<%= farm.code %>
+                                    </span>
+
+                                <% } %>
+
+                            </span>
+
+
+                            <!-- CURRENT LABEL -->
+
+                            <% if (
+                                dairy &&
+                                dairy._id &&
+                                farm._id &&
+                                dairy._id.toString() ===
+                                farm._id.toString()
+                            ) { %>
+
+                                <span
+                                    class="update-nav-current-label"
+                                >
+                                    CURRENT
+                                </span>
+
+                            <% } %>
+
+                        </a>
+
+                    <% }); %>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    <% } %>
 
 
 
@@ -284,426 +420,937 @@
 
 
 <!-- =====================================================
+     FARM SWITCHING JAVASCRIPT
+===================================================== -->
+
+<script>
+
+(function () {
+
+    "use strict";
+
+
+    /* =====================================================
+       INITIALIZE
+    ===================================================== */
+
+    function initializeFarmSwitcher() {
+
+
+        const switchButton =
+            document.getElementById(
+                "updateFarmSwitchButton"
+            );
+
+
+        const farmList =
+            document.getElementById(
+                "updateAssignedFarmList"
+            );
+
+
+        /* =================================================
+           NOTHING TO INITIALIZE
+
+           This happens automatically when the worker has
+           zero or one assigned farm because the EJS does
+           not render the switcher.
+        ================================================== */
+
+        if (
+            !switchButton ||
+            !farmList
+        ) {
+
+            return;
+
+        }
+
+
+        /* =================================================
+           TOGGLE FARM LIST
+        ================================================== */
+
+        switchButton.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                const currentlyHidden =
+                    farmList.hidden;
+
+
+                farmList.hidden =
+                    !currentlyHidden;
+
+
+                switchButton.setAttribute(
+                    "aria-expanded",
+                    String(currentlyHidden)
+                );
+
+            }
+        );
+
+
+        /* =================================================
+           CLOSE WHEN CLICKING OUTSIDE
+        ================================================== */
+
+        document.addEventListener(
+            "click",
+            function (event) {
+
+                if (
+                    !switchButton.contains(event.target) &&
+                    !farmList.contains(event.target)
+                ) {
+
+                    farmList.hidden =
+                        true;
+
+                    switchButton.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                }
+
+            }
+        );
+
+
+        /* =================================================
+           ESCAPE KEY
+        ================================================== */
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Escape" &&
+                    !farmList.hidden
+                ) {
+
+                    farmList.hidden =
+                        true;
+
+                    switchButton.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                    switchButton.focus();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       DOM READY
+    ===================================================== */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeFarmSwitcher
+        );
+
+    } else {
+
+        initializeFarmSwitcher();
+
+    }
+
+})();
+
+</script>
+
+
+
+<!-- =====================================================
      UPDATE NAVIGATION STYLES
 ===================================================== -->
 
 <style>
 
-    /* =====================================================
-       COLOUR PALETTE
+/* =====================================================
+   COLOUR PALETTE
+===================================================== */
 
-       Very faint light green / "kwa umbaali"
+.update-fixed-nav {
 
-       The background is intentionally subtle.
-    ===================================================== */
+    --nav-green:
+        #638b6a;
 
-    .update-fixed-nav {
+    --nav-green-dark:
+        #4f7657;
 
-        --nav-green:
-            #638b6a;
+    --nav-green-light:
+        rgba(225, 240, 226, 0.72);
 
-        --nav-green-dark:
-            #4f7657;
+    --nav-green-hover:
+        rgba(201, 225, 204, 0.72);
 
-        --nav-green-light:
-            rgba(225, 240, 226, 0.72);
+    --nav-border:
+        rgba(99, 139, 106, 0.16);
 
-        --nav-green-hover:
-            rgba(201, 225, 204, 0.72);
-
-        --nav-border:
-            rgba(99, 139, 106, 0.16);
-
-    }
+}
 
 
 
-    /* =====================================================
-       FIXED NAVIGATION
+/* =====================================================
+   FIXED NAVIGATION
+===================================================== */
 
-       layout.ejs header:
-           120px
+.update-fixed-nav {
 
-       update navigation:
-           40px
-    ===================================================== */
+    position: fixed;
 
-    .update-fixed-nav {
+    top: 120px;
 
-        position: fixed;
+    left: 0;
+    right: 0;
 
-        top: 120px;
+    width: 100%;
 
-        left: 0;
-        right: 0;
+    height: 40px;
 
-        width: 100%;
+    display: grid;
 
-        height: 40px;
+    /*
+       Four columns when the farm switcher exists.
+       Three columns when it does not.
+    */
 
-        display: grid;
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
 
-        grid-template-columns:
-            repeat(4, minmax(0, 1fr));
+    align-items: stretch;
 
-        align-items: stretch;
+    margin: 0;
 
-        margin: 0;
+    padding: 0;
 
-        padding: 0;
+    box-sizing: border-box;
 
-        box-sizing: border-box;
+    z-index: 9999;
 
-        z-index: 9999;
+    background:
+        var(--nav-green-light);
 
-        background:
-            var(--nav-green-light);
+    border-bottom:
+        1px solid
+        var(--nav-border);
 
-        border-bottom:
-            1px solid
-            var(--nav-border);
+    box-shadow:
+        0 1px 5px
+        rgba(67, 103, 72, 0.06);
 
-        box-shadow:
-            0 1px 5px
-            rgba(67, 103, 72, 0.06);
+    backdrop-filter:
+        blur(4px);
 
-        backdrop-filter:
-            blur(4px);
+    -webkit-backdrop-filter:
+        blur(4px);
 
-        -webkit-backdrop-filter:
-            blur(4px);
-
-    }
-
+}
 
 
-    /* =====================================================
-       EACH NAVIGATION ITEM
+/* =====================================================
+   THREE COLUMN MODE
 
-       Four equal columns.
-    ===================================================== */
+   When there is only one assigned farm, the farm
+   switcher is not rendered. The remaining three
+   navigation items fill the navigation evenly.
+===================================================== */
+
+.update-fixed-nav.without-farm-switcher {
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+}
+
+
+
+/* =====================================================
+   EACH NAVIGATION ITEM
+===================================================== */
+
+.update-nav-link {
+
+    min-width: 0;
+
+    width: 100%;
+
+    height: 40px;
+
+    display: flex;
+
+    flex-direction: row;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 5px;
+
+    margin: 0;
+
+    padding: 0 5px;
+
+    border: 0;
+
+    border-right:
+        1px solid
+        rgba(99, 139, 106, 0.08);
+
+    border-radius: 0;
+
+    background: transparent;
+
+    color:
+        var(--nav-green-dark);
+
+    text-decoration: none;
+
+    font-family: inherit;
+
+    font-size: 10px;
+
+    font-weight: 600;
+
+    line-height: 1;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    cursor: pointer;
+
+    box-sizing: border-box;
+
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease;
+
+    -webkit-tap-highlight-color:
+        transparent;
+
+}
+
+
+
+/* =====================================================
+   FARM SWITCHER CONTAINER
+
+   It occupies exactly one grid column.
+===================================================== */
+
+.update-nav-farm-switcher {
+
+    position: relative;
+
+    min-width: 0;
+
+    width: 100%;
+
+    height: 40px;
+
+}
+
+
+
+/* =====================================================
+   FARM SWITCH BUTTON
+===================================================== */
+
+.update-nav-switch-farm {
+
+    appearance: none;
+
+    -webkit-appearance: none;
+
+    font: inherit;
+
+}
+
+
+
+/* =====================================================
+   REMOVE DIVIDER FROM FINAL ITEM
+===================================================== */
+
+.update-nav-link:last-child {
+
+    border-right: 0;
+
+}
+
+
+
+/* =====================================================
+   ICON
+===================================================== */
+
+.update-nav-icon {
+
+    width: 19px;
+
+    height: 19px;
+
+    flex:
+        0 0 19px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+.update-nav-icon svg {
+
+    width: 18px;
+
+    height: 18px;
+
+    display: block;
+
+}
+
+
+
+/* =====================================================
+   LABEL
+===================================================== */
+
+.update-nav-label {
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+
+/* =====================================================
+   INDIVIDUAL ICON SHADES
+===================================================== */
+
+.update-nav-updates {
+
+    color:
+        #628668;
+
+}
+
+
+.update-nav-switch-farm {
+
+    color:
+        #587f5f;
+
+}
+
+
+.update-nav-storage {
+
+    color:
+        #668b6b;
+
+}
+
+
+.update-nav-dairy-assets {
+
+    color:
+        #4f7857;
+
+}
+
+
+
+/* =====================================================
+   HOVER
+===================================================== */
+
+.update-nav-link:hover {
+
+    background:
+        var(--nav-green-hover);
+
+    color:
+        var(--nav-green-dark);
+
+}
+
+
+
+/* =====================================================
+   FOCUS
+===================================================== */
+
+.update-nav-link:focus-visible {
+
+    outline:
+        2px solid
+        rgba(79, 118, 87, 0.28);
+
+    outline-offset:
+        -2px;
+
+    background:
+        rgba(255, 255, 255, 0.35);
+
+}
+
+
+
+/* =====================================================
+   ACTIVE
+===================================================== */
+
+.update-nav-link:active {
+
+    background:
+        rgba(185, 213, 189, 0.55);
+
+}
+
+
+
+/* =====================================================
+   FARM LIST
+===================================================== */
+
+.update-nav-farm-list {
+
+    position: absolute;
+
+    top: 43px;
+
+    left: 50%;
+
+    width: 270px;
+
+    max-width:
+        calc(100vw - 24px);
+
+    box-sizing: border-box;
+
+    transform:
+        translateX(-50%);
+
+    padding: 8px;
+
+    border:
+        1px solid
+        rgba(99, 139, 106, 0.18);
+
+    border-radius: 10px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 8px 24px
+        rgba(45, 74, 50, 0.15);
+
+    z-index: 10001;
+
+}
+
+
+.update-nav-farm-list[hidden] {
+
+    display: none;
+
+}
+
+
+
+/* =====================================================
+   FARM LIST TITLE
+===================================================== */
+
+.update-nav-farm-list-title {
+
+    padding:
+        3px 6px 8px;
+
+    color:
+        #727c75;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+}
+
+
+
+/* =====================================================
+   FARM OPTIONS
+===================================================== */
+
+.update-nav-farm-options {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+}
+
+
+
+/* =====================================================
+   INDIVIDUAL FARM
+===================================================== */
+
+.update-nav-farm-option {
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 8px;
+
+    border:
+        1px solid
+        transparent;
+
+    border-radius: 7px;
+
+    background:
+        #f7faf8;
+
+    color:
+        #17351f;
+
+    text-decoration: none;
+
+    transition:
+        background-color 0.18s ease,
+        border-color 0.18s ease;
+
+}
+
+
+.update-nav-farm-option:hover {
+
+    background:
+        #edf6ef;
+
+    border-color:
+        #c8d9cc;
+
+}
+
+
+.update-nav-farm-option.is-current {
+
+    background:
+        #e8f5eb;
+
+    border-color:
+        #bad3c0;
+
+}
+
+
+
+/* =====================================================
+   FARM OPTION ICON
+===================================================== */
+
+.update-nav-farm-option-icon {
+
+    flex:
+        0 0 27px;
+
+    width: 27px;
+
+    height: 27px;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background:
+        #e3ebe5;
+
+    color:
+        var(--nav-green);
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+}
+
+
+.update-nav-farm-option.is-current
+.update-nav-farm-option-icon {
+
+    background:
+        var(--nav-green);
+
+    color:
+        #ffffff;
+
+}
+
+
+
+/* =====================================================
+   FARM DETAILS
+===================================================== */
+
+.update-nav-farm-option-details {
+
+    min-width: 0;
+
+    flex:
+        1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+
+}
+
+
+.update-nav-farm-option-name {
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    color:
+        #20352a;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+}
+
+
+.update-nav-farm-option-code {
+
+    color:
+        #747d77;
+
+    font-size: 9px;
+
+}
+
+
+
+/* =====================================================
+   CURRENT LABEL
+===================================================== */
+
+.update-nav-current-label {
+
+    flex:
+        0 0 auto;
+
+    padding:
+        4px 6px;
+
+    border-radius: 5px;
+
+    background:
+        var(--nav-green);
+
+    color:
+        #ffffff;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.5px;
+
+}
+
+
+
+/* =====================================================
+   BUTTON RESET
+===================================================== */
+
+.update-nav-button {
+
+    appearance: none;
+
+    -webkit-appearance: none;
+
+}
+
+
+
+/* =====================================================
+   CONTENT POSITIONING
+
+   Navigation is exactly 40px high.
+
+   The content starts exactly below it.
+===================================================== */
+
+.dairy-page {
+
+    margin-top: 40px;
+
+}
+
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 600px) {
 
     .update-nav-link {
 
-        min-width: 0;
+        gap: 3px;
 
-        width: 100%;
+        padding: 0 3px;
 
-        height: 40px;
-
-        display: flex;
-
-        flex-direction: row;
-
-        align-items: center;
-
-        justify-content: center;
-
-        gap: 5px;
-
-        margin: 0;
-
-        padding: 0 5px;
-
-        border: 0;
-
-        border-right:
-            1px solid
-            rgba(99, 139, 106, 0.08);
-
-        border-radius: 0;
-
-        background: transparent;
-
-        color:
-            var(--nav-green-dark);
-
-        text-decoration: none;
-
-        font-family: inherit;
-
-        font-size: 10px;
-
-        font-weight: 600;
-
-        line-height: 1;
-
-        white-space: nowrap;
-
-        overflow: hidden;
-
-        cursor: pointer;
-
-        box-sizing: border-box;
-
-        transition:
-            background-color 0.18s ease,
-            color 0.18s ease;
-
-        -webkit-tap-highlight-color:
-            transparent;
+        font-size: 9px;
 
     }
 
-
-
-    /* Remove divider from final item */
-
-    .update-nav-link:last-child {
-
-        border-right: 0;
-
-    }
-
-
-
-    /* =====================================================
-       ICON
-    ===================================================== */
 
     .update-nav-icon {
 
-        width: 19px;
+        width: 18px;
 
-        height: 19px;
+        height: 18px;
 
-        flex: 0 0 19px;
-
-        display: flex;
-
-        align-items: center;
-
-        justify-content: center;
+        flex-basis: 18px;
 
     }
 
 
     .update-nav-icon svg {
 
-        width: 18px;
+        width: 17px;
 
-        height: 18px;
-
-        display: block;
+        height: 17px;
 
     }
 
 
+    .update-nav-farm-list {
 
-    /* =====================================================
-       LABEL
-    ===================================================== */
+        width: 255px;
 
-    .update-nav-label {
+    }
 
-        min-width: 0;
+}
 
-        overflow: hidden;
 
-        text-overflow: ellipsis;
 
-        white-space: nowrap;
+/* =====================================================
+   VERY SMALL SCREENS
+===================================================== */
+
+@media (max-width: 380px) {
+
+    .update-nav-link {
+
+        gap: 2px;
+
+        padding: 0 2px;
+
+        font-size: 8px;
 
     }
 
 
+    .update-nav-icon {
 
-    /* =====================================================
-       INDIVIDUAL ICON SHADES
-       
-       All remain within the same soft green family.
-    ===================================================== */
+        width: 17px;
 
-    .update-nav-updates {
+        height: 17px;
 
-        color:
-            #628668;
+        flex-basis: 17px;
 
     }
 
 
-    .update-nav-assets {
+    .update-nav-icon svg {
 
-        color:
-            #587f5f;
+        width: 16px;
 
-    }
-
-
-    .update-nav-storage {
-
-        color:
-            #668b6b;
+        height: 16px;
 
     }
 
 
-    .update-nav-dairy-assets {
+    .update-nav-farm-list {
 
-        color:
-            #4f7857;
-
-    }
-
-
-
-    /* =====================================================
-       HOVER
-    ===================================================== */
-
-    .update-nav-link:hover {
-
-        background:
-            var(--nav-green-hover);
-
-        color:
-            var(--nav-green-dark);
+        width: 240px;
 
     }
 
+}
 
 
-    /* =====================================================
-       FOCUS
-    ===================================================== */
 
-    .update-nav-link:focus-visible {
+/* =====================================================
+   REDUCED MOTION
+===================================================== */
 
-        outline:
-            2px solid
-            rgba(79, 118, 87, 0.28);
+@media (prefers-reduced-motion: reduce) {
 
-        outline-offset:
-            -2px;
+    .update-nav-link,
+    .update-nav-farm-option {
 
-        background:
-            rgba(255, 255, 255, 0.35);
+        transition: none;
 
     }
 
-
-
-    /* =====================================================
-       ACTIVE
-    ===================================================== */
-
-    .update-nav-link:active {
-
-        background:
-            rgba(185, 213, 189, 0.55);
-
-    }
-
-
-
-    /* =====================================================
-       BUTTON RESET
-    ===================================================== */
-
-    .update-nav-button {
-
-        appearance: none;
-
-        -webkit-appearance: none;
-
-    }
-
-
-
-    /* =====================================================
-       CONTENT POSITIONING
-
-       Navigation is exactly 40px high.
-
-       The content starts exactly below it.
-    ===================================================== */
-
-    .dairy-page {
-
-        margin-top: 40px;
-
-    }
-
-
-
-    /* =====================================================
-       MOBILE
-    ===================================================== */
-
-    @media (max-width: 600px) {
-
-        .update-nav-link {
-
-            gap: 3px;
-
-            padding: 0 3px;
-
-            font-size: 9px;
-
-        }
-
-
-        .update-nav-icon {
-
-            width: 18px;
-
-            height: 18px;
-
-            flex-basis: 18px;
-
-        }
-
-
-        .update-nav-icon svg {
-
-            width: 17px;
-
-            height: 17px;
-
-        }
-
-    }
-
-
-
-    /* =====================================================
-       VERY SMALL SCREENS
-
-       Labels remain visible but become smaller.
-    ===================================================== */
-
-    @media (max-width: 380px) {
-
-        .update-nav-link {
-
-            gap: 2px;
-
-            padding: 0 2px;
-
-            font-size: 8px;
-
-        }
-
-
-        .update-nav-icon {
-
-            width: 17px;
-
-            height: 17px;
-
-            flex-basis: 17px;
-
-        }
-
-
-        .update-nav-icon svg {
-
-            width: 16px;
-
-            height: 16px;
-
-        }
-
-    }
+}
 
 </style>
