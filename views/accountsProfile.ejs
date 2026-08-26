@@ -2,39 +2,37 @@
 
 /* =========================================================
    PAGE
-======================================================== */
+========================================================= */
 
 .profile-page{
-
-  width:100%;
-
-  max-width:760px;
-
-  margin:0 auto;
-
-  padding:20px 0 40px;
+    max-width:760px;
+    margin:0 auto;
+    padding:20px 0 45px;
 }
 
 
 /* =========================================================
-   MAIN CARD
+   PROFILE CARD
 ========================================================= */
 
 .profile-card{
+    background:#fff;
+    border-radius:22px;
+    padding:32px;
+    box-shadow:
+        0 12px 32px rgba(0,0,0,.08);
+    border:1px solid #edf0f2;
+}
 
-  background:#fff;
 
-  border-radius:20px;
+/* =========================================================
+   PROFILE HEADER
+========================================================= */
 
-  padding:35px;
-
-  box-shadow:
-    0 12px 30px rgba(0,0,0,.08);
-
-  border:
-    1px solid #edf0f2;
-
-  text-align:center;
+.profile-header{
+    text-align:center;
+    padding-bottom:25px;
+    border-bottom:1px solid #edf0f2;
 }
 
 
@@ -43,54 +41,29 @@
 ========================================================= */
 
 .profile-img{
-
-  width:120px;
-
-  height:120px;
-
-  object-fit:cover;
-
-  border-radius:50%;
-
-  border:
-    4px solid #0b5d1e;
-
-  margin:
-    0 auto 18px;
-
-  display:block;
+    width:120px;
+    height:120px;
+    object-fit:cover;
+    border-radius:50%;
+    border:4px solid #0b5d1e;
+    margin:0 auto 18px;
+    display:block;
 }
 
-
 .profile-avatar{
-
-  width:120px;
-
-  height:120px;
-
-  border-radius:50%;
-
-  border:
-    4px solid #0b5d1e;
-
-  background:#0b5d1e;
-
-  color:#fff;
-
-  display:flex;
-
-  align-items:center;
-
-  justify-content:center;
-
-  font-size:48px;
-
-  font-weight:700;
-
-  text-transform:uppercase;
-
-  margin:
-    0 auto 18px;
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    border:4px solid #0b5d1e;
+    background:#0b5d1e;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:48px;
+    font-weight:700;
+    text-transform:uppercase;
+    margin:0 auto 18px;
 }
 
 
@@ -99,182 +72,223 @@
 ========================================================= */
 
 .profile-name{
-
-  margin:0;
-
-  font-size:28px;
-
-  color:#222;
-
-  font-weight:700;
+    margin:0;
+    font-size:28px;
+    color:#222;
+    font-weight:700;
 }
-
 
 .profile-email{
-
-  margin:
-    10px 0 5px;
-
-  color:#666;
-
-  font-size:15px;
+    margin:10px 0 5px;
+    color:#666;
+    font-size:15px;
 }
 
-
 .profile-phone{
-
-  color:#777;
-
-  font-size:15px;
-
-  margin-bottom:25px;
+    color:#777;
+    font-size:15px;
 }
 
 
 /* =========================================================
-   INFORMATION GRID
+   INFO GRID
 ========================================================= */
 
 .info-grid{
+    display:grid;
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(210px,1fr)
+        );
 
-  display:grid;
+    gap:14px;
 
-  grid-template-columns:
-    repeat(
-      auto-fit,
-      minmax(220px,1fr)
-    );
-
-  gap:15px;
-
-  margin-bottom:25px;
+    margin:25px 0;
 }
-
 
 .info-box{
-
-  background:#f8faf9;
-
-  border:
-    1px solid #e7ece9;
-
-  border-radius:14px;
-
-  padding:18px;
-
-  text-align:left;
+    background:#f8faf9;
+    border:1px solid #e7ece9;
+    border-radius:14px;
+    padding:17px;
 }
-
 
 .info-title{
-
-  font-size:12px;
-
-  color:#888;
-
-  text-transform:uppercase;
-
-  letter-spacing:.6px;
-
-  margin-bottom:8px;
-
-  font-weight:700;
+    font-size:12px;
+    color:#888;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    margin-bottom:8px;
 }
-
 
 .info-box strong{
-
-  color:#263238;
-
-  font-size:14px;
-
-  line-height:20px;
-
-  word-break:break-word;
+    color:#222;
+    font-size:14px;
+    word-break:break-word;
 }
 
-
 .role-badge{
-
-  display:inline-flex;
-
-  align-items:center;
-
-  padding:
-    8px 14px;
-
-  background:#e9f7ef;
-
-  color:#0b5d1e;
-
-  border-radius:30px;
-
-  font-weight:700;
-
-  text-transform:capitalize;
-
-  font-size:13px;
+    display:inline-flex;
+    align-items:center;
+    padding:7px 13px;
+    background:#e9f7ef;
+    color:#0b5d1e;
+    border-radius:30px;
+    font-weight:700;
+    text-transform:capitalize;
 }
 
 
 /* =========================================================
-   FORM / MANAGEMENT SECTIONS
+   FORM SECTION
 ========================================================= */
 
 .form-section{
-
-  margin-top:25px;
-
-  padding-top:25px;
-
-  border-top:
-    1px solid #edf0f2;
-
-  text-align:left;
+    margin-top:25px;
+    text-align:left;
+    border-top:1px solid #edf0f2;
+    padding-top:25px;
 }
-
 
 .form-title{
-
-  color:#0b5d1e;
-
-  font-size:20px;
-
-  margin:
-    0 0 15px;
-
-  line-height:26px;
-}
-
-
-.form-description{
-
-  color:#667085;
-
-  font-size:13px;
-
-  line-height:20px;
-
-  margin:
-    -5px 0 16px;
+    color:#0b5d1e;
+    font-size:21px;
+    margin:0 0 15px;
 }
 
 
 /* =========================================================
-   FORM LABEL
+   COLLAPSIBLE ASSIGNMENT BOX
 ========================================================= */
 
-.form-section label{
+.assignment-box{
+    border:1px solid #e2e9e4;
+    border-radius:15px;
+    overflow:hidden;
+    background:#fff;
+}
 
-  display:block;
+.assignment-toggle{
+    width:100%;
+    border:0;
+    background:#f5faf6;
+    color:#0b5d1e;
+    padding:15px 17px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    cursor:pointer;
+    font:inherit;
+    text-align:left;
+    transition:
+        background .2s ease;
+}
 
-  margin-bottom:8px;
+.assignment-toggle:hover{
+    background:#eaf7ee;
+}
 
-  font-weight:600;
+.assignment-toggle-content{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    min-width:0;
+}
 
-  color:#444;
+.assignment-toggle-icon{
+    width:34px;
+    height:34px;
+    border-radius:9px;
+    background:#0b5d1e;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    font-size:18px;
+}
 
-  font-size:14px;
+.assignment-toggle-text{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+}
+
+.assignment-toggle-title{
+    font-size:15px;
+    font-weight:700;
+}
+
+.assignment-toggle-subtitle{
+    font-size:12px;
+    color:#718078;
+}
+
+.assignment-arrow{
+    font-size:15px;
+    transition:
+        transform .2s ease;
+}
+
+.assignment-toggle.open
+.assignment-arrow{
+    transform:rotate(90deg);
+}
+
+.assignment-content{
+    display:none;
+    padding:17px;
+    border-top:1px solid #e5ebe7;
+}
+
+.assignment-content.open{
+    display:block;
+}
+
+
+/* =========================================================
+   ASSIGNMENT LIST
+========================================================= */
+
+.assigned-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:18px;
+}
+
+.assigned-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+
+    background:#f8faf9;
+
+    border:1px solid #e4ebe6;
+
+    border-radius:12px;
+
+    padding:13px 14px;
+}
+
+.assigned-info{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    min-width:0;
+}
+
+.assigned-info strong{
+    color:#222;
+    font-size:14px;
+}
+
+.assigned-meta{
+    color:#77827c;
+    font-size:12px;
 }
 
 
@@ -282,324 +296,41 @@
    SELECT
 ========================================================= */
 
-.form-section select{
-
-  width:100%;
-
-  min-height:48px;
-
-  padding:
-    12px 14px;
-
-  border:
-    1px solid #d8d8d8;
-
-  border-radius:12px;
-
-  font-size:14px;
-
-  color:#263238;
-
-  background:#fff;
-
-  transition:
-    border-color .2s ease,
-    box-shadow .2s ease;
-
-  box-sizing:border-box;
+.form-section label{
+    display:block;
+    margin-bottom:8px;
+    font-weight:600;
+    color:#444;
 }
 
+.form-section select{
+    width:100%;
+    padding:14px;
+    border:1px solid #d8d8d8;
+    border-radius:12px;
+    font-size:15px;
+    background:#fff;
+    transition:.2s;
+    box-sizing:border-box;
+}
 
 .form-section select:focus{
-
-  outline:none;
-
-  border-color:#0b5d1e;
-
-  box-shadow:
-    0 0 0 3px
-    rgba(11,93,30,.1);
+    outline:none;
+    border-color:#0b5d1e;
+    box-shadow:
+        0 0 0 3px
+        rgba(11,93,30,.1);
 }
 
 
 /* =========================================================
-   DROPDOWN DETAILS
+   SELECT HINT
 ========================================================= */
 
-.assignment-details{
-
-  width:100%;
-
-  margin-bottom:18px;
-
-  background:#f8faf9;
-
-  border:
-    1px solid #e3ebe5;
-
-  border-radius:14px;
-
-  overflow:hidden;
-}
-
-
-.assignment-summary{
-
-  display:flex;
-
-  align-items:center;
-
-  justify-content:space-between;
-
-  gap:15px;
-
-  min-height:54px;
-
-  padding:
-    0 16px;
-
-  cursor:pointer;
-
-  list-style:none;
-
-  color:#0b5d1e;
-
-  font-size:14px;
-
-  font-weight:700;
-
-  user-select:none;
-}
-
-
-.assignment-summary::-webkit-details-marker{
-
-  display:none;
-}
-
-
-.assignment-summary::after{
-
-  content:"⌄";
-
-  color:#0b5d1e;
-
-  font-size:18px;
-
-  line-height:1;
-
-  transition:
-    transform .2s ease;
-}
-
-
-.assignment-details[open]
-.assignment-summary::after{
-
-  transform:rotate(180deg);
-}
-
-
-.assignment-summary-left{
-
-  display:flex;
-
-  align-items:center;
-
-  gap:10px;
-
-  min-width:0;
-}
-
-
-.assignment-summary-icon{
-
-  width:30px;
-
-  height:30px;
-
-  min-width:30px;
-
-  display:flex;
-
-  align-items:center;
-
-  justify-content:center;
-
-  border-radius:8px;
-
-  background:#eaf7ee;
-
-  color:#0b5d1e;
-
-  font-size:16px;
-}
-
-
-.assignment-count{
-
-  display:inline-flex;
-
-  align-items:center;
-
-  justify-content:center;
-
-  min-width:24px;
-
-  height:24px;
-
-  padding:
-    0 7px;
-
-  border-radius:20px;
-
-  background:#0b5d1e;
-
-  color:#fff;
-
-  font-size:11px;
-
-  font-weight:700;
-}
-
-
-.assignment-details-content{
-
-  padding:
-    0 14px 14px;
-}
-
-
-/* =========================================================
-   ASSIGNED LIST
-========================================================= */
-
-.assigned-list{
-
-  display:flex;
-
-  flex-direction:column;
-
-  gap:9px;
-}
-
-
-.assigned-item{
-
-  display:flex;
-
-  align-items:center;
-
-  justify-content:space-between;
-
-  gap:12px;
-
-  background:#fff;
-
-  border:
-    1px solid #e3ebe5;
-
-  border-radius:11px;
-
-  padding:
-    12px 13px;
-}
-
-
-.assigned-item-info{
-
-  display:flex;
-
-  flex-direction:column;
-
-  gap:3px;
-
-  min-width:0;
-}
-
-
-.assigned-item-name{
-
-  color:#263238;
-
-  font-size:14px;
-
-  font-weight:700;
-
-  word-break:break-word;
-}
-
-
-.assigned-item-meta{
-
-  color:#7a8589;
-
-  font-size:12px;
-
-  line-height:17px;
-
-  word-break:break-word;
-}
-
-
-/* =========================================================
-   REMOVE BUTTON
-========================================================= */
-
-.btn-remove{
-
-  flex-shrink:0;
-
-  border:none;
-
-  border-radius:8px;
-
-  padding:
-    8px 11px;
-
-  background:#ffe5e5;
-
-  color:#c62828;
-
-  font-size:12px;
-
-  font-weight:700;
-
-  cursor:pointer;
-
-  transition:
-    background .2s ease,
-    transform .15s ease;
-}
-
-
-.btn-remove:hover{
-
-  background:#ffd2d2;
-}
-
-
-.btn-remove:active{
-
-  transform:scale(.97);
-}
-
-
-/* =========================================================
-   ASSIGNMENT SELECT GROUP
-========================================================= */
-
-.assignment-select-box{
-
-  padding:
-    16px;
-
-  background:#f8faf9;
-
-  border:
-    1px solid #e3ebe5;
-
-  border-radius:14px;
+.select-hint{
+    margin-top:7px;
+    color:#7a847e;
+    font-size:12px;
 }
 
 
@@ -608,82 +339,55 @@
 ========================================================= */
 
 .btn-save{
-
-  width:100%;
-
-  margin-top:15px;
-
-  padding:14px 15px;
-
-  border:none;
-
-  border-radius:12px;
-
-  background:#0b5d1e;
-
-  color:#fff;
-
-  font-size:15px;
-
-  font-weight:700;
-
-  cursor:pointer;
-
-  transition:
-    background .2s ease,
-    transform .15s ease;
+    width:100%;
+    margin-top:16px;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    background:#0b5d1e;
+    color:#fff;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    transition:
+        background .2s ease,
+        transform .15s ease;
 }
-
 
 .btn-save:hover{
-
-  background:#084814;
+    background:#084814;
 }
-
 
 .btn-save:active{
-
-  transform:scale(.98);
+    transform:scale(.98);
 }
 
+.btn-remove{
+    border:none;
+    border-radius:8px;
+    padding:8px 11px;
+    background:#ffe5e5;
+    color:#c62828;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+}
+
+.btn-remove:hover{
+    background:#ffd2d2;
+}
 
 .btn-delete{
-
-  width:100%;
-
-  margin-top:15px;
-
-  padding:14px 15px;
-
-  border:none;
-
-  border-radius:12px;
-
-  background:#c62828;
-
-  color:#fff;
-
-  font-size:15px;
-
-  font-weight:700;
-
-  cursor:pointer;
-
-  transition:
-    background .2s ease,
-    transform .15s ease;
-}
-
-
-.btn-delete:hover{
-
-  background:#a91f1f;
-}
-
-
-.btn-delete:active{
-
-  transform:scale(.98);
+    width:100%;
+    margin-top:15px;
+    padding:15px;
+    border:none;
+    border-radius:12px;
+    background:#c62828;
+    color:#fff;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
 }
 
 
@@ -692,90 +396,29 @@
 ========================================================= */
 
 .notice{
-
-  padding:
-    14px 15px;
-
-  border-radius:12px;
-
-  background:#fff8e5;
-
-  color:#9a6700;
-
-  border:
-    1px solid #f0d58c;
-
-  font-size:13px;
-
-  line-height:20px;
+    padding:14px;
+    border-radius:12px;
+    background:#fff8e5;
+    color:#9a6700;
+    border:1px solid #f0d58c;
+    font-size:14px;
+    line-height:1.5;
 }
 
 
 /* =========================================================
-   EMPTY ASSIGNMENT NOTICE
+   EMPTY
 ========================================================= */
 
-.assignment-empty{
-
-  padding:
-    14px;
-
-  border-radius:10px;
-
-  background:#fff;
-
-  border:
-    1px dashed #d8e2db;
-
-  color:#7a8589;
-
-  font-size:13px;
-
-  line-height:19px;
-
-  text-align:center;
-}
-
-
-/* =========================================================
-   ADMIN-ONLY NOTICE
-========================================================= */
-
-.admin-assignment-note{
-
-  display:flex;
-
-  align-items:flex-start;
-
-  gap:10px;
-
-  padding:
-    12px 14px;
-
-  margin-bottom:15px;
-
-  background:#f3faf5;
-
-  border:
-    1px solid #dceee1;
-
-  border-radius:11px;
-
-  color:#48604f;
-
-  font-size:12px;
-
-  line-height:18px;
-}
-
-
-.admin-assignment-note-icon{
-
-  flex-shrink:0;
-
-  font-size:17px;
-
-  color:#0b5d1e;
+.empty-assignment{
+    text-align:center;
+    padding:16px;
+    margin-bottom:17px;
+    border-radius:12px;
+    background:#f8faf9;
+    border:1px dashed #d8e1db;
+    color:#78837d;
+    font-size:13px;
 }
 
 
@@ -784,22 +427,11 @@
 ========================================================= */
 
 .danger-section{
-
-  border-top:
-    1px solid #f0dddd;
+    border-top:1px solid #f0dddd;
 }
 
-
-.danger-title{
-
-  color:#c62828;
-
-  font-size:20px;
-
-  margin:
-    0 0 10px;
-
-  line-height:26px;
+.danger-section .form-title{
+    color:#c62828;
 }
 
 
@@ -809,107 +441,52 @@
 
 @media(max-width:600px){
 
-  .profile-page{
+    .profile-page{
+        padding:10px 0 35px;
+    }
 
-    padding:
-      10px 0 30px;
-  }
+    .profile-card{
+        padding:20px;
+        border-radius:18px;
+    }
 
+    .profile-img,
+    .profile-avatar{
+        width:100px;
+        height:100px;
+    }
 
-  .profile-card{
+    .profile-avatar{
+        font-size:40px;
+    }
 
-    padding:22px 17px;
+    .profile-name{
+        font-size:24px;
+    }
 
-    border-radius:16px;
-  }
+    .info-grid{
+        grid-template-columns:1fr;
+    }
 
+    .assigned-item{
+        align-items:flex-start;
+    }
 
-  .profile-img,
-  .profile-avatar{
-
-    width:100px;
-
-    height:100px;
-  }
-
-
-  .profile-avatar{
-
-    font-size:40px;
-  }
-
-
-  .profile-name{
-
-    font-size:24px;
-  }
-
-
-  .info-grid{
-
-    grid-template-columns:1fr;
-  }
-
-
-  .assigned-item{
-
-    align-items:flex-start;
-
-    flex-direction:column;
-  }
-
-
-  .btn-remove{
-
-    width:100%;
-  }
-
-
-  .assignment-summary{
-
-    padding:
-      0 13px;
-  }
-
-
-  .assignment-details-content{
-
-    padding:
-      0 10px 10px;
-  }
+    .assigned-item .btn-remove{
+        flex-shrink:0;
+    }
 
 }
 
+@media(max-width:430px){
 
-/* =========================================================
-   VERY SMALL SCREENS
-========================================================= */
+    .assigned-item{
+        flex-direction:column;
+    }
 
-@media(max-width:380px){
-
-  .profile-card{
-
-    padding:
-      20px 13px;
-  }
-
-
-  .profile-name{
-
-    font-size:22px;
-  }
-
-
-  .form-title{
-
-    font-size:18px;
-  }
-
-
-  .assignment-summary{
-
-    font-size:13px;
-  }
+    .assigned-item .btn-remove{
+        width:100%;
+    }
 
 }
 
@@ -918,859 +495,868 @@
 
 <div class="profile-page">
 
-  <div class="profile-card">
-
-
-    <!-- =====================================================
-         PROFILE IMAGE
-    ====================================================== -->
-
-    <% if(user.profileImage){ %>
-
-      <img
-        src="<%= user.profileImage %>"
-        class="profile-img"
-        alt="<%= user.name %>"
-      >
-
-    <% } else { %>
-
-      <div class="profile-avatar">
-
-        <%= (user.name || "U")
-          .charAt(0)
-          .toUpperCase() %>
-
-      </div>
-
-    <% } %>
-
-
-    <!-- =====================================================
-         USER DETAILS
-    ====================================================== -->
-
-    <h2 class="profile-name">
-      <%= user.name %>
-    </h2>
-
-
-    <div class="profile-email">
-      📧 <%= user.email %>
-    </div>
-
-
-    <div class="profile-phone">
-      📱 <%= user.phone || "No phone number available" %>
-    </div>
-
-
-    <!-- =====================================================
-         INFORMATION
-    ====================================================== -->
-
-    <div class="info-grid">
-
-
-      <div class="info-box">
-
-        <div class="info-title">
-          Current Role
-        </div>
-
-        <span class="role-badge">
-          <%= user.role %>
-        </span>
-
-      </div>
-
-
-      <div class="info-box">
-
-        <div class="info-title">
-          User ID
-        </div>
-
-        <strong>
-          <%= user._id %>
-        </strong>
-
-      </div>
-
-
-      <div class="info-box">
-
-        <div class="info-title">
-          Last Login
-        </div>
-
-        <strong>
-
-          <%= user.lastLogin
-            ? new Date(
-                user.lastLogin
-              ).toLocaleString()
-            : "Never logged in" %>
-
-        </strong>
-
-      </div>
-
-
-    </div>
-
-
-    <!-- =====================================================
-         ASSIGNED STANDALONE ASSETS
-         
-         RULE:
-             code === null
-             assetCode === null
-
-         ASSIGNMENT FIELD:
-             user.assignedAsset
-
-         ADMIN MAY ASSIGN TO:
-             Any non-admin user
-    ====================================================== -->
-
-    <% if(
-      user.role !== "admin"
-    ){ %>
-
-
-      <div class="form-section">
-
-        <h3 class="form-title">
-          Assigned Assets
-        </h3>
-
-
-        <p class="form-description">
-          Standalone assets assigned directly to this user.
-        </p>
+    <div class="profile-card">
 
 
         <!-- =================================================
-             CURRENT ASSIGNED ASSETS
+             PROFILE HEADER
         ================================================== -->
 
-        <details class="assignment-details">
+        <div class="profile-header">
 
 
-          <summary class="assignment-summary">
+            <% if(user.profileImage){ %>
 
-            <span class="assignment-summary-left">
+                <img
+                    src="<%= user.profileImage %>"
+                    class="profile-img"
+                    alt="<%= user.name %>"
+                >
 
-              <span
-                class="assignment-summary-icon"
-                aria-hidden="true"
-              >
-                ✨
-              </span>
+            <% } else { %>
 
-              <span>
-                Current Assigned Assets
-              </span>
+                <div class="profile-avatar">
 
-              <span class="assignment-count">
+                    <%= (user.name || "U")
+                        .charAt(0)
+                        .toUpperCase() %>
 
-                <%= Array.isArray(user.assignedAsset)
-                  ? user.assignedAsset.length
-                  : 0 %>
+                </div>
 
-              </span>
-
-            </span>
-
-          </summary>
+            <% } %>
 
 
-          <div class="assignment-details-content">
+            <h2 class="profile-name">
+                <%= user.name %>
+            </h2>
 
 
-            <% if(
-              Array.isArray(user.assignedAsset) &&
-              user.assignedAsset.length > 0
-            ){ %>
+            <div class="profile-email">
+                📧 <%= user.email %>
+            </div>
 
 
-              <div class="assigned-list">
+            <div class="profile-phone">
+                📱
+                <%= user.phone ||
+                    "No phone number available" %>
+            </div>
 
 
-                <% user.assignedAsset.forEach(
-                  function(asset)
-                { %>
+        </div>
 
 
-                  <div class="assigned-item">
+        <!-- =================================================
+             INFORMATION
+        ================================================== -->
+
+        <div class="info-grid">
 
 
-                    <div class="assigned-item-info">
+            <div class="info-box">
 
-                      <span class="assigned-item-name">
+                <div class="info-title">
+                    Current Role
+                </div>
 
-                        <%= asset.name ||
-                            "Standalone Asset" %>
+                <span class="role-badge">
+                    <%= user.role %>
+                </span>
 
-                      </span>
+            </div>
 
 
-                      <span class="assigned-item-meta">
+            <div class="info-box">
+
+                <div class="info-title">
+                    User ID
+                </div>
+
+                <strong>
+                    <%= user._id %>
+                </strong>
+
+            </div>
+
+
+            <div class="info-box">
+
+                <div class="info-title">
+                    Last Login
+                </div>
+
+                <strong>
+
+                    <%= user.lastLogin
+                        ? new Date(
+                            user.lastLogin
+                          ).toLocaleString()
+                        : "Never logged in" %>
+
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             DAIRY FARM ASSIGNMENT
+        ================================================== -->
+
+        <% if(user.role === "dairyWorker"){ %>
+
+            <div class="form-section">
+
+                <h3 class="form-title">
+                    Dairy Farm Assignment
+                </h3>
+
+
+                <div class="assignment-box">
+
+
+                    <button
+                        type="button"
+                        class="assignment-toggle"
+                        data-target="farmAssignmentContent"
+                        aria-expanded="false"
+                    >
+
+                        <span class="assignment-toggle-content">
+
+                            <span
+                                class="assignment-toggle-icon"
+                                aria-hidden="true"
+                            >
+                                🐄
+                            </span>
+
+                            <span class="assignment-toggle-text">
+
+                                <span class="assignment-toggle-title">
+                                    Assigned Dairy Farms
+                                </span>
+
+                                <span class="assignment-toggle-subtitle">
+
+                                    <%= Array.isArray(user.assignedFarm)
+                                        ? user.assignedFarm.length
+                                        : 0 %>
+
+                                    currently assigned
+
+                                </span>
+
+                            </span>
+
+                        </span>
+
+                        <span
+                            class="assignment-arrow"
+                            aria-hidden="true"
+                        >
+                            ▶
+                        </span>
+
+                    </button>
+
+
+                    <div
+                        id="farmAssignmentContent"
+                        class="assignment-content"
+                    >
+
+
+                        <!-- =================================
+                             CURRENT FARMS
+                        ================================== -->
 
                         <% if(
-                          asset.type
+                            Array.isArray(user.assignedFarm) &&
+                            user.assignedFarm.length > 0
                         ){ %>
 
-                          Type:
-                          <%= asset.type %>
+
+                            <div class="assigned-list">
+
+
+                                <% user.assignedFarm.forEach(
+                                    function(farm)
+                                { %>
+
+
+                                    <div class="assigned-item">
+
+
+                                        <div class="assigned-info">
+
+                                            <strong>
+                                                <%= farm.name ||
+                                                    "Dairy Farm" %>
+                                            </strong>
+
+                                            <span class="assigned-meta">
+
+                                                Code:
+                                                <%= farm.code !== undefined &&
+                                                    farm.code !== null
+                                                    ? farm.code
+                                                    : "Unknown" %>
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <form
+                                            method="POST"
+                                            action="/accounts/<%= user._id %>/farms/<%= farm._id %>/unassign"
+                                            onsubmit="return confirm('Unassign this Dairy Farm from this worker?');"
+                                        >
+
+                                            <button
+                                                type="submit"
+                                                class="btn-remove"
+                                            >
+                                                Unassign
+                                            </button>
+
+                                        </form>
+
+
+                                    </div>
+
+
+                                <% }); %>
+
+
+                            </div>
+
+
+                        <% } else { %>
+
+
+                            <div class="empty-assignment">
+                                No Dairy Farms are currently assigned.
+                            </div>
+
 
                         <% } %>
 
 
-                        <% if(
-                          asset.refNo
-                        ){ %>
+                        <!-- =================================
+                             ASSIGN FARM
+                        ================================== -->
 
-                          <% if(asset.type){ %>
-                            ·
-                          <% } %>
+                        <form
+                            method="POST"
+                            action="/accounts/<%= user._id %>/farms"
+                        >
 
-                          Ref:
-                          <%= asset.refNo %>
+                            <label for="assignedFarms">
 
-                        <% } %>
+                                Assign Dairy Farms
 
-                      </span>
+                            </label>
+
+
+                            <select
+                                id="assignedFarms"
+                                name="assignedFarms"
+                                multiple
+                                size="5"
+                            >
+
+                                <% if(
+                                    Array.isArray(dairies)
+                                ){ %>
+
+
+                                    <% dairies.forEach(
+                                        function(dairy)
+                                    {
+
+                                        const alreadyAssigned =
+                                            Array.isArray(
+                                                user.assignedFarm
+                                            ) &&
+                                            user.assignedFarm.some(
+                                                function(farm){
+
+                                                    return String(
+                                                        farm._id
+                                                    ) ===
+                                                    String(
+                                                        dairy._id
+                                                    );
+
+                                                }
+                                            );
+
+                                    %>
+
+
+                                        <% if(
+                                            !alreadyAssigned
+                                        ){ %>
+
+                                            <option
+                                                value="<%= dairy._id %>"
+                                            >
+                                                <%= dairy.name %>
+                                                —
+                                                <%= dairy.code %>
+                                            </option>
+
+                                        <% } %>
+
+
+                                    <% }); %>
+
+
+                                <% } %>
+
+                            </select>
+
+
+                            <div class="select-hint">
+                                Hold Ctrl or Command to select multiple farms.
+                            </div>
+
+
+                            <button
+                                type="submit"
+                                class="btn-save"
+                            >
+                                Assign Selected Farms
+                            </button>
+
+                        </form>
+
 
                     </div>
 
+                </div>
 
-                    <!-- =================================
-                         UNASSIGN ASSET
-                    ================================== -->
+            </div>
 
-                    <form
-                      method="POST"
-                      action="/accounts/<%= user._id %>/assets/<%= asset._id %>/unassign"
+        <% } %>
 
-                      onsubmit="return confirm('Unassign this asset from this user?');"
+
+        <!-- =================================================
+             STANDALONE ASSET ASSIGNMENT
+        ================================================== -->
+
+        <% if(
+            user.role !== "admin"
+        ){ %>
+
+
+            <div class="form-section">
+
+                <h3 class="form-title">
+                    Standalone Asset Assignment
+                </h3>
+
+
+                <div class="assignment-box">
+
+
+                    <button
+                        type="button"
+                        class="assignment-toggle"
+                        data-target="assetAssignmentContent"
+                        aria-expanded="false"
                     >
 
-                      <button
-                        type="submit"
-                        class="btn-remove"
-                      >
-                        Unassign
-                      </button>
+                        <span class="assignment-toggle-content">
 
-                    </form>
+                            <span
+                                class="assignment-toggle-icon"
+                                aria-hidden="true"
+                            >
+                                📦
+                            </span>
+
+                            <span class="assignment-toggle-text">
+
+                                <span class="assignment-toggle-title">
+                                    Assigned Assets
+                                </span>
+
+                                <span class="assignment-toggle-subtitle">
+
+                                    <%= Array.isArray(user.assignedAsset)
+                                        ? user.assignedAsset.length
+                                        : 0 %>
+
+                                    currently assigned
+
+                                </span>
+
+                            </span>
+
+                        </span>
 
 
-                  </div>
+                        <span
+                            class="assignment-arrow"
+                            aria-hidden="true"
+                        >
+                            ▶
+                        </span>
+
+                    </button>
 
 
-                <% }); %>
+                    <div
+                        id="assetAssignmentContent"
+                        class="assignment-content"
+                    >
 
 
-              </div>
+                        <!-- =================================
+                             CURRENT ASSETS
+                        ================================== -->
+
+                        <% if(
+                            Array.isArray(user.assignedAsset) &&
+                            user.assignedAsset.length > 0
+                        ){ %>
+
+
+                            <div class="assigned-list">
+
+
+                                <% user.assignedAsset.forEach(
+                                    function(asset)
+                                { %>
+
+
+                                    <div class="assigned-item">
+
+
+                                        <div class="assigned-info">
+
+                                            <strong>
+                                                <%= asset.name ||
+                                                    "Standalone Asset" %>
+                                            </strong>
+
+
+                                            <span class="assigned-meta">
+
+                                                <%= asset.type ||
+                                                    "Asset" %>
+
+                                                <% if(
+                                                    asset.condition
+                                                ){ %>
+
+                                                    ·
+                                                    <%= asset.condition %>
+
+                                                <% } %>
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <form
+                                            method="POST"
+                                            action="/accounts/<%= user._id %>/assets/<%= asset._id %>/unassign"
+                                            onsubmit="return confirm('Remove this asset from the user?');"
+                                        >
+
+                                            <button
+                                                type="submit"
+                                                class="btn-remove"
+                                            >
+                                                Unassign
+                                            </button>
+
+                                        </form>
+
+
+                                    </div>
+
+
+                                <% }); %>
+
+
+                            </div>
+
+
+                        <% } else { %>
+
+
+                            <div class="empty-assignment">
+                                No standalone assets are currently assigned.
+                            </div>
+
+
+                        <% } %>
+
+
+                        <!-- =================================
+                             AVAILABLE ASSETS
+                        ================================== -->
+
+                        <form
+                            method="POST"
+                            action="/accounts/<%= user._id %>/assets"
+                        >
+
+
+                            <label for="assignedAssets">
+
+                                Assign Standalone Assets
+
+                            </label>
+
+
+                            <select
+                                id="assignedAssets"
+                                name="assignedAssets"
+                                multiple
+                                size="5"
+                            >
+
+
+                                <% if(
+                                    Array.isArray(assets)
+                                ){ %>
+
+
+                                    <% assets.forEach(
+                                        function(asset)
+                                    {
+
+                                        const alreadyAssigned =
+                                            Array.isArray(
+                                                user.assignedAsset
+                                            ) &&
+                                            user.assignedAsset.some(
+                                                function(
+                                                    assignedAsset
+                                                ){
+
+                                                    return String(
+                                                        assignedAsset._id
+                                                    ) ===
+                                                    String(
+                                                        asset._id
+                                                    );
+
+                                                }
+                                            );
+
+                                    %>
+
+
+                                        <% if(
+                                            !alreadyAssigned
+                                        ){ %>
+
+
+                                            <option
+                                                value="<%= asset._id %>"
+                                            >
+
+                                                <%= asset.name ||
+                                                    "Unnamed Asset" %>
+
+                                                <% if(
+                                                    asset.type
+                                                ){ %>
+
+                                                    —
+                                                    <%= asset.type %>
+
+                                                <% } %>
+
+                                            </option>
+
+
+                                        <% } %>
+
+
+                                    <% }); %>
+
+
+                                <% } %>
+
+
+                            </select>
+
+
+                            <% if(
+                                !Array.isArray(assets) ||
+                                assets.length === 0
+                            ){ %>
+
+
+                                <div class="select-hint">
+
+                                    No standalone/code-less Dairy assets
+                                    are currently available.
+
+                                </div>
+
+
+                            <% } else { %>
+
+
+                                <div class="select-hint">
+
+                                    Select one or more standalone assets
+                                    to assign to this user.
+
+                                </div>
+
+
+                            <% } %>
+
+
+                            <button
+                                type="submit"
+                                class="btn-save"
+                                <%= !Array.isArray(assets) ||
+                                    assets.length === 0
+                                    ? "disabled"
+                                    : "" %>
+                            >
+
+                                Assign Selected Assets
+
+                            </button>
+
+
+                        </form>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        <% } %>
+
+
+        <!-- =================================================
+             CHANGE ROLE
+        ================================================== -->
+
+        <div class="form-section">
+
+            <h3 class="form-title">
+                Change User Role
+            </h3>
+
+
+            <% if(
+                currentUser._id.toString() ===
+                user._id.toString()
+            ){ %>
+
+
+                <div class="notice">
+                    You cannot change your own role.
+                </div>
 
 
             <% } else { %>
 
 
-              <div class="assignment-empty">
+                <form
+                    method="POST"
+                    action="/accounts/<%= user._id %>/role"
+                >
 
-                No standalone assets are currently
-                assigned to this user.
 
-              </div>
+                    <label for="role">
+                        Select New Role
+                    </label>
+
+
+                    <select
+                        id="role"
+                        name="role"
+                        required
+                    >
+
+                        <option
+                            value="dairyWorker"
+                            <%= user.role === "dairyWorker"
+                                ? "selected"
+                                : "" %>
+                        >
+                            🐄 Dairy Worker
+                        </option>
+
+
+                        <option
+                            value="poultryWorker"
+                            <%= user.role === "poultryWorker"
+                                ? "selected"
+                                : "" %>
+                        >
+                            🐔 Poultry Worker
+                        </option>
+
+
+                        <option
+                            value="admin"
+                            <%= user.role === "admin"
+                                ? "selected"
+                                : "" %>
+                        >
+                            👑 Administrator
+                        </option>
+
+                    </select>
+
+
+                    <button
+                        type="submit"
+                        class="btn-save"
+                    >
+                        Save Role Changes
+                    </button>
+
+
+                </form>
 
 
             <% } %>
 
-
-          </div>
-
-
-        </details>
-
-
-        <!-- =================================================
-             ADMIN ASSIGNMENT
-        ================================================== -->
-
-        <div class="admin-assignment-note">
-
-          <span
-            class="admin-assignment-note-icon"
-            aria-hidden="true"
-          >
-            ℹ
-          </span>
-
-          <span>
-            Only Dairy records with both
-            <strong>code = null</strong> and
-            <strong>assetCode = null</strong>
-            are eligible for direct assignment.
-          </span>
-
         </div>
 
 
-        <form
-          method="POST"
-          action="/accounts/<%= user._id %>/assets"
-        >
-
-
-          <div class="assignment-select-box">
-
-
-            <label for="assignedAssets">
-
-              Assign Standalone Assets
-
-            </label>
-
-
-            <select
-              id="assignedAssets"
-              name="assignedAssets"
-              required
-            >
-
-              <option
-                value=""
-                selected
-                disabled
-              >
-                Select an asset
-              </option>
-
-
-              <% if(
-                Array.isArray(dairies)
-              ){ %>
-
-
-                <%
-                  const currentAssignedAssets =
-                    Array.isArray(
-                      user.assignedAsset
-                    )
-                      ? user.assignedAsset
-                      : [];
-                %>
-
-
-                <% dairies.forEach(
-                  function(dairy)
-                {
-
-                  const alreadyAssigned =
-                    currentAssignedAssets.some(
-                      function(asset){
-
-                        return String(
-                          asset._id
-                        ) === String(
-                          dairy._id
-                        );
-
-                      }
-                    );
-
-
-                  const isStandaloneAsset =
-                    dairy.code === null &&
-                    dairy.assetCode === null;
-
-                %>
-
-
-                  <% if(
-                    isStandaloneAsset &&
-                    !alreadyAssigned
-                  ){ %>
-
-
-                    <option
-                      value="<%= dairy._id %>"
-                    >
-
-                      <%= dairy.name ||
-                          "Unnamed Asset" %>
-
-
-                      <% if(
-                        dairy.type
-                      ){ %>
-
-                        —
-                        <%= dairy.type %>
-
-                      <% } %>
-
-
-                      <% if(
-                        dairy.refNo
-                      ){ %>
-
-                        ·
-                        <%= dairy.refNo %>
-
-                      <% } %>
-
-                    </option>
-
-
-                  <% } %>
-
-
-                <% }); %>
-
-
-              <% } %>
-
-
-            </select>
-
-
-            <button
-              type="submit"
-              class="btn-save"
-            >
-
-              ✨ Assign Asset
-
-            </button>
-
-
-          </div>
-
-
-        </form>
-
-
-      </div>
-
-
-    <% } %>
-
-
-    <!-- =====================================================
-         ASSIGNED DAIRY FARMS
-         
-         Existing dairyWorker logic retained.
-    ====================================================== -->
-
-    <% if(
-      user.role === "dairyWorker"
-    ){ %>
-
-
-      <div class="form-section">
-
-        <h3 class="form-title">
-          Assigned Dairy Farms
-        </h3>
-
-
-        <p class="form-description">
-          Dairy farms currently assigned to this Dairy Worker.
-        </p>
-
-
         <!-- =================================================
-             CURRENT FARM ASSIGNMENTS
+             DELETE ACCOUNT
         ================================================== -->
 
-        <details class="assignment-details">
+        <div class="form-section danger-section">
 
-
-          <summary class="assignment-summary">
-
-            <span class="assignment-summary-left">
-
-              <span
-                class="assignment-summary-icon"
-                aria-hidden="true"
-              >
-                🐄
-              </span>
-
-              <span>
-                Current Assigned Farms
-              </span>
-
-              <span class="assignment-count">
-
-                <%= Array.isArray(user.assignedFarm)
-                  ? user.assignedFarm.length
-                  : 0 %>
-
-              </span>
-
-            </span>
-
-          </summary>
-
-
-          <div class="assignment-details-content">
+            <h3 class="form-title">
+                Delete Account
+            </h3>
 
 
             <% if(
-              Array.isArray(user.assignedFarm) &&
-              user.assignedFarm.length > 0
+                currentUser._id.toString() ===
+                user._id.toString()
             ){ %>
 
 
-              <div class="assigned-list">
+                <div class="notice">
 
+                    You cannot permanently delete
+                    your own account.
 
-                <% user.assignedFarm.forEach(
-                  function(farm)
-                { %>
-
-
-                  <div class="assigned-item">
-
-
-                    <div class="assigned-item-info">
-
-                      <span class="assigned-item-name">
-
-                        <%= farm.name ||
-                            "Dairy Farm" %>
-
-                      </span>
-
-
-                      <span class="assigned-item-meta">
-
-                        Code:
-
-                        <%= farm.code !== undefined &&
-                            farm.code !== null
-                          ? farm.code
-                          : "Unknown" %>
-
-                      </span>
-
-                    </div>
-
-
-                    <form
-                      method="POST"
-
-                      action="/accounts/<%= user._id %>/farms/<%= farm._id %>/unassign"
-
-                      onsubmit="return confirm('Unassign this Dairy Farm from this worker?');"
-                    >
-
-                      <button
-                        type="submit"
-                        class="btn-remove"
-                      >
-
-                        Unassign
-
-                      </button>
-
-                    </form>
-
-
-                  </div>
-
-
-                <% }); %>
-
-
-              </div>
+                </div>
 
 
             <% } else { %>
 
 
-              <div class="assignment-empty">
+                <form
+                    method="POST"
+                    action="/accounts/<%= user._id %>/delete"
+                    onsubmit="return confirm('This account will be permanently deleted. This action cannot be undone. Continue?');"
+                >
 
-                This Dairy Worker currently has no
-                assigned Dairy Farms.
+                    <button
+                        type="submit"
+                        class="btn-delete"
+                    >
 
-              </div>
+                        🚫 Permanently Delete Account
+
+                    </button>
+
+                </form>
 
 
             <% } %>
 
 
-          </div>
-
-
-        </details>
-
-
-        <!-- =================================================
-             ASSIGN MORE FARMS
-        ================================================== -->
-
-        <form
-          method="POST"
-          action="/accounts/<%= user._id %>/farms"
-        >
-
-
-          <div class="assignment-select-box">
-
-
-            <label for="assignedFarms">
-
-              Assign Additional Dairy Farms
-
-            </label>
-
-
-            <select
-              id="assignedFarms"
-              name="assignedFarms"
-              multiple
-              size="5"
-            >
-
-
-              <% if(
-                Array.isArray(dairies)
-              ){ %>
-
-
-                <% dairies.forEach(
-                  function(dairy)
-                {
-
-                  const alreadyAssigned =
-                    Array.isArray(
-                      user.assignedFarm
-                    ) &&
-                    user.assignedFarm.some(
-                      function(farm){
-
-                        return String(
-                          farm._id
-                        ) === String(
-                          dairy._id
-                        );
-
-                      }
-                    );
-
-                %>
-
-
-                  <% if(
-                    !alreadyAssigned
-                  ){ %>
-
-
-                    <option
-                      value="<%= dairy._id %>"
-                    >
-
-                      <%= dairy.name ||
-                          "Dairy Farm" %>
-
-                      —
-                      <%= dairy.code %>
-
-                    </option>
-
-
-                  <% } %>
-
-
-                <% }); %>
-
-
-              <% } %>
-
-
-            </select>
-
-
-            <button
-              type="submit"
-              class="btn-save"
-            >
-
-              🐄 Assign Selected Farms
-
-            </button>
-
-
-          </div>
-
-
-        </form>
-
-
-      </div>
-
-
-    <% } %>
-
-
-    <!-- =====================================================
-         CHANGE ROLE
-    ====================================================== -->
-
-    <div class="form-section">
-
-      <h3 class="form-title">
-        Change User Role
-      </h3>
-
-
-      <% if(
-        currentUser._id.toString() ===
-        user._id.toString()
-      ){ %>
-
-
-        <div class="notice">
-
-          You cannot change your own role.
-
         </div>
 
 
-      <% } else { %>
-
-
-        <form
-          method="POST"
-          action="/accounts/<%= user._id %>/role"
-        >
-
-
-          <label for="role">
-            Select New Role
-          </label>
-
-
-          <select
-            id="role"
-            name="role"
-            required
-          >
-
-
-            <option
-              value="dairyWorker"
-              <%= user.role === "dairyWorker"
-                ? "selected"
-                : "" %>
-            >
-              🐄 Dairy Worker
-            </option>
-
-
-            <option
-              value="poultryWorker"
-              <%= user.role === "poultryWorker"
-                ? "selected"
-                : "" %>
-            >
-              🐔 Poultry Worker
-            </option>
-
-
-            <option
-              value="admin"
-              <%= user.role === "admin"
-                ? "selected"
-                : "" %>
-            >
-              👑 Administrator
-            </option>
-
-
-          </select>
-
-
-          <button
-            type="submit"
-            class="btn-save"
-          >
-
-            Save Role Changes
-
-          </button>
-
-
-        </form>
-
-
-      <% } %>
-
     </div>
-
-
-    <!-- =====================================================
-         DELETE ACCOUNT
-    ====================================================== -->
-
-    <div class="form-section danger-section">
-
-
-      <h3 class="danger-title">
-        Delete Account
-      </h3>
-
-
-      <% if(
-        currentUser._id.toString() ===
-        user._id.toString()
-      ){ %>
-
-
-        <div class="notice">
-
-          You cannot permanently delete
-          your own account.
-
-        </div>
-
-
-      <% } else { %>
-
-
-        <form
-          method="POST"
-          action="/accounts/<%= user._id %>/delete"
-
-          onsubmit="return confirm('This account will be permanently deleted. This action cannot be undone. Continue?');"
-        >
-
-
-          <button
-            type="submit"
-            class="btn-delete"
-          >
-
-            🚫 Permanently Delete Account
-
-          </button>
-
-
-        </form>
-
-
-      <% } %>
-
-
-    </div>
-
-
-  </div>
 
 </div>
+
+
+<script>
+
+/* =========================================================
+   ASSIGNMENT DROPDOWNS
+========================================================= */
+
+document
+    .querySelectorAll(
+        ".assignment-toggle"
+    )
+    .forEach(
+        function(button){
+
+            button.addEventListener(
+                "click",
+                function(){
+
+                    const targetId =
+                        button.getAttribute(
+                            "data-target"
+                        );
+
+                    const target =
+                        document.getElementById(
+                            targetId
+                        );
+
+
+                    if(!target){
+
+                        return;
+
+                    }
+
+
+                    const isOpen =
+                        target.classList.contains(
+                            "open"
+                        );
+
+
+                    target.classList.toggle(
+                        "open",
+                        !isOpen
+                    );
+
+
+                    button.classList.toggle(
+                        "open",
+                        !isOpen
+                    );
+
+
+                    button.setAttribute(
+                        "aria-expanded",
+                        String(!isOpen)
+                    );
+
+                }
+            );
+
+        }
+    );
+
+</script>
