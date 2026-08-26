@@ -2,83 +2,93 @@
 // routes/accounts.js
 // ==========================================================
 
-const express = require("express");
+const express =
+  require("express");
 
-const router = express.Router();
+const router =
+  express.Router();
 
-const controller =
+const accountsController =
   require("../controllers/accountsController");
 
 
 // ==========================================================
-// LIST USERS
-// GET /accounts
+// USERS
 // ==========================================================
 
 router.get(
   "/",
-  controller.getAccountsPage
+  accountsController.getAccountsPage
 );
 
 
 // ==========================================================
 // USER PROFILE
-// GET /accounts/:id
 // ==========================================================
 
 router.get(
   "/:id",
-  controller.getAccountProfile
+  accountsController.getAccountProfile
 );
 
 
 // ==========================================================
 // UPDATE ROLE
-// POST /accounts/:id/role
 // ==========================================================
 
 router.post(
   "/:id/role",
-  controller.updateUserRole
+  accountsController.updateUserRole
 );
 
 
 // ==========================================================
 // ASSIGN DAIRY FARMS
-// POST /accounts/:id/farms
-//
-// The controller accepts:
-//
-// assignedFarms
-//
-// It can be one farm or multiple farms.
 // ==========================================================
 
 router.post(
   "/:id/farms",
-  controller.assignDairyFarms
+  accountsController.assignDairyFarms
 );
 
 
 // ==========================================================
 // UNASSIGN DAIRY FARM
-// POST /accounts/:id/farms/:farmId/unassign
 // ==========================================================
 
 router.post(
   "/:id/farms/:farmId/unassign",
-  controller.unassignDairyFarm
+  accountsController.unassignDairyFarm
 );
 
 
 // ==========================================================
-// DELETE ACCOUNT
-// POST /accounts/:id/delete
+// ASSIGN STANDALONE ASSETS
+// ==========================================================
+
+router.post(
+  "/:id/assets",
+  accountsController.assignDairyAssets
+);
+
+
+// ==========================================================
+// UNASSIGN STANDALONE ASSET
+// ==========================================================
+
+router.post(
+  "/:id/assets/:assetId/unassign",
+  accountsController.unassignDairyAsset
+);
+
+
+// ==========================================================
+// DELETE USER
 // ==========================================================
 
 router.post(
   "/:id/delete",
-  controller.deleteUser
+  accountsController.deleteUser
 );
 
 
