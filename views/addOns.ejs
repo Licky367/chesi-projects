@@ -1,7 +1,7 @@
 <%
 // ==========================================================
 // views/addOns.ejs
-// =========================================================
+// ==========================================================
 //
 // FINANCIAL ADD-ONS PAGE
 //
@@ -28,9 +28,21 @@
 <div class="addons-page">
 
     <!-- =====================================================
+         FIXED FINANCIAL REPORT
+         ===================================================== -->
+
+    <a
+        href="/cash/<%= dairy._id %>"
+        class="fixed-cash-report"
+    >
+        Cash Report
+    </a>
+
+
+    <!-- =====================================================
          FIXED EDIT DETAILS
          ADMIN ONLY
-    ====================================================== -->
+         ===================================================== -->
 
     <% if (user.role === "admin") { %>
 
@@ -146,12 +158,62 @@
 
 
 </div>
+
+
 <style>
+
+/* ==========================================================
+   FIXED CASH REPORT
+========================================================== */
+
+.fixed-cash-report {
+
+    position: fixed;
+
+    top: 135px;
+    left: 15px;
+
+    z-index: 9999;
+
+    display: inline-block;
+
+    padding: 10px 16px;
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    border-radius: 8px;
+
+    background: #0b5d1e;
+    color: #fff;
+
+    box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.2);
+
+    transition:
+        background .2s ease,
+        transform .15s ease;
+}
+
+.fixed-cash-report:hover {
+
+    background: #084814;
+}
+
+.fixed-cash-report:active {
+
+    transform: scale(.97);
+}
+
+
 /* ==========================================================
    FIXED EDIT DETAILS
 ========================================================== */
 
 .fixed-edit-details {
+
     position: fixed;
 
     top: 135px;
@@ -173,10 +235,13 @@
     background: #000;
     color: #fff;
 
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.2);
 }
 
 .fixed-edit-details:hover {
+
     opacity: 0.85;
 }
+
 </style>
