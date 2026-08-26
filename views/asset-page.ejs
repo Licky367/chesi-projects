@@ -41,6 +41,12 @@ Every asset opens:
 
     /dairy/<asset._id>
 
+EXCEPTION:
+----------------------------------------------------------
+Cow Shades and AgroStores open their storage contents:
+
+    /storage/<dairy._id>/contents/<asset._id>
+
 FARM ROUTES:
 ----------------------------------------------------------
 Every assigned farm opens:
@@ -812,7 +818,7 @@ const currentFarmId =
                     <% cowShadeDairies.forEach(shade => { %>
 
                         <a
-                            href="/dairy/<%= shade._id %>"
+                            href="/storage/<%= dairy._id %>/contents/<%= shade._id %>"
                             class="asset-page__card"
                             data-asset-id="<%= shade._id %>"
                             data-asset-room-number="<%= shade.roomNumber %>"
@@ -952,7 +958,7 @@ const currentFarmId =
                     <% animalFeedDairies.forEach(feed => { %>
 
                         <a
-                            href="/dairy/<%= feed._id %>"
+                            href="/storage/<%= dairy._id %>/contents/<%= feed._id %>"
                             class="asset-page__card"
                             data-asset-id="<%= feed._id %>"
                             data-asset-room-number="<%= feed.roomNumber %>"
