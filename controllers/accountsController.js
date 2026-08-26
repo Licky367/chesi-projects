@@ -1,6 +1,6 @@
 // ==========================================================
 // controllers/accountsController.js
-// =========================================================
+// ==========================================================
 
 const accountsService =
   require("../services/accountsService");
@@ -19,13 +19,16 @@ async (req, res) => {
       await accountsService.getAllUsers();
 
 
-    res.render("accounts", {
+    res.render(
+      "accounts",
+      {
 
-      title: "All Users",
+        title: "All Users",
 
-      users
+        users
 
-    });
+      }
+    );
 
   } catch (err) {
 
@@ -74,6 +77,8 @@ async (req, res) => {
         user: data.user,
 
         dairies: data.dairies,
+
+        assets: data.assets,
 
         currentUser: req.user
 
@@ -167,7 +172,9 @@ async (req, res) => {
 
 
     if (
-      !Array.isArray(assignedFarms)
+      !Array.isArray(
+        assignedFarms
+      )
     ) {
 
       assignedFarms = [
@@ -244,24 +251,13 @@ async (req, res) => {
 // ASSIGN STANDALONE ASSETS
 // ==========================================================
 //
-// ASSIGNMENT FIELD:
+// REQUEST FIELD:
 //
-//     user.assignedAsset
+//     assignedAssets
 //
-// ELIGIBLE DAIRY:
+// USER FIELD:
 //
-//     dairy.assetCode === null
-//     dairy.code      === null
-//
-// These are standalone / code-less assets.
-//
-// A standalone asset may be assigned to:
-//     - dairyWorker
-//     - poultryWorker
-//     - other non-admin users
-//
-// It MUST NOT be assigned to:
-//     - admin
+//     assignedAsset
 //
 // ==========================================================
 
@@ -287,7 +283,9 @@ async (req, res) => {
 
 
     if (
-      !Array.isArray(assignedAssets)
+      !Array.isArray(
+        assignedAssets
+      )
     ) {
 
       assignedAssets = [
@@ -326,12 +324,6 @@ async (req, res) => {
 
 // ==========================================================
 // UNASSIGN STANDALONE ASSET
-// ==========================================================
-//
-// Removes the Dairy ObjectId from:
-//
-//     user.assignedAsset
-//
 // ==========================================================
 
 exports.unassignDairyAsset =
@@ -401,6 +393,7 @@ async (req, res) => {
     console.error(err);
 
     res.status(500).send(
+      err.message ||
       "Failed to delete account"
     );
 
