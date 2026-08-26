@@ -1,139 +1,19 @@
-<%
-/*
-==========================================================
-DAIRY SET PAGE
-==========================================================
-
-FILE:
-    views/dairySet.ejs
-
-PURPOSE:
-    Display the profile page for a Dairy asset or structure.
-
-STORAGE CONTENT RULE:
-    A Dairy record is considered a storage content item ONLY
-    when:
-
-        Number(dairy.dwellNumber) < 0
-
-    Therefore:
-
-        null / undefined / 0 / positive
-            → not a storage content item
-
-        negative
-            → storage content item
-
-IMPORTANT:
-    This file DOES NOT include content-item.ejs.
-
-    content-update.ejs is responsible for displaying the
-    storage content update interface.
-
-    content-item.ejs must NOT be included from this file.
-==========================================================
-*/
-
-
-/* =========================================================
-   SAFE DAIRY
-========================================================= */
-
-const safeDairy =
-    typeof dairy !== "undefined" && dairy
-        ? dairy
-        : null;
-
-
-/* =========================================================
-   SAFE USER
-========================================================= */
-
-const safeUser =
-    typeof user !== "undefined" && user
-        ? user
-        : null;
-
-
-/* =========================================================
-   SAFE STORAGE
-========================================================= */
-
-const safeStorage =
-    typeof storage !== "undefined"
-        ? storage
-        : null;
-
-
-/* =========================================================
-   SAFE MESSAGES
-========================================================= */
-
-const safeSuccessMessage =
-    typeof successMessage !== "undefined"
-        ? successMessage
-        : null;
-
-
-const safePageError =
-    typeof pageError !== "undefined"
-        ? pageError
-        : null;
-
-
-/* =========================================================
-   SAFE STOCK UPDATE
-========================================================= */
-
-const safeLatestStockUpdate =
-    typeof latestStockUpdate !== "undefined"
-        ? latestStockUpdate
-        : null;
-
-
-/* =========================================================
-   CONTENT ITEM DATA
-=========================================================
-
-   Prefer contentItem supplied by the controller.
-
-   If no contentItem was supplied, use the Dairy record.
-
-   This is ONLY DATA.
-
-   No content-item.ejs include occurs here.
-========================================================= */
-
-const safeContentItem =
-    typeof contentItem !== "undefined" && contentItem
-        ? contentItem
-        : safeDairy;
-
-
-/* =========================================================
-   NEGATIVE DWELL NUMBER
-=========================================================
-
-   ONLY negative dwellNumber values qualify.
-
-   null
-   undefined
-   0
-   positive values
-
-   do NOT qualify.
-========================================================= */
-
-const hasNegativeDwellNumber =
-    !!safeDairy &&
-    safeDairy.dwellNumber !== null &&
-    safeDairy.dwellNumber !== undefined &&
-    Number(safeDairy.dwellNumber) < 0;
-
-%>
-
-
 <div class="dairy-page">
+
+    <!-- =====================================================
+         FIXED EDIT DETAILS LINK
+    ====================================================== -->
+
+    <% if (safeDairy && safeDairy._id) { %>
+
+        <a
+            href="/networth/assets/<%= safeDairy._id %>"
+            class="fixed-edit-details"
+        >
+            Edit Details
+        </a>
+
+    <% } %>
 
 
     <!-- =====================================================
@@ -151,16 +31,6 @@ const hasNegativeDwellNumber =
 
     <!-- =====================================================
          STORAGE CONTENT UPDATE
-    ======================================================
-
-         IMPORTANT:
-
-         content-item.ejs is NOT included here.
-
-         Only content-update.ejs is included.
-
-         The update interface is available only for a Dairy
-         record whose dwellNumber is negative.
     ====================================================== -->
 
     <% if (hasNegativeDwellNumber && safeContentItem) { %>
@@ -190,20 +60,53 @@ const hasNegativeDwellNumber =
         }) %>
 
     <% } %>
-   <!-- =====================================================
+
+
+    <!-- =====================================================
          DAIRY FEED (temporarily commented out)
-    ====================================================== -->
-<!--
-
-<%- include(
-    "update/feed",
-    {
-        feed: feed || [],
-        user: user
-    }
-) %>
-
--->
-
+    ======================================================
+    <%- include(
+        "update/feed",
+        {
+            feed: feed || [],
+            user: user
+        }
+    ) %>
+    -->
 
 </div>
+
+
+<style>
+/* ==========================================================
+   FIXED EDIT DETAILS LINK
+========================================================== */
+
+.fixed-edit-details {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+
+    z-index: 9999;
+
+    display: inline-block;
+
+    padding: 10px 16px;
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    border-radius: 8px;
+
+    background: #000;
+    color: #fff;
+
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.fixed-edit-details:hover {
+    opacity: 0.85;
+}
+</style>
