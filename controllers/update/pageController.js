@@ -4,11 +4,12 @@
 // ==========================================================
 //
 // PURPOSE
-// ---------------------------------------------------------
+// ----------------------------------------------------------
 //
 // Handles:
 //
 //     GET    /dairy/:id
+//     GET    /dairy/:id/assets
 //     GET    /dairy/:id/general
 //     GET    /dairy/:id/addOns
 //
@@ -38,10 +39,12 @@
 //
 //     POST   /post/:id/like
 //     POST   /post/:id/comment
+//
 //     DELETE /post/:id
 //     DELETE /comment/:id
 //
 // ==========================================================
+
 
 const updateService =
     require("../../services/update");
@@ -86,7 +89,9 @@ function isPositiveCode(dairy) {
 
     }
 
-    return Number(dairy.code) > 0;
+    return Number(
+        dairy.code
+    ) > 0;
 
 }
 
@@ -143,21 +148,27 @@ function sendServiceError(
 
 
 // ==========================================================
-// VIEW ASSET PAGE
+// VIEW DAIRY PROFILE
 // ==========================================================
 //
 // GET:
 //
 //     /dairy/:id
 //
-// VIEW:
+// IMPORTANT
+// ----------------------------------------------------------
 //
-//     views/asset-page.ejs
+// EXISTING LOGIC PRESERVED.
+//
+// This remains the existing Dairy profile renderer.
+// Nothing about its rendering logic is changed.
 //
 // ==========================================================
 
-exports.viewPage =
-async (req, res) => {
+exports.viewPage = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -180,7 +191,6 @@ async (req, res) => {
         const sessionUser =
             getSessionUser(req);
 
-
         const userId =
             getUserId(req);
 
@@ -200,37 +210,11 @@ async (req, res) => {
             return res
                 .status(404)
                 .send(
-                    "Dairy asset not found."
+                    "Dairy Farm not found."
                 );
 
         }
 
-
-        // --------------------------------------------------
-        // ASSET DAIRIES
-        // --------------------------------------------------
-        //
-        // These are supplied by the update service.
-        //
-        // Do not rebuild the relationship here.
-        //
-        // assetDairies is passed directly to:
-        //
-        //     views/asset-page.ejs
-        //
-        // --------------------------------------------------
-
-        const assetDairies =
-            Array.isArray(
-                data.assetDairies
-            )
-                ? data.assetDairies
-                : [];
-
-
-        // --------------------------------------------------
-        // ITEM LINKS
-        // --------------------------------------------------
 
         let itemLinks = [];
 
@@ -255,10 +239,6 @@ async (req, res) => {
 
         }
 
-
-        // --------------------------------------------------
-        // BOOLEAN DATA
-        // --------------------------------------------------
 
         let booleanAnimals = [];
 
@@ -292,13 +272,25 @@ async (req, res) => {
         }
 
 
-        // --------------------------------------------------
-        // MEDICAL ASSETS
-        // --------------------------------------------------
+        const isDairyFarm =
+            data.dairy.code !== null &&
+            data.dairy.code !== undefined &&
+            Number(
+                data.dairy.code
+            ) < 0;
+
+
+        const farmAssets =
+            Array.isArray(
+                data.assetDairies
+            )
+                ? data.assetDairies
+                : [];
+
 
         const medicalDairies =
-            assetDairies.filter(
-                function (animal) {
+            farmAssets.filter(
+                function(animal) {
 
                     return (
                         isPositiveCode(animal) &&
@@ -310,8 +302,8 @@ async (req, res) => {
 
 
         const medicalAnimals =
-            assetDairies.filter(
-                function (animal) {
+            farmAssets.filter(
+                function(animal) {
 
                     return (
                         isPositiveCode(animal) &&
@@ -321,10 +313,6 @@ async (req, res) => {
                 }
             );
 
-
-        // --------------------------------------------------
-        // FEED
-        // --------------------------------------------------
 
         const feed =
             Array.isArray(
@@ -339,19 +327,11 @@ async (req, res) => {
             null;
 
 
-        // --------------------------------------------------
-        // COMMENTS
-        // --------------------------------------------------
-
         const commentCount =
             Number(
                 data.commentCount || 0
             );
 
-
-        // --------------------------------------------------
-        // ASSIGNED FARMS
-        // --------------------------------------------------
 
         const assignedFarms =
             Array.isArray(
@@ -361,10 +341,6 @@ async (req, res) => {
                 : [];
 
 
-        // --------------------------------------------------
-        // ANIMAL FEEDS
-        // --------------------------------------------------
-
         const animalFeeds =
             Array.isArray(
                 data.animalFeeds
@@ -373,32 +349,21 @@ async (req, res) => {
                 : [];
 
 
-        // --------------------------------------------------
-        // RENDER ASSET PAGE
-        // --------------------------------------------------
-        //
-        // IMPORTANT:
-        //
-        // This intentionally renders:
-        //
-        //     views/asset-page.ejs
-        //
-        // and NOT "update" or "dairySet".
-        //
-        // --------------------------------------------------
+        const view =
+            isDairyFarm
+                ? "update"
+                : "dairySet";
+
 
         return res.render(
-            "asset-page",
+            view,
             {
 
                 title:
-                    "Dairy Asset",
+                    "Dairy Profile",
 
                 dairy:
                     data.dairy,
-
-                assetDairies:
-                    assetDairies,
 
                 feed:
                     feed,
@@ -408,6 +373,9 @@ async (req, res) => {
 
                 commentCount:
                     commentCount,
+
+                assetDairies:
+                    farmAssets,
 
                 assignedFarms:
                     assignedFarms,
@@ -441,7 +409,119 @@ async (req, res) => {
         return sendServiceError(
             res,
             err,
-            "Failed to load dairy asset page."
+            "Failed to load dairy profile."
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// VIEW ASSETS
+// ==========================================================
+//
+// GET:
+//
+//     /dairy/:id/assets
+//
+// RENDERS:
+//
+//     views/asset-page.ejs
+//
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// This is a NEW route.
+//
+// It does NOT replace or modify /dairy/:id.
+//
+// assetDairies is taken directly from the existing
+// getDairyPage() service response.
+//
+// ==========================================================
+
+exports.viewAssets = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const {
+            id
+        } = req.params;
+
+
+        if (!id) {
+
+            return res
+                .status(400)
+                .send(
+                    "Dairy ID is required."
+                );
+
+        }
+
+
+        const sessionUser =
+            getSessionUser(req);
+
+
+        const data =
+            await updateService.getDairyPage(
+                id,
+                getUserId(req)
+            );
+
+
+        if (
+            !data ||
+            !data.dairy
+        ) {
+
+            return res
+                .status(404)
+                .send(
+                    "Dairy Farm not found."
+                );
+
+        }
+
+
+        const assetDairies =
+            Array.isArray(
+                data.assetDairies
+            )
+                ? data.assetDairies
+                : [];
+
+
+        return res.render(
+            "asset-page",
+            {
+
+                title:
+                    "Dairy Assets",
+
+                dairy:
+                    data.dairy,
+
+                assetDairies:
+                    assetDairies,
+
+                user:
+                    sessionUser
+
+            }
+        );
+
+    } catch (err) {
+
+        return sendServiceError(
+            res,
+            err,
+            "Failed to load dairy assets."
         );
 
     }
@@ -459,8 +539,10 @@ async (req, res) => {
 //
 // ==========================================================
 
-exports.viewGeneral =
-async (req, res) => {
+exports.viewGeneral = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -508,7 +590,9 @@ async (req, res) => {
         const isDairyFarm =
             data.dairy.code !== null &&
             data.dairy.code !== undefined &&
-            Number(data.dairy.code) < 0;
+            Number(
+                data.dairy.code
+            ) < 0;
 
 
         if (!isDairyFarm) {
@@ -533,12 +617,16 @@ async (req, res) => {
                     data.dairy,
 
                 feed:
-                    Array.isArray(data.feed)
+                    Array.isArray(
+                        data.feed
+                    )
                         ? data.feed
                         : [],
 
                 assetDairies:
-                    Array.isArray(data.assetDairies)
+                    Array.isArray(
+                        data.assetDairies
+                    )
                         ? data.assetDairies
                         : [],
 
@@ -571,8 +659,10 @@ async (req, res) => {
 //
 // ==========================================================
 
-exports.viewAddOns =
-async (req, res) => {
+exports.viewAddOns = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -628,7 +718,9 @@ async (req, res) => {
                     data.dairy,
 
                 assetDairies:
-                    Array.isArray(data.assetDairies)
+                    Array.isArray(
+                        data.assetDairies
+                    )
                         ? data.assetDairies
                         : [],
 
@@ -655,8 +747,10 @@ async (req, res) => {
 // RECORD LIABILITY
 // ==========================================================
 
-exports.recordLiability =
-async (req, res) => {
+exports.recordLiability = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -671,7 +765,9 @@ async (req, res) => {
 
             return res
                 .status(401)
-                .send("Unauthorized.");
+                .send(
+                    "Unauthorized."
+                );
 
         }
 
@@ -680,7 +776,9 @@ async (req, res) => {
 
             return res
                 .status(400)
-                .send("Dairy ID is required.");
+                .send(
+                    "Dairy ID is required."
+                );
 
         }
 
@@ -700,31 +798,41 @@ async (req, res) => {
 
             return res
                 .status(400)
-                .send("Liability amount is required.");
+                .send(
+                    "Liability amount is required."
+                );
 
         }
 
 
         if (
             !description ||
-            !String(description).trim()
+            !String(
+                description
+            ).trim()
         ) {
 
             return res
                 .status(400)
-                .send("Liability description is required.");
+                .send(
+                    "Liability description is required."
+                );
 
         }
 
 
         if (
             !date ||
-            !String(date).trim()
+            !String(
+                date
+            ).trim()
         ) {
 
             return res
                 .status(400)
-                .send("Liability date is required.");
+                .send(
+                    "Liability date is required."
+                );
 
         }
 
@@ -734,13 +842,17 @@ async (req, res) => {
 
 
         if (
-            !Number.isFinite(liabilityAmount) ||
+            !Number.isFinite(
+                liabilityAmount
+            ) ||
             liabilityAmount < 0
         ) {
 
             return res
                 .status(400)
-                .send("Invalid liability amount.");
+                .send(
+                    "Invalid liability amount."
+                );
 
         }
 
@@ -754,10 +866,14 @@ async (req, res) => {
                 liabilityAmount,
 
             description:
-                String(description).trim(),
+                String(
+                    description
+                ).trim(),
 
             date:
-                String(date).trim(),
+                String(
+                    date
+                ).trim(),
 
             user:
                 user
@@ -786,8 +902,10 @@ async (req, res) => {
 // RECORD REVENUE
 // ==========================================================
 
-exports.recordRevenue =
-async (req, res) => {
+exports.recordRevenue = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -802,7 +920,9 @@ async (req, res) => {
 
             return res
                 .status(401)
-                .send("Unauthorized.");
+                .send(
+                    "Unauthorized."
+                );
 
         }
 
@@ -811,7 +931,9 @@ async (req, res) => {
 
             return res
                 .status(400)
-                .send("Dairy ID is required.");
+                .send(
+                    "Dairy ID is required."
+                );
 
         }
 
@@ -831,31 +953,41 @@ async (req, res) => {
 
             return res
                 .status(400)
-                .send("Revenue amount is required.");
+                .send(
+                    "Revenue amount is required."
+                );
 
         }
 
 
         if (
             !description ||
-            !String(description).trim()
+            !String(
+                description
+            ).trim()
         ) {
 
             return res
                 .status(400)
-                .send("Revenue description is required.");
+                .send(
+                    "Revenue description is required."
+                );
 
         }
 
 
         if (
             !date ||
-            !String(date).trim()
+            !String(
+                date
+            ).trim()
         ) {
 
             return res
                 .status(400)
-                .send("Revenue date is required.");
+                .send(
+                    "Revenue date is required."
+                );
 
         }
 
@@ -865,13 +997,17 @@ async (req, res) => {
 
 
         if (
-            !Number.isFinite(revenueAmount) ||
+            !Number.isFinite(
+                revenueAmount
+            ) ||
             revenueAmount < 0
         ) {
 
             return res
                 .status(400)
-                .send("Invalid revenue amount.");
+                .send(
+                    "Invalid revenue amount."
+                );
 
         }
 
@@ -885,10 +1021,14 @@ async (req, res) => {
                 revenueAmount,
 
             description:
-                String(description).trim(),
+                String(
+                    description
+                ).trim(),
 
             date:
-                String(date).trim(),
+                String(
+                    date
+                ).trim(),
 
             user:
                 user
@@ -917,8 +1057,10 @@ async (req, res) => {
 // TOGGLE MILKING
 // ==========================================================
 
-exports.toggleMilking =
-async (req, res) => {
+exports.toggleMilking = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -931,8 +1073,13 @@ async (req, res) => {
             return res
                 .status(400)
                 .json({
-                    success: false,
-                    message: "Dairy ID is required."
+
+                    success:
+                        false,
+
+                    message:
+                        "Dairy ID is required."
+
                 });
 
         }
@@ -972,8 +1119,13 @@ async (req, res) => {
             return res
                 .status(404)
                 .json({
-                    success: false,
-                    message: err.message
+
+                    success:
+                        false,
+
+                    message:
+                        err.message
+
                 });
 
         }
@@ -987,8 +1139,13 @@ async (req, res) => {
             return res
                 .status(400)
                 .json({
-                    success: false,
-                    message: err.message
+
+                    success:
+                        false,
+
+                    message:
+                        err.message
+
                 });
 
         }
@@ -997,9 +1154,13 @@ async (req, res) => {
         return res
             .status(500)
             .json({
-                success: false,
+
+                success:
+                    false,
+
                 message:
                     "Failed to toggle milking status."
+
             });
 
     }
@@ -1011,8 +1172,10 @@ async (req, res) => {
 // SWITCH DAIRY
 // ==========================================================
 
-exports.switchDairy =
-async (req, res) => {
+exports.switchDairy = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1024,12 +1187,17 @@ async (req, res) => {
 
             return res
                 .status(401)
-                .send("Unauthorized.");
+                .send(
+                    "Unauthorized."
+                );
 
         }
 
 
-        if (user.role !== "dairyWorker") {
+        if (
+            user.role !==
+            "dairyWorker"
+        ) {
 
             return res
                 .status(403)
@@ -1056,10 +1224,11 @@ async (req, res) => {
 
 
         const farm =
-            await updateService.getAssignedFarmForUser(
-                user._id,
-                farmId
-            );
+            await updateService
+                .getAssignedFarmForUser(
+                    user._id,
+                    farmId
+                );
 
 
         if (!farm) {
@@ -1094,8 +1263,10 @@ async (req, res) => {
 // BOOLEAN MANAGEMENT
 // ==========================================================
 
-exports.toggleBoolean =
-async (req, res) => {
+exports.toggleBoolean = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1104,11 +1275,17 @@ async (req, res) => {
             "function"
         ) {
 
-            return res.status(500).json({
-                success: false,
-                message:
-                    "Boolean service is not available."
-            });
+            return res
+                .status(500)
+                .json({
+
+                    success:
+                        false,
+
+                    message:
+                        "Boolean service is not available."
+
+                });
 
         }
 
@@ -1121,8 +1298,13 @@ async (req, res) => {
 
 
         return res.json({
-            success: true,
-            data: result
+
+            success:
+                true,
+
+            data:
+                result
+
         });
 
     } catch (err) {
@@ -1138,8 +1320,10 @@ async (req, res) => {
 };
 
 
-exports.getBooleanFields =
-async (req, res) => {
+exports.getBooleanFields = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1148,11 +1332,17 @@ async (req, res) => {
             "function"
         ) {
 
-            return res.status(500).json({
-                success: false,
-                message:
-                    "Boolean service is not available."
-            });
+            return res
+                .status(500)
+                .json({
+
+                    success:
+                        false,
+
+                    message:
+                        "Boolean service is not available."
+
+                });
 
         }
 
@@ -1167,12 +1357,16 @@ async (req, res) => {
                 true,
 
             animals:
-                Array.isArray(data?.animals)
+                Array.isArray(
+                    data?.animals
+                )
                     ? data.animals
                     : [],
 
             fields:
-                Array.isArray(data?.fields)
+                Array.isArray(
+                    data?.fields
+                )
                     ? data.fields
                     : []
 
@@ -1195,8 +1389,10 @@ async (req, res) => {
 // GENERAL COMMENT
 // ==========================================================
 
-exports.comment =
-async (req, res) => {
+exports.comment = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1214,10 +1410,14 @@ async (req, res) => {
         }
 
 
-        return await updateService.comment(
-            req,
-            res
-        );
+        const result =
+            await updateService.comment(
+                req,
+                res
+            );
+
+
+        return result;
 
     } catch (err) {
 
@@ -1236,8 +1436,10 @@ async (req, res) => {
 // CREATE POST
 // ==========================================================
 
-exports.createPost =
-async (req, res) => {
+exports.createPost = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1277,8 +1479,10 @@ async (req, res) => {
 // PROFILE IMAGE
 // ==========================================================
 
-exports.image =
-async (req, res) => {
+exports.image = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1318,8 +1522,10 @@ async (req, res) => {
 // UPDATE PROFILE
 // ==========================================================
 
-exports.updateProfile =
-async (req, res) => {
+exports.updateProfile = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1359,8 +1565,10 @@ async (req, res) => {
 // MEDICAL
 // ==========================================================
 
-exports.markMedical =
-async (req, res) => {
+exports.markMedical = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1382,8 +1590,10 @@ async (req, res) => {
 };
 
 
-exports.unmarkMedical =
-async (req, res) => {
+exports.unmarkMedical = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1409,8 +1619,10 @@ async (req, res) => {
 // MAINTENANCE
 // ==========================================================
 
-exports.markMaintenance =
-async (req, res) => {
+exports.markMaintenance = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1432,8 +1644,10 @@ async (req, res) => {
 };
 
 
-exports.clearMaintenance =
-async (req, res) => {
+exports.clearMaintenance = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1458,9 +1672,17 @@ async (req, res) => {
 // ==========================================================
 // STORAGE CONTENT ITEM
 // ==========================================================
+//
+// GET:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// ==========================================================
 
-exports.getContentItem =
-async (req, res) => {
+exports.getContentItem = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1500,8 +1722,10 @@ async (req, res) => {
 // UPDATE STORAGE CONTENT ITEM
 // ==========================================================
 
-exports.updateContentItem =
-async (req, res) => {
+exports.updateContentItem = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1541,8 +1765,10 @@ async (req, res) => {
 // POST LIKE
 // ==========================================================
 
-exports.likePost =
-async (req, res) => {
+exports.likePost = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1551,19 +1777,29 @@ async (req, res) => {
             "function"
         ) {
 
-            return res.status(500).json({
-                success: false,
-                message:
-                    "Post like service is not available."
-            });
+            return res
+                .status(500)
+                .json({
+
+                    success:
+                        false,
+
+                    message:
+                        "Post like service is not available."
+
+                });
 
         }
 
 
-        return await updateService.likePost(
-            req,
-            res
-        );
+        const result =
+            await updateService.likePost(
+                req,
+                res
+            );
+
+
+        return result;
 
     } catch (err) {
 
@@ -1582,8 +1818,10 @@ async (req, res) => {
 // POST COMMENT
 // ==========================================================
 
-exports.addPostComment =
-async (req, res) => {
+exports.addPostComment = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1623,8 +1861,10 @@ async (req, res) => {
 // DELETE POST
 // ==========================================================
 
-exports.deletePost =
-async (req, res) => {
+exports.deletePost = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1664,8 +1904,10 @@ async (req, res) => {
 // DELETE COMMENT
 // ==========================================================
 
-exports.deleteComment =
-async (req, res) => {
+exports.deleteComment = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -1709,6 +1951,9 @@ module.exports = {
 
     viewPage:
         exports.viewPage,
+
+    viewAssets:
+        exports.viewAssets,
 
     viewGeneral:
         exports.viewGeneral,
