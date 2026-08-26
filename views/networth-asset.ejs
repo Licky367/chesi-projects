@@ -547,6 +547,56 @@
 
 
 /* ==========================================================
+   ASSIGNMENT INFORMATION
+========================================================== */
+
+.asset-assignment-info {
+
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    background: #f4f8ff;
+    border: 1px solid #d8e4f2;
+    border-radius: 11px;
+    color: #526579;
+    font-size: 13px;
+    line-height: 1.5;
+
+}
+
+
+.asset-assignment-info strong {
+
+    color: #294c37;
+
+}
+
+
+/* ==========================================================
+   ASSIGNMENT WARNING
+========================================================== */
+
+.asset-assignment-warning {
+
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    background: #fff8ed;
+    border: 1px solid #efdfc2;
+    border-radius: 11px;
+    color: #796244;
+    font-size: 13px;
+    line-height: 1.5;
+
+}
+
+
+.asset-assignment-warning strong {
+
+    color: #684b24;
+
+}
+
+
+/* ==========================================================
    SAVE STATUS
 ========================================================== */
 
@@ -875,6 +925,33 @@ const isDairyFarm =
 
 
 // ==========================================================
+// STANDALONE ASSET ELIGIBILITY
+//
+// A record is assignable to a user only when:
+//
+//     1. It has no code
+//     2. It has no assetCode
+//
+// Therefore:
+//
+//     code === null / undefined
+//     AND
+//     assetCode === null / undefined / ""
+// ==========================================================
+
+const hasAssetCode =
+    dairy &&
+    dairy.assetCode !== null &&
+    dairy.assetCode !== undefined &&
+    dairy.assetCode !== "";
+
+
+const isStandaloneAssignableAsset =
+    !hasCode &&
+    !hasAssetCode;
+
+
+// ==========================================================
 // GENDER
 // ==========================================================
 
@@ -1003,6 +1080,63 @@ const statusOptions = [
     "inactive"
 
 ];
+
+
+// ==========================================================
+// AVAILABLE USERS
+//
+// The controller/service should provide:
+//
+//     availableUsers
+//
+// or:
+//
+//     users
+//
+// The view accepts either variable.
+//
+// Only users whose role is NOT "admin" are displayed.
+//
+// The controller/service should preferably already filter
+// these users, but the EJS applies the role check as an
+// additional presentation safeguard.
+// ==========================================================
+
+const assignmentUsers =
+    Array.isArray(availableUsers)
+        ? availableUsers
+        : Array.isArray(users)
+            ? users
+            : [];
+
+
+// ==========================================================
+// CURRENT ASSIGNED USER
+//
+// The controller/service may provide:
+//
+//     assignedUser
+//
+// If populated, this can be used to preselect the current
+// assignment.
+//
+// The view also supports:
+//
+//     currentAssignedUser
+//
+// ==========================================================
+
+const currentUser =
+    assignedUser ||
+    currentAssignedUser ||
+    null;
+
+
+const currentAssignedUserId =
+    currentUser?._id
+        ? String(currentUser._id)
+        : "";
+
 
 %>
 
@@ -1918,6 +2052,214 @@ const statusOptions = [
 
 
                 </div>
+
+
+                <!-- =================================================
+                     ASSIGN STANDALONE ASSET TO USER
+
+                     ONLY AVAILABLE WHEN:
+
+                         code === null / undefined
+
+                         AND
+
+                         assetCode is absent / empty
+
+                     The selected user's ID is submitted as:
+
+                         assignedUserId
+
+                     The controller/service is responsible for
+                     updating:
+
+                         User.assignedAsset
+
+                     with:
+
+                         dairy._id
+                ================================================== -->
+
+                <% if (isStandaloneAssignableAsset) { %>
+
+
+                    <div class="form-section">
+
+
+                        <h2 class="form-section-title">
+
+                            Assign Asset to User
+
+                        </h2>
+
+
+                        <p class="form-section-description">
+
+                            This is a standalone Dairy asset.
+                            You can assign it to a user whose
+                            role is not <strong>admin</strong>.
+
+                        </p>
+
+
+                        <div class="asset-assignment-info">
+
+                            <strong>Assignment rule:</strong>
+
+                            Only standalone records with no
+                            numeric code and no
+                            <strong>assetCode</strong> can be
+                            assigned as user assets.
+
+                            <br><br>
+
+                            When saved, this Dairy record will be
+                            added to the selected user's
+                            <strong>assignedAsset</strong>.
+
+                        </div>
+
+
+                        <div class="form-group">
+
+
+                            <label for="assignedUserId">
+
+                                Assign To User
+
+                            </label>
+
+
+                            <select
+                                id="assignedUserId"
+                                name="assignedUserId"
+                            >
+
+
+                                <option
+                                    value=""
+                                    <%= !currentAssignedUserId
+                                        ? "selected"
+                                        : "" %>
+                                >
+
+                                    Select User
+
+                                </option>
+
+
+                                <% if (assignmentUsers.length > 0) { %>
+
+
+                                    <% assignmentUsers.forEach(
+                                        function(user)
+                                    { %>
+
+
+                                        <% if (
+                                            user &&
+                                            user.role &&
+                                            user.role !== "admin"
+                                        ) { %>
+
+
+                                            <option
+                                                value="<%= user._id %>"
+                                                <%= currentAssignedUserId &&
+                                                    String(user._id) ===
+                                                    currentAssignedUserId
+                                                        ? "selected"
+                                                        : "" %>
+                                            >
+
+                                                <%= user.name ||
+                                                    user.email ||
+                                                    "User" %>
+
+                                                <% if (user.email && user.name) { %>
+
+                                                    —
+                                                    <%= user.email %>
+
+                                                <% } %>
+
+                                            </option>
+
+
+                                        <% } %>
+
+
+                                    <% }); %>
+
+
+                                <% } else { %>
+
+
+                                    <option
+                                        value=""
+                                        disabled
+                                    >
+
+                                        No non-admin users available
+
+                                    </option>
+
+
+                                <% } %>
+
+
+                            </select>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                <% } else if (
+                    isStructure &&
+                    hasAssetCode
+                ) { %>
+
+
+                    <!-- =================================================
+                         NON-STANDALONE STRUCTURE
+                    ================================================== -->
+
+                    <div class="form-section">
+
+
+                        <h2 class="form-section-title">
+
+                            Asset Assignment
+
+                        </h2>
+
+
+                        <div class="asset-assignment-warning">
+
+                            <strong>This asset cannot be assigned as
+                            a standalone user asset.</strong>
+
+                            <br><br>
+
+                            This record has an
+                            <strong>assetCode</strong>, meaning it
+                            belongs to a Dairy Farm.
+
+                            Only Dairy records with no numeric
+                            <strong>code</strong> and no
+                            <strong>assetCode</strong> are eligible
+                            for assignment through
+                            <strong>assignedAsset</strong>.
+
+                        </div>
+
+
+                    </div>
+
+
+                <% } %>
 
 
             <% } %>
