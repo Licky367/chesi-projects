@@ -2,9 +2,15 @@
 
     <!-- =====================================================
          FIXED EDIT DETAILS LINK
+         ADMIN ONLY
     ====================================================== -->
 
-    <% if (safeDairy && safeDairy._id) { %>
+    <% if (
+        safeUser &&
+        String(safeUser.role || "").toLowerCase() === "admin" &&
+        safeDairy &&
+        safeDairy._id
+    ) { %>
 
         <a
             href="/networth/assets/<%= safeDairy._id %>"
@@ -66,6 +72,7 @@
 <style>
 /* ==========================================================
    FIXED EDIT DETAILS LINK
+   ADMIN ONLY
 ========================================================== */
 
 .fixed-edit-details {
