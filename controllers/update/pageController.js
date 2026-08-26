@@ -43,7 +43,6 @@
 //
 // ==========================================================
 
-
 const updateService =
     require("../../services/update");
 
@@ -87,9 +86,7 @@ function isPositiveCode(dairy) {
 
     }
 
-    return Number(
-        dairy.code
-    ) > 0;
+    return Number(dairy.code) > 0;
 
 }
 
@@ -116,12 +113,10 @@ function sendServiceError(
         err
     );
 
-
     const status =
         Number(
             err && err.statusCode
         );
-
 
     if (
         Number.isInteger(status) &&
@@ -138,7 +133,6 @@ function sendServiceError(
 
     }
 
-
     return res
         .status(500)
         .send(
@@ -149,12 +143,16 @@ function sendServiceError(
 
 
 // ==========================================================
-// VIEW DAIRY PROFILE
+// VIEW ASSET PAGE
 // ==========================================================
 //
 // GET:
 //
 //     /dairy/:id
+//
+// VIEW:
+//
+//     views/asset-page.ejs
 //
 // ==========================================================
 
@@ -202,11 +200,37 @@ async (req, res) => {
             return res
                 .status(404)
                 .send(
-                    "Dairy Farm not found."
+                    "Dairy asset not found."
                 );
 
         }
 
+
+        // --------------------------------------------------
+        // ASSET DAIRIES
+        // --------------------------------------------------
+        //
+        // These are supplied by the update service.
+        //
+        // Do not rebuild the relationship here.
+        //
+        // assetDairies is passed directly to:
+        //
+        //     views/asset-page.ejs
+        //
+        // --------------------------------------------------
+
+        const assetDairies =
+            Array.isArray(
+                data.assetDairies
+            )
+                ? data.assetDairies
+                : [];
+
+
+        // --------------------------------------------------
+        // ITEM LINKS
+        // --------------------------------------------------
 
         let itemLinks = [];
 
@@ -231,6 +255,10 @@ async (req, res) => {
 
         }
 
+
+        // --------------------------------------------------
+        // BOOLEAN DATA
+        // --------------------------------------------------
 
         let booleanAnimals = [];
 
@@ -264,25 +292,13 @@ async (req, res) => {
         }
 
 
-        const isDairyFarm =
-            data.dairy.code !== null &&
-            data.dairy.code !== undefined &&
-            Number(
-                data.dairy.code
-            ) < 0;
-
-
-        const farmAssets =
-            Array.isArray(
-                data.assetDairies
-            )
-                ? data.assetDairies
-                : [];
-
+        // --------------------------------------------------
+        // MEDICAL ASSETS
+        // --------------------------------------------------
 
         const medicalDairies =
-            farmAssets.filter(
-                function(animal) {
+            assetDairies.filter(
+                function (animal) {
 
                     return (
                         isPositiveCode(animal) &&
@@ -294,8 +310,8 @@ async (req, res) => {
 
 
         const medicalAnimals =
-            farmAssets.filter(
-                function(animal) {
+            assetDairies.filter(
+                function (animal) {
 
                     return (
                         isPositiveCode(animal) &&
@@ -305,6 +321,10 @@ async (req, res) => {
                 }
             );
 
+
+        // --------------------------------------------------
+        // FEED
+        // --------------------------------------------------
 
         const feed =
             Array.isArray(
@@ -319,11 +339,19 @@ async (req, res) => {
             null;
 
 
+        // --------------------------------------------------
+        // COMMENTS
+        // --------------------------------------------------
+
         const commentCount =
             Number(
                 data.commentCount || 0
             );
 
+
+        // --------------------------------------------------
+        // ASSIGNED FARMS
+        // --------------------------------------------------
 
         const assignedFarms =
             Array.isArray(
@@ -333,6 +361,10 @@ async (req, res) => {
                 : [];
 
 
+        // --------------------------------------------------
+        // ANIMAL FEEDS
+        // --------------------------------------------------
+
         const animalFeeds =
             Array.isArray(
                 data.animalFeeds
@@ -341,21 +373,32 @@ async (req, res) => {
                 : [];
 
 
-        const view =
-            isDairyFarm
-                ? "update"
-                : "dairySet";
-
+        // --------------------------------------------------
+        // RENDER ASSET PAGE
+        // --------------------------------------------------
+        //
+        // IMPORTANT:
+        //
+        // This intentionally renders:
+        //
+        //     views/asset-page.ejs
+        //
+        // and NOT "update" or "dairySet".
+        //
+        // --------------------------------------------------
 
         return res.render(
-            view,
+            "asset-page",
             {
 
                 title:
-                    "Dairy Profile",
+                    "Dairy Asset",
 
                 dairy:
                     data.dairy,
+
+                assetDairies:
+                    assetDairies,
 
                 feed:
                     feed,
@@ -365,9 +408,6 @@ async (req, res) => {
 
                 commentCount:
                     commentCount,
-
-                assetDairies:
-                    farmAssets,
 
                 assignedFarms:
                     assignedFarms,
@@ -401,7 +441,7 @@ async (req, res) => {
         return sendServiceError(
             res,
             err,
-            "Failed to load dairy profile."
+            "Failed to load dairy asset page."
         );
 
     }
@@ -468,9 +508,7 @@ async (req, res) => {
         const isDairyFarm =
             data.dairy.code !== null &&
             data.dairy.code !== undefined &&
-            Number(
-                data.dairy.code
-            ) < 0;
+            Number(data.dairy.code) < 0;
 
 
         if (!isDairyFarm) {
@@ -495,16 +533,12 @@ async (req, res) => {
                     data.dairy,
 
                 feed:
-                    Array.isArray(
-                        data.feed
-                    )
+                    Array.isArray(data.feed)
                         ? data.feed
                         : [],
 
                 assetDairies:
-                    Array.isArray(
-                        data.assetDairies
-                    )
+                    Array.isArray(data.assetDairies)
                         ? data.assetDairies
                         : [],
 
@@ -594,9 +628,7 @@ async (req, res) => {
                     data.dairy,
 
                 assetDairies:
-                    Array.isArray(
-                        data.assetDairies
-                    )
+                    Array.isArray(data.assetDairies)
                         ? data.assetDairies
                         : [],
 
@@ -622,12 +654,6 @@ async (req, res) => {
 // ==========================================================
 // RECORD LIABILITY
 // ==========================================================
-//
-// POST:
-//
-//     /dairy/:id/liability
-//
-// ==========================================================
 
 exports.recordLiability =
 async (req, res) => {
@@ -637,7 +663,6 @@ async (req, res) => {
         const dairyId =
             req.params.id;
 
-
         const user =
             getSessionUser(req);
 
@@ -646,9 +671,7 @@ async (req, res) => {
 
             return res
                 .status(401)
-                .send(
-                    "Unauthorized."
-                );
+                .send("Unauthorized.");
 
         }
 
@@ -657,9 +680,7 @@ async (req, res) => {
 
             return res
                 .status(400)
-                .send(
-                    "Dairy ID is required."
-                );
+                .send("Dairy ID is required.");
 
         }
 
@@ -679,41 +700,31 @@ async (req, res) => {
 
             return res
                 .status(400)
-                .send(
-                    "Liability amount is required."
-                );
+                .send("Liability amount is required.");
 
         }
 
 
         if (
             !description ||
-            !String(
-                description
-            ).trim()
+            !String(description).trim()
         ) {
 
             return res
                 .status(400)
-                .send(
-                    "Liability description is required."
-                );
+                .send("Liability description is required.");
 
         }
 
 
         if (
             !date ||
-            !String(
-                date
-            ).trim()
+            !String(date).trim()
         ) {
 
             return res
                 .status(400)
-                .send(
-                    "Liability date is required."
-                );
+                .send("Liability date is required.");
 
         }
 
@@ -723,17 +734,13 @@ async (req, res) => {
 
 
         if (
-            !Number.isFinite(
-                liabilityAmount
-            ) ||
+            !Number.isFinite(liabilityAmount) ||
             liabilityAmount < 0
         ) {
 
             return res
                 .status(400)
-                .send(
-                    "Invalid liability amount."
-                );
+                .send("Invalid liability amount.");
 
         }
 
@@ -747,14 +754,10 @@ async (req, res) => {
                 liabilityAmount,
 
             description:
-                String(
-                    description
-                ).trim(),
+                String(description).trim(),
 
             date:
-                String(
-                    date
-                ).trim(),
+                String(date).trim(),
 
             user:
                 user
@@ -782,12 +785,6 @@ async (req, res) => {
 // ==========================================================
 // RECORD REVENUE
 // ==========================================================
-//
-// POST:
-//
-//     /dairy/:id/revenue
-//
-// ==========================================================
 
 exports.recordRevenue =
 async (req, res) => {
@@ -797,7 +794,6 @@ async (req, res) => {
         const dairyId =
             req.params.id;
 
-
         const user =
             getSessionUser(req);
 
@@ -806,9 +802,7 @@ async (req, res) => {
 
             return res
                 .status(401)
-                .send(
-                    "Unauthorized."
-                );
+                .send("Unauthorized.");
 
         }
 
@@ -817,9 +811,7 @@ async (req, res) => {
 
             return res
                 .status(400)
-                .send(
-                    "Dairy ID is required."
-                );
+                .send("Dairy ID is required.");
 
         }
 
@@ -839,41 +831,31 @@ async (req, res) => {
 
             return res
                 .status(400)
-                .send(
-                    "Revenue amount is required."
-                );
+                .send("Revenue amount is required.");
 
         }
 
 
         if (
             !description ||
-            !String(
-                description
-            ).trim()
+            !String(description).trim()
         ) {
 
             return res
                 .status(400)
-                .send(
-                    "Revenue description is required."
-                );
+                .send("Revenue description is required.");
 
         }
 
 
         if (
             !date ||
-            !String(
-                date
-            ).trim()
+            !String(date).trim()
         ) {
 
             return res
                 .status(400)
-                .send(
-                    "Revenue date is required."
-                );
+                .send("Revenue date is required.");
 
         }
 
@@ -883,17 +865,13 @@ async (req, res) => {
 
 
         if (
-            !Number.isFinite(
-                revenueAmount
-            ) ||
+            !Number.isFinite(revenueAmount) ||
             revenueAmount < 0
         ) {
 
             return res
                 .status(400)
-                .send(
-                    "Invalid revenue amount."
-                );
+                .send("Invalid revenue amount.");
 
         }
 
@@ -907,14 +885,10 @@ async (req, res) => {
                 revenueAmount,
 
             description:
-                String(
-                    description
-                ).trim(),
+                String(description).trim(),
 
             date:
-                String(
-                    date
-                ).trim(),
+                String(date).trim(),
 
             user:
                 user
@@ -942,12 +916,6 @@ async (req, res) => {
 // ==========================================================
 // TOGGLE MILKING
 // ==========================================================
-//
-// POST:
-//
-//     /dairy/:id/toggle-milking
-//
-// ==========================================================
 
 exports.toggleMilking =
 async (req, res) => {
@@ -963,13 +931,8 @@ async (req, res) => {
             return res
                 .status(400)
                 .json({
-
-                    success:
-                        false,
-
-                    message:
-                        "Dairy ID is required."
-
+                    success: false,
+                    message: "Dairy ID is required."
                 });
 
         }
@@ -1009,13 +972,8 @@ async (req, res) => {
             return res
                 .status(404)
                 .json({
-
-                    success:
-                        false,
-
-                    message:
-                        err.message
-
+                    success: false,
+                    message: err.message
                 });
 
         }
@@ -1029,13 +987,8 @@ async (req, res) => {
             return res
                 .status(400)
                 .json({
-
-                    success:
-                        false,
-
-                    message:
-                        err.message
-
+                    success: false,
+                    message: err.message
                 });
 
         }
@@ -1044,13 +997,9 @@ async (req, res) => {
         return res
             .status(500)
             .json({
-
-                success:
-                    false,
-
+                success: false,
                 message:
                     "Failed to toggle milking status."
-
             });
 
     }
@@ -1060,12 +1009,6 @@ async (req, res) => {
 
 // ==========================================================
 // SWITCH DAIRY
-// ==========================================================
-//
-// GET:
-//
-//     /dairy/:id/switch
-//
 // ==========================================================
 
 exports.switchDairy =
@@ -1081,17 +1024,12 @@ async (req, res) => {
 
             return res
                 .status(401)
-                .send(
-                    "Unauthorized."
-                );
+                .send("Unauthorized.");
 
         }
 
 
-        if (
-            user.role !==
-            "dairyWorker"
-        ) {
+        if (user.role !== "dairyWorker") {
 
             return res
                 .status(403)
@@ -1118,11 +1056,10 @@ async (req, res) => {
 
 
         const farm =
-            await updateService
-                .getAssignedFarmForUser(
-                    user._id,
-                    farmId
-                );
+            await updateService.getAssignedFarmForUser(
+                user._id,
+                farmId
+            );
 
 
         if (!farm) {
@@ -1167,17 +1104,11 @@ async (req, res) => {
             "function"
         ) {
 
-            return res
-                .status(500)
-                .json({
-
-                    success:
-                        false,
-
-                    message:
-                        "Boolean service is not available."
-
-                });
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Boolean service is not available."
+            });
 
         }
 
@@ -1190,13 +1121,8 @@ async (req, res) => {
 
 
         return res.json({
-
-            success:
-                true,
-
-            data:
-                result
-
+            success: true,
+            data: result
         });
 
     } catch (err) {
@@ -1222,17 +1148,11 @@ async (req, res) => {
             "function"
         ) {
 
-            return res
-                .status(500)
-                .json({
-
-                    success:
-                        false,
-
-                    message:
-                        "Boolean service is not available."
-
-                });
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Boolean service is not available."
+            });
 
         }
 
@@ -1294,14 +1214,10 @@ async (req, res) => {
         }
 
 
-        const result =
-            await updateService.comment(
-                req,
-                res
-            );
-
-
-        return result;
+        return await updateService.comment(
+            req,
+            res
+        );
 
     } catch (err) {
 
@@ -1542,12 +1458,6 @@ async (req, res) => {
 // ==========================================================
 // STORAGE CONTENT ITEM
 // ==========================================================
-//
-// GET:
-//
-//     /dairy/:contentItemId/:dwellNumber
-//
-// ==========================================================
 
 exports.getContentItem =
 async (req, res) => {
@@ -1641,29 +1551,19 @@ async (req, res) => {
             "function"
         ) {
 
-            return res
-                .status(500)
-                .json({
-
-                    success:
-                        false,
-
-                    message:
-                        "Post like service is not available."
-
-                });
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Post like service is not available."
+            });
 
         }
 
 
-        const result =
-            await updateService.likePost(
-                req,
-                res
-            );
-
-
-        return result;
+        return await updateService.likePost(
+            req,
+            res
+        );
 
     } catch (err) {
 
