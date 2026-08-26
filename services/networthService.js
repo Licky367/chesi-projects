@@ -8,6 +8,10 @@
 //
 //     models/dairy.js
 //
+// USER MODEL:
+//
+//     models/projectUser.js
+//
 // RESPONSIBILITIES:
 //
 // 1. Load the main Net Worth page
@@ -18,6 +22,8 @@
 // 6. Update an individual Dairy record
 // 7. Supply JSON data for Net Worth
 // 8. Supply JSON data for a Dairy Farm
+// 9. Supply available non-admin users for asset assignment
+// 10. Assign a standalone Dairy asset to a non-admin user
 //
 // RECORD CLASSIFICATION
 // ----------------------------------------------------------
@@ -34,17 +40,19 @@
 // ASSIGNMENT
 // ----------------------------------------------------------
 //
-//     assetCode === Dairy Farm.code
-//         = asset belongs to that Dairy Farm
+// A standalone asset:
+//
+//     code === null
 //
 //     assetCode === null
-//         = standalone asset
 //
-// VALUE
-// ----------------------------------------------------------
+// may be assigned to a User.
 //
-//     currentWorth
-//         = authoritative Net Worth value
+// User:
+//
+//     assignedAsset
+//
+// stores the Dairy document _id.
 //
 // IMPORTANT
 // ----------------------------------------------------------
@@ -54,7 +62,7 @@
 //     code
 //     assetCode
 //
-// The service derives those values where necessary.
+// Assignment is controlled by this service.
 //
 // ==========================================================
 
@@ -63,6 +71,7 @@
 const mongoose = require("mongoose");
 
 const Dairy = require("../models/dairy");
+const User = require("../models/projectUser");
 
 
 // ==========================================================
@@ -103,10 +112,16 @@ const ASSET_TYPES = [
 // HELPERS
 // ==========================================================
 
-function createError(message, statusCode = 500) {
-    const error = new Error(message);
+function createError(
+    message,
+    statusCode = 500
+) {
 
-    error.statusCode = statusCode;
+    const error =
+        new Error(message);
+
+    error.statusCode =
+        statusCode;
 
     return error;
 }
@@ -117,7 +132,9 @@ function createError(message, statusCode = 500) {
 // ==========================================================
 
 function isValidObjectId(id) {
+
     return mongoose.Types.ObjectId.isValid(id);
+
 }
 
 
@@ -125,37 +142,48 @@ function isValidObjectId(id) {
 // REQUIRE OBJECT ID
 // ==========================================================
 
-function requireObjectId(id, label = "record") {
+function requireObjectId(
+    id,
+    label = "record"
+) {
+
     if (!isValidObjectId(id)) {
+
         throw createError(
             `Invalid ${label} ID.`,
             400
         );
+
     }
 
     return new mongoose.Types.ObjectId(id);
+
 }
 
 
 // ==========================================================
 // CONVERT DOCUMENT
-//
-// Using lean() already gives plain objects.
-//
-// This helper is retained so all returned records have a
-// predictable shape.
 // ==========================================================
 
 function plainDocument(document) {
+
     if (!document) {
+
         return null;
+
     }
 
-    if (typeof document.toObject === "function") {
+    if (
+        typeof document.toObject ===
+        "function"
+    ) {
+
         return document.toObject();
+
     }
 
     return document;
+
 }
 
 
@@ -164,13 +192,18 @@ function plainDocument(document) {
 // ==========================================================
 
 function numericValue(value) {
-    const number = Number(value);
+
+    const number =
+        Number(value);
 
     if (!Number.isFinite(number)) {
+
         return 0;
+
     }
 
     return number;
+
 }
 
 
@@ -178,20 +211,28 @@ function numericValue(value) {
 // NORMALIZE NUMBER
 // ==========================================================
 
-function normalizeNumber(value, fallback = 0) {
+function normalizeNumber(
+    value,
+    fallback = 0
+) {
+
     if (
         value === undefined ||
         value === null ||
         value === ""
     ) {
+
         return fallback;
+
     }
 
-    const number = Number(value);
+    const number =
+        Number(value);
 
     return Number.isFinite(number)
         ? number
         : fallback;
+
 }
 
 
@@ -200,15 +241,22 @@ function normalizeNumber(value, fallback = 0) {
 // ==========================================================
 
 function normalizeBoolean(value) {
+
     if (
         value === undefined ||
         value === null
     ) {
+
         return false;
+
     }
 
-    if (typeof value === "boolean") {
+    if (
+        typeof value === "boolean"
+    ) {
+
         return value;
+
     }
 
     const normalized =
@@ -222,6 +270,7 @@ function normalizeBoolean(value) {
         normalized === "yes" ||
         normalized === "on"
     );
+
 }
 
 
@@ -230,14 +279,18 @@ function normalizeBoolean(value) {
 // ==========================================================
 
 function normalizeText(value) {
+
     if (
         value === undefined ||
         value === null
     ) {
+
         return "";
+
     }
 
     return String(value).trim();
+
 }
 
 
@@ -246,49 +299,69 @@ function normalizeText(value) {
 // ==========================================================
 
 function normalizeDate(value) {
+
     if (
         value === undefined ||
         value === null ||
         value === ""
     ) {
+
         return null;
+
     }
 
-    const date = new Date(value);
+    const date =
+        new Date(value);
 
-    if (Number.isNaN(date.getTime())) {
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
         return null;
+
     }
 
     return date;
+
 }
 
 
 // ==========================================================
 // AGE TEXT
-//
-// The EJS expects:
-//
-//     dairy.ageText
-//
-// This is calculated for animal records.
 // ==========================================================
 
-function calculateAgeText(dateOfBirth) {
+function calculateAgeText(
+    dateOfBirth
+) {
+
     if (!dateOfBirth) {
+
         return "";
+
     }
 
-    const dob = new Date(dateOfBirth);
+    const dob =
+        new Date(dateOfBirth);
 
-    if (Number.isNaN(dob.getTime())) {
+    if (
+        Number.isNaN(
+            dob.getTime()
+        )
+    ) {
+
         return "";
+
     }
 
-    const now = new Date();
+    const now =
+        new Date();
 
     if (dob > now) {
+
         return "";
+
     }
 
     let years =
@@ -304,6 +377,7 @@ function calculateAgeText(dateOfBirth) {
         dob.getDate();
 
     if (days < 0) {
+
         months -= 1;
 
         const previousMonth =
@@ -313,50 +387,66 @@ function calculateAgeText(dateOfBirth) {
                 0
             );
 
-        days += previousMonth.getDate();
+        days +=
+            previousMonth.getDate();
+
     }
 
     if (months < 0) {
+
         years -= 1;
+
         months += 12;
+
     }
 
     const parts = [];
 
     if (years > 0) {
+
         parts.push(
             `${years} year${years === 1 ? "" : "s"}`
         );
+
     }
 
     if (months > 0) {
+
         parts.push(
             `${months} month${months === 1 ? "" : "s"}`
         );
+
     }
 
     if (
         years === 0 &&
         months === 0
     ) {
+
         parts.push(
             `${days} day${days === 1 ? "" : "s"}`
         );
+
     }
 
     return parts.join(" ");
+
 }
 
 
 // ==========================================================
-// ADD AGE TEXT TO DOCUMENT
+// PREPARE DAIRY RECORD
 // ==========================================================
 
 function prepareDairyRecord(record) {
-    const dairy = plainDocument(record);
+
+    const dairy =
+        plainDocument(record);
 
     if (!dairy) {
+
         return null;
+
     }
 
     const code =
@@ -370,15 +460,20 @@ function prepareDairyRecord(record) {
         Number.isFinite(code) &&
         code > 0
     ) {
+
         dairy.ageText =
             calculateAgeText(
                 dairy.dateOfBirth
             );
+
     } else {
+
         dairy.ageText = "";
+
     }
 
     return dairy;
+
 }
 
 
@@ -389,11 +484,12 @@ function prepareDairyRecord(record) {
 //
 //     code < 0
 //
-// Returned as `structures` because the EJS deliberately
-// expects that variable.
+// Returned as `structures` because the EJS expects that
+// variable.
 // ==========================================================
 
 async function getDairyFarms() {
+
     const farms =
         await Dairy
             .find({
@@ -408,6 +504,7 @@ async function getDairyFarms() {
             .lean();
 
     return farms;
+
 }
 
 
@@ -421,12 +518,12 @@ async function getDairyFarms() {
 // Asset:
 //
 //     assetCode === dairy.code
-//
-// The farm itself is excluded because the farm's assetCode
-// is normally null.
 // ==========================================================
 
-async function getAssetsForFarm(farmCode) {
+async function getAssetsForFarm(
+    farmCode
+) {
+
     const numericFarmCode =
         Number(farmCode);
 
@@ -436,7 +533,9 @@ async function getAssetsForFarm(farmCode) {
         ) ||
         numericFarmCode >= 0
     ) {
+
         return [];
+
     }
 
     const assets =
@@ -459,23 +558,25 @@ async function getAssetsForFarm(farmCode) {
     return assets.map(
         prepareDairyRecord
     );
+
 }
 
 
 // ==========================================================
 // GET STANDALONE ASSETS
 //
-// Source EJS contract:
+// Standalone:
 //
 //     assetCode === null
 //
-// Dairy Farms are excluded because they have:
+// AND:
 //
-//     code < 0
+//     code is not negative
 //
 // ==========================================================
 
 async function getStandaloneAssets() {
+
     const assets =
         await Dairy
             .find({
@@ -496,38 +597,152 @@ async function getStandaloneAssets() {
     return assets.map(
         prepareDairyRecord
     );
+
 }
 
 
 // ==========================================================
-// GET TOTAL NET WORTH
+// GET AVAILABLE USERS FOR ASSET ASSIGNMENT
 //
-// Uses:
+// ONLY users whose role is NOT:
 //
-//     currentWorth
+//     admin
 //
-// The service sums all Dairy records.
+// are returned.
 //
-// This keeps currentWorth as the single financial value
-// used by the Net Worth system.
+// This means:
+//
+//     dairyWorker
+//     poultryWorker
+//
+// are eligible.
+//
+// Admin users are deliberately excluded.
+// ==========================================================
+
+async function getAvailableAssetUsers() {
+
+    const users =
+        await User
+            .find({
+                role: {
+                    $ne: "admin"
+                }
+            })
+            .select(
+                "_id name email phone role assignedAsset"
+            )
+            .sort({
+                name: 1
+            })
+            .lean();
+
+    return users.map(
+        user => {
+
+            const assignedAssets =
+                Array.isArray(
+                    user.assignedAsset
+                )
+                    ? user.assignedAsset
+                    : [];
+
+            return {
+
+                _id:
+                    user._id,
+
+                name:
+                    user.name || "",
+
+                email:
+                    user.email || "",
+
+                phone:
+                    user.phone || null,
+
+                role:
+                    user.role || "",
+
+                assignedAsset:
+                    assignedAssets
+
+            };
+
+        }
+    );
+
+}
+
+
+// ==========================================================
+// FIND CURRENT USER ASSIGNED TO ASSET
+//
+// Looks through assignedAsset arrays.
+//
+// This is intentionally performed against User rather than
+// adding another ownership field to Dairy.
+//
+// ==========================================================
+
+async function findUsersAssignedToAsset(
+    assetId
+) {
+
+    const objectId =
+        requireObjectId(
+            assetId,
+            "asset"
+        );
+
+    const users =
+        await User
+            .find({
+                role: {
+                    $ne: "admin"
+                },
+
+                assignedAsset:
+                    objectId
+            })
+            .select(
+                "_id name email phone role"
+            )
+            .lean();
+
+    return users;
+
+}
+
+
+// ==========================================================
+// CALCULATE TOTAL NET WORTH
 // ==========================================================
 
 async function calculateTotalNetWorth() {
+
     const result =
         await Dairy.aggregate([
             {
                 $group: {
+
                     _id: null,
 
                     total: {
+
                         $sum: {
+
                             $ifNull: [
                                 "$currentWorth",
                                 0
                             ]
+
                         }
+
                     }
+
                 }
+
             }
         ]);
 
@@ -535,42 +750,40 @@ async function calculateTotalNetWorth() {
         !Array.isArray(result) ||
         result.length === 0
     ) {
+
         return 0;
+
     }
 
     return numericValue(
         result[0].total
     );
+
 }
 
 
 // ==========================================================
 // GET MAIN NET WORTH
-//
-// Controller:
-//
-//     networthService.getNetWorth()
-//
-// EJS requires:
-//
-//     structures
-//     standaloneAssets
-//
-// Additional values are supplied for API consumers.
 // ==========================================================
 
 async function getNetWorth() {
+
     const [
         structures,
         standaloneAssets,
         totalNetWorth
     ] = await Promise.all([
+
         getDairyFarms(),
+
         getStandaloneAssets(),
+
         calculateTotalNetWorth()
+
     ]);
 
     return {
+
         structures,
 
         standaloneAssets,
@@ -579,7 +792,9 @@ async function getNetWorth() {
 
         netWorth:
             totalNetWorth
+
     };
+
 }
 
 
@@ -588,6 +803,7 @@ async function getNetWorth() {
 // ==========================================================
 
 async function findDairyFarmById(id) {
+
     const objectId =
         requireObjectId(
             id,
@@ -602,10 +818,12 @@ async function findDairyFarmById(id) {
             .lean();
 
     if (!dairy) {
+
         throw createError(
             "Dairy Farm not found.",
             404
         );
+
     }
 
     if (
@@ -613,32 +831,25 @@ async function findDairyFarmById(id) {
         dairy.code === undefined ||
         Number(dairy.code) >= 0
     ) {
+
         throw createError(
             "The selected record is not a Dairy Farm.",
             400
         );
+
     }
 
     return dairy;
+
 }
 
 
 // ==========================================================
 // GET DAIRY FARM PAGE
-//
-// Controller:
-//
-//     getDairyFarm(req.params.id)
-//
-// EJS requires:
-//
-//     dairy
-//     assets
-//     dairyTotal
-//
 // ==========================================================
 
 async function getDairyFarm(id) {
+
     const dairy =
         await findDairyFarmById(
             id
@@ -648,10 +859,13 @@ async function getDairyFarm(id) {
         assets,
         totalNetWorth
     ] = await Promise.all([
+
         getAssetsForFarm(
             dairy.code
         ),
+
         calculateTotalNetWorth()
+
     ]);
 
     const dairyTotal =
@@ -668,6 +882,7 @@ async function getDairyFarm(id) {
         );
 
     return {
+
         dairy:
             prepareDairyRecord(
                 dairy
@@ -681,39 +896,35 @@ async function getDairyFarm(id) {
 
         netWorth:
             totalNetWorth
+
     };
+
 }
 
 
 // ==========================================================
 // GET STRUCTURE TYPES
-//
-// The EJS expects:
-//
-//     structureTypes
-//
-// The source material does not define a separate authoritative
-// constant list for structure types.
-//
-// Therefore the service derives the list from existing
-// structure records' `type` values.
-//
-// This avoids inventing database values that are not present.
 // ==========================================================
 
 async function getStructureTypes() {
+
     const records =
         await Dairy
             .find({
+
                 code: null,
 
                 type: {
+
                     $exists: true,
+
                     $nin: [
                         null,
                         ""
                     ]
+
                 }
+
             })
             .select({
                 type: 1
@@ -736,38 +947,35 @@ async function getStructureTypes() {
         (a, b) =>
             a.localeCompare(b)
     );
+
 }
 
 
 // ==========================================================
 // GET DAIRY BREEDS
-//
-// The EJS expects:
-//
-//     dairyBreeds
-//
-// Animal records are identified by:
-//
-//     code > 0
-//
-// Their `type` field is used by the view as the breed.
 // ==========================================================
 
 async function getDairyBreeds() {
+
     const records =
         await Dairy
             .find({
+
                 code: {
                     $gt: 0
                 },
 
                 type: {
+
                     $exists: true,
+
                     $nin: [
                         null,
                         ""
                     ]
+
                 }
+
             })
             .select({
                 type: 1
@@ -790,29 +998,18 @@ async function getDairyBreeds() {
         (a, b) =>
             a.localeCompare(b)
     );
+
 }
 
 
 // ==========================================================
 // GET ADD ASSET PAGE
-//
-// Controller:
-//
-//     getAddAsset(req.params.id)
-//
-// EJS expects:
-//
-//     dairy
-//
-// The EJS itself supplies the assetTypes list.
-//
-// The service additionally supplies structureTypes and
-// dairyBreeds so the data contract remains consistent.
 // ==========================================================
 
 async function getAddAsset(
     dairyFarmId
 ) {
+
     const parentFarm =
         await findDairyFarmById(
             dairyFarmId
@@ -823,12 +1020,17 @@ async function getAddAsset(
         dairyBreeds,
         structureTypes
     ] = await Promise.all([
+
         getDairyFarms(),
+
         getDairyBreeds(),
+
         getStructureTypes()
+
     ]);
 
     return {
+
         dairy:
             prepareDairyRecord(
                 parentFarm
@@ -848,76 +1050,84 @@ async function getAddAsset(
         assetTypes: [
             ...ASSET_TYPES
         ]
+
     };
+
 }
 
 
 // ==========================================================
 // BUILD CREATE DATA
-//
-// This is deliberately restrictive.
-//
-// Browser-controlled protected fields:
-//
-//     _id
-//     code
-//     assetCode
-//     __v
-//     createdAt
-//     updatedAt
-//
-// are ignored.
-//
 // ==========================================================
 
-function buildCreateData(
-    data
-) {
+function buildCreateData(data) {
+
     const source =
-        data && typeof data === "object"
+        data &&
+        typeof data === "object"
             ? data
             : {};
 
     const result = {};
 
     const allowedFields = [
+
         "name",
+
         "type",
+
         "buyingPrice",
+
         "currentWorth",
+
         "description",
+
         "condition",
+
         "location",
+
         "status",
+
         "valuationDate",
+
         "acquisitionDate",
+
         "dateOfBirth",
+
         "mass",
+
         "isMilking",
+
         "about",
+
         "mission",
+
         "refNo",
+
         "vision",
+
         "profileImage"
+
     ];
 
     allowedFields.forEach(
         field => {
+
             if (
                 Object.prototype.hasOwnProperty.call(
                     source,
                     field
                 )
             ) {
+
                 result[field] =
                     source[field];
+
             }
+
         }
     );
 
-    // ------------------------------------------------------
-    // TEXT
-    // ------------------------------------------------------
 
     [
         "name",
@@ -933,24 +1143,24 @@ function buildCreateData(
         "profileImage"
     ].forEach(
         field => {
+
             if (
                 Object.prototype.hasOwnProperty.call(
                     result,
                     field
                 )
             ) {
+
                 result[field] =
                     normalizeText(
                         result[field]
                     );
+
             }
+
         }
     );
 
-
-    // ------------------------------------------------------
-    // NUMBERS
-    // ------------------------------------------------------
 
     [
         "buyingPrice",
@@ -958,24 +1168,24 @@ function buildCreateData(
         "mass"
     ].forEach(
         field => {
+
             if (
                 Object.prototype.hasOwnProperty.call(
                     result,
                     field
                 )
             ) {
+
                 result[field] =
                     normalizeNumber(
                         result[field]
                     );
+
             }
+
         }
     );
 
-
-    // ------------------------------------------------------
-    // BOOLEAN
-    // ------------------------------------------------------
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -983,16 +1193,14 @@ function buildCreateData(
             "isMilking"
         )
     ) {
+
         result.isMilking =
             normalizeBoolean(
                 result.isMilking
             );
+
     }
 
-
-    // ------------------------------------------------------
-    // DATES
-    // ------------------------------------------------------
 
     [
         "valuationDate",
@@ -1000,24 +1208,24 @@ function buildCreateData(
         "dateOfBirth"
     ].forEach(
         field => {
+
             if (
                 Object.prototype.hasOwnProperty.call(
                     result,
                     field
                 )
             ) {
+
                 result[field] =
                     normalizeDate(
                         result[field]
                     );
+
             }
+
         }
     );
 
-
-    // ------------------------------------------------------
-    // DEFAULT STATUS
-    // ------------------------------------------------------
 
     if (
         !result.status ||
@@ -1025,52 +1233,44 @@ function buildCreateData(
             result.status
         )
     ) {
-        result.status = "active";
+
+        result.status =
+            "active";
+
     }
 
-
-    // ------------------------------------------------------
-    // DEFAULT VALUES
-    // ------------------------------------------------------
 
     if (
         result.buyingPrice === undefined
     ) {
+
         result.buyingPrice = 0;
+
     }
+
 
     if (
         result.currentWorth === undefined
     ) {
+
         result.currentWorth = 0;
+
     }
 
 
     return result;
+
 }
 
 
 // ==========================================================
 // ADD ASSET
 //
-// Controller:
-//
-//     addAsset(
-//         dairyFarmId,
-//         body,
-//         req.file
-//     )
-//
 // SYSTEM CONTROLLED:
-//
-//     code
-//     assetCode
-//
-// For this Add Asset page:
 //
 //     code = null
 //
-//     assetCode = parent Dairy Farm code
+//     assetCode = parent farm code
 //
 // ==========================================================
 
@@ -1079,6 +1279,7 @@ async function addAsset(
     data,
     file = null
 ) {
+
     const parentFarm =
         await findDairyFarmById(
             dairyFarmId
@@ -1090,78 +1291,57 @@ async function addAsset(
         );
 
 
-    // ------------------------------------------------------
-    // NAME
-    // ------------------------------------------------------
-
     if (!createData.name) {
+
         throw createError(
             "Asset name is required.",
             400
         );
+
     }
 
-
-    // ------------------------------------------------------
-    // CURRENT WORTH
-    // ------------------------------------------------------
 
     if (
         createData.currentWorth < 0
     ) {
+
         throw createError(
             "Current worth cannot be negative.",
             400
         );
+
     }
 
-
-    // ------------------------------------------------------
-    // BUYING PRICE
-    // ------------------------------------------------------
 
     if (
         createData.buyingPrice < 0
     ) {
+
         throw createError(
             "Buying price cannot be negative.",
             400
         );
+
     }
 
-
-    // ------------------------------------------------------
-    // PROFILE IMAGE
-    //
-    // The controller normally supplies the browser URL in
-    // body.profileImage.
-    //
-    // The file argument is accepted for compatibility.
-    // ------------------------------------------------------
 
     if (
         file &&
         file.filename &&
         !createData.profileImage
     ) {
+
         createData.profileImage =
             `/uploads/${file.filename}`;
+
     }
 
-
-    // ------------------------------------------------------
-    // SYSTEM CONTROLLED IDENTITY
-    // ------------------------------------------------------
 
     createData.code = null;
 
     createData.assetCode =
         Number(parentFarm.code);
 
-
-    // ------------------------------------------------------
-    // CREATE
-    // ------------------------------------------------------
 
     const asset =
         await Dairy.create(
@@ -1171,25 +1351,30 @@ async function addAsset(
     return prepareDairyRecord(
         asset
     );
+
 }
 
 
 // ==========================================================
 // GET INDIVIDUAL ASSET
 //
-// Controller:
+// IMPORTANT:
 //
-//     getAsset(req.params.id)
+// This now additionally supplies:
 //
-// EJS expects:
+//     availableUsers
 //
-//     dairy
-//     structures
-//     dairyBreeds
-//     structureTypes
+// and:
+//
+//     assignedUsers
+//
+// to the EJS.
+//
+// availableUsers contains ONLY users whose role is not admin.
 // ==========================================================
 
 async function getAsset(id) {
+
     const objectId =
         requireObjectId(
             id,
@@ -1204,23 +1389,40 @@ async function getAsset(id) {
             .lean();
 
     if (!dairy) {
+
         throw createError(
             "Asset not found.",
             404
         );
+
     }
+
 
     const [
         structures,
         dairyBreeds,
-        structureTypes
+        structureTypes,
+        availableUsers,
+        assignedUsers
     ] = await Promise.all([
+
         getDairyFarms(),
+
         getDairyBreeds(),
-        getStructureTypes()
+
+        getStructureTypes(),
+
+        getAvailableAssetUsers(),
+
+        findUsersAssignedToAsset(
+            objectId
+        )
+
     ]);
 
+
     return {
+
         dairy:
             prepareDairyRecord(
                 dairy
@@ -1230,69 +1432,468 @@ async function getAsset(id) {
 
         dairyBreeds,
 
-        structureTypes
+        structureTypes,
+
+        // --------------------------------------------------
+        // USERS AVAILABLE FOR ASSIGNMENT
+        // --------------------------------------------------
+
+        availableUsers,
+
+        // --------------------------------------------------
+        // USERS CURRENTLY ASSIGNED TO THIS ASSET
+        // --------------------------------------------------
+
+        assignedUsers,
+
+        // --------------------------------------------------
+        // CONVENIENT SINGLE USER VALUE
+        //
+        // Normally there should be one assignee.
+        // The array is still retained above so existing
+        // inconsistent data does not disappear.
+        // --------------------------------------------------
+
+        assignedUser:
+            assignedUsers.length > 0
+                ? assignedUsers[0]
+                : null,
+
+        assignedUserId:
+            assignedUsers.length > 0
+                ? String(
+                    assignedUsers[0]._id
+                )
+                : ""
+
     };
+
+}
+
+
+// ==========================================================
+// NORMALIZE ASSIGNED USER ID
+//
+// Accepted service input:
+//
+//     assignedUserId
+//
+// For compatibility, the service also recognizes:
+//
+//     assignedUser
+//     userId
+//
+// Empty value means:
+//
+//     remove assignment
+//
+// ==========================================================
+
+function normalizeAssignedUserId(
+    data
+) {
+
+    if (
+        !data ||
+        typeof data !== "object"
+    ) {
+
+        return null;
+
+    }
+
+
+    let value;
+
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "assignedUserId"
+        )
+    ) {
+
+        value =
+            data.assignedUserId;
+
+    } else if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "assignedUser"
+        )
+    ) {
+
+        value =
+            data.assignedUser;
+
+    } else if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "userId"
+        )
+    ) {
+
+        value =
+            data.userId;
+
+    } else {
+
+        // --------------------------------------------------
+        // Assignment was not part of this update.
+        //
+        // `undefined` tells updateAsset not to change
+        // assignments.
+        // --------------------------------------------------
+
+        return undefined;
+
+    }
+
+
+    if (
+        value === undefined ||
+        value === null ||
+        String(value).trim() === ""
+    ) {
+
+        return null;
+
+    }
+
+
+    const normalized =
+        String(value).trim();
+
+    if (
+        !isValidObjectId(
+            normalized
+        )
+    ) {
+
+        throw createError(
+            "Invalid assigned user ID.",
+            400
+        );
+
+    }
+
+    return new mongoose.Types.ObjectId(
+        normalized
+    );
+
+}
+
+
+// ==========================================================
+// VALIDATE ASSIGNMENT USER
+//
+// User MUST:
+//
+//     exist
+//
+// AND:
+//
+//     role !== "admin"
+//
+// ==========================================================
+
+async function validateAssignmentUser(
+    userId
+) {
+
+    if (!userId) {
+
+        return null;
+
+    }
+
+    const user =
+        await User
+            .findOne({
+                _id: userId,
+
+                role: {
+                    $ne: "admin"
+                }
+            })
+            .select(
+                "_id name email phone role"
+            );
+
+    if (!user) {
+
+        throw createError(
+            "The selected user does not exist or is an admin.",
+            400
+        );
+
+    }
+
+    return user;
+
+}
+
+
+// ==========================================================
+// ASSIGN ASSET TO USER
+//
+// THIS IS THE CORE ASSIGNMENT LOGIC.
+//
+// Given:
+//
+//     assetId
+//
+//     userId
+//
+// The service:
+//
+// 1. Removes the asset from every non-admin user.
+// 2. Adds the asset to the selected user.
+// 3. Does not modify Dairy.code.
+// 4. Does not modify Dairy.assetCode.
+//
+// If userId === null:
+//
+//     the asset becomes unassigned.
+//
+// ==========================================================
+
+async function assignAssetToUser(
+    assetId,
+    userId
+) {
+
+    const assetObjectId =
+        requireObjectId(
+            assetId,
+            "asset"
+        );
+
+
+    // ------------------------------------------------------
+    // MAKE SURE THE DAIRY RECORD EXISTS
+    // ------------------------------------------------------
+
+    const asset =
+        await Dairy
+            .findById(
+                assetObjectId
+            )
+            .select(
+                "_id name code assetCode"
+            )
+            .lean();
+
+    if (!asset) {
+
+        throw createError(
+            "Asset not found.",
+            404
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // THE ASSIGNMENT TARGET MUST BE A USER.
+    //
+    // Admin users are rejected by validateAssignmentUser.
+    // ------------------------------------------------------
+
+    const selectedUser =
+        await validateAssignmentUser(
+            userId
+        );
+
+
+    // ------------------------------------------------------
+    // REMOVE THIS ASSET FROM ALL NON-ADMIN USERS
+    //
+    // This prevents the same standalone asset from remaining
+    // assigned to multiple users after reassignment.
+    //
+    // $pull removes the Dairy _id from assignedAsset.
+    // ------------------------------------------------------
+
+    await User.updateMany(
+
+        {
+            role: {
+                $ne: "admin"
+            },
+
+            assignedAsset:
+                assetObjectId
+        },
+
+        {
+            $pull: {
+                assignedAsset:
+                    assetObjectId
+            }
+        }
+
+    );
+
+
+    // ------------------------------------------------------
+    // NO USER SELECTED
+    //
+    // The asset is now unassigned.
+    // ------------------------------------------------------
+
+    if (!selectedUser) {
+
+        return {
+
+            assetId:
+                assetObjectId,
+
+            assignedUser:
+                null,
+
+            assignedUserId:
+                null
+
+        };
+
+    }
+
+
+    // ------------------------------------------------------
+    // ADD ASSET TO SELECTED USER
+    //
+    // $addToSet prevents duplicate Dairy IDs.
+    // ------------------------------------------------------
+
+    await User.updateOne(
+
+        {
+            _id:
+                selectedUser._id,
+
+            role: {
+                $ne: "admin"
+            }
+        },
+
+        {
+            $addToSet: {
+
+                assignedAsset:
+                    assetObjectId
+
+            }
+        }
+
+    );
+
+
+    return {
+
+        assetId:
+            assetObjectId,
+
+        assignedUser:
+            plainDocument(
+                selectedUser
+            ),
+
+        assignedUserId:
+            selectedUser._id
+
+    };
+
 }
 
 
 // ==========================================================
 // BUILD UPDATE DATA
 //
-// Only fields represented by the supplied EJS/controller are
-// accepted.
+// IMPORTANT:
 //
-// Protected fields are deliberately excluded.
+// Assignment is deliberately handled separately from the
+// Dairy update.
+//
+// It is NOT written into the Dairy document.
+//
+// Instead:
+//
+//     assignedUserId
+//
+// is extracted and applied to:
+//
+//     User.assignedAsset
 //
 // ==========================================================
 
-function buildUpdateData(
-    data
-) {
+function buildUpdateData(data) {
+
     const source =
-        data && typeof data === "object"
+        data &&
+        typeof data === "object"
             ? data
             : {};
 
     const update = {};
 
     const allowedFields = [
+
         "name",
+
         "type",
+
         "dateOfBirth",
+
         "mass",
+
         "isMilking",
+
         "description",
+
         "condition",
+
         "location",
+
         "status",
+
         "buyingPrice",
+
         "currentWorth",
+
         "valuationDate",
+
         "about",
+
         "mission",
+
         "refNo",
+
         "vision",
+
         "profileImage"
+
     ];
+
 
     allowedFields.forEach(
         field => {
+
             if (
                 Object.prototype.hasOwnProperty.call(
                     source,
                     field
                 )
             ) {
+
                 update[field] =
                     source[field];
+
             }
+
         }
     );
 
-
-    // ------------------------------------------------------
-    // TEXT
-    // ------------------------------------------------------
 
     [
         "name",
@@ -1308,24 +1909,24 @@ function buildUpdateData(
         "profileImage"
     ].forEach(
         field => {
+
             if (
                 Object.prototype.hasOwnProperty.call(
                     update,
                     field
                 )
             ) {
+
                 update[field] =
                     normalizeText(
                         update[field]
                     );
+
             }
+
         }
     );
 
-
-    // ------------------------------------------------------
-    // NUMBERS
-    // ------------------------------------------------------
 
     [
         "mass",
@@ -1333,24 +1934,24 @@ function buildUpdateData(
         "currentWorth"
     ].forEach(
         field => {
+
             if (
                 Object.prototype.hasOwnProperty.call(
                     update,
                     field
                 )
             ) {
+
                 update[field] =
                     normalizeNumber(
                         update[field]
                     );
+
             }
+
         }
     );
 
-
-    // ------------------------------------------------------
-    // BOOLEAN
-    // ------------------------------------------------------
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -1358,40 +1959,38 @@ function buildUpdateData(
             "isMilking"
         )
     ) {
+
         update.isMilking =
             normalizeBoolean(
                 update.isMilking
             );
+
     }
 
-
-    // ------------------------------------------------------
-    // DATES
-    // ------------------------------------------------------
 
     [
         "dateOfBirth",
         "valuationDate"
     ].forEach(
         field => {
+
             if (
                 Object.prototype.hasOwnProperty.call(
                     update,
                     field
                 )
             ) {
+
                 update[field] =
                     normalizeDate(
                         update[field]
                     );
+
             }
+
         }
     );
 
-
-    // ------------------------------------------------------
-    // STATUS
-    // ------------------------------------------------------
 
     if (
         update.status !== undefined &&
@@ -1399,66 +1998,77 @@ function buildUpdateData(
             update.status
         )
     ) {
-        update.status = "active";
+
+        update.status =
+            "active";
+
     }
 
-
-    // ------------------------------------------------------
-    // FINANCIAL VALIDATION
-    // ------------------------------------------------------
 
     if (
         update.buyingPrice !== undefined &&
         update.buyingPrice < 0
     ) {
+
         throw createError(
             "Buying price cannot be negative.",
             400
         );
+
     }
+
 
     if (
         update.currentWorth !== undefined &&
         update.currentWorth < 0
     ) {
+
         throw createError(
             "Current worth cannot be negative.",
             400
         );
+
     }
 
 
     return update;
+
 }
 
 
 // ==========================================================
 // UPDATE ASSET
 //
-// Controller:
+// This function now handles:
 //
-//     updateAsset(
-//         id,
-//         updateData
-//     )
+//     1. Normal Dairy updates
 //
-// Protected:
+//     2. Standalone asset assignment
 //
-//     code
-//     assetCode
+// Assignment is only processed when the request actually
+// contains:
 //
-// are NEVER modified here.
+//     assignedUserId
+//
+// Therefore ordinary asset edits that do not contain the
+// assignment field will not change existing assignments.
 // ==========================================================
 
 async function updateAsset(
     id,
     data
 ) {
+
     const objectId =
         requireObjectId(
             id,
             "asset"
         );
+
+
+    // ======================================================
+    // LOAD EXISTING ASSET
+    // ======================================================
 
     const existing =
         await Dairy
@@ -1466,13 +2076,40 @@ async function updateAsset(
                 objectId
             );
 
+
     if (!existing) {
+
         throw createError(
             "Asset not found.",
             404
         );
+
     }
 
+
+    // ======================================================
+    // EXTRACT ASSIGNMENT
+    // ======================================================
+    //
+    // undefined:
+    //     assignment field was not submitted.
+    //
+    // null:
+    //     explicitly unassign.
+    //
+    // ObjectId:
+    //     assign to selected user.
+    //
+
+    const assignedUserId =
+        normalizeAssignedUserId(
+            data
+        );
+
+
+    // ======================================================
+    // BUILD NORMAL DAIRY UPDATE
+    // ======================================================
 
     const update =
         buildUpdateData(
@@ -1480,33 +2117,28 @@ async function updateAsset(
         );
 
 
-    // ------------------------------------------------------
-    // STRUCTURE-SPECIFIC FIELDS
+    // ======================================================
+    // STRUCTURE / FACILITY FIELDS
     //
-    // The controller explicitly preserves:
+    // about
+    // mission
+    // refNo
+    // vision
     //
-    //     about
-    //     mission
-    //     refNo
-    //     vision
-    //
-    // The service allows them through.
-    // ------------------------------------------------------
+    // are already retained by buildUpdateData().
+    // ======================================================
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // ANIMAL RULE
-    //
-    // A structure cannot be treated as a milking animal.
-    //
-    // Existing animal status remains controlled by its code.
-    // ------------------------------------------------------
+    // ======================================================
 
     const existingCode =
         existing.code === null ||
         existing.code === undefined
             ? null
             : Number(existing.code);
+
 
     if (
         existingCode === null ||
@@ -1515,25 +2147,32 @@ async function updateAsset(
         ) ||
         existingCode <= 0
     ) {
+
         if (
             Object.prototype.hasOwnProperty.call(
                 update,
                 "isMilking"
             )
         ) {
-            update.isMilking = false;
+
+            update.isMilking =
+                false;
+
         }
+
     }
 
 
-    // ------------------------------------------------------
-    // SAVE
-    // ------------------------------------------------------
+    // ======================================================
+    // SAVE DAIRY UPDATE
+    // ======================================================
 
     Object.keys(update).forEach(
         field => {
+
             existing[field] =
                 update[field];
+
         }
     );
 
@@ -1541,9 +2180,89 @@ async function updateAsset(
     await existing.save();
 
 
-    return prepareDairyRecord(
-        existing
-    );
+    // ======================================================
+    // UPDATE USER ASSIGNMENT
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // This happens AFTER the Dairy record has successfully
+    // saved.
+    //
+    // The Dairy document itself does NOT receive an
+    // assignedUserId field.
+    //
+    // Instead:
+    //
+    //     User.assignedAsset
+    //
+    // is updated.
+    // ======================================================
+
+    let assignment = null;
+
+    if (
+        assignedUserId !== undefined
+    ) {
+
+        assignment =
+            await assignAssetToUser(
+                objectId,
+                assignedUserId
+            );
+
+    }
+
+
+    // ======================================================
+    // RETURN UPDATED ASSET
+    // ======================================================
+
+    const prepared =
+        prepareDairyRecord(
+            existing
+        );
+
+
+    // ======================================================
+    // INCLUDE ASSIGNMENT INFORMATION
+    // ======================================================
+
+    if (assignment) {
+
+        prepared.assignedUser =
+            assignment.assignedUser;
+
+        prepared.assignedUserId =
+            assignment.assignedUserId;
+
+    }
+
+
+    return prepared;
+
+}
+
+
+// ==========================================================
+// GET NET WORTH DATA
+// ==========================================================
+
+async function getNetWorthData() {
+
+    return getNetWorth();
+
+}
+
+
+// ==========================================================
+// GET DAIRY FARM DATA
+// ==========================================================
+
+async function getDairyFarmData(id) {
+
+    return getDairyFarm(id);
+
 }
 
 
@@ -1565,9 +2284,8 @@ module.exports = {
 
     updateAsset,
 
-    getNetWorthData:
-        getNetWorth,
+    getNetWorthData,
 
-    getDairyFarmData:
-        getDairyFarm
+    getDairyFarmData
+
 };
