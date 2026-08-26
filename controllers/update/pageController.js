@@ -432,12 +432,26 @@ exports.viewPage = async (
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// This is a NEW route.
+// This page receives the same view data prepared by
+// /dairy/:id.
 //
-// It does NOT replace or modify /dairy/:id.
+// The only difference is the EJS view being rendered.
 //
-// assetDairies is taken directly from the existing
-// getDairyPage() service response.
+// Therefore asset-page.ejs receives:
+//
+//     dairy
+//     feed
+//     weeklyFeed
+//     commentCount
+//     assetDairies
+//     assignedFarms
+//     animalFeeds
+//     itemLinks
+//     booleanAnimals
+//     booleanFields
+//     medicalDairies
+//     medicalAnimals
+//     user
 //
 // ==========================================================
 
@@ -468,10 +482,18 @@ exports.viewAssets = async (
             getSessionUser(req);
 
 
+        const userId =
+            getUserId(req);
+
+
+        // --------------------------------------------------
+        // GET THE SAME DATA USED BY /dairy/:id
+        // --------------------------------------------------
+
         const data =
             await updateService.getDairyPage(
                 id,
-                getUserId(req)
+                userId
             );
 
 
@@ -489,13 +511,197 @@ exports.viewAssets = async (
         }
 
 
-        const assetDairies =
+        // --------------------------------------------------
+        // ITEM LINKS
+        // --------------------------------------------------
+
+        let itemLinks = [];
+
+
+        if (
+            typeof updateService.getItemLinks ===
+            "function"
+        ) {
+
+            const resolvedItemLinks =
+                await updateService.getItemLinks(
+                    id
+                );
+
+
+            itemLinks =
+                Array.isArray(
+                    resolvedItemLinks
+                )
+                    ? resolvedItemLinks
+                    : [];
+
+        }
+
+
+        // --------------------------------------------------
+        // BOOLEAN DATA
+        // --------------------------------------------------
+
+        let booleanAnimals = [];
+
+        let booleanFields = [];
+
+
+        if (
+            typeof updateService.getBooleanData ===
+            "function"
+        ) {
+
+            const booleanData =
+                await updateService.getBooleanData();
+
+
+            booleanAnimals =
+                Array.isArray(
+                    booleanData?.animals
+                )
+                    ? booleanData.animals
+                    : [];
+
+
+            booleanFields =
+                Array.isArray(
+                    booleanData?.fields
+                )
+                    ? booleanData.fields
+                    : [];
+
+        }
+
+
+        // --------------------------------------------------
+        // DAIRY FARM CHECK
+        // --------------------------------------------------
+
+        const isDairyFarm =
+            data.dairy.code !== null &&
+            data.dairy.code !== undefined &&
+            Number(
+                data.dairy.code
+            ) < 0;
+
+
+        // --------------------------------------------------
+        // ASSET DAIRIES
+        // --------------------------------------------------
+
+        const farmAssets =
             Array.isArray(
                 data.assetDairies
             )
                 ? data.assetDairies
                 : [];
 
+
+        // --------------------------------------------------
+        // MEDICAL DAIRIES
+        // --------------------------------------------------
+
+        const medicalDairies =
+            farmAssets.filter(
+                function(animal) {
+
+                    return (
+                        isPositiveCode(animal) &&
+                        isUnmarkedMedical(animal)
+                    );
+
+                }
+            );
+
+
+        // --------------------------------------------------
+        // MEDICAL ANIMALS
+        // --------------------------------------------------
+
+        const medicalAnimals =
+            farmAssets.filter(
+                function(animal) {
+
+                    return (
+                        isPositiveCode(animal) &&
+                        isUnmarkedMedical(animal)
+                    );
+
+                }
+            );
+
+
+        // --------------------------------------------------
+        // FEED
+        // --------------------------------------------------
+
+        const feed =
+            Array.isArray(
+                data.feed
+            )
+                ? data.feed
+                : [];
+
+
+        // --------------------------------------------------
+        // WEEKLY FEED
+        // --------------------------------------------------
+
+        const weeklyFeed =
+            data.weeklyFeeds ||
+            null;
+
+
+        // --------------------------------------------------
+        // COMMENTS
+        // --------------------------------------------------
+
+        const commentCount =
+            Number(
+                data.commentCount || 0
+            );
+
+
+        // --------------------------------------------------
+        // ASSIGNED FARMS
+        // --------------------------------------------------
+
+        const assignedFarms =
+            Array.isArray(
+                data.assignedFarms
+            )
+                ? data.assignedFarms
+                : [];
+
+
+        // --------------------------------------------------
+        // ANIMAL FEEDS
+        // --------------------------------------------------
+
+        const animalFeeds =
+            Array.isArray(
+                data.animalFeeds
+            )
+                ? data.animalFeeds
+                : [];
+
+
+        // --------------------------------------------------
+        // RENDER ASSET PAGE
+        // --------------------------------------------------
+        //
+        // IMPORTANT:
+        //
+        // Do NOT render "update".
+        // Do NOT render "dairySet".
+        //
+        // This route specifically renders:
+        //
+        //     views/asset-page.ejs
+        //
+        // --------------------------------------------------
 
         return res.render(
             "asset-page",
@@ -507,8 +713,38 @@ exports.viewAssets = async (
                 dairy:
                     data.dairy,
 
+                feed:
+                    feed,
+
+                weeklyFeed:
+                    weeklyFeed,
+
+                commentCount:
+                    commentCount,
+
                 assetDairies:
-                    assetDairies,
+                    farmAssets,
+
+                assignedFarms:
+                    assignedFarms,
+
+                animalFeeds:
+                    animalFeeds,
+
+                itemLinks:
+                    itemLinks,
+
+                booleanAnimals:
+                    booleanAnimals,
+
+                booleanFields:
+                    booleanFields,
+
+                medicalDairies:
+                    medicalDairies,
+
+                medicalAnimals:
+                    medicalAnimals,
 
                 user:
                     sessionUser
