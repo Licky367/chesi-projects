@@ -1,45 +1,214 @@
 // ==========================================================
 // services/accountsService.js
 // ==========================================================
+//
+// ACCOUNT SERVICE
+//
+// RESPONSIBILITIES:
+//
+// 1. Retrieve users
+// 2. Retrieve user profile information
+// 3. Update user roles
+// 4. Assign Dairy Farms to dairyWorkers
+// 5. Unassign Dairy Farms
+// 6. Assign standalone/code-less Dairy assets
+// 7. Unassign standalone/code-less Dairy assets
+// 8. Delete users
+//
+// SINGLE SOURCE OF TRUTH:
+//
+//     models/dairy.js
+//
+// ASSIGNED FARM RULE:
+//
+//     A Dairy Farm is:
+//
+//         code < 0
+//
+//     Farm assignments are stored in:
+//
+//         User.assignedFarm
+//
+//     Only dairyWorker users may have assigned farms.
+//
+//
+// ASSIGNED ASSET RULE:
+//
+//     A standalone assigned asset is:
+//
+//         recordType === "structure"
+//         AND
+//         code === null / undefined
+//         AND
+//         assetCode === null / undefined
+//
+//     These assets are stored in:
+//
+//         User.assignedAsset
+//
+//     assignedAsset is NOT restricted to dairyWorker.
+//
+//     Any user may receive a standalone asset EXCEPT:
+//
+//         role === "admin"
+//
+// ==========================================================
 
-const mongoose = require("mongoose");
+
+const mongoose =
+    require("mongoose");
+
 
 const User =
-  require("../models/projectUser");
+    require("../models/projectUser");
+
 
 const Dairy =
-  require("../models/dairy");
+    require("../models/dairy");
 
 
 // ==========================================================
-// HELPERS
+// CONSTANTS
 // ==========================================================
 
-function normalizeIds(value) {
+const DAIRY_WORKER_ROLE =
+    "dairyWorker";
 
-  if (!Array.isArray(value)) {
 
-    value =
-      value
-        ? [value]
-        : [];
+const ADMIN_ROLE =
+    "admin";
 
-  }
 
-  return [
-    ...new Set(
-      value
+const ALLOWED_ROLES = [
+    "dairyWorker",
+    "poultryWorker",
+    "admin"
+];
+
+
+// ==========================================================
+// HELPER
+// ==========================================================
+//
+// Determines whether a Dairy record is a valid standalone
+// asset.
+//
+// THIS MUST MATCH:
+//
+//     views/admin/standalone.ejs
+//
+// Exactly:
+//
+//     recordType === "structure"
+//     code === null / undefined
+//     assetCode === null / undefined
+//
+// ==========================================================
+
+function isStandaloneAsset(dairy) {
+
+    if (!dairy) {
+        return false;
+    }
+
+
+    const recordType =
+        String(
+            dairy.recordType || ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    const codeIsNull =
+        dairy.code === null ||
+        dairy.code === undefined;
+
+
+    const assetCodeIsNull =
+        dairy.assetCode === null ||
+        dairy.assetCode === undefined;
+
+
+    return (
+        recordType === "structure" &&
+        codeIsNull &&
+        assetCodeIsNull
+    );
+
+}
+
+
+// ==========================================================
+// NORMALIZE IDS
+// ==========================================================
+
+function normalizeIds(ids) {
+
+    if (!Array.isArray(ids)) {
+
+        ids =
+            ids
+                ? [ids]
+                : [];
+
+    }
+
+
+    return ids
         .filter(
-          id =>
-            id &&
-            String(id).trim()
+            id =>
+                id !== null &&
+                id !== undefined &&
+                String(id).trim() !== ""
         )
         .map(
-          id =>
-            String(id)
+            id =>
+                String(id).trim()
+        );
+
+}
+
+
+// ==========================================================
+// REMOVE DUPLICATES
+// ==========================================================
+
+function uniqueIds(ids) {
+
+    return [
+        ...new Set(
+            normalizeIds(ids)
         )
-    )
-  ];
+    ];
+
+}
+
+
+// ==========================================================
+// VALIDATE OBJECT IDS
+// ==========================================================
+
+function validateObjectIds(
+    ids,
+    message
+) {
+
+    for (const id of ids) {
+
+        if (
+            !mongoose.Types.ObjectId.isValid(
+                id
+            )
+        ) {
+
+            throw new Error(
+                message
+            );
+
+        }
+
+    }
 
 }
 
@@ -51,10 +220,10 @@ function normalizeIds(value) {
 exports.getAllUsers =
 async () => {
 
-  return await User.find()
-    .sort({
-      name: 1
-    });
+    return await User.find()
+        .sort({
+            name: 1
+        });
 
 };
 
@@ -62,129 +231,79 @@ async () => {
 // ==========================================================
 // GET USER PROFILE DATA
 // ==========================================================
+//
+// Returns:
+//
+//     user
+//     dairies
+//
+// `dairies` contains ONLY standalone/code-less assets.
+//
+// This is what populates the Assigned Asset dropdown.
+//
+// ==========================================================
 
 exports.getUserProfileData =
 async (userId) => {
 
-  if (
-    !mongoose.Types.ObjectId.isValid(
-      userId
-    )
-  ) {
+    const user =
+        await User.findById(
+            userId
+        )
+        .populate({
+            path: "assignedFarm",
+            select:
+                "name code profileImage status recordType"
+        })
+        .populate({
+            path: "assignedAsset",
+            select:
+                "name code assetCode recordType type condition location description displayImage profileImage status"
+        });
+
+
+    // --------------------------------------------------------
+    // Standalone assets available for assignment.
+    // --------------------------------------------------------
+    //
+    // IMPORTANT:
+    //
+    // Do NOT query:
+    //
+    //     code: { $exists: false }
+    //
+    // alone.
+    //
+    // The standalone definition is the same definition
+    // used by views/admin/standalone.ejs.
+    //
+    // --------------------------------------------------------
+
+    const dairies =
+        await Dairy.find({
+
+            recordType: "structure",
+
+            code: null,
+
+            assetCode: null
+
+        })
+        .select(
+            "name code assetCode recordType type condition location description displayImage profileImage status"
+        )
+        .sort({
+            name: 1
+        });
+
 
     return {
-      user: null,
-      dairies: [],
-      assets: []
+
+        user,
+
+        dairies
+
     };
-
-  }
-
-
-  // ========================================================
-  // USER
-  // ========================================================
-
-  const user =
-    await User.findById(
-      userId
-    )
-      .populate({
-        path: "assignedFarm",
-        select:
-          "name code assetCode profileImage status"
-      })
-      .populate({
-        path: "assignedAsset",
-        select:
-          "name code assetCode type condition location description displayImage profileImage status refNo"
-      });
-
-
-  // ========================================================
-  // AVAILABLE DAIRY FARMS
-  // ========================================================
-  //
-  // Farm:
-  //
-  //     code < 0
-  //
-  // ========================================================
-
-  const dairies =
-    await Dairy.find({
-
-      code: {
-        $lt: 0
-      }
-
-    })
-      .select(
-        "name code assetCode profileImage status"
-      )
-      .sort({
-        name: 1
-      });
-
-
-  // ========================================================
-  // AVAILABLE STANDALONE ASSETS
-  // ========================================================
-  //
-  // Standalone asset:
-  //
-  //     code      === null OR missing
-  //     assetCode === null OR missing
-  //
-  // MongoDB:
-  //
-  //     { code: null }
-  //
-  // matches both:
-  //
-  //     code: null
-  //
-  // and a document where code is absent.
-  //
-  // ========================================================
-
-  const assets =
-    await Dairy.find({
-
-      code: null,
-
-      assetCode: null
-
-    })
-      .select(
-        [
-          "name",
-          "code",
-          "assetCode",
-          "type",
-          "condition",
-          "location",
-          "description",
-          "displayImage",
-          "profileImage",
-          "status",
-          "refNo"
-        ].join(" ")
-      )
-      .sort({
-        name: 1
-      });
-
-
-  return {
-
-    user,
-
-    dairies,
-
-    assets
-
-  };
 
 };
 
@@ -196,18 +315,18 @@ async (userId) => {
 exports.getUserById =
 async (userId) => {
 
-  return await User.findById(
-    userId
-  )
+    return await User.findById(
+        userId
+    )
     .populate({
-      path: "assignedFarm",
-      select:
-        "name code assetCode profileImage status"
+        path: "assignedFarm",
+        select:
+            "name code profileImage status recordType"
     })
     .populate({
-      path: "assignedAsset",
-      select:
-        "name code assetCode type condition location description displayImage profileImage status refNo"
+        path: "assignedAsset",
+        select:
+            "name code assetCode recordType type condition location description displayImage profileImage status"
     });
 
 };
@@ -216,84 +335,92 @@ async (userId) => {
 // ==========================================================
 // UPDATE USER ROLE
 // ==========================================================
+//
+// RULE:
+//
+//     dairyWorker
+//         may have assignedFarm
+//
+//     poultryWorker
+//         cannot have assignedFarm
+//
+//     admin
+//         cannot have assignedFarm
+//
+// IMPORTANT:
+//
+//     assignedAsset is NOT cleared here.
+//
+// A standalone asset may remain assigned to a user even if
+// their role changes between dairyWorker and poultryWorker.
+//
+// However, an admin must not retain assigned assets because
+// admins are not permitted to receive assignedAsset records.
+//
+// ==========================================================
 
 exports.updateUserRole =
 async (
-  userId,
-  role
+    userId,
+    role
 ) => {
 
-  if (
-    ![
-      "dairyWorker",
-      "poultryWorker",
-      "admin"
-    ].includes(role)
-  ) {
+    if (
+        !ALLOWED_ROLES.includes(
+            role
+        )
+    ) {
 
-    throw new Error(
-      "Invalid user role."
-    );
+        throw new Error(
+            "Invalid user role."
+        );
 
-  }
+    }
 
 
-  const update = {
-    role
-  };
+    const update = {
+        role
+    };
 
 
-  // --------------------------------------------------------
-  // Only dairyWorker can have Dairy Farms.
-  // --------------------------------------------------------
+    // --------------------------------------------------------
+    // Only dairyWorker can have Dairy Farms.
+    // --------------------------------------------------------
 
-  if (
-    role !== "dairyWorker"
-  ) {
+    if (
+        role !== DAIRY_WORKER_ROLE
+    ) {
 
-    update.assignedFarm = [];
+        update.assignedFarm = [];
 
-  }
-
-
-  // --------------------------------------------------------
-  // Admins cannot have standalone assets.
-  // --------------------------------------------------------
-
-  if (
-    role === "admin"
-  ) {
-
-    update.assignedAsset = [];
-
-  }
+    }
 
 
-  const updatedUser =
-    await User.findByIdAndUpdate(
+    // --------------------------------------------------------
+    // Admins cannot have assigned standalone assets.
+    // --------------------------------------------------------
 
-      userId,
+    if (
+        role === ADMIN_ROLE
+    ) {
 
-      update,
+        update.assignedAsset = [];
 
-      {
-        new: true,
-        runValidators: true
-      }
+    }
+
+
+    return await User.findByIdAndUpdate(
+
+        userId,
+
+        update,
+
+        {
+            new: true,
+            runValidators: true
+        }
 
     );
-
-
-  if (!updatedUser) {
-
-    throw new Error(
-      "User not found."
-    );
-
-  }
-
-
-  return updatedUser;
 
 };
 
@@ -301,157 +428,159 @@ async (
 // ==========================================================
 // ASSIGN DAIRY FARMS
 // ==========================================================
+//
+// ONLY dairyWorker.
+//
+// A valid farm:
+//
+//     code < 0
+//
+// Farm relationship:
+//
+//     User.assignedFarm
+//
+// ==========================================================
 
 exports.assignDairyFarms =
 async (
-  userId,
-  assignedFarms
+    userId,
+    assignedFarms
 ) => {
 
-  const user =
-    await User.findById(
-      userId
+    const user =
+        await User.findById(
+            userId
+        );
+
+
+    if (!user) {
+
+        throw new Error(
+            "User not found."
+        );
+
+    }
+
+
+    if (
+        user.role !== DAIRY_WORKER_ROLE
+    ) {
+
+        throw new Error(
+            "Only a Dairy Worker can be assigned Dairy Farms."
+        );
+
+    }
+
+
+    const uniqueIds =
+        uniqueIds(
+            assignedFarms
+        );
+
+
+    if (!uniqueIds.length) {
+
+        return user;
+
+    }
+
+
+    validateObjectIds(
+        uniqueIds,
+        "One or more selected Dairy Farms are invalid."
     );
 
 
-  if (!user) {
+    // --------------------------------------------------------
+    // Find only Dairy Farm structures.
+    //
+    // Farm:
+    //
+    //     code < 0
+    //
+    // --------------------------------------------------------
 
-    throw new Error(
-      "User not found."
-    );
+    const farms =
+        await Dairy.find({
 
-  }
+            _id: {
+                $in: uniqueIds
+            },
 
+            code: {
+                $lt: 0
+            }
 
-  if (
-    user.role !== "dairyWorker"
-  ) {
-
-    throw new Error(
-      "Only a Dairy Worker can be assigned Dairy Farms."
-    );
-
-  }
-
-
-  const uniqueIds =
-    normalizeIds(
-      assignedFarms
-    );
+        })
+        .select(
+            "_id code name"
+        );
 
 
-  if (!uniqueIds.length) {
+    if (
+        farms.length !== uniqueIds.length
+    ) {
+
+        throw new Error(
+            "One or more selected records are not valid Dairy Farms."
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // Existing assignments.
+    // --------------------------------------------------------
+
+    const existingIds =
+        new Set(
+
+            (user.assignedFarm || [])
+                .map(
+                    id =>
+                        String(
+                            id._id || id
+                        )
+                )
+
+        );
+
+
+    // --------------------------------------------------------
+    // Add only new assignments.
+    // --------------------------------------------------------
+
+    for (
+        const farm
+        of farms
+    ) {
+
+        const id =
+            String(
+                farm._id
+            );
+
+
+        if (
+            !existingIds.has(id)
+        ) {
+
+            user.assignedFarm.push(
+                farm._id
+            );
+
+            existingIds.add(id);
+
+        }
+
+    }
+
+
+    await user.save();
+
 
     return user;
-
-  }
-
-
-  // --------------------------------------------------------
-  // Validate ObjectIds.
-  // --------------------------------------------------------
-
-  for (
-    const id of uniqueIds
-  ) {
-
-    if (
-      !mongoose.Types.ObjectId.isValid(
-        id
-      )
-    ) {
-
-      throw new Error(
-        "One or more selected Dairy Farms are invalid."
-      );
-
-    }
-
-  }
-
-
-  // --------------------------------------------------------
-  // Find only negative-code Dairy Farms.
-  // --------------------------------------------------------
-
-  const farms =
-    await Dairy.find({
-
-      _id: {
-        $in: uniqueIds
-      },
-
-      code: {
-        $lt: 0
-      }
-
-    })
-      .select(
-        "_id name code assetCode"
-      );
-
-
-  if (
-    farms.length !==
-    uniqueIds.length
-  ) {
-
-    throw new Error(
-      "One or more selected records are not valid Dairy Farms."
-    );
-
-  }
-
-
-  // --------------------------------------------------------
-  // Existing assignments.
-  // --------------------------------------------------------
-
-  const existingIds =
-    new Set(
-
-      (user.assignedFarm || [])
-        .map(
-          id =>
-            String(
-              id._id || id
-            )
-        )
-
-    );
-
-
-  // --------------------------------------------------------
-  // Add only new farms.
-  // --------------------------------------------------------
-
-  for (
-    const farm of farms
-  ) {
-
-    const id =
-      farm._id.toString();
-
-
-    if (
-      !existingIds.has(id)
-    ) {
-
-      user.assignedFarm.push(
-        farm._id
-      );
-
-      existingIds.add(id);
-
-    }
-
-  }
-
-
-  await user.save();
-
-
-  return user;
 
 };
 
@@ -462,373 +591,361 @@ async (
 
 exports.unassignDairyFarm =
 async (
-  userId,
-  farmId
+    userId,
+    farmId
 ) => {
 
-  const user =
-    await User.findById(
-      userId
-    );
+    const user =
+        await User.findById(
+            userId
+        );
 
 
-  if (!user) {
+    if (!user) {
 
-    throw new Error(
-      "User not found."
-    );
+        throw new Error(
+            "User not found."
+        );
 
-  }
-
-
-  if (
-    user.role !== "dairyWorker"
-  ) {
-
-    throw new Error(
-      "Only a Dairy Worker can have assigned Dairy Farms."
-    );
-
-  }
+    }
 
 
-  if (
-    !mongoose.Types.ObjectId.isValid(
-      farmId
-    )
-  ) {
+    if (
+        user.role !== DAIRY_WORKER_ROLE
+    ) {
 
-    throw new Error(
-      "Invalid Dairy Farm."
-    );
+        throw new Error(
+            "Only a Dairy Worker can have assigned Dairy Farms."
+        );
 
-  }
+    }
 
 
-  const farm =
-    await Dairy.findOne({
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            farmId
+        )
+    ) {
 
-      _id: farmId,
+        throw new Error(
+            "Invalid Dairy Farm."
+        );
 
-      code: {
-        $lt: 0
-      }
-
-    });
-
-
-  if (!farm) {
-
-    throw new Error(
-      "The selected record is not a valid Dairy Farm."
-    );
-
-  }
+    }
 
 
-  user.assignedFarm =
-    (user.assignedFarm || [])
-      .filter(
-        id =>
-          String(
-            id._id || id
-          ) !==
-          String(farmId)
-      );
+    const farm =
+        await Dairy.findOne({
+
+            _id: farmId,
+
+            code: {
+                $lt: 0
+            }
+
+        });
 
 
-  await user.save();
+    if (!farm) {
+
+        throw new Error(
+            "The selected record is not a valid Dairy Farm."
+        );
+
+    }
 
 
-  return user;
+    user.assignedFarm =
+        (
+            user.assignedFarm || []
+        )
+        .filter(
+            id =>
+                String(
+                    id._id || id
+                ) !==
+                String(farmId)
+        );
+
+
+    await user.save();
+
+
+    return user;
 
 };
 
 
 // ==========================================================
-// ASSIGN STANDALONE DAIRY ASSETS
+// ASSIGN STANDALONE ASSETS
 // ==========================================================
 //
-// USER FIELD:
+// IMPORTANT:
+//
+// Unlike assignedFarm:
 //
 //     assignedAsset
 //
-// ELIGIBLE ASSET:
+// can be assigned to:
 //
-//     code      === null OR missing
-//     assetCode === null OR missing
+//     dairyWorker
+//     poultryWorker
+//     any other non-admin user
 //
-// ELIGIBLE USER:
+// but NEVER:
 //
-//     any user except admin
+//     admin
 //
 // ==========================================================
 
 exports.assignDairyAssets =
 async (
-  userId,
-  assignedAssets
+    userId,
+    assignedAssets
 ) => {
 
-  const user =
-    await User.findById(
-      userId
+    const user =
+        await User.findById(
+            userId
+        );
+
+
+    if (!user) {
+
+        throw new Error(
+            "User not found."
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // Admins cannot receive assigned assets.
+    // --------------------------------------------------------
+
+    if (
+        user.role === ADMIN_ROLE
+    ) {
+
+        throw new Error(
+            "Standalone assets cannot be assigned to an Administrator."
+        );
+
+    }
+
+
+    const uniqueIds =
+        uniqueIds(
+            assignedAssets
+        );
+
+
+    if (!uniqueIds.length) {
+
+        return user;
+
+    }
+
+
+    validateObjectIds(
+        uniqueIds,
+        "One or more selected assets are invalid."
     );
 
 
-  if (!user) {
+    // --------------------------------------------------------
+    // Find ONLY standalone assets.
+    //
+    // Exact standalone rule:
+    //
+    //     recordType === "structure"
+    //     code === null
+    //     assetCode === null
+    //
+    // --------------------------------------------------------
 
-    throw new Error(
-      "User not found."
-    );
+    const assets =
+        await Dairy.find({
 
-  }
+            _id: {
+                $in: uniqueIds
+            },
 
+            recordType: "structure",
 
-  // --------------------------------------------------------
-  // Admin protection.
-  // --------------------------------------------------------
+            code: null,
 
-  if (
-    user.role === "admin"
-  ) {
+            assetCode: null
 
-    throw new Error(
-      "An Administrator cannot be assigned standalone Dairy assets."
-    );
-
-  }
+        })
+        .select(
+            "_id name code assetCode recordType type condition location description displayImage profileImage status"
+        );
 
 
-  const uniqueIds =
-    normalizeIds(
-      assignedAssets
-    );
+    // --------------------------------------------------------
+    // Every submitted ID must resolve to a standalone asset.
+    // --------------------------------------------------------
+
+    if (
+        assets.length !== uniqueIds.length
+    ) {
+
+        throw new Error(
+            "One or more selected records are not valid standalone assets."
+        );
+
+    }
 
 
-  if (!uniqueIds.length) {
+    // --------------------------------------------------------
+    // Existing assigned assets.
+    // --------------------------------------------------------
+
+    const existingIds =
+        new Set(
+
+            (user.assignedAsset || [])
+                .map(
+                    id =>
+                        String(
+                            id._id || id
+                        )
+                )
+
+        );
+
+
+    // --------------------------------------------------------
+    // Add only assets that are not already assigned.
+    // --------------------------------------------------------
+
+    for (
+        const asset
+        of assets
+    ) {
+
+        const id =
+            String(
+                asset._id
+            );
+
+
+        if (
+            !existingIds.has(id)
+        ) {
+
+            user.assignedAsset.push(
+                asset._id
+            );
+
+            existingIds.add(id);
+
+        }
+
+    }
+
+
+    await user.save();
+
 
     return user;
-
-  }
-
-
-  // --------------------------------------------------------
-  // Validate ObjectIds.
-  // --------------------------------------------------------
-
-  for (
-    const id of uniqueIds
-  ) {
-
-    if (
-      !mongoose.Types.ObjectId.isValid(
-        id
-      )
-    ) {
-
-      throw new Error(
-        "One or more selected assets are invalid."
-      );
-
-    }
-
-  }
-
-
-  // --------------------------------------------------------
-  // Find only standalone/code-less assets.
-  //
-  // IMPORTANT:
-  //
-  //     code: null
-  //     assetCode: null
-  //
-  // MongoDB treats null matching as:
-  //
-  //     explicit null
-  //     OR field does not exist
-  //
-  // --------------------------------------------------------
-
-  const assets =
-    await Dairy.find({
-
-      _id: {
-        $in: uniqueIds
-      },
-
-      code: null,
-
-      assetCode: null
-
-    })
-      .select(
-        "_id name code assetCode type condition location description displayImage profileImage status refNo"
-      );
-
-
-  if (
-    assets.length !==
-    uniqueIds.length
-  ) {
-
-    throw new Error(
-      "One or more selected records are not valid standalone assets."
-    );
-
-  }
-
-
-  // --------------------------------------------------------
-  // Existing assignedAsset IDs.
-  // --------------------------------------------------------
-
-  if (
-    !Array.isArray(
-      user.assignedAsset
-    )
-  ) {
-
-    user.assignedAsset = [];
-
-  }
-
-
-  const existingIds =
-    new Set(
-
-      user.assignedAsset
-        .map(
-          id =>
-            String(
-              id._id || id
-            )
-        )
-
-    );
-
-
-  // --------------------------------------------------------
-  // Add only assets not already assigned.
-  // --------------------------------------------------------
-
-  for (
-    const asset of assets
-  ) {
-
-    const id =
-      asset._id.toString();
-
-
-    if (
-      !existingIds.has(id)
-    ) {
-
-      user.assignedAsset.push(
-        asset._id
-      );
-
-      existingIds.add(id);
-
-    }
-
-  }
-
-
-  await user.save();
-
-
-  return user;
 
 };
 
 
 // ==========================================================
-// UNASSIGN ONE STANDALONE DAIRY ASSET
+// UNASSIGN ONE STANDALONE ASSET
+// ==========================================================
+//
+// The asset itself remains in the Dairy collection.
+//
+// Only the relationship:
+//
+//     User.assignedAsset
+//
+// is removed.
+//
 // ==========================================================
 
 exports.unassignDairyAsset =
 async (
-  userId,
-  assetId
+    userId,
+    assetId
 ) => {
 
-  const user =
-    await User.findById(
-      userId
-    );
+    const user =
+        await User.findById(
+            userId
+        );
 
 
-  if (!user) {
+    if (!user) {
 
-    throw new Error(
-      "User not found."
-    );
+        throw new Error(
+            "User not found."
+        );
 
-  }
-
-
-  if (
-    user.role === "admin"
-  ) {
-
-    throw new Error(
-      "An Administrator cannot have assigned standalone Dairy assets."
-    );
-
-  }
+    }
 
 
-  if (
-    !mongoose.Types.ObjectId.isValid(
-      assetId
-    )
-  ) {
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            assetId
+        )
+    ) {
 
-    throw new Error(
-      "Invalid standalone asset."
-    );
+        throw new Error(
+            "Invalid standalone asset."
+        );
 
-  }
-
-
-  const asset =
-    await Dairy.findOne({
-
-      _id: assetId,
-
-      code: null,
-
-      assetCode: null
-
-    });
+    }
 
 
-  if (!asset) {
+    // --------------------------------------------------------
+    // Confirm that the record is still a standalone asset.
+    // --------------------------------------------------------
 
-    throw new Error(
-      "The selected record is not a valid standalone asset."
-    );
+    const asset =
+        await Dairy.findOne({
 
-  }
+            _id: assetId,
 
+            recordType: "structure",
 
-  user.assignedAsset =
-    (user.assignedAsset || [])
-      .filter(
-        id =>
-          String(
-            id._id || id
-          ) !==
-          String(assetId)
-      );
+            code: null,
+
+            assetCode: null
+
+        });
 
 
-  await user.save();
+    if (!asset) {
+
+        throw new Error(
+            "The selected record is not a valid standalone asset."
+        );
+
+    }
 
 
-  return user;
+    user.assignedAsset =
+        (
+            user.assignedAsset || []
+        )
+        .filter(
+            id =>
+                String(
+                    id._id || id
+                ) !==
+                String(assetId)
+        );
+
+
+    await user.save();
+
+
+    return user;
 
 };
 
@@ -838,23 +955,12 @@ async (
 // ==========================================================
 
 exports.deleteUser =
-async (userId) => {
+async (
+    userId
+) => {
 
-  const deletedUser =
-    await User.findByIdAndDelete(
-      userId
+    return await User.findByIdAndDelete(
+        userId
     );
-
-
-  if (!deletedUser) {
-
-    throw new Error(
-      "User not found."
-    );
-
-  }
-
-
-  return deletedUser;
 
 };
