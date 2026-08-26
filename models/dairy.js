@@ -70,14 +70,16 @@
 //
 // IMPORTANT:
 //
-//     User assignment is NOT represented by assetCode.
+//     assetCode is FARM OWNERSHIP.
+//
+//     assetCode is NOT USER ASSIGNMENT.
 //
 //     A standalone asset assigned to a user remains:
 //
 //         code       = null
 //         assetCode  = null
 //
-//     The assignment is stored in:
+//     The user assignment is stored in:
 //
 //         User.assignedAsset[]
 //
@@ -96,10 +98,6 @@
 //
 //     isAssignableAsset === true
 //
-// These assets may be assigned by an admin to a User through:
-//
-//     User.assignedAsset
-//
 // ==========================================================
 //
 // STORAGE FACILITY
@@ -113,12 +111,21 @@
 //     type       = "agroStore"
 //     roomNumber = negative integer
 //
+// IMPORTANT:
+//
+//     Database values are EXACTLY:
+//
+//         "room"
+//         "agroStore"
+//
+//     Do NOT convert these values to lowercase.
+//
 // ==========================================================
 //
 // STORAGE CONTENT
 // ----------------------------------------------------------
 //
-//     dwellNumber >= 0
+//     dwellNumber > 0
 //         = allocated to normal Room
 //
 //     dwellNumber < 0
@@ -126,6 +133,9 @@
 //
 //     dwellNumber === null
 //         = not currently allocated
+//
+//     dwellNumber === 0
+//         = invalid
 //
 // ==========================================================
 //
@@ -150,8 +160,7 @@
 // ==========================================================
 
 
-const mongoose =
-    require("mongoose");
+const mongoose = require("mongoose");
 
 
 // ==========================================================
@@ -217,6 +226,16 @@ const DAIRY_FARM_TYPES = [
 // ==========================================================
 // STRUCTURE TYPES
 // ==========================================================
+//
+// IMPORTANT:
+//
+//     "room"
+//     "agroStore"
+//     "feeds"
+//
+// are exact database values.
+//
+// ==========================================================
 
 const STRUCTURE_TYPES = [
 
@@ -260,8 +279,7 @@ const STORAGE_TYPES = [
 // FEED TYPE
 // ==========================================================
 
-const FEED_TYPE =
-    "feeds";
+const FEED_TYPE = "feeds";
 
 
 // ==========================================================
@@ -366,6 +384,16 @@ function isValidFarmCode(value) {
 // ==========================================================
 // HELPER: VALID DWELL NUMBER
 // ==========================================================
+//
+// A dwellNumber represents an actual storage allocation.
+//
+//     positive = Room
+//     negative = AgroStore
+//     null     = not allocated
+//
+// Zero is intentionally invalid.
+//
+// ==========================================================
 
 function isValidDwellNumber(value) {
 
@@ -373,7 +401,10 @@ function isValidDwellNumber(value) {
 
         value === null ||
         value === undefined ||
-        Number.isInteger(value)
+        (
+            Number.isInteger(value) &&
+            value !== 0
+        )
 
     );
 
@@ -421,6 +452,14 @@ function normalizeProfileImage(
 
 // ==========================================================
 // HELPER: FEMALE ANIMAL
+// ==========================================================
+//
+// Even positive animal code
+//     = Female
+//
+// Odd positive animal code
+//     = Male
+//
 // ==========================================================
 
 function isFemaleAnimalCode(code) {
@@ -770,7 +809,7 @@ const dairySchema =
 
 
             // ==================================================
-            // FEMALE / ANIMAL STATUS FIELDS
+            // FEMALE / ANIMAL STATUS
             // ==================================================
 
             isMilking: {
@@ -905,17 +944,6 @@ const dairySchema =
             // ==================================================
             // PARENT FARM CODE
             // ==================================================
-            //
-            // IMPORTANT:
-            //
-            // This is ownership/location relationship.
-            //
-            // It is NOT user assignment.
-            //
-            // A standalone asset assigned to a worker still
-            // keeps assetCode = null.
-            //
-            // ==================================================
 
             assetCode: {
 
@@ -993,8 +1021,10 @@ const dairySchema =
 
 
                             return (
+
                                 value === null ||
                                 value === undefined
+
                             );
 
                         },
@@ -1007,7 +1037,7 @@ const dairySchema =
                             ) {
 
                                 return (
-                                    "A room must have a positive integer roomNumber."
+                                    "A Room must have a positive integer roomNumber."
                                 );
 
                             }
@@ -1057,7 +1087,7 @@ const dairySchema =
                         },
 
                     message:
-                        "dwellNumber must be a whole number or null."
+                        "dwellNumber must be a non-zero whole number or null."
 
                 }
 
@@ -1584,15 +1614,6 @@ dairySchema.virtual(
 // ==========================================================
 // VIRTUAL: IS MANUAL ASSET
 // ==========================================================
-//
-// Legacy-compatible name.
-//
-// A manual/standalone asset is a structure with:
-//
-//     code      = null
-//     assetCode = null
-//
-// ==========================================================
 
 dairySchema.virtual(
     "isManualAsset"
@@ -1616,19 +1637,11 @@ dairySchema.virtual(
 // VIRTUAL: IS ASSIGNABLE ASSET
 // ==========================================================
 //
-// THIS IS THE NEW ARCHITECTURAL DEFINITION.
+// User assignment is NOT represented here.
 //
-// An assignable asset:
-//
-//     - is a structure
-//     - has no entity code
-//     - has no parent farm assetCode
-//
-// Assignment to a user is stored separately in:
+// User assignment is stored in:
 //
 //     User.assignedAsset[]
-//
-// Assigning it to a user does NOT modify this Dairy document.
 //
 // ==========================================================
 
@@ -1651,16 +1664,14 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// VIRTUAL: IS ASSIGNED ASSET
+// VIRTUAL: IS FARM-OWNED STRUCTURE / ASSET
 // ==========================================================
 //
 // IMPORTANT:
 //
-// This means the asset is associated with a parent farm.
+//     This does NOT mean assigned to a User.
 //
-// It does NOT mean User.assignedAsset.
-//
-// User assignment is determined from the User document.
+//     It means the structure belongs to a Dairy Farm.
 //
 // ==========================================================
 
@@ -1681,10 +1692,6 @@ dairySchema.virtual(
 
 // ==========================================================
 // VIRTUAL: IS STANDALONE ASSET
-// ==========================================================
-//
-// Compatibility alias for existing code.
-//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1827,6 +1834,14 @@ dairySchema.virtual(
 // ==========================================================
 // VIRTUAL: IS AGROSTORE CONTENT
 // ==========================================================
+//
+// AgroStore content is identified by:
+//
+//     dwellNumber < 0
+//
+// The storage facility itself is excluded.
+//
+// ==========================================================
 
 dairySchema.virtual(
     "isAgroStoreContent"
@@ -1852,7 +1867,7 @@ dairySchema.virtual(
     "storageDwellNumber"
 ).get(function () {
 
-    return this.isAgroStoreContent
+    return this.isStorageContent
 
         ? Number(this.dwellNumber)
 
@@ -1869,13 +1884,32 @@ dairySchema.virtual(
     "hasNegativeDwell"
 ).get(function () {
 
-    return this.isAgroStoreContent;
+    return (
+
+        this.dwellNumber !== null &&
+        this.dwellNumber !== undefined &&
+        Number(this.dwellNumber) < 0 &&
+        !this.isStorageFacility
+
+    );
 
 });
 
 
 // ==========================================================
 // VIRTUAL: IS FEED
+// ==========================================================
+//
+// IMPORTANT:
+//
+//     NO toLowerCase().
+//
+// Database value:
+//
+//     "feeds"
+//
+// must remain exact.
+//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1884,10 +1918,8 @@ dairySchema.virtual(
 
     return (
 
-        String(this.type || "")
-            .trim()
-            .toLowerCase() ===
-            FEED_TYPE
+        this.recordType === "structure" &&
+        this.type === FEED_TYPE
 
     );
 
@@ -1943,7 +1975,9 @@ dairySchema.virtual(
         Number(this.quantity);
 
 
-    if (!Number.isFinite(quantity)) {
+    if (
+        !Number.isFinite(quantity)
+    ) {
 
         return "";
 
@@ -2093,18 +2127,14 @@ dairySchema.virtual(
 
 
     const dob =
-        new Date(
-            this.dateOfBirth
-        );
+        new Date(this.dateOfBirth);
 
     const now =
         new Date();
 
 
     if (
-        Number.isNaN(
-            dob.getTime()
-        ) ||
+        Number.isNaN(dob.getTime()) ||
         dob > now
     ) {
 
@@ -2130,14 +2160,12 @@ dairySchema.virtual(
 
         months--;
 
-
         const previousMonth =
             new Date(
                 now.getFullYear(),
                 now.getMonth(),
                 0
             );
-
 
         days +=
             previousMonth.getDate();
@@ -2181,18 +2209,14 @@ dairySchema.virtual(
 
 
     const dob =
-        new Date(
-            this.dateOfBirth
-        );
+        new Date(this.dateOfBirth);
 
     const now =
         new Date();
 
 
     if (
-        Number.isNaN(
-            dob.getTime()
-        )
+        Number.isNaN(dob.getTime())
     ) {
 
         return null;
@@ -2214,8 +2238,7 @@ dairySchema.virtual(
         monthDifference < 0 ||
         (
             monthDifference === 0 &&
-            now.getDate() <
-                dob.getDate()
+            now.getDate() < dob.getDate()
         )
     ) {
 
@@ -2798,23 +2821,16 @@ dairySchema.pre(
 
 
             this.refNo = null;
-
             this.assetCode = null;
-
             this.roomNumber = null;
-
             this.dwellNumber = null;
 
             this.dateOfBirth = null;
-
             this.mass = 0;
 
             this.quantity = null;
-
             this.unit = null;
-
             this.stockUpdateNote = "";
-
             this.stockUpdates = [];
 
 
@@ -2862,7 +2878,6 @@ dairySchema.pre(
 
 
             if (
-                !this.assetCode ||
                 !isValidFarmCode(
                     this.assetCode
                 )
@@ -2920,11 +2935,8 @@ dairySchema.pre(
             this.roomNumber = null;
 
             this.quantity = null;
-
             this.unit = null;
-
             this.stockUpdateNote = "";
-
             this.stockUpdates = [];
 
         }
@@ -2937,6 +2949,10 @@ dairySchema.pre(
         if (
             this.recordType === "structure"
         ) {
+
+            // --------------------------------------------------
+            // Structures NEVER have an entity code.
+            // --------------------------------------------------
 
             if (
                 this.code !== null &&
@@ -2956,7 +2972,6 @@ dairySchema.pre(
 
 
             this.dateOfBirth = null;
-
             this.mass = 0;
 
 
@@ -2968,6 +2983,10 @@ dairySchema.pre(
                 }
             );
 
+
+            // --------------------------------------------------
+            // Validate structure type.
+            // --------------------------------------------------
 
             if (
                 this.type &&
@@ -2989,7 +3008,7 @@ dairySchema.pre(
 
 
             // --------------------------------------------------
-            // Farm-owned structure
+            // Farm ownership.
             // --------------------------------------------------
 
             if (
@@ -3018,7 +3037,7 @@ dairySchema.pre(
 
 
             // ==================================================
-            // STORAGE FACILITY
+            // NORMAL ROOM
             // ==================================================
 
             if (
@@ -3047,6 +3066,10 @@ dairySchema.pre(
 
             }
 
+
+            // ==================================================
+            // AGROSTORE
+            // ==================================================
 
             if (
                 this.type === "agroStore"
@@ -3093,7 +3116,7 @@ dairySchema.pre(
 
 
         // ======================================================
-        // DWELL NUMBER
+        // DWELL NUMBER VALIDATION
         // ======================================================
 
         if (
@@ -3104,7 +3127,7 @@ dairySchema.pre(
 
             const error =
                 new Error(
-                    "dwellNumber must be a whole number or null."
+                    "dwellNumber must be a non-zero whole number or null."
                 );
 
             error.status = 400;
@@ -3115,7 +3138,7 @@ dairySchema.pre(
 
 
         // ======================================================
-        // STORAGE DIRECTION VALIDATION
+        // STORAGE FACILITY CANNOT BE CONTENT
         // ======================================================
 
         if (
@@ -3219,15 +3242,10 @@ dairySchema.pre(
         ) {
 
             this.medicalAttention.type = "";
-
             this.medicalAttention.details = "";
-
             this.medicalAttention.charges = 0;
-
             this.medicalAttention.description = "";
-
             this.medicalAttention.markedBy = null;
-
             this.medicalAttention.markedAt = null;
 
         }
@@ -3344,11 +3362,8 @@ dairySchema.pre(
         } else {
 
             this.quantity = null;
-
             this.unit = null;
-
             this.stockUpdateNote = "";
-
             this.stockUpdates = [];
 
         }
@@ -3379,24 +3394,20 @@ dairySchema.pre(
 
             this.refNo = null;
 
-        } else {
+        } else if (
+            this.refNo !== null &&
+            this.refNo !== undefined
+        ) {
 
-            if (
-                this.refNo !== null &&
-                this.refNo !== undefined
-            ) {
-
-                this.refNo =
-                    String(
-                        this.refNo
-                    ).trim();
+            this.refNo =
+                String(
+                    this.refNo
+                ).trim();
 
 
-                if (!this.refNo) {
+            if (!this.refNo) {
 
-                    this.refNo = null;
-
-                }
+                this.refNo = null;
 
             }
 
@@ -3532,23 +3543,16 @@ dairySchema.pre(
         ) {
 
             this.refNo = null;
-
             this.assetCode = null;
-
             this.roomNumber = null;
-
             this.dwellNumber = null;
 
             this.dateOfBirth = null;
-
             this.mass = 0;
 
             this.quantity = null;
-
             this.unit = null;
-
             this.stockUpdateNote = "";
-
             this.stockUpdates = [];
 
 
@@ -3572,15 +3576,11 @@ dairySchema.pre(
         ) {
 
             this.refNo = null;
-
             this.roomNumber = null;
 
             this.quantity = null;
-
             this.unit = null;
-
             this.stockUpdateNote = "";
-
             this.stockUpdates = [];
 
 
@@ -3613,7 +3613,6 @@ dairySchema.pre(
         ) {
 
             this.dateOfBirth = null;
-
             this.mass = 0;
 
 
@@ -3718,11 +3717,8 @@ dairySchema.pre(
         ) {
 
             this.quantity = null;
-
             this.unit = null;
-
             this.stockUpdateNote = "";
-
             this.stockUpdates = [];
 
         }
@@ -3800,14 +3796,17 @@ dairySchema.pre(
         if (
             this.dwellNumber !== null &&
             this.dwellNumber !== undefined &&
-            !Number.isInteger(
-                this.dwellNumber
+            (
+                !Number.isInteger(
+                    this.dwellNumber
+                ) ||
+                this.dwellNumber === 0
             )
         ) {
 
             const error =
                 new Error(
-                    "dwellNumber must be a whole number or null."
+                    "dwellNumber must be a non-zero whole number or null."
                 );
 
             error.status = 400;
@@ -4091,22 +4090,6 @@ dairySchema.statics.getFarmAssets =
 // ==========================================================
 // STATIC: GET ASSIGNABLE ASSETS
 // ==========================================================
-//
-// Returns standalone assets that an admin may assign to a User.
-//
-// Eligibility:
-//
-//     recordType = structure
-//     code       = null
-//     assetCode  = null
-//
-// Assignment itself is stored in:
-//
-//     User.assignedAsset[]
-//
-// This query DOES NOT modify the Dairy document.
-//
-// ==========================================================
 
 dairySchema.statics.getAssignableAssets =
     function () {
@@ -4127,11 +4110,7 @@ dairySchema.statics.getAssignableAssets =
 
 
 // ==========================================================
-// STATIC: GET UNASSIGNED / STANDALONE ASSETS
-// ==========================================================
-//
-// Compatibility alias.
-//
+// STATIC: GET STANDALONE ASSETS
 // ==========================================================
 
 dairySchema.statics.getStandaloneAssets =
@@ -4208,8 +4187,7 @@ dairySchema.statics.getFarmRoomContent =
 
         if (
             !isValidFarmCode(farm) ||
-            !Number.isInteger(room) ||
-            room < 0
+            !isValidRoomNumber(room)
         ) {
 
             return this.find({
@@ -4242,35 +4220,10 @@ dairySchema.statics.getFarmNormalRoomContent =
         roomNumber
     ) {
 
-        const farm =
-            Number(farmCode);
-
-        const room =
-            Number(roomNumber);
-
-
-        if (
-            !isValidFarmCode(farm) ||
-            !Number.isInteger(room) ||
-            room < 0
-        ) {
-
-            return this.find({
-                _id: null
-            });
-
-        }
-
-
-        return this.find({
-
-            assetCode: farm,
-
-            dwellNumber: room,
-
-            status: "active"
-
-        });
+        return this.getFarmRoomContent(
+            farmCode,
+            roomNumber
+        );
 
     };
 
@@ -4294,8 +4247,7 @@ dairySchema.statics.getAgroStoreContent =
 
         if (
             !isValidFarmCode(farm) ||
-            !Number.isInteger(store) ||
-            store >= 0
+            !isValidAgroStoreNumber(store)
         ) {
 
             return this.find({
@@ -4606,8 +4558,7 @@ dairySchema.statics.getAgroStoreFeeds =
 
         if (
             !isValidFarmCode(farm) ||
-            !Number.isInteger(store) ||
-            store >= 0
+            !isValidAgroStoreNumber(store)
         ) {
 
             return this.find({
