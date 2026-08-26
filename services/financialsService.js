@@ -18,6 +18,8 @@
 //        currentWorth
 //        revenue
 //
+//    `revenue` is calculated from MilkSummary.
+//
 // 2. models/financials.js
 //
 //    Stores financial TRANSACTIONS:
@@ -33,14 +35,20 @@
 //
 // 3. models/milkSummary.js
 //
-//    Used to calculate Dairy revenue from milk production/sales.
+//    Used to calculate Dairy.revenue from milk production/sales.
 //
 // ==========================================================
 //
-// FARM FINANCIAL RULE
+// FINANCIAL RULE
 // ----------------------------------------------------------
 //
-// A farm's total is:
+// A Dairy's financial values consist of:
+//
+//     ITS OWN DAIRY VALUES
+//     +
+//     FINANCIAL TRANSACTIONS BELONGING TO IT
+//
+// A farm's totals are:
 //
 //     FARM OWN VALUE
 //     +
@@ -58,9 +66,6 @@
 //     monetaryAssets
 //     propertyAssets
 //     netWorth
-//
-// The farm's own financial values are NEVER replaced by the
-// financial values of its children.
 //
 // ==========================================================
 
@@ -82,15 +87,7 @@ const MilkSummary =
 
 
 // ==========================================================
-// CONSTANTS FROM FINANCIALS MODEL
-// ==========================================================
-//
-// The Financials model exposes FINANCIAL_TYPES:
-//
-//     ["liability", "revenue"]
-//
-// We use the model's definition instead of inventing our own
-// transaction types.
+// CONSTANTS
 // ==========================================================
 
 const FINANCIAL_TYPES =
@@ -124,10 +121,8 @@ function createError(
     const error =
         new Error(message);
 
-
     error.statusCode =
         statusCode;
-
 
     return error;
 
@@ -258,12 +253,6 @@ function number(
 // ==========================================================
 // USER VALIDATION
 // ==========================================================
-//
-// Financials.recordedBy is required by the schema.
-//
-// Therefore a liability/revenue transaction must never be
-// created without a valid user ID.
-// ==========================================================
 
 function validateUserId(
     userId,
@@ -360,15 +349,6 @@ function validateDescription(
 
 // ==========================================================
 // TRANSACTION DATE
-// ==========================================================
-//
-// Financials uses Mongoose timestamps:
-//
-//     createdAt
-//     updatedAt
-//
-// We allow an explicitly supplied date to become the
-// transaction's createdAt/updatedAt value.
 // ==========================================================
 
 function resolveTransactionDate(
@@ -487,7 +467,7 @@ function validateFinancialType(
 
 
 // ==========================================================
-// STATUS HELPER
+// STATUS HELPERS
 // ==========================================================
 
 function isSold(
@@ -510,9 +490,6 @@ function isSold(
 
 // ==========================================================
 // PROPERTY ASSET CHECK
-// ==========================================================
-//
-// An unsold Dairy record represents a current property asset.
 // ==========================================================
 
 function isPropertyAsset(
@@ -560,123 +537,7 @@ function getSalesAmount(
 
 
 // ==========================================================
-// MONETARY ASSET CHECK
-// ==========================================================
-
-function isMonetaryAsset(
-    dairy
-) {
-
-    if (!dairy) {
-
-        return false;
-
-    }
-
-
-    const revenue =
-        number(
-            dairy?.revenue
-        );
-
-
-    const salesAmount =
-        getSalesAmount(
-            dairy
-        );
-
-
-    return (
-
-        revenue !== 0 ||
-
-        salesAmount !== 0
-
-    );
-
-}
-
-
-// ==========================================================
-// PROPERTY ASSET VALUE
-// ==========================================================
-
-function getPropertyAssetValue(
-    dairy
-) {
-
-    if (
-        !isPropertyAsset(
-            dairy
-        )
-    ) {
-
-        return 0;
-
-    }
-
-
-    return number(
-        dairy?.currentWorth
-    );
-
-}
-
-
-// ==========================================================
-// MONETARY ASSET VALUE
-// ==========================================================
-//
-// monetaryAssets:
-//
-//     revenue
-//     +
-//     salesAmount
-//
-// ==========================================================
-
-function getMonetaryAssetValue(
-    dairy
-) {
-
-    if (!dairy) {
-
-        return 0;
-
-    }
-
-
-    const revenue =
-        number(
-            dairy?.revenue
-        );
-
-
-    const salesAmount =
-        getSalesAmount(
-            dairy
-        );
-
-
-    return (
-
-        revenue +
-
-        salesAmount
-
-    );
-
-}
-
-
-// ==========================================================
 // FARM IDENTIFICATION
-// ==========================================================
-//
-// Dairy Farm:
-//
-//     code < 0
-//
 // ==========================================================
 
 function isFarm(
@@ -727,12 +588,6 @@ function isFarm(
 // ==========================================================
 // FARM ASSET IDENTIFICATION
 // ==========================================================
-//
-// Assigned asset:
-//
-//     assetCode = farm.code
-//
-// ==========================================================
 
 function isFarmAsset(
     dairy
@@ -767,13 +622,6 @@ function isFarmAsset(
 
 // ==========================================================
 // STANDALONE ASSET IDENTIFICATION
-// ==========================================================
-//
-// Standalone:
-//
-//     code      = null
-//     assetCode = null
-//
 // ==========================================================
 
 function isStandaloneAsset(
@@ -821,22 +669,7 @@ function isStandaloneAsset(
 
 
 // ==========================================================
-// LIABILITY QUERY BUILDER
-// ==========================================================
-//
-// IMPORTANT:
-//
-// The Financials model supports:
-//
-//     liability
-//     revenue
-//
-// Therefore liability queries MUST explicitly include:
-//
-//     type: "liability"
-//
-// Otherwise revenue transactions would incorrectly be counted
-// as liabilities.
+// LIABILITY QUERY
 // ==========================================================
 
 function buildLiabilityQuery(
@@ -881,6 +714,51 @@ function buildLiabilityQuery(
 
 
 // ==========================================================
+// REVENUE TRANSACTION QUERY
+// ==========================================================
+
+function buildRevenueQuery(
+    dairyId,
+    startDate,
+    endDate
+) {
+
+    const query = {
+
+        dairy:
+            dairyId,
+
+        type:
+            REVENUE_TYPE
+
+    };
+
+
+    const dateRange =
+        getDateRange(
+            startDate,
+            endDate
+        );
+
+
+    if (
+        Object.keys(
+            dateRange
+        ).length
+    ) {
+
+        query.createdAt =
+            dateRange;
+
+    }
+
+
+    return query;
+
+}
+
+
+// ==========================================================
 // GET LIABILITY TOTAL
 // ==========================================================
 
@@ -892,6 +770,81 @@ async function getLiabilityTotal(
 
     const query =
         buildLiabilityQuery(
+            dairyId,
+            startDate,
+            endDate
+        );
+
+
+    const result =
+        await Financials.aggregate([
+
+            {
+                $match:
+                    query
+            },
+
+            {
+                $group: {
+
+                    _id:
+                        null,
+
+                    total: {
+
+                        $sum:
+                            "$amount"
+
+                    }
+
+                }
+
+            }
+
+        ]);
+
+
+    if (
+        !result.length
+    ) {
+
+        return 0;
+
+    }
+
+
+    return number(
+        result[0].total
+    );
+
+}
+
+
+// ==========================================================
+// GET REVENUE TRANSACTION TOTAL
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This is separate from Dairy.revenue.
+//
+// Dairy.revenue comes from MilkSummary.
+//
+// Financials revenue comes from:
+//
+//     Financials.type === "revenue"
+//
+// Both are included in total revenue.
+// ==========================================================
+
+async function getRevenueTransactionTotal(
+    dairyId,
+    startDate,
+    endDate
+) {
+
+    const query =
+        buildRevenueQuery(
             dairyId,
             startDate,
             endDate
@@ -1012,12 +965,76 @@ async function getLiabilities(
 
 
 // ==========================================================
-// GET ALL LIABILITY RECORDS
+// GET REVENUE TRANSACTION RECORDS
 // ==========================================================
-//
-// Again, explicitly limited to:
-//
-//     type: "liability"
+
+async function getRevenues(
+    dairyId,
+    startDate,
+    endDate
+) {
+
+    if (
+        !isValidObjectId(
+            dairyId
+        )
+    ) {
+
+        throw createError(
+            "Invalid Dairy ID.",
+            400
+        );
+
+    }
+
+
+    const query =
+        buildRevenueQuery(
+            dairyId,
+            startDate,
+            endDate
+        );
+
+
+    return Financials.find(
+        query
+    )
+
+    .populate(
+        "dairy",
+        [
+            "name",
+            "code",
+            "assetCode",
+            "type",
+            "status",
+            "buyingPrice",
+            "currentWorth",
+            "sellingPrice",
+            "revenue",
+            "description"
+        ].join(" ")
+    )
+
+    .populate(
+        "recordedBy",
+        "name email"
+    )
+
+    .sort({
+
+        createdAt:
+            -1
+
+    })
+
+    .lean();
+
+}
+
+
+// ==========================================================
+// GET ALL LIABILITY RECORDS
 // ==========================================================
 
 async function getAllLiabilities(
@@ -1090,18 +1107,80 @@ async function getAllLiabilities(
 
 
 // ==========================================================
-// RECORD LIABILITY
+// GET ALL REVENUE TRANSACTIONS
 // ==========================================================
-//
-// Financials schema requires:
-//
-//     dairy
-//     type
-//     amount
-//     description
-//     recordedBy
-//
-// Therefore all required fields are explicitly supplied.
+
+async function getAllRevenues(
+    startDate,
+    endDate
+) {
+
+    const query = {
+
+        type:
+            REVENUE_TYPE
+
+    };
+
+
+    const dateRange =
+        getDateRange(
+            startDate,
+            endDate
+        );
+
+
+    if (
+        Object.keys(
+            dateRange
+        ).length
+    ) {
+
+        query.createdAt =
+            dateRange;
+
+    }
+
+
+    return Financials.find(
+        query
+    )
+
+    .populate(
+        "dairy",
+        [
+            "name",
+            "code",
+            "assetCode",
+            "type",
+            "status",
+            "buyingPrice",
+            "currentWorth",
+            "sellingPrice",
+            "revenue",
+            "description"
+        ].join(" ")
+    )
+
+    .populate(
+        "recordedBy",
+        "name email"
+    )
+
+    .sort({
+
+        createdAt:
+            -1
+
+    })
+
+    .lean();
+
+}
+
+
+// ==========================================================
+// RECORD LIABILITY
 // ==========================================================
 
 async function recordLiability({
@@ -1157,10 +1236,6 @@ async function recordLiability({
         dairy:
             dairy._id,
 
-        // --------------------------------------------------
-        // REQUIRED BY models/financials.js
-        // --------------------------------------------------
-
         dairyCode:
             dairy.code ?? null,
 
@@ -1191,14 +1266,6 @@ async function recordLiability({
 
 // ==========================================================
 // RECORD REVENUE TRANSACTION
-// ==========================================================
-//
-// This records an actual Financials transaction:
-//
-//     type: "revenue"
-//
-// This is different from Dairy.revenue, which is the stored
-// calculated revenue value used by the financial summaries.
 // ==========================================================
 
 async function recordRevenue({
@@ -1386,12 +1453,7 @@ function getFarmAssets(
 //
 // This calculates Dairy.revenue.
 //
-// It does NOT create Financials records.
-//
-// Financials revenue transactions remain independent records
-// with:
-//
-//     type: "revenue"
+// It does NOT create Financials revenue records.
 //
 // ==========================================================
 
@@ -1407,10 +1469,6 @@ async function calculateRevenueMap(
         )
         .lean();
 
-
-    // ------------------------------------------------------
-    // DATE FILTER
-    // ------------------------------------------------------
 
     if (
         startDate ||
@@ -1539,17 +1597,9 @@ async function calculateRevenueMap(
     }
 
 
-    // ------------------------------------------------------
-    // REVENUE MAP
-    // ------------------------------------------------------
-
     const revenueMap =
         new Map();
 
-
-    // ------------------------------------------------------
-    // PROCESS EACH SUMMARY
-    // ------------------------------------------------------
 
     for (
         const summary of summaries
@@ -1707,13 +1757,9 @@ async function calculateRevenueMap(
 // CALCULATE AND STORE REVENUE
 // ==========================================================
 //
-// IMPORTANT:
+// Updates Dairy.revenue from MilkSummary.
 //
-// This function updates:
-//
-//     Dairy.revenue
-//
-// It does NOT create Financials revenue transaction records.
+// Financials revenue transactions are NOT written here.
 //
 // ==========================================================
 
@@ -1841,22 +1887,29 @@ async function refreshRevenue(
 // CALCULATE PROFIT / LOSS
 // ==========================================================
 //
+// TOTAL REVENUE:
+//
+//     Dairy.revenue
+//     +
+//     Financials revenue transactions
+//
 // UNSOLD:
 //
-//     revenue - liabilities
+//     totalRevenue - liabilities
 //
 // SOLD:
 //
 //     sellingPrice
 //     - buyingPrice
 //     - liabilities
-//     + revenue
+//     + totalRevenue
 //
 // ==========================================================
 
 function calculateProfit(
     dairy,
-    liabilityTotal
+    liabilityTotal,
+    revenueTransactionTotal = 0
 ) {
 
     const liabilities =
@@ -1865,10 +1918,21 @@ function calculateProfit(
         );
 
 
-    const revenue =
+    const milkRevenue =
         number(
             dairy?.revenue
         );
+
+
+    const transactionRevenue =
+        number(
+            revenueTransactionTotal
+        );
+
+
+    const totalRevenue =
+        milkRevenue +
+        transactionRevenue;
 
 
     if (
@@ -1879,7 +1943,7 @@ function calculateProfit(
 
         return (
 
-            revenue -
+            totalRevenue -
 
             liabilities
 
@@ -1908,7 +1972,7 @@ function calculateProfit(
 
         liabilities +
 
-        revenue
+        totalRevenue
 
     );
 
@@ -1922,6 +1986,7 @@ function calculateProfit(
 // Represents ONE Dairy record.
 //
 // It does not include child assets.
+//
 // ==========================================================
 
 async function buildFinancialData(
@@ -1932,6 +1997,18 @@ async function buildFinancialData(
 
     const liabilities =
         await getLiabilityTotal(
+
+            dairy._id,
+
+            startDate,
+
+            endDate
+
+        );
+
+
+    const revenueTransactions =
+        await getRevenueTransactionTotal(
 
             dairy._id,
 
@@ -1960,10 +2037,25 @@ async function buildFinancialData(
         );
 
 
-    const revenue =
+    const milkRevenue =
         number(
             dairy?.revenue
         );
+
+
+    // ------------------------------------------------------
+    // IMPORTANT
+    //
+    // Revenue is BOTH:
+    //
+    //     Dairy.revenue
+    //     +
+    //     Financials revenue transactions
+    // ------------------------------------------------------
+
+    const revenue =
+        milkRevenue +
+        revenueTransactions;
 
 
     const salesAmount =
@@ -1977,15 +2069,16 @@ async function buildFinancialData(
 
             dairy,
 
-            liabilities
+            liabilities,
+
+            revenueTransactions
 
         );
 
 
     const monetaryAssets =
-        getMonetaryAssetValue(
-            dairy
-        );
+        revenue +
+        salesAmount;
 
 
     const propertyAssets =
@@ -2011,7 +2104,13 @@ async function buildFinancialData(
 
         salesAmount,
 
+        // Total revenue from both sources
         revenue,
+
+        // Kept separately so callers can see the sources
+        milkRevenue,
+
+        revenueTransactions,
 
         totalLiabilities:
             liabilities,
@@ -2352,6 +2451,18 @@ async function getFarmFinancialTotals(
         );
 
 
+    let totalRevenueTransactions =
+        number(
+            farmFinancial.revenueTransactions
+        );
+
+
+    let totalMilkRevenue =
+        number(
+            farmFinancial.milkRevenue
+        );
+
+
     let totalProfit =
         number(
             farmFinancial.profit
@@ -2427,6 +2538,18 @@ async function getFarmFinancialTotals(
         totalRevenue +=
             number(
                 financial.revenue
+            );
+
+
+        totalRevenueTransactions +=
+            number(
+                financial.revenueTransactions
+            );
+
+
+        totalMilkRevenue +=
+            number(
+                financial.milkRevenue
             );
 
 
@@ -2538,6 +2661,12 @@ async function getFarmFinancialTotals(
         farmRevenue:
             farmFinancial.revenue,
 
+        farmMilkRevenue:
+            farmFinancial.milkRevenue,
+
+        farmRevenueTransactions:
+            farmFinancial.revenueTransactions,
+
         farmProfit:
             farmFinancial.profit,
 
@@ -2568,6 +2697,12 @@ async function getFarmFinancialTotals(
 
         revenue:
             totalRevenue,
+
+        milkRevenue:
+            totalMilkRevenue,
+
+        revenueTransactions:
+            totalRevenueTransactions,
 
         profit:
             totalProfit,
@@ -2643,6 +2778,14 @@ async function getFinancialSummary(
 
 
     let totalRevenue =
+        0;
+
+
+    let totalMilkRevenue =
+        0;
+
+
+    let totalRevenueTransactions =
         0;
 
 
@@ -2725,6 +2868,18 @@ async function getFinancialSummary(
             );
 
 
+        totalMilkRevenue +=
+            number(
+                financial.milkRevenue
+            );
+
+
+        totalRevenueTransactions +=
+            number(
+                financial.revenueTransactions
+            );
+
+
         totalProfit +=
             number(
                 financial.profit
@@ -2774,6 +2929,14 @@ async function getFinancialSummary(
 
 
     let standaloneRevenue =
+        0;
+
+
+    let standaloneMilkRevenue =
+        0;
+
+
+    let standaloneRevenueTransactions =
         0;
 
 
@@ -2846,6 +3009,18 @@ async function getFinancialSummary(
             );
 
 
+        standaloneMilkRevenue +=
+            number(
+                financial.milkRevenue
+            );
+
+
+        standaloneRevenueTransactions +=
+            number(
+                financial.revenueTransactions
+            );
+
+
         standaloneProfit +=
             number(
                 financial.profit
@@ -2892,6 +3067,14 @@ async function getFinancialSummary(
 
     totalRevenue +=
         standaloneRevenue;
+
+
+    totalMilkRevenue +=
+        standaloneMilkRevenue;
+
+
+    totalRevenueTransactions +=
+        standaloneRevenueTransactions;
 
 
     totalProfit +=
@@ -3028,8 +3211,16 @@ async function getFinancialSummary(
             salesAmount:
                 totalSalesAmount,
 
+            // Combined revenue
             revenue:
                 totalRevenue,
+
+            // Revenue source breakdown
+            milkRevenue:
+                totalMilkRevenue,
+
+            revenueTransactions:
+                totalRevenueTransactions,
 
             profit:
                 totalProfit,
@@ -3068,6 +3259,12 @@ async function getFinancialSummary(
             revenue:
                 standaloneRevenue,
 
+            milkRevenue:
+                standaloneMilkRevenue,
+
+            revenueTransactions:
+                standaloneRevenueTransactions,
+
             profit:
                 standaloneProfit,
 
@@ -3097,11 +3294,13 @@ async function getFinancialSummary(
 // GET LIABILITY HISTORY
 // ==========================================================
 //
-// getAllLiabilities() already restricts records to:
+// Groups liability transactions by:
 //
-//     type: "liability"
+//     standalone
+//     farm
 //
-// Therefore revenue transactions can never enter this history.
+// Revenue transactions do NOT enter this history.
+//
 // ==========================================================
 
 async function getLiabilityHistory(
@@ -3282,6 +3481,193 @@ async function getLiabilityHistory(
 
 
 // ==========================================================
+// GET REVENUE HISTORY
+// ==========================================================
+//
+// Same grouping logic as liability history, but for:
+//
+//     type: "revenue"
+//
+// ==========================================================
+
+async function getRevenueHistory(
+    startDate,
+    endDate
+) {
+
+    const records =
+        await getAllRevenues(
+
+            startDate,
+
+            endDate
+
+        );
+
+
+    const standalone =
+        [];
+
+
+    const farms =
+        new Map();
+
+
+    for (
+        const record of records
+    ) {
+
+        if (
+            !record.dairy
+        ) {
+
+            continue;
+
+        }
+
+
+        const dairy =
+            record.dairy;
+
+
+        // --------------------------------------------------
+        // STANDALONE REVENUE
+        // --------------------------------------------------
+
+        if (
+            isStandaloneAsset(
+                dairy
+            )
+        ) {
+
+            standalone.push(
+                record
+            );
+
+            continue;
+
+        }
+
+
+        let farmCode;
+
+
+        // --------------------------------------------------
+        // REVENUE DIRECTLY ON FARM
+        // --------------------------------------------------
+
+        if (
+            isFarm(
+                dairy
+            )
+        ) {
+
+            farmCode =
+                Number(
+                    dairy.code
+                );
+
+        }
+
+
+        // --------------------------------------------------
+        // REVENUE ON FARM ASSET
+        // --------------------------------------------------
+
+        else if (
+            isFarmAsset(
+                dairy
+            )
+        ) {
+
+            farmCode =
+                Number(
+                    dairy.assetCode
+                );
+
+        }
+
+
+        if (
+
+            farmCode === undefined ||
+
+            Number.isNaN(
+                farmCode
+            )
+
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            !farms.has(
+                farmCode
+            )
+        ) {
+
+            farms.set(
+
+                farmCode,
+
+                {
+
+                    farm:
+                        null,
+
+                    revenues:
+                        []
+
+                }
+
+            );
+
+        }
+
+
+        const group =
+            farms.get(
+                farmCode
+            );
+
+
+        if (
+            isFarm(
+                dairy
+            )
+        ) {
+
+            group.farm =
+                dairy;
+
+        }
+
+
+        group.revenues.push(
+            record
+        );
+
+    }
+
+
+    return {
+
+        standalone,
+
+        farms:
+            [
+                ...farms.values()
+            ]
+
+    };
+
+}
+
+
+// ==========================================================
 // PUBLIC REVENUE REFRESH
 // ==========================================================
 
@@ -3311,18 +3697,13 @@ module.exports = {
 
     getAllDairies,
 
-
     getFinancialStructure,
-
 
     getDairyFinancial,
 
-
     getStandaloneFinancial,
 
-
     getFarmFinancialTotals,
-
 
     getFinancialSummary,
 
@@ -3333,17 +3714,28 @@ module.exports = {
 
     recordLiability,
 
-
     recordRevenue,
-
 
     getLiabilities,
 
+    getRevenues,
 
     getAllLiabilities,
 
+    getAllRevenues,
 
     getLiabilityHistory,
+
+    getRevenueHistory,
+
+
+    // ------------------------------------------------------
+    // Financial totals
+    // ------------------------------------------------------
+
+    getLiabilityTotal,
+
+    getRevenueTransactionTotal,
 
 
     // ------------------------------------------------------
@@ -3352,8 +3744,11 @@ module.exports = {
 
     updateDairyRevenues,
 
-
     refreshRevenue,
+
+    calculateRevenueMap,
+
+    calculateAndStoreRevenue,
 
 
     // ------------------------------------------------------
@@ -3362,28 +3757,14 @@ module.exports = {
 
     isSold,
 
-
     isPropertyAsset,
-
-
-    isMonetaryAsset,
-
 
     isFarm,
 
-
     isFarmAsset,
-
 
     isStandaloneAsset,
 
-
-    getSalesAmount,
-
-
-    getPropertyAssetValue,
-
-
-    getMonetaryAssetValue
+    getSalesAmount
 
 };
