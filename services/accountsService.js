@@ -31,7 +31,6 @@
 //
 //     Only dairyWorker users may have assigned farms.
 //
-//
 // ASSIGNED ASSET RULE:
 //
 //     A standalone assigned asset is:
@@ -48,36 +47,24 @@
 //
 //     assignedAsset is NOT restricted to dairyWorker.
 //
-//     Any user may receive a standalone asset EXCEPT:
-//
-//         role === "admin"
+//     Any non-admin user may receive a standalone asset.
 //
 // ==========================================================
 
+const mongoose = require("mongoose");
 
-const mongoose =
-    require("mongoose");
+const User = require("../models/projectUser");
 
-
-const User =
-    require("../models/projectUser");
-
-
-const Dairy =
-    require("../models/dairy");
+const Dairy = require("../models/dairy");
 
 
 // ==========================================================
 // CONSTANTS
 // ==========================================================
 
-const DAIRY_WORKER_ROLE =
-    "dairyWorker";
+const DAIRY_WORKER_ROLE = "dairyWorker";
 
-
-const ADMIN_ROLE =
-    "admin";
-
+const ADMIN_ROLE = "admin";
 
 const ALLOWED_ROLES = [
     "dairyWorker",
@@ -93,11 +80,7 @@ const ALLOWED_ROLES = [
 // Determines whether a Dairy record is a valid standalone
 // asset.
 //
-// THIS MUST MATCH:
-//
-//     views/admin/standalone.ejs
-//
-// Exactly:
+// Exact rule:
 //
 //     recordType === "structure"
 //     code === null / undefined
@@ -111,31 +94,24 @@ function isStandaloneAsset(dairy) {
         return false;
     }
 
-
     const recordType =
-        String(
-            dairy.recordType || ""
-        )
+        String(dairy.recordType || "")
             .trim()
             .toLowerCase();
-
 
     const codeIsNull =
         dairy.code === null ||
         dairy.code === undefined;
 
-
     const assetCodeIsNull =
         dairy.assetCode === null ||
         dairy.assetCode === undefined;
-
 
     return (
         recordType === "structure" &&
         codeIsNull &&
         assetCodeIsNull
     );
-
 }
 
 
@@ -147,25 +123,23 @@ function normalizeIds(ids) {
 
     if (!Array.isArray(ids)) {
 
-        ids =
-            ids
-                ? [ids]
-                : [];
+        ids = ids
+            ? [ids]
+            : [];
 
     }
 
-
     return ids
-        .filter(
-            id =>
+        .filter(id => {
+
+            return (
                 id !== null &&
                 id !== undefined &&
                 String(id).trim() !== ""
-        )
-        .map(
-            id =>
-                String(id).trim()
-        );
+            );
+
+        })
+        .map(id => String(id).trim());
 
 }
 
@@ -174,7 +148,7 @@ function normalizeIds(ids) {
 // REMOVE DUPLICATES
 // ==========================================================
 
-function uniqueIds(ids) {
+function getUniqueIds(ids) {
 
     return [
         ...new Set(
@@ -197,14 +171,10 @@ function validateObjectIds(
     for (const id of ids) {
 
         if (
-            !mongoose.Types.ObjectId.isValid(
-                id
-            )
+            !mongoose.Types.ObjectId.isValid(id)
         ) {
 
-            throw new Error(
-                message
-            );
+            throw new Error(message);
 
         }
 
@@ -217,8 +187,7 @@ function validateObjectIds(
 // GET ALL USERS
 // ==========================================================
 
-exports.getAllUsers =
-async () => {
+exports.getAllUsers = async () => {
 
     return await User.find()
         .sort({
@@ -237,46 +206,67 @@ async () => {
 //     user
 //     dairies
 //
-// `dairies` contains ONLY standalone/code-less assets.
-//
-// This is what populates the Assigned Asset dropdown.
+// `dairies` contains only standalone/code-less assets
+// available for assignment.
 //
 // ==========================================================
 
-exports.getUserProfileData =
-async (userId) => {
+exports.getUserProfileData = async (userId) => {
+
+    if (
+        !mongoose.Types.ObjectId.isValid(userId)
+    ) {
+
+        return {
+            user: null,
+            dairies: []
+        };
+
+    }
+
 
     const user =
-        await User.findById(
-            userId
-        )
-        .populate({
-            path: "assignedFarm",
-            select:
-                "name code profileImage status recordType"
-        })
-        .populate({
-            path: "assignedAsset",
-            select:
-                "name code assetCode recordType type condition location description displayImage profileImage status"
-        });
+        await User.findById(userId)
+
+            .populate({
+                path: "assignedFarm",
+                select:
+                    "name code profileImage status recordType"
+            })
+
+            .populate({
+                path: "assignedAsset",
+                select:
+                    "name code assetCode recordType type condition location description displayImage profileImage status"
+            });
+
+
+    if (!user) {
+
+        return {
+            user: null,
+            dairies: []
+        };
+
+    }
 
 
     // --------------------------------------------------------
-    // Standalone assets available for assignment.
-    // --------------------------------------------------------
+    // Standalone assets.
     //
-    // IMPORTANT:
+    // MongoDB:
     //
-    // Do NOT query:
+    //     { code: null }
     //
-    //     code: { $exists: false }
+    // matches both:
     //
-    // alone.
+    //     code === null
     //
-    // The standalone definition is the same definition
-    // used by views/admin/standalone.ejs.
+    // and
     //
+    //     code does not exist.
+    //
+    // The same applies to assetCode.
     // --------------------------------------------------------
 
     const dairies =
@@ -312,22 +302,30 @@ async (userId) => {
 // GET SINGLE USER
 // ==========================================================
 
-exports.getUserById =
-async (userId) => {
+exports.getUserById = async (userId) => {
 
-    return await User.findById(
-        userId
-    )
-    .populate({
-        path: "assignedFarm",
-        select:
-            "name code profileImage status recordType"
-    })
-    .populate({
-        path: "assignedAsset",
-        select:
-            "name code assetCode recordType type condition location description displayImage profileImage status"
-    });
+    if (
+        !mongoose.Types.ObjectId.isValid(userId)
+    ) {
+
+        return null;
+
+    }
+
+
+    return await User.findById(userId)
+
+        .populate({
+            path: "assignedFarm",
+            select:
+                "name code profileImage status recordType"
+        })
+
+        .populate({
+            path: "assignedAsset",
+            select:
+                "name code assetCode recordType type condition location description displayImage profileImage status"
+        });
 
 };
 
@@ -347,28 +345,26 @@ async (userId) => {
 //     admin
 //         cannot have assignedFarm
 //
-// IMPORTANT:
+// assignedAsset:
 //
-//     assignedAsset is NOT cleared here.
+//     dairyWorker
+//         allowed
 //
-// A standalone asset may remain assigned to a user even if
-// their role changes between dairyWorker and poultryWorker.
+//     poultryWorker
+//         allowed
 //
-// However, an admin must not retain assigned assets because
-// admins are not permitted to receive assignedAsset records.
+//     admin
+//         not allowed
 //
 // ==========================================================
 
-exports.updateUserRole =
-async (
+exports.updateUserRole = async (
     userId,
     role
 ) => {
 
     if (
-        !ALLOWED_ROLES.includes(
-            role
-        )
+        !ALLOWED_ROLES.includes(role)
     ) {
 
         throw new Error(
@@ -378,9 +374,20 @@ async (
     }
 
 
-    const update = {
-        role
-    };
+    const user =
+        await User.findById(userId);
+
+
+    if (!user) {
+
+        throw new Error(
+            "User not found."
+        );
+
+    }
+
+
+    user.role = role;
 
 
     // --------------------------------------------------------
@@ -391,36 +398,28 @@ async (
         role !== DAIRY_WORKER_ROLE
     ) {
 
-        update.assignedFarm = [];
+        user.assignedFarm = [];
 
     }
 
 
     // --------------------------------------------------------
-    // Admins cannot have assigned standalone assets.
+    // Admins cannot have standalone assets.
     // --------------------------------------------------------
 
     if (
         role === ADMIN_ROLE
     ) {
 
-        update.assignedAsset = [];
+        user.assignedAsset = [];
 
     }
 
 
-    return await User.findByIdAndUpdate(
+    await user.save();
 
-        userId,
 
-        update,
-
-        {
-            new: true,
-            runValidators: true
-        }
-
-    );
+    return user;
 
 };
 
@@ -431,26 +430,23 @@ async (
 //
 // ONLY dairyWorker.
 //
-// A valid farm:
+// Valid farm:
 //
 //     code < 0
 //
-// Farm relationship:
+// Relationship:
 //
 //     User.assignedFarm
 //
 // ==========================================================
 
-exports.assignDairyFarms =
-async (
+exports.assignDairyFarms = async (
     userId,
     assignedFarms
 ) => {
 
     const user =
-        await User.findById(
-            userId
-        );
+        await User.findById(userId);
 
 
     if (!user) {
@@ -473,13 +469,19 @@ async (
     }
 
 
-    const uniqueIds =
-        uniqueIds(
-            assignedFarms
-        );
+    // IMPORTANT:
+    //
+    // Do not use:
+    //
+    //     const uniqueIds = uniqueIds(...)
+    //
+    // because that shadows the helper function.
+    //
+    const farmIds =
+        getUniqueIds(assignedFarms);
 
 
-    if (!uniqueIds.length) {
+    if (!farmIds.length) {
 
         return user;
 
@@ -487,15 +489,15 @@ async (
 
 
     validateObjectIds(
-        uniqueIds,
+        farmIds,
         "One or more selected Dairy Farms are invalid."
     );
 
 
     // --------------------------------------------------------
-    // Find only Dairy Farm structures.
+    // Find only valid Dairy Farms.
     //
-    // Farm:
+    // Dairy Farm:
     //
     //     code < 0
     //
@@ -505,7 +507,7 @@ async (
         await Dairy.find({
 
             _id: {
-                $in: uniqueIds
+                $in: farmIds
             },
 
             code: {
@@ -519,7 +521,7 @@ async (
 
 
     if (
-        farms.length !== uniqueIds.length
+        farms.length !== farmIds.length
     ) {
 
         throw new Error(
@@ -533,16 +535,17 @@ async (
     // Existing assignments.
     // --------------------------------------------------------
 
-    const existingIds =
+    const existingFarmIds =
         new Set(
 
             (user.assignedFarm || [])
-                .map(
-                    id =>
-                        String(
-                            id._id || id
-                        )
-                )
+                .map(id => {
+
+                    return String(
+                        id._id || id
+                    );
+
+                })
 
         );
 
@@ -551,26 +554,23 @@ async (
     // Add only new assignments.
     // --------------------------------------------------------
 
-    for (
-        const farm
-        of farms
-    ) {
+    for (const farm of farms) {
 
-        const id =
-            String(
-                farm._id
-            );
+        const farmId =
+            String(farm._id);
 
 
         if (
-            !existingIds.has(id)
+            !existingFarmIds.has(farmId)
         ) {
 
             user.assignedFarm.push(
                 farm._id
             );
 
-            existingIds.add(id);
+            existingFarmIds.add(
+                farmId
+            );
 
         }
 
@@ -589,16 +589,13 @@ async (
 // UNASSIGN ONE DAIRY FARM
 // ==========================================================
 
-exports.unassignDairyFarm =
-async (
+exports.unassignDairyFarm = async (
     userId,
     farmId
 ) => {
 
     const user =
-        await User.findById(
-            userId
-        );
+        await User.findById(userId);
 
 
     if (!user) {
@@ -656,16 +653,17 @@ async (
 
 
     user.assignedFarm =
-        (
-            user.assignedFarm || []
-        )
-        .filter(
-            id =>
-                String(
-                    id._id || id
-                ) !==
-                String(farmId)
-        );
+        (user.assignedFarm || [])
+            .filter(id => {
+
+                return (
+                    String(
+                        id._id || id
+                    ) !==
+                    String(farmId)
+                );
+
+            });
 
 
     await user.save();
@@ -680,34 +678,24 @@ async (
 // ASSIGN STANDALONE ASSETS
 // ==========================================================
 //
-// IMPORTANT:
-//
-// Unlike assignedFarm:
-//
-//     assignedAsset
-//
-// can be assigned to:
+// Allowed:
 //
 //     dairyWorker
 //     poultryWorker
-//     any other non-admin user
 //
-// but NEVER:
+// Not allowed:
 //
 //     admin
 //
 // ==========================================================
 
-exports.assignDairyAssets =
-async (
+exports.assignDairyAssets = async (
     userId,
     assignedAssets
 ) => {
 
     const user =
-        await User.findById(
-            userId
-        );
+        await User.findById(userId);
 
 
     if (!user) {
@@ -718,10 +706,6 @@ async (
 
     }
 
-
-    // --------------------------------------------------------
-    // Admins cannot receive assigned assets.
-    // --------------------------------------------------------
 
     if (
         user.role === ADMIN_ROLE
@@ -734,13 +718,16 @@ async (
     }
 
 
-    const uniqueIds =
-        uniqueIds(
-            assignedAssets
-        );
+    // IMPORTANT:
+    //
+    // Use a different variable name so that the helper
+    // function is not shadowed.
+    //
+    const assetIds =
+        getUniqueIds(assignedAssets);
 
 
-    if (!uniqueIds.length) {
+    if (!assetIds.length) {
 
         return user;
 
@@ -748,7 +735,7 @@ async (
 
 
     validateObjectIds(
-        uniqueIds,
+        assetIds,
         "One or more selected assets are invalid."
     );
 
@@ -756,11 +743,11 @@ async (
     // --------------------------------------------------------
     // Find ONLY standalone assets.
     //
-    // Exact standalone rule:
+    // Exact rule:
     //
     //     recordType === "structure"
-    //     code === null
-    //     assetCode === null
+    //     code === null / missing
+    //     assetCode === null / missing
     //
     // --------------------------------------------------------
 
@@ -768,7 +755,7 @@ async (
         await Dairy.find({
 
             _id: {
-                $in: uniqueIds
+                $in: assetIds
             },
 
             recordType: "structure",
@@ -784,11 +771,11 @@ async (
 
 
     // --------------------------------------------------------
-    // Every submitted ID must resolve to a standalone asset.
+    // Every submitted ID must be a valid standalone asset.
     // --------------------------------------------------------
 
     if (
-        assets.length !== uniqueIds.length
+        assets.length !== assetIds.length
     ) {
 
         throw new Error(
@@ -802,16 +789,17 @@ async (
     // Existing assigned assets.
     // --------------------------------------------------------
 
-    const existingIds =
+    const existingAssetIds =
         new Set(
 
             (user.assignedAsset || [])
-                .map(
-                    id =>
-                        String(
-                            id._id || id
-                        )
-                )
+                .map(id => {
+
+                    return String(
+                        id._id || id
+                    );
+
+                })
 
         );
 
@@ -820,26 +808,23 @@ async (
     // Add only assets that are not already assigned.
     // --------------------------------------------------------
 
-    for (
-        const asset
-        of assets
-    ) {
+    for (const asset of assets) {
 
-        const id =
-            String(
-                asset._id
-            );
+        const assetId =
+            String(asset._id);
 
 
         if (
-            !existingIds.has(id)
+            !existingAssetIds.has(assetId)
         ) {
 
             user.assignedAsset.push(
                 asset._id
             );
 
-            existingIds.add(id);
+            existingAssetIds.add(
+                assetId
+            );
 
         }
 
@@ -858,26 +843,23 @@ async (
 // UNASSIGN ONE STANDALONE ASSET
 // ==========================================================
 //
-// The asset itself remains in the Dairy collection.
+// The Dairy record is NOT deleted.
 //
-// Only the relationship:
+// Only:
 //
 //     User.assignedAsset
 //
-// is removed.
+// is modified.
 //
 // ==========================================================
 
-exports.unassignDairyAsset =
-async (
+exports.unassignDairyAsset = async (
     userId,
     assetId
 ) => {
 
     const user =
-        await User.findById(
-            userId
-        );
+        await User.findById(userId);
 
 
     if (!user) {
@@ -930,16 +912,17 @@ async (
 
 
     user.assignedAsset =
-        (
-            user.assignedAsset || []
-        )
-        .filter(
-            id =>
-                String(
-                    id._id || id
-                ) !==
-                String(assetId)
-        );
+        (user.assignedAsset || [])
+            .filter(id => {
+
+                return (
+                    String(
+                        id._id || id
+                    ) !==
+                    String(assetId)
+                );
+
+            });
 
 
     await user.save();
@@ -954,13 +937,39 @@ async (
 // DELETE USER
 // ==========================================================
 
-exports.deleteUser =
-async (
+exports.deleteUser = async (
     userId
 ) => {
 
-    return await User.findByIdAndDelete(
+    if (
+        !mongoose.Types.ObjectId.isValid(userId)
+    ) {
+
+        throw new Error(
+            "Invalid user ID."
+        );
+
+    }
+
+
+    const user =
+        await User.findById(userId);
+
+
+    if (!user) {
+
+        throw new Error(
+            "User not found."
+        );
+
+    }
+
+
+    await User.findByIdAndDelete(
         userId
     );
+
+
+    return user;
 
 };
