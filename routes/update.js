@@ -10,43 +10,6 @@
 //
 //     /
 //
-// IMPORTANT ROUTING RULE
-// ---------------------------------------------------------
-//
-// Explicit Dairy routes are defined BEFORE the generic
-// storage content-item route.
-//
-// STORAGE CONTENT:
-//
-//     /dairy/:contentItemId/:dwellNumber
-//
-// This route is ONLY allowed when dwellNumber is numeric.
-//
-// Valid dwellNumbers:
-//
-//     -5
-//     -1
-//      0
-//      1
-//      25
-//
-// Non-numeric values such as:
-//
-//     assets
-//     post
-//     maintenance
-//     mark
-//     abc
-//
-// MUST NEVER be interpreted as dwellNumbers.
-//
-// ASSET PAGE:
-//
-//     /dairy/:id
-//     /dairy/:id/assets
-//
-// Both are explicitly handled by controller.viewPage.
-//
 // =========================================================
 
 
@@ -117,31 +80,27 @@ function isAuth(
 // STRICT DWELL NUMBER GUARD
 // =========================================================
 //
-// This middleware is ONLY used by:
+// Used ONLY by:
 //
 //     /dairy/:contentItemId/:dwellNumber
 //
-// A numeric value is required.
+// The second parameter MUST be numeric.
 //
-// Negative values are valid.
+// Valid:
 //
-// IMPORTANT:
+//     -5
+//     -1
+//      0
+//      1
+//      25
 //
-// Unlike the previous version, a non-numeric value does
-// NOT call next().
+// Invalid:
 //
-// It returns 404 immediately.
-//
-// This prevents:
-//
-//     /dairy/:id/assets
-//
-//     /dairy/:id/post
-//
-//     /dairy/:id/maintenance
-//
-// or any other unrelated two-segment URL from ever reaching
-// the storage content-item controller.
+//     assets
+//     post
+//     maintenance
+//     mark
+//     abc
 //
 // =========================================================
 
@@ -170,17 +129,6 @@ function isValidDwellNumber(
     }
 
 
-    /*
-     * Strict numeric check.
-     *
-     * Number("25")  -> 25
-     * Number("-5")  -> -5
-     * Number("0")   -> 0
-     *
-     * Number("abc")     -> NaN
-     * Number("assets")  -> NaN
-     */
-
     const dwellNumber =
         Number(value);
 
@@ -199,10 +147,6 @@ function isValidDwellNumber(
 
     }
 
-
-    /*
-     * Preserve the numeric value for the controller.
-     */
 
     req.dwellNumber =
         dwellNumber;
@@ -234,10 +178,7 @@ router.get(
 // =========================================================
 //
 // IMPORTANT:
-//
-// This must remain before:
-//
-//     /dairy/:id
+// Must remain before /dairy/:id
 //
 // =========================================================
 
@@ -412,10 +353,7 @@ router.post(
 // MEDICAL
 // =========================================================
 
-
-// ---------------------------------------------------------
 // MARK MEDICAL
-// ---------------------------------------------------------
 
 router.post(
     "/dairy/:id/medical-mark",
@@ -424,9 +362,7 @@ router.post(
 );
 
 
-// ---------------------------------------------------------
 // UNMARK MEDICAL
-// ---------------------------------------------------------
 
 router.post(
     "/dairy/:id/medical-unmark",
@@ -439,10 +375,7 @@ router.post(
 // MAINTENANCE
 // =========================================================
 
-
-// ---------------------------------------------------------
 // MARK MAINTENANCE
-// ---------------------------------------------------------
 
 router.post(
     "/dairy/:id/maintenance/mark",
@@ -451,9 +384,7 @@ router.post(
 );
 
 
-// ---------------------------------------------------------
 // CLEAR MAINTENANCE
-// ---------------------------------------------------------
 
 router.post(
     "/dairy/:id/maintenance/clear",
@@ -466,10 +397,7 @@ router.post(
 // FINANCIAL ROUTES
 // =========================================================
 
-
-// ---------------------------------------------------------
 // RECORD LIABILITY
-// ---------------------------------------------------------
 
 router.post(
     "/dairy/:id/liability",
@@ -478,9 +406,7 @@ router.post(
 );
 
 
-// ---------------------------------------------------------
 // RECORD REVENUE
-// ---------------------------------------------------------
 
 router.post(
     "/dairy/:id/revenue",
@@ -490,50 +416,76 @@ router.post(
 
 
 // =========================================================
-// ASSET PAGE
+// ASSET PAGES
 // =========================================================
 //
-// PRIMARY:
+// PRIMARY DAIRY PROFILE:
 //
 //     GET /dairy/:id
 //
-// ASSET URL:
+// ASSET PAGE:
 //
 //     GET /dairy/:id/assets
 //
 // IMPORTANT:
 //
-// /dairy/:id/assets is deliberately defined BEFORE:
+// These are TWO DIFFERENT CONTROLLER ACTIONS.
 //
-//     /dairy/:contentItemId/:dwellNumber
+// /dairy/:id
+//     -> controller.viewPage
 //
-// Therefore:
+// /dairy/:id/assets
+//     -> controller.viewAssets
 //
-//     /dairy/123/assets
-//
-// is NEVER sent to getContentItem().
-//
-// It goes directly to viewPage().
-//
-// The controller renders:
+// viewAssets renders:
 //
 //     views/asset-page.ejs
+//
+// and passes:
+//
+//     dairy
+//     assetDairies
+//     user
 //
 // =========================================================
 
 
 // ---------------------------------------------------------
-// ASSET PAGE — EXPLICIT /assets URL
+// ASSET PAGE
+// ---------------------------------------------------------
+//
+// GET:
+//
+//     /dairy/:id/assets
+//
+// RENDERS:
+//
+//     views/asset-page.ejs
+//
 // ---------------------------------------------------------
 
 router.get(
     "/dairy/:id/assets",
-    controller.viewPage
+    controller.viewAssets
 );
 
 
 // ---------------------------------------------------------
-// ASSET PAGE — PRIMARY DAIRY URL
+// PRIMARY DAIRY PROFILE
+// ---------------------------------------------------------
+//
+// GET:
+//
+//     /dairy/:id
+//
+// RENDERS:
+//
+//     views/update.ejs
+//     OR
+//     views/dairySet.ejs
+//
+// depending on dairy.code
+//
 // ---------------------------------------------------------
 
 router.get(
@@ -556,16 +508,13 @@ router.get(
 //
 // IMPORTANT:
 //
-// These routes come AFTER:
+// These routes come AFTER all explicit Dairy routes.
 //
-//     /dairy/:id/assets
-//     /dairy/:id
-//     /dairy/:id/addOns
-//     /dairy/:id/general
-//     etc.
+// The strict dwell-number middleware means that:
 //
-// AND the strict numeric guard ensures that only a numeric
-// second parameter can reach the storage controller.
+//     /dairy/123/assets
+//
+// cannot reach the storage controller.
 //
 // =========================================================
 
@@ -602,10 +551,7 @@ router.post(
 // POST INTERACTIONS
 // =========================================================
 
-
-// ---------------------------------------------------------
 // POST LIKE
-// ---------------------------------------------------------
 
 router.post(
     "/post/:id/like",
@@ -614,9 +560,7 @@ router.post(
 );
 
 
-// ---------------------------------------------------------
 // POST COMMENT
-// ---------------------------------------------------------
 
 router.post(
     "/post/:id/comment",
@@ -625,9 +569,11 @@ router.post(
 );
 
 
-// ---------------------------------------------------------
+// =========================================================
+// GENERIC UPDATE INTERACTIONS
+// =========================================================
+
 // GENERIC UPDATE LIKE
-// ---------------------------------------------------------
 
 router.post(
     "/:type/:id/like",
@@ -636,9 +582,7 @@ router.post(
 );
 
 
-// ---------------------------------------------------------
 // GENERIC UPDATE COMMENT
-// ---------------------------------------------------------
 
 router.post(
     "/:type/:id/comment",
