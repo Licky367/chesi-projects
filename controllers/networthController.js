@@ -24,15 +24,33 @@
 //
 // it is treated as a structure / facility / equipment record.
 //
-// Such records may now edit:
+// Such records may edit:
 //
 //     about
 //     mission
 //     refNo
 //     vision
 //
-// These fields are intentionally preserved and passed to
-// networthService.updateAsset().
+// ASSIGNED USER
+// ----------------------------------------------------------
+//
+// The Net Worth asset edit page may also assign the current
+// Dairy asset to another project user.
+//
+// The controller:
+//
+//     1. Loads all users whose role is NOT "admin"
+//     2. Passes them to the asset edit view
+//     3. Accepts assignedUserId from the form
+//     4. Passes assignedUserId to networthService.updateAsset()
+//
+// The controller DOES NOT decide whether this Dairy is an
+// eligible asset. The page is already the standalone-asset
+// editor.
+//
+// The service is responsible for updating:
+//
+//     User.assignedAsset
 //
 // IMPORTANT:
 //
@@ -50,6 +68,20 @@
 
 const networthService =
     require("../services/networthService");
+
+
+// ==========================================================
+// USER MODEL
+// ==========================================================
+//
+// Used only to retrieve users for the assignment dropdown.
+//
+// Assignment itself is handled by networthService.updateAsset().
+//
+// ==========================================================
+
+const User =
+    require("../models/projectUser");
 
 
 // ==========================================================
@@ -193,16 +225,6 @@ function getUploadedImageUrl(file) {
 //
 // DO NOT allow the browser to change them.
 //
-// code:
-//
-//     negative = Dairy Farm
-//     positive = Animal
-//     null     = Structure / Facility
-//
-// assetCode:
-//
-//     derived from the parent Dairy Farm.
-//
 
 function removeProtectedAssetFields(data) {
 
@@ -279,8 +301,8 @@ function normalizeBoolean(value) {
 //     refNo
 //     vision
 //
-// Empty strings are preserved as empty strings so that the
-// user can intentionally clear a field.
+// Empty strings are preserved so the user can intentionally
+// clear a field.
 //
 
 function normalizeText(value) {
@@ -303,12 +325,6 @@ function normalizeText(value) {
 // ==========================================================
 // NORMALIZE STRUCTURE INFORMATION
 // ==========================================================
-//
-// Explicitly prepares the four additional fields.
-//
-// These are only meaningful for records whose code is null.
-// The service/model remains responsible for final validation.
-//
 
 function normalizeStructureFields(data) {
 
@@ -359,16 +375,6 @@ function normalizeStructureFields(data) {
 
     // ------------------------------------------------------
     // REFERENCE NUMBER
-    //
-    // Database field:
-    //
-    //     refNo
-    //
-    // NOT:
-    //
-    //     ref.no
-    //     refNumber
-    //     referenceNumber
     // ------------------------------------------------------
 
     if (
@@ -406,6 +412,91 @@ function normalizeStructureFields(data) {
 
 
     return data;
+
+}
+
+
+// ==========================================================
+// NORMALIZE ASSIGNED USER
+// ==========================================================
+//
+// The form sends:
+//
+//     assignedUserId
+//
+// Empty value means:
+//
+//     remove the current assignment.
+//
+// The controller does not determine asset eligibility.
+//
+// It simply normalizes the selected user ID and passes it
+// to the service.
+//
+
+function normalizeAssignedUserId(value) {
+
+    if (
+        value === undefined ||
+        value === null
+    ) {
+
+        return null;
+
+    }
+
+
+    const normalized =
+        String(value).trim();
+
+
+    if (!normalized) {
+
+        return null;
+
+    }
+
+
+    return normalized;
+
+}
+
+
+// ==========================================================
+// GET AVAILABLE ASSIGNMENT USERS
+// ==========================================================
+//
+// Returns every project user whose role is NOT admin.
+//
+// Admin users are intentionally excluded from the dropdown.
+//
+// The service performs the actual assignedAsset update.
+//
+// ==========================================================
+
+async function getAvailableAssignmentUsers() {
+
+    return User
+        .find(
+            {
+                role: {
+                    $ne: "admin"
+                }
+            },
+            {
+                _id: 1,
+                name: 1,
+                email: 1,
+                role: 1
+            }
+        )
+        .sort(
+            {
+                name: 1,
+                email: 1
+            }
+        )
+        .lean();
 
 }
 
@@ -528,18 +619,6 @@ async function getDairyFarm(
 //
 // Creates the data required by the Add Asset page.
 //
-// The created record is a STRUCTURE.
-//
-// The browser does NOT control:
-//
-//     code
-//     assetCode
-//
-// The service derives:
-//
-//     code = null
-//     assetCode = parent Dairy Farm negative code
-//
 
 async function getAddAsset(
     req,
@@ -647,12 +726,6 @@ async function addAsset(
         // ======================================================
         // NORMALIZE STRUCTURE FIELDS
         // ======================================================
-        //
-        // These fields are allowed to be created for
-        // structure / facility records.
-        //
-        // They are deliberately retained.
-        //
 
         normalizeStructureFields(
             body
@@ -680,12 +753,6 @@ async function addAsset(
         // ======================================================
         // MILKING
         // ======================================================
-        //
-        // Structures cannot be milking animals.
-        //
-        // This normalization remains for compatibility with
-        // older forms that might still submit the field.
-        //
 
         if (
             body.isMilking !== undefined
@@ -785,6 +852,15 @@ async function addAsset(
 //
 // Loads the individual asset page.
 //
+// ALSO loads:
+//
+//     availableUsers
+//
+// These are all users whose role is NOT admin.
+//
+// The current asset's assigned user is supplied separately
+// by the service data if available.
+//
 
 async function getAsset(
     req,
@@ -793,11 +869,38 @@ async function getAsset(
 
     try {
 
+        // ======================================================
+        // LOAD ASSET DATA
+        // ======================================================
+
         const data =
             await networthService.getAsset(
                 req.params.id
             );
 
+
+        // ======================================================
+        // LOAD AVAILABLE USERS
+        // ======================================================
+        //
+        // Only non-admin users appear in the assignment list.
+        //
+
+        const availableUsers =
+            await getAvailableAssignmentUsers();
+
+
+        // ======================================================
+        // ADD USERS TO VIEW DATA
+        // ======================================================
+
+        data.availableUsers =
+            availableUsers;
+
+
+        // ======================================================
+        // RENDER
+        // ======================================================
 
         return res.render(
             "networth-asset",
@@ -852,13 +955,23 @@ async function getAsset(
 //     refNo
 //     vision
 //
-// These four fields are explicitly retained and passed to:
+// Assignment:
+//
+//     assignedUserId
+//
+// The controller passes assignedUserId to:
 //
 //     networthService.updateAsset()
 //
+// The service is responsible for updating:
+//
+//     User.assignedAsset
+//
 // IMPORTANT:
 //
-// The controller does NOT silently discard them.
+// The controller does NOT decide whether the current Dairy
+// is eligible for assignment. This page is already the
+// standalone asset editor.
 //
 
 async function updateAsset(
@@ -936,22 +1049,6 @@ async function updateAsset(
         // ======================================================
         // STRUCTURE / FACILITY FIELDS
         // ======================================================
-        //
-        // IMPORTANT:
-        //
-        // These are the fields requested for records with
-        // no numeric code.
-        //
-        // They are explicitly normalized here and remain
-        // inside updateData.
-        //
-        //     updateData.about
-        //     updateData.mission
-        //     updateData.refNo
-        //     updateData.vision
-        //
-        // They are then sent directly to the service below.
-        //
 
         normalizeStructureFields(
             updateData
@@ -959,8 +1056,71 @@ async function updateAsset(
 
 
         // ======================================================
+        // ASSIGNED USER
+        // ======================================================
+        //
+        // Form field:
+        //
+        //     assignedUserId
+        //
+        // This value is deliberately preserved and passed to
+        // the service.
+        //
+        // Possible values:
+        //
+        //     ObjectId string
+        //         = assign asset to selected user
+        //
+        //     null
+        //         = remove assignment
+        //
+        // The service will perform the actual User update.
+        //
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                updateData,
+                "assignedUserId"
+            )
+        ) {
+
+            updateData.assignedUserId =
+                normalizeAssignedUserId(
+                    updateData.assignedUserId
+                );
+
+        } else {
+
+            // --------------------------------------------------
+            // No assignment field submitted.
+            //
+            // Keep this undefined so the service can distinguish
+            // between:
+            //
+            //     "do not change assignment"
+            //
+            // and:
+            //
+            //     "remove assignment"
+            //
+            // --------------------------------------------------
+
+            delete updateData.assignedUserId;
+
+        }
+
+
+        // ======================================================
         // UPDATE DATABASE
         // ======================================================
+        //
+        // IMPORTANT:
+        //
+        // assignedUserId is now part of updateData.
+        //
+        // Therefore the service receives the selected user and
+        // can update User.assignedAsset accordingly.
+        //
 
         const updatedAsset =
             await networthService.updateAsset(
