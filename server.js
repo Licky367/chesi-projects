@@ -350,6 +350,27 @@ try {
 
 
 // ==========================================================
+// ADD-ONS
+// ==========================================================
+
+let addOnsRoutes;
+
+try {
+
+    addOnsRoutes =
+        require("./routes/addOns");
+
+} catch (err) {
+
+    console.warn(
+        "Warning: failed to load addOns routes:",
+        err.message
+    );
+
+}
+
+
+// ==========================================================
 // STORAGE
 // ==========================================================
 
@@ -1115,6 +1136,20 @@ if (financialsRoutes) {
     app.use(
         "/financials",
         financialsRoutes
+    );
+
+}
+
+
+// ==========================================================
+// ADD-ONS
+// ==========================================================
+
+if (addOnsRoutes) {
+
+    app.use(
+        "/",
+        addOnsRoutes
     );
 
 }
