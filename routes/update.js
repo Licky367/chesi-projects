@@ -10,17 +10,42 @@
 //
 //     /
 //
-// IMPORTANT STORAGE RULE
+// IMPORTANT ROUTING RULE
 // ---------------------------------------------------------
 //
-// The content-item route:
+// Explicit Dairy routes are defined BEFORE the generic
+// storage content-item route.
+//
+// STORAGE CONTENT:
 //
 //     /dairy/:contentItemId/:dwellNumber
 //
-// is ONLY allowed to reach getContentItem/updateContentItem
-// when the second parameter is actually numeric.
+// This route is ONLY allowed when dwellNumber is numeric.
 //
-// Negative dwellNumbers ARE valid.
+// Valid dwellNumbers:
+//
+//     -5
+//     -1
+//      0
+//      1
+//      25
+//
+// Non-numeric values such as:
+//
+//     assets
+//     post
+//     maintenance
+//     mark
+//     abc
+//
+// MUST NEVER be interpreted as dwellNumbers.
+//
+// ASSET PAGE:
+//
+//     /dairy/:id
+//     /dairy/:id/assets
+//
+// Both are explicitly handled by controller.viewPage.
 //
 // =========================================================
 
@@ -89,26 +114,34 @@ function isAuth(
 
 
 // =========================================================
-// DWELL NUMBER GUARD
+// STRICT DWELL NUMBER GUARD
 // =========================================================
 //
-// Valid:
+// This middleware is ONLY used by:
 //
-//     -5
-//     -1
-//      0
-//      1
-//      25
+//     /dairy/:contentItemId/:dwellNumber
 //
-// Invalid:
+// A numeric value is required.
 //
-//     post
-//     maintenance
-//     mark
-//     abc
+// Negative values are valid.
 //
-// Non-numeric values are passed onward rather than being
-// treated as a storage content-item request.
+// IMPORTANT:
+//
+// Unlike the previous version, a non-numeric value does
+// NOT call next().
+//
+// It returns 404 immediately.
+//
+// This prevents:
+//
+//     /dairy/:id/assets
+//
+//     /dairy/:id/post
+//
+//     /dairy/:id/maintenance
+//
+// or any other unrelated two-segment URL from ever reaching
+// the storage content-item controller.
 //
 // =========================================================
 
@@ -128,10 +161,25 @@ function isValidDwellNumber(
         value === ""
     ) {
 
-        return next();
+        return res
+            .status(404)
+            .send(
+                "Storage content item not found."
+            );
 
     }
 
+
+    /*
+     * Strict numeric check.
+     *
+     * Number("25")  -> 25
+     * Number("-5")  -> -5
+     * Number("0")   -> 0
+     *
+     * Number("abc")     -> NaN
+     * Number("assets")  -> NaN
+     */
 
     const dwellNumber =
         Number(value);
@@ -143,10 +191,18 @@ function isValidDwellNumber(
         )
     ) {
 
-        return next();
+        return res
+            .status(404)
+            .send(
+                "Storage content item not found."
+            );
 
     }
 
+
+    /*
+     * Preserve the numeric value for the controller.
+     */
 
     req.dwellNumber =
         dwellNumber;
@@ -174,6 +230,25 @@ router.get(
 
 
 // =========================================================
+// BOOLEAN FIELD DEFINITIONS
+// =========================================================
+//
+// IMPORTANT:
+//
+// This must remain before:
+//
+//     /dairy/:id
+//
+// =========================================================
+
+router.get(
+    "/dairy/boolean/fields",
+    isAuth,
+    controller.getBooleanFields
+);
+
+
+// =========================================================
 // BOOLEAN MANAGEMENT
 // =========================================================
 //
@@ -187,25 +262,6 @@ router.post(
     "/dairy/:animalId/boolean/:field",
     isAuth,
     controller.toggleBoolean
-);
-
-
-// =========================================================
-// BOOLEAN FIELD DEFINITIONS
-// =========================================================
-//
-// GET:
-//
-//     /dairy/boolean/fields
-//
-// IMPORTANT:
-// This MUST remain before /dairy/:id.
-// =========================================================
-
-router.get(
-    "/dairy/boolean/fields",
-    isAuth,
-    controller.getBooleanFields
 );
 
 
@@ -407,15 +463,7 @@ router.post(
 
 
 // =========================================================
-// DAIRY FINANCIAL ROUTES
-// =========================================================
-//
-// These MUST appear before:
-//
-//     /dairy/:contentItemId/:dwellNumber
-//
-// because they are explicit Dairy routes.
-//
+// FINANCIAL ROUTES
 // =========================================================
 
 
@@ -442,34 +490,51 @@ router.post(
 
 
 // =========================================================
-// DAIRY PROFILE PAGE
+// ASSET PAGE
 // =========================================================
 //
-// GET:
+// PRIMARY:
 //
-//     /dairy/:id
+//     GET /dairy/:id
+//
+// ASSET URL:
+//
+//     GET /dairy/:id/assets
+//
+// IMPORTANT:
+//
+// /dairy/:id/assets is deliberately defined BEFORE:
+//
+//     /dairy/:contentItemId/:dwellNumber
+//
+// Therefore:
+//
+//     /dairy/123/assets
+//
+// is NEVER sent to getContentItem().
+//
+// It goes directly to viewPage().
 //
 // The controller renders:
 //
 //     views/asset-page.ejs
 //
-// and passes:
-//
-//     dairy
-//     assetDairies
-//     assignedFarms
-//     animalFeeds
-//     feed
-//     weeklyFeed
-//     comments
-//     booleanAnimals
-//     booleanFields
-//     medicalDairies
-//     medicalAnimals
-//     itemLinks
-//     user
-//
 // =========================================================
+
+
+// ---------------------------------------------------------
+// ASSET PAGE — EXPLICIT /assets URL
+// ---------------------------------------------------------
+
+router.get(
+    "/dairy/:id/assets",
+    controller.viewPage
+);
+
+
+// ---------------------------------------------------------
+// ASSET PAGE — PRIMARY DAIRY URL
+// ---------------------------------------------------------
 
 router.get(
     "/dairy/:id",
@@ -491,9 +556,16 @@ router.get(
 //
 // IMPORTANT:
 //
-// This remains AFTER all explicit /dairy/:id/... routes.
+// These routes come AFTER:
 //
-// Negative dwellNumbers remain valid.
+//     /dairy/:id/assets
+//     /dairy/:id
+//     /dairy/:id/addOns
+//     /dairy/:id/general
+//     etc.
+//
+// AND the strict numeric guard ensures that only a numeric
+// second parameter can reach the storage controller.
 //
 // =========================================================
 
@@ -601,7 +673,9 @@ router.delete(
 // DELETE DAIRY
 // =========================================================
 //
-// This is intentionally last among the Dairy routes.
+// DELETE:
+//
+//     /dairy/:id
 //
 // =========================================================
 
