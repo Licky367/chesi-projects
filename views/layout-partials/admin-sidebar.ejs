@@ -1,0 +1,313 @@
+<!-- =========================================================
+   ADMIN SIDEBAR
+========================================================= -->
+
+<% if(isAdmin){ %>
+
+
+<aside
+    id="adminDashboardSidebar"
+
+    class="admin-dashboard-sidebar"
+
+    aria-label="Project navigation"
+
+    aria-expanded="false"
+>
+
+
+    <ul class="admin-sidebar-menu">
+
+
+        <li class="admin-sidebar-item">
+
+            <button
+                type="button"
+
+                id="adminSidebarMenuButton"
+
+                class="admin-sidebar-menu-button"
+
+                aria-label="Close navigation menu"
+
+                aria-expanded="true"
+            >
+
+                <span
+                    class="admin-sidebar-menu-icon"
+
+                    aria-hidden="true"
+                >
+                    ☰
+                </span>
+
+                <span class="admin-sidebar-label">
+                    Menu
+                </span>
+
+            </button>
+
+        </li>
+
+
+        <li class="admin-sidebar-item">
+
+            <a
+                href="<%= homeLink %>"
+
+                class="admin-sidebar-link active"
+
+                title="Dashboard"
+            >
+
+                <span
+                    class="admin-sidebar-icon"
+
+                    aria-hidden="true"
+                >
+                    ⌂
+                </span>
+
+                <span class="admin-sidebar-label">
+                    Dashboard
+                </span>
+
+            </a>
+
+        </li>
+
+
+        <li class="admin-sidebar-item">
+
+            <button
+                type="button"
+
+                id="dairyActivitiesButton"
+
+                class="admin-sidebar-section-button"
+
+                aria-expanded="false"
+
+                aria-controls="dairyActivitiesSubmenu"
+            >
+
+                <span
+                    class="admin-sidebar-icon"
+
+                    aria-hidden="true"
+                >
+                    🐄
+                </span>
+
+                <span class="admin-sidebar-label">
+                    Dairy Activities
+                </span>
+
+                <span
+                    class="admin-sidebar-section-arrow"
+
+                    aria-hidden="true"
+                >
+                    ▶
+                </span>
+
+            </button>
+
+
+            <ul
+                id="dairyActivitiesSubmenu"
+
+                class="admin-sidebar-submenu"
+            >
+
+
+                <li class="admin-sidebar-item">
+
+                    <a
+                        href="/add"
+
+                        class="admin-sidebar-link"
+
+                        title="Add an Asset"
+                    >
+
+                        <span
+                            class="admin-sidebar-icon"
+
+                            aria-hidden="true"
+                        >
+                            ＋
+                        </span>
+
+                        <span class="admin-sidebar-label">
+                            Add an Asset
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <li class="admin-sidebar-item">
+
+                    <a
+                        href="/milk"
+
+                        class="admin-sidebar-link"
+
+                        title="Record Milk Production"
+                    >
+
+                        <span
+                            class="admin-sidebar-icon"
+
+                            aria-hidden="true"
+                        >
+                            🥛
+                        </span>
+
+                        <span class="admin-sidebar-label">
+                            Record Milk Production
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <li class="admin-sidebar-item">
+
+                    <a
+                        href="/milk/sales"
+
+                        class="admin-sidebar-link"
+
+                        title="Record Milk Sales"
+                    >
+
+                        <span
+                            class="admin-sidebar-icon"
+
+                            aria-hidden="true"
+                        >
+                            💰
+                        </span>
+
+                        <span class="admin-sidebar-label">
+                            Record Milk Sales
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <li class="admin-sidebar-item">
+
+                    <a
+                        href="/stats"
+
+                        class="admin-sidebar-link"
+
+                        title="Milk Statistics"
+                    >
+
+                        <span
+                            class="admin-sidebar-icon"
+
+                            aria-hidden="true"
+                        >
+                            📊
+                        </span>
+
+                        <span class="admin-sidebar-label">
+                            Milk Statistics
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+            </ul>
+
+        </li>
+
+
+        <li class="admin-sidebar-item">
+
+            <a
+                href="/networth"
+
+                class="admin-sidebar-link"
+
+                title="View Assets"
+            >
+
+                <span
+                    class="admin-sidebar-icon"
+
+                    aria-hidden="true"
+                >
+                    👁
+                </span>
+
+                <span class="admin-sidebar-label">
+                    View Assets
+                </span>
+
+            </a>
+
+        </li>
+
+
+        <li class="admin-sidebar-item">
+
+            <a
+                href="/financials/summary"
+
+                class="admin-sidebar-link"
+
+                title="Financials"
+            >
+
+                <span
+                    class="admin-sidebar-icon"
+
+                    aria-hidden="true"
+                >
+                    💱
+                </span>
+
+                <span class="admin-sidebar-label">
+                    Financials
+                </span>
+
+            </a>
+
+        </li>
+
+
+    </ul>
+
+
+    <div class="admin-sidebar-footer">
+
+        Chesi Project Management System
+
+    </div>
+
+
+</aside>
+
+
+<div
+    id="adminSidebarOverlay"
+
+    class="admin-sidebar-overlay"
+
+    aria-hidden="true"
+></div>
+
+
+<% } %>
