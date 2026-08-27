@@ -89,6 +89,17 @@ try {
     );
 }
 
+
+let productsEntryRoutes;
+
+try {
+    productsEntryRoutes = require("./routes/corevester/adminProducts");
+} catch (err) {
+    console.warn(
+        "Warning: failed to load products-entry routes:",
+        err.message
+    );
+}
 // ==========================================================
 // SOCKET HANDLER
 // ==========================================================
@@ -274,6 +285,10 @@ if (corevesterRoutes) {
 
 if (productsRoutes) {
     app.use("/products", productsRoutes);
+}
+
+if (productsEntryRoutes) {
+    app.use("/admin/products", productsEntryRoutes);
 }
 
 // ==========================================================
