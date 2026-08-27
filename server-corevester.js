@@ -100,6 +100,17 @@ try {
         err.message
     );
 }
+
+let stockEntryRoutes;
+
+try {
+    stockEntryRoutes = require("./routes/corevester/stock");
+} catch (err) {
+    console.warn(
+        "Warning: failed to load stock-entry routes:",
+        err.message
+    );
+}
 // ==========================================================
 // SOCKET HANDLER
 // ==========================================================
@@ -289,6 +300,11 @@ if (productsRoutes) {
 
 if (productsEntryRoutes) {
     app.use("/admin/products", productsEntryRoutes);
+}
+
+
+if (stockEntryRoutes) {
+    app.use("/admin/stock", stockEntryRoutes);
 }
 
 // ==========================================================
