@@ -25,7 +25,6 @@
     href="/css/layout.css"
 >
 
-
 <meta
     property="og:title"
     content="<%= typeof title !== "undefined" ? title : "Chesi Projects" %>"
@@ -217,28 +216,42 @@ const isPoultryWorker =
    HEADER
 ========================================================= -->
 
-<%- include("layout-partials/header") %>
+<%- include("layout-partials/header", {
+    homeLink: homeLink,
+    headerTitle: headerTitle
+}) %>
 
 
 <!-- =========================================================
    TOP MENU
 ========================================================= -->
 
-<%- include("layout-partials/top-menu") %>
+<%- include("layout-partials/top-menu", {
+    user: user,
+    homeLink: homeLink,
+    isAdmin: isAdmin,
+    isDairyWorker: isDairyWorker,
+    isPoultryWorker: isPoultryWorker
+}) %>
 
 
 <!-- =========================================================
    ADMIN SIDEBAR
 ========================================================= -->
 
-<%- include("layout-partials/admin-sidebar") %>
+<%- include("layout-partials/admin-sidebar", {
+    homeLink: homeLink,
+    isAdmin: isAdmin
+}) %>
 
 
 <!-- =========================================================
-   POULTRY SIDEBAR
+   POULTRY WORKER SIDEBAR
 ========================================================= -->
 
-<%- include("layout-partials/poultry-sidebar") %>
+<%- include("layout-partials/poultry-sidebar", {
+    isPoultryWorker: isPoultryWorker
+}) %>
 
 
 <% } %>
