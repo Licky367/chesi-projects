@@ -1,0 +1,66 @@
+<!-- =========================================================
+   PROFILE
+========================================================= -->
+
+<div
+    class="profile-box"
+    id="profileBox"
+>
+
+    <div
+        class="profile-trigger"
+
+        onclick="toggleProfile(event)"
+
+        role="button"
+
+        tabindex="0"
+
+        aria-label="Open profile menu"
+    >
+
+        <span
+            class="profile-icon"
+            aria-hidden="true"
+        >
+            👤
+        </span>
+
+        <span class="profile-name">
+            Profile
+        </span>
+
+    </div>
+
+
+    <div class="dropdown-profile">
+
+
+        <% if(user){ %>
+
+
+            <a href="/profile">
+                👤 My Account
+            </a>
+
+
+            <% if(isAdmin){ %>
+
+                <a href="/accounts">
+                    👥 People
+                </a>
+
+            <% } %>
+
+
+            <a href="/logout">
+                🚪 Logout
+            </a>
+
+
+        <% } %>
+
+
+    </div>
+
+</div>
