@@ -6,7 +6,7 @@ exports.entryPage = async (req, res) => {
             adminProductsService.getAllStock(),
             adminProductsService.getAllProducts()
         ]);
-        res.render("corevester/admin/products-entry", {
+        res.render("products-entry", {
             title: "Key In Products - COREVESTER",
             stockList,
             products,
