@@ -11,6 +11,6 @@ const packageSchema = new mongoose.Schema({
     }],
     totalAmount: { type: Number, required: true },
     status: { type: String, enum: ["pending","confirmed","delivered"], default: "pending" }
-}, { timestamps: true });
+}, { timestamps: true }); 
 
 module.exports = mongoose.model("Package", packageSchema);
