@@ -1,91 +1,42 @@
-<% /* COREVESTER LANDING - FIXED */ %>
+<div style="max-width:1200px; margin:0 auto; padding:40px 20px; display:flex; align-items:center; justify-content:space-between; gap:40px; min-height:calc(100vh - 80px); box-sizing:border-box; flex-wrap:wrap;">
 
-<div class="corevester-landing">
+    <div style="flex:1; min-width:300px; max-width:540px;">
+        <p style="margin:0; font-size:12px; letter-spacing:3px; color:#0a4d1e; font-weight:800; opacity:0.8;">COREVESTER</p>
+        <p style="margin:5px 0 0 0; font-size:13px; font-weight:600; color:#333;">Core Vester Healthcare</p>
+        <p style="margin:4px 0 20px 0; font-size:11px; letter-spacing:2px; color:#2e7d32;">HEALTHCARE • WELLNESS • CARE</p>
 
-    <div class="corevester-hero">
+        <h1 style="margin:0; font-size:48px; line-height:1.05; font-weight:900; color:#0a1f0f;">Your health.<br><span style="color:#2e7d32;">Our priority.</span></h1>
 
-        <div class="corevester-hero-text">
-            <p class="kicker">COREVESTER</p>
-            <h1 class="brand">Core Vester Healthcare</h1>
-            <p class="sub">HEALTHCARE • WELLNESS • CARE</p>
+        <p style="margin:20px 0 0 0; font-size:15px; line-height:1.7; color:#444;">
+            Core Vester Healthcare is committed to making quality healthcare products and essential medical solutions more accessible, convenient and reliable.
+        </p>
 
-            <h2 class="headline">Your health.<br>Our priority.</h2>
-
-            <p class="desc">
-                Core Vester Healthcare is committed to making quality healthcare products 
-                and essential medical solutions more accessible, convenient and reliable.
-            </p>
-
-            <ul class="points">
-                <li>✓ Quality Care</li>
-                <li>✓ Better Health</li>
-            </ul>
-
-            <p class="copy">© 2026 Dr. Chesay Edwin</p>
-
-            <div class="cta">
-                <a href="/login" class="btn btn-primary">Get Started</a>
-                <a href="/products" class="btn btn-outline">Our Products</a>
-            </div>
+        <div style="margin:18px 0; display:flex; flex-direction:column; gap:6px;">
+            <span style="font-size:14px; color:#0a4d1e; font-weight:600;"><i class="fas fa-check-circle" style="color:#4caf50; margin-right:6px;"></i> Quality Care</span>
+            <span style="font-size:14px; color:#0a4d1e; font-weight:600;"><i class="fas fa-check-circle" style="color:#4caf50; margin-right:6px;"></i> Better Health</span>
         </div>
 
-        <div class="corevester-hero-logo">
-            <img src="/images/cfp-logo.png" alt="Core Vester Logo" />
-        </div>
+        <p style="margin:20px 0 0 0; font-size:11px; color:#888;">© 2026 Dr. Chesay Edwin</p>
 
+        <div style="margin-top:28px; display:flex; gap:12px; flex-wrap:wrap;">
+            <a href="/products" style="padding:14px 28px; background:#0a4d1e; color:#fff; text-decoration:none; border-radius:30px; font-weight:700; font-size:14px; display:inline-block;">Explore Products</a>
+            <a href="/contact" style="padding:14px 28px; background:#ffffff; color:#0a4d1e; text-decoration:none; border-radius:30px; font-weight:700; font-size:14px; border:2px solid #0a4d1e; display:inline-block;">Contact Us</a>
+        </div>
+    </div>
+
+    <div style="flex:1; min-width:300px; display:flex; justify-content:center; align-items:center;">
+        <!-- Big preview of your logo - contained -->
+        <div style="background:white; border:3px solid #0a4d1e; border-radius:24px; padding:30px; box-shadow:0 15px 40px rgba(10,77,30,0.12);">
+            <img src="/images/corevester-logo.png" alt="CoreVester" style="width:100%; max-width:380px; height:auto; object-fit:contain; display:block;" />
+        </div>
     </div>
 
 </div>
 
+<!-- MOBILE FIX -->
 <style>
-.corevester-landing {
-    min-height: 80vh;
-    display: flex;
-    align-items: center;
-    padding: 40px 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-.corevester-hero {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 40px;
-    width: 100%;
-}
-.corevester-hero-text {
-    flex: 1;
-    max-width: 550px;
-}
-.kicker { letter-spacing: 3px; font-size: 12px; opacity: .6; margin: 0; }
-.brand { font-size: 14px; font-weight: 600; margin: 5px 0; }
-.sub { font-size: 12px; opacity: .7; margin-bottom: 20px; }
-.headline { font-size: 42px; line-height: 1.1; font-weight: 800; margin: 20px 0; color: #111; }
-.desc { font-size: 15px; line-height: 1.6; opacity: .8; }
-.points { list-style: none; padding: 0; margin: 15px 0; }
-.points li { margin: 5px 0; font-size: 14px; }
-.copy { font-size: 12px; margin-top: 15px; opacity: .6; }
-.cta { margin-top: 25px; display: flex; gap: 12px; }
-.btn { padding: 12px 22px; border-radius: 30px; text-decoration: none; font-weight: 600; font-size: 14px; }
-.btn-primary { background: #5bbc2e; color: white; }
-.btn-outline { border: 1px solid #ddd; color: #111; }
-
-.corevester-hero-logo {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-}
-.corevester-hero-logo img {
-    width: 100%;
-    max-width: 420px; /* THIS FIXES YOUR HUGE LOGO BUG */
-    height: auto;
-    object-fit: contain;
-}
-
-@media(max-width: 768px){
-    .corevester-hero { flex-direction: column-reverse; text-align: center; }
-    .headline { font-size: 32px; }
-    .cta { justify-content: center; }
-    .corevester-hero-logo img { max-width: 280px; }
+@media(max-width:768px){
+    div[style*="font-size:48px"]{ font-size:34px !important; }
+    img[style*="max-width:280px"]{ height:48px !important; max-width:190px !important; }
 }
 </style>
