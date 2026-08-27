@@ -111,6 +111,17 @@ try {
         err.message
     );
 }
+
+let stockEntryRoutes;
+
+try {
+    packageRoutes = require("./routes/corevester/packages");
+} catch (err) {
+    console.warn(
+        "Warning: failed to load package routes:",
+        err.message
+    );
+}
 // ==========================================================
 // SOCKET HANDLER
 // ==========================================================
@@ -305,6 +316,10 @@ if (productsEntryRoutes) {
 
 if (stockEntryRoutes) {
     app.use("/admin/stock", stockEntryRoutes);
+}
+
+if (packageRoutes) {
+    app.use("/packages", packageRoutes);
 }
 
 // ==========================================================
