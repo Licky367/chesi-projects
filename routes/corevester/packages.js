@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Package = require("../../models/corevester/package");
+const Package = require("../../models/corevester/packages");
 const packageService = require("../../services/corevester/packageService");
 
 const getSessionId = (req) => req.user? req.user._id.toString() : req.ip;
