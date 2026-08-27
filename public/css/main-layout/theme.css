@@ -1,0 +1,27 @@
+/* =========================================================
+   THEME
+========================================================= */
+
+:root{
+
+    --primary:#0b5d1e;
+
+    --primary-dark:#084814;
+
+    --primary-light:#eaf7ee;
+
+    --primary-soft:#f3faf5;
+
+    --text:#263238;
+
+    --muted:#667085;
+
+    --border:#e5e7eb;
+
+    --white:#ffffff;
+
+    --sidebar-width:275px;
+
+    --layout-top:120px;
+
+}
