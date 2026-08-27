@@ -28,41 +28,15 @@ const isAuthPage =
 <body class="<%= isAuthPage ? 'auth-page' : 'app-page' %>">
 
 <%
-/* =========================================================
-   COREVESTER - FREELY ACCESSIBLE
-========================================================= */
 let homeLink = "/";
 let headerTitle = "COREVESTER";
 %>
 
 <% if(!isAuthPage){ %>
-
-<!-- =========================================================
-   HEADER - FREELY ACCESSIBLE FOR ALL
-========================================================= -->
 <%- include("layout-partials/header", {
     homeLink: homeLink,
     headerTitle: headerTitle
 }) %>
-
-<!-- =========================================================
-   TOP MENU - FREELY ACCESSIBLE FOR ALL
-========================================================= -->
-<%- include("layout-partials/top-menu", {
-    user: user || null,
-    homeLink: homeLink,
-    isAdmin: true
-}) %>
-
-<!-- =========================================================
-   ADMIN SIDEBAR - FREELY ACCESSIBLE FOR ALL
-   Dairy and Poultry worker sidebars removed
-========================================================= -->
-<%- include("layout-partials/admin-sidebar", {
-    homeLink: homeLink,
-    isAdmin: true
-}) %>
-
 <% } %>
 
 <!-- =========================================================
@@ -78,103 +52,13 @@ let headerTitle = "COREVESTER";
 <%- include("layout-partials/footer") %>
 
 <% if(!isAuthPage){ %>
-
 <script>
-/* =========================================================
-   PROFILE
-========================================================= */
 const profileBox = document.getElementById("profileBox");
-
 function toggleProfile(event){
     event.stopPropagation();
     if(profileBox){
         profileBox.classList.toggle("active");
     }
-}
-
-/* =========================================================
-   ADMIN SIDEBAR - FREELY ACCESSIBLE
-========================================================= */
-const adminSidebar = document.getElementById("adminDashboardSidebar");
-const adminTopMenuButton = document.getElementById("adminTopMenuButton");
-const adminSidebarMenuButton = document.getElementById("adminSidebarMenuButton");
-const adminSidebarOverlay = document.getElementById("adminSidebarOverlay");
-const dairyActivitiesButton = document.getElementById("dairyActivitiesButton");
-const dairyActivitiesSubmenu = document.getElementById("dairyActivitiesSubmenu");
-
-function openAdminSidebar(){
-    if(!adminSidebar ||!adminSidebarOverlay) return;
-    adminSidebar.classList.add("open");
-    adminSidebarOverlay.classList.add("active");
-    adminSidebar.setAttribute("aria-expanded", "true");
-    if(adminTopMenuButton){
-        adminTopMenuButton.setAttribute("aria-expanded", "true");
-    }
-    adminSidebarOverlay.setAttribute("aria-hidden", "false");
-}
-
-function closeDairyActivities(){
-    if(!dairyActivitiesButton ||!dairyActivitiesSubmenu) return;
-    dairyActivitiesButton.setAttribute("aria-expanded", "false");
-    dairyActivitiesButton.classList.remove("expanded");
-    dairyActivitiesSubmenu.classList.remove("open");
-}
-
-function closeAdminSidebar(){
-    if(!adminSidebar ||!adminSidebarOverlay) return;
-    adminSidebar.classList.remove("open");
-    adminSidebarOverlay.classList.remove("active");
-    adminSidebar.setAttribute("aria-expanded", "false");
-    if(adminTopMenuButton){
-        adminTopMenuButton.setAttribute("aria-expanded", "false");
-    }
-    adminSidebarOverlay.setAttribute("aria-hidden", "true");
-    closeDairyActivities();
-}
-
-if(adminTopMenuButton){
-    adminTopMenuButton.addEventListener("click", function(event){
-        event.preventDefault();
-        event.stopPropagation();
-        if(adminSidebar && adminSidebar.classList.contains("open")){
-            closeAdminSidebar();
-        } else {
-            openAdminSidebar();
-        }
-    });
-}
-
-if(adminSidebarMenuButton){
-    adminSidebarMenuButton.addEventListener("click", function(event){
-        event.preventDefault();
-        event.stopPropagation();
-        closeAdminSidebar();
-    });
-}
-
-if(dairyActivitiesButton && dairyActivitiesSubmenu){
-    dairyActivitiesButton.addEventListener("click", function(event){
-        event.preventDefault();
-        event.stopPropagation();
-        const isExpanded = dairyActivitiesButton.getAttribute("aria-expanded") === "true";
-        dairyActivitiesButton.setAttribute("aria-expanded", String(!isExpanded));
-        dairyActivitiesButton.classList.toggle("expanded",!isExpanded);
-        dairyActivitiesSubmenu.classList.toggle("open",!isExpanded);
-    });
-}
-
-if(adminSidebar){
-    adminSidebar.querySelectorAll(".admin-sidebar-link").forEach(function(link){
-        link.addEventListener("click", function(){
-            closeAdminSidebar();
-        });
-    });
-}
-
-if(adminSidebarOverlay){
-    adminSidebarOverlay.addEventListener("click", function(){
-        closeAdminSidebar();
-    });
 }
 
 document.addEventListener("click", function(event){
@@ -185,18 +69,12 @@ document.addEventListener("click", function(event){
 
 document.addEventListener("keydown", function(event){
     if(event.key === "Escape"){
-        closeAdminSidebar();
         if(profileBox){
             profileBox.classList.remove("active");
         }
     }
 });
-
-window.addEventListener("resize", function(){
-    closeAdminSidebar();
-});
 </script>
-
 <% } %>
 
 </body>
