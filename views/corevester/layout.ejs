@@ -2,18 +2,13 @@
 <html lang="en">
 
 <head>
-
 <%- include("layout-partials/meta") %>
-
 </head>
 
-
 <%
-
 /* =========================================================
    AUTHENTICATION PAGES
 ========================================================= */
-
 const authPages = [
     "/login",
     "/signup",
@@ -27,681 +22,182 @@ const currentPagePath =
     "";
 
 const isAuthPage =
-    authPages.includes(
-        currentPagePath
-    );
-
+    authPages.includes(currentPagePath);
 %>
-
 
 <body class="<%= isAuthPage ? 'auth-page' : 'app-page' %>">
 
-
 <%
-
 /* =========================================================
-   HOME DESTINATION
+   COREVESTER - FREELY ACCESSIBLE
 ========================================================= */
-
 let homeLink = "/";
-
-
-/* =========================================================
-   ADMIN
-========================================================= */
-
-if(
-    user &&
-    user.role === "admin"
-){
-
-    homeLink =
-        "/dashboard/dairy";
-
-}
-
-
-/* =========================================================
-   DAIRY WORKER
-========================================================= */
-
-else if(
-    user &&
-    user.role === "dairyWorker" &&
-    Array.isArray(user.assignedFarm) &&
-    user.assignedFarm.length > 0
-){
-
-    const firstFarm =
-        user.assignedFarm[0];
-
-    homeLink =
-        `/dairy/${firstFarm}`;
-
-}
-
-
-/* =========================================================
-   HEADER TITLE
-========================================================= */
-
-let headerTitle =
-    "CHESI PROJECTS";
-
-if(user){
-
-    if(
-        user.role === "dairyWorker"
-    ){
-
-        headerTitle =
-            "DAIRY ACTIVITIES";
-
-    }
-
-    else if(
-        user.role === "poultryWorker"
-    ){
-
-        headerTitle =
-            "POULTRY ACTIVITIES";
-
-    }
-
-    else if(
-        user.role === "admin"
-    ){
-
-        headerTitle =
-            "CHESI PROJECTS";
-
-    }
-
-}
-
-
-/* =========================================================
-   ROLE FLAGS
-========================================================= */
-
-const isAdmin =
-    !!user &&
-    user.role === "admin";
-
-const isDairyWorker =
-    !!user &&
-    user.role === "dairyWorker";
-
-const isPoultryWorker =
-    !!user &&
-    user.role === "poultryWorker";
-
+let headerTitle = "COREVESTER";
 %>
-
 
 <% if(!isAuthPage){ %>
 
-
 <!-- =========================================================
-   HEADER
+   HEADER - FREELY ACCESSIBLE FOR ALL
 ========================================================= -->
-
 <%- include("layout-partials/header", {
     homeLink: homeLink,
     headerTitle: headerTitle
 }) %>
 
-
 <!-- =========================================================
-   TOP MENU
+   TOP MENU - FREELY ACCESSIBLE FOR ALL
 ========================================================= -->
-
 <%- include("layout-partials/top-menu", {
-    user: user,
+    user: user || null,
     homeLink: homeLink,
-    isAdmin: isAdmin,
-    isDairyWorker: isDairyWorker,
-    isPoultryWorker: isPoultryWorker
+    isAdmin: true
 }) %>
 
-
 <!-- =========================================================
-   ADMIN SIDEBAR
+   ADMIN SIDEBAR - FREELY ACCESSIBLE FOR ALL
+   Dairy and Poultry worker sidebars removed
 ========================================================= -->
-
 <%- include("layout-partials/admin-sidebar", {
     homeLink: homeLink,
-    isAdmin: isAdmin
+    isAdmin: true
 }) %>
-
-
-<!-- =========================================================
-   POULTRY WORKER SIDEBAR
-========================================================= -->
-
-<%- include("layout-partials/poultry-sidebar", {
-    isPoultryWorker: isPoultryWorker
-}) %>
-
 
 <% } %>
-
 
 <!-- =========================================================
    MAIN CONTENT
 ========================================================= -->
-
 <div class="main">
-
     <%- body %>
-
 </div>
-
 
 <!-- =========================================================
    FOOTER
 ========================================================= -->
-
 <%- include("layout-partials/footer") %>
-
 
 <% if(!isAuthPage){ %>
 
-
 <script>
-
 /* =========================================================
    PROFILE
 ========================================================= */
-
-const profileBox =
-    document.getElementById(
-        "profileBox"
-    );
-
+const profileBox = document.getElementById("profileBox");
 
 function toggleProfile(event){
-
     event.stopPropagation();
-
     if(profileBox){
-
-        profileBox.classList.toggle(
-            "active"
-        );
-
+        profileBox.classList.toggle("active");
     }
-
 }
-
 
 /* =========================================================
-   POULTRY SIDEBAR
+   ADMIN SIDEBAR - FREELY ACCESSIBLE
 ========================================================= */
-
-const poultrySidebar =
-    document.getElementById(
-        "sidebar"
-    );
-
-const poultryOverlay =
-    document.getElementById(
-        "overlay"
-    );
-
-
-function openSidebar(){
-
-    if(
-        !poultrySidebar ||
-        !poultryOverlay
-    ){
-
-        return;
-
-    }
-
-    poultrySidebar.classList.add(
-        "active"
-    );
-
-    poultryOverlay.classList.add(
-        "active"
-    );
-
-}
-
-
-function closeSidebar(){
-
-    if(
-        !poultrySidebar ||
-        !poultryOverlay
-    ){
-
-        return;
-
-    }
-
-    poultrySidebar.classList.remove(
-        "active"
-    );
-
-    poultryOverlay.classList.remove(
-        "active"
-    );
-
-}
-
-
-if(poultryOverlay){
-
-    poultryOverlay.addEventListener(
-        "click",
-        closeSidebar
-    );
-
-}
-
-
-if(poultrySidebar){
-
-    poultrySidebar
-        .querySelectorAll("a")
-        .forEach(
-            function(link){
-
-                link.addEventListener(
-                    "click",
-                    closeSidebar
-                );
-
-            }
-        );
-
-}
-
-
-/* =========================================================
-   ADMIN SIDEBAR
-========================================================= */
-
-const adminSidebar =
-    document.getElementById(
-        "adminDashboardSidebar"
-    );
-
-const adminTopMenuButton =
-    document.getElementById(
-        "adminTopMenuButton"
-    );
-
-const adminSidebarMenuButton =
-    document.getElementById(
-        "adminSidebarMenuButton"
-    );
-
-const adminSidebarOverlay =
-    document.getElementById(
-        "adminSidebarOverlay"
-    );
-
-const dairyActivitiesButton =
-    document.getElementById(
-        "dairyActivitiesButton"
-    );
-
-const dairyActivitiesSubmenu =
-    document.getElementById(
-        "dairyActivitiesSubmenu"
-    );
-
-
-/* =========================================================
-   OPEN ADMIN SIDEBAR
-========================================================= */
+const adminSidebar = document.getElementById("adminDashboardSidebar");
+const adminTopMenuButton = document.getElementById("adminTopMenuButton");
+const adminSidebarMenuButton = document.getElementById("adminSidebarMenuButton");
+const adminSidebarOverlay = document.getElementById("adminSidebarOverlay");
+const dairyActivitiesButton = document.getElementById("dairyActivitiesButton");
+const dairyActivitiesSubmenu = document.getElementById("dairyActivitiesSubmenu");
 
 function openAdminSidebar(){
-
-    if(
-        !adminSidebar ||
-        !adminSidebarOverlay
-    ){
-
-        return;
-
-    }
-
-    adminSidebar.classList.add(
-        "open"
-    );
-
-    adminSidebarOverlay.classList.add(
-        "active"
-    );
-
-    adminSidebar.setAttribute(
-        "aria-expanded",
-        "true"
-    );
-
+    if(!adminSidebar ||!adminSidebarOverlay) return;
+    adminSidebar.classList.add("open");
+    adminSidebarOverlay.classList.add("active");
+    adminSidebar.setAttribute("aria-expanded", "true");
     if(adminTopMenuButton){
-
-        adminTopMenuButton.setAttribute(
-            "aria-expanded",
-            "true"
-        );
-
+        adminTopMenuButton.setAttribute("aria-expanded", "true");
     }
-
-    adminSidebarOverlay.setAttribute(
-        "aria-hidden",
-        "false"
-    );
-
+    adminSidebarOverlay.setAttribute("aria-hidden", "false");
 }
-
-
-/* =========================================================
-   CLOSE DAIRY ACTIVITIES
-========================================================= */
 
 function closeDairyActivities(){
-
-    if(
-        !dairyActivitiesButton ||
-        !dairyActivitiesSubmenu
-    ){
-
-        return;
-
-    }
-
-    dairyActivitiesButton.setAttribute(
-        "aria-expanded",
-        "false"
-    );
-
-    dairyActivitiesButton.classList.remove(
-        "expanded"
-    );
-
-    dairyActivitiesSubmenu.classList.remove(
-        "open"
-    );
-
+    if(!dairyActivitiesButton ||!dairyActivitiesSubmenu) return;
+    dairyActivitiesButton.setAttribute("aria-expanded", "false");
+    dairyActivitiesButton.classList.remove("expanded");
+    dairyActivitiesSubmenu.classList.remove("open");
 }
-
-
-/* =========================================================
-   CLOSE ADMIN SIDEBAR
-========================================================= */
 
 function closeAdminSidebar(){
-
-    if(
-        !adminSidebar ||
-        !adminSidebarOverlay
-    ){
-
-        return;
-
-    }
-
-    adminSidebar.classList.remove(
-        "open"
-    );
-
-    adminSidebarOverlay.classList.remove(
-        "active"
-    );
-
-    adminSidebar.setAttribute(
-        "aria-expanded",
-        "false"
-    );
-
+    if(!adminSidebar ||!adminSidebarOverlay) return;
+    adminSidebar.classList.remove("open");
+    adminSidebarOverlay.classList.remove("active");
+    adminSidebar.setAttribute("aria-expanded", "false");
     if(adminTopMenuButton){
-
-        adminTopMenuButton.setAttribute(
-            "aria-expanded",
-            "false"
-        );
-
+        adminTopMenuButton.setAttribute("aria-expanded", "false");
     }
-
-    adminSidebarOverlay.setAttribute(
-        "aria-hidden",
-        "true"
-    );
-
+    adminSidebarOverlay.setAttribute("aria-hidden", "true");
     closeDairyActivities();
-
 }
-
-
-/* =========================================================
-   ADMIN TOP MENU BUTTON
-========================================================= */
 
 if(adminTopMenuButton){
-
-    adminTopMenuButton.addEventListener(
-        "click",
-        function(event){
-
-            event.preventDefault();
-
-            event.stopPropagation();
-
-            if(
-                adminSidebar &&
-                adminSidebar.classList.contains(
-                    "open"
-                )
-            ){
-
-                closeAdminSidebar();
-
-            }
-
-            else{
-
-                openAdminSidebar();
-
-            }
-
+    adminTopMenuButton.addEventListener("click", function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        if(adminSidebar && adminSidebar.classList.contains("open")){
+            closeAdminSidebar();
+        } else {
+            openAdminSidebar();
         }
-    );
-
+    });
 }
-
-
-/* =========================================================
-   ADMIN SIDEBAR MENU BUTTON
-========================================================= */
 
 if(adminSidebarMenuButton){
-
-    adminSidebarMenuButton.addEventListener(
-        "click",
-        function(event){
-
-            event.preventDefault();
-
-            event.stopPropagation();
-
-            closeAdminSidebar();
-
-        }
-    );
-
+    adminSidebarMenuButton.addEventListener("click", function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        closeAdminSidebar();
+    });
 }
 
-
-/* =========================================================
-   DAIRY ACTIVITIES
-========================================================= */
-
-if(
-    dairyActivitiesButton &&
-    dairyActivitiesSubmenu
-){
-
-    dairyActivitiesButton.addEventListener(
-        "click",
-        function(event){
-
-            event.preventDefault();
-
-            event.stopPropagation();
-
-            const isExpanded =
-                dairyActivitiesButton.getAttribute(
-                    "aria-expanded"
-                ) === "true";
-
-            dairyActivitiesButton.setAttribute(
-                "aria-expanded",
-                String(!isExpanded)
-            );
-
-            dairyActivitiesButton.classList.toggle(
-                "expanded",
-                !isExpanded
-            );
-
-            dairyActivitiesSubmenu.classList.toggle(
-                "open",
-                !isExpanded
-            );
-
-        }
-    );
-
+if(dairyActivitiesButton && dairyActivitiesSubmenu){
+    dairyActivitiesButton.addEventListener("click", function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        const isExpanded = dairyActivitiesButton.getAttribute("aria-expanded") === "true";
+        dairyActivitiesButton.setAttribute("aria-expanded", String(!isExpanded));
+        dairyActivitiesButton.classList.toggle("expanded",!isExpanded);
+        dairyActivitiesSubmenu.classList.toggle("open",!isExpanded);
+    });
 }
-
-
-/* =========================================================
-   ADMIN SIDEBAR LINKS
-========================================================= */
 
 if(adminSidebar){
-
-    adminSidebar
-        .querySelectorAll(
-            ".admin-sidebar-link"
-        )
-        .forEach(
-            function(link){
-
-                link.addEventListener(
-                    "click",
-                    function(){
-
-                        closeAdminSidebar();
-
-                    }
-                );
-
-            }
-        );
-
+    adminSidebar.querySelectorAll(".admin-sidebar-link").forEach(function(link){
+        link.addEventListener("click", function(){
+            closeAdminSidebar();
+        });
+    });
 }
-
-
-/* =========================================================
-   ADMIN OVERLAY
-========================================================= */
 
 if(adminSidebarOverlay){
-
-    adminSidebarOverlay.addEventListener(
-        "click",
-        function(){
-
-            closeAdminSidebar();
-
-        }
-    );
-
+    adminSidebarOverlay.addEventListener("click", function(){
+        closeAdminSidebar();
+    });
 }
 
-
-/* =========================================================
-   CLOSE PROFILE WHEN CLICKING OUTSIDE
-========================================================= */
-
-document.addEventListener(
-    "click",
-    function(event){
-
-        if(
-            profileBox &&
-            !profileBox.contains(
-                event.target
-            )
-        ){
-
-            profileBox.classList.remove(
-                "active"
-            );
-
-        }
-
+document.addEventListener("click", function(event){
+    if(profileBox &&!profileBox.contains(event.target)){
+        profileBox.classList.remove("active");
     }
-);
+});
 
-
-/* =========================================================
-   ESCAPE KEY
-========================================================= */
-
-document.addEventListener(
-    "keydown",
-    function(event){
-
-        if(event.key === "Escape"){
-
-            closeSidebar();
-
-            closeAdminSidebar();
-
-            if(profileBox){
-
-                profileBox.classList.remove(
-                    "active"
-                );
-
-            }
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   WINDOW RESIZE
-========================================================= */
-
-window.addEventListener(
-    "resize",
-    function(){
-
+document.addEventListener("keydown", function(event){
+    if(event.key === "Escape"){
         closeAdminSidebar();
-
-        closeSidebar();
-
+        if(profileBox){
+            profileBox.classList.remove("active");
+        }
     }
-);
+});
 
+window.addEventListener("resize", function(){
+    closeAdminSidebar();
+});
 </script>
-
 
 <% } %>
 
-
 </body>
-
 </html>
