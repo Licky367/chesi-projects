@@ -31,7 +31,7 @@ exports.productsPage = async (req, res) => {
         const cartTotal = cart.reduce((sum, i) => sum + (i.qty * i.price), 0);
         const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
 
-        res.render("corevester/products", {
+        res.render("/products", {
             title: "Products - COREVESTER",
             products,
             categories,
