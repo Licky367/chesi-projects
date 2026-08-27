@@ -1,1921 +1,570 @@
-<style>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    <%= typeof title !== "undefined" ? title : "Chesi Projects" %>
+</title>
+
+<link
+    rel="icon"
+    type="image/png"
+    href="/images/cfp-logo.png"
+>
+
+<link
+    rel="stylesheet"
+    href="/css/layout.css"
+>
+
+
+<meta
+    property="og:title"
+    content="<%= typeof title !== "undefined" ? title : "Chesi Projects" %>"
+>
+
+<meta
+    property="og:description"
+    content="Chesi Projects Management System"
+>
+
+<meta
+    property="og:image"
+    content="https://YOUR-DOMAIN.com/images/cfp-logo.png"
+>
+
+<meta
+    property="og:url"
+    content="https://YOUR-DOMAIN.com<%= currentPath || "/" %>"
+>
+
+<meta
+    property="og:type"
+    content="website"
+>
+
+<meta
+    property="og:site_name"
+    content="Chesi Projects"
+>
+
+<meta
+    name="twitter:card"
+    content="summary_large_image"
+>
+
+<meta
+    name="twitter:title"
+    content="<%= typeof title !== "undefined" ? title : "Chesi Projects" %>"
+>
+
+<meta
+    name="twitter:description"
+    content="Chesi Projects Management System"
+>
+
+<meta
+    name="twitter:image"
+    content="https://YOUR-DOMAIN.com/images/cfp-logo.png"
+>
+
+</head>
+
+
+<%
 
 /* =========================================================
-   SALES PAGE
+   AUTHENTICATION PAGES
 ========================================================= */
 
-.sales-page{
-    max-width:1100px;
-    margin:0 auto;
-    padding:20px 0 40px;
-}
+const authPages = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password"
+];
 
+const currentPagePath =
+    currentPath ||
+    (typeof req !== "undefined" && req.path) ||
+    "";
+
+const isAuthPage =
+    authPages.includes(
+        currentPagePath
+    );
+
+%>
+
+
+<body class="<%= isAuthPage ? 'auth-page' : 'app-page' %>">
+
+
+<%
 
 /* =========================================================
-   CARD
+   HOME DESTINATION
 ========================================================= */
 
-.sales-card{
-    background:#fff;
-    border-radius:18px;
-    padding:24px;
-    margin-bottom:20px;
-    box-shadow:0 8px 25px rgba(0,0,0,.06);
-}
-
-
-/* =========================================================
-   TITLES
-========================================================= */
-
-.sales-title{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    margin-bottom:22px;
-    color:#166534;
-    font-size:22px;
-    font-weight:700;
-}
-
-.sales-title-icon{
-    width:42px;
-    height:42px;
-    border-radius:12px;
-    background:#dcfce7;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex-shrink:0;
-}
-
-.sales-title-icon i{
-    font-size:20px;
-    color:#15803d;
-}
-
-
-/* =========================================================
-   FORM
-========================================================= */
-
-.sales-row{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:18px;
-}
-
-.sales-field{
-    display:flex;
-    flex-direction:column;
-    gap:7px;
-}
-
-.sales-field label{
-    font-size:13px;
-    color:#374151;
-    font-weight:600;
-}
-
-.sales-input{
-    width:100%;
-    padding:12px 14px;
-    border:1px solid #d1d5db;
-    border-radius:9px;
-    background:#f9fafb;
-    font-size:14px;
-    outline:none;
-    transition:.25s;
-    box-sizing:border-box;
-}
-
-.sales-input:focus{
-    border-color:#16a34a;
-    background:#fff;
-    box-shadow:0 0 0 4px rgba(22,163,74,.10);
-}
-
-.sales-input[readonly]{
-    background:#f3f4f6;
-    cursor:not-allowed;
-}
-
-
-/* =========================================================
-   SELECT
-========================================================= */
-
-.sales-select{
-    width:100%;
-    padding:12px 14px;
-    border:1px solid #d1d5db;
-    border-radius:9px;
-    background:#f9fafb;
-    font-size:14px;
-    outline:none;
-    cursor:pointer;
-    box-sizing:border-box;
-}
-
-.sales-select:focus{
-    border-color:#16a34a;
-    background:#fff;
-    box-shadow:0 0 0 4px rgba(22,163,74,.10);
-}
+let homeLink = "/";
 
 
 /* =========================================================
-   BUTTONS
+   ADMIN
 ========================================================= */
 
-.sales-btn{
-    border:none;
-    border-radius:9px;
-    padding:12px 18px;
-    background:linear-gradient(135deg,#16a34a,#15803d);
-    color:#fff;
-    font-size:14px;
-    font-weight:700;
-    cursor:pointer;
-    transition:.25s;
-}
+if(
+    user &&
+    user.role === "admin"
+){
 
-.sales-btn:hover{
-    transform:translateY(-2px);
-    box-shadow:0 8px 18px rgba(22,163,74,.22);
-}
+    homeLink =
+        "/dashboard/dairy";
 
-.sales-btn:disabled{
-    background:#d1d5db;
-    color:#6b7280;
-    cursor:not-allowed;
-    transform:none;
-    box-shadow:none;
 }
 
 
 /* =========================================================
-   FARM SUMMARY
+   DAIRY WORKER
 ========================================================= */
 
-.farm-total-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-    gap:16px;
-}
+else if(
+    user &&
+    user.role === "dairyWorker" &&
+    Array.isArray(user.assignedFarm) &&
+    user.assignedFarm.length > 0
+){
 
-.farm-total-card{
-    border:1px solid #e5e7eb;
-    border-radius:14px;
-    padding:18px;
-    background:#fff;
-}
+    const firstFarm =
+        user.assignedFarm[0];
 
-.farm-total-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    margin-bottom:16px;
-}
+    homeLink =
+        `/dairy/${firstFarm}`;
 
-.farm-total-name{
-    font-size:16px;
-    font-weight:700;
-    color:#166534;
-}
-
-.farm-total-code{
-    font-size:11px;
-    color:#6b7280;
-}
-
-.farm-total-values{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-}
-
-.farm-stat{
-    background:#f9fafb;
-    border-radius:10px;
-    padding:11px;
-}
-
-.farm-stat-label{
-    display:block;
-    font-size:11px;
-    color:#6b7280;
-    margin-bottom:4px;
-}
-
-.farm-stat-value{
-    display:block;
-    font-size:16px;
-    font-weight:800;
-    color:#111827;
-}
-
-.farm-stat-available{
-    color:#15803d;
-}
-
-.farm-stat-sold{
-    color:#b45309;
-}
-
-.farm-stat-revenue{
-    color:#166534;
 }
 
 
 /* =========================================================
-   FARM SELECT INFO
+   HEADER TITLE
 ========================================================= */
 
-.farm-selection-info{
-    margin-top:15px;
-    padding:12px 14px;
-    background:#f0fdf4;
-    border:1px solid #bbf7d0;
-    border-radius:10px;
-    color:#166534;
-    font-size:13px;
-}
+let headerTitle =
+    "CHESI PROJECTS";
 
-.farm-selection-info strong{
-    font-weight:800;
-}
+if(user){
 
+    if(
+        user.role === "dairyWorker"
+    ){
 
-/* =========================================================
-   PRICE INFO
-========================================================= */
+        headerTitle =
+            "DAIRY ACTIVITIES";
 
-.price-info{
-    margin-top:15px;
-    background:#fefce8;
-    padding:10px 14px;
-    border-radius:10px;
-    color:#854d0e;
-    font-size:13px;
-}
-
-.price-info i{
-    margin-right:6px;
-}
-
-
-/* =========================================================
-   TABLE
-========================================================= */
-
-.sales-table-wrapper{
-    overflow-x:auto;
-}
-
-.sales-table{
-    width:100%;
-    min-width:700px;
-    border-collapse:collapse;
-}
-
-.sales-table th{
-    padding:14px 12px;
-    background:#f9fafb;
-    border-bottom:1px solid #e5e7eb;
-    text-align:left;
-    font-size:12px;
-    text-transform:uppercase;
-    color:#6b7280;
-}
-
-.sales-table td{
-    padding:12px;
-    border-bottom:1px solid #f0f0f0;
-    vertical-align:middle;
-}
-
-.sales-table tbody tr:hover{
-    background:#fbfffc;
-}
-
-
-/* =========================================================
-   BADGES
-========================================================= */
-
-.badge{
-    display:inline-flex;
-    align-items:center;
-    padding:6px 10px;
-    border-radius:999px;
-    font-size:11px;
-    font-weight:700;
-    gap:6px;
-}
-
-.badge-green{
-    background:#dcfce7;
-    color:#166534;
-}
-
-.badge-blue{
-    background:#dbeafe;
-    color:#1d4ed8;
-}
-
-.badge-gray{
-    background:#f3f4f6;
-    color:#6b7280;
-}
-
-.badge-orange{
-    background:#ffedd5;
-    color:#c2410c;
-}
-
-
-/* =========================================================
-   STANDING ORDER FORM
-========================================================= */
-
-.standing-sale-form{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    flex-wrap:wrap;
-}
-
-.standing-sale-form .sales-select{
-    width:210px;
-}
-
-
-/* =========================================================
-   SALE DETAILS
-========================================================= */
-
-.sale-customer{
-    font-weight:700;
-    color:#111827;
-}
-
-.sale-liters{
-    font-weight:700;
-    color:#166534;
-}
-
-.sale-cash{
-    font-weight:700;
-    color:#166534;
-}
-
-
-/* =========================================================
-   OMIT BUTTON
-========================================================= */
-
-.omit-btn{
-    border:none;
-    border-radius:8px;
-    padding:8px 12px;
-    background:#fee2e2;
-    color:#b91c1c;
-    font-weight:700;
-    cursor:pointer;
-}
-
-.omit-btn:hover{
-    background:#fecaca;
-}
-
-
-/* =========================================================
-   TOTAL BOX
-========================================================= */
-
-.total-box{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    border-left:5px solid #16a34a;
-    font-size:18px;
-    font-weight:700;
-}
-
-.total-number{
-    color:#166534;
-    font-size:28px;
-    font-weight:800;
-}
-
-
-/* =========================================================
-   SUMMARY GRID
-========================================================= */
-
-.sales-summary-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
-    gap:14px;
-}
-
-.sales-summary-item{
-    background:#f9fafb;
-    border-radius:12px;
-    padding:16px;
-}
-
-.sales-summary-label{
-    display:block;
-    color:#6b7280;
-    font-size:12px;
-    margin-bottom:6px;
-}
-
-.sales-summary-value{
-    display:block;
-    color:#166534;
-    font-size:22px;
-    font-weight:800;
-}
-
-
-/* =========================================================
-   EMPTY
-========================================================= */
-
-.empty{
-    text-align:center;
-    padding:35px;
-    color:#6b7280;
-}
-
-.empty i{
-    display:block;
-    margin-bottom:8px;
-    font-size:25px;
-}
-
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media(max-width:650px){
-
-    .sales-page{
-        padding:14px 0 30px;
     }
 
-    .sales-card{
-        padding:18px;
-        border-radius:14px;
+    else if(
+        user.role === "poultryWorker"
+    ){
+
+        headerTitle =
+            "POULTRY ACTIVITIES";
+
     }
 
-    .sales-title{
-        font-size:20px;
-    }
+    else if(
+        user.role === "admin"
+    ){
 
-    .total-box{
-        flex-direction:column;
-        align-items:flex-start;
-        gap:12px;
-    }
+        headerTitle =
+            "CHESI PROJECTS";
 
-    .farm-total-values{
-        grid-template-columns:1fr;
     }
 
 }
 
-</style>
 
+/* =========================================================
+   ROLE FLAGS
+========================================================= */
 
-<div class="sales-page">
+const isAdmin =
+    !!user &&
+    user.role === "admin";
 
+const isDairyWorker =
+    !!user &&
+    user.role === "dairyWorker";
 
-    <!-- =====================================================
-         1. DAILY MILK SUMMARY
-    ====================================================== -->
+const isPoultryWorker =
+    !!user &&
+    user.role === "poultryWorker";
 
-    <div class="sales-card">
+%>
 
-        <div class="sales-title">
 
-            <div class="sales-title-icon">
-                <i class="fas fa-chart-column"></i>
-            </div>
+<% if(!isAuthPage){ %>
 
-            <span>
-                Today's Milk Summary
-            </span>
 
-        </div>
+<!-- =========================================================
+   HEADER
+========================================================= -->
 
+<%- include("layout-partials/header") %>
 
-        <div class="sales-summary-grid">
 
+<!-- =========================================================
+   TOP MENU
+========================================================= -->
 
-            <!-- PRODUCTION -->
+<%- include("layout-partials/top-menu") %>
 
-            <div class="sales-summary-item">
 
-                <span class="sales-summary-label">
-                    Total Production
-                </span>
+<!-- =========================================================
+   ADMIN SIDEBAR
+========================================================= -->
 
-                <span class="sales-summary-value">
+<%- include("layout-partials/admin-sidebar") %>
 
-                    <%= Number(
-                        totalProduction || 0
-                    ).toFixed(2) %> L
 
-                </span>
+<!-- =========================================================
+   POULTRY SIDEBAR
+========================================================= -->
 
-            </div>
+<%- include("layout-partials/poultry-sidebar") %>
 
 
-            <!-- SOLD -->
+<% } %>
 
-            <div class="sales-summary-item">
 
-                <span class="sales-summary-label">
-                    Total Sold
-                </span>
+<!-- =========================================================
+   MAIN CONTENT
+========================================================= -->
 
-                <span class="sales-summary-value">
+<div class="main">
 
-                    <%= Number(
-                        totalSales || 0
-                    ).toFixed(2) %> L
-
-                </span>
-
-            </div>
-
-
-            <!-- AVAILABLE -->
-
-            <div class="sales-summary-item">
-
-                <span class="sales-summary-label">
-                    Available Milk
-                </span>
-
-                <span class="sales-summary-value">
-
-                    <%= Number(
-                        availableMilk || 0
-                    ).toFixed(2) %> L
-
-                </span>
-
-            </div>
-
-
-            <!-- REVENUE -->
-
-            <div class="sales-summary-item">
-
-                <span class="sales-summary-label">
-                    Total Revenue
-                </span>
-
-                <span class="sales-summary-value">
-
-                    KES
-                    <%= Number(
-                        totalRevenue || 0
-                    ).toFixed(2) %>
-
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <div class="price-info">
-
-            <i class="fas fa-tag"></i>
-
-            Current Milk Price:
-
-            <strong>
-
-                KES
-                <%= Number(
-                    currentPrice || 0
-                ).toFixed(2) %>
-                / L
-
-            </strong>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         2. MILK PRICE
-    ====================================================== -->
-
-    <div class="sales-card">
-
-        <div class="sales-title">
-
-            <div class="sales-title-icon">
-                <i class="fas fa-sack-dollar"></i>
-            </div>
-
-            <span>
-                Milk Price
-            </span>
-
-        </div>
-
-
-        <form
-            method="POST"
-            action="/sales/price"
-        >
-
-            <div class="sales-row">
-
-                <div class="sales-field">
-
-                    <label>
-                        Current Price (KES/L)
-                    </label>
-
-                    <input
-                        class="sales-input"
-                        type="number"
-                        name="price"
-                        min="0"
-                        step="0.1"
-                        value="<%= Number(currentPrice || 0) %>"
-                        <%= user?.role === "admin"
-                            ? ""
-                            : "readonly" %>
-                    >
-
-                </div>
-
-            </div>
-
-
-            <% if (user?.role === "admin") { %>
-
-                <button
-                    type="submit"
-                    class="sales-btn"
-                    style="margin-top:18px;"
-                >
-
-                    <i class="fas fa-floppy-disk"></i>
-
-                    Save Price
-
-                </button>
-
-            <% } else { %>
-
-                <div class="price-info">
-
-                    <i class="fas fa-lock"></i>
-
-                    Only administrators can change milk price.
-
-                </div>
-
-            <% } %>
-
-        </form>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         3. FARM MILK POSITION
-    ====================================================== -->
-
-    <div class="sales-card">
-
-        <div class="sales-title">
-
-            <div class="sales-title-icon">
-                <i class="fas fa-tractor"></i>
-            </div>
-
-            <span>
-                Farm Milk Position
-            </span>
-
-        </div>
-
-
-        <% if (farmTotals && farmTotals.length) { %>
-
-            <div class="farm-total-grid">
-
-                <% farmTotals.forEach(farm => { %>
-
-                    <div class="farm-total-card">
-
-                        <div class="farm-total-header">
-
-                            <div>
-
-                                <div class="farm-total-name">
-
-                                    <%= farm.farmName %>
-
-                                </div>
-
-                                <div class="farm-total-code">
-
-                                    Farm Code:
-                                    <%= farm.farmCode %>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="farm-total-values">
-
-
-                            <!-- PRODUCTION -->
-
-                            <div class="farm-stat">
-
-                                <span class="farm-stat-label">
-                                    Production
-                                </span>
-
-                                <span class="farm-stat-value">
-
-                                    <%= Number(
-                                        farm.production || 0
-                                    ).toFixed(2) %> L
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- SOLD -->
-
-                            <div class="farm-stat">
-
-                                <span class="farm-stat-label">
-                                    Sold
-                                </span>
-
-                                <span class="farm-stat-value farm-stat-sold">
-
-                                    <%= Number(
-                                        farm.sold || 0
-                                    ).toFixed(2) %> L
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- AVAILABLE -->
-
-                            <div class="farm-stat">
-
-                                <span class="farm-stat-label">
-                                    Available
-                                </span>
-
-                                <span class="farm-stat-value farm-stat-available">
-
-                                    <%= Number(
-                                        farm.available || 0
-                                    ).toFixed(2) %> L
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- REVENUE -->
-
-                            <div class="farm-stat">
-
-                                <span class="farm-stat-label">
-                                    Revenue
-                                </span>
-
-                                <span class="farm-stat-value farm-stat-revenue">
-
-                                    KES
-                                    <%= Number(
-                                        farm.revenue || 0
-                                    ).toFixed(2) %>
-
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                <% }) %>
-
-            </div>
-
-        <% } else { %>
-
-            <div class="empty">
-
-                <i class="fas fa-tractor"></i>
-
-                No dairy farms are available for this account.
-
-            </div>
-
-        <% } %>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         4. STANDING ORDERS
-    ====================================================== -->
-
-    <div class="sales-card">
-
-        <div class="sales-title">
-
-            <div class="sales-title-icon">
-                <i class="fas fa-repeat"></i>
-            </div>
-
-            <span>
-                Standing Orders
-            </span>
-
-        </div>
-
-
-        <% if (standingOrders && standingOrders.length) { %>
-
-            <div class="sales-table-wrapper">
-
-                <table class="sales-table">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Customer
-                            </th>
-
-                            <th>
-                                Liters
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                            <th>
-                                Farm
-                            </th>
-
-                            <th>
-                                Daily Sale
-                            </th>
-
-                            <% if (user?.role === "admin") { %>
-
-                                <th>
-                                    Action
-                                </th>
-
-                            <% } %>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        <% standingOrders.forEach(order => { %>
-
-                            <tr>
-
-
-                                <!-- CUSTOMER -->
-
-                                <td>
-
-                                    <span class="sale-customer">
-
-                                        <%= order.customerName %>
-
-                                    </span>
-
-                                </td>
-
-
-                                <!-- LITERS -->
-
-                                <td>
-
-                                    <span class="sale-liters">
-
-                                        <%= Number(
-                                            order.liters || 0
-                                        ).toFixed(2) %> L
-
-                                    </span>
-
-                                </td>
-
-
-                                <!-- STATUS -->
-
-                                <td>
-
-                                    <% if (order.isFuture) { %>
-
-                                        <span class="badge badge-blue">
-
-                                            <i class="fas fa-clock"></i>
-
-                                            Effective Tomorrow
-
-                                        </span>
-
-                                    <% } else if (order.saleRecordedToday) { %>
-
-                                        <span class="badge badge-green">
-
-                                            <i class="fas fa-circle-check"></i>
-
-                                            Recorded Today
-
-                                        </span>
-
-                                    <% } else { %>
-
-                                        <span class="badge badge-gray">
-
-                                            <i class="fas fa-hourglass-half"></i>
-
-                                            Ready
-
-                                        </span>
-
-                                    <% } %>
-
-                                </td>
-
-
-                                <!-- FARM -->
-
-                                <td>
-
-                                    <% if (
-                                        farmTotals &&
-                                        farmTotals.length
-                                    ) { %>
-
-                                        <form
-                                            method="POST"
-                                            action="/sales/standing-order"
-                                            class="standing-sale-form"
-                                        >
-
-                                            <input
-                                                type="hidden"
-                                                name="standingOrderId"
-                                                value="<%= order._id %>"
-                                            >
-
-
-                                            <select
-                                                class="sales-select"
-                                                name="farmId"
-                                                required
-                                                <%= order.isFuture ||
-                                                    order.saleRecordedToday
-                                                        ? "disabled"
-                                                        : "" %>
-                                            >
-
-                                                <option value="">
-                                                    Select farm
-                                                </option>
-
-
-                                                <% farmTotals.forEach(farm => { %>
-
-                                                    <option
-                                                        value="<%= farm.farmId %>"
-                                                        data-available="<%= Number(farm.available || 0) %>"
-                                                    >
-
-                                                        <%= farm.farmName %>
-                                                        -
-                                                        <%= Number(
-                                                            farm.available || 0
-                                                        ).toFixed(2) %>
-                                                        L available
-
-                                                    </option>
-
-                                                <% }) %>
-
-                                            </select>
-
-
-                                            <!-- =================================================
-                                                 STANDING ORDER SALE BUTTON
-                                            ================================================== -->
-
-                                            <% if (order.isFuture) { %>
-
-                                                <button
-                                                    type="button"
-                                                    class="sales-btn"
-                                                    disabled
-                                                >
-
-                                                    <i class="fas fa-ban"></i>
-
-                                                    Not Active
-
-                                                </button>
-
-                                            <% } else if (
-                                                order.saleRecordedToday
-                                            ) { %>
-
-                                                <button
-                                                    type="button"
-                                                    class="sales-btn"
-                                                    disabled
-                                                >
-
-                                                    <i class="fas fa-circle-check"></i>
-
-                                                    Recorded
-
-                                                </button>
-
-                                            <% } else { %>
-
-                                                <button
-                                                    type="submit"
-                                                    class="sales-btn"
-                                                >
-
-                                                    <i class="fas fa-paper-plane"></i>
-
-                                                    Submit Sale
-
-                                                </button>
-
-                                            <% } %>
-
-                                        </form>
-
-                                    <% } else { %>
-
-                                        <span class="badge badge-gray">
-
-                                            No farm available
-
-                                        </span>
-
-                                    <% } %>
-
-                                </td>
-
-
-                                <!-- DAILY SALE -->
-
-                                <td>
-
-                                    <%= Number(
-                                        order.liters || 0
-                                    ).toFixed(2) %> L
-
-                                </td>
-
-
-                                <!-- OMIT -->
-
-                                <% if (user?.role === "admin") { %>
-
-                                    <td>
-
-                                        <form
-                                            method="POST"
-                                            action="/sales/standing-order/omit"
-                                            onsubmit="return confirm('Omit this standing order?');"
-                                        >
-
-                                            <input
-                                                type="hidden"
-                                                name="id"
-                                                value="<%= order._id %>"
-                                            >
-
-
-                                            <button
-                                                type="submit"
-                                                class="omit-btn"
-                                            >
-
-                                                <i class="fas fa-trash-can"></i>
-
-                                                Omit
-
-                                            </button>
-
-                                        </form>
-
-                                    </td>
-
-                                <% } %>
-
-                            </tr>
-
-                        <% }) %>
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        <% } else { %>
-
-            <div class="empty">
-
-                <i class="fas fa-box-open"></i>
-
-                No standing orders available.
-
-            </div>
-
-        <% } %>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         5. ADD STANDING ORDER
-    ====================================================== -->
-
-    <div class="sales-card">
-
-        <div class="sales-title">
-
-            <div class="sales-title-icon">
-                <i class="fas fa-repeat"></i>
-            </div>
-
-            <span>
-                Add Standing Order
-            </span>
-
-        </div>
-
-
-        <form
-            method="POST"
-            action="/sales/standing-order/add"
-        >
-
-            <div class="sales-row">
-
-
-                <!-- CUSTOMER -->
-
-                <div class="sales-field">
-
-                    <label>
-                        Customer Name
-                    </label>
-
-                    <input
-                        class="sales-input"
-                        type="text"
-                        name="customerName"
-                        placeholder="Customer name"
-                        required
-                    >
-
-                </div>
-
-
-                <!-- LITERS -->
-
-                <div class="sales-field">
-
-                    <label>
-                        Default Liters Per Day
-                    </label>
-
-                    <input
-                        class="sales-input"
-                        type="number"
-                        name="liters"
-                        step="0.1"
-                        min="0.1"
-                        placeholder="Liters"
-                        required
-                    >
-
-                </div>
-
-            </div>
-
-
-            <button
-                type="submit"
-                class="sales-btn"
-                style="margin-top:18px;"
-            >
-
-                <i class="fas fa-circle-plus"></i>
-
-                Add Standing Order
-
-            </button>
-
-        </form>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         6. MANUAL SALE
-    ====================================================== -->
-
-    <div class="sales-card">
-
-        <div class="sales-title">
-
-            <div class="sales-title-icon">
-                <i class="fas fa-cart-shopping"></i>
-            </div>
-
-            <span>
-                Manual Sale
-            </span>
-
-        </div>
-
-
-        <% if (farmTotals && farmTotals.length) { %>
-
-            <form
-                method="POST"
-                action="/sales/manual"
-                id="manualSaleForm"
-            >
-
-                <div class="sales-row">
-
-
-                    <!-- FARM -->
-
-                    <div class="sales-field">
-
-                        <label>
-                            Dairy Farm
-                        </label>
-
-                        <select
-                            class="sales-select"
-                            name="farmId"
-                            id="manualSaleFarm"
-                            required
-                        >
-
-                            <option value="">
-                                Select dairy farm
-                            </option>
-
-
-                            <% farmTotals.forEach(farm => { %>
-
-                                <option
-                                    value="<%= farm.farmId %>"
-                                    data-available="<%= Number(farm.available || 0) %>"
-                                >
-
-                                    <%= farm.farmName %>
-                                    -
-                                    <%= Number(
-                                        farm.available || 0
-                                    ).toFixed(2) %>
-                                    L available
-
-                                </option>
-
-                            <% }) %>
-
-                        </select>
-
-                    </div>
-
-
-                    <!-- CUSTOMER -->
-
-                    <div class="sales-field">
-
-                        <label>
-                            Customer Name
-                        </label>
-
-                        <input
-                            class="sales-input"
-                            type="text"
-                            name="customerName"
-                            id="manualSaleCustomer"
-                            required
-                        >
-
-                    </div>
-
-
-                    <!-- LITERS -->
-
-                    <div class="sales-field">
-
-                        <label>
-                            Liters
-                        </label>
-
-                        <input
-                            class="sales-input"
-                            type="number"
-                            name="liters"
-                            id="manualSaleLiters"
-                            step="0.1"
-                            min="0.1"
-                            required
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <div
-                    class="farm-selection-info"
-                    id="manualSaleAvailability"
-                    style="display:none;"
-                >
-
-                    Available for selected farm:
-
-                    <strong id="selectedFarmAvailable">
-                        0.00 L
-                    </strong>
-
-                </div>
-
-
-                <button
-                    type="submit"
-                    class="sales-btn"
-                    style="margin-top:18px;"
-                >
-
-                    <i class="fas fa-circle-plus"></i>
-
-                    Record Manual Sale
-
-                </button>
-
-            </form>
-
-        <% } else { %>
-
-            <div class="empty">
-
-                <i class="fas fa-tractor"></i>
-
-                No dairy farm is available for recording a sale.
-
-            </div>
-
-        <% } %>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         7. TODAY'S MANUAL SALES
-    ====================================================== -->
-
-    <div class="sales-card">
-
-        <div class="sales-title">
-
-            <div class="sales-title-icon">
-                <i class="fas fa-clipboard-list"></i>
-            </div>
-
-            <span>
-                Today's Manual Sales
-            </span>
-
-        </div>
-
-
-        <% if (manualSales && manualSales.length) { %>
-
-            <div class="sales-table-wrapper">
-
-                <table class="sales-table">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Customer
-                            </th>
-
-                            <th>
-                                Farm
-                            </th>
-
-                            <th>
-                                Liters
-                            </th>
-
-                            <th>
-                                Price
-                            </th>
-
-                            <th>
-                                Cash
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        <% manualSales.forEach(sale => { %>
-
-                            <tr>
-
-
-                                <!-- CUSTOMER -->
-
-                                <td>
-
-                                    <span class="sale-customer">
-
-                                        <%= sale.customerName %>
-
-                                    </span>
-
-                                </td>
-
-
-                                <!-- FARM -->
-
-                                <td>
-
-                                    <%
-                                        const saleFarm =
-                                            farmTotals &&
-                                            farmTotals.find(
-                                                farm =>
-                                                    sale.farm &&
-                                                    String(farm.farmId) ===
-                                                    String(sale.farm)
-                                            );
-                                    %>
-
-
-                                    <% if (saleFarm) { %>
-
-                                        <strong>
-                                            <%= saleFarm.farmName %>
-                                        </strong>
-
-                                    <% } else { %>
-
-                                        <span class="badge badge-gray">
-
-                                            Farm unavailable
-
-                                        </span>
-
-                                    <% } %>
-
-                                </td>
-
-
-                                <!-- LITERS -->
-
-                                <td>
-
-                                    <span class="sale-liters">
-
-                                        <%= Number(
-                                            sale.liters || 0
-                                        ).toFixed(2) %> L
-
-                                    </span>
-
-                                </td>
-
-
-                                <!-- PRICE -->
-
-                                <td>
-
-                                    KES
-                                    <%= Number(
-                                        sale.price || 0
-                                    ).toFixed(2) %>
-                                    / L
-
-                                </td>
-
-
-                                <!-- CASH -->
-
-                                <td>
-
-                                    <span class="sale-cash">
-
-                                        KES
-                                        <%= Number(
-                                            sale.cash || 0
-                                        ).toFixed(2) %>
-
-                                    </span>
-
-                                </td>
-
-
-                                <!-- STATUS -->
-
-                                <td>
-
-                                    <span class="badge badge-green">
-
-                                        <i class="fas fa-circle-check"></i>
-
-                                        Recorded
-
-                                    </span>
-
-                                </td>
-
-                            </tr>
-
-                        <% }) %>
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        <% } else { %>
-
-            <div class="empty">
-
-                <i class="fas fa-box-open"></i>
-
-                No manual sales recorded today.
-
-            </div>
-
-        <% } %>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         8. TOTAL SOLD
-    ====================================================== -->
-
-    <div class="sales-card total-box">
-
-        <span>
-
-            <i class="fas fa-bottle-water"></i>
-
-            Total Sold Today
-
-        </span>
-
-
-        <span class="total-number">
-
-            <%= Number(
-                totalSales || 0
-            ).toFixed(2) %> L
-
-        </span>
-
-    </div>
-
-
+    <%- body %>
 
 </div>
 
+
+<!-- =========================================================
+   FOOTER
+========================================================= -->
+
+<%- include("layout-partials/footer") %>
+
+
+<% if(!isAuthPage){ %>
 
 
 <script>
 
 /* =========================================================
-   MANUAL SALE FARM AVAILABILITY
+   PROFILE
 ========================================================= */
 
-const manualSaleFarm =
+const profileBox =
     document.getElementById(
-        "manualSaleFarm"
-    );
-
-const manualSaleLiters =
-    document.getElementById(
-        "manualSaleLiters"
-    );
-
-const manualSaleAvailability =
-    document.getElementById(
-        "manualSaleAvailability"
-    );
-
-const selectedFarmAvailable =
-    document.getElementById(
-        "selectedFarmAvailable"
+        "profileBox"
     );
 
 
-function updateManualFarmAvailability(){
+function toggleProfile(event){
 
-    if (
-        !manualSaleFarm ||
-        !manualSaleAvailability ||
-        !selectedFarmAvailable
-    ){
+    event.stopPropagation();
 
-        return;
+    if(profileBox){
 
-    }
-
-
-    const selected =
-        manualSaleFarm.options[
-            manualSaleFarm.selectedIndex
-        ];
-
-
-    if (
-        !selected ||
-        !selected.value
-    ){
-
-        manualSaleAvailability.style.display =
-            "none";
-
-        selectedFarmAvailable.textContent =
-            "0.00 L";
-
-        return;
-
-    }
-
-
-    const available =
-        Number(
-            selected.dataset.available || 0
+        profileBox.classList.toggle(
+            "active"
         );
-
-
-    selectedFarmAvailable.textContent =
-        available.toFixed(2) + " L";
-
-
-    manualSaleAvailability.style.display =
-        "block";
-
-
-    if (
-        manualSaleLiters
-    ){
-
-        manualSaleLiters.max =
-            available > 0
-                ? available
-                : "";
 
     }
 
 }
 
 
-if (
-    manualSaleFarm
-){
+/* =========================================================
+   POULTRY SIDEBAR
+========================================================= */
 
-    manualSaleFarm.addEventListener(
-        "change",
-        updateManualFarmAvailability
+const poultrySidebar =
+    document.getElementById(
+        "sidebar"
+    );
+
+const poultryOverlay =
+    document.getElementById(
+        "overlay"
+    );
+
+
+function openSidebar(){
+
+    if(
+        !poultrySidebar ||
+        !poultryOverlay
+    ){
+
+        return;
+
+    }
+
+    poultrySidebar.classList.add(
+        "active"
+    );
+
+    poultryOverlay.classList.add(
+        "active"
+    );
+
+}
+
+
+function closeSidebar(){
+
+    if(
+        !poultrySidebar ||
+        !poultryOverlay
+    ){
+
+        return;
+
+    }
+
+    poultrySidebar.classList.remove(
+        "active"
+    );
+
+    poultryOverlay.classList.remove(
+        "active"
+    );
+
+}
+
+
+if(poultryOverlay){
+
+    poultryOverlay.addEventListener(
+        "click",
+        closeSidebar
+    );
+
+}
+
+
+if(poultrySidebar){
+
+    poultrySidebar
+        .querySelectorAll("a")
+        .forEach(
+            function(link){
+
+                link.addEventListener(
+                    "click",
+                    closeSidebar
+                );
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   ADMIN SIDEBAR
+========================================================= */
+
+const adminSidebar =
+    document.getElementById(
+        "adminDashboardSidebar"
+    );
+
+const adminTopMenuButton =
+    document.getElementById(
+        "adminTopMenuButton"
+    );
+
+const adminSidebarMenuButton =
+    document.getElementById(
+        "adminSidebarMenuButton"
+    );
+
+const adminSidebarOverlay =
+    document.getElementById(
+        "adminSidebarOverlay"
+    );
+
+const dairyActivitiesButton =
+    document.getElementById(
+        "dairyActivitiesButton"
+    );
+
+const dairyActivitiesSubmenu =
+    document.getElementById(
+        "dairyActivitiesSubmenu"
+    );
+
+
+/* =========================================================
+   OPEN ADMIN SIDEBAR
+========================================================= */
+
+function openAdminSidebar(){
+
+    if(
+        !adminSidebar ||
+        !adminSidebarOverlay
+    ){
+
+        return;
+
+    }
+
+    adminSidebar.classList.add(
+        "open"
+    );
+
+    adminSidebarOverlay.classList.add(
+        "active"
+    );
+
+    adminSidebar.setAttribute(
+        "aria-expanded",
+        "true"
+    );
+
+    if(adminTopMenuButton){
+
+        adminTopMenuButton.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+
+    }
+
+    adminSidebarOverlay.setAttribute(
+        "aria-hidden",
+        "false"
     );
 
 }
 
 
 /* =========================================================
-   MANUAL SALE VALIDATION
+   CLOSE DAIRY ACTIVITIES
 ========================================================= */
 
-const manualSaleForm =
-    document.getElementById(
-        "manualSaleForm"
+function closeDairyActivities(){
+
+    if(
+        !dairyActivitiesButton ||
+        !dairyActivitiesSubmenu
+    ){
+
+        return;
+
+    }
+
+    dairyActivitiesButton.setAttribute(
+        "aria-expanded",
+        "false"
     );
 
+    dairyActivitiesButton.classList.remove(
+        "expanded"
+    );
 
-if (
-    manualSaleForm
-){
+    dairyActivitiesSubmenu.classList.remove(
+        "open"
+    );
 
-    manualSaleForm.addEventListener(
-        "submit",
+}
+
+
+/* =========================================================
+   CLOSE ADMIN SIDEBAR
+========================================================= */
+
+function closeAdminSidebar(){
+
+    if(
+        !adminSidebar ||
+        !adminSidebarOverlay
+    ){
+
+        return;
+
+    }
+
+    adminSidebar.classList.remove(
+        "open"
+    );
+
+    adminSidebarOverlay.classList.remove(
+        "active"
+    );
+
+    adminSidebar.setAttribute(
+        "aria-expanded",
+        "false"
+    );
+
+    if(adminTopMenuButton){
+
+        adminTopMenuButton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+    }
+
+    adminSidebarOverlay.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+    closeDairyActivities();
+
+}
+
+
+/* =========================================================
+   ADMIN TOP MENU BUTTON
+========================================================= */
+
+if(adminTopMenuButton){
+
+    adminTopMenuButton.addEventListener(
+        "click",
         function(event){
 
-            const farmSelect =
-                this.querySelector(
-                    "[name='farmId']"
-                );
+            event.preventDefault();
 
-            const customerInput =
-                this.querySelector(
-                    "[name='customerName']"
-                );
+            event.stopPropagation();
 
-            const litersInput =
-                this.querySelector(
-                    "[name='liters']"
-                );
-
-
-            if (
-                !farmSelect ||
-                !customerInput ||
-                !litersInput
+            if(
+                adminSidebar &&
+                adminSidebar.classList.contains(
+                    "open"
+                )
             ){
 
-                return;
+                closeAdminSidebar();
 
             }
 
+            else{
 
-            const selected =
-                farmSelect.options[
-                    farmSelect.selectedIndex
-                ];
-
-
-            const available =
-                Number(
-                    selected?.dataset?.available || 0
-                );
-
-
-            const liters =
-                Number(
-                    litersInput.value
-                );
-
-
-            if (
-                !farmSelect.value
-            ){
-
-                event.preventDefault();
-
-                alert(
-                    "Please select a dairy farm."
-                );
-
-                return;
-
-            }
-
-
-            if (
-                !Number.isFinite(liters) ||
-                liters <= 0
-            ){
-
-                event.preventDefault();
-
-                alert(
-                    "Please enter a valid milk quantity."
-                );
-
-                return;
-
-            }
-
-
-            if (
-                liters > available
-            ){
-
-                event.preventDefault();
-
-                alert(
-                    "Insufficient milk available for the selected farm.\n\n" +
-                    "Available: " +
-                    available.toFixed(2) +
-                    " L"
-                );
-
-                return;
-
-            }
-
-
-            const customer =
-                customerInput.value.trim();
-
-
-            const proceed =
-                confirm(
-                    "Confirm Manual Sale\n\n" +
-                    "Farm: " +
-                    selected.textContent.trim() +
-                    "\nCustomer: " +
-                    customer +
-                    "\nMilk: " +
-                    liters.toFixed(2) +
-                    " L\n\n" +
-                    "Press OK to record this sale."
-                );
-
-
-            if (
-                !proceed
-            ){
-
-                event.preventDefault();
-
-                return;
-
-            }
-
-
-            const button =
-                this.querySelector(
-                    "button[type='submit']"
-                );
-
-
-            if (
-                button
-            ){
-
-                button.disabled =
-                    true;
-
-                button.innerHTML =
-                    '<i class="fas fa-spinner fa-spin"></i> Recording...';
+                openAdminSidebar();
 
             }
 
@@ -1926,162 +575,190 @@ if (
 
 
 /* =========================================================
-   STANDING ORDER SALES
+   ADMIN SIDEBAR MENU BUTTON
 ========================================================= */
 
-document
-    .querySelectorAll(
-        "form[action='/sales/standing-order']"
-    )
-    .forEach(
-        form => {
+if(adminSidebarMenuButton){
 
-            form.addEventListener(
-                "submit",
-                function(event){
+    adminSidebarMenuButton.addEventListener(
+        "click",
+        function(event){
 
-                    const farmSelect =
-                        this.querySelector(
-                            "[name='farmId']"
-                        );
+            event.preventDefault();
 
+            event.stopPropagation();
 
-                    if (
-                        !farmSelect
-                    ){
+            closeAdminSidebar();
 
-                        event.preventDefault();
+        }
+    );
 
-                        alert(
-                            "Please select a dairy farm."
-                        );
-
-                        return;
-
-                    }
+}
 
 
-                    const selected =
-                        farmSelect.options[
-                            farmSelect.selectedIndex
-                        ];
+/* =========================================================
+   DAIRY ACTIVITIES
+========================================================= */
 
+if(
+    dairyActivitiesButton &&
+    dairyActivitiesSubmenu
+){
 
-                    const available =
-                        Number(
-                            selected?.dataset?.available || 0
-                        );
+    dairyActivitiesButton.addEventListener(
+        "click",
+        function(event){
 
+            event.preventDefault();
 
-                    const row =
-                        this.closest("tr");
+            event.stopPropagation();
 
+            const isExpanded =
+                dairyActivitiesButton.getAttribute(
+                    "aria-expanded"
+                ) === "true";
 
-                    const litersText =
-                        row
-                            ?.querySelector(
-                                ".sale-liters"
-                            )
-                            ?.textContent || "";
+            dairyActivitiesButton.setAttribute(
+                "aria-expanded",
+                String(!isExpanded)
+            );
 
+            dairyActivitiesButton.classList.toggle(
+                "expanded",
+                !isExpanded
+            );
 
-                    const liters =
-                        Number(
-                            litersText
-                                .replace(
-                                    /[^0-9.]/g,
-                                    ""
-                                )
-                        );
-
-
-                    if (
-                        !farmSelect.value
-                    ){
-
-                        event.preventDefault();
-
-                        alert(
-                            "Please select a dairy farm."
-                        );
-
-                        return;
-
-                    }
-
-
-                    if (
-                        Number.isFinite(liters) &&
-                        liters > available
-                    ){
-
-                        event.preventDefault();
-
-                        alert(
-                            "Insufficient milk available for the selected farm.\n\n" +
-                            "Required: " +
-                            liters.toFixed(2) +
-                            " L\n" +
-                            "Available: " +
-                            available.toFixed(2) +
-                            " L"
-                        );
-
-                        return;
-
-                    }
-
-
-                    const proceed =
-                        confirm(
-                            "Confirm Standing Order Sale\n\n" +
-                            "Farm: " +
-                            selected.textContent.trim() +
-                            "\nMilk: " +
-                            (
-                                Number.isFinite(liters)
-                                    ? liters.toFixed(2)
-                                    : "standing-order quantity"
-                            ) +
-                            " L\n\n" +
-                            "Press OK to record this sale."
-                        );
-
-
-                    if (
-                        !proceed
-                    ){
-
-                        event.preventDefault();
-
-                        return;
-
-                    }
-
-
-                    const button =
-                        this.querySelector(
-                            "button[type='submit']"
-                        );
-
-
-                    if (
-                        button
-                    ){
-
-                        button.disabled =
-                            true;
-
-                        button.innerHTML =
-                            '<i class="fas fa-spinner fa-spin"></i> Recording...';
-
-                    }
-
-                }
+            dairyActivitiesSubmenu.classList.toggle(
+                "open",
+                !isExpanded
             );
 
         }
     );
 
+}
+
+
+/* =========================================================
+   ADMIN SIDEBAR LINKS
+========================================================= */
+
+if(adminSidebar){
+
+    adminSidebar
+        .querySelectorAll(
+            ".admin-sidebar-link"
+        )
+        .forEach(
+            function(link){
+
+                link.addEventListener(
+                    "click",
+                    function(){
+
+                        closeAdminSidebar();
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   ADMIN OVERLAY
+========================================================= */
+
+if(adminSidebarOverlay){
+
+    adminSidebarOverlay.addEventListener(
+        "click",
+        function(){
+
+            closeAdminSidebar();
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   CLOSE PROFILE WHEN CLICKING OUTSIDE
+========================================================= */
+
+document.addEventListener(
+    "click",
+    function(event){
+
+        if(
+            profileBox &&
+            !profileBox.contains(
+                event.target
+            )
+        ){
+
+            profileBox.classList.remove(
+                "active"
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   ESCAPE KEY
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    function(event){
+
+        if(event.key === "Escape"){
+
+            closeSidebar();
+
+            closeAdminSidebar();
+
+            if(profileBox){
+
+                profileBox.classList.remove(
+                    "active"
+                );
+
+            }
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   WINDOW RESIZE
+========================================================= */
+
+window.addEventListener(
+    "resize",
+    function(){
+
+        closeAdminSidebar();
+
+        closeSidebar();
+
+    }
+);
 
 </script>
+
+
+<% } %>
+
+
+</body>
+
+</html>
