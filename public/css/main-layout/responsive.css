@@ -1,0 +1,168 @@
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:600px){
+
+    .header{
+
+        padding:0 10px;
+
+        min-height:70px;
+    }
+
+    .header-logo{
+
+        height:100px;
+
+        top:8px;
+    }
+
+    .header-title{
+
+        padding-left:6px;
+
+        flex:1 1 auto;
+    }
+
+    .header-title-text{
+
+        font-size:15px;
+
+        line-height:18px;
+    }
+
+    .top-menu{
+
+        padding:0 8px;
+    }
+
+    .dairy-worker-nav{
+
+        gap:3px;
+
+        flex:1 1 auto;
+
+        min-width:0;
+    }
+
+    .dairy-worker-nav a{
+
+        min-width:0;
+
+        padding:2px 5px;
+    }
+
+    .nav-icon{
+        font-size:18px;
+    }
+
+    .nav-label{
+        font-size:9px;
+    }
+
+    .menu-btn{
+
+        width:42px;
+
+        min-width:42px;
+
+        height:42px;
+    }
+
+    .profile-trigger{
+
+        min-width:53px;
+    }
+
+    .profile-name{
+
+        max-width:60px;
+    }
+
+    .admin-dashboard-sidebar{
+
+        width:270px;
+
+        left:-285px;
+    }
+
+    .admin-dashboard-sidebar.open{
+
+        left:0;
+    }
+
+    .main{
+
+        padding-left:12px;
+
+        padding-right:12px;
+    }
+
+    .auth-page .main{
+
+        padding-left:12px;
+
+        padding-right:12px;
+
+        padding-top:0;
+
+        padding-bottom:70px;
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL SCREENS
+========================================================= */
+
+@media(max-width:380px){
+
+    .header{
+
+        padding:0 6px;
+    }
+
+    .header-logo{
+
+        height:88px;
+    }
+
+    .header-title{
+
+        padding-left:4px;
+    }
+
+    .header-title-text{
+
+        font-size:14px;
+
+        line-height:17px;
+    }
+
+    .profile-trigger{
+
+        min-width:48px;
+    }
+
+    .profile-name{
+
+        max-width:50px;
+    }
+
+    .dairy-worker-nav a{
+
+        padding-left:2px;
+
+        padding-right:2px;
+    }
+
+    .admin-dashboard-sidebar{
+
+        width:250px;
+
+        left:-265px;
+    }
+
+}
