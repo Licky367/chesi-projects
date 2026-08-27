@@ -1,0 +1,117 @@
+/* =========================================================
+   PROFILE
+========================================================= */
+
+.profile-box{
+
+    position:relative;
+
+    margin-left:auto;
+
+    flex-shrink:0;
+
+    height:50px;
+
+    display:flex;
+
+    align-items:center;
+}
+
+.profile-trigger{
+
+    height:48px;
+
+    min-width:58px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:1px;
+
+    cursor:pointer;
+}
+
+.profile-icon{
+
+    font-size:19px;
+
+    line-height:19px;
+
+    display:block;
+}
+
+.profile-name{
+
+    font-size:10px;
+
+    line-height:12px;
+
+    color:#fff;
+
+    max-width:75px;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+}
+
+
+/* =========================================================
+   PROFILE DROPDOWN
+========================================================= */
+
+.dropdown-profile{
+
+    position:absolute;
+
+    top:52px;
+
+    right:0;
+
+    width:190px;
+
+    background:#fff;
+
+    border-radius:10px;
+
+    overflow:hidden;
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.20);
+
+    display:none;
+
+    z-index:2500;
+}
+
+.profile-box.active .dropdown-profile{
+    display:block;
+}
+
+.dropdown-profile a{
+
+    display:block;
+
+    padding:12px 15px;
+
+    text-decoration:none;
+
+    color:#333;
+
+    border-bottom:1px solid #eee;
+}
+
+.dropdown-profile a:last-child{
+    border-bottom:none;
+}
+
+.dropdown-profile a:hover{
+    background:#f2f2f2;
+}
