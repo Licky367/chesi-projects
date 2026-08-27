@@ -1,7 +1,7 @@
 // ==========================================================
 // models/corevester/customers.js
 // CUSTOMER MODEL
-// ==========================================================
+// =========================================================
 
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
