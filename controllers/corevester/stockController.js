@@ -6,7 +6,7 @@ exports.stockPage = async (req, res) => {
             stockService.getAllStock(),
             stockService.getStats()
         ]);
-        res.render("corevester/admin/stock-entry", {
+        res.render("stock-entry", {
             title: "Stock Warehouse - COREVESTER",
             stockList,
             stats,
