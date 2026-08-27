@@ -19,7 +19,6 @@ const methodOverride = require("method-override");
 
 require("dotenv").config();
 
-
 // ==========================================================
 // CONNECT-MONGO
 // ==========================================================
@@ -39,14 +38,12 @@ try {
 
 }
 
-
 // ==========================================================
 // ENVIRONMENT
 // ==========================================================
 
 const isProduction =
     process.env.NODE_ENV === "production";
-
 
 if (isProduction) {
 
@@ -56,12 +53,10 @@ if (isProduction) {
         "FRONTEND_URL"
     ];
 
-
     const missing =
         requiredEnvVars.filter(
-            (key) => !process.env[key]
+            (key) =>!process.env[key]
         );
-
 
     if (missing.length) {
 
@@ -75,7 +70,6 @@ if (isProduction) {
 
 }
 
-
 // ==========================================================
 // DATABASE
 // ==========================================================
@@ -83,14 +77,12 @@ if (isProduction) {
 const connectDB =
     require("./db");
 
-
 // ==========================================================
 // DEFAULT ADMIN USER SEEDER
 // ==========================================================
 
 const seedUser =
     require("./utils/seedUser");
-
 
 // ==========================================================
 // ROUTES
@@ -100,10 +92,9 @@ const seedUser =
 //
 // The application now uses:
 //
-//     routes/corevester/index.js
+// routes/corevester/index.js
 //
 // ==========================================================
-
 
 // ----------------------------------------------------------
 // CORE VESTER
@@ -125,14 +116,12 @@ try {
 
 }
 
-
 // ==========================================================
 // SOCKET HANDLER
 // ==========================================================
 
 const socketHandler =
     require("./socket/socket");
-
 
 // ==========================================================
 // APP
@@ -141,13 +130,10 @@ const socketHandler =
 const app =
     express();
 
-
 const server =
     http.createServer(app);
 
-
 app.disable("x-powered-by");
-
 
 // ==========================================================
 // TRUST PROXY
@@ -166,7 +152,6 @@ if (
 
 }
 
-
 // ==========================================================
 // SECURITY
 // ==========================================================
@@ -183,7 +168,6 @@ app.use(
 
 );
 
-
 // ==========================================================
 // RATE LIMIT
 // ==========================================================
@@ -197,7 +181,7 @@ app.use(
 
         max:
             isProduction
-                ? 200
+               ? 200
                 : 1000,
 
         standardHeaders:
@@ -217,7 +201,6 @@ app.use(
 
 );
 
-
 // ==========================================================
 // COMPRESSION
 // ==========================================================
@@ -225,7 +208,6 @@ app.use(
 app.use(
     compression()
 );
-
 
 // ==========================================================
 // LOGGING
@@ -242,7 +224,6 @@ app.use(
 
 );
 
-
 // ==========================================================
 // SOCKET.IO
 // ==========================================================
@@ -251,10 +232,9 @@ const allowedOrigin =
     process.env.FRONTEND_URL ||
     (
         isProduction
-            ? false
+           ? false
             : "*"
     );
-
 
 const io =
     new Server(
@@ -279,15 +259,12 @@ const io =
 
     );
 
-
 app.set(
     "io",
     io
 );
 
-
 socketHandler(io);
-
 
 // ==========================================================
 // BODY PARSERS
@@ -307,7 +284,6 @@ app.use(
 
 );
 
-
 app.use(
 
     express.json({
@@ -319,7 +295,6 @@ app.use(
 
 );
 
-
 // ==========================================================
 // METHOD OVERRIDE
 // ==========================================================
@@ -327,7 +302,6 @@ app.use(
 app.use(
     methodOverride("_method")
 );
-
 
 // ==========================================================
 // SESSION
@@ -339,7 +313,7 @@ const sessionStore =
     process.env.MONGO_URI &&
     MongoStore
 
-        ? MongoStore.create({
+       ? MongoStore.create({
 
             mongoUrl:
                 process.env.MONGO_URI,
@@ -354,7 +328,6 @@ const sessionStore =
 
         : undefined;
 
-
 app.use(
 
     session({
@@ -365,7 +338,7 @@ app.use(
 
             (
                 isProduction
-                    ? ""
+                   ? ""
                     : "development-session-secret"
             ),
 
@@ -401,7 +374,6 @@ app.use(
 
 );
 
-
 // ==========================================================
 // GLOBAL USER
 // ==========================================================
@@ -414,29 +386,23 @@ app.use(
             req.session?.user ||
             null;
 
-
         req.user =
             currentUser;
-
 
         res.locals.user =
             currentUser;
 
-
         res.locals.req =
             req;
 
-
         res.locals.currentPath =
             req.path;
-
 
         next();
 
     }
 
 );
-
 
 // ==========================================================
 // HEALTH CHECK
@@ -463,7 +429,6 @@ app.get(
 
 );
 
-
 // ==========================================================
 // STATIC FILES
 // ==========================================================
@@ -480,7 +445,6 @@ app.use(
     )
 
 );
-
 
 // ==========================================================
 // UPLOADS
@@ -501,7 +465,6 @@ app.use(
 
 );
 
-
 // ==========================================================
 // VIEW ENGINE
 // ==========================================================
@@ -510,7 +473,6 @@ app.set(
     "view engine",
     "ejs"
 );
-
 
 app.set(
 
@@ -523,22 +485,18 @@ app.set(
 
 );
 
-
 app.use(
     expressLayouts
 );
-
 
 app.set(
     "layout",
     "layout"
 );
 
-
 // ==========================================================
 // ROUTE MOUNTING
 // ==========================================================
-
 
 // ----------------------------------------------------------
 // CORE VESTER
@@ -553,7 +511,6 @@ if (corevesterRoutes) {
 
 }
 
-
 // ==========================================================
 // 404
 // ==========================================================
@@ -564,7 +521,7 @@ app.use(
 
         return res.status(404).render(
 
-            "404",
+            "error/404",
 
             {
 
@@ -582,7 +539,6 @@ app.use(
     }
 
 );
-
 
 // ==========================================================
 // GLOBAL ERROR HANDLER
@@ -602,7 +558,6 @@ app.use(
             err
         );
 
-
         let statusCode =
             Number(
 
@@ -611,7 +566,6 @@ app.use(
                 500
 
             );
-
 
         if (
             err &&
@@ -627,7 +581,6 @@ app.use(
 
         }
 
-
         if (
             req.accepts("html")
         ) {
@@ -635,33 +588,31 @@ app.use(
             const views = {
 
                 400:
-                    "400",
+                    "error/400",
 
                 401:
-                    "401",
+                    "error/401",
 
                 403:
-                    "403",
+                    "error/403",
 
                 404:
-                    "404",
+                    "error/404",
 
                 409:
-                    "409",
+                    "error/409",
 
                 422:
-                    "422",
+                    "error/422",
 
                 500:
-                    "500"
+                    "error/500"
 
             };
 
-
             const view =
                 views[statusCode] ||
-                "500";
-
+                "error/500";
 
             return res.status(
                 statusCode
@@ -687,7 +638,6 @@ app.use(
 
         }
 
-
         return res.status(
             statusCode
         ).json({
@@ -700,7 +650,7 @@ app.use(
                 isProduction &&
                 statusCode === 500
 
-                    ? "Internal Server Error"
+                   ? "Internal Server Error"
 
                     : err.message
 
@@ -709,7 +659,6 @@ app.use(
     }
 
 );
-
 
 // ==========================================================
 // PORT
@@ -720,7 +669,6 @@ const PORT =
         process.env.PORT ||
         3000
     );
-
 
 // ==========================================================
 // START SERVER
@@ -743,7 +691,6 @@ const startServer = (port) => {
     );
 
 };
-
 
 // ==========================================================
 // SERVER ERROR
@@ -768,19 +715,16 @@ server.on(
 
         }
 
-
         console.error(
             "❌ Server error:",
             error.message
         );
-
 
         process.exit(1);
 
     }
 
 );
-
 
 // ==========================================================
 // GRACEFUL SHUTDOWN
@@ -796,7 +740,6 @@ process.on(
             "🛑 Received SIGTERM. Shutting down gracefully..."
         );
 
-
         server.close(
             () => process.exit(0)
         );
@@ -804,7 +747,6 @@ process.on(
     }
 
 );
-
 
 process.on(
 
@@ -816,7 +758,6 @@ process.on(
             "🛑 Received SIGINT. Shutting down gracefully..."
         );
 
-
         server.close(
             () => process.exit(0)
         );
@@ -824,7 +765,6 @@ process.on(
     }
 
 );
-
 
 // ==========================================================
 // DATABASE BOOTSTRAP
@@ -841,7 +781,6 @@ const bootstrap = async () => {
         const dbConnected =
             await connectDB();
 
-
         if (dbConnected) {
 
             console.log(
@@ -849,7 +788,6 @@ const bootstrap = async () => {
             );
 
         }
-
 
         else if (isProduction) {
 
@@ -861,7 +799,6 @@ const bootstrap = async () => {
 
         }
 
-
         else {
 
             console.warn(
@@ -869,7 +806,6 @@ const bootstrap = async () => {
             );
 
         }
-
 
         // --------------------------------------------------
         // SEED DEFAULT ADMIN USER
@@ -879,7 +815,7 @@ const bootstrap = async () => {
         //
         // Running:
         //
-        //     node server.js
+        // node server.js
         //
         // therefore automatically ensures that the default
         // admin user exists.
@@ -894,9 +830,7 @@ const bootstrap = async () => {
                 "\n🌱 Checking default admin user..."
             );
 
-
             await seedUser();
-
 
             console.log(
                 "✅ Default admin user check completed."
@@ -904,13 +838,11 @@ const bootstrap = async () => {
 
         }
 
-
         // --------------------------------------------------
         // START HTTP SERVER
         // --------------------------------------------------
 
         startServer(PORT);
-
 
     } catch (error) {
 
@@ -918,11 +850,9 @@ const bootstrap = async () => {
             "\n❌ Application bootstrap failed:"
         );
 
-
         console.error(
             error
         );
-
 
         // --------------------------------------------------
         // DO NOT START SERVER IF DATABASE INITIALIZATION
@@ -939,18 +869,15 @@ const bootstrap = async () => {
 
         }
 
-
         console.warn(
             "\n⚠️ Database initialization failed. Starting server in development mode."
         );
-
 
         startServer(PORT);
 
     }
 
 };
-
 
 // ==========================================================
 // START APPLICATION
