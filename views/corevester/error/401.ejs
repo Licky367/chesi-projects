@@ -1,0 +1,53 @@
+<link rel="stylesheet" href="/css/error.css">
+
+<div class="page-error">
+
+  <div class="error-card">
+
+    <div class="error-icon">
+      🔐
+    </div>
+
+    <div
+      class="error-code"
+      style="color:#0d6efd;"
+    >
+      401
+    </div>
+
+    <h1 class="error-title">
+      Authentication Required
+    </h1>
+
+    <p class="error-text">
+      <%= typeof error !== "undefined" && error
+        ? error
+        : "You must sign in before you can access this page. Please log in with a valid account and try again." %>
+    </p>
+
+    <div class="button-group">
+
+      <a
+        href="/login"
+        class="btn-action btn-home"
+      >
+        🔑 Login
+      </a>
+
+      <button
+        type="button"
+        class="btn-action btn-back"
+        onclick="history.back()"
+      >
+        ← Go Back
+      </button>
+
+    </div>
+
+    <div class="help-box">
+      Your session may have expired, or you may not be signed in. Please log in to continue. If you believe this is an error, contact your system administrator.
+    </div>
+
+  </div>
+
+</div>

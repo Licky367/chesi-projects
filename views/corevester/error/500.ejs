@@ -1,0 +1,53 @@
+<link rel="stylesheet" href="/css/error.css">
+
+<div class="page-error">
+
+  <div class="error-card">
+
+    <div class="error-icon">
+      💥
+    </div>
+
+    <div
+      class="error-code"
+      style="color:#dc3545;"
+    >
+      500
+    </div>
+
+    <h1 class="error-title">
+      Internal Server Error
+    </h1>
+
+    <p class="error-text">
+      <%= typeof error !== "undefined" && error
+        ? error
+        : "Something went wrong while processing your request. This is an unexpected server error. Please try again in a few moments." %>
+    </p>
+
+    <div class="button-group">
+
+      <button
+        type="button"
+        class="btn-action btn-back"
+        onclick="location.reload()"
+      >
+        🔄 Try Again
+      </button>
+
+      <a
+        href="/"
+        class="btn-action btn-home"
+      >
+        🏠 Home
+      </a>
+
+    </div>
+
+    <div class="help-box">
+      Our server encountered an unexpected problem while handling your request. If the issue persists after trying again, please contact your system administrator with details of what you were doing when the error occurred.
+    </div>
+
+  </div>
+
+</div>
