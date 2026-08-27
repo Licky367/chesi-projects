@@ -77,6 +77,18 @@ try {
     );
 }
 
+
+let productsRoutes;
+
+try {
+    productsRoutes = require("./routes/corevester/products");
+} catch (err) {
+    console.warn(
+        "Warning: failed to load products routes:",
+        err.message
+    );
+}
+
 // ==========================================================
 // SOCKET HANDLER
 // ==========================================================
@@ -258,6 +270,10 @@ app.set("layout", "layout");
 
 if (corevesterRoutes) {
     app.use("/", corevesterRoutes);
+}
+
+if (productsRoutes) {
+    app.use("/products", productsRoutes);
 }
 
 // ==========================================================
