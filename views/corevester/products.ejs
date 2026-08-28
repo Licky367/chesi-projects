@@ -1,7 +1,7 @@
 <!-- =========================================================
-     views/corevester/products.ejs
+     views/products.ejs
      =========================================================
-     
+
      CORE VESTER HEALTHCARE
      PRODUCT MARKETPLACE
 
@@ -18,11 +18,17 @@
          description
          isActive
          isOutOfStock (virtual)
+
+     DISPLAY:
+         One card per product
+         One horizontal scrollable row per category
      ========================================================= -->
 
+
 <style>
+
     /* =========================================================
-       CORE VESTER PRODUCT PAGE
+       CORE VESTER THEME
        ========================================================= */
 
     :root {
@@ -30,10 +36,13 @@
         --core-green-dark: #063b17;
         --core-green-light: #e8f5e9;
         --core-green-soft: #f1f8e9;
-        --core-border: #dcebdc;
+
         --core-background: #f8fdf6;
+        --core-border: #dcebdc;
+
         --core-text: #18351f;
         --core-muted: #6b756d;
+
         --core-white: #ffffff;
     }
 
@@ -44,21 +53,28 @@
 
     .products-page {
         min-height: calc(100vh - 80px);
+
         background: var(--core-background);
+
         padding-bottom: 45px;
+
         font-family: "Segoe UI", sans-serif;
+
         color: var(--core-text);
+
         box-sizing: border-box;
     }
 
 
     /* =========================================================
-       HERO / INTRO
+       HERO
        ========================================================= */
 
     .products-hero {
         position: relative;
+
         overflow: hidden;
+
         background: linear-gradient(
             135deg,
             #ffffff 0%,
@@ -67,57 +83,80 @@
         );
 
         border-bottom: 1px solid var(--core-border);
+
         padding: 30px 24px 28px;
+
+        box-sizing: border-box;
     }
 
     .products-hero::after {
         content: "";
+
         position: absolute;
+
         width: 230px;
         height: 230px;
+
         right: -90px;
         top: -110px;
+
         border-radius: 50%;
+
         background: rgba(10, 77, 30, 0.035);
+
         pointer-events: none;
     }
 
     .products-hero-inner {
         position: relative;
+
         z-index: 1;
+
         max-width: 1250px;
+
         margin: 0 auto;
     }
 
     .products-hero h1 {
         margin: 0;
+
         color: var(--core-green);
+
         font-size: 30px;
+
         font-weight: 800;
+
         letter-spacing: -0.5px;
     }
 
     .products-hero p {
         margin: 7px 0 0;
+
         color: #536058;
+
         font-size: 14px;
+
         line-height: 1.5;
     }
 
 
     /* =========================================================
-       PRODUCT CONTENT
+       PRODUCTS CONTAINER
        ========================================================= */
 
     .products-container {
         max-width: 1250px;
+
         margin: 0 auto;
+
         padding: 28px 20px 0;
+
+        box-sizing: border-box;
     }
 
 
     /* =========================================================
-       CATEGORY SECTION
+       CATEGORY
        ========================================================= */
 
     .product-category {
@@ -135,61 +174,90 @@
 
     .category-header {
         display: flex;
+
         align-items: center;
+
         justify-content: space-between;
+
         gap: 15px;
+
         margin-bottom: 13px;
+
         padding: 0 3px;
+
+        box-sizing: border-box;
     }
 
     .category-title-wrapper {
         min-width: 0;
+
         display: flex;
+
         align-items: center;
+
         gap: 10px;
     }
 
     .category-icon {
         width: 34px;
         height: 34px;
+
         flex: 0 0 34px;
 
         display: flex;
+
         align-items: center;
+
         justify-content: center;
 
         background: var(--core-green-light);
+
         color: var(--core-green);
 
         border-radius: 10px;
+
         font-size: 15px;
     }
 
     .category-title {
         margin: 0;
+
         color: #17351f;
+
         font-size: 19px;
+
         font-weight: 750;
+
         text-transform: capitalize;
+
         white-space: nowrap;
+
         overflow: hidden;
+
         text-overflow: ellipsis;
     }
 
     .category-count {
         color: #778078;
+
         font-size: 12px;
+
         font-weight: 500;
+
         margin-left: 3px;
     }
 
     .category-scroll-hint {
         display: flex;
+
         align-items: center;
+
         gap: 5px;
 
         color: var(--core-green);
+
         font-size: 12px;
+
         font-weight: 700;
 
         white-space: nowrap;
@@ -206,20 +274,32 @@
 
     .product-row {
         display: flex;
+
         gap: 13px;
 
+        width: 100%;
+
+        max-width: 100%;
+
         overflow-x: auto;
+
         overflow-y: hidden;
 
         padding: 3px 3px 12px;
 
+        box-sizing: border-box;
+
         scroll-snap-type: x mandatory;
+
         scroll-behavior: smooth;
 
         -webkit-overflow-scrolling: touch;
 
         scrollbar-width: thin;
-        scrollbar-color: rgba(10, 77, 30, 0.35) transparent;
+
+        scrollbar-color:
+            rgba(10, 77, 30, 0.35)
+            transparent;
     }
 
     .product-row::-webkit-scrollbar {
@@ -232,6 +312,7 @@
 
     .product-row::-webkit-scrollbar-thumb {
         background: rgba(10, 77, 30, 0.28);
+
         border-radius: 20px;
     }
 
@@ -248,10 +329,17 @@
         position: relative;
 
         flex: 0 0 205px;
+
         width: 205px;
 
+        min-width: 205px;
+
+        max-width: 205px;
+
         background: var(--core-white);
+
         border: 1px solid #e1e8e2;
+
         border-radius: 15px;
 
         overflow: hidden;
@@ -265,6 +353,8 @@
             transform 0.2s ease,
             box-shadow 0.2s ease,
             border-color 0.2s ease;
+
+        box-sizing: border-box;
     }
 
     .product-card:hover {
@@ -278,33 +368,78 @@
 
 
     /* =========================================================
-       PRODUCT IMAGE
+       PRODUCT IMAGE CONTAINER
+       =========================================================
+
+       IMPORTANT:
+       ---------------------------------------------------------
+       This container strictly controls the image area.
+
+       An image can be 100px, 1000px, or 10,000px wide,
+       but it cannot escape this box.
        ========================================================= */
 
     .product-image-wrapper {
         position: relative;
 
         width: 100%;
+
         height: 158px;
+
+        min-height: 158px;
+
+        max-height: 158px;
 
         background: #f7faf7;
 
         overflow: hidden;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        box-sizing: border-box;
     }
 
-    .product-image {
-        width: 100%;
-        height: 100%;
 
-        display: block;
+    /* =========================================================
+       PRODUCT IMAGE
+       =========================================================
 
-        object-fit: cover;
+       IMPORTANT:
+       ---------------------------------------------------------
+       "contain" keeps the complete product visible.
 
-        transition: transform 0.3s ease;
-    }
+       !important prevents external/global img CSS from
+       overriding these dimensions.
+       ========================================================= */
 
-    .product-card:hover .product-image {
-        transform: scale(1.035);
+    .product-image-wrapper .product-image {
+        display: block !important;
+
+        width: 100% !important;
+
+        height: 100% !important;
+
+        max-width: 100% !important;
+
+        max-height: 100% !important;
+
+        min-width: 0 !important;
+
+        min-height: 0 !important;
+
+        object-fit: contain !important;
+
+        object-position: center center !important;
+
+        margin: 0 !important;
+
+        padding: 0 !important;
+
+        box-sizing: border-box !important;
     }
 
 
@@ -314,18 +449,27 @@
 
     .product-no-image {
         width: 100%;
+
         height: 100%;
 
+        min-height: 0;
+
         display: flex;
+
         flex-direction: column;
+
         align-items: center;
+
         justify-content: center;
 
         color: #9ba59d;
+
+        box-sizing: border-box;
     }
 
     .product-no-image i {
         font-size: 31px;
+
         margin-bottom: 7px;
     }
 
@@ -340,7 +484,9 @@
 
     .stock-badge {
         position: absolute;
+
         top: 9px;
+
         right: 9px;
 
         padding: 5px 8px;
@@ -352,23 +498,30 @@
         color: var(--core-green);
 
         font-size: 10px;
+
         font-weight: 750;
 
-        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.08);
+        box-shadow:
+            0 2px 7px rgba(0, 0, 0, 0.08);
+
+        z-index: 2;
     }
 
     .stock-badge.out-of-stock {
         background: #fff1f1;
+
         color: #a52828;
     }
 
 
     /* =========================================================
-       CARD CONTENT
+       PRODUCT CONTENT
        ========================================================= */
 
     .product-content {
         padding: 11px 11px 12px;
+
+        box-sizing: border-box;
     }
 
     .product-name {
@@ -377,12 +530,15 @@
         color: #183a22;
 
         font-size: 14px;
+
         font-weight: 750;
 
         line-height: 1.25;
 
         display: -webkit-box;
+
         -webkit-line-clamp: 2;
+
         -webkit-box-orient: vertical;
 
         overflow: hidden;
@@ -396,10 +552,13 @@
         color: var(--core-muted);
 
         font-size: 11px;
+
         line-height: 1.4;
 
         display: -webkit-box;
+
         -webkit-line-clamp: 2;
+
         -webkit-box-orient: vertical;
 
         overflow: hidden;
@@ -409,23 +568,17 @@
 
 
     /* =========================================================
-       PRICE + CART
+       PRODUCT BOTTOM
        ========================================================= */
 
     .product-bottom {
         display: flex;
+
         align-items: center;
+
         justify-content: space-between;
+
         gap: 7px;
-    }
-
-    .product-price {
-        color: var(--core-green);
-
-        font-size: 13px;
-        font-weight: 800;
-
-        white-space: nowrap;
     }
 
     .product-price-label {
@@ -434,29 +587,46 @@
         color: #879088;
 
         font-size: 9px;
+
         font-weight: 500;
 
         margin-bottom: 1px;
     }
 
+    .product-price {
+        color: var(--core-green);
+
+        font-size: 13px;
+
+        font-weight: 800;
+
+        white-space: nowrap;
+    }
+
 
     /* =========================================================
-       ACTION BUTTON
+       PRODUCT ACTION
        ========================================================= */
 
     .product-action {
         width: 34px;
+
         height: 34px;
+
         flex: 0 0 34px;
 
         display: flex;
+
         align-items: center;
+
         justify-content: center;
 
         border: 0;
+
         border-radius: 9px;
 
         background: var(--core-green-soft);
+
         color: var(--core-green);
 
         cursor: pointer;
@@ -471,6 +641,7 @@
 
     .product-action:hover {
         background: var(--core-green);
+
         color: #ffffff;
     }
 
@@ -480,18 +651,21 @@
 
     .product-action.disabled {
         background: #f0f1f0;
+
         color: #9a9e9b;
+
         cursor: not-allowed;
     }
 
     .product-action.disabled:hover {
         background: #f0f1f0;
+
         color: #9a9e9b;
     }
 
 
     /* =========================================================
-       OUT OF STOCK CARD
+       OUT OF STOCK
        ========================================================= */
 
     .product-card.is-out-of-stock {
@@ -504,36 +678,64 @@
 
 
     /* =========================================================
+       CATEGORY DIVIDER
+       ========================================================= */
+
+    .category-divider {
+        height: 1px;
+
+        margin: 0 3px 30px;
+
+        background: #dfe9e0;
+    }
+
+    .product-category:last-child .category-divider {
+        display: none;
+    }
+
+
+    /* =========================================================
        EMPTY STATE
        ========================================================= */
 
     .products-empty {
         max-width: 520px;
+
         margin: 50px auto;
+
         padding: 40px 25px;
 
         background: #ffffff;
+
         border: 1px solid var(--core-border);
+
         border-radius: 18px;
 
         text-align: center;
 
-        box-shadow: 0 4px 18px rgba(10, 77, 30, 0.06);
+        box-shadow:
+            0 4px 18px rgba(10, 77, 30, 0.06);
+
+        box-sizing: border-box;
     }
 
     .products-empty-icon {
         width: 62px;
+
         height: 62px;
 
         margin: 0 auto 15px;
 
         display: flex;
+
         align-items: center;
+
         justify-content: center;
 
         border-radius: 17px;
 
         background: var(--core-green-light);
+
         color: var(--core-green);
 
         font-size: 25px;
@@ -553,24 +755,8 @@
         color: #707a72;
 
         font-size: 13px;
+
         line-height: 1.5;
-    }
-
-
-    /* =========================================================
-       CATEGORY DIVIDER
-       ========================================================= */
-
-    .category-divider {
-        height: 1px;
-
-        margin: 0 3px 30px;
-
-        background: #dfe9e0;
-    }
-
-    .product-category:last-child .category-divider {
-        display: none;
     }
 
 
@@ -606,13 +792,17 @@
 
         .category-header {
             padding: 0 3px;
+
             margin-bottom: 11px;
         }
 
         .category-icon {
             width: 31px;
+
             height: 31px;
+
             flex-basis: 31px;
+
             border-radius: 9px;
         }
 
@@ -632,17 +822,50 @@
             gap: 11px;
 
             padding-left: 2px;
+
             padding-right: 2px;
         }
 
+
+        /* -----------------------------------------
+           MOBILE CARD
+           ----------------------------------------- */
+
         .product-card {
             flex-basis: 175px;
+
             width: 175px;
+
+            min-width: 175px;
+
+            max-width: 175px;
+
             border-radius: 14px;
         }
 
+
+        /* -----------------------------------------
+           MOBILE IMAGE
+           ----------------------------------------- */
+
         .product-image-wrapper {
+            width: 100%;
+
             height: 145px;
+
+            min-height: 145px;
+
+            max-height: 145px;
+        }
+
+        .product-image-wrapper .product-image {
+            width: 100% !important;
+
+            height: 100% !important;
+
+            max-width: 100% !important;
+
+            max-height: 100% !important;
         }
 
         .product-content {
@@ -663,7 +886,9 @@
 
         .product-action {
             width: 32px;
+
             height: 32px;
+
             flex-basis: 32px;
         }
     }
@@ -677,17 +902,26 @@
 
         .product-card {
             flex-basis: 160px;
+
             width: 160px;
+
+            min-width: 160px;
+
+            max-width: 160px;
         }
 
         .product-image-wrapper {
             height: 132px;
+
+            min-height: 132px;
+
+            max-height: 132px;
         }
     }
 
 
     /* =========================================================
-       REDUCE MOTION
+       REDUCED MOTION
        ========================================================= */
 
     @media (prefers-reduced-motion: reduce) {
@@ -702,6 +936,7 @@
             transition: none;
         }
     }
+
 </style>
 
 
@@ -711,6 +946,7 @@
 
 <div class="products-page">
 
+
     <!-- =====================================================
          PAGE INTRO
          ===================================================== -->
@@ -719,7 +955,9 @@
 
         <div class="products-hero-inner">
 
-            <h1>Our Products</h1>
+            <h1>
+                Our Products
+            </h1>
 
             <p>
                 Quality medical equipment and hospital supplies
@@ -739,9 +977,9 @@
 
         <%
             /*
-             * -------------------------------------------------
+             * =================================================
              * GROUP PRODUCTS BY CATEGORY
-             * -------------------------------------------------
+             * =================================================
              */
 
             const groupedProducts = {};
@@ -749,13 +987,18 @@
             if (Array.isArray(products)) {
 
                 products
-                    .filter(product => product && product.isActive !== false)
+                    .filter(product =>
+                        product &&
+                        product.isActive !== false
+                    )
                     .forEach(product => {
 
                         const category =
-                            String(product.category || "other")
-                                .trim()
-                                .toLowerCase();
+                            String(
+                                product.category || "other"
+                            )
+                            .trim()
+                            .toLowerCase();
 
                         if (!groupedProducts[category]) {
                             groupedProducts[category] = [];
@@ -767,45 +1010,70 @@
 
 
             /*
-             * -------------------------------------------------
+             * =================================================
              * CATEGORY ICONS
-             * -------------------------------------------------
-             *
-             * These are only visual helpers.
-             * Unknown categories use the boxes icon.
+             * =================================================
              */
 
             const categoryIcons = {
-                "medical equipment": "fa-stethoscope",
-                "medical equipment ": "fa-stethoscope",
-                "hospital supplies": "fa-kit-medical",
-                "consumables": "fa-syringe",
-                "medicines": "fa-pills",
-                "pharmaceuticals": "fa-pills",
-                "diagnostics": "fa-microscope",
-                "surgical": "fa-user-doctor",
-                "laboratory": "fa-flask",
-                "laboratory equipment": "fa-flask",
-                "dental": "fa-tooth",
-                "personal care": "fa-hand-holding-medical",
-                "other": "fa-boxes-stacked"
+
+                "medical equipment":
+                    "fa-stethoscope",
+
+                "hospital supplies":
+                    "fa-kit-medical",
+
+                "consumables":
+                    "fa-syringe",
+
+                "medicines":
+                    "fa-pills",
+
+                "pharmaceuticals":
+                    "fa-pills",
+
+                "diagnostics":
+                    "fa-microscope",
+
+                "surgical":
+                    "fa-user-doctor",
+
+                "laboratory":
+                    "fa-flask",
+
+                "laboratory equipment":
+                    "fa-flask",
+
+                "dental":
+                    "fa-tooth",
+
+                "personal care":
+                    "fa-hand-holding-medical",
+
+                "other":
+                    "fa-boxes-stacked"
             };
         %>
 
 
         <% if (Object.keys(groupedProducts).length === 0) { %>
 
+
             <!-- =================================================
-                 EMPTY PRODUCTS
+                 EMPTY STATE
                  ================================================= -->
 
             <div class="products-empty">
 
                 <div class="products-empty-icon">
+
                     <i class="fas fa-box-open"></i>
+
                 </div>
 
-                <h2>No Products Available</h2>
+                <h2>
+                    No Products Available
+                </h2>
 
                 <p>
                     There are currently no products available.
@@ -822,7 +1090,10 @@
                  CATEGORY ROWS
                  ================================================= -->
 
-            <% Object.entries(groupedProducts).forEach(([category, categoryProducts]) => { %>
+            <% Object.entries(groupedProducts).forEach(
+                ([category, categoryProducts]) => {
+            %>
+
 
                 <section class="product-category">
 
@@ -833,20 +1104,30 @@
 
                     <div class="category-header">
 
+
                         <div class="category-title-wrapper">
+
 
                             <div class="category-icon">
 
-                                <i class="fas <%= categoryIcons[category] || 'fa-boxes-stacked' %>"></i>
+                                <i class="fas
+                                    <%= categoryIcons[category]
+                                        || 'fa-boxes-stacked' %>">
+                                </i>
 
                             </div>
 
+
                             <h2 class="category-title">
+
                                 <%= category %>
+
                                 <span class="category-count">
                                     (<%= categoryProducts.length %>)
                                 </span>
+
                             </h2>
+
 
                         </div>
 
@@ -854,11 +1135,17 @@
                         <% if (categoryProducts.length > 2) { %>
 
                             <div class="category-scroll-hint">
-                                <span>Scroll</span>
+
+                                <span>
+                                    Scroll
+                                </span>
+
                                 <i class="fas fa-chevron-right"></i>
+
                             </div>
 
                         <% } %>
+
 
                     </div>
 
@@ -872,6 +1159,7 @@
                         data-category="<%= category %>"
                     >
 
+
                         <% categoryProducts.forEach(product => { %>
 
 
@@ -880,36 +1168,54 @@
                                  ================================= -->
 
                             <article
-                                class="product-card <%= product.units <= 0 ? 'is-out-of-stock' : '' %>"
+                                class="
+                                    product-card
+                                    <%= product.units <= 0
+                                        ? 'is-out-of-stock'
+                                        : '' %>
+                                "
                                 data-product-id="<%= product._id %>"
                             >
 
 
                                 <!-- =============================
-                                     PRODUCT IMAGE
+                                     IMAGE AREA
                                      ============================= -->
 
                                 <div class="product-image-wrapper">
 
+
                                     <% if (product.image) { %>
+
 
                                         <img
                                             class="product-image"
                                             src="<%= product.image %>"
                                             alt="<%= product.name %>"
                                             loading="lazy"
-                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                            onerror="
+                                                this.style.display='none';
+                                                this.nextElementSibling.style.display='flex';
+                                            "
                                         >
+
 
                                         <div
                                             class="product-no-image"
                                             style="display:none;"
                                         >
+
                                             <i class="fas fa-image"></i>
-                                            <span>Image unavailable</span>
+
+                                            <span>
+                                                Image unavailable
+                                            </span>
+
                                         </div>
 
+
                                     <% } else { %>
+
 
                                         <div class="product-no-image">
 
@@ -921,46 +1227,69 @@
 
                                         </div>
 
+
                                     <% } %>
 
 
                                     <!-- =========================
-                                         STOCK BADGE
+                                         STOCK
                                          ========================= -->
 
                                     <% if (product.units <= 0) { %>
 
-                                        <span class="stock-badge out-of-stock">
+
+                                        <span
+                                            class="
+                                                stock-badge
+                                                out-of-stock
+                                            "
+                                        >
                                             Out of stock
                                         </span>
 
+
                                     <% } else { %>
 
+
                                         <span class="stock-badge">
-                                            <%= product.units %> units
+
+                                            <%= product.units %>
+                                            units
+
                                         </span>
 
+
                                     <% } %>
+
 
                                 </div>
 
 
                                 <!-- =============================
-                                     PRODUCT INFORMATION
+                                     PRODUCT CONTENT
                                      ============================= -->
 
                                 <div class="product-content">
 
 
                                     <h3 class="product-name">
+
                                         <%= product.name %>
+
                                     </h3>
 
 
                                     <p class="product-description">
-                                        <%= product.description || "Quality healthcare product." %>
+
+                                        <%= product.description
+                                            || "Quality healthcare product." %>
+
                                     </p>
 
+
+                                    <!-- =========================
+                                         PRICE + ACTION
+                                         ========================= -->
 
                                     <div class="product-bottom">
 
@@ -971,14 +1300,21 @@
 
                                         <div>
 
-                                            <span class="product-price-label">
+                                            <span
+                                                class="
+                                                    product-price-label
+                                                "
+                                            >
                                                 Price
                                             </span>
+
 
                                             <span class="product-price">
 
                                                 KSh
-                                                <%= Number(product.unitSellPrice || 0).toLocaleString("en-KE") %>
+                                                <%= Number(
+                                                    product.unitSellPrice || 0
+                                                ).toLocaleString("en-KE") %>
 
                                             </span>
 
@@ -986,43 +1322,77 @@
 
 
                                         <!-- =====================
-                                             ACTION
+                                             CART BUTTON
                                              ===================== -->
 
                                         <% if (product.units > 0) { %>
+
 
                                             <button
                                                 type="button"
                                                 class="product-action"
                                                 title="Add to cart"
-                                                aria-label="Add <%= product.name %> to cart"
-                                                data-product-id="<%= product._id %>"
+                                                aria-label="
+                                                    Add
+                                                    <%= product.name %>
+                                                    to cart
+                                                "
+                                                data-product-id="
+                                                    <%= product._id %>
+                                                "
                                             >
-                                                <i class="fas fa-cart-plus"></i>
+
+                                                <i
+                                                    class="
+                                                        fas
+                                                        fa-cart-plus
+                                                    "
+                                                ></i>
+
                                             </button>
+
 
                                         <% } else { %>
 
+
                                             <button
                                                 type="button"
-                                                class="product-action disabled"
+                                                class="
+                                                    product-action
+                                                    disabled
+                                                "
                                                 disabled
                                                 title="Out of stock"
-                                                aria-label="<%= product.name %> is out of stock"
+                                                aria-label="
+                                                    <%= product.name %>
+                                                    is out of stock
+                                                "
                                             >
-                                                <i class="fas fa-ban"></i>
+
+                                                <i
+                                                    class="
+                                                        fas
+                                                        fa-ban
+                                                    "
+                                                ></i>
+
                                             </button>
+
 
                                         <% } %>
 
 
                                     </div>
 
+
                                 </div>
+
 
                             </article>
 
+
                         <% }) %>
+
 
                     </div>
 
@@ -1033,19 +1403,24 @@
 
                     <div class="category-divider"></div>
 
+
                 </section>
+
 
             <% }) %>
 
+
         <% } %>
 
+
     </main>
+
 
 </div>
 
 
 <!-- =========================================================
-     PRODUCT ROW TOUCH / DRAG SUPPORT
+     HORIZONTAL SCROLL BEHAVIOUR
      ========================================================= -->
 
 <script>
@@ -1056,10 +1431,12 @@
         document.querySelectorAll(".product-row");
 
 
-    rows.forEach(row => {
+    rows.forEach(function (row) {
 
         let isDown = false;
+
         let startX = 0;
+
         let scrollLeft = 0;
 
 
@@ -1067,64 +1444,80 @@
            MOUSE DRAG
            ===================================================== */
 
-        row.addEventListener("mousedown", function (event) {
+        row.addEventListener(
+            "mousedown",
+            function (event) {
 
-            /*
-             * Only activate drag when there is
-             * actually horizontal overflow.
-             */
+                if (
+                    row.scrollWidth <=
+                    row.clientWidth
+                ) {
+                    return;
+                }
 
-            if (row.scrollWidth <= row.clientWidth) {
-                return;
+                isDown = true;
+
+                row.style.cursor = "grabbing";
+
+                startX =
+                    event.pageX -
+                    row.offsetLeft;
+
+                scrollLeft =
+                    row.scrollLeft;
             }
-
-            isDown = true;
-
-            row.style.cursor = "grabbing";
-
-            startX = event.pageX - row.offsetLeft;
-
-            scrollLeft = row.scrollLeft;
-
-        });
+        );
 
 
-        row.addEventListener("mouseleave", function () {
+        row.addEventListener(
+            "mouseleave",
+            function () {
 
-            isDown = false;
+                isDown = false;
 
-            row.style.cursor = "";
+                row.style.cursor = "";
 
-        });
-
-
-        row.addEventListener("mouseup", function () {
-
-            isDown = false;
-
-            row.style.cursor = "";
-
-        });
-
-
-        row.addEventListener("mousemove", function (event) {
-
-            if (!isDown) {
-                return;
             }
+        );
 
-            event.preventDefault();
 
-            const x =
-                event.pageX - row.offsetLeft;
+        row.addEventListener(
+            "mouseup",
+            function () {
 
-            const walk =
-                (x - startX) * 1.25;
+                isDown = false;
 
-            row.scrollLeft =
-                scrollLeft - walk;
+                row.style.cursor = "";
 
-        });
+            }
+        );
+
+
+        row.addEventListener(
+            "mousemove",
+            function (event) {
+
+                if (!isDown) {
+                    return;
+                }
+
+                event.preventDefault();
+
+
+                const x =
+                    event.pageX -
+                    row.offsetLeft;
+
+
+                const walk =
+                    (x - startX) * 1.25;
+
+
+                row.scrollLeft =
+                    scrollLeft - walk;
+
+            }
+        );
 
 
         /* =====================================================
@@ -1135,21 +1528,17 @@
             "wheel",
             function (event) {
 
-                /*
-                 * Convert vertical mouse-wheel movement
-                 * into horizontal movement when the row
-                 * has horizontal overflow.
-                 */
-
                 if (
-                    row.scrollWidth > row.clientWidth &&
-                    Math.abs(event.deltaY) > Math.abs(event.deltaX)
+                    row.scrollWidth >
+                    row.clientWidth &&
+                    Math.abs(event.deltaY) >
+                    Math.abs(event.deltaX)
                 ) {
 
                     event.preventDefault();
 
-                    row.scrollLeft += event.deltaY;
-
+                    row.scrollLeft +=
+                        event.deltaY;
                 }
 
             },
