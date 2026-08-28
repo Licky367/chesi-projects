@@ -1,65 +1,94 @@
 <style>
-.core-page{width:100%;max-width:100vw;overflow-x:hidden;background:#f8fdf6;font-family:"Segoe UI",sans-serif;}
-.core-container{width:100%;max-width:1300px;margin:0 auto;padding:0;box-sizing:border-box;overflow-x:hidden;}
+/* SAME PAGE STYLE AS YOUR SCREENSHOT */
+.core-page{width:100%;max-width:100vw;overflow-x:hidden;background:#f4f6f4;font-family:"Segoe UI",sans-serif;}
+.core-container{width:100%;max-width:1300px;margin:0 auto;padding:12px 0 30px 0;box-sizing:border-box;overflow-x:hidden;}
 
-/* TOP BAR LIKE MARKETPLACE ENTRY */
-.core-topbar{background:#fff;border-bottom:3px solid #0a4d1e;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:80px;z-index:800;}
-.core-top-title{color:#0a4d1e;font-weight:900;font-size:18px;margin:0;line-height:1;}
-.core-top-sub{color:#666;font-size:11px;margin-top:2px;}
-.core-pill{border:1.5px solid #c5e1a5;background:#fff;color:#0a4d1e;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;}
-.core-pill.active{background:#0a4d1e;color:#fff;border-color:#0a4d1e;}
+/* TOP FILTER - LIKE YOUR APP */
+.core-top-filter{display:flex;gap:8px;padding:10px 14px;overflow-x:auto;scrollbar-width:none;background:#fff;border-bottom:2px solid #e8f5e9;}
+.core-top-filter::-webkit-scrollbar{display:none;}
+.core-filter{border:1.5px solid #c8d9cc;background:#fff;color:#0a4d1e;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;}
+.core-filter.active{background:#0a4d1e;color:#fff;border-color:#0a4d1e;}
 
-/* CATEGORY SECTION - ONE ROW PER CATEGORY */
-.core-category{width:100%;max-width:100%;margin:18px 0 0 0;padding:0;overflow:hidden;}
-.core-cat-head{padding:0 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.core-cat-left{display:flex;align-items:center;gap:8px;min-width:0;}
-.core-cat-icon{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:#e8f5e9;border:1px solid #c5e1a5;border-radius:8px;color:#0a4d1e;font-size:13px;flex-shrink:0;}
-.core-cat-name{margin:0;color:#0a4d1e;font-size:15px;font-weight:800;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.core-cat-count{color:#777;font-size:11px;font-weight:600;margin-left:4px;}
-.core-cat-hint{color:#0a4d1e;font-size:10px;font-weight:700;flex-shrink:0;}
+/* CATEGORY TITLE LIKE "Dairy Farms" / "Standalone Assets" */
+.core-category{width:100%;margin:18px 0 0 0;overflow:hidden;}
+.core-cat-title{padding:0 14px;margin:0;}
+.core-cat-title h2{margin:0;color:#111;font-size:20px;font-weight:800;line-height:1.2;}
+.core-cat-title p{margin:2px 0 0 0;color:#777;font-size:12px;line-height:1.4;}
 
-/* HORIZONTAL ROW - SAME CATEGORY IN SAME ROW */
-.core-row{width:100%;max-width:100%;display:flex;flex-wrap:nowrap;gap:12px;overflow-x:auto;overflow-y:hidden;padding:2px 14px 14px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.core-row{width:100%;display:flex;flex-wrap:nowrap;gap:14px;overflow-x:auto;overflow-y:hidden;padding:14px 14px 10px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
 .core-row::-webkit-scrollbar{display:none;}
 
-/* CARD - FIXED SIZE, IMAGE NEVER HUGE */
-.core-card{flex:0 0 165px;width:165px;min-width:165px;max-width:165px;background:#fff;border:1.5px solid #e8f5e9;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 8px rgba(0,0,0,0.04);cursor:pointer;flex-shrink:0;}
-.core-img{width:100%;height:110px;min-height:110px;max-height:110px;background:#f6fbf6;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;flex-shrink:0;}
-.core-img img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;}
-.core-noimg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#a5d6a7;font-size:26px;}
-.core-badge{position:absolute;top:6px;left:6px;background:#fff;border:1px solid #0a4d1e;color:#0a4d1e;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;z-index:2;}
-.core-badge.empty{border-color:#c62828;color:#c62828;}
-.core-info{padding:10px;flex:1;display:flex;flex-direction:column;}
-.core-cat-label{margin:0;color:#2e7d32;font-size:9px;font-weight:800;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.core-name{margin:3px 0 0 0;color:#111;font-size:12.5px;font-weight:700;line-height:1.25;height:32px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
-.core-price{margin-top:8px;background:#f9fbe7;border-radius:6px;padding:6px;}
-.core-price-lbl{margin:0;color:#888;font-size:8px;}
-.core-price-val{margin:0;color:#0a4d1e;font-size:12px;font-weight:800;}
-.core-foot{padding:0 10px 10px 10px;}
-.core-btn{width:100%;padding:8px;border:none;border-radius:7px;background:#0a4d1e;color:#fff;font-size:10px;font-weight:800;cursor:pointer;}
+/* CARD EXACT LIKE YOUR SCREENSHOT - C KA HM KS */
+.core-card{
+  flex:0 0 165px;width:165px;min-width:165px;max-width:165px;
+  height:210px;min-height:210px;
+  background:linear-gradient(to bottom, #eef5e9 0%, #e8f0e3 55%, #ffffff 55%, #ffffff 100%);
+  border-radius:18px;
+  border:1.5px solid #e6efe3;
+  border-left:4px solid #d87c2a;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  position:relative;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+  cursor:pointer;flex-shrink:0;
+}
+.core-card.green-left{border-left-color:#0a4d1e;}
+.core-card.orange-left{border-left-color:#c97a2e;}
 
-@media(min-width:768px){
- .core-card{flex-basis:200px;width:200px;min-width:200px;max-width:200px;}
- .core-img{height:130px;min-height:130px;max-height:130px;}
+.core-badge-top{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  background:#fff;border:1px solid #e0e0e0;color:#333;
+  font-size:9px;font-weight:800;letter-spacing:0.5px;
+  padding:3px 10px;border-radius:20px;z-index:2;
 }
 
+.core-card-top{
+  height:118px;min-height:118px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;padding-top:10px;
+}
+.core-initials{
+  font-size:52px;font-weight:400;color:#1e5a3a;line-height:1;
+  letter-spacing:-1px;font-family:"Segoe UI", sans-serif;
+}
+.core-card-top img{width:80%;height:80%;object-fit:contain;}
+
+.core-card-bottom{
+  background:#fff;
+  padding:10px 12px 10px 12px;
+  flex:1;display:flex;flex-direction:column;
+  border-top:1px solid #f0f0f0;
+}
+.core-name{margin:0;color:#111;font-size:13px;font-weight:800;line-height:1.25;height:34px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
+.core-sub{margin:3px 0 0 0;color:#888;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;}
+.core-code-row{margin-top:auto;display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid #f5f5f5;margin-top:6px;}
+.core-code-label{color:#888;font-size:10px;}
+.core-code-val{background:#f1f8e9;color:#0a4d1e;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;}
+
+/* ADD CARD LIKE YOUR "Add Dairy Farm" */
+.core-add-card{
+  flex:0 0 165px;width:165px;min-width:165px;max-width:165px;height:210px;
+  background:#fdfdf5;border:1.5px dashed #c5c5b5;border-radius:18px;
+  border-left:4px solid #c97a2e;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:14px;text-align:center;cursor:pointer;flex-shrink:0;
+}
+.core-add-icon{width:56px;height:56px;border-radius:14px;background:#f5f0e8;border:1px solid #e8e0d0;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.core-add-title{font-size:14px;font-weight:800;color:#111;margin:0;}
+.core-add-sub{font-size:11px;color:#888;margin-top:4px;}
+
+.core-price-btn{margin-top:6px;width:100%;background:#0a4d1e;color:#fff;border:none;border-radius:8px;padding:6px;font-size:10px;font-weight:800;cursor:pointer;}
+
 #qtyOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1300;display:none;align-items:center;justify-content:center;padding:20px;}
-#qtyBox{background:#fff;border:3px solid #0a4d1e;border-radius:16px;width:100%;max-width:300px;padding:20px;text-align:center;}
+#qtyBox{background:#fff;border:3px solid #0a4d1e;border-radius:18px;width:100%;max-width:300px;padding:20px;text-align:center;}
 </style>
 
 <div class="core-page">
-  <!-- TOP BAR -->
-  <div class="core-topbar">
-    <div>
-      <p class="core-top-title">Marketplace</p>
-      <p class="core-top-sub"><%= products.length %> products • Swipe →</p>
-    </div>
-    <div style="display:flex;gap:6px;overflow-x:auto;max-width:55%;scrollbar-width:none;">
-      <a href="/products?category=all" class="core-pill <%= activeCategory==='all'?'active':'' %>">ALL</a>
-      <% (categories||[]).slice(0,4).forEach(c=>{ %>
-        <a href="/products?category=<%= c %>" class="core-pill <%= activeCategory===c?'active':'' %>"><%= c.toUpperCase() %></a>
-      <% }) %>
-    </div>
+  <div class="core-top-filter">
+    <a href="/products?category=all" class="core-filter <%= activeCategory==='all'?'active':'' %>">ALL</a>
+    <% (categories||[]).forEach(c=>{ %>
+      <a href="/products?category=<%= c %>" class="core-filter <%= activeCategory===c?'active':'' %>"><%= c.toUpperCase() %></a>
+    <% }) %>
   </div>
 
   <div class="core-container">
@@ -68,44 +97,81 @@
       if(Array.isArray(products)){ products.filter(p=>p&&p.isActive!==false).forEach(p=>{
         const c=String(p.category||"other").trim().toLowerCase(); if(!groups[c]) groups[c]=[]; groups[c].push(p);
       });}
-      const icons={"medical equipment":"fa-stethoscope","hospital supplies":"fa-kit-medical","surgical":"fa-user-doctor","diagnostics":"fa-microscope","laboratory":"fa-flask","consumables":"fa-boxes-stacked","medicines":"fa-pills","other":"fa-box-open"};
-      const filteredCats = activeCategory && activeCategory!=='all'? [activeCategory.toLowerCase()] : Object.keys(groups);
+      const filtered = activeCategory && activeCategory!=='all'? [activeCategory.toLowerCase()] : Object.keys(groups);
     %>
 
-    <% filteredCats.forEach(cat=>{
+    <% filtered.forEach(cat=>{
       const list=groups[cat]; if(!list) return;
-      const icon=icons[cat]||"fa-box-open";
     %>
       <div class="core-category">
-        <div class="core-cat-head">
-          <div class="core-cat-left">
-            <div class="core-cat-icon"><i class="fas <%= icon %>"></i></div>
-            <h2 class="core-cat-name"><%= cat %><span class="core-cat-count">(<%= list.length %>)</span></h2>
-          </div>
-          <% if(list.length>2){ %><div class="core-cat-hint"><%= list.length %> items • Swipe <i class="fas fa-arrow-right"></i></div><% } %>
+        <div class="core-cat-title">
+          <h2 style="text-transform:capitalize;"><%= cat %></h2>
+          <p>View and manage all <%= cat %> in the system.</p>
         </div>
 
-        <!-- SAME CATEGORY = SAME ROW -->
         <div class="core-row">
-          <% list.forEach(p=>{ %>
-            <div class="core-card" data-id="<%= p._id %>">
-              <div class="core-img">
-                <% if(p.image){ %><img src="<%= p.image %>" alt="<%= p.name %>" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="core-noimg" style="display:none;"><i class="fas fa-image"></i></div><% } else { %><div class="core-noimg"><i class="fas fa-box-open"></i></div><% } %>
-                <% if(Number(p.units||0)>0){ %><span class="core-badge"><%= p.units %> left</span><% } else { %><span class="core-badge empty">Out</span><% } %>
+          <% list.forEach(p=>{
+            const initials = (p.name||'').split(' ').slice(0,2).map(w=>w[0]).join('').substring(0,2).toUpperCase();
+            const leftColor = Math.random()>0.5? 'green-left' : 'orange-left';
+          %>
+            <div class="core-card <%= leftColor %>" data-id="<%= p._id %>">
+              <span class="core-badge-top"><%= cat.toUpperCase().substring(0,8) %></span>
+              <div class="core-card-top">
+                <% if(p.image){ %>
+                  <img src="<%= p.image %>" alt="<%= p.name %>" loading="lazy">
+                <% } else { %>
+                  <span class="core-initials"><%= initials %></span>
+                <% } %>
               </div>
-              <div class="core-info">
-                <p class="core-cat-label"><%= cat %></p>
+              <div class="core-card-bottom">
                 <p class="core-name"><%= p.name %></p>
-                <div class="core-price"><p class="core-price-lbl">PRICE</p><p class="core-price-val">KES <%= Number(p.unitSellPrice||0).toLocaleString() %></p></div>
-              </div>
-              <div class="core-foot">
-                <% if(Number(p.units||0)>0){ %><button class="core-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>">ADD CART</button><% } else { %><button class="core-btn" disabled>OUT</button><% } %>
+                <p class="core-sub"><i class="fas fa-box" style="font-size:9px;color:#0a4d1e;"></i> <%= cat %></p>
+                <div class="core-code-row">
+                  <span class="core-code-label">Price</span>
+                  <span class="core-code-val">KES <%= Number(p.unitSellPrice||0).toLocaleString() %></span>
+                </div>
+                <% if(Number(p.units||0)>0){ %>
+                  <button class="core-price-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>">ADD CART • <%= p.units %> left</button>
+                <% } else { %>
+                  <button class="core-price-btn" disabled style="background:#eee;color:#999;">OUT</button>
+                <% } %>
               </div>
             </div>
           <% }) %>
         </div>
       </div>
     <% }) %>
+
+    <!-- STANDALONE ASSETS STYLE - OPTIONAL EXTRA ROW FOR ALL PRODUCTS -->
+    <% if(activeCategory==='all' && Object.keys(groups).length>1){ %>
+      <div class="core-category">
+        <div class="core-cat-title">
+          <h2>All Products</h2>
+          <p>Quick access to all available products.</p>
+        </div>
+        <div class="core-row">
+          <div class="core-add-card" onclick="window.location.href='/products?category=all'">
+            <div class="core-add-icon"><i class="fas fa-plus" style="color:#0a4d1e;"></i></div>
+            <p class="core-add-title">View All</p>
+            <p class="core-add-sub">Browse <%= products.length %> products</p>
+          </div>
+          <% products.slice(0,6).forEach(p=>{
+            const initials = (p.name||'').substring(0,2).toUpperCase();
+          %>
+            <div class="core-card green-left" data-id="<%= p._id %>">
+              <span class="core-badge-top">PRODUCT</span>
+              <div class="core-card-top"><span class="core-initials"><%= initials %></span></div>
+              <div class="core-card-bottom">
+                <p class="core-name"><%= p.name %></p>
+                <p class="core-sub">Condition: Good</p>
+                <div class="core-code-row"><span class="core-code-label">KES</span><span class="core-code-val"><%= Number(p.unitSellPrice||0).toLocaleString() %></span></div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+
   </div>
 </div>
 
@@ -118,7 +184,7 @@
       <span id="qVal" style="font-size:24px;font-weight:900;color:#0a4d1e;">1</span>
       <button id="qPlus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;cursor:pointer;">+</button>
     </div>
-    <button id="qConfirm" style="width:100%;padding:10px;background:#0a4d1e;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;">ADD <span id="qCount">1</span> TO CART</button>
+    <button id="qConfirm" style="width:100%;padding:10px;background:#0a4d1e;color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer;">ADD <span id="qCount">1</span> TO CART</button>
     <button onclick="closeQty()" style="width:100%;margin-top:8px;background:none;border:none;color:#888;cursor:pointer;">Cancel</button>
   </div>
 </div>
@@ -133,11 +199,8 @@
   document.getElementById('qConfirm').onclick=async()=>{ const r=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:sel.id,qty:sel.qty})}); const d=await r.json(); if(!d.success){alert(d.message);return;} closeQty(); location.reload(); };
   document.getElementById('qtyOverlay').addEventListener('click',e=>{ if(e.target.id==='qtyOverlay') closeQty(); });
   document.querySelectorAll('.core-card').forEach(card=>{
-    card.addEventListener('click',e=>{ if(e.target.closest('.core-btn')) return; const btn=card.querySelector('.core-btn[data-id]'); if(btn) window.location.href='/products/'+btn.dataset.id; });
+    card.addEventListener('click',e=>{ if(e.target.closest('.core-price-btn')) return; const btn=card.querySelector('.core-price-btn[data-id]'); if(btn) window.location.href='/products/'+btn.dataset.id; });
   });
-  document.querySelectorAll('.core-btn[data-id]').forEach(b=>{ b.addEventListener('click',e=>{ e.stopPropagation(); openQty(b.dataset.id,b.dataset.name,b.dataset.stock); }); });
-  document.querySelectorAll('.core-row').forEach(row=>{
-    let drag=false,sx=0,ss=0; row.addEventListener('mousedown',e=>{drag=true;sx=e.pageX-row.offsetLeft;ss=row.scrollLeft;}); row.addEventListener('mousemove',e=>{if(!drag) return; e.preventDefault(); row.scrollLeft=ss-(e.pageX-row.offsetLeft-sx);}); row.addEventListener('mouseup',()=>drag=false); row.addEventListener('mouseleave',()=>drag=false);
-  });
+  document.querySelectorAll('.core-price-btn[data-id]').forEach(b=>{ b.addEventListener('click',e=>{ e.stopPropagation(); openQty(b.dataset.id,b.dataset.name,b.dataset.stock); }); });
 })();
 </script>
