@@ -149,10 +149,16 @@ app.get("/health", (req, res) => res.status(200).json({ status: "ok", env: proce
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
+
+
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-app.use(expressLayouts);
-app.set("layout", "corevester/layout");
+
+app.set("views", path.join(__dirname, "views/corevester"));
+console.log("Views path set to:", path.join(__dirname, "views/corevester"));
+app.set("layout", "layout"); // not corevester/layout
+
+// and then fix all renders to NOT include corevester/
+
 
 // ==========================================================
 // MOUNT ROUTES - WITH LOG
