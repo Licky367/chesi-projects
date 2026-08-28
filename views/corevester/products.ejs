@@ -1,182 +1,84 @@
-<style>
-/* PAGE - LOCK WIDTH SO NOTHING CAN BE 40CM WIDE */
-.core-page{width:100%;max-width:100vw;overflow-x:hidden;background:#f4f6f4;font-family:"Segoe UI",sans-serif;box-sizing:border-box;}
-.core-container{width:100%;max-width:1300px;margin:0 auto;overflow:hidden;box-sizing:border-box;}
+<div style="width:100%;max-width:100vw;overflow-x:hidden;background:#f4f6f4;font-family:sans-serif;padding-bottom:30px;">
 
-/* FILTER PILLS - LIKE YOUR HEADER */
-.core-filters{display:flex;gap:8px;padding:10px 14px;overflow-x:auto;scrollbar-width:none;background:#fff;border-bottom:2px solid #e8f5e9;white-space:nowrap;}
-.core-filters::-webkit-scrollbar{display:none;}
-.core-pill{border:1.5px solid #c8d9cc;background:#fff;color:#0a4d1e;border-radius:20px;padding:6px 16px;font-size:11px;font-weight:800;text-decoration:none;display:inline-block;flex-shrink:0;}
-.core-pill.active{background:#0a4d1e;color:#fff;border-color:#0a4d1e;}
-
-/* CATEGORY HEADER LIKE "Dairy Farms" / "Gloves" */
-.core-cat{width:100%;max-width:100%;margin:0 0 6px 0;overflow:hidden;}
-.core-cat-head{padding:14px 14px 0 14px;}
-.core-cat-head h2{margin:0;color:#111;font-size:19px;font-weight:800;text-transform:capitalize;line-height:1.2;}
-.core-cat-head p{margin:3px 0 0 0;color:#777;font-size:12px;}
-
-/* THE IMPORTANT PART - ONE ROW PER CATEGORY, HORIZONTAL SCROLL */
-.core-row{
-  width:100%;max-width:100%;
-  display:flex;flex-direction:row;flex-wrap:nowrap;
-  gap:14px;
-  overflow-x:auto;overflow-y:hidden;
-  padding:12px 14px 18px 14px;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-  box-sizing:border-box;
-}
-.core-row::-webkit-scrollbar{display:none;}
-
-/* CARD - EXACTLY LIKE YOUR CFP SCREENSHOT */
-.core-card{
-  flex:0 0 162px!important;
-  width:162px!important;
-  min-width:162px!important;
-  max-width:162px!important;
-  height:218px;
-  background:#fff;
-  border-radius:18px;
-  border:1.5px solid #e6efe3;
-  border-left:4px solid #0a4d1e;
-  display:flex;flex-direction:column;
-  overflow:hidden;
-  flex-shrink:0!important;
-  box-shadow:0 2px 10px rgba(0,0,0,0.05);
-  position:relative;
-  box-sizing:border-box;
-}
-.core-card:nth-child(even){border-left-color:#c97a2e;}
-
-.core-top-badge{
-  position:absolute;top:7px;left:50%;transform:translateX(-50%);
-  background:#fff;border:1px solid #e5e5e5;
-  color:#333;font-size:8px;font-weight:800;letter-spacing:0.6px;
-  padding:2px 8px;border-radius:20px;z-index:2;white-space:nowrap;
-}
-
-/* IMAGE BOX - LOCKED TO 108px, IMAGE CONTAINED INSIDE */
-.core-img-box{
-  width:100%!important;
-  height:108px!important;
-  min-height:108px!important;
-  max-height:108px!important;
-  background:linear-gradient(to bottom, #eef4e9, #e4ece0);
-  display:flex;align-items:center;justify-content:center;
-  overflow:hidden;
-  flex-shrink:0;
-  position:relative;
-}
-.core-img-box img{
-  width:100%!important;
-  height:100%!important;
-  max-width:100%!important;
-  max-height:100%!important;
-  object-fit:contain!important;
-  object-position:center!important;
-  display:block!important;
-}
-.core-initials{font-size:48px;font-weight:300;color:#1e5a3a;line-height:1;}
-.core-stock{position:absolute;bottom:6px;right:6px;background:#fff;border:1px solid #0a4d1e;color:#0a4d1e;font-size:8px;font-weight:800;padding:2px 6px;border-radius:20px;}
-
-/* DETAILS - CONTAINED TOGETHER INSIDE CARD */
-.core-details{background:#fff;padding:10px 10px 8px 10px;flex:1;display:flex;flex-direction:column;box-sizing:border-box;}
-.core-name{margin:0;color:#111;font-size:12.5px;font-weight:800;line-height:1.25;height:31px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
-.core-meta{margin:4px 0 0 0;color:#888;font-size:10.5px;display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.core-meta i{font-size:9px;color:#0a4d1e;}
-.core-bottom{margin-top:auto;padding-top:6px;border-top:1px solid #f2f2f2;display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
-.core-price-lbl{color:#888;font-size:9px;}
-.core-price-val{background:#f1f8e9;color:#0a4d1e;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;}
-.core-add-btn{margin-top:7px;width:100%;background:#0a4d1e;color:#fff;border:none;border-radius:8px;padding:7px 4px;font-size:10px;font-weight:800;cursor:pointer;flex-shrink:0;}
-
-#qtyOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;}
-#qtyBox{background:#fff;border:3px solid #0a4d1e;border-radius:18px;width:100%;max-width:300px;padding:20px;text-align:center;}
-</style>
-
-<div class="core-page">
-  <div class="core-filters">
-    <a href="/products?category=all" class="core-pill <%= activeCategory==='all'?'active':'' %>">ALL</a>
+  <!-- FILTERS - INLINE -->
+  <div style="display:flex;gap:8px;padding:10px 14px;overflow-x:auto;background:#fff;border-bottom:2px solid #0a4d1e;white-space:nowrap;">
+    <a href="/products?category=all" style="border:1.5px solid #0a4d1e;background:<%= activeCategory==='all'?'#0a4d1e':'#fff' %>;color:<%= activeCategory==='all'?'#fff':'#0a4d1e' %>;border-radius:20px;padding:6px 14px;font-size:11px;font-weight:800;text-decoration:none;flex-shrink:0;">ALL</a>
     <% (categories||[]).forEach(c=>{ %>
-      <a href="/products?category=<%= c %>" class="core-pill <%= activeCategory===c?'active':'' %>"><%= c.toUpperCase() %></a>
+      <a href="/products?category=<%= c %>" style="border:1.5px solid #c5d6c5;background:<%= activeCategory===c?'#0a4d1e':'#fff' %>;color:<%= activeCategory===c?'#fff':'#0a4d1e' %>;border-radius:20px;padding:6px 14px;font-size:11px;font-weight:800;text-decoration:none;flex-shrink:0;text-transform:uppercase;"><%= c %></a>
     <% }) %>
   </div>
 
-  <div class="core-container">
-    <%
-      const groups={};
-      if(Array.isArray(products)){ products.filter(p=>p&&p.isActive!==false).forEach(p=>{
-        const c=String(p.category||"other").trim().toLowerCase(); if(!groups[c]) groups[c]=[]; groups[c].push(p);
-      });}
-      const filtered = activeCategory && activeCategory!=='all'? [activeCategory.toLowerCase()] : Object.keys(groups);
-    %>
+  <%
+    const groups={};
+    if(Array.isArray(products)){ products.filter(p=>p&&p.isActive!==false).forEach(p=>{
+      const c=String(p.category||"other").trim().toLowerCase(); if(!groups[c]) groups[c]=[]; groups[c].push(p);
+    });}
+    const filtered = activeCategory && activeCategory!=='all'? [activeCategory.toLowerCase()] : Object.keys(groups);
+  %>
 
-    <% filtered.forEach(cat=>{
-      const list=groups[cat]; if(!list) return;
-    %>
-      <div class="core-cat">
-        <div class="core-cat-head">
-          <h2><%= cat %></h2>
-          <p>View and manage all <%= cat %> in the system.</p>
-        </div>
-
-        <!-- SAME CATEGORY = SAME HORIZONTAL ROW -->
-        <div class="core-row">
-          <% list.forEach(p=>{
-            const initials = (p.name||'').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-          %>
-            <div class="core-card" data-id="<%= p._id %>">
-              <span class="core-top-badge"><%= cat.substring(0,7).toUpperCase() %></span>
-              <div class="core-img-box">
-                <% if(p.image){ %>
-                  <img src="<%= p.image %>" alt="<%= p.name %>">
-                <% } else { %>
-                  <span class="core-initials"><%= initials %></span>
-                <% } %>
-                <span class="core-stock"><%= p.units %> left</span>
-              </div>
-              <div class="core-details">
-                <p class="core-name"><%= p.name %></p>
-                <p class="core-meta"><i class="fas fa-boxes-stacked"></i> <%= cat %></p>
-                <div class="core-bottom">
-                  <span class="core-price-lbl">Price</span>
-                  <span class="core-price-val">KES <%= Number(p.unitSellPrice||0).toLocaleString() %></span>
-                </div>
-                <% if(Number(p.units||0)>0){ %>
-                  <button class="core-add-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>">ADD CART</button>
-                <% } else { %>
-                  <button class="core-add-btn" disabled style="background:#eee;color:#999;">OUT</button>
-                <% } %>
-              </div>
-            </div>
-          <% }) %>
-        </div>
+  <% filtered.forEach(cat=>{
+    const list=groups[cat]; if(!list) return;
+  %>
+    <div style="width:100%;max-width:100%;margin-top:14px;overflow:hidden;">
+      <div style="padding:0 14px;">
+        <h2 style="margin:0;color:#111;font-size:19px;font-weight:800;text-transform:capitalize;"><%= cat %></h2>
+        <p style="margin:2px 0 0 0;color:#777;font-size:12px;">View and manage all <%= cat %> in the system.</p>
       </div>
-    <% }) %>
+
+      <!-- ROW - SAME CATEGORY SAME ROW - INLINE FLEX -->
+      <div style="width:100%;display:flex;flex-wrap:nowrap;gap:14px;overflow-x:auto;padding:12px 14px;box-sizing:border-box;-webkit-overflow-scrolling:touch;">
+
+        <% list.forEach(p=>{ %>
+          <!-- CARD - EXACTLY LIKE YOUR KA CARD - ALL INLINE -->
+          <div style="flex:0 0 162px;width:162px;min-width:162px;max-width:162px;height:218px;background:#fff;border-radius:18px;border:1.5px solid #e0e9dc;border-left:4px solid #0a4d1e;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;box-shadow:0 2px 10px rgba(0,0,0,0.05);position:relative;box-sizing:border-box;">
+
+            <span style="position:absolute;top:7px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid #ddd;color:#333;font-size:8px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;z-index:2;"><%= cat.substring(0,8).toUpperCase() %></span>
+
+            <div style="width:100%;height:108px;min-height:108px;max-height:108px;background:#eef4e9;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+              <% if(p.image){ %>
+                <img src="<%= p.image %>" style="width:100%;height:100%;object-fit:contain;display:block;">
+              <% } else { %>
+                <span style="font-size:44px;color:#1e5a3a;"><%= (p.name||'').substring(0,2).toUpperCase() %></span>
+              <% } %>
+            </div>
+
+            <div style="background:#fff;padding:10px;flex:1;display:flex;flex-direction:column;">
+              <p style="margin:0;color:#111;font-size:12px;font-weight:800;line-height:1.2;height:30px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;"><%= p.name %></p>
+              <p style="margin:4px 0 0 0;color:#888;font-size:10px;">gloves</p>
+              <div style="margin-top:auto;border-top:1px solid #f2f2f2;padding-top:5px;display:flex;justify-content:space-between;align-items:center;">
+                <span style="color:#888;font-size:9px;">Price</span>
+                <span style="background:#f1f8e9;color:#0a4d1e;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;">KES <%= Number(p.unitSellPrice||0).toLocaleString() %></span>
+              </div>
+              <div style="margin-top:6px;background:#f6f6f6;border-radius:6px;padding:2px 6px;font-size:10px;"><%= p.units %> left</div>
+              <button onclick="openQty('<%= p._id %>','<%= p.name.replace(/'/g, "\\'") %>','<%= p.units %>')" style="margin-top:6px;width:100%;background:#0a4d1e;color:#fff;border:none;border-radius:8px;padding:7px;font-size:10px;font-weight:800;">ADD CART</button>
+            </div>
+
+          </div>
+        <% }) %>
+
+      </div>
+    </div>
+  <% }) %>
+</div>
+
+<div id="qtyOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border:3px solid #0a4d1e;border-radius:18px;width:100%;max-width:300px;padding:20px;text-align:center;">
+    <h3 id="qtyName" style="margin:0;color:#0a4d1e;font-size:14px;"></h3>
+    <p style="font-size:11px;color:#666;">Available: <b id="qtyAvail"></b></p>
+    <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:16px 0;">
+      <button id="qMinus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;">-</button>
+      <span id="qVal" style="font-size:24px;font-weight:900;color:#0a4d1e;">1</span>
+      <button id="qPlus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;">+</button>
+    </div>
+    <button id="qConfirm" style="width:100%;padding:10px;background:#0a4d1e;color:#fff;border:none;border-radius:10px;font-weight:800;">ADD <span id="qCount">1</span> TO CART</button>
+    <button onclick="document.getElementById('qtyOverlay').style.display='none'" style="width:100%;margin-top:8px;background:none;border:none;color:#888;">Cancel</button>
   </div>
 </div>
 
-<div id="qtyOverlay"><div id="qtyBox">
-  <h3 id="qtyName" style="margin:0;color:#0a4d1e;font-size:14px;"></h3>
-  <p style="font-size:11px;color:#666;">Available: <b id="qtyAvail"></b></p>
-  <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:16px 0;">
-    <button id="qMinus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;cursor:pointer;">-</button>
-    <span id="qVal" style="font-size:24px;font-weight:900;color:#0a4d1e;">1</span>
-    <button id="qPlus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;cursor:pointer;">+</button>
-  </div>
-  <button id="qConfirm" style="width:100%;padding:10px;background:#0a4d1e;color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer;">ADD <span id="qCount">1</span> TO CART</button>
-  <button onclick="closeQty()" style="width:100%;margin-top:8px;background:none;border:none;color:#888;cursor:pointer;">Cancel</button>
-</div></div>
-
 <script>
-(function(){
-  let sel={id:null,stock:0,qty:1};
-  window.closeQty=()=>document.getElementById('qtyOverlay').style.display='none';
-  function openQty(id,name,stock){ sel={id,stock:parseInt(stock),qty:1}; document.getElementById('qtyName').innerText=name; document.getElementById('qtyAvail').innerText=stock; document.getElementById('qVal').innerText=1; document.getElementById('qCount').innerText=1; document.getElementById('qtyOverlay').style.display='flex'; }
-  document.getElementById('qPlus').onclick=()=>{ if(sel.qty<sel.stock){sel.qty++; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty;}};
-  document.getElementById('qMinus').onclick=()=>{ if(sel.qty>1){sel.qty--; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty;}};
-  document.getElementById('qConfirm').onclick=async()=>{ const r=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:sel.id,qty:sel.qty})}); const d=await r.json(); if(!d.success){alert(d.message);return;} closeQty(); location.reload(); };
-  document.getElementById('qtyOverlay').addEventListener('click',e=>{ if(e.target.id==='qtyOverlay') closeQty(); });
-  document.querySelectorAll('.core-card').forEach(c=>{ c.addEventListener('click',e=>{ if(e.target.closest('.core-add-btn')) return; const b=c.querySelector('.core-add-btn[data-id]'); if(b) location.href='/products/'+b.dataset.id; }); });
-  document.querySelectorAll('.core-add-btn[data-id]').forEach(b=>{ b.addEventListener('click',e=>{ e.stopPropagation(); openQty(b.dataset.id,b.dataset.name,b.dataset.stock); }); });
-})();
+let sel={id:null,stock:0,qty:1};
+function openQty(id,name,stock){ sel={id,stock:parseInt(stock),qty:1}; document.getElementById('qtyName').innerText=name; document.getElementById('qtyAvail').innerText=stock; document.getElementById('qVal').innerText=1; document.getElementById('qCount').innerText=1; document.getElementById('qtyOverlay').style.display='flex'; }
+document.getElementById('qPlus').onclick=()=>{ if(sel.qty<sel.stock){sel.qty++; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty;}};
+document.getElementById('qMinus').onclick=()=>{ if(sel.qty>1){sel.qty--; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty;}};
+document.getElementById('qConfirm').onclick=async()=>{ const r=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:sel.id,qty:sel.qty})}); const d=await r.json(); if(!d.success){alert(d.message);return;} document.getElementById('qtyOverlay').style.display='none'; location.reload(); };
 </script>
