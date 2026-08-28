@@ -1,11 +1,11 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
   fullName: { type: String, required: true, trim: true },
-  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  password: { type: String, required: true, minlength: 6, select: false },
-  role: { type: String, enum: ['admin','client'], default: 'client', required: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  password: { type: String, required: true, select: false },
+  role: { type: String, enum: ['admin','client'], default: 'client' }
 }, { timestamps: true });
 
 userSchema.pre('save', async function(next){
@@ -18,4 +18,4 @@ userSchema.methods.comparePassword = function(candidate){
   return bcrypt.compare(candidate, this.password);
 };
 
-module.exports = mongoose.model('CorevesterUser', userSchema);
+module.exports = mongoose.models.CorevesterUser || mongoose.model("CorevesterUser", userSchema);
