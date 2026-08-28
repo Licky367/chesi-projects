@@ -3,67 +3,45 @@
      =========================================================
 
      CORE VESTER HEALTHCARE
-     CUSTOMER PRODUCT MARKETPLACE
+     CUSTOMER MARKETPLACE
 
-     DISPLAY RULE:
+     DISPLAY:
      ---------------------------------------------------------
-     • One product = one card
      • Products grouped by category
      • One horizontal scrollable row per category
-     • Card design follows the existing marketplace cards
-     • Images are restricted to a fixed 130px image area
-
-     EXPECTED DATA:
-         products
-
-     PRODUCT FIELDS:
-         _id
-         name
-         category
-         image
-         units
-         unitSellPrice
-         description
-         isActive
-         isOutOfStock
+     • One card per product
+     • Same basic card design as the marketplace entry page
+     • Fixed image area
+     • Image can NEVER determine card/page height
      ========================================================= -->
 
 
 <style>
 
 /* =========================================================
-   CORE VESTER PRODUCTS PAGE
+   PAGE
    ========================================================= */
 
-.products-page {
-
+.core-products-page {
+    width: 100%;
     min-height: calc(100vh - 80px);
-
     background: #f8fdf6;
-
     font-family: "Segoe UI", sans-serif;
-
-    color: #111;
-
     box-sizing: border-box;
-
+    overflow-x: hidden;
 }
 
 
 /* =========================================================
-   PAGE CONTAINER
+   MAIN CONTAINER
    ========================================================= */
 
-.products-page-container {
-
+.core-products-container {
+    width: 100%;
     max-width: 1300px;
-
     margin: 0 auto;
-
     padding: 20px;
-
     box-sizing: border-box;
-
 }
 
 
@@ -71,42 +49,27 @@
    PAGE HEADER
    ========================================================= */
 
-.products-page-header {
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-    gap: 15px;
-
+.core-products-header {
+    width: 100%;
     margin-bottom: 25px;
-
+    box-sizing: border-box;
 }
 
-
-.products-page-title {
-
+.core-products-header h1 {
     margin: 0;
-
-    font-size: 26px;
-
+    padding: 0;
     color: #0a4d1e;
-
+    font-size: 26px;
+    line-height: 1.2;
     font-weight: 900;
-
 }
 
-
-.products-page-subtitle {
-
-    margin: 4px 0 0 0;
-
-    font-size: 13px;
-
+.core-products-header p {
+    margin: 5px 0 0 0;
+    padding: 0;
     color: #666;
-
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 
@@ -114,10 +77,11 @@
    CATEGORY SECTION
    ========================================================= */
 
-.product-category-section {
-
-    margin-bottom: 30px;
-
+.core-category {
+    width: 100%;
+    margin: 0 0 30px 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 
@@ -125,299 +89,217 @@
    CATEGORY HEADER
    ========================================================= */
 
-.product-category-header {
-
+.core-category-header {
+    width: 100%;
     display: flex;
-
+    align-items: center;
     justify-content: space-between;
-
-    align-items: center;
-
-    gap: 15px;
-
+    gap: 10px;
     margin-bottom: 12px;
-
+    box-sizing: border-box;
 }
 
-
-.product-category-title-area {
-
+.core-category-title {
     display: flex;
-
     align-items: center;
-
     gap: 9px;
-
     min-width: 0;
-
 }
 
-
-.product-category-icon {
-
+.core-category-icon {
     width: 34px;
-
     height: 34px;
-
-    flex: 0 0 34px;
-
+    min-width: 34px;
     display: flex;
-
     align-items: center;
-
     justify-content: center;
-
     background: #e8f5e9;
-
-    color: #0a4d1e;
-
+    border: 1px solid #c5e1a5;
     border-radius: 10px;
-
+    color: #0a4d1e;
     font-size: 14px;
-
+    box-sizing: border-box;
 }
 
-
-.product-category-title {
-
+.core-category-title h2 {
     margin: 0;
-
-    font-size: 18px;
-
+    padding: 0;
     color: #0a4d1e;
-
+    font-size: 17px;
+    line-height: 1.2;
     font-weight: 850;
-
     text-transform: capitalize;
-
 }
 
-
-.product-category-count {
-
-    margin-left: 5px;
-
-    color: #888;
-
+.core-category-count {
+    color: #777;
     font-size: 11px;
-
     font-weight: 600;
-
-}
-
-
-/* =========================================================
-   SCROLL INDICATOR
-   ========================================================= */
-
-.product-category-scroll-label {
-
-    color: #0a4d1e;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    white-space: nowrap;
-
-}
-
-
-.product-category-scroll-label i {
-
     margin-left: 4px;
+}
 
+.core-category-scroll {
+    flex-shrink: 0;
+    color: #0a4d1e;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.core-category-scroll i {
+    margin-left: 3px;
 }
 
 
 /* =========================================================
-   HORIZONTAL PRODUCTS ROW
+   HORIZONTAL PRODUCT ROW
+
+   IMPORTANT:
+   The row itself is the scrolling container.
    ========================================================= */
 
-.products-horizontal-row {
-
+.core-products-row {
+    width: 100%;
+    max-width: 100%;
     display: flex;
-
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
     gap: 14px;
 
-    width: 100%;
-
-    max-width: 100%;
-
     overflow-x: auto;
-
     overflow-y: hidden;
 
-    padding: 2px 2px 12px;
+    padding: 2px 2px 14px 2px;
+    margin: 0;
 
     box-sizing: border-box;
 
     -webkit-overflow-scrolling: touch;
-
     scroll-behavior: smooth;
 
     scrollbar-width: thin;
-
-    scrollbar-color:
-        rgba(10,77,30,0.35)
-        transparent;
-
+    scrollbar-color: #a5d6a7 transparent;
 }
 
-
-.products-horizontal-row::-webkit-scrollbar {
-
+.core-products-row::-webkit-scrollbar {
     height: 5px;
-
 }
 
-
-.products-horizontal-row::-webkit-scrollbar-track {
-
+.core-products-row::-webkit-scrollbar-track {
     background: transparent;
-
 }
 
-
-.products-horizontal-row::-webkit-scrollbar-thumb {
-
-    background: rgba(10,77,30,0.30);
-
+.core-products-row::-webkit-scrollbar-thumb {
+    background: #a5d6a7;
     border-radius: 20px;
-
-}
-
-
-.products-horizontal-row::-webkit-scrollbar-thumb:hover {
-
-    background: rgba(10,77,30,0.50);
-
 }
 
 
 /* =========================================================
    PRODUCT CARD
 
-   SAME BASIC DESIGN AS THE MARKETPLACE ENTRY PAGE
+   FIXED WIDTH.
+
+   It cannot stretch to the width of the screen.
+   It cannot shrink because of flex-shrink:0.
    ========================================================= */
 
-.market-product-card {
+.core-product-card {
+    flex: 0 0 220px;
+    width: 220px;
+    min-width: 220px;
+    max-width: 220px;
 
-    background: white;
-
-    border-radius: 14px;
+    background: #ffffff;
 
     border: 1px solid #e8f5e9;
+    border-radius: 14px;
 
     overflow: hidden;
 
-    box-shadow:
-        0 2px 10px rgba(0,0,0,0.04);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
 
     display: flex;
-
     flex-direction: column;
-
-    flex: 0 0 220px;
-
-    width: 220px;
-
-    min-width: 220px;
-
-    max-width: 220px;
 
     box-sizing: border-box;
 
-    scroll-snap-align: start;
-
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
-
-}
-
-
-.market-product-card:hover {
-
-    transform: translateY(-3px);
-
-    box-shadow:
-        0 6px 18px rgba(0,0,0,0.08);
-
+    position: relative;
 }
 
 
 /* =========================================================
-   PRODUCT IMAGE AREA
+   PRODUCT IMAGE WINDOW
 
-   THIS IS THE IMPORTANT PART.
+   THIS IS THE CRITICAL FIX.
 
-   EXACTLY 130PX HIGH.
-
-   THE IMAGE CANNOT CONTROL THE CARD SIZE.
+   The image window is ALWAYS 130px high.
    ========================================================= */
 
-.market-product-image {
-
+.core-product-image-window {
     position: relative;
 
-    width: 100%;
+    width: 220px;
+    max-width: 220px;
 
-    height: 130px;
-
-    min-height: 130px;
-
-    max-height: 130px;
+    height: 130px !important;
+    min-height: 130px !important;
+    max-height: 130px !important;
 
     flex: 0 0 130px;
 
     background: #f6fbf6;
 
-    display: flex;
+    overflow: hidden !important;
 
-    align-items: center;
+    display: block;
 
-    justify-content: center;
-
-    overflow: hidden;
+    margin: 0;
+    padding: 0;
 
     box-sizing: border-box;
-
 }
 
 
 /* =========================================================
    PRODUCT IMAGE
 
-   KEEP THE SAME BEHAVIOUR AS THE ENTRY PAGE
+   ABSOLUTE POSITIONING IS INTENTIONAL.
+
+   Therefore the image participates in NO document flow.
+
+   It CANNOT make the card taller.
    ========================================================= */
 
-.market-product-image img {
+.core-product-image-window img {
+    position: absolute !important;
+
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
 
     display: block !important;
 
     width: 100% !important;
-
     height: 100% !important;
 
-    max-width: 100% !important;
-
-    max-height: 100% !important;
-
     min-width: 0 !important;
-
     min-height: 0 !important;
 
-    object-fit: cover !important;
-
-    object-position: center center !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
 
     margin: 0 !important;
-
     padding: 0 !important;
 
-    box-sizing: border-box !important;
+    border: 0 !important;
 
+    object-fit: contain !important;
+    object-position: center center !important;
+
+    box-sizing: border-box !important;
 }
 
 
@@ -425,27 +307,26 @@
    NO IMAGE
    ========================================================= */
 
-.market-product-no-image {
+.core-product-no-image {
+    position: absolute;
+
+    inset: 0;
 
     width: 100%;
-
     height: 130px;
 
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
+    background: #f6fbf6;
+
+    box-sizing: border-box;
 }
 
-
-.market-product-no-image i {
-
-    font-size: 36px;
-
+.core-product-no-image i {
     color: #a5d6a7;
-
+    font-size: 36px;
 }
 
 
@@ -453,39 +334,37 @@
    STOCK BADGE
    ========================================================= */
 
-.market-product-stock {
-
+.core-product-stock {
     position: absolute;
 
     top: 8px;
-
     left: 8px;
 
-    background: white;
+    z-index: 5;
+
+    background: #ffffff;
 
     border: 1px solid #0a4d1e;
 
     color: #0a4d1e;
 
     font-size: 10px;
-
     font-weight: 800;
 
     padding: 3px 8px;
 
     border-radius: 20px;
 
-    z-index: 2;
+    line-height: 1.2;
 
+    white-space: nowrap;
+
+    box-sizing: border-box;
 }
 
-
-.market-product-stock.out-of-stock {
-
+.core-product-stock.empty {
     border-color: #c62828;
-
     color: #c62828;
-
 }
 
 
@@ -493,39 +372,37 @@
    PRODUCT INFORMATION
    ========================================================= */
 
-.market-product-info {
+.core-product-info {
+    width: 100%;
 
     padding: 12px;
 
-    flex: 1;
-
     box-sizing: border-box;
 
+    flex: 1 1 auto;
 }
 
 
 /* =========================================================
-   CATEGORY LABEL
+   PRODUCT CATEGORY
    ========================================================= */
 
-.market-product-category {
-
+.core-product-category {
     margin: 0;
-
-    font-size: 10px;
+    padding: 0;
 
     color: #2e7d32;
+
+    font-size: 10px;
+    line-height: 1.2;
 
     font-weight: 800;
 
     text-transform: uppercase;
 
     white-space: nowrap;
-
     overflow: hidden;
-
     text-overflow: ellipsis;
-
 }
 
 
@@ -533,28 +410,26 @@
    PRODUCT NAME
    ========================================================= */
 
-.market-product-name {
-
+.core-product-name {
     margin: 4px 0 0 0;
-
-    font-size: 14px;
-
-    font-weight: 700;
+    padding: 0;
 
     color: #111;
 
+    font-size: 14px;
     line-height: 1.3;
 
+    font-weight: 700;
+
+    height: 36px;
     min-height: 36px;
-
-    display: -webkit-box;
-
-    -webkit-line-clamp: 2;
-
-    -webkit-box-orient: vertical;
+    max-height: 36px;
 
     overflow: hidden;
 
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 
@@ -562,69 +437,65 @@
    DESCRIPTION
    ========================================================= */
 
-.market-product-description {
-
+.core-product-description {
     margin: 6px 0 0 0;
-
-    font-size: 11px;
+    padding: 0;
 
     color: #777;
 
+    font-size: 11px;
     line-height: 1.35;
 
+    height: 30px;
     min-height: 30px;
-
-    display: -webkit-box;
-
-    -webkit-line-clamp: 2;
-
-    -webkit-box-orient: vertical;
+    max-height: 30px;
 
     overflow: hidden;
 
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 
 /* =========================================================
-   PRICE AREA
+   PRICE
    ========================================================= */
 
-.market-product-price-area {
+.core-product-price {
+    width: 100%;
 
     margin-top: 10px;
+
+    padding: 8px;
 
     background: #f9fbe7;
 
     border-radius: 8px;
 
-    padding: 8px;
-
     box-sizing: border-box;
-
 }
 
-
-.market-product-price-label {
-
+.core-product-price-label {
     margin: 0;
-
-    font-size: 9px;
+    padding: 0;
 
     color: #888;
 
+    font-size: 9px;
+    line-height: 1.2;
 }
 
-
-.market-product-price {
-
-    margin: 0;
-
-    font-size: 13px;
-
-    font-weight: 800;
+.core-product-price-value {
+    margin: 1px 0 0 0;
+    padding: 0;
 
     color: #0a4d1e;
 
+    font-size: 13px;
+    line-height: 1.3;
+
+    font-weight: 800;
 }
 
 
@@ -632,16 +503,12 @@
    CARD FOOTER
    ========================================================= */
 
-.market-product-footer {
+.core-product-footer {
+    width: 100%;
 
     padding: 0 12px 12px 12px;
 
-    display: flex;
-
-    gap: 8px;
-
     box-sizing: border-box;
-
 }
 
 
@@ -649,55 +516,39 @@
    CART BUTTON
    ========================================================= */
 
-.market-product-cart {
-
+.core-product-button {
     width: 100%;
 
+    margin: 0;
     padding: 9px;
+
+    border: none;
+    border-radius: 8px;
 
     background: #0a4d1e;
 
-    border: none;
+    color: #ffffff;
 
-    color: white;
-
-    border-radius: 8px;
+    font-family: inherit;
 
     font-size: 11px;
+    line-height: 1.2;
 
     font-weight: 800;
 
     cursor: pointer;
 
-    transition:
-        background 0.2s ease,
-        transform 0.15s ease;
-
+    box-sizing: border-box;
 }
 
-
-.market-product-cart:hover {
-
-    background: #063b17;
-
-}
-
-
-.market-product-cart:active {
-
+.core-product-button:active {
     transform: scale(0.98);
-
 }
 
-
-.market-product-cart.disabled {
-
+.core-product-button.disabled {
     background: #eeeeee;
-
-    color: #999;
-
+    color: #999999;
     cursor: not-allowed;
-
 }
 
 
@@ -705,14 +556,13 @@
    CATEGORY DIVIDER
    ========================================================= */
 
-.product-category-divider {
-
+.core-category-divider {
+    width: 100%;
     height: 1px;
-
-    background: #e8f5e9;
 
     margin-top: 22px;
 
+    background: #e8f5e9;
 }
 
 
@@ -720,228 +570,150 @@
    EMPTY STATE
    ========================================================= */
 
-.products-empty {
+.core-products-empty {
+    width: 100%;
 
-    background: white;
-
-    border-radius: 16px;
+    background: #ffffff;
 
     border-top: 4px solid #0a4d1e;
+    border-radius: 16px;
 
-    box-shadow:
-        0 4px 20px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
 
     padding: 45px 20px;
 
     text-align: center;
 
+    box-sizing: border-box;
 }
 
-
-.products-empty-icon {
-
+.core-products-empty-icon {
     width: 60px;
-
     height: 60px;
 
-    margin: 0 auto 15px;
+    margin: 0 auto 15px auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     background: #e8f5e9;
-
     color: #0a4d1e;
 
     border-radius: 16px;
 
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
     font-size: 25px;
-
 }
 
-
-.products-empty h2 {
-
+.core-products-empty h2 {
     margin: 0;
+    padding: 0;
 
     color: #0a4d1e;
 
     font-size: 19px;
-
 }
 
-
-.products-empty p {
-
-    margin: 6px 0 0;
+.core-products-empty p {
+    margin: 6px 0 0 0;
+    padding: 0;
 
     color: #777;
 
     font-size: 13px;
-
 }
 
 
 /* =========================================================
    MOBILE
+
+   Keep cards normal-sized.
+   Only the number of cards visible changes.
    ========================================================= */
 
 @media (max-width: 600px) {
 
-    .products-page-container {
-
+    .core-products-container {
         padding: 16px 12px;
-
     }
 
-
-    .products-page-header {
-
-        margin-bottom: 20px;
-
+    .core-products-header {
+        margin-bottom: 22px;
     }
 
-
-    .products-page-title {
-
-        font-size: 23px;
-
+    .core-products-header h1 {
+        font-size: 25px;
     }
 
-
-    .products-page-subtitle {
-
-        font-size: 12px;
-
-    }
-
-
-    .product-category-section {
-
-        margin-bottom: 25px;
-
-    }
-
-
-    .product-category-title {
-
-        font-size: 16px;
-
-    }
-
-
-    .product-category-icon {
-
-        width: 31px;
-
-        height: 31px;
-
-        flex-basis: 31px;
-
-    }
-
-
-    .product-category-scroll-label {
-
-        font-size: 0;
-
-    }
-
-
-    .product-category-scroll-label i {
-
+    .core-products-header p {
         font-size: 13px;
-
     }
 
-
-    .products-horizontal-row {
-
-        gap: 11px;
-
-        padding-left: 2px;
-
-        padding-right: 2px;
-
+    .core-category {
+        margin-bottom: 26px;
     }
 
-
-    .market-product-card {
-
-        flex: 0 0 185px;
-
-        width: 185px;
-
-        min-width: 185px;
-
-        max-width: 185px;
-
+    .core-category-title h2 {
+        font-size: 16px;
     }
 
+    .core-category-scroll {
+        font-size: 0;
+    }
+
+    .core-category-scroll i {
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .core-products-row {
+        gap: 12px;
+    }
 
     /*
-     * Still exactly 130px.
+     * Still a normal card.
+     * We are NOT making it full-screen.
      */
 
-    .market-product-image {
+    .core-product-card {
+        flex: 0 0 220px;
+        width: 220px;
+        min-width: 220px;
+        max-width: 220px;
+    }
 
-        height: 130px;
+    /*
+     * The image remains exactly 130px.
+     */
 
-        min-height: 130px;
-
-        max-height: 130px;
-
+    .core-product-image-window {
+        width: 220px;
+        height: 130px !important;
+        min-height: 130px !important;
+        max-height: 130px !important;
         flex-basis: 130px;
-
-    }
-
-
-    .market-product-no-image {
-
-        height: 130px;
-
-    }
-
-
-    .market-product-info {
-
-        padding: 10px;
-
-    }
-
-
-    .market-product-footer {
-
-        padding:
-            0
-            10px
-            10px
-            10px;
-
     }
 
 }
 
 
 /* =========================================================
-   SMALL PHONES
+   VERY SMALL PHONES
+
+   Slightly narrower card, but still fixed.
    ========================================================= */
 
-@media (max-width: 380px) {
+@media (max-width: 360px) {
 
-    .market-product-card {
+    .core-product-card {
+        flex-basis: 205px;
+        width: 205px;
+        min-width: 205px;
+        max-width: 205px;
+    }
 
-        flex: 0 0 170px;
-
-        width: 170px;
-
-        min-width: 170px;
-
-        max-width: 170px;
-
+    .core-product-image-window {
+        width: 205px;
     }
 
 }
@@ -953,30 +725,25 @@
      PRODUCTS PAGE
      ========================================================= -->
 
-<div class="products-page">
+<div class="core-products-page">
 
-
-    <div class="products-page-container">
+    <div class="core-products-container">
 
 
         <!-- =====================================================
              PAGE HEADER
              ===================================================== -->
 
-        <div class="products-page-header">
+        <div class="core-products-header">
 
-            <div>
+            <h1>
+                Our Products
+            </h1>
 
-                <h1 class="products-page-title">
-                    Our Products
-                </h1>
-
-                <p class="products-page-subtitle">
-                    Quality medical equipment and hospital
-                    supplies you can trust.
-                </p>
-
-            </div>
+            <p>
+                Quality medical equipment and hospital supplies
+                you can trust.
+            </p>
 
         </div>
 
@@ -988,8 +755,7 @@
              * =================================================
              */
 
-            const groupedProducts = {};
-
+            const categoryGroups = {};
 
             if (Array.isArray(products)) {
 
@@ -1011,15 +777,11 @@
                             .trim()
                             .toLowerCase();
 
-
-                        if (!groupedProducts[category]) {
-
-                            groupedProducts[category] = [];
-
+                        if (!categoryGroups[category]) {
+                            categoryGroups[category] = [];
                         }
 
-
-                        groupedProducts[category].push(product);
+                        categoryGroups[category].push(product);
 
                     });
 
@@ -1040,26 +802,29 @@
                 "hospital supplies":
                     "fa-kit-medical",
 
-                "consumables":
-                    "fa-syringe",
+                "surgical":
+                    "fa-user-doctor",
 
-                "medicines":
-                    "fa-pills",
-
-                "pharmaceuticals":
-                    "fa-pills",
+                "surgical equipment":
+                    "fa-user-doctor",
 
                 "diagnostics":
                     "fa-microscope",
-
-                "surgical":
-                    "fa-user-doctor",
 
                 "laboratory":
                     "fa-flask",
 
                 "laboratory equipment":
                     "fa-flask",
+
+                "consumables":
+                    "fa-boxes-stacked",
+
+                "medicines":
+                    "fa-pills",
+
+                "pharmaceuticals":
+                    "fa-pills",
 
                 "dental":
                     "fa-tooth",
@@ -1068,25 +833,23 @@
                     "fa-hand-holding-medical",
 
                 "other":
-                    "fa-boxes-stacked"
+                    "fa-box-open"
 
             };
 
         %>
 
 
-        <% if (
-            Object.keys(groupedProducts).length === 0
-        ) { %>
+        <% if (Object.keys(categoryGroups).length === 0) { %>
 
 
             <!-- =================================================
-                 EMPTY PRODUCTS
+                 EMPTY MARKET
                  ================================================= -->
 
-            <div class="products-empty">
+            <div class="core-products-empty">
 
-                <div class="products-empty-icon">
+                <div class="core-products-empty-icon">
 
                     <i class="fas fa-box-open"></i>
 
@@ -1097,8 +860,8 @@
                 </h2>
 
                 <p>
-                    There are currently no products available.
-                    Please check again later.
+                    There are currently no products available
+                    in the marketplace.
                 </p>
 
             </div>
@@ -1111,15 +874,14 @@
                  CATEGORY ROWS
                  ================================================= -->
 
-            <% Object.entries(groupedProducts).forEach(
-                function(entry)
-            {
-
-                const category =
-                    entry[0];
+            <% Object.keys(categoryGroups).forEach(function(category) {
 
                 const categoryProducts =
-                    entry[1];
+                    categoryGroups[category];
+
+                const icon =
+                    categoryIcons[category]
+                    || "fa-boxes-stacked";
 
             %>
 
@@ -1128,80 +890,47 @@
                      CATEGORY
                      ============================================= -->
 
-                <section
-                    class="product-category-section"
-                >
+                <section class="core-category">
 
 
                     <!-- =========================================
                          CATEGORY HEADER
                          ========================================= -->
 
-                    <div
-                        class="product-category-header"
-                    >
+                    <div class="core-category-header">
 
 
-                        <div
-                            class="product-category-title-area"
-                        >
+                        <div class="core-category-title">
 
+                            <div class="core-category-icon">
 
-                            <div
-                                class="product-category-icon"
-                            >
-
-                                <i
-                                    class="
-                                        fas
-                                        <%= categoryIcons[category]
-                                            || 'fa-boxes-stacked' %>
-                                    "
-                                ></i>
+                                <i class="fas <%= icon %>"></i>
 
                             </div>
 
 
-                            <h2
-                                class="product-category-title"
-                            >
+                            <h2>
 
                                 <%= category %>
 
-                                <span
-                                    class="product-category-count"
-                                >
-                                    <%= categoryProducts.length %>
+                                <span class="core-category-count">
+                                    (<%= categoryProducts.length %>)
                                 </span>
 
                             </h2>
 
-
                         </div>
 
 
-                        <% if (
-                            categoryProducts.length > 1
-                        ) { %>
+                        <% if (categoryProducts.length > 1) { %>
 
+                            <div class="core-category-scroll">
 
-                            <div
-                                class="
-                                    product-category-scroll-label
-                                "
-                            >
+                                Swipe
 
-                                Scroll
-
-                                <i
-                                    class="
-                                        fas
-                                        fa-chevron-right
-                                    "
-                                ></i>
+                                <i class="fas fa-arrow-right"></i>
 
                             </div>
-
 
                         <% } %>
 
@@ -1210,18 +939,13 @@
 
 
                     <!-- =========================================
-                         HORIZONTAL PRODUCT ROW
+                         HORIZONTAL ROW
                          ========================================= -->
 
-                    <div
-                        class="products-horizontal-row"
-                        data-category="<%= category %>"
-                    >
+                    <div class="core-products-row">
 
 
-                        <% categoryProducts.forEach(
-                            function(product)
-                        { %>
+                        <% categoryProducts.forEach(function(product) { %>
 
 
                             <!-- =================================
@@ -1229,17 +953,16 @@
                                  ================================= -->
 
                             <article
-                                class="market-product-card"
-                                data-product-id="<%= product._id %>"
+                                class="core-product-card"
                             >
 
 
                                 <!-- =============================
-                                     IMAGE
+                                     IMAGE WINDOW
                                      ============================= -->
 
                                 <div
-                                    class="market-product-image"
+                                    class="core-product-image-window"
                                 >
 
 
@@ -1254,26 +977,23 @@
                                                 this.style.display='none';
                                                 this.parentElement
                                                     .querySelector(
-                                                        '.market-product-no-image'
+                                                        '.core-product-no-image'
                                                     )
                                                     .style.display='flex';
                                             "
                                         >
 
 
+                                        <!-- =========================
+                                             IMAGE FALLBACK
+                                             ========================= -->
+
                                         <div
-                                            class="
-                                                market-product-no-image
-                                            "
+                                            class="core-product-no-image"
                                             style="display:none;"
                                         >
 
-                                            <i
-                                                class="
-                                                    fas
-                                                    fa-box-open
-                                                "
-                                            ></i>
+                                            <i class="fas fa-box-open"></i>
 
                                         </div>
 
@@ -1282,17 +1002,10 @@
 
 
                                         <div
-                                            class="
-                                                market-product-no-image
-                                            "
+                                            class="core-product-no-image"
                                         >
 
-                                            <i
-                                                class="
-                                                    fas
-                                                    fa-box-open
-                                                "
-                                            ></i>
+                                            <i class="fas fa-box-open"></i>
 
                                         </div>
 
@@ -1300,19 +1013,16 @@
                                     <% } %>
 
 
-                                    <!-- =========================
-                                         STOCK
-                                         ========================= -->
+                                    <!-- =============================
+                                         UNITS BADGE
+                                         ============================= -->
 
                                     <% if (
                                         Number(product.units || 0) > 0
                                     ) { %>
 
-
                                         <span
-                                            class="
-                                                market-product-stock
-                                            "
+                                            class="core-product-stock"
                                         >
 
                                             <%= product.units %>
@@ -1320,21 +1030,18 @@
 
                                         </span>
 
-
                                     <% } else { %>
-
 
                                         <span
                                             class="
-                                                market-product-stock
-                                                out-of-stock
+                                                core-product-stock
+                                                empty
                                             "
                                         >
 
                                             Out of stock
 
                                         </span>
-
 
                                     <% } %>
 
@@ -1343,11 +1050,11 @@
 
 
                                 <!-- =============================
-                                     PRODUCT INFORMATION
+                                     INFORMATION
                                      ============================= -->
 
                                 <div
-                                    class="market-product-info"
+                                    class="core-product-info"
                                 >
 
 
@@ -1357,27 +1064,23 @@
 
                                     <p
                                         class="
-                                            market-product-category
+                                            core-product-category
                                         "
                                     >
-
                                         <%= category %>
-
                                     </p>
 
 
                                     <!-- =========================
-                                         NAME
+                                         PRODUCT NAME
                                          ========================= -->
 
                                     <p
                                         class="
-                                            market-product-name
+                                            core-product-name
                                         "
                                     >
-
                                         <%= product.name %>
-
                                     </p>
 
 
@@ -1387,7 +1090,7 @@
 
                                     <p
                                         class="
-                                            market-product-description
+                                            core-product-description
                                         "
                                     >
 
@@ -1398,36 +1101,31 @@
 
 
                                     <!-- =========================
-                                         SELLING PRICE
+                                         PRICE
                                          ========================= -->
 
                                     <div
-                                        class="
-                                            market-product-price-area
-                                        "
+                                        class="core-product-price"
                                     >
 
                                         <p
                                             class="
-                                                market-product-price-label
+                                                core-product-price-label
                                             "
                                         >
                                             PRICE
                                         </p>
 
-
                                         <p
                                             class="
-                                                market-product-price
+                                                core-product-price-value
                                             "
                                         >
 
                                             KES
                                             <%= Number(
                                                 product.unitSellPrice || 0
-                                            ).toLocaleString(
-                                                "en-KE"
-                                            ) %>
+                                            ).toLocaleString("en-KE") %>
 
                                         </p>
 
@@ -1442,9 +1140,7 @@
                                      ============================= -->
 
                                 <div
-                                    class="
-                                        market-product-footer
-                                    "
+                                    class="core-product-footer"
                                 >
 
 
@@ -1456,7 +1152,7 @@
                                         <button
                                             type="button"
                                             class="
-                                                market-product-cart
+                                                core-product-button
                                             "
                                             data-product-id="
                                                 <%= product._id %>
@@ -1466,12 +1162,7 @@
                                             "
                                         >
 
-                                            <i
-                                                class="
-                                                    fas
-                                                    fa-cart-plus
-                                                "
-                                            ></i>
+                                            <i class="fas fa-cart-plus"></i>
 
                                             Add to Cart
 
@@ -1484,18 +1175,13 @@
                                         <button
                                             type="button"
                                             class="
-                                                market-product-cart
+                                                core-product-button
                                                 disabled
                                             "
                                             disabled
                                         >
 
-                                            <i
-                                                class="
-                                                    fas
-                                                    fa-ban
-                                                "
-                                            ></i>
+                                            <i class="fas fa-ban"></i>
 
                                             Out of Stock
 
@@ -1521,9 +1207,7 @@
                          CATEGORY DIVIDER
                          ========================================= -->
 
-                    <div
-                        class="product-category-divider"
-                    ></div>
+                    <div class="core-category-divider"></div>
 
 
                 </section>
@@ -1541,7 +1225,12 @@
 
 
 <!-- =========================================================
-     HORIZONTAL DRAG / WHEEL SUPPORT
+     HORIZONTAL SCROLLING
+
+     Allows:
+     • Finger swiping on mobile
+     • Mouse wheel scrolling
+     • Mouse dragging on desktop
      ========================================================= -->
 
 <script>
@@ -1550,17 +1239,17 @@
 
     const rows =
         document.querySelectorAll(
-            ".products-horizontal-row"
+            ".core-products-row"
         );
 
 
     rows.forEach(function (row) {
 
-        let isDragging = false;
+        let dragging = false;
 
         let startX = 0;
 
-        let initialScrollLeft = 0;
+        let startingScroll = 0;
 
 
         /* =====================================================
@@ -1575,19 +1264,16 @@
                     row.scrollWidth <=
                     row.clientWidth
                 ) {
-
                     return;
-
                 }
 
-
-                isDragging = true;
+                dragging = true;
 
                 startX =
                     event.pageX -
                     row.offsetLeft;
 
-                initialScrollLeft =
+                startingScroll =
                     row.scrollLeft;
 
                 row.style.cursor =
@@ -1601,27 +1287,21 @@
             "mousemove",
             function (event) {
 
-                if (!isDragging) {
-
+                if (!dragging) {
                     return;
-
                 }
-
 
                 event.preventDefault();
 
-
-                const currentX =
+                const x =
                     event.pageX -
                     row.offsetLeft;
 
-
                 const distance =
-                    (currentX - startX) * 1.2;
-
+                    (x - startX) * 1.2;
 
                 row.scrollLeft =
-                    initialScrollLeft - distance;
+                    startingScroll - distance;
 
             }
         );
@@ -1631,7 +1311,7 @@
             "mouseup",
             function () {
 
-                isDragging = false;
+                dragging = false;
 
                 row.style.cursor = "";
 
@@ -1643,7 +1323,7 @@
             "mouseleave",
             function () {
 
-                isDragging = false;
+                dragging = false;
 
                 row.style.cursor = "";
 
@@ -1683,12 +1363,9 @@
 
 
     /* =========================================================
-       CART BUTTON EVENT
-       =========================================================
+       ADD TO CART EVENT
 
-       This only emits a custom browser event for now.
-
-       It does NOT assume or alter your cart architecture.
+       Does not assume a cart backend.
        ========================================================= */
 
     document.addEventListener(
@@ -1697,14 +1374,12 @@
 
             const button =
                 event.target.closest(
-                    ".market-product-cart:not(.disabled)"
+                    ".core-product-button:not(.disabled)"
                 );
 
 
             if (!button) {
-
                 return;
-
             }
 
 
