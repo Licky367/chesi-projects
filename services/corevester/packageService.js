@@ -3,33 +3,33 @@ const Product = require("../../models/corevester/products");
 const productsService = require("./productsService");
 
 module.exports = {
+
     async createFromCart(sessionId){
         const cart = productsService.getCart(sessionId);
-        if(cart.length===0) throw new Error("Cart empty");
+        if(!cart || cart.length === 0) throw new Error("Cart empty");
 
-        const total = cart.reduce((s,i)=> s + (i.price * i.qty), 0);
+        const total = cart.reduce((s,i) => s + (i.price * i.qty), 0);
 
-        // Create package
         const pkg = await Package.create({
             clientId: sessionId,
-            items: cart,
-            totalAmount: total
+            items: cart.map(c => ({
+                productId: c.productId,
+                name: c.name,
+                price: c.price,
+                qty: c.qty,
+                image: c.image
+            })),
+            totalAmount: total,
+            status: "pending"
         });
 
-        // Deduct stock NOW (when ordered, not when added to cart)
+        // Deduct stock when ordered
         for(let item of cart){
             await Product.findByIdAndUpdate(item.productId, { $inc: { units: -item.qty } });
         }
 
-        // Clear cart
-        productsService.getCart(sessionId).length = 0;
-        // or using your store Map
-        const cartStore = require("./productsService").cartStore || null;
-        // if you exported cartStore, clear it
-        try{
-            const ps = require("./productsService");
-            if(ps.cartStore) ps.cartStore.set(sessionId, []);
-        }catch(e){}
+        // Clear cart correctly
+        productsService.clearCart(sessionId);
 
         return pkg;
     },
