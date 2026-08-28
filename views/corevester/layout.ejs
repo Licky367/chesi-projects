@@ -3,85 +3,127 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><%= typeof title !== 'undefined' ? title : 'COREVESTER - Core Vester Healthcare' %></title>
+<title><%= typeof title!== 'undefined'? title : 'COREVESTER - Core Vester Healthcare' %></title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 *{box-sizing:border-box;}
-body{margin:0;padding:0;font-family:'Segoe UI',sans-serif;background:#f8fdf6;overflow-x:hidden;}
+html,body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden;}
+body{font-family:'Segoe UI',sans-serif;background:#f8fdf6;}
+img{max-width:100%;}
 </style>
 </head>
 <body>
 
-<!-- HEADER - 80px WHITE WITH GREEN SHADE -->
-<header style="height:80px; background:#ffffff; border-top:4px solid #0a4d1e; border-bottom:4px solid #0a4d1e; box-shadow: 0 2px 15px rgba(10,77,30,0.08); display:flex; align-items:center; justify-content:space-between; padding:0 20px; position:sticky; top:0; z-index:900;">
+<!-- HEADER -->
+<header style="height:80px;background:#fff;border-top:4px solid #0a4d1e;border-bottom:4px solid #0a4d1e;box-shadow:0 2px 15px rgba(10,77,30,0.08);display:flex;align-items:center;justify-content:space-between;padding:0 14px;position:sticky;top:0;z-index:900;width:100%;max-width:100vw;">
 
-    <a href="/" style="display:flex; align-items:center; text-decoration:none; height:100%;">
-        <img src="/images/corevester.png" alt="CoreVester Investments Limited" 
-             style="height:58px; width:auto; max-width:280px; object-fit:contain; display:block;"
-        />
+    <a href="/" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0;">
+        <img src="/images/corevester.png" alt="CoreVester" style="height:52px;width:auto;max-width:200px;object-fit:contain;display:block;">
     </a>
 
-    <button onclick="openCoreSidebar()" style="width:48px; height:48px; border-radius:12px; background:#e8f5e9; border:1.5px solid #0a4d1e; color:#0a4d1e; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-        <i class="fas fa-bars"></i>
-    </button>
-</header>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <!-- CART BUTTON - VISIBLE ON ALL PAGES -->
+        <div id="headerCartWrap" style="display:flex;align-items:center;gap:6px;border:1.5px solid #0a4d1e;border-radius:50px;padding:5px 10px;background:#fff;cursor:pointer;" onclick="openCartSidebar()">
+            <span style="background:#0a4d1e;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;" id="headerCartCount"><%= typeof cartCount!=='undefined'? cartCount : 0 %></span>
+            <i class="fas fa-shopping-cart" style="color:#0a4d1e;font-size:14px;"></i>
+            <span style="font-size:12px;font-weight:700;color:#0a4d1e;display:none;" class="hide-mobile">KES <span id="headerCartTotal"><%= typeof cartTotal!=='undefined'? Number(cartTotal).toLocaleString() : 0 %></span></span>
+        </div>
 
-<!-- OVERLAY - COVERS FULL SCREEN -->
-<div id="coreOverlay" onclick="closeCoreSidebar()" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:1000; display:none; opacity:0; transition: opacity 0.3s ease;"></div>
-
-<!-- SIDEBAR - SLIDES FROM RIGHT -->
-<div id="coreSidebar" style="position:fixed; top:0; right:-320px; width:300px; max-width:85vw; height:100vh; height:100dvh; background:#ffffff; border-left:5px solid #0a4d1e; z-index:1100; transition: right 0.35s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; box-shadow:-5px 0 25px rgba(0,0,0,0.2);">
-
-    <div style="height:80px; min-height:80px; background:#ffffff; border-bottom:3px solid #0a4d1e; display:flex; align-items:center; justify-content:space-between; padding:0 20px;">
-        <span style="font-weight:800; color:#0a4d1e; font-size:14px; letter-spacing:2px;">COREVESTER</span>
-        <button onclick="closeCoreSidebar()" style="width:36px; height:36px; border-radius:8px; background:#f1f8e9; border:1px solid #c5e1a5; color:#0a4d1e; cursor:pointer;">
-            <i class="fas fa-times"></i>
+        <button onclick="openCoreSidebar()" style="width:44px;height:44px;border-radius:10px;background:#e8f5e9;border:1.5px solid #0a4d1e;color:#0a4d1e;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-bars"></i>
         </button>
     </div>
+</header>
 
-    <nav style="flex:1; padding:20px; display:flex; flex-direction:column; gap:8px; overflow-y:auto;">
-        <a href="/" style="padding:14px 16px; border-radius:10px; text-decoration:none; color:#0a4d1e; background:#e8f5e9; font-weight:600; display:flex; align-items:center; gap:12px;"><i class="fas fa-home" style="width:20px;"></i> Home</a>
-        <a href="/dashboard/dairy" style="padding:14px 16px; border-radius:10px; text-decoration:none; color:#333; font-weight:500; display:flex; align-items:center; gap:12px;"><i class="fas fa-chart-line" style="width:20px; color:#0a4d1e;"></i> Dashboard</a>
-        <a href="/products" style="padding:14px 16px; border-radius:10px; text-decoration:none; color:#333; font-weight:500; display:flex; align-items:center; gap:12px;"><i class="fas fa-boxes" style="width:20px; color:#0a4d1e;"></i> Products</a>
-        <a href="/about" style="padding:14px 16px; border-radius:10px; text-decoration:none; color:#333; font-weight:500; display:flex; align-items:center; gap:12px;"><i class="fas fa-info-circle" style="width:20px; color:#0a4d1e;"></i> About Us</a>
-        <a href="/contact" style="padding:14px 16px; border-radius:10px; text-decoration:none; color:#333; font-weight:500; display:flex; align-items:center; gap:12px;"><i class="fas fa-phone" style="width:20px; color:#0a4d1e;"></i> Contact</a>
+<!-- MENU OVERLAY -->
+<div id="coreOverlay" onclick="closeCoreSidebar()" style="position:fixed;inset:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;display:none;opacity:0;transition:opacity 0.3s;"></div>
+
+<!-- MENU SIDEBAR -->
+<div id="coreSidebar" style="position:fixed;top:0;right:-100%;width:300px;max-width:85vw;height:100%;background:#fff;border-left:5px solid #0a4d1e;z-index:1100;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;">
+    <div style="height:80px;min-height:80px;background:#fff;border-bottom:3px solid #0a4d1e;display:flex;align-items:center;justify-content:space-between;padding:0 20px;">
+        <span style="font-weight:800;color:#0a4d1e;font-size:14px;letter-spacing:2px;">COREVESTER</span>
+        <button onclick="closeCoreSidebar()" style="width:36px;height:36px;border-radius:8px;background:#f1f8e9;border:1px solid #c5e1a5;color:#0a4d1e;cursor:pointer;"><i class="fas fa-times"></i></button>
+    </div>
+    <nav style="flex:1;padding:20px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;">
+        <a href="/" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#0a4d1e;background:#e8f5e9;font-weight:600;display:flex;gap:12px;"><i class="fas fa-home" style="width:20px;"></i> Home</a>
+        <a href="/dashboard/dairy" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#333;font-weight:500;display:flex;gap:12px;"><i class="fas fa-chart-line" style="width:20px;color:#0a4d1e;"></i> Dashboard</a>
+        <a href="/products" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#333;font-weight:500;display:flex;gap:12px;"><i class="fas fa-boxes" style="width:20px;color:#0a4d1e;"></i> Products</a>
+        <a href="/about" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#333;display:flex;gap:12px;"><i class="fas fa-info-circle" style="width:20px;color:#0a4d1e;"></i> About Us</a>
+        <a href="/contact" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#333;display:flex;gap:12px;"><i class="fas fa-phone" style="width:20px;color:#0a4d1e;"></i> Contact</a>
     </nav>
-
-    <div style="padding:20px; border-top:1px solid #e8f5e9; background:#f9fbe7;">
-        <p style="margin:0; font-size:11px; color:#0a4d1e; font-weight:700; letter-spacing:1px;">CORE VESTER HEALTHCARE</p>
-        <p style="margin:4px 0 0 0; font-size:11px; color:#666;">Medical Equipment & Hospital Supplies</p>
-        <p style="margin:12px 0 0 0; font-size:10px; color:#888;">© 2026 Dr. Chesay Edwin</p>
+    <div style="padding:20px;border-top:1px solid #e8f5e9;background:#f9fbe7;">
+        <p style="margin:0;font-size:11px;color:#0a4d1e;font-weight:700;">CORE VESTER HEALTHCARE</p>
+        <p style="margin:4px 0 0 0;font-size:11px;color:#666;">Medical Equipment & Supplies</p>
     </div>
 </div>
 
+<!-- CART OVERLAY -->
+<div id="coreCartOverlay" onclick="closeCartSidebar()" style="position:fixed;inset:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;display:none;opacity:0;transition:opacity 0.3s;"></div>
+
+<!-- CART SIDEBAR - AVAILABLE ON ALL PAGES -->
+<div id="coreCartSidebar" style="position:fixed;top:0;right:-100%;width:360px;max-width:90vw;height:100%;background:#fff;border-left:5px solid #0a4d1e;z-index:1100;transition:right 0.35s;display:flex;flex-direction:column;">
+  <div style="height:70px;min-height:70px;border-bottom:3px solid #0a4d1e;display:flex;align-items:center;justify-content:space-between;padding:0 18px;">
+    <b style="color:#0a4d1e;">Your Cart</b>
+    <button onclick="closeCartSidebar()" style="width:32px;height:32px;border-radius:8px;border:1px solid #c5e1a5;background:#f1f8e9;cursor:pointer;"><i class="fas fa-times"></i></button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:16px;" id="globalCartBody">
+    <p style="text-align:center;color:#888;margin-top:30px;">Loading cart...</p>
+  </div>
+  <div style="padding:16px;border-top:1px solid #e8f5e9;background:#f9fbe7;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><b>Total:</b><b style="color:#0a4d1e;">KES <span id="globalCartTotal">0</span></b></div>
+    <button id="globalCheckoutBtn" style="width:100%;padding:11px;background:#0a4d1e;color:#fff;border:none;border-radius:8px;font-weight:800;display:none;cursor:pointer;">PACKAGE ORDER</button>
+  </div>
+</div>
+
 <!-- MAIN -->
-<div style="min-height:calc(100vh - 80px);">
+<div style="width:100%;max-width:100vw;overflow-x:hidden;min-height:calc(100vh - 80px);">
     <%- body %>
 </div>
 
 <script>
 function openCoreSidebar(){
-    const sidebar = document.getElementById('coreSidebar');
-    const overlay = document.getElementById('coreOverlay');
-    // show overlay first
-    overlay.style.display = 'block';
-    // force reflow
-    overlay.offsetHeight;
-    overlay.style.opacity = '1';
-    sidebar.style.right = '0';
-    document.body.style.overflow = 'hidden';
+    const sb=document.getElementById('coreSidebar'); const ov=document.getElementById('coreOverlay');
+    closeCartSidebar();
+    ov.style.display='block'; void ov.offsetWidth; ov.style.opacity='1'; sb.style.right='0';
 }
 function closeCoreSidebar(){
-    const sidebar = document.getElementById('coreSidebar');
-    const overlay = document.getElementById('coreOverlay');
-    sidebar.style.right = '-320px';
-    overlay.style.opacity = '0';
-    setTimeout(()=>{
-        overlay.style.display = 'none';
-    }, 300);
-    document.body.style.overflow = '';
+    const sb=document.getElementById('coreSidebar'); const ov=document.getElementById('coreOverlay');
+    sb.style.right='-100%'; ov.style.opacity='0'; setTimeout(()=>ov.style.display='none',300);
 }
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeCoreSidebar(); });
+function openCartSidebar(){
+    const sb=document.getElementById('coreCartSidebar'); const ov=document.getElementById('coreCartOverlay');
+    closeCoreSidebar();
+    ov.style.display='block'; void ov.offsetWidth; ov.style.opacity='1'; sb.style.right='0';
+    loadGlobalCart();
+}
+function closeCartSidebar(){
+    const sb=document.getElementById('coreCartSidebar'); const ov=document.getElementById('coreCartOverlay');
+    sb.style.right='-100%'; ov.style.opacity='0'; setTimeout(()=>ov.style.display='none',300);
+}
+async function loadGlobalCart(){
+    try{
+        const r=await fetch('/products/cart-data'); const d=await r.json();
+        const body=document.getElementById('globalCartBody');
+        document.getElementById('globalCartTotal').innerText=(d.total||0).toLocaleString();
+        document.getElementById('headerCartCount').innerText=d.count||0;
+        document.getElementById('headerCartTotal').innerText=(d.total||0).toLocaleString();
+        if(!d.cart||d.cart.length===0){ body.innerHTML='<p style="text-align:center;color:#888;margin-top:30px;">Cart empty</p>'; document.getElementById('globalCheckoutBtn').style.display='none'; return; }
+        let html=''; d.cart.forEach(item=>{
+            html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #eee;"><div style="max-width:60%"><b style="font-size:13px;">${item.name}</b><br><small>KES ${item.price} x ${item.qty}</small></div><div style="display:flex;gap:4px;"><button onclick="updateCartQty('${item.productId}',${item.qty-1})" style="width:28px;height:28px;border:1.5px solid #0a4d1e;background:#fff;border-radius:6px;cursor:pointer;">-</button><button onclick="updateCartQty('${item.productId}',${item.qty+1})" style="width:28px;height:28px;border:1.5px solid #0a4d1e;background:#fff;border-radius:6px;cursor:pointer;">+</button><button onclick="removeCartItem('${item.productId}')" style="width:28px;height:28px;background:#c62828;color:#fff;border:none;border-radius:6px;cursor:pointer;">×</button></div></div>`;
+        });
+        body.innerHTML=html; document.getElementById('globalCheckoutBtn').style.display='block';
+    }catch(e){}
+}
+async function updateCartQty(id,qty){
+    const r=await fetch('/products/update-cart-qty',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:id,qty})}); const d=await r.json(); if(d.success) loadGlobalCart(); else alert(d.message);
+}
+async function removeCartItem(id){
+    const r=await fetch('/products/remove-from-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:id})}); const d=await r.json(); if(d.success) loadGlobalCart();
+}
+document.getElementById('globalCheckoutBtn').onclick=async()=>{
+    const r=await fetch('/packages/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}); const d=await r.json(); if(d.success) window.location.href='/packages/'+d.packageId; else alert(d.message);
+};
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeCoreSidebar(); closeCartSidebar(); }});
 </script>
 
 </body>
