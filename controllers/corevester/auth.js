@@ -10,15 +10,12 @@ exports.signup = async (req, res) => {
     req.session.role = user.role;
     req.session.user = { id: user._id, fullName: user.fullName, email: user.email, role: user.role };
     
-    if(req.xhr || req.headers.accept?.includes('json')){
+    req.session.save((err) => {
+      if(err) return res.status(500).json({ success:false, message: 'Session error' });
       return res.json({ success:true, redirect:'/' });
-    }
-    return res.redirect('/');
+    });
   }catch(err){
-    if(req.xhr || req.headers.accept?.includes('json')){
-      return res.status(400).json({ success:false, message: err.message });
-    }
-    return res.render("signup", { title: "Create Account", error: err.message });
+    return res.status(400).json({ success:false, message: err.message });
   }
 };
 
@@ -31,15 +28,12 @@ exports.login = async (req, res) => {
     
     const redirectTo = user.role === 'admin' ? '/admin/products' : '/';
     
-    if(req.xhr || req.headers.accept?.includes('json')){
+    req.session.save((err) => {
+      if(err) return res.status(500).json({ success:false, message: 'Session error' });
       return res.json({ success:true, redirect: redirectTo });
-    }
-    return res.redirect(redirectTo);
+    });
   }catch(err){
-    if(req.xhr || req.headers.accept?.includes('json')){
-      return res.status(401).json({ success:false, message: err.message });
-    }
-    return res.render("login", { title: "Login", error: err.message });
+    return res.status(401).json({ success:false, message: err.message });
   }
 };
 
