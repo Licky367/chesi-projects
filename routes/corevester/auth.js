@@ -3,7 +3,7 @@ const router = express.Router();
 
 const authController = require("../../controllers/corevester/auth");
 
-// ================= ROUTES =================
+// ================= ROUTES ================
 
 // SIGNUP
 router.get("/signup", authController.renderSignup);
