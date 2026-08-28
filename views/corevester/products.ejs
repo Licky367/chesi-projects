@@ -1,56 +1,1943 @@
-<% /*
-============================================================
-PRODUCT MARKETPLACE
+<%- contentFor('body') %>
 
-PURPOSE:
-------------------------------------------------------------
-    Displays marketplace products as compact product cards.
+<style>
 
-LAYOUT:
-------------------------------------------------------------
-    • Uses FLEXBOX only.
-    • CSS GRID IS NOT USED.
-    • Products are arranged four cards across.
-    • Additional products continue on the next row.
-    • The product area can scroll horizontally.
-    • Cards never shrink.
-    • Cards remain compact on phones.
+/* ==========================================================
+   MARKETPLACE
+========================================================== */
 
-MOBILE CARD SIZE:
-------------------------------------------------------------
-    Width  : 108px
-    Height : 155px
+.marketplace{
 
-PRODUCT DATA:
-------------------------------------------------------------
-    products
-    categories
-    activeCategory
-    cart
-    cartCount
-    cartTotal
+    --green:#0b5a2a;
+    --green-dark:#073f1d;
+    --green-soft:#edf7f0;
 
-============================================================
-*/ %>
+    --orange:#e58a22;
+    --orange-soft:#fff5e8;
+
+    --ink:#18231c;
+    --muted:#718078;
+
+    --line:#e2e9e4;
+    --line-soft:#edf2ee;
+
+    width:100%;
+    min-height:100vh;
+
+    margin:0;
+
+    padding:0 0 35px;
+
+    background:#f6f8f7;
+
+    color:var(--ink);
+
+    box-sizing:border-box;
+}
+
+
+.marketplace *,
+.marketplace *::before,
+.marketplace *::after{
+
+    box-sizing:border-box;
+
+}
+
+
+/* ==========================================================
+   HERO
+========================================================== */
+
+.market-hero{
+
+    width:100%;
+
+    background:#ffffff;
+
+    border-bottom:1px solid var(--line);
+
+}
+
+
+.market-hero-inner{
+
+    width:100%;
+
+    max-width:1280px;
+
+    margin:0 auto;
+
+    padding:18px 14px 15px;
+
+}
+
+
+/* ==========================================================
+   TITLE ROW
+========================================================== */
+
+.market-title-row{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:15px;
+
+}
+
+
+.market-heading{
+
+    min-width:0;
+
+}
+
+
+.market-eyebrow{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    margin-bottom:4px;
+
+    color:#718078;
+
+    font-size:10px;
+
+    font-weight:800;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+}
+
+
+.market-eyebrow i{
+
+    color:var(--green);
+
+}
+
+
+.market-title{
+
+    margin:0;
+
+    color:var(--green);
+
+    font-size:25px;
+
+    font-weight:900;
+
+    line-height:1.1;
+
+    letter-spacing:-.5px;
+
+}
+
+
+.market-description{
+
+    margin:5px 0 0;
+
+    color:#758179;
+
+    font-size:11px;
+
+    font-weight:500;
+
+    line-height:1.45;
+
+}
+
+
+/* ==========================================================
+   CART BUTTON
+========================================================== */
+
+.market-cart-button{
+
+    position:relative;
+
+    flex:0 0 44px;
+
+    width:44px;
+
+    height:44px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border:0;
+
+    border-radius:12px;
+
+    background:var(--green);
+
+    color:#ffffff;
+
+    cursor:pointer;
+
+    box-shadow:
+        0 5px 14px rgba(11,90,42,.18);
+
+}
+
+
+.market-cart-button:hover{
+
+    background:var(--green-dark);
+
+}
+
+
+.market-cart-button:active{
+
+    transform:scale(.96);
+
+}
+
+
+.market-cart-button i{
+
+    font-size:15px;
+
+}
+
+
+/* ==========================================================
+   SUMMARY
+========================================================== */
+
+.market-summary{
+
+    width:100%;
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(3,minmax(0,1fr));
+
+    gap:7px;
+
+    margin-top:14px;
+
+}
+
+
+.summary-card{
+
+    min-width:0;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:7px;
+
+    padding:8px;
+
+    background:#ffffff;
+
+    border:1px solid var(--line);
+
+    border-radius:10px;
+
+}
+
+
+.summary-icon{
+
+    flex:0 0 28px;
+
+    width:28px;
+
+    height:28px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:8px;
+
+    background:var(--green-soft);
+
+    color:var(--green);
+
+    font-size:11px;
+
+}
+
+
+.summary-card:nth-child(2)
+.summary-icon{
+
+    background:#f2f5f3;
+
+    color:#587064;
+
+}
+
+
+.summary-card:nth-child(3)
+.summary-icon{
+
+    background:var(--orange-soft);
+
+    color:#c56d10;
+
+}
+
+
+.summary-info{
+
+    min-width:0;
+
+}
+
+
+.summary-label{
+
+    display:block;
+
+    color:#8a958e;
+
+    font-size:7px;
+
+    font-weight:900;
+
+    text-transform:uppercase;
+
+    letter-spacing:.4px;
+
+}
+
+
+.summary-value{
+
+    display:block;
+
+    margin-top:2px;
+
+    color:var(--green);
+
+    font-size:10px;
+
+    font-weight:900;
+
+    line-height:1.1;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+
+.summary-card:nth-child(3)
+.summary-value{
+
+    color:#b96710;
+
+}
+
+
+/* ==========================================================
+   MAIN
+========================================================== */
+
+.market-main{
+
+    width:100%;
+
+    max-width:1280px;
+
+    margin:0 auto;
+
+    padding:16px 12px 0;
+
+}
+
+
+/* ==========================================================
+   CATEGORY SECTION
+========================================================== */
+
+.category-section{
+
+    margin-bottom:17px;
+
+}
+
+
+.section-heading{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    margin-bottom:8px;
+
+}
+
+
+.section-heading-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+}
+
+
+.section-heading-left i{
+
+    color:var(--green);
+
+    font-size:11px;
+
+}
+
+
+.section-heading-title{
+
+    margin:0;
+
+    color:#26352c;
+
+    font-size:12px;
+
+    font-weight:900;
+
+    text-transform:uppercase;
+
+    letter-spacing:.6px;
+
+}
+
+
+/* ==========================================================
+   CATEGORY BAR
+========================================================== */
+
+.category-bar{
+
+    width:100%;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:7px;
+
+    overflow-x:auto;
+
+    overflow-y:hidden;
+
+    padding:2px 1px 5px;
+
+    scrollbar-width:none;
+
+    -webkit-overflow-scrolling:touch;
+
+}
+
+
+.category-bar::-webkit-scrollbar{
+
+    display:none;
+
+}
+
+
+.category-pill{
+
+    flex:0 0 auto;
+
+    min-height:30px;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:0 13px;
+
+    border:1px solid #d5dfd8;
+
+    border-radius:30px;
+
+    background:#ffffff;
+
+    color:#425348;
+
+    text-decoration:none;
+
+    font-size:9px;
+
+    font-weight:800;
+
+    white-space:nowrap;
+
+}
+
+
+.category-pill:hover{
+
+    border-color:#a8c5b1;
+
+    color:var(--green);
+
+}
+
+
+.category-pill.active{
+
+    background:var(--green);
+
+    border-color:var(--green);
+
+    color:#ffffff;
+
+}
+
+
+/* ==========================================================
+   PRODUCTS HEADER
+========================================================== */
+
+.products-heading{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:10px;
+
+    margin-bottom:9px;
+
+}
+
+
+.products-count{
+
+    color:#849089;
+
+    font-size:9px;
+
+    font-weight:600;
+
+}
+
+
+.products-count strong{
+
+    color:var(--green);
+
+    font-weight:900;
+
+}
+
+
+/* ==========================================================
+   PRODUCT CATALOGUE
+==========================================================
+
+   Responsive ecommerce layout.
+
+   No fixed four-card limit.
+   No horizontal product strip.
+   No product shrinking to fit one row.
+========================================================== */
+
+.product-grid{
+
+    width:100%;
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(2,minmax(0,1fr));
+
+    gap:9px;
+
+}
+
+
+/* ==========================================================
+   PRODUCT CARD
+========================================================== */
+
+.product-card{
+
+    position:relative;
+
+    width:100%;
+
+    min-width:0;
+
+    display:flex;
+
+    flex-direction:column;
+
+    overflow:hidden;
+
+    background:#ffffff;
+
+    border:1px solid #e1e7e3;
+
+    border-radius:9px;
+
+    box-shadow:
+        0 2px 7px rgba(20,40,28,.055);
+
+    cursor:pointer;
+
+    transition:
+        transform .16s ease,
+        box-shadow .16s ease,
+        border-color .16s ease;
+
+}
+
+
+.product-card:hover{
+
+    transform:translateY(-2px);
+
+    border-color:#cbd9cf;
+
+    box-shadow:
+        0 7px 17px rgba(20,40,28,.10);
+
+}
+
+
+.product-card:active{
+
+    transform:scale(.985);
+
+}
+
+
+/* ==========================================================
+   IMAGE AREA
+========================================================== */
+
+.product-image{
+
+    position:relative;
+
+    width:100%;
+
+    aspect-ratio:1 / 1;
+
+    overflow:hidden;
+
+    background:#f0f4f1;
+
+}
+
+
+.product-image img{
+
+    width:100%;
+
+    height:100%;
+
+    display:block;
+
+    object-fit:cover;
+
+    object-position:center;
+
+    transition:transform .25s ease;
+
+}
+
+
+.product-card:hover
+.product-image img{
+
+    transform:scale(1.035);
+
+}
+
+
+/* ==========================================================
+   STOCK BADGE
+========================================================== */
+
+.stock-badge{
+
+    position:absolute;
+
+    top:6px;
+
+    left:6px;
+
+    z-index:3;
+
+    max-width:calc(100% - 12px);
+
+    min-height:18px;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:4px;
+
+    padding:0 6px;
+
+    border:1px solid rgba(11,90,42,.12);
+
+    border-radius:20px;
+
+    background:rgba(255,255,255,.94);
+
+    color:var(--green);
+
+    font-size:7px;
+
+    font-weight:900;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+
+.stock-dot{
+
+    flex:0 0 5px;
+
+    width:5px;
+
+    height:5px;
+
+    border-radius:50%;
+
+    background:#2da653;
+
+}
+
+
+.stock-low{
+
+    color:#9a650e;
+
+    border-color:#ecd7aa;
+
+}
+
+
+.stock-low .stock-dot{
+
+    background:#e39a1d;
+
+}
+
+
+.stock-out{
+
+    color:#a52f2f;
+
+    border-color:#edcccc;
+
+}
+
+
+.stock-out .stock-dot{
+
+    background:#d63b3b;
+
+}
+
+
+/* ==========================================================
+   PRODUCT DETAILS
+========================================================== */
+
+.product-details{
+
+    width:100%;
+
+    min-width:0;
+
+    display:flex;
+
+    flex-direction:column;
+
+    flex:1;
+
+    padding:8px;
+
+}
+
+
+/* ==========================================================
+   CATEGORY
+========================================================== */
+
+.product-category{
+
+    width:100%;
+
+    margin:0 0 3px;
+
+    color:#4b7d5a;
+
+    font-size:7px;
+
+    font-weight:900;
+
+    line-height:1.1;
+
+    text-transform:uppercase;
+
+    letter-spacing:.35px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+
+/* ==========================================================
+   PRODUCT NAME
+========================================================== */
+
+.product-name{
+
+    margin:0;
+
+    min-height:30px;
+
+    color:#202a23;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    line-height:15px;
+
+    display:-webkit-box;
+
+    -webkit-box-orient:vertical;
+
+    -webkit-line-clamp:2;
+
+    overflow:hidden;
+
+}
+
+
+/* ==========================================================
+   PRICE
+========================================================== */
+
+.product-price{
+
+    display:flex;
+
+    align-items:baseline;
+
+    gap:3px;
+
+    margin-top:5px;
+
+    color:var(--green);
+
+    font-size:13px;
+
+    font-weight:900;
+
+    line-height:1;
+
+}
+
+
+.currency{
+
+    font-size:7px;
+
+    font-weight:900;
+
+}
+
+
+/* ==========================================================
+   ADD TO CART
+========================================================== */
+
+.add-to-cart-btn{
+
+    width:100%;
+
+    min-height:28px;
+
+    height:28px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:4px;
+
+    margin-top:8px;
+
+    padding:0 5px;
+
+    border:0;
+
+    border-radius:6px;
+
+    background:var(--green);
+
+    color:#ffffff;
+
+    font-size:7px;
+
+    font-weight:900;
+
+    white-space:nowrap;
+
+    cursor:pointer;
+
+    transition:
+        background .15s ease,
+        transform .15s ease;
+
+}
+
+
+.add-to-cart-btn:hover{
+
+    background:var(--green-dark);
+
+}
+
+
+.add-to-cart-btn:active{
+
+    transform:scale(.97);
+
+}
+
+
+.add-to-cart-btn:disabled{
+
+    background:#dfe6e1;
+
+    color:#7c8981;
+
+    cursor:not-allowed;
+
+}
+
+
+.add-to-cart-btn i{
+
+    font-size:8px;
+
+}
+
+
+/* ==========================================================
+   EMPTY MARKET
+========================================================== */
+
+.empty-market{
+
+    width:100%;
+
+    min-height:250px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:30px 18px;
+
+    background:#ffffff;
+
+    border:1px solid var(--line);
+
+    border-radius:12px;
+
+    text-align:center;
+
+}
+
+
+.empty-inner{
+
+    max-width:380px;
+
+}
+
+
+.empty-icon{
+
+    width:58px;
+
+    height:58px;
+
+    margin:0 auto 12px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:17px;
+
+    background:var(--green-soft);
+
+    color:var(--green);
+
+    font-size:21px;
+
+}
+
+
+.empty-market h3{
+
+    margin:0;
+
+    color:#27382d;
+
+    font-size:15px;
+
+    font-weight:900;
+
+}
+
+
+.empty-market p{
+
+    margin:7px auto 0;
+
+    color:#7a877f;
+
+    font-size:10px;
+
+    font-weight:600;
+
+    line-height:1.5;
+
+}
+
+
+.empty-action{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:6px;
+
+    min-height:34px;
+
+    margin-top:13px;
+
+    padding:0 13px;
+
+    border-radius:7px;
+
+    background:var(--green);
+
+    color:#ffffff;
+
+    text-decoration:none;
+
+    font-size:8px;
+
+    font-weight:900;
+
+}
+
+
+/* ==========================================================
+   QUANTITY MODAL
+========================================================== */
+
+.qty-modal{
+
+    overflow:hidden;
+
+    border:0;
+
+    border-radius:18px;
+
+    box-shadow:
+        0 20px 55px rgba(0,0,0,.2);
+
+}
+
+
+.qty-header{
+
+    padding:17px;
+
+    background:#f3f8f4;
+
+    border-bottom:1px solid var(--line);
+
+    text-align:center;
+
+}
+
+
+.qty-icon{
+
+    width:42px;
+
+    height:42px;
+
+    margin:0 auto 8px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:12px;
+
+    background:var(--green);
+
+    color:#ffffff;
+
+    font-size:15px;
+
+}
+
+
+.qty-product-name{
+
+    margin:0;
+
+    color:var(--green);
+
+    font-size:15px;
+
+    font-weight:900;
+
+}
+
+
+.qty-available{
+
+    margin:4px 0 0;
+
+    color:#7b8981;
+
+    font-size:10px;
+
+}
+
+
+.qty-available strong{
+
+    color:#34483b;
+
+}
+
+
+.qty-body{
+
+    padding:19px 17px 16px;
+
+}
+
+
+.qty-selector{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:22px;
+
+    margin-bottom:19px;
+
+}
+
+
+.qty-control{
+
+    width:43px;
+
+    height:43px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:0;
+
+    border:2px solid var(--green);
+
+    border-radius:50%;
+
+    background:#ffffff;
+
+    color:var(--green);
+
+    font-size:19px;
+
+    font-weight:900;
+
+    cursor:pointer;
+
+}
+
+
+.qty-control:hover{
+
+    background:var(--green);
+
+    color:#ffffff;
+
+}
+
+
+.qty-number{
+
+    min-width:45px;
+
+    color:var(--green);
+
+    font-size:30px;
+
+    font-weight:900;
+
+    text-align:center;
+
+}
+
+
+.qty-confirm{
+
+    height:44px;
+
+    min-height:44px;
+
+    font-size:10px;
+
+}
+
+
+.qty-cancel{
+
+    display:block;
+
+    width:100%;
+
+    margin-top:5px;
+
+    color:#7c8982 !important;
+
+    font-size:10px;
+
+    font-weight:800;
+
+    text-decoration:none !important;
+
+}
+
+
+/* ==========================================================
+   CART SIDEBAR
+========================================================== */
+
+.cart-sidebar{
+
+    width:min(400px,94vw) !important;
+
+    border-left:1px solid var(--line) !important;
+
+    box-shadow:
+        -15px 0 45px rgba(0,0,0,.12);
+
+}
+
+
+.cart-header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:10px;
+
+    padding:14px;
+
+    background:#f2f8f3;
+
+    border-bottom:1px solid var(--line);
+
+}
+
+
+.cart-heading{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:9px;
+
+}
+
+
+.cart-icon{
+
+    width:38px;
+
+    height:38px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:11px;
+
+    background:var(--green);
+
+    color:#ffffff;
+
+    font-size:14px;
+
+}
+
+
+.cart-title{
+
+    margin:0;
+
+    color:var(--green);
+
+    font-size:15px;
+
+    font-weight:900;
+
+}
+
+
+.cart-subtitle{
+
+    margin:2px 0 0;
+
+    color:#7c8981;
+
+    font-size:9px;
+
+}
+
+
+.cart-body{
+
+    padding:10px !important;
+
+    background:#ffffff;
+
+}
+
+
+.cart-item{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    padding:11px 2px;
+
+    border-bottom:1px solid var(--line-soft);
+
+}
+
+
+.cart-item:last-child{
+
+    border-bottom:0;
+
+}
+
+
+.cart-product-info{
+
+    flex:1;
+
+    min-width:0;
+
+}
+
+
+.cart-product-name{
+
+    display:block;
+
+    color:#243229;
+
+    font-size:11px;
+
+    font-weight:900;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+
+.cart-product-price{
+
+    display:block;
+
+    margin-top:3px;
+
+    color:#7d8982;
+
+    font-size:9px;
+
+}
+
+
+.cart-product-price strong{
+
+    color:var(--green);
+
+}
+
+
+.cart-controls{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:3px;
+
+}
+
+
+.cart-control{
+
+    width:28px;
+
+    height:28px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:0;
+
+    border:1px solid #cfddd3;
+
+    border-radius:7px;
+
+    background:#ffffff;
+
+    color:var(--green);
+
+    font-size:14px;
+
+    font-weight:900;
+
+    cursor:pointer;
+
+}
+
+
+.cart-control:hover{
+
+    background:var(--green-soft);
+
+    border-color:var(--green);
+
+}
+
+
+.cart-remove{
+
+    color:#b42f2f;
+
+    border-color:#eccccc;
+
+    background:#fff8f8;
+
+}
+
+
+.cart-qty{
+
+    min-width:18px;
+
+    color:#26352c;
+
+    font-weight:900;
+
+    text-align:center;
+
+}
+
+
+/* ==========================================================
+   EMPTY CART
+========================================================== */
+
+.empty-cart{
+
+    min-height:260px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:25px;
+
+    text-align:center;
+
+}
+
+
+.empty-cart-icon{
+
+    width:65px;
+
+    height:65px;
+
+    margin-bottom:12px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:20px;
+
+    background:#f0f5f1;
+
+    color:#8a9b91;
+
+    font-size:21px;
+
+}
+
+
+.empty-cart strong{
+
+    color:#405148;
+
+    font-size:12px;
+
+    font-weight:900;
+
+}
+
+
+.empty-cart span{
+
+    margin-top:4px;
+
+    color:#87928c;
+
+    font-size:9px;
+
+}
+
+
+/* ==========================================================
+   CART FOOTER
+========================================================== */
+
+.cart-footer{
+
+    padding:13px;
+
+    background:#f5f9f6;
+
+    border-top:1px solid var(--line);
+
+}
+
+
+.cart-total{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    margin-bottom:10px;
+
+    color:#68766e;
+
+    font-size:10px;
+
+    font-weight:800;
+
+}
+
+
+.cart-total strong{
+
+    color:var(--green);
+
+    font-size:15px;
+
+    font-weight:900;
+
+}
+
+
+.checkout-btn{
+
+    height:43px;
+
+    min-height:43px;
+
+}
+
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (min-width:600px){
+
+    .market-hero-inner{
+
+        padding-left:22px;
+
+        padding-right:22px;
+
+    }
+
+
+    .market-main{
+
+        padding-left:20px;
+
+        padding-right:20px;
+
+    }
+
+
+    .product-grid{
+
+        grid-template-columns:
+            repeat(3,minmax(0,1fr));
+
+        gap:11px;
+
+    }
+
+
+    .product-name{
+
+        font-size:12px;
+
+    }
+
+
+    .product-price{
+
+        font-size:14px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   DESKTOP
+========================================================== */
+
+@media (min-width:850px){
+
+    .market-hero-inner{
+
+        padding:
+            22px
+            28px
+            18px;
+
+    }
+
+
+    .market-main{
+
+        padding:
+            20px
+            28px
+            0;
+
+    }
+
+
+    .product-grid{
+
+        grid-template-columns:
+            repeat(4,minmax(0,1fr));
+
+        gap:13px;
+
+    }
+
+
+    .product-details{
+
+        padding:10px;
+
+    }
+
+
+    .product-category{
+
+        font-size:8px;
+
+    }
+
+
+    .product-name{
+
+        font-size:13px;
+
+        line-height:17px;
+
+    }
+
+
+    .product-price{
+
+        font-size:15px;
+
+    }
+
+
+    .add-to-cart-btn{
+
+        min-height:31px;
+
+        height:31px;
+
+        font-size:8px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   LARGE DESKTOP
+========================================================== */
+
+@media (min-width:1100px){
+
+    .market-hero-inner{
+
+        padding-left:30px;
+
+        padding-right:30px;
+
+    }
+
+
+    .market-main{
+
+        padding-left:30px;
+
+        padding-right:30px;
+
+    }
+
+
+    .product-grid{
+
+        grid-template-columns:
+            repeat(5,minmax(0,1fr));
+
+        gap:14px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL PHONES
+========================================================== */
+
+@media (max-width:360px){
+
+    .market-hero-inner{
+
+        padding-left:10px;
+
+        padding-right:10px;
+
+    }
+
+
+    .market-main{
+
+        padding-left:8px;
+
+        padding-right:8px;
+
+    }
+
+
+    .product-grid{
+
+        gap:7px;
+
+    }
+
+
+    .product-details{
+
+        padding:7px;
+
+    }
+
+
+    .product-name{
+
+        font-size:10px;
+
+        line-height:14px;
+
+    }
+
+
+    .product-price{
+
+        font-size:12px;
+
+    }
+
+
+    .add-to-cart-btn{
+
+        min-height:27px;
+
+        height:27px;
+
+        font-size:6.5px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   ACCESSIBILITY
+========================================================== */
+
+button:focus-visible,
+a:focus-visible{
+
+    outline:3px solid rgba(11,90,42,.23);
+
+    outline-offset:2px;
+
+}
+
+
+@media(prefers-reduced-motion:reduce){
+
+    *,
+    *::before,
+    *::after{
+
+        scroll-behavior:auto !important;
+
+        transition:none !important;
+
+        animation:none !important;
+
+    }
+
+}
+
+</style>
 
 
 <div class="marketplace">
 
 
-    <!-- =====================================================
-         MARKETPLACE HEADER
+    <!-- ======================================================
+         MARKET HEADER
     ====================================================== -->
 
     <section class="market-hero">
 
         <div class="market-hero-inner">
 
-
             <div class="market-title-row">
 
-
                 <div class="market-heading">
-
 
                     <div class="market-eyebrow">
 
@@ -74,9 +1961,7 @@ PRODUCT DATA:
 
                     </p>
 
-
                 </div>
-
 
 
                 <button
@@ -90,12 +1975,10 @@ PRODUCT DATA:
 
                 </button>
 
-
             </div>
 
 
-
-            <!-- =================================================
+            <!-- ==================================================
                  SUMMARY
             ================================================== -->
 
@@ -103,7 +1986,6 @@ PRODUCT DATA:
 
 
                 <div class="summary-card">
-
 
                     <div class="summary-icon">
 
@@ -115,11 +1997,8 @@ PRODUCT DATA:
                     <div class="summary-info">
 
                         <span class="summary-label">
-
                             Available
-
                         </span>
-
 
                         <span class="summary-value">
 
@@ -134,13 +2013,10 @@ PRODUCT DATA:
 
                     </div>
 
-
                 </div>
 
 
-
                 <div class="summary-card">
-
 
                     <div class="summary-icon">
 
@@ -152,11 +2028,8 @@ PRODUCT DATA:
                     <div class="summary-info">
 
                         <span class="summary-label">
-
                             In Cart
-
                         </span>
-
 
                         <span
                             class="summary-value"
@@ -174,13 +2047,10 @@ PRODUCT DATA:
 
                     </div>
 
-
                 </div>
 
 
-
                 <div class="summary-card">
-
 
                     <div class="summary-icon">
 
@@ -192,11 +2062,8 @@ PRODUCT DATA:
                     <div class="summary-info">
 
                         <span class="summary-label">
-
                             Cart Value
-
                         </span>
-
 
                         <span
                             class="summary-value"
@@ -213,12 +2080,10 @@ PRODUCT DATA:
 
                     </div>
 
-
                 </div>
 
 
             </div>
-
 
         </div>
 
@@ -226,15 +2091,15 @@ PRODUCT DATA:
 
 
 
-    <!-- =====================================================
+    <!-- ======================================================
          MAIN
     ====================================================== -->
 
     <main class="market-main">
 
 
-        <!-- =================================================
-             CATEGORY SECTION
+        <!-- ==================================================
+             CATEGORIES
         ================================================== -->
 
         <section class="category-section">
@@ -242,22 +2107,17 @@ PRODUCT DATA:
 
             <div class="section-heading">
 
-
                 <div class="section-heading-left">
 
                     <i class="fas fa-layer-group"></i>
 
                     <h2 class="section-heading-title">
-
                         Categories
-
                     </h2>
 
                 </div>
 
-
             </div>
-
 
 
             <nav
@@ -279,8 +2139,7 @@ PRODUCT DATA:
                 </a>
 
 
-
-                <% (categories || []).forEach(function(category) { %>
+                <% (categories || []).forEach(category => { %>
 
 
                     <a
@@ -301,27 +2160,21 @@ PRODUCT DATA:
 
             </nav>
 
-
         </section>
 
 
 
-        <!-- =================================================
+        <!-- ==================================================
              PRODUCTS
         ================================================== -->
 
-        <section class="products-section">
+        <section>
 
 
-            <% if (!products || !products.length) { %>
+            <% if(!products || !products.length){ %>
 
-
-                <!-- =========================================
-                     EMPTY MARKETPLACE
-                ========================================== -->
 
                 <div class="empty-market">
-
 
                     <div class="empty-inner">
 
@@ -343,10 +2196,10 @@ PRODUCT DATA:
                         <p>
 
 
-                            <% if (
+                            <% if(
                                 activeCategory &&
                                 activeCategory !== 'all'
-                            ) { %>
+                            ){ %>
 
                                 We don't currently have any
                                 products in the
@@ -362,17 +2215,17 @@ PRODUCT DATA:
                                 available in the marketplace.
                                 Please check again later.
 
+
                             <% } %>
 
 
                         </p>
 
 
-
-                        <% if (
+                        <% if(
                             activeCategory &&
                             activeCategory !== 'all'
-                        ) { %>
+                        ){ %>
 
 
                             <a
@@ -392,16 +2245,15 @@ PRODUCT DATA:
 
                     </div>
 
-
                 </div>
 
 
             <% } else { %>
 
 
-                <!-- =========================================
-                     PRODUCTS HEADING
-                ========================================== -->
+                <!-- ==========================================
+                     PRODUCTS HEADER
+                =========================================== -->
 
                 <div class="products-heading">
 
@@ -436,215 +2288,152 @@ PRODUCT DATA:
 
 
 
-                <!-- =========================================
-                     PRODUCT VIEWPORT
+                <!-- ==========================================
+                     PRODUCT CATALOGUE
+                =========================================== -->
 
-                     FLEXBOX ONLY.
-
-                     NO CSS GRID.
-                ========================================== -->
-
-                <div class="product-scroll">
+                <div class="product-grid">
 
 
-                    <!--
-                        This is intentionally a FLEX container.
-
-                        Four cards occupy one row.
-
-                        The fifth card automatically moves
-                        to the next row.
-
-                        There is NO product-count limit.
-                    -->
-
-                    <div class="product-list">
+                    <% products.forEach(product => { %>
 
 
-                        <% products.forEach(function(product) { %>
+                        <%
+                            const stock =
+                                Number(product.units || 0);
+
+                            let stockClass = '';
+
+                            if(stock <= 0){
+
+                                stockClass =
+                                    'stock-out';
+
+                            }
+                            else if(stock <= 5){
+
+                                stockClass =
+                                    'stock-low';
+
+                            }
+                        %>
 
 
-                            <%
-                                const stock =
-                                    Number(
-                                        product.units || 0
-                                    );
+                        <article
+                            class="product-card"
+                            data-product-id="<%= product._id %>"
+                        >
 
 
-                                let stockClass = '';
+                            <!-- =================================
+                                 PRODUCT IMAGE
+                            ================================== -->
+
+                            <div class="product-image">
 
 
-                                if (stock <= 0) {
+                                <span
+                                    class="stock-badge <%= stockClass %>"
+                                >
 
-                                    stockClass =
-                                        'stock-out';
+                                    <span class="stock-dot"></span>
 
-                                }
-                                else if (stock <= 5) {
 
-                                    stockClass =
-                                        'stock-low';
+                                    <% if(stock <= 0){ %>
 
-                                }
-                            %>
+                                        Out of stock
+
+                                    <% } else if(stock <= 5){ %>
+
+                                        Only <%= stock %> left
+
+                                    <% } else { %>
+
+                                        <%= stock %> available
+
+                                    <% } %>
+
+
+                                </span>
+
+
+                                <img
+                                    src="<%= product.image || '/images/no-image.png' %>"
+                                    alt="<%= product.name %>"
+                                    loading="lazy"
+                                    onerror="this.src='/images/no-image.png';"
+                                >
+
+                            </div>
 
 
 
                             <!-- =================================
-                                 PRODUCT CARD
+                                 DETAILS
                             ================================== -->
 
-                            <article
-                                class="product-card"
-                                data-product-id="<%= product._id %>"
-                            >
+                            <div class="product-details">
 
 
-                                <!-- =============================
-                                     PRODUCT IMAGE
-                                ============================== -->
+                                <p class="product-category">
 
-                                <div class="product-image-wrap">
+                                    <%= product.category || 'General' %>
 
-
-                                    <img
-                                        src="<%= product.image || '/images/no-image.png' %>"
-                                        alt="<%= product.name %>"
-                                        class="product-image"
-                                        loading="lazy"
-                                        onerror="this.src='/images/no-image.png';"
-                                    >
+                                </p>
 
 
-                                    <!-- STOCK BADGE -->
+                                <h3 class="product-name">
 
-                                    <span
-                                        class="stock-badge <%= stockClass %>"
-                                    >
+                                    <%= product.name %>
 
-
-                                        <span class="stock-dot"></span>
+                                </h3>
 
 
-                                        <% if (stock <= 0) { %>
+                                <div class="product-price">
 
-                                            Out of stock
-
-                                        <% }
-                                        else if (stock <= 5) { %>
-
-                                            Only <%= stock %> left
-
-                                        <% }
-                                        else { %>
-
-                                            <%= stock %> available
-
-                                        <% } %>
-
-
+                                    <span class="currency">
+                                        KES
                                     </span>
 
+                                    <%= Number(
+                                        product.unitSellPrice || 0
+                                    ).toLocaleString() %>
 
                                 </div>
 
 
+                                <button
+                                    type="button"
+                                    class="add-to-cart-btn"
+                                    data-id="<%= product._id %>"
+                                    data-name="<%= product.name %>"
+                                    data-stock="<%= stock %>"
+                                    <%= stock <= 0
+                                        ? 'disabled'
+                                        : '' %>
+                                >
 
-                                <!-- =============================
-                                     PRODUCT CONTENT
-                                ============================== -->
-
-                                <div class="product-content">
-
-
-                                    <!-- CATEGORY -->
-
-                                    <div class="product-category">
-
-                                        <%= product.category || 'General' %>
-
-                                    </div>
-
-
-
-                                    <!-- NAME -->
-
-                                    <div class="product-name">
-
-                                        <%= product.name %>
-
-                                    </div>
-
-
-
-                                    <!-- PRICE -->
-
-                                    <div class="product-price">
-
-
-                                        <span class="currency">
-
-                                            KES
-
-                                        </span>
-
-
-                                        <span>
-
-                                            <%= Number(
-                                                product.unitSellPrice || 0
-                                            ).toLocaleString() %>
-
-                                        </span>
-
-
-                                    </div>
-
-
-
-                                    <!-- ADD TO CART -->
-
-                                    <button
-                                        type="button"
-                                        class="add-to-cart-btn"
-                                        data-id="<%= product._id %>"
-                                        data-name="<%= product.name %>"
-                                        data-stock="<%= stock %>"
+                                    <i class="fas
                                         <%= stock <= 0
-                                            ? 'disabled'
-                                            : '' %>
-                                    >
+                                            ? 'fa-ban'
+                                            : 'fa-cart-plus' %>"
+                                    ></i>
 
 
-                                        <i class="fas
-                                            <%= stock <= 0
-                                                ? 'fa-ban'
-                                                : 'fa-cart-plus' %>"
-                                        ></i>
+                                    <%= stock <= 0
+                                        ? 'OUT OF STOCK'
+                                        : 'ADD TO CART' %>
+
+                                </button>
 
 
-                                        <span>
-
-                                            <%= stock <= 0
-                                                ? 'OUT'
-                                                : 'ADD' %>
-
-                                        </span>
+                            </div>
 
 
-                                    </button>
+                        </article>
 
 
-                                </div>
-
-
-                            </article>
-
-
-                        <% }) %>
-
-
-                    </div>
+                    <% }) %>
 
 
                 </div>
@@ -663,9 +2452,9 @@ PRODUCT DATA:
 
 
 
-<!-- =========================================================
+<!-- ==========================================================
      QUANTITY MODAL
-========================================================= -->
+========================================================== -->
 
 <div
     class="modal fade"
@@ -674,15 +2463,12 @@ PRODUCT DATA:
     aria-hidden="true"
 >
 
-
     <div class="modal-dialog modal-dialog-centered modal-sm">
-
 
         <div class="modal-content qty-modal">
 
 
             <div class="qty-header">
-
 
                 <div class="qty-icon">
 
@@ -707,9 +2493,7 @@ PRODUCT DATA:
 
                 </p>
 
-
             </div>
-
 
 
             <div class="qty-body">
@@ -722,10 +2506,9 @@ PRODUCT DATA:
                         type="button"
                         class="qty-control"
                         id="qtyMinus"
+                        aria-label="Decrease quantity"
                     >
-
                         −
-
                     </button>
 
 
@@ -733,9 +2516,7 @@ PRODUCT DATA:
                         id="qtyValue"
                         class="qty-number"
                     >
-
                         1
-
                     </span>
 
 
@@ -743,15 +2524,13 @@ PRODUCT DATA:
                         type="button"
                         class="qty-control"
                         id="qtyPlus"
+                        aria-label="Increase quantity"
                     >
-
                         +
-
                     </button>
 
 
                 </div>
-
 
 
                 <button
@@ -773,7 +2552,6 @@ PRODUCT DATA:
                 </button>
 
 
-
                 <button
                     type="button"
                     class="btn btn-link qty-cancel"
@@ -787,25 +2565,23 @@ PRODUCT DATA:
 
             </div>
 
-
         </div>
 
-
     </div>
-
 
 </div>
 
 
 
-<!-- =========================================================
+<!-- ==========================================================
      CART SIDEBAR
-========================================================= -->
+========================================================== -->
 
 <div
     class="offcanvas offcanvas-end cart-sidebar"
     tabindex="-1"
     id="cartSidebar"
+    aria-labelledby="cartSidebarLabel"
 >
 
 
@@ -824,8 +2600,10 @@ PRODUCT DATA:
 
             <div>
 
-
-                <h5 class="cart-title">
+                <h5
+                    class="cart-title"
+                    id="cartSidebarLabel"
+                >
 
                     Your Cart
 
@@ -838,18 +2616,17 @@ PRODUCT DATA:
 
                 </p>
 
-
             </div>
 
 
         </div>
 
 
-
         <button
             type="button"
             class="btn-close"
             data-bs-dismiss="offcanvas"
+            aria-label="Close"
         ></button>
 
 
@@ -860,10 +2637,10 @@ PRODUCT DATA:
     <div class="offcanvas-body cart-body">
 
 
-        <% if (cart && cart.length) { %>
+        <% if(cart && cart.length){ %>
 
 
-            <% cart.forEach(function(item) { %>
+            <% cart.forEach(item => { %>
 
 
                 <div
@@ -908,7 +2685,6 @@ PRODUCT DATA:
                     </div>
 
 
-
                     <div class="cart-controls">
 
 
@@ -916,10 +2692,9 @@ PRODUCT DATA:
                             type="button"
                             class="cart-control cart-minus"
                             data-id="<%= item.productId %>"
+                            aria-label="Decrease quantity"
                         >
-
                             −
-
                         </button>
 
 
@@ -927,10 +2702,9 @@ PRODUCT DATA:
                             type="button"
                             class="cart-control cart-plus"
                             data-id="<%= item.productId %>"
+                            aria-label="Increase quantity"
                         >
-
                             +
-
                         </button>
 
 
@@ -938,10 +2712,9 @@ PRODUCT DATA:
                             type="button"
                             class="cart-control cart-remove"
                             data-id="<%= item.productId %>"
+                            aria-label="Remove product"
                         >
-
                             ×
-
                         </button>
 
 
@@ -996,11 +2769,8 @@ PRODUCT DATA:
 
         <div class="cart-total">
 
-
             <span>
-
                 Cart total
-
             </span>
 
 
@@ -1014,12 +2784,10 @@ PRODUCT DATA:
 
             </strong>
 
-
         </div>
 
 
-
-        <% if (cart && cart.length) { %>
+        <% if(cart && cart.length){ %>
 
 
             <button
@@ -1045,2575 +2813,188 @@ PRODUCT DATA:
 
 
 
-<style>
-
-/* ==========================================================
-   MARKETPLACE
-========================================================== */
-
-.marketplace {
-
-    --green:
-        #198754;
-
-    --green-dark:
-        #146c43;
-
-    --green-soft:
-        #edf7f0;
-
-    --orange:
-        #e58a22;
-
-    --orange-soft:
-        #fff5e8;
-
-    --ink:
-        #202520;
-
-    --muted:
-        #7b847e;
-
-    --line:
-        #e4e9e6;
-
-    width:
-        100%;
-
-    min-height:
-        100vh;
-
-    margin:
-        0;
-
-    padding:
-        0
-        0
-        30px;
-
-    background:
-        #f7faf8;
-
-    color:
-        var(--ink);
-
-    box-sizing:
-        border-box;
-
-}
-
-
-.marketplace *,
-.marketplace *::before,
-.marketplace *::after {
-
-    box-sizing:
-        border-box;
-
-}
-
-
-
-/* ==========================================================
-   HEADER
-========================================================== */
-
-.market-hero {
-
-    width:
-        100%;
-
-    padding:
-        18px
-        14px
-        15px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffffff,
-            #f4faf5
-        );
-
-    border-bottom:
-        1px solid
-        #dce8df;
-
-}
-
-
-.market-hero-inner {
-
-    width:
-        100%;
-
-    max-width:
-        1180px;
-
-    margin:
-        0
-        auto;
-
-}
-
-
-
-/* ==========================================================
-   TITLE ROW
-========================================================== */
-
-.market-title-row {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    gap:
-        15px;
-
-}
-
-
-.market-heading {
-
-    min-width:
-        0;
-
-}
-
-
-.market-eyebrow {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        6px;
-
-    margin-bottom:
-        4px;
-
-    color:
-        #6d8174;
-
-    font-size:
-        .58rem;
-
-    font-weight:
-        900;
-
-    text-transform:
-        uppercase;
-
-    letter-spacing:
-        1.2px;
-
-}
-
-
-.market-eyebrow i {
-
-    color:
-        var(--green);
-
-}
-
-
-.market-title {
-
-    margin:
-        0;
-
-    color:
-        #14532d;
-
-    font-size:
-        1.35rem;
-
-    font-weight:
-        950;
-
-    line-height:
-        1.05;
-
-}
-
-
-.market-description {
-
-    margin:
-        5px
-        0
-        0;
-
-    color:
-        var(--muted);
-
-    font-size:
-        .66rem;
-
-    font-weight:
-        600;
-
-    line-height:
-        1.4;
-
-}
-
-
-
-/* ==========================================================
-   CART BUTTON
-========================================================== */
-
-.market-cart-button {
-
-    flex:
-        0 0
-        48px;
-
-    width:
-        48px;
-
-    height:
-        42px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    border:
-        0;
-
-    border-radius:
-        12px;
-
-    background:
-        var(--green);
-
-    color:
-        #fff;
-
-    cursor:
-        pointer;
-
-    box-shadow:
-        0 5px 13px
-        rgba(25,135,84,.18);
-
-}
-
-
-.market-cart-button i {
-
-    font-size:
-        .9rem;
-
-}
-
-
-
-/* ==========================================================
-   SUMMARY
-========================================================== */
-
-.market-summary {
-
-    width:
-        100%;
-
-    margin-top:
-        13px;
-
-    display:
-        flex;
-
-    gap:
-        7px;
-
-}
-
-
-.summary-card {
-
-    flex:
-        1 1 0;
-
-    min-width:
-        0;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        7px;
-
-    padding:
-        8px
-        9px;
-
-    background:
-        #fff;
-
-    border:
-        1px solid
-        #dce8df;
-
-    border-radius:
-        11px;
-
-}
-
-
-.summary-icon {
-
-    flex:
-        0 0
-        29px;
-
-    width:
-        29px;
-
-    height:
-        29px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    border-radius:
-        8px;
-
-    background:
-        var(--green-soft);
-
-    color:
-        var(--green);
-
-    font-size:
-        .68rem;
-
-}
-
-
-.summary-info {
-
-    min-width:
-        0;
-
-}
-
-
-.summary-label {
-
-    display:
-        block;
-
-    color:
-        #849088;
-
-    font-size:
-        .46rem;
-
-    font-weight:
-        900;
-
-    text-transform:
-        uppercase;
-
-}
-
-
-.summary-value {
-
-    display:
-        block;
-
-    margin-top:
-        2px;
-
-    color:
-        var(--green);
-
-    font-size:
-        .67rem;
-
-    font-weight:
-        950;
-
-    white-space:
-        nowrap;
-
-    overflow:
-        hidden;
-
-    text-overflow:
-        ellipsis;
-
-}
-
-
-
-/* ==========================================================
-   MAIN
-========================================================== */
-
-.market-main {
-
-    width:
-        100%;
-
-    max-width:
-        1180px;
-
-    margin:
-        0
-        auto;
-
-    padding:
-        15px
-        12px
-        0;
-
-}
-
-
-
-/* ==========================================================
-   SECTION HEADING
-========================================================== */
-
-.section-heading {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    margin-bottom:
-        7px;
-
-}
-
-
-.section-heading-left {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        6px;
-
-}
-
-
-.section-heading-left i {
-
-    color:
-        var(--green);
-
-    font-size:
-        .66rem;
-
-}
-
-
-.section-heading-title {
-
-    margin:
-        0;
-
-    color:
-        #304237;
-
-    font-size:
-        .68rem;
-
-    font-weight:
-        950;
-
-    text-transform:
-        uppercase;
-
-    letter-spacing:
-        .65px;
-
-}
-
-
-
-/* ==========================================================
-   CATEGORY SECTION
-========================================================== */
-
-.category-section {
-
-    width:
-        100%;
-
-    margin-bottom:
-        15px;
-
-}
-
-
-.category-bar {
-
-    width:
-        100%;
-
-    display:
-        flex;
-
-    gap:
-        6px;
-
-    overflow-x:
-        auto;
-
-    overflow-y:
-        hidden;
-
-    padding:
-        2px
-        1px
-        5px;
-
-    scrollbar-width:
-        none;
-
-    -webkit-overflow-scrolling:
-        touch;
-
-}
-
-
-.category-bar::-webkit-scrollbar {
-
-    display:
-        none;
-
-}
-
-
-.category-pill {
-
-    flex:
-        0 0
-        auto;
-
-    min-height:
-        31px;
-
-    display:
-        inline-flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    padding:
-        0
-        12px;
-
-    border:
-        1px solid
-        #d1e0d5;
-
-    border-radius:
-        50px;
-
-    background:
-        #fff;
-
-    color:
-        #3d5848;
-
-    text-decoration:
-        none;
-
-    font-size:
-        .59rem;
-
-    font-weight:
-        900;
-
-    white-space:
-        nowrap;
-
-}
-
-
-.category-pill.active {
-
-    background:
-        var(--green);
-
-    border-color:
-        var(--green);
-
-    color:
-        #fff;
-
-}
-
-
-
-/* ==========================================================
-   PRODUCTS HEADING
-========================================================== */
-
-.products-heading {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    margin-bottom:
-        8px;
-
-}
-
-
-.products-count {
-
-    color:
-        #7b8981;
-
-    font-size:
-        .58rem;
-
-    font-weight:
-        700;
-
-}
-
-
-.products-count strong {
-
-    color:
-        var(--green);
-
-    font-weight:
-        950;
-
-}
-
-
-
-/* ==========================================================
-   PRODUCT SCROLL AREA
-
-   IMPORTANT:
-
-   This is NOT a grid.
-
-   The outer element provides horizontal scrolling.
-========================================================== */
-
-.product-scroll {
-
-    width:
-        100%;
-
-    overflow-x:
-        auto;
-
-    overflow-y:
-        hidden;
-
-    padding:
-        2px
-        2px
-        10px;
-
-    -webkit-overflow-scrolling:
-        touch;
-
-    scrollbar-width:
-        none;
-
-}
-
-
-.product-scroll::-webkit-scrollbar {
-
-    display:
-        none;
-
-}
-
-
-
-/* ==========================================================
-   PRODUCT LIST
-
-   FLEXBOX ONLY.
-
-   Four cards per row.
-
-   The fifth card moves down naturally.
-
-   No product-count limit exists.
-========================================================== */
-
-.product-list {
-
-    display:
-        flex;
-
-    flex-direction:
-        row;
-
-    flex-wrap:
-        wrap;
-
-    align-content:
-        flex-start;
-
-    align-items:
-        flex-start;
-
-    justify-content:
-        flex-start;
-
-    gap:
-        10px;
-
-    width:
-        464px;
-
-    min-width:
-        464px;
-
-}
-
-
-
-/* ==========================================================
-   PRODUCT CARD
-
-   MOBILE BASE:
-
-       108px × 155px
-
-========================================================== */
-
-.product-card {
-
-    position:
-        relative;
-
-    flex:
-        0 0
-        108px;
-
-    width:
-        108px;
-
-    height:
-        155px;
-
-    min-width:
-        108px;
-
-    max-width:
-        108px;
-
-    min-height:
-        155px;
-
-    max-height:
-        155px;
-
-    display:
-        flex;
-
-    flex-direction:
-        column;
-
-    overflow:
-        hidden;
-
-    border:
-        1px solid
-        #e4e9e6;
-
-    border-radius:
-        14px;
-
-    background:
-        #ffffff;
-
-    box-shadow:
-        0 2px 8px
-        rgba(20,40,28,.06);
-
-    text-decoration:
-        none;
-
-    cursor:
-        pointer;
-
-    transition:
-        transform .16s ease,
-        box-shadow .16s ease;
-
-}
-
-
-.product-card:hover {
-
-    transform:
-        translateY(-2px);
-
-    box-shadow:
-        0 5px 14px
-        rgba(20,40,28,.10);
-
-}
-
-
-.product-card:active {
-
-    transform:
-        scale(.97);
-
-}
-
-
-
-/* ==========================================================
-   PRODUCT IMAGE
-========================================================== */
-
-.product-image-wrap {
-
-    position:
-        relative;
-
-    width:
-        100%;
-
-    height:
-        76px;
-
-    flex:
-        0 0
-        76px;
-
-    overflow:
-        hidden;
-
-    background:
-        #eef3ef;
-
-}
-
-
-.product-image {
-
-    width:
-        100%;
-
-    height:
-        100%;
-
-    display:
-        block;
-
-    object-fit:
-        cover;
-
-}
-
-
-
-/* ==========================================================
-   STOCK BADGE
-========================================================== */
-
-.stock-badge {
-
-    position:
-        absolute;
-
-    top:
-        4px;
-
-    left:
-        4px;
-
-    right:
-        4px;
-
-    z-index:
-        2;
-
-    min-height:
-        16px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        3px;
-
-    padding:
-        2px
-        4px;
-
-    border:
-        1px solid
-        rgba(25,135,84,.12);
-
-    border-radius:
-        20px;
-
-    background:
-        rgba(255,255,255,.94);
-
-    color:
-        var(--green);
-
-    font-size:
-        7px;
-
-    font-weight:
-        900;
-
-    white-space:
-        nowrap;
-
-    overflow:
-        hidden;
-
-    text-overflow:
-        ellipsis;
-
-}
-
-
-.stock-dot {
-
-    flex:
-        0 0
-        4px;
-
-    width:
-        4px;
-
-    height:
-        4px;
-
-    border-radius:
-        50%;
-
-    background:
-        #28a44d;
-
-}
-
-
-.stock-low {
-
-    color:
-        #9a650e;
-
-    border-color:
-        #ecd7aa;
-
-}
-
-
-.stock-low .stock-dot {
-
-    background:
-        #e39a1d;
-
-}
-
-
-.stock-out {
-
-    color:
-        #a52f2f;
-
-    border-color:
-        #edcccc;
-
-}
-
-
-.stock-out .stock-dot {
-
-    background:
-        #d63b3b;
-
-}
-
-
-
-/* ==========================================================
-   PRODUCT CONTENT
-========================================================== */
-
-.product-content {
-
-    width:
-        100%;
-
-    min-width:
-        0;
-
-    flex:
-        1;
-
-    display:
-        flex;
-
-    flex-direction:
-        column;
-
-    overflow:
-        hidden;
-
-}
-
-
-
-/* ==========================================================
-   CATEGORY
-========================================================== */
-
-.product-category {
-
-    width:
-        100%;
-
-    padding:
-        6px
-        7px
-        0;
-
-    color:
-        #4b7d5a;
-
-    font-size:
-        8px;
-
-    font-weight:
-        900;
-
-    line-height:
-        11px;
-
-    text-transform:
-        uppercase;
-
-    white-space:
-        nowrap;
-
-    overflow:
-        hidden;
-
-    text-overflow:
-        ellipsis;
-
-}
-
-
-
-/* ==========================================================
-   PRODUCT NAME
-========================================================== */
-
-.product-name {
-
-    width:
-        100%;
-
-    min-height:
-        28px;
-
-    max-height:
-        28px;
-
-    padding:
-        3px
-        7px
-        0;
-
-    color:
-        #202520;
-
-    font-size:
-        11px;
-
-    font-weight:
-        700;
-
-    line-height:
-        14px;
-
-    overflow:
-        hidden;
-
-    display:
-        -webkit-box;
-
-    -webkit-box-orient:
-        vertical;
-
-    -webkit-line-clamp:
-        2;
-
-}
-
-
-
-/* ==========================================================
-   PRICE
-========================================================== */
-
-.product-price {
-
-    width:
-        100%;
-
-    display:
-        flex;
-
-    align-items:
-        baseline;
-
-    gap:
-        3px;
-
-    padding:
-        3px
-        7px
-        0;
-
-    color:
-        var(--green);
-
-    font-size:
-        12px;
-
-    font-weight:
-        900;
-
-    line-height:
-        14px;
-
-}
-
-
-.currency {
-
-    font-size:
-        7px;
-
-    font-weight:
-        900;
-
-}
-
-
-
-/* ==========================================================
-   ADD TO CART
-========================================================== */
-
-.add-to-cart-btn {
-
-    width:
-        calc(100% - 14px);
-
-    height:
-        23px;
-
-    min-height:
-        23px;
-
-    flex:
-        0 0
-        23px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    gap:
-        3px;
-
-    margin:
-        auto
-        7px
-        7px;
-
-    padding:
-        0
-        3px;
-
-    border:
-        0;
-
-    border-radius:
-        6px;
-
-    background:
-        var(--green);
-
-    color:
-        #fff;
-
-    font-size:
-        7px;
-
-    font-weight:
-        900;
-
-    white-space:
-        nowrap;
-
-    cursor:
-        pointer;
-
-}
-
-
-.add-to-cart-btn:hover {
-
-    background:
-        var(--green-dark);
-
-}
-
-
-.add-to-cart-btn:active {
-
-    transform:
-        scale(.97);
-
-}
-
-
-.add-to-cart-btn:disabled {
-
-    background:
-        #dfe6e1;
-
-    color:
-        #7c8981;
-
-    cursor:
-        not-allowed;
-
-}
-
-
-.add-to-cart-btn i {
-
-    font-size:
-        7px;
-
-}
-
-
-
-/* ==========================================================
-   EMPTY MARKET
-========================================================== */
-
-.empty-market {
-
-    width:
-        100%;
-
-    min-height:
-        250px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    padding:
-        30px
-        18px;
-
-    background:
-        #fff;
-
-    border:
-        1px solid
-        #e4e9e6;
-
-    border-radius:
-        15px;
-
-    text-align:
-        center;
-
-}
-
-
-.empty-inner {
-
-    max-width:
-        380px;
-
-}
-
-
-.empty-icon {
-
-    width:
-        60px;
-
-    height:
-        60px;
-
-    margin:
-        0
-        auto
-        12px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    border-radius:
-        18px;
-
-    background:
-        #edf7f0;
-
-    color:
-        var(--green);
-
-    font-size:
-        1.35rem;
-
-}
-
-
-.empty-market h3 {
-
-    margin:
-        0;
-
-    color:
-        #27382d;
-
-    font-size:
-        .95rem;
-
-    font-weight:
-        950;
-
-}
-
-
-.empty-market p {
-
-    margin:
-        7px
-        auto
-        0;
-
-    color:
-        #7a877f;
-
-    font-size:
-        .66rem;
-
-    line-height:
-        1.5;
-
-}
-
-
-.empty-action {
-
-    display:
-        inline-flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    gap:
-        6px;
-
-    min-height:
-        35px;
-
-    margin-top:
-        13px;
-
-    padding:
-        0
-        13px;
-
-    border-radius:
-        8px;
-
-    background:
-        var(--green);
-
-    color:
-        #fff;
-
-    text-decoration:
-        none;
-
-    font-size:
-        .56rem;
-
-    font-weight:
-        900;
-
-}
-
-
-
-/* ==========================================================
-   QUANTITY MODAL
-========================================================== */
-
-.qty-modal {
-
-    overflow:
-        hidden;
-
-    border:
-        0;
-
-    border-radius:
-        18px;
-
-    box-shadow:
-        0 20px 55px
-        rgba(0,0,0,.2);
-
-}
-
-
-.qty-header {
-
-    padding:
-        17px;
-
-    background:
-        #f3f8f4;
-
-    border-bottom:
-        1px solid
-        #dce8df;
-
-    text-align:
-        center;
-
-}
-
-
-.qty-icon {
-
-    width:
-        42px;
-
-    height:
-        42px;
-
-    margin:
-        0
-        auto
-        8px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    border-radius:
-        12px;
-
-    background:
-        var(--green);
-
-    color:
-        #fff;
-
-}
-
-
-.qty-product-name {
-
-    margin:
-        0;
-
-    color:
-        #14532d;
-
-    font-size:
-        .92rem;
-
-    font-weight:
-        950;
-
-}
-
-
-.qty-available {
-
-    margin:
-        4px
-        0
-        0;
-
-    color:
-        #7b8981;
-
-    font-size:
-        .65rem;
-
-}
-
-
-.qty-body {
-
-    padding:
-        19px
-        17px
-        16px;
-
-}
-
-
-.qty-selector {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    gap:
-        22px;
-
-    margin-bottom:
-        19px;
-
-}
-
-
-.qty-control {
-
-    width:
-        43px;
-
-    height:
-        43px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    border:
-        2px solid
-        var(--green);
-
-    border-radius:
-        50%;
-
-    background:
-        #fff;
-
-    color:
-        var(--green);
-
-    font-size:
-        1.2rem;
-
-    font-weight:
-        950;
-
-}
-
-
-.qty-number {
-
-    min-width:
-        45px;
-
-    color:
-        var(--green);
-
-    font-size:
-        2rem;
-
-    font-weight:
-        950;
-
-    text-align:
-        center;
-
-}
-
-
-.qty-confirm {
-
-    width:
-        100%;
-
-    height:
-        44px;
-
-    min-height:
-        44px;
-
-    margin:
-        0;
-
-    font-size:
-        .65rem;
-
-}
-
-
-.qty-cancel {
-
-    display:
-        block;
-
-    width:
-        100%;
-
-    margin-top:
-        5px;
-
-    color:
-        #7c8982 !important;
-
-    font-size:
-        .67rem;
-
-}
-
-
-
-/* ==========================================================
-   CART SIDEBAR
-========================================================== */
-
-.cart-sidebar {
-
-    width:
-        min(400px,94vw) !important;
-
-    border-left:
-        1px solid
-        #dce8df !important;
-
-}
-
-
-.cart-header {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    padding:
-        14px;
-
-    background:
-        #f2f8f3;
-
-    border-bottom:
-        1px solid
-        #dce8df;
-
-}
-
-
-.cart-heading {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        9px;
-
-}
-
-
-.cart-icon {
-
-    width:
-        38px;
-
-    height:
-        38px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    border-radius:
-        11px;
-
-    background:
-        var(--green);
-
-    color:
-        #fff;
-
-}
-
-
-.cart-title {
-
-    margin:
-        0;
-
-    color:
-        #14532d;
-
-    font-size:
-        .9rem;
-
-    font-weight:
-        950;
-
-}
-
-
-.cart-subtitle {
-
-    margin:
-        2px
-        0
-        0;
-
-    color:
-        #7c8981;
-
-    font-size:
-        .6rem;
-
-}
-
-
-.cart-body {
-
-    padding:
-        10px !important;
-
-    background:
-        #fff;
-
-}
-
-
-.cart-item {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        8px;
-
-    padding:
-        11px
-        2px;
-
-    border-bottom:
-        1px solid
-        #edf2ee;
-
-}
-
-
-.cart-product-info {
-
-    flex:
-        1;
-
-    min-width:
-        0;
-
-}
-
-
-.cart-product-name {
-
-    display:
-        block;
-
-    color:
-        #243229;
-
-    font-size:
-        .7rem;
-
-    font-weight:
-        900;
-
-    white-space:
-        nowrap;
-
-    overflow:
-        hidden;
-
-    text-overflow:
-        ellipsis;
-
-}
-
-
-.cart-product-price {
-
-    display:
-        block;
-
-    margin-top:
-        3px;
-
-    color:
-        #7d8982;
-
-    font-size:
-        .59rem;
-
-}
-
-
-.cart-product-price strong {
-
-    color:
-        var(--green);
-
-}
-
-
-.cart-controls {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        3px;
-
-}
-
-
-.cart-control {
-
-    width:
-        28px;
-
-    height:
-        28px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    padding:
-        0;
-
-    border:
-        1px solid
-        #cfddd3;
-
-    border-radius:
-        7px;
-
-    background:
-        #fff;
-
-    color:
-        var(--green);
-
-    cursor:
-        pointer;
-
-}
-
-
-.cart-remove {
-
-    color:
-        #b42f2f;
-
-    border-color:
-        #eccccc;
-
-    background:
-        #fff8f8;
-
-}
-
-
-
-/* ==========================================================
-   EMPTY CART
-========================================================== */
-
-.empty-cart {
-
-    min-height:
-        260px;
-
-    display:
-        flex;
-
-    flex-direction:
-        column;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    text-align:
-        center;
-
-}
-
-
-.empty-cart-icon {
-
-    width:
-        65px;
-
-    height:
-        65px;
-
-    margin-bottom:
-        12px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    border-radius:
-        20px;
-
-    background:
-        #f0f5f1;
-
-    color:
-        #8a9b91;
-
-    font-size:
-        1.35rem;
-
-}
-
-
-
-/* ==========================================================
-   CART FOOTER
-========================================================== */
-
-.cart-footer {
-
-    padding:
-        13px;
-
-    background:
-        #f5f9f6;
-
-    border-top:
-        1px solid
-        #dce8df;
-
-}
-
-
-.cart-total {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    margin-bottom:
-        10px;
-
-    color:
-        #68766e;
-
-    font-size:
-        .66rem;
-
-}
-
-
-.cart-total strong {
-
-    color:
-        var(--green);
-
-    font-size:
-        .92rem;
-
-    font-weight:
-        950;
-
-}
-
-
-.checkout-btn {
-
-    width:
-        100%;
-
-    height:
-        43px;
-
-    min-height:
-        43px;
-
-    margin:
-        0;
-
-}
-
-
-
-/* ==========================================================
-   TABLET / DESKTOP
-========================================================== */
-
-@media (min-width: 700px) {
-
-    .market-hero {
-
-        padding:
-            22px
-            22px
-            18px;
-
-    }
-
-
-    .market-title {
-
-        font-size:
-            1.65rem;
-
-    }
-
-
-    .market-main {
-
-        padding:
-            18px
-            20px
-            0;
-
-    }
-
-
-    /*
-       Cards remain compact.
-       They do not grow with the screen.
-    */
-
-    .product-list {
-
-        width:
-            464px;
-
-        min-width:
-            464px;
-
-    }
-
-
-    .product-card {
-
-        flex-basis:
-            108px;
-
-        width:
-            108px;
-
-        height:
-            155px;
-
-    }
-
-}
-
-
-
-/* ==========================================================
-   LARGE DESKTOP
-========================================================== */
-
-@media (min-width: 1100px) {
-
-    .market-hero {
-
-        padding-left:
-            30px;
-
-        padding-right:
-            30px;
-
-    }
-
-
-    .market-main {
-
-        padding-left:
-            30px;
-
-        padding-right:
-            30px;
-
-    }
-
-}
-
-
-
-/* ==========================================================
-   SMALL PHONES
-========================================================== */
-
-@media (max-width: 380px) {
-
-    .market-main {
-
-        padding-left:
-            9px;
-
-        padding-right:
-            9px;
-
-    }
-
-
-    .product-scroll {
-
-        padding-left:
-            1px;
-
-        padding-right:
-            1px;
-
-    }
-
-
-    .product-list {
-
-        gap:
-            8px;
-
-        width:
-            456px;
-
-        min-width:
-            456px;
-
-    }
-
-
-    .product-card {
-
-        flex-basis:
-            108px;
-
-        width:
-            108px;
-
-        height:
-            155px;
-
-    }
-
-
-    .summary-card {
-
-        padding:
-            7px
-            6px;
-
-    }
-
-
-    .summary-icon {
-
-        flex-basis:
-            26px;
-
-        width:
-            26px;
-
-        height:
-            26px;
-
-    }
-
-
-    .summary-value {
-
-        font-size:
-            .61rem;
-
-    }
-
-}
-
-
-
-/* ==========================================================
-   ACCESSIBILITY
-========================================================== */
-
-.product-card:focus-visible,
-.category-pill:focus-visible,
-button:focus-visible {
-
-    outline:
-        2px solid
-        var(--green);
-
-    outline-offset:
-        2px;
-
-}
-
-
-@media (prefers-reduced-motion: reduce) {
-
-    *,
-    *::before,
-    *::after {
-
-        transition:
-            none !important;
-
-        animation:
-            none !important;
-
-        scroll-behavior:
-            auto !important;
-
-    }
-
-}
-
-</style>
-
-
-
 <script>
 
-document.addEventListener(
-    'DOMContentLoaded',
-    function () {
+document.addEventListener('DOMContentLoaded', () => {
 
 
-        /* ==================================================
-           BOOTSTRAP
-        ================================================== */
+    const qtyModalElement =
+        document.getElementById('qtyModal');
 
-        const qtyModalElement =
-            document.getElementById('qtyModal');
-
-
-        const cartSidebarElement =
-            document.getElementById('cartSidebar');
+    const cartSidebarElement =
+        document.getElementById('cartSidebar');
 
 
-        const qtyModal =
-            new bootstrap.Modal(
-                qtyModalElement
-            );
+    const qtyModal =
+        new bootstrap.Modal(qtyModalElement);
 
-
-        const cartSidebar =
-            new bootstrap.Offcanvas(
-                cartSidebarElement
-            );
+    const cartSidebar =
+        new bootstrap.Offcanvas(cartSidebarElement);
 
 
 
-        /* ==================================================
-           SELECTED PRODUCT
-        ================================================== */
+    let selected = {
 
-        let selected = {
+        id:null,
 
-            id:
-                null,
+        name:'',
 
-            name:
-                '',
+        stock:0,
 
-            stock:
-                0,
+        qty:1
 
-            qty:
-                1
-
-        };
+    };
 
 
 
-        /* ==================================================
-           PRODUCT CARD NAVIGATION
-        ================================================== */
+    /* ======================================================
+       PRODUCT CARD NAVIGATION
+    ====================================================== */
 
-        document
-            .querySelectorAll('.product-card')
-            .forEach(function (card) {
+    document
+        .querySelectorAll('.product-card')
+        .forEach(card => {
 
+            card.addEventListener(
+                'click',
+                event => {
 
-                card.addEventListener(
-                    'click',
-                    function (event) {
+                    if(
+                        event.target.closest(
+                            '.add-to-cart-btn'
+                        )
+                    ){
 
-
-                        if (
-                            event.target.closest(
-                                '.add-to-cart-btn'
-                            )
-                        ) {
-
-                            return;
-
-                        }
-
-
-                        const productId =
-                            card.dataset.productId;
-
-
-                        if (productId) {
-
-                            window.location.href =
-                                '/products/' +
-                                productId;
-
-                        }
+                        return;
 
                     }
-                );
-
-            });
 
 
-
-        /* ==================================================
-           ADD TO CART
-        ================================================== */
-
-        document
-            .querySelectorAll(
-                '.product-card .add-to-cart-btn'
-            )
-            .forEach(function (button) {
+                    const productId =
+                        card.dataset.productId;
 
 
-                button.addEventListener(
-                    'click',
-                    function (event) {
+                    if(productId){
+
+                        window.location.href =
+                            '/products/' +
+                            productId;
+
+                    }
+
+                }
+            );
+
+        });
 
 
-                        event.preventDefault();
 
-                        event.stopPropagation();
+    /* ======================================================
+       ADD TO CART
+    ====================================================== */
 
-
-                        selected.id =
-                            button.dataset.id;
-
-
-                        selected.name =
-                            button.dataset.name;
+    document
+        .querySelectorAll('.add-to-cart-btn')
+        .forEach(button => {
 
 
-                        selected.stock =
-                            parseInt(
-                                button.dataset.stock,
-                                10
-                            ) || 0;
+            if(
+                button.id === 'qtyConfirm' ||
+                button.id === 'checkoutBtn'
+            ){
+
+                return;
+
+            }
 
 
-                        selected.qty =
-                            1;
+            button.addEventListener(
+                'click',
+                event => {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
 
 
-                        document.getElementById(
+                    selected.id =
+                        button.dataset.id;
+
+                    selected.name =
+                        button.dataset.name;
+
+                    selected.stock =
+                        parseInt(
+                            button.dataset.stock,
+                            10
+                        ) || 0;
+
+                    selected.qty = 1;
+
+
+                    document
+                        .getElementById(
                             'qtyProductName'
-                        ).innerText =
+                        )
+                        .innerText =
                             selected.name;
 
 
-                        document.getElementById(
+                    document
+                        .getElementById(
                             'qtyAvailable'
-                        ).innerText =
+                        )
+                        .innerText =
                             selected.stock;
 
 
-                        updateQuantityDisplay();
+                    updateQuantityDisplay();
 
 
-                        qtyModal.show();
+                    qtyModal.show();
 
-                    }
-                );
+                }
+            );
 
-            });
+        });
 
 
 
-        /* ==================================================
-           QUANTITY DISPLAY
-        ================================================== */
+    /* ======================================================
+       QUANTITY DISPLAY
+    ====================================================== */
 
-        function updateQuantityDisplay() {
+    function updateQuantityDisplay(){
 
-            document.getElementById(
-                'qtyValue'
-            ).innerText =
+        document
+            .getElementById('qtyValue')
+            .innerText =
                 selected.qty;
 
 
-            document.getElementById(
-                'qtyConfirmCount'
-            ).innerText =
+        document
+            .getElementById('qtyConfirmCount')
+            .innerText =
                 selected.qty;
 
-        }
+    }
 
 
 
-        /* ==================================================
-           PLUS
-        ================================================== */
+    /* ======================================================
+       PLUS
+    ====================================================== */
 
-        document.getElementById(
-            'qtyPlus'
-        ).addEventListener(
+    document
+        .getElementById('qtyPlus')
+        .addEventListener(
             'click',
-            function () {
+            () => {
 
-
-                if (
+                if(
                     selected.qty <
                     selected.stock
-                ) {
+                ){
 
                     selected.qty++;
 
@@ -3626,20 +3007,19 @@ document.addEventListener(
 
 
 
-        /* ==================================================
-           MINUS
-        ================================================== */
+    /* ======================================================
+       MINUS
+    ====================================================== */
 
-        document.getElementById(
-            'qtyMinus'
-        ).addEventListener(
+    document
+        .getElementById('qtyMinus')
+        .addEventListener(
             'click',
-            function () {
+            () => {
 
-
-                if (
+                if(
                     selected.qty > 1
-                ) {
+                ){
 
                     selected.qty--;
 
@@ -3652,16 +3032,15 @@ document.addEventListener(
 
 
 
-        /* ==================================================
-           CONFIRM ADD
-        ================================================== */
+    /* ======================================================
+       CONFIRM ADD
+    ====================================================== */
 
-        document.getElementById(
-            'qtyConfirm'
-        ).addEventListener(
+    document
+        .getElementById('qtyConfirm')
+        .addEventListener(
             'click',
-            async function () {
-
+            async () => {
 
                 const button =
                     document.getElementById(
@@ -3669,36 +3048,31 @@ document.addEventListener(
                     );
 
 
-                button.disabled =
-                    true;
+                button.disabled = true;
 
 
-                try {
-
+                try{
 
                     const response =
                         await fetch(
                             '/products/add-to-cart',
                             {
-                                method:
-                                    'POST',
+                                method:'POST',
 
-                                headers: {
+                                headers:{
                                     'Content-Type':
                                         'application/json'
                                 },
 
-                                body:
-                                    JSON.stringify({
+                                body:JSON.stringify({
 
-                                        productId:
-                                            selected.id,
+                                    productId:
+                                        selected.id,
 
-                                        qty:
-                                            selected.qty
+                                    qty:
+                                        selected.qty
 
-                                    })
-
+                                })
                             }
                         );
 
@@ -3707,7 +3081,7 @@ document.addEventListener(
                         await response.json();
 
 
-                    if (!data.success) {
+                    if(!data.success){
 
                         alert(
                             data.message ||
@@ -3715,8 +3089,7 @@ document.addEventListener(
                         );
 
 
-                        button.disabled =
-                            false;
+                        button.disabled = false;
 
                         return;
 
@@ -3727,9 +3100,8 @@ document.addEventListener(
 
                     location.reload();
 
-
                 }
-                catch (error) {
+                catch(error){
 
                     console.error(error);
 
@@ -3739,8 +3111,7 @@ document.addEventListener(
                     );
 
 
-                    button.disabled =
-                        false;
+                    button.disabled = false;
 
                 }
 
@@ -3749,15 +3120,15 @@ document.addEventListener(
 
 
 
-        /* ==================================================
-           OPEN CART
-        ================================================== */
+    /* ======================================================
+       OPEN CART
+    ====================================================== */
 
-        document.getElementById(
-            'cartBtn'
-        ).addEventListener(
+    document
+        .getElementById('cartBtn')
+        .addEventListener(
             'click',
-            function () {
+            () => {
 
                 cartSidebar.show();
 
@@ -3766,338 +3137,305 @@ document.addEventListener(
 
 
 
-        /* ==================================================
-           CART REQUEST
-        ================================================== */
+    /* ======================================================
+       CART REQUEST
+    ====================================================== */
 
-        async function callCart(
-            url,
-            body
-        ) {
+    async function callCart(
+        url,
+        body
+    ){
 
+        try{
 
-            try {
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method:'POST',
 
+                        headers:{
+                            'Content-Type':
+                                'application/json'
+                        },
 
-                const response =
-                    await fetch(
-                        url,
-                        {
-                            method:
-                                'POST',
-
-                            headers: {
-                                'Content-Type':
-                                    'application/json'
-                            },
-
-                            body:
-                                JSON.stringify(body)
-
-                        }
-                    );
-
-
-                const data =
-                    await response.json();
-
-
-                if (!data.success) {
-
-                    alert(
-                        data.message ||
-                        'Cart update failed.'
-                    );
-
-                    return false;
-
-                }
-
-
-                location.reload();
-
-                return true;
-
-
-            }
-            catch (error) {
-
-                console.error(error);
-
-
-                alert(
-                    'Unable to connect to the server.'
+                        body:
+                            JSON.stringify(body)
+                    }
                 );
 
+
+            const data =
+                await response.json();
+
+
+            if(!data.success){
+
+                alert(
+                    data.message ||
+                    'Cart update failed.'
+                );
 
                 return false;
 
             }
 
+
+            location.reload();
+
+            return true;
+
         }
+        catch(error){
 
+            console.error(error);
 
 
-        /* ==================================================
-           CART PLUS
-        ================================================== */
-
-        document
-            .querySelectorAll('.cart-plus')
-            .forEach(function (button) {
-
-
-                button.addEventListener(
-                    'click',
-                    function () {
-
-
-                        const id =
-                            button.dataset.id;
-
-
-                        const quantityElement =
-                            document.querySelector(
-                                `.cart-item[data-id="${id}"] .cart-qty`
-                            );
-
-
-                        if (!quantityElement) {
-
-                            return;
-
-                        }
-
-
-                        const currentQuantity =
-                            parseInt(
-                                quantityElement.innerText,
-                                10
-                            ) || 0;
-
-
-                        callCart(
-                            '/products/update-cart-qty',
-                            {
-
-                                productId:
-                                    id,
-
-                                qty:
-                                    currentQuantity + 1
-
-                            }
-                        );
-
-                    }
-                );
-
-            });
-
-
-
-        /* ==================================================
-           CART MINUS
-        ================================================== */
-
-        document
-            .querySelectorAll('.cart-minus')
-            .forEach(function (button) {
-
-
-                button.addEventListener(
-                    'click',
-                    function () {
-
-
-                        const id =
-                            button.dataset.id;
-
-
-                        const quantityElement =
-                            document.querySelector(
-                                `.cart-item[data-id="${id}"] .cart-qty`
-                            );
-
-
-                        if (!quantityElement) {
-
-                            return;
-
-                        }
-
-
-                        const currentQuantity =
-                            parseInt(
-                                quantityElement.innerText,
-                                10
-                            ) || 0;
-
-
-                        if (
-                            currentQuantity <= 1
-                        ) {
-
-                            callCart(
-                                '/products/remove-from-cart',
-                                {
-                                    productId:
-                                        id
-                                }
-                            );
-
-                            return;
-
-                        }
-
-
-                        callCart(
-                            '/products/update-cart-qty',
-                            {
-
-                                productId:
-                                    id,
-
-                                qty:
-                                    currentQuantity - 1
-
-                            }
-                        );
-
-                    }
-                );
-
-            });
-
-
-
-        /* ==================================================
-           REMOVE FROM CART
-        ================================================== */
-
-        document
-            .querySelectorAll('.cart-remove')
-            .forEach(function (button) {
-
-
-                button.addEventListener(
-                    'click',
-                    function () {
-
-
-                        callCart(
-                            '/products/remove-from-cart',
-                            {
-
-                                productId:
-                                    button.dataset.id
-
-                            }
-                        );
-
-                    }
-                );
-
-            });
-
-
-
-        /* ==================================================
-           PACKAGE ORDER
-        ================================================== */
-
-        const checkoutButton =
-            document.getElementById(
-                'checkoutBtn'
+            alert(
+                'Unable to connect to the server.'
             );
 
 
-        if (checkoutButton) {
+            return false;
+
+        }
+
+    }
 
 
-            checkoutButton.addEventListener(
+
+    /* ======================================================
+       CART PLUS
+    ====================================================== */
+
+    document
+        .querySelectorAll('.cart-plus')
+        .forEach(button => {
+
+            button.addEventListener(
                 'click',
-                async function () {
+                () => {
+
+                    const id =
+                        button.dataset.id;
 
 
-                    checkoutButton.disabled =
-                        true;
+                    const quantityElement =
+                        document.querySelector(
+                            `.cart-item[data-id="${id}"] .cart-qty`
+                        );
 
 
-                    try {
+                    if(!quantityElement){
+
+                        return;
+
+                    }
 
 
-                        const response =
-                            await fetch(
-                                '/packages/create',
-                                {
-                                    method:
-                                        'POST',
-
-                                    headers: {
-                                        'Content-Type':
-                                            'application/json'
-                                    },
-
-                                    body:
-                                        JSON.stringify({})
-
-                                }
-                            );
+                    const currentQuantity =
+                        parseInt(
+                            quantityElement.innerText,
+                            10
+                        ) || 0;
 
 
-                        const data =
-                            await response.json();
+                    callCart(
+                        '/products/update-cart-qty',
+                        {
+                            productId:id,
 
-
-                        if (
-                            data.success &&
-                            data.packageId
-                        ) {
-
-                            window.location.href =
-                                '/packages/' +
-                                data.packageId;
-
-                            return;
-
+                            qty:
+                                currentQuantity + 1
                         }
-
-
-                        alert(
-                            data.message ||
-                            'Unable to create package order.'
-                        );
-
-
-                        checkoutButton.disabled =
-                            false;
-
-
-                    }
-                    catch (error) {
-
-                        console.error(error);
-
-
-                        alert(
-                            'Unable to connect to the server.'
-                        );
-
-
-                        checkoutButton.disabled =
-                            false;
-
-                    }
+                    );
 
                 }
             );
 
-        }
+        });
 
+
+
+    /* ======================================================
+       CART MINUS
+    ====================================================== */
+
+    document
+        .querySelectorAll('.cart-minus')
+        .forEach(button => {
+
+            button.addEventListener(
+                'click',
+                () => {
+
+                    const id =
+                        button.dataset.id;
+
+
+                    const quantityElement =
+                        document.querySelector(
+                            `.cart-item[data-id="${id}"] .cart-qty`
+                        );
+
+
+                    if(!quantityElement){
+
+                        return;
+
+                    }
+
+
+                    const currentQuantity =
+                        parseInt(
+                            quantityElement.innerText,
+                            10
+                        ) || 0;
+
+
+                    if(currentQuantity <= 1){
+
+                        callCart(
+                            '/products/remove-from-cart',
+                            {
+                                productId:id
+                            }
+                        );
+
+                        return;
+
+                    }
+
+
+                    callCart(
+                        '/products/update-cart-qty',
+                        {
+                            productId:id,
+
+                            qty:
+                                currentQuantity - 1
+                        }
+                    );
+
+                }
+            );
+
+        });
+
+
+
+    /* ======================================================
+       REMOVE
+    ====================================================== */
+
+    document
+        .querySelectorAll('.cart-remove')
+        .forEach(button => {
+
+            button.addEventListener(
+                'click',
+                () => {
+
+                    callCart(
+                        '/products/remove-from-cart',
+                        {
+                            productId:
+                                button.dataset.id
+                        }
+                    );
+
+                }
+            );
+
+        });
+
+
+
+    /* ======================================================
+       PACKAGE ORDER
+    ====================================================== */
+
+    const checkoutButton =
+        document.getElementById(
+            'checkoutBtn'
+        );
+
+
+    if(checkoutButton){
+
+        checkoutButton.addEventListener(
+            'click',
+            async () => {
+
+                checkoutButton.disabled = true;
+
+
+                try{
+
+                    const response =
+                        await fetch(
+                            '/packages/create',
+                            {
+                                method:'POST',
+
+                                headers:{
+                                    'Content-Type':
+                                        'application/json'
+                                },
+
+                                body:
+                                    JSON.stringify({})
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if(
+                        data.success &&
+                        data.packageId
+                    ){
+
+                        window.location.href =
+                            '/packages/' +
+                            data.packageId;
+
+                        return;
+
+                    }
+
+
+                    alert(
+                        data.message ||
+                        'Unable to create package order.'
+                    );
+
+
+                    checkoutButton.disabled = false;
+
+                }
+                catch(error){
+
+                    console.error(error);
+
+
+                    alert(
+                        'Unable to connect to the server.'
+                    );
+
+
+                    checkoutButton.disabled = false;
+
+                }
+
+            }
+        );
 
     }
 
-);
+
+});
 
 </script>
