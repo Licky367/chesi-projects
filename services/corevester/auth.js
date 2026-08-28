@@ -1,125 +1,265 @@
+const crypto = require("crypto");
+
+const User =
+  require("../../models/corevester/user");
+
+const {
+  sendResetEmail
+} = require("../../utils/mailer");
+
+
 // ==========================================================
-// services/corevester/auth.js
-// ==========================================================
-//
-// COREVESTER AUTH SERVICE
-//
-// RESPONSIBILITIES:
-// ----------------------------------------------------------
-// • Register users
-// • Validate signup information
-// • Prevent duplicate accounts
-// • Authenticate users
-// • Verify passwords
-//
+// SIGNUP
 // ==========================================================
 
-const User = require("../../models/corevester/user");
-
-// ----------------------------------------------------------
-// REGISTER USER
-// ----------------------------------------------------------
-
-exports.registerUser = async ({ fullName, email, password }) => {
-
-  // --------------------------------------------------------
-  // BASIC VALIDATION
-  // --------------------------------------------------------
-
-  if (!fullName || !email || !password) {
-    throw new Error("All fields are required");
-  }
-
-  const cleanName = String(fullName).trim();
-  const cleanEmail = String(email).trim().toLowerCase();
-  const cleanPassword = String(password);
-
-  if (!cleanName) {
-    throw new Error("Full name is required");
-  }
-
-  if (!cleanEmail) {
-    throw new Error("Email is required");
-  }
-
-  if (!cleanPassword) {
-    throw new Error("Password is required");
-  }
+exports.signup = async ({
+  name,
+  email,
+  password,
+  phone
+}) => {
 
   // --------------------------------------------------------
-  // PASSWORD VALIDATION
+  // CHECK EXISTING ACCOUNT
   // --------------------------------------------------------
 
-  if (cleanPassword.length < 6) {
-    throw new Error("Password must be at least 6 characters");
+  const existingUser =
+    await User.findOne({
+      email
+    });
+
+  if (existingUser) {
+
+    throw new Error(
+      "Account already exists"
+    );
+
   }
 
-  // --------------------------------------------------------
-  // CHECK EXISTING USER
-  // --------------------------------------------------------
-
-  const exists = await User.findOne({
-    email: cleanEmail
-  });
-
-  if (exists) {
-    throw new Error("Email already exists");
-  }
 
   // --------------------------------------------------------
   // CREATE USER
-  //
-  // The User model's pre-save middleware handles
-  // password hashing.
   // --------------------------------------------------------
 
-  const user = await User.create({
-    fullName: cleanName,
-    email: cleanEmail,
-    password: cleanPassword
-  });
+  const user =
+    await User.create({
+
+      name,
+
+      email,
+
+      password,
+
+      phone
+
+    });
+
 
   return user;
+
 };
 
-// ----------------------------------------------------------
-// LOGIN USER
-// ----------------------------------------------------------
 
-exports.loginUser = async ({ email, password }) => {
+// ==========================================================
+// LOGIN
+// ==========================================================
 
-  if (!email || !password) {
-    throw new Error("Email and password are required");
-  }
-
-  const cleanEmail = String(email).trim().toLowerCase();
-  const cleanPassword = String(password);
+exports.login = async ({
+  email,
+  password
+}) => {
 
   // --------------------------------------------------------
-  // PASSWORD HAS select:false
-  //
-  // Therefore explicitly request it here.
+  // FIND USER
   // --------------------------------------------------------
 
-  const user = await User
-    .findOne({
-      email: cleanEmail
-    })
-    .select("+password");
+  const user =
+    await User
+      .findOne({
+        email
+      })
+      .select("+password");
+
 
   if (!user) {
-    throw new Error("Invalid credentials");
+
+    throw new Error(
+      "Invalid email or password"
+    );
+
   }
 
+
   // --------------------------------------------------------
-  // VERIFY PASSWORD
+  // CHECK PASSWORD
   // --------------------------------------------------------
 
-  const validPassword = await user.comparePassword(cleanPassword);
+  const isMatch =
+    await user.comparePassword(
+      password
+    );
 
-  if (!validPassword) {
-    throw new Error("Invalid credentials");
+
+  if (!isMatch) {
+
+    throw new Error(
+      "Invalid email or password"
+    );
+
   }
+
+
+  // --------------------------------------------------------
+  // UPDATE LAST LOGIN
+  // --------------------------------------------------------
+
+  user.lastLogin =
+    new Date();
+
+
+  await user.save();
+
 
   return user;
+
+};
+
+
+// ==========================================================
+// FORGOT PASSWORD
+// ==========================================================
+
+exports.forgotPassword =
+async (
+  email,
+  baseUrl
+) => {
+
+  const user =
+    await User.findOne({
+      email
+    });
+
+
+  if (!user) {
+
+    throw new Error(
+      "No account with that email"
+    );
+
+  }
+
+
+  // --------------------------------------------------------
+  // GENERATE RESET TOKEN
+  // --------------------------------------------------------
+
+  const token =
+    crypto.randomBytes(32)
+      .toString("hex");
+
+
+  user.resetToken =
+    token;
+
+
+  user.resetTokenExpiry =
+    Date.now() +
+    1000 * 60 * 15;
+
+
+  await user.save();
+
+
+  // --------------------------------------------------------
+  // BUILD RESET URL
+  // --------------------------------------------------------
+
+  const effectiveBaseUrl =
+    baseUrl ||
+    process.env.FRONTEND_URL ||
+    "http://localhost:3000";
+
+
+  const resetLink =
+    `${effectiveBaseUrl.replace(/\/$/, "")}` +
+    `/reset-password/${token}`;
+
+
+  // --------------------------------------------------------
+  // SEND EMAIL
+  // --------------------------------------------------------
+
+  await sendResetEmail(
+    email,
+    resetLink
+  );
+
+
+  return true;
+
+};
+
+
+// ==========================================================
+// RESET PASSWORD
+// ==========================================================
+
+exports.resetPassword =
+async (
+  token,
+  newPassword
+) => {
+
+  // --------------------------------------------------------
+  // FIND VALID TOKEN
+  // --------------------------------------------------------
+
+  const user =
+    await User.findOne({
+
+      resetToken:
+        token,
+
+      resetTokenExpiry: {
+        $gt: Date.now()
+      }
+
+    });
+
+
+  if (!user) {
+
+    throw new Error(
+      "Invalid or expired token"
+    );
+
+  }
+
+
+  // --------------------------------------------------------
+  // UPDATE PASSWORD
+  // --------------------------------------------------------
+
+  user.password =
+    newPassword;
+
+
+  // --------------------------------------------------------
+  // REMOVE RESET TOKEN
+  // --------------------------------------------------------
+
+  user.resetToken =
+    undefined;
+
+
+  user.resetTokenExpiry =
+    undefined;
+
+
+  await user.save();
+
+
+  return true;
+
 };
