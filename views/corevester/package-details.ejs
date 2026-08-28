@@ -1,0 +1,62 @@
+<div style="max-width:800px; margin:0 auto; padding:20px; box-sizing:border-box;">
+
+    <a href="/packages" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none; color:#0a4d1e; font-size:12px; font-weight:700; background:white; border:1.5px solid #e8f5e9; padding:8px 14px; border-radius:20px; margin-bottom:16px;">
+        <i class="fas fa-arrow-left"></i> My Packages
+    </a>
+
+    <% if(!pkg){ %>
+        <p>Package not found</p>
+    <% } else { %>
+
+        <div style="background:white; border-radius:16px; border-top:4px solid #0a4d1e; box-shadow:0 4px 20px rgba(0,0,0,0.06); overflow:hidden;">
+
+            <div style="padding:20px; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; align-items:start; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h2 style="margin:0; font-size:18px; font-weight:900; color:#0a1f0f;">Package #<%= pkg._id.toString().slice(-8).toUpperCase() %></h2>
+                    <p style="margin:4px 0 0 0; font-size:12px; color:#888;"><%= new Date(pkg.createdAt).toLocaleString() %></p>
+                </div>
+                <span style="background:<%= pkg.status==='pending'? '#fff3e0' : '#e8f5e9' %>; color:<%= pkg.status==='pending'? '#e65100' : '#0a4d1e' %>; padding:6px 14px; border-radius:20px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px;"><%= pkg.status %></span>
+            </div>
+
+            <div style="padding:20px;">
+                <p style="margin:0 0 10px 0; font-size:11px; font-weight:800; color:#0a4d1e; letter-spacing:1px;">ITEMS (<%= pkg.items.length %>)</p>
+
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <% pkg.items.forEach(item=>{ %>
+                        <div style="display:flex; gap:12px; background:#f9fbe7; border:1px solid #e8f5e9; border-radius:12px; padding:10px; align-items:center;">
+                            <div style="width:52px; height:52px; background:white; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <% if(item.image){ %><img src="<%= item.image %>" style="width:100%; height:100%; object-fit:cover;"><% } else { %><i class="fas fa-box" style="color:#a5d6a7;"></i><% } %>
+                            </div>
+                            <div style="flex:1;">
+                                <p style="margin:0; font-size:13px; font-weight:700;"><%= item.name %></p>
+                                <p style="margin:2px 0 0 0; font-size:11px; color:#666;">KES <%= item.price.toLocaleString() %> per unit</p>
+                            </div>
+                            <div style="text-align:right;">
+                                <p style="margin:0; font-size:13px; font-weight:800;">x<%= item.qty %></p>
+                                <p style="margin:0; font-size:12px; font-weight:700; color:#0a4d1e;">KES <%= (item.price * item.qty).toLocaleString() %></p>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+
+                <div style="margin-top:18px; background:#f6fbf6; border-radius:12px; padding:14px; border:1.5px dashed #c5e1a5;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span style="font-size:12px; color:#666;">Subtotal</span><span style="font-size:12px; font-weight:600;">KES <%= pkg.totalAmount.toLocaleString() %></span></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span style="font-size:12px; color:#666;">Delivery</span><span style="font-size:12px; font-weight:600; color:#2e7d32;">FREE</span></div>
+                    <div style="display:flex; justify-content:space-between; border-top:1px solid #ddd; padding-top:8px; margin-top:8px;"><span style="font-size:14px; font-weight:800;">Total</span><span style="font-size:18px; font-weight:900; color:#0a4d1e;">KES <%= pkg.totalAmount.toLocaleString() %></span></div>
+                </div>
+
+                <div style="margin-top:16px; display:flex; gap:10px;">
+                    <div style="flex:1; background:#e8f5e9; border-radius:10px; padding:10px; text-align:center;">
+                        <p style="margin:0; font-size:10px; color:#2e7d32; font-weight:700;">CLIENT ID</p>
+                        <p style="margin:2px 0 0 0; font-size:11px; font-weight:600; word-break:break-all;"><%= pkg.clientId %></p>
+                    </div>
+                    <div style="flex:1; background:#fff3e0; border-radius:10px; padding:10px; text-align:center;">
+                        <p style="margin:0; font-size:10px; color:#e65100; font-weight:700;">STATUS</p>
+                        <p style="margin:2px 0 0 0; font-size:11px; font-weight:700; text-transform:uppercase;"><%= pkg.status %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <% } %>
+</div>
