@@ -1,50 +1,41 @@
-<%- contentFor('body') %>
-<div style="min-height:100vh;background:#f4f6f4;display:flex;align-items:center;justify-content:center;padding:16px;font-family:sans-serif;">
-  <div style="width:100%;max-width:420px;background:#fff;border:1.5px solid #e0e9dc;border-radius:20px;padding:24px;box-shadow:0 8px 30px rgba(0,0,0,0.06);">
-    <div style="text-align:center;margin-bottom:18px;">
-      <div style="width:52px;height:52px;background:#15472E;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:22px;">C</div>
-      <h1 style="margin:12px 0 4px 0;color:#15472E;font-weight:900;font-size:22px;">Create Account</h1>
-      <p style="margin:0;color:#777;font-size:13px;">Join Corevester marketplace</p>
-    </div>
-
-    <div id="msg" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:10px;font-size:13px;font-weight:700;"></div>
-
-    <form id="signupForm">
-      <label style="font-size:12px;font-weight:800;color:#15472E;">Full Name</label>
-      <input id="fullName" type="text" required placeholder="John Doe" style="width:100%;margin:6px 0 12px 0;height:44px;border:2px solid #e0e9dc;border-radius:12px;padding:0 14px;outline:none;box-sizing:border-box;">
-      
-      <label style="font-size:12px;font-weight:800;color:#15472E;">Email</label>
-      <input id="email" type="email" required placeholder="you@email.com" style="width:100%;margin:6px 0 12px 0;height:44px;border:2px solid #e0e9dc;border-radius:12px;padding:0 14px;outline:none;box-sizing:border-box;">
-      
-      <label style="font-size:12px;font-weight:800;color:#15472E;">Password</label>
-      <input id="password" type="password" required placeholder="••••••••" style="width:100%;margin:6px 0 12px 0;height:44px;border:2px solid #e0e9dc;border-radius:12px;padding:0 14px;outline:none;box-sizing:border-box;">
-      
-      <button type="submit" id="btn" style="width:100%;height:46px;background:#15472E;color:#fff;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px;">Create Account</button>
-    </form>
-
-    <p style="text-align:center;margin-top:14px;font-size:13px;color:#666;">Already have account? <a href="/auth/login" style="color:#15472E;font-weight:800;text-decoration:none;">Login</a></p>
-  </div>
+<div class="container" style="max-width:450px; margin-top:60px;">
+  <h2>Create Account</h2>
+  <% if(typeof error !== 'undefined' && error){ %><div class="alert alert-danger"><%= error %></div><% } %>
+  <div id="errorBox" class="alert alert-danger d-none"></div>
+  
+  <form id="signupForm">
+    <input type="text" name="fullName" class="form-control mb-3" placeholder="Full Name" required>
+    <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
+    <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
+    <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+  </form>
+  <p class="mt-3"><a href="/auth/login">Already have account? Login</a></p>
 </div>
 
 <script>
-document.getElementById('signupForm').onsubmit = async (e) => {
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = document.getElementById('btn');
-  const msg = document.getElementById('msg');
-  btn.textContent='Creating...'; btn.disabled=true;
+  const errorBox = document.getElementById('errorBox');
+  errorBox.classList.add('d-none');
+  
+  const data = Object.fromEntries(new FormData(e.target));
+  
   try{
-    const res = await fetch('/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({
-      fullName: document.getElementById('fullName').value,
-      email: document.getElementById('email').value,
-      password: document.getElementById('password').value,
-      role: 'client'
-    })});
-    const data = await res.json();
-    if(!data.success) throw new Error(data.message);
-    window.location.href = data.redirect;
+    const res = await fetch('/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if(result.success){
+      window.location.href = result.redirect;
+    } else {
+      errorBox.textContent = result.message;
+      errorBox.classList.remove('d-none');
+    }
   }catch(err){
-    msg.style.display='block'; msg.style.background='#ffebee'; msg.style.color='#c62828'; msg.textContent=err.message;
-    btn.textContent='Create Account'; btn.disabled=false;
+    errorBox.textContent = 'Something went wrong';
+    errorBox.classList.remove('d-none');
   }
-};
+});
 </script>
