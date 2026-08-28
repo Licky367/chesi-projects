@@ -1,103 +1,139 @@
-<!-- views/product-details.ejs - SHARED LAYOUT VERSION -->
+<%- contentFor('body') %>
+<div style="width:100%;max-width:100vw;overflow-x:hidden;background:#f4f6f4;min-height:100vh;padding-bottom:30px;box-sizing:border-box;font-family:sans-serif;">
 
-<style>
-  .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;background:#e9d5ff;color:#6b21a8;border-radius:9999px;text-decoration:none;font-weight:600;font-size:14px;margin:12px 0 20px 0;transition:all .2s}
-  .back-btn:hover{background:#d8b4fe;transform:translateX(-2px)}
-  .product-wrap{display:grid;grid-template-columns:1fr 1fr;gap:32px;background:#fff;border-radius:24px;padding:24px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
-  .product-image{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:16px;background:#f1f5f9}
-  .badge{display:inline-block;padding:4px 12px;background:#dcfce7;color:#166534;border-radius:9999px;font-size:12px;font-weight:600;margin-bottom:12px}
-  .badge.out{background:#fee2e2;color:#991b1b}
-  .product-title{font-size:28px;font-weight:800;margin-bottom:8px}
-  .product-category{color:#64748b;font-size:14px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
-  .product-price{font-size:24px;font-weight:800;color:#16a34a;margin:12px 0}
-  .qty-row{display:flex;align-items:center;gap:16px;margin:20px 0}
-  .qty-control{display:flex;align-items:center;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden}
-  .qty-control button{width:44px;height:44px;border:none;background:#fff;font-size:20px;font-weight:700;cursor:pointer}
-  .qty-control button:hover{background:#f1f5f9}
-  .qty-display{width:56px;height:44px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;border-left:1.5px solid #e2e8f0;border-right:1.5px solid #e2e8f0;background:#fff}
-  .btn-add{flex:1;height:48px;background:#16a34a;color:#fff;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer}
-  .btn-add:disabled{background:#94a3b8}
-  .section{margin-top:24px;padding-top:20px;border-top:1px solid #f1f5f9}
-  .section h3{font-size:16px;font-weight:700;margin-bottom:8px}
-  .section p{font-size:14px;line-height:1.6;color:#475569;white-space:pre-line}
-  @media(max-width:768px){ .product-wrap{grid-template-columns:1fr} }
-</style>
+  <div style="width:100%;max-width:1100px;margin:0 auto;padding:12px 14px;box-sizing:border-box;">
+    
+    <a href="/products" style="display:inline-flex;align-items:center;gap:8px;border:2px solid #15472E;background:#fff;color:#15472E;border-radius:50px;padding:8px 16px;font-size:12px;font-weight:800;text-decoration:none;letter-spacing:0.3px;box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+      <span style="font-size:14px;">←</span> Back to Marketplace
+    </a>
 
-<div class="container" style="max-width:1100px;margin:0 auto;padding:16px">
-  <a href="/products" class="back-btn">← Back to Marketplace</a>
-
-  <div class="product-wrap">
-    <div>
-      <% if(product.image){ %>
-        <img src="<%= product.image %>" alt="<%= product.name %>" class="product-image">
-      <% } else { %>
-        <div class="product-image" style="display:flex;align-items:center;justify-content:center;color:#94a3b8">No Image</div>
-      <% } %>
-    </div>
-
-    <div>
-      <% if(availableUnits > 0){ %>
-        <span class="badge">In Stock • <%= availableUnits %> left</span>
-      <% } else { %>
-        <span class="badge out">Out of Stock</span>
-      <% } %>
-
-      <h1 class="product-title"><%= product.name %></h1>
-      <div class="product-category"><%= product.category %></div>
-      <div class="product-price">KES <%= Number(product.unitSellPrice || 0).toLocaleString() %></div>
-      <div style="font-size:14px;color:#64748b;margin-bottom:16px">Available: <b><%= availableUnits %></b> | In cart: <b id="in-cart-qty"><%= inCartQty || 0 %></b></div>
-
-      <div class="qty-row">
-        <div class="qty-control">
-          <button type="button" id="btn-minus">−</button>
-          <div class="qty-display" id="qty-display">1</div>
-          <button type="button" id="btn-plus">+</button>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;">
+      
+      <!-- LEFT - IMAGE -->
+      <div style="flex:1 1 340px;min-width:280px;background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+        <div style="width:100%;height:380px;background:linear-gradient(to bottom,#eef4e9,#e4ece0);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+          <span style="position:absolute;top:12px;left:12px;background:#fff;border:1.5px solid <%= product.units>0?'#15472E':'#c62828' %>;color:<%= product.units>0?'#15472E':'#c62828' %>;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;z-index:2;">
+            <%= product.units>0? product.units+' left' : 'Out of Stock' %>
+          </span>
+          <img src="<%= product.image||'/images/no-image.png' %>" alt="<%= product.name %>" style="width:100%;height:100%;object-fit:contain;display:block;background:#fff;">
         </div>
-        <button type="button" id="btn-add-to-cart" class="btn-add" <%= availableUnits <=0 ? 'disabled' : '' %>>
-          <%= inCartQty>0 ? 'UPDATE CART' : 'ADD TO CART' %>
-        </button>
       </div>
 
-      <% if(product.description){ %>
-        <div class="section"><h3>Description</h3><p><%= product.description %></p></div>
-      <% } %>
-      <% if(product.usage){ %>
-        <div class="section"><h3>Usage</h3><p><%= product.usage %></p></div>
-      <% } %>
-      <% if(product.precautions){ %>
-        <div class="section"><h3>Precautions</h3><p><%= product.precautions %></p></div>
-      <% } %>
-      <% if(product.specifications){ %>
-        <div class="section"><h3>Specifications</h3><p><%= product.specifications %></p></div>
-      <% } %>
+      <!-- RIGHT - DETAILS -->
+      <div style="flex:1 1 340px;min-width:280px;">
+        <div style="background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+          <p style="margin:0;color:#2e7d32;font-weight:800;font-size:11px;letter-spacing:1px;text-transform:uppercase;"><%= product.category %></p>
+          <h1 style="margin:6px 0 0 0;color:#15472E;font-weight:900;font-size:24px;line-height:1.2;"><%= product.name %></h1>
+          <p style="margin:10px 0 0 0;color:#15472E;font-weight:900;font-size:22px;">KES <%= Number(product.unitSellPrice||0).toLocaleString() %></p>
+          <p style="margin:6px 0 0 0;font-size:12px;font-weight:700;color:<%= product.units>0?'#2e7d32':'#c62828' %>;"><%= product.units>0? product.units+' units available' : 'Out of Stock' %></p>
+
+          <% if(product.description){ %>
+            <p style="margin-top:12px;color:#555;font-size:13px;line-height:1.5;"><%= product.description.substring(0,180) %></p>
+          <% } %>
+
+          <!-- QTY + ADD TO CART - FIXED JS -->
+          <div style="margin-top:18px;display:flex;gap:10px;align-items:center;">
+            <div style="display:flex;align-items:center;border:2.5px solid #15472E;border-radius:12px;overflow:hidden;background:#fff;height:46px;flex-shrink:0;">
+              <button id="btnMinus" type="button" style="width:44px;height:100%;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+              <input id="inputQty" type="number" value="1" min="1" max="<%= product.units %>" style="width:56px;height:100%;border:none;border-left:1.5px solid #e0e9dc;border-right:1.5px solid #e0e9dc;text-align:center;font-weight:900;color:#15472E;font-size:18px;outline:none;background:#fff;">
+              <button id="btnPlus" type="button" style="width:44px;height:100%;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+            </div>
+
+            <button id="btnAddCart" data-id="<%= product._id %>" data-stock="<%= product.units %>" <%= product.units<=0?'disabled':'' %> style="flex:1;height:46px;background:<%= product.units>0?'#15472E':'#ccc' %>;color:#fff;font-weight:800;border:none;border-radius:12px;padding:0 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(21,71,46,0.25);">
+              <i class="fas fa-shopping-cart"></i> ADD TO CART
+            </button>
+          </div>
+          <p id="stockMsg" style="margin:8px 0 0 0;font-size:11px;color:#888;">Stock will reduce from products & increase in cart</p>
+        </div>
+
+        <% if(product.description && product.description.length>5){ %>
+          <div style="margin-top:12px;background:#fff;border:1.5px solid #e0e9dc;border-radius:14px;padding:14px;">
+            <h4 style="margin:0 0 6px 0;color:#15472E;font-size:13px;font-weight:800;">Description</h4>
+            <p style="margin:0;color:#444;font-size:13px;line-height:1.6;white-space:pre-line;"><%= product.description %></p>
+          </div>
+        <% } %>
+        <% if(product.usage){ %>
+          <div style="margin-top:12px;background:#fff;border:1.5px solid #e0e9dc;border-radius:14px;padding:14px;">
+            <h4 style="margin:0 0 6px 0;color:#15472E;font-size:13px;font-weight:800;">Usage</h4>
+            <p style="margin:0;color:#444;font-size:13px;line-height:1.6;white-space:pre-line;"><%= product.usage %></p>
+          </div>
+        <% } %>
+        <% if(product.precautions){ %>
+          <div style="margin-top:12px;background:#fff;border:1.5px solid #ffe0b2;border-radius:14px;padding:14px;background:#fffaf0;">
+            <h4 style="margin:0 0 6px 0;color:#c97a2e;font-size:13px;font-weight:800;">Precautions</h4>
+            <p style="margin:0;color:#5d4037;font-size:13px;line-height:1.6;white-space:pre-line;"><%= product.precautions %></p>
+          </div>
+        <% } %>
+        <% if(product.specifications){ %>
+          <div style="margin-top:12px;background:#fff;border:1.5px solid #e0e9dc;border-radius:14px;padding:14px;">
+            <h4 style="margin:0 0 6px 0;color:#15472E;font-size:13px;font-weight:800;">Specifications</h4>
+            <p style="margin:0;color:#444;font-size:13px;line-height:1.6;white-space:pre-line;"><%= product.specifications %></p>
+          </div>
+        <% } %>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-(function(){
-  const productId = "<%= product._id %>";
-  const maxUnits = Number("<%= availableUnits %>") || 0;
-  const currentInCart = Number("<%= inCartQty || 0 %>") || 0;
-  let qty = currentInCart > 0 ? currentInCart : 1;
-  const elQty = document.getElementById('qty-display');
-  const elMinus = document.getElementById('btn-minus');
-  const elPlus = document.getElementById('btn-plus');
-  const elAdd = document.getElementById('btn-add-to-cart');
-  const elInCart = document.getElementById('in-cart-qty');
-  function render(){ qty = Math.max(1, Math.min(qty, maxUnits || 999)); if(elQty) elQty.textContent = qty; }
-  elMinus?.addEventListener('click', ()=>{ qty = Math.max(1, qty-1); render(); });
-  elPlus?.addEventListener('click', ()=>{ if(maxUnits && qty >= maxUnits){ alert(`Only ${maxUnits} units available`); return; } qty++; render(); });
-  elAdd?.addEventListener('click', async ()=>{
-    if(maxUnits===0) return alert('Out of stock');
-    elAdd.disabled=true; const original=elAdd.textContent; elAdd.textContent="Adding...";
+document.addEventListener('DOMContentLoaded', function(){
+  const minus = document.getElementById('btnMinus');
+  const plus = document.getElementById('btnPlus');
+  const qtyInput = document.getElementById('inputQty');
+  const addBtn = document.getElementById('btnAddCart');
+  const msg = document.getElementById('stockMsg');
+  if(!addBtn || !qtyInput) return;
+
+  const maxStock = parseInt(addBtn.dataset.stock) || 0;
+  const productId = addBtn.dataset.id;
+
+  function setQty(v){
+    v = parseInt(v) || 1;
+    if(v < 1) v = 1;
+    if(maxStock > 0 && v > maxStock) v = maxStock;
+    qtyInput.value = v;
+  }
+
+  plus.addEventListener('click', (e)=>{ e.preventDefault(); setQty(parseInt(qtyInput.value)+1); });
+  minus.addEventListener('click', (e)=>{ e.preventDefault(); setQty(parseInt(qtyInput.value)-1); });
+  qtyInput.addEventListener('change', ()=> setQty(qtyInput.value));
+
+  addBtn.addEventListener('click', async (e)=>{
+    e.preventDefault();
+    const qty = parseInt(qtyInput.value) || 1;
+    if(maxStock > 0 && qty > maxStock){ alert('Only '+maxStock+' units left'); return; }
+
+    const originalHTML = addBtn.innerHTML;
+    addBtn.innerHTML = 'Adding...';
+    addBtn.disabled = true;
+
     try{
-      const res = await fetch('/products/add-to-cart', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ productId, qty }) });
-      const data = await res.json(); if(!data.success) throw new Error(data.message);
-      document.querySelectorAll('[data-cart-count], #cart-count, .cart-count').forEach(b=>{ if(data.cartCount!==undefined) b.textContent=data.cartCount; });
-      if(elInCart) elInCart.textContent=qty; elAdd.textContent="Added ✓"; setTimeout(()=>{ elAdd.textContent="UPDATE CART"; elAdd.disabled=false; },1200);
-    }catch(e){ alert(e.message); elAdd.textContent=original; elAdd.disabled=false; }
+      const res = await fetch('/products/add-to-cart', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials: 'include',
+        body: JSON.stringify({ productId: productId, qty: qty })
+      });
+      const data = await res.json();
+      if(!res.ok || !data.success) throw new Error(data.message || 'Failed');
+
+      msg.style.color='#2e7d32';
+      msg.textContent='✓ Added '+qty+' to cart. Stock reduced.';
+
+      const cartCountEl = document.querySelector('[data-cart-count], #cartCount, #cart-count, .cart-count');
+      if(cartCountEl && data.cartCount !== undefined) cartCountEl.textContent = data.cartCount;
+
+      addBtn.innerHTML = 'Added ✓';
+      setTimeout(()=>{ window.location.href='/cart'; }, 700);
+
+    }catch(err){
+      console.error('Add to cart error:', err);
+      alert(err.message || 'Network error');
+      addBtn.innerHTML = originalHTML;
+      addBtn.disabled = false;
+      msg.style.color='#c62828';
+      msg.textContent = 'Failed: ' + err.message;
+    }
   });
-  render();
-})();
+});
 </script>
