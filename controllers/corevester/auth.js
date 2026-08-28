@@ -1,7 +1,7 @@
 const authService = require('../../services/corevester/auth');
 
-exports.showSignup = (req,res) => res.render('corevester/signup');
-exports.showLogin = (req,res) => res.render('corevester/login');
+exports.showSignup = (req,res) => res.render('signup');
+exports.showLogin = (req,res) => res.render('login');
 
 exports.signup = async (req,res) => {
   try{
