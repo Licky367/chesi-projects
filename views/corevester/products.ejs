@@ -2,229 +2,211 @@
 
 <style>
 
-/* =========================================================
-   MARKETPLACE — COMPLETE UI
-   ========================================================= */
+/* ==========================================================
+   PRODUCTS / MARKETPLACE
+   ========================================================== */
 
-.market-wrap{
+.marketplace{
     --green:#0a4d1e;
-    --green-dark:#063914;
-    --green-mid:#147334;
+    --green-dark:#073b17;
     --green-soft:#edf7ef;
     --green-pale:#f6fbf7;
 
-    --orange:#e68a1b;
-    --orange-soft:#fff4e4;
+    --orange:#e58a22;
+    --orange-soft:#fff5e8;
 
-    --ink:#18231c;
+    --ink:#17221b;
     --muted:#718078;
-    --line:#e2eae4;
+    --line:#dfe9e1;
+    --line-soft:#ebf1ec;
 
     min-height:100vh;
+    background:#f7faf7;
+    color:var(--ink);
 
-    padding-bottom:45px;
+    padding-bottom:50px;
+}
+
+
+/* ==========================================================
+   HERO
+   ========================================================== */
+
+.market-hero{
+    position:relative;
+    overflow:hidden;
+
+    padding:22px 16px 18px;
 
     background:
         radial-gradient(
-            circle at 0 0,
-            rgba(10,77,30,.06),
-            transparent 30%
+            circle at 100% 0%,
+            rgba(10,77,30,.09),
+            transparent 34%
         ),
-        #f5f8f6;
+        linear-gradient(
+            180deg,
+            #ffffff 0%,
+            #f7fbf8 100%
+        );
 
-    color:var(--ink);
+    border-bottom:1px solid var(--line);
 }
 
-
-/* =========================================================
-   MAIN CONTAINER
-   ========================================================= */
-
-.market-container{
-    width:100%;
-    max-width:1450px;
-
+.market-hero-inner{
+    width:min(1250px,100%);
     margin:0 auto;
 }
 
-
-/* =========================================================
-   HEADER
-   ========================================================= */
-
-.market-top{
+.market-title-row{
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:18px;
-
-    padding:22px 18px 16px;
 }
 
 .market-heading{
     min-width:0;
 }
 
-.market-title{
+.market-eyebrow{
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:7px;
 
-    margin:0;
+    margin-bottom:5px;
 
-    color:var(--green-dark);
+    color:#568064;
 
-    font-size:1.65rem;
-    line-height:1.1;
-    font-weight:950;
-    letter-spacing:-.7px;
+    font-size:.67rem;
+    font-weight:900;
+
+    text-transform:uppercase;
+    letter-spacing:1.4px;
 }
 
-.market-title-icon{
-    display:flex;
+.market-eyebrow i{
+    color:var(--green);
+}
+
+.market-title{
+    margin:0;
+
+    color:var(--green);
+
+    font-size:clamp(1.65rem,4vw,2.35rem);
+    font-weight:950;
+
+    letter-spacing:-1px;
+    line-height:1.05;
+}
+
+.market-description{
+    margin:7px 0 0;
+
+    color:var(--muted);
+
+    font-size:.78rem;
+    font-weight:600;
+
+    line-height:1.45;
+}
+
+
+/* ==========================================================
+   CART BUTTON
+   ========================================================== */
+
+.market-cart-button{
+    flex:0 0 auto;
+
+    display:inline-flex;
     align-items:center;
     justify-content:center;
+    gap:9px;
 
-    width:38px;
-    height:38px;
+    min-width:116px;
+    min-height:48px;
 
-    flex:0 0 38px;
+    padding:0 16px;
+
+    border:0;
+    border-radius:15px;
 
     background:var(--green);
     color:#fff;
 
-    border-radius:12px;
-
-    box-shadow:
-        0 6px 16px rgba(10,77,30,.15);
-}
-
-.market-sub{
-    margin:7px 0 0 48px;
-
-    color:var(--muted);
-
-    font-size:.73rem;
-    font-weight:650;
-}
-
-
-/* =========================================================
-   CART ICON
-   ========================================================= */
-
-.market-cart-button{
-    position:relative;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    width:48px;
-    height:48px;
-
-    flex:0 0 48px;
-
-    background:#fff;
-    color:var(--green);
-
-    border:1px solid #d8e4da;
-    border-radius:15px;
+    font-size:.76rem;
+    font-weight:900;
 
     cursor:pointer;
 
     box-shadow:
-        0 5px 15px rgba(22,55,32,.07);
+        0 8px 18px rgba(10,77,30,.18);
 
     transition:
         transform .18s ease,
         background .18s ease,
-        color .18s ease,
         box-shadow .18s ease;
 }
 
+.market-cart-button i{
+    font-size:1rem;
+}
+
 .market-cart-button:hover{
-    background:var(--green);
-    color:#fff;
+    background:var(--green-dark);
 
     transform:translateY(-2px);
 
     box-shadow:
-        0 9px 20px rgba(10,77,30,.16);
+        0 11px 24px rgba(10,77,30,.24);
 }
 
 .market-cart-button:active{
-    transform:scale(.95);
-}
-
-.market-cart-button i{
-    font-size:1.05rem;
-}
-
-.cart-badge{
-    position:absolute;
-
-    top:-5px;
-    right:-5px;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    min-width:21px;
-    height:21px;
-
-    padding:0 5px;
-
-    background:var(--orange);
-    color:#fff;
-
-    border:3px solid #f5f8f6;
-    border-radius:50px;
-
-    font-size:.57rem;
-    font-weight:950;
-
-    box-shadow:
-        0 3px 8px rgba(230,138,27,.25);
+    transform:scale(.97);
 }
 
 
-/* =========================================================
-   TOP SUMMARY CARDS
-   ========================================================= */
+/* ==========================================================
+   THREE SUMMARY CARDS
+   ========================================================== */
 
 .market-summary{
+    width:min(1250px,100%);
+
+    margin:18px auto 0;
+
     display:grid;
 
     grid-template-columns:
         repeat(3,minmax(0,1fr));
 
     gap:10px;
-
-    padding:0 14px 18px;
 }
 
 .summary-card{
     position:relative;
 
+    min-width:0;
+
     display:flex;
     align-items:center;
 
-    min-width:0;
-    min-height:82px;
+    gap:10px;
 
     padding:12px;
-
-    overflow:hidden;
 
     background:#fff;
 
     border:1px solid var(--line);
-    border-radius:17px;
+
+    border-radius:15px;
 
     box-shadow:
-        0 5px 17px rgba(23,57,34,.055);
+        0 3px 12px rgba(20,55,31,.045);
+
+    overflow:hidden;
 }
 
 .summary-card::after{
@@ -232,11 +214,11 @@
 
     position:absolute;
 
-    width:70px;
-    height:70px;
+    right:-20px;
+    bottom:-25px;
 
-    right:-25px;
-    bottom:-28px;
+    width:65px;
+    height:65px;
 
     border-radius:50%;
 
@@ -244,101 +226,135 @@
 }
 
 .summary-icon{
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    flex:0 0 38px;
 
     width:38px;
     height:38px;
 
-    flex:0 0 38px;
-
-    margin-right:9px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
 
     border-radius:11px;
 
-    font-size:.88rem;
-}
-
-.summary-products .summary-icon{
     background:var(--green-soft);
     color:var(--green);
+
+    font-size:.9rem;
 }
 
-.summary-cart .summary-icon{
+.summary-card:nth-child(2) .summary-icon{
+    background:#f1f5f2;
+}
+
+.summary-card:nth-child(3) .summary-icon{
     background:var(--orange-soft);
-    color:var(--orange);
+    color:#c66f12;
 }
 
-.summary-money .summary-icon{
-    background:#eef3f0;
-    color:#496154;
-}
-
-.summary-content{
+.summary-info{
     min-width:0;
+}
+
+.summary-label{
+    display:block;
+
+    margin-bottom:2px;
+
+    color:#7b8981;
+
+    font-size:.58rem;
+    font-weight:900;
+
+    text-transform:uppercase;
+    letter-spacing:.65px;
 }
 
 .summary-value{
     display:block;
 
-    color:var(--green-dark);
+    color:var(--green);
 
-    font-size:1.12rem;
-    line-height:1.05;
+    font-size:1rem;
     font-weight:950;
+
+    line-height:1.1;
 
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
 }
 
-.summary-cart .summary-value{
-    color:#b86b0b;
+.summary-card:nth-child(3) .summary-value{
+    color:#bd6810;
 }
 
-.summary-money .summary-value{
-    color:#26392d;
 
-    font-size:.96rem;
+/* ==========================================================
+   MAIN CONTENT
+   ========================================================== */
+
+.market-main{
+    width:min(1250px,100%);
+
+    margin:0 auto;
+
+    padding:18px 14px 0;
 }
 
-.summary-label{
-    display:block;
 
-    margin-top:4px;
+/* ==========================================================
+   CATEGORY BAR
+   ========================================================== */
 
-    color:#7d8b82;
+.category-section{
+    margin-bottom:18px;
+}
 
-    font-size:.57rem;
-    line-height:1.15;
-    font-weight:800;
+.section-heading{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    margin-bottom:9px;
+}
+
+.section-heading-left{
+    display:flex;
+    align-items:center;
+    gap:7px;
+}
+
+.section-heading-left i{
+    color:var(--green);
+
+    font-size:.75rem;
+}
+
+.section-heading-title{
+    margin:0;
+
+    color:#33463a;
+
+    font-size:.72rem;
+    font-weight:950;
 
     text-transform:uppercase;
-    letter-spacing:.35px;
-}
-
-
-/* =========================================================
-   CATEGORY NAVIGATION
-   ========================================================= */
-
-.category-shell{
-    background:#fff;
-
-    border-top:1px solid #e5ebe7;
-    border-bottom:1px solid #e1e9e3;
+    letter-spacing:.8px;
 }
 
 .category-bar{
     display:flex;
-    gap:7px;
+    align-items:center;
+
+    gap:8px;
 
     overflow-x:auto;
 
-    padding:11px 14px;
+    padding:2px 1px 7px;
 
     scrollbar-width:none;
+
     -webkit-overflow-scrolling:touch;
 }
 
@@ -346,204 +362,120 @@
     display:none;
 }
 
-.cat-pill{
+.category-pill{
+    flex:0 0 auto;
+
     display:inline-flex;
     align-items:center;
     justify-content:center;
 
-    flex:0 0 auto;
+    min-height:38px;
 
-    min-height:35px;
+    padding:0 16px;
 
-    padding:0 15px;
+    border:1px solid #cfe0d3;
+    border-radius:50px;
 
     background:#fff;
-    color:#596a60;
-
-    border:1px solid #dce6df;
-    border-radius:50px;
+    color:#365541;
 
     text-decoration:none;
 
-    font-size:.65rem;
-    font-weight:850;
+    font-size:.71rem;
+    font-weight:900;
 
     transition:
-        background .16s ease,
-        border-color .16s ease,
-        color .16s ease,
-        transform .16s ease;
+        background .18s ease,
+        color .18s ease,
+        border-color .18s ease,
+        transform .18s ease;
 }
 
-.cat-pill:hover{
-    background:var(--green-pale);
-    border-color:#bcd1c1;
+.category-pill:hover{
+    border-color:var(--green);
     color:var(--green);
+
+    transform:translateY(-1px);
 }
 
-.cat-pill.active{
+.category-pill.active{
     background:var(--green);
     color:#fff;
 
     border-color:var(--green);
 
     box-shadow:
-        0 5px 13px rgba(10,77,30,.15);
+        0 5px 13px rgba(10,77,30,.16);
 }
 
 
-/* =========================================================
-   PRODUCTS HEADER
-   ========================================================= */
+/* ==========================================================
+   PRODUCT SECTION HEADER
+   ========================================================== */
 
 .products-heading{
     display:flex;
-    align-items:flex-end;
+    align-items:center;
     justify-content:space-between;
 
-    padding:21px 15px 13px;
-}
-
-.products-heading-left h2{
-    margin:0;
-
-    color:#203127;
-
-    font-size:.98rem;
-    font-weight:950;
-    letter-spacing:-.2px;
-}
-
-.products-heading-left p{
-    margin:4px 0 0;
-
-    color:#829087;
-
-    font-size:.66rem;
+    margin:4px 0 11px;
 }
 
 .products-count{
-    color:#7b8981;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
 
-    font-size:.63rem;
-    font-weight:800;
+    color:#718078;
+
+    font-size:.68rem;
+    font-weight:700;
+}
+
+.products-count strong{
+    color:var(--green);
+    font-weight:950;
 }
 
 
-/* =========================================================
+/* ==========================================================
    PRODUCT GRID
-   ========================================================= */
+   ========================================================== */
 
-.grid-wrap{
+.product-grid{
     display:grid;
 
     grid-template-columns:
         repeat(2,minmax(0,1fr));
 
-    gap:11px;
-
-    padding:0 12px;
-}
-
-@media(min-width:600px){
-
-    .grid-wrap{
-        grid-template-columns:
-            repeat(3,minmax(0,1fr));
-
-        gap:15px;
-
-        padding:0 17px;
-    }
-
-}
-
-@media(min-width:900px){
-
-    .grid-wrap{
-        grid-template-columns:
-            repeat(4,minmax(0,1fr));
-
-        gap:17px;
-
-        padding:0 22px;
-    }
-
-}
-
-@media(min-width:1200px){
-
-    .grid-wrap{
-        grid-template-columns:
-            repeat(5,minmax(0,1fr));
-
-        gap:19px;
-
-        padding:0 28px;
-    }
-
-}
-
-
-/* =========================================================
-   HORIZONTAL COLLECTION
-   ========================================================= */
-
-.prod-scroll{
-    display:flex;
     gap:12px;
-
-    overflow-x:auto;
-
-    padding:0 12px 18px;
-
-    scroll-snap-type:x mandatory;
-
-    scrollbar-width:none;
-
-    -webkit-overflow-scrolling:touch;
-}
-
-.prod-scroll::-webkit-scrollbar{
-    display:none;
-}
-
-@media(min-width:768px){
-
-    .prod-scroll{
-        gap:16px;
-
-        padding-left:22px;
-        padding-right:22px;
-    }
-
 }
 
 
-/* =========================================================
+/* ==========================================================
    PRODUCT CARD
-   ========================================================= */
+   ========================================================== */
 
-.card-box{
+.product-card{
     position:relative;
 
-    min-width:calc(50% - 6px);
-    max-width:calc(50% - 6px);
-    flex:0 0 calc(50% - 6px);
+    min-width:0;
+
+    display:flex;
+    flex-direction:column;
 
     overflow:hidden;
 
     background:#fff;
 
-    border:1px solid #e0e8e2;
-    border-radius:18px;
+    border:1px solid var(--line);
 
-    cursor:pointer;
-
-    scroll-snap-align:start;
+    border-radius:17px;
 
     box-shadow:
-        0 4px 14px rgba(20,58,33,.05);
+        0 3px 13px rgba(18,54,29,.055);
+
+    cursor:pointer;
 
     transition:
         transform .2s ease,
@@ -551,116 +483,87 @@
         border-color .2s ease;
 }
 
-.card-box:hover{
-    transform:translateY(-4px);
+.product-card:hover{
+    transform:translateY(-3px);
 
-    border-color:#c6d9ca;
+    border-color:#c9ddce;
 
     box-shadow:
-        0 12px 27px rgba(20,58,33,.10);
-}
-
-.grid-wrap .card-box{
-    min-width:0;
-    max-width:none;
-    width:100%;
-}
-
-@media(min-width:768px){
-
-    .prod-scroll .card-box{
-        min-width:calc(25% - 12px);
-        max-width:calc(25% - 12px);
-        flex:0 0 calc(25% - 12px);
-    }
-
+        0 11px 27px rgba(18,54,29,.11);
 }
 
 
-/* =========================================================
+/* ==========================================================
    PRODUCT IMAGE
-   ========================================================= */
+   ========================================================== */
 
-.product-image-wrap{
+.product-image{
     position:relative;
 
     width:100%;
 
-    aspect-ratio:1 / .9;
+    aspect-ratio:1 / .87;
 
     overflow:hidden;
 
-    background:#edf4ef;
+    background:
+        linear-gradient(
+            135deg,
+            #eef6f0,
+            #f7faf7
+        );
 }
 
-.product-image{
-    display:block;
-
+.product-image img{
     width:100%;
     height:100%;
+
+    display:block;
 
     object-fit:cover;
 
     transition:
-        transform .45s cubic-bezier(.2,.7,.2,1);
+        transform .35s ease;
 }
 
-.card-box:hover .product-image{
-    transform:scale(1.055);
-}
-
-.product-image-wrap::after{
-    content:"";
-
-    position:absolute;
-    inset:0;
-
-    pointer-events:none;
-
-    background:
-        linear-gradient(
-            to bottom,
-            rgba(0,0,0,.08),
-            transparent 32%,
-            transparent 72%,
-            rgba(0,0,0,.06)
-        );
+.product-card:hover .product-image img{
+    transform:scale(1.045);
 }
 
 
-/* =========================================================
+/* ==========================================================
    STOCK BADGE
-   ========================================================= */
+   ========================================================== */
 
-.left-badge{
+.stock-badge{
     position:absolute;
 
-    top:9px;
-    left:9px;
+    top:10px;
+    left:10px;
 
-    z-index:5;
+    z-index:3;
 
     display:inline-flex;
     align-items:center;
-    gap:5px;
+    gap:6px;
 
-    min-height:25px;
+    min-height:27px;
 
-    padding:0 8px;
+    padding:0 9px;
 
-    background:rgba(255,255,255,.95);
-    color:var(--green);
+    background:rgba(255,255,255,.96);
 
-    border:1px solid rgba(255,255,255,.75);
+    border:1px solid rgba(10,77,30,.18);
+
     border-radius:50px;
 
-    font-size:.55rem;
-    font-weight:900;
+    color:var(--green);
+
+    font-size:.62rem;
+    font-weight:950;
 
     box-shadow:
-        0 3px 9px rgba(0,0,0,.10);
-
-    backdrop-filter:blur(7px);
+        0 3px 9px rgba(0,0,0,.09);
 }
 
 .stock-dot{
@@ -669,138 +572,138 @@
 
     border-radius:50%;
 
-    background:#23a653;
+    background:#25a34a;
 }
 
 .stock-low .stock-dot{
-    background:var(--orange);
+    background:#e29a20;
+}
+
+.stock-low{
+    color:#a86a0b;
+    border-color:#efd9ad;
 }
 
 .stock-out{
-    color:#a83232;
-
-    background:#fff7f7;
-
-    border-color:#f1d3d3;
+    color:#a52c2c;
+    border-color:#efcaca;
 }
 
 .stock-out .stock-dot{
-    background:#d74444;
+    background:#d63939;
 }
 
 
-/* =========================================================
-   PRODUCT BODY
-   ========================================================= */
+/* ==========================================================
+   PRODUCT INFORMATION
+   ========================================================== */
 
-.product-body{
-    padding:12px 11px 12px;
+.product-details{
+    display:flex;
+    flex-direction:column;
+
+    flex:1;
+
+    padding:12px 11px 11px;
 }
 
-.cat-label{
-    margin-bottom:5px;
+.product-category{
+    margin:0 0 4px;
 
-    color:#7c9082;
+    color:#3e7b50;
 
-    font-size:.54rem;
-    font-weight:900;
+    font-size:.59rem;
+    font-weight:950;
 
     text-transform:uppercase;
-    letter-spacing:.6px;
+    letter-spacing:.65px;
 }
 
-.prod-name{
-    min-height:35px;
+.product-name{
+    margin:0;
+
+    min-height:36px;
+
+    color:#18221c;
+
+    font-size:.88rem;
+    font-weight:850;
+
+    line-height:1.25;
 
     display:-webkit-box;
-
-    -webkit-line-clamp:2;
     -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
 
     overflow:hidden;
-
-    color:#1a2820;
-
-    font-size:.82rem;
-    line-height:1.3;
-
-    font-weight:850;
 }
 
-.prod-price{
+.product-price{
     display:flex;
     align-items:baseline;
-    gap:3px;
+    gap:4px;
 
-    margin-top:8px;
+    margin-top:9px;
 
     color:var(--green);
 
-    font-size:.98rem;
-    line-height:1;
-
+    font-size:1rem;
     font-weight:950;
 }
 
-.price-label{
-    color:#819087;
-
-    font-size:.54rem;
-    font-weight:800;
+.currency{
+    font-size:.58rem;
+    font-weight:900;
 }
 
 
-/* =========================================================
+/* ==========================================================
    ADD BUTTON
-   ========================================================= */
+   ========================================================== */
 
-.add-btn{
+.add-to-cart-btn{
+    width:100%;
+
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:6px;
+    gap:7px;
 
-    width:100%;
-    min-height:38px;
+    min-height:40px;
 
-    margin-top:11px;
-
-    padding:8px 9px;
-
-    background:var(--green);
-    color:#fff;
+    margin-top:10px;
 
     border:0;
     border-radius:10px;
 
-    font-size:.61rem;
-    font-weight:900;
+    background:var(--green);
+    color:#fff;
+
+    font-size:.67rem;
+    font-weight:950;
 
     cursor:pointer;
 
-    box-shadow:
-        0 4px 10px rgba(10,77,30,.10);
-
     transition:
-        background .16s ease,
-        transform .16s ease,
-        box-shadow .16s ease;
+        background .18s ease,
+        transform .18s ease,
+        box-shadow .18s ease;
 }
 
-.add-btn:hover{
+.add-to-cart-btn:hover{
     background:var(--green-dark);
 
     box-shadow:
-        0 6px 14px rgba(10,77,30,.18);
+        0 5px 12px rgba(10,77,30,.17);
 }
 
-.add-btn:active{
-    transform:scale(.975);
+.add-to-cart-btn:active{
+    transform:scale(.98);
 }
 
-.add-btn:disabled{
-    background:#e3e8e4;
-    color:#858f89;
+.add-to-cart-btn:disabled{
+    background:#e0e6e2;
+    color:#7e8982;
 
     cursor:not-allowed;
 
@@ -808,154 +711,134 @@
 }
 
 
-/* =========================================================
-   BEAUTIFUL EMPTY STATE
-   ========================================================= */
+/* ==========================================================
+   EMPTY STATE
+   ========================================================== */
 
-.market-empty{
+.empty-market{
     position:relative;
-
-    max-width:650px;
-
-    margin:28px auto;
-
-    padding:50px 25px 45px;
 
     overflow:hidden;
 
-    text-align:center;
+    min-height:390px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    padding:35px 20px;
 
     background:#fff;
 
-    border:1px solid #e0e9e2;
-    border-radius:26px;
+    border:1px solid var(--line);
+
+    border-radius:22px;
+
+    text-align:center;
 
     box-shadow:
-        0 12px 35px rgba(20,57,33,.065);
+        0 5px 20px rgba(18,54,29,.045);
 }
 
-.market-empty::before{
+.empty-market::before{
     content:"";
 
     position:absolute;
 
-    width:190px;
-    height:190px;
+    width:220px;
+    height:220px;
 
-    top:-100px;
-    left:-75px;
+    top:-110px;
+    right:-80px;
 
     border-radius:50%;
 
     background:rgba(10,77,30,.045);
 }
 
-.market-empty::after{
+.empty-market::after{
     content:"";
 
     position:absolute;
 
-    width:160px;
-    height:160px;
+    width:170px;
+    height:170px;
 
-    right:-70px;
     bottom:-90px;
+    left:-70px;
 
     border-radius:50%;
 
-    background:rgba(230,138,27,.055);
+    background:rgba(229,138,34,.045);
 }
 
-.empty-visual{
+.empty-inner{
     position:relative;
     z-index:2;
+
+    max-width:430px;
+}
+
+.empty-icon{
+    width:92px;
+    height:92px;
+
+    margin:0 auto 19px;
 
     display:flex;
     align-items:center;
     justify-content:center;
 
-    width:92px;
-    height:92px;
-
-    margin:0 auto 20px;
+    border-radius:27px;
 
     background:
         linear-gradient(
             145deg,
-            #eef8f0,
-            #e4f1e7
+            #eaf6ed,
+            #f6faf7
         );
-
-    border:8px solid #f7fbf8;
-
-    border-radius:30px;
 
     color:var(--green);
 
     font-size:2rem;
 
     box-shadow:
-        0 10px 25px rgba(10,77,30,.08);
+        inset 0 0 0 1px #dceade;
 }
 
-.empty-visual::before{
-    content:"";
-
-    position:absolute;
-
-    width:12px;
-    height:12px;
-
-    top:9px;
-    right:8px;
-
-    background:var(--orange);
-
-    border:3px solid #eef8f0;
-
-    border-radius:50%;
-}
-
-.market-empty h3{
-    position:relative;
-    z-index:2;
-
+.empty-market h3{
     margin:0;
 
-    color:#213229;
+    color:#213329;
 
-    font-size:1.08rem;
+    font-size:1.15rem;
     font-weight:950;
+
+    letter-spacing:-.25px;
 }
 
-.market-empty p{
-    position:relative;
-    z-index:2;
-
-    max-width:430px;
-
+.empty-market p{
     margin:8px auto 0;
 
-    color:#7a887f;
+    color:#7a877f;
 
-    font-size:.74rem;
-    line-height:1.6;
+    font-size:.77rem;
+    font-weight:600;
+
+    line-height:1.55;
 }
 
 .empty-action{
-    position:relative;
-    z-index:2;
-
     display:inline-flex;
     align-items:center;
     justify-content:center;
     gap:7px;
 
-    margin-top:20px;
+    min-height:42px;
 
-    min-height:40px;
+    margin-top:18px;
 
-    padding:0 18px;
+    padding:0 17px;
 
     background:var(--green);
     color:#fff;
@@ -964,168 +847,184 @@
 
     text-decoration:none;
 
-    font-size:.68rem;
+    font-size:.7rem;
     font-weight:900;
 
     box-shadow:
-        0 6px 15px rgba(10,77,30,.14);
-
-    transition:
-        transform .16s ease,
-        background .16s ease;
+        0 6px 14px rgba(10,77,30,.15);
 }
 
 .empty-action:hover{
     background:var(--green-dark);
     color:#fff;
-
-    transform:translateY(-2px);
 }
 
 
-/* =========================================================
+/* ==========================================================
    QUANTITY MODAL
-   ========================================================= */
+   ========================================================== */
 
-.qty-modal-content{
+.qty-modal{
     overflow:hidden;
 
-    background:#fff;
-
     border:0;
-    border-radius:23px;
+    border-radius:22px;
 
     box-shadow:
-        0 25px 70px rgba(12,39,21,.22);
+        0 25px 65px rgba(0,0,0,.2);
 }
 
-.qty-modal-header{
+.qty-header{
     padding:20px;
-
-    text-align:center;
 
     background:
         linear-gradient(
-            135deg,
+            145deg,
             #f0f8f2,
-            #fbfdfb
+            #fafcfb
         );
 
-    border-bottom:1px solid #e1eae3;
+    border-bottom:1px solid var(--line);
+
+    text-align:center;
+}
+
+.qty-icon{
+    width:44px;
+    height:44px;
+
+    margin:0 auto 9px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:13px;
+
+    background:var(--green);
+
+    color:#fff;
+
+    font-size:.95rem;
 }
 
 .qty-product-name{
     margin:0;
 
-    color:var(--green-dark);
+    color:var(--green);
 
     font-size:1rem;
     font-weight:950;
 }
 
 .qty-available{
-    margin:6px 0 0;
+    margin:5px 0 0;
 
-    color:#78867e;
+    color:#7a877f;
 
-    font-size:.71rem;
+    font-size:.7rem;
+    font-weight:600;
 }
 
 .qty-available strong{
-    color:var(--green);
+    color:#33483a;
+}
+
+.qty-body{
+    padding:22px 20px 18px;
 }
 
 .qty-selector{
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:24px;
 
-    margin:22px 0 24px;
+    gap:25px;
+
+    margin:4px 0 22px;
 }
 
 .qty-control{
+    width:45px;
+    height:45px;
+
     display:flex;
     align-items:center;
     justify-content:center;
 
-    width:46px;
-    height:46px;
+    padding:0;
 
-    background:#fff;
-
-    border:1.5px solid #c9d9cd;
+    border:2px solid var(--green);
     border-radius:50%;
 
+    background:#fff;
     color:var(--green);
 
-    font-size:1.2rem;
-    font-weight:900;
+    font-size:1.3rem;
+    font-weight:950;
 
     cursor:pointer;
 
     transition:
         background .16s ease,
         color .16s ease,
-        border-color .16s ease,
         transform .16s ease;
 }
 
 .qty-control:hover{
     background:var(--green);
-    border-color:var(--green);
     color:#fff;
 }
 
 .qty-control:active{
-    transform:scale(.91);
+    transform:scale(.92);
 }
 
 .qty-number{
-    min-width:50px;
+    min-width:55px;
 
-    color:var(--green-dark);
+    color:var(--green);
 
-    font-size:2.2rem;
+    font-size:2.15rem;
+    font-weight:950;
+
     line-height:1;
 
-    font-weight:950;
+    text-align:center;
 }
 
 .qty-confirm{
-    min-height:47px;
     margin-top:0;
-
-    border-radius:12px;
+    min-height:47px;
 }
 
 .qty-cancel{
+    display:block;
+
     width:100%;
 
     margin-top:7px;
 
-    color:#7b8780 !important;
+    color:#7a867f !important;
 
-    font-size:.76rem;
-    font-weight:750;
+    font-size:.74rem;
+    font-weight:800;
 
     text-decoration:none !important;
 }
 
 
-/* =========================================================
-   CART SIDEBAR
-   ========================================================= */
+/* ==========================================================
+   CART OFFCANVAS
+   ========================================================== */
 
 .cart-sidebar{
     width:min(430px,94vw) !important;
 
-    background:#fff;
-
-    border-left:1px solid #dce7df !important;
+    border-left:1px solid var(--line) !important;
 
     box-shadow:
-        -18px 0 50px rgba(16,46,26,.15);
+        -15px 0 45px rgba(0,0,0,.13);
 }
 
 .cart-header{
@@ -1133,45 +1032,51 @@
     align-items:center;
     justify-content:space-between;
 
+    gap:12px;
+
     padding:17px;
 
     background:
         linear-gradient(
-            135deg,
+            145deg,
             #f0f8f2,
             #fff
         );
 
-    border-bottom:1px solid #dfe8e2;
+    border-bottom:1px solid var(--line);
 }
 
-.cart-title-wrap{
+.cart-heading{
     display:flex;
     align-items:center;
-    gap:11px;
+    gap:10px;
+
+    min-width:0;
 }
 
-.cart-title-icon{
-    display:flex;
-    align-items:center;
-    justify-content:center;
+.cart-icon{
+    flex:0 0 42px;
 
     width:42px;
     height:42px;
 
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:13px;
+
     background:var(--green);
+
     color:#fff;
 
-    border-radius:12px;
-
-    box-shadow:
-        0 5px 13px rgba(10,77,30,.14);
+    font-size:1rem;
 }
 
 .cart-title{
     margin:0;
 
-    color:var(--green-dark);
+    color:var(--green);
 
     font-size:1rem;
     font-weight:950;
@@ -1180,13 +1085,14 @@
 .cart-subtitle{
     margin:3px 0 0;
 
-    color:#7b8981;
+    color:#7c8981;
 
-    font-size:.64rem;
+    font-size:.66rem;
+    font-weight:600;
 }
 
 .cart-body{
-    padding:8px 16px 20px !important;
+    padding:13px !important;
 
     background:#fff;
 }
@@ -1194,175 +1100,177 @@
 .cart-item{
     display:flex;
     align-items:center;
-    gap:12px;
 
-    padding:14px 0;
+    gap:10px;
 
-    border-bottom:1px solid #edf1ee !important;
+    padding:13px 3px;
+
+    border-bottom:1px solid var(--line-soft);
 }
 
 .cart-item:last-child{
-    border-bottom:0 !important;
+    border-bottom:0;
 }
 
 .cart-product-info{
-    min-width:0;
     flex:1;
+    min-width:0;
 }
 
 .cart-product-name{
     display:block;
 
-    color:#1d2a22;
+    color:#203027;
 
-    font-size:.81rem;
-    line-height:1.3;
+    font-size:.79rem;
     font-weight:850;
+
+    line-height:1.3;
 
     overflow:hidden;
     text-overflow:ellipsis;
+    white-space:nowrap;
 }
 
 .cart-product-price{
     display:block;
 
-    margin-top:5px;
+    margin-top:4px;
 
-    color:#7c8981;
+    color:#7b8980;
 
-    font-size:.68rem;
+    font-size:.67rem;
+    font-weight:600;
 }
 
-.cart-qty{
+.cart-product-price strong{
     color:var(--green);
-    font-weight:900;
 }
 
 .cart-controls{
+    flex:0 0 auto;
+
     display:flex;
     align-items:center;
-    gap:5px;
+
+    gap:4px;
 }
 
 .cart-control{
+    width:31px;
+    height:31px;
+
     display:flex;
     align-items:center;
     justify-content:center;
 
-    width:31px;
-    height:31px;
-
     padding:0;
 
-    background:#fff;
-
-    border:1px solid #d2ded5;
+    border:1px solid #cedbd1;
     border-radius:8px;
 
+    background:#fff;
     color:var(--green);
 
-    font-size:.85rem;
-    font-weight:900;
+    font-size:.82rem;
+    font-weight:950;
 
     cursor:pointer;
 
     transition:
         background .15s ease,
-        border-color .15s ease,
-        transform .15s ease;
+        border-color .15s ease;
 }
 
 .cart-control:hover{
     background:var(--green-soft);
-    border-color:#aec7b4;
-}
 
-.cart-control:active{
-    transform:scale(.92);
+    border-color:var(--green);
 }
 
 .cart-remove{
-    color:#b33434 !important;
+    color:#b52d2d;
 
-    background:#fff7f7 !important;
+    border-color:#efcece;
 
-    border-color:#efd3d3 !important;
+    background:#fff8f8;
+}
+
+.cart-qty{
+    min-width:22px;
+
+    color:#25352b;
+
+    font-size:.73rem;
+    font-weight:950;
+
+    text-align:center;
 }
 
 
-/* =========================================================
+/* ==========================================================
    EMPTY CART
-   ========================================================= */
+   ========================================================== */
 
 .empty-cart{
+    min-height:310px;
+
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
 
-    min-height:330px;
-
     text-align:center;
+
+    padding:30px 20px;
 }
 
 .empty-cart-icon{
+    width:76px;
+    height:76px;
+
+    margin-bottom:14px;
+
     display:flex;
     align-items:center;
     justify-content:center;
 
-    width:76px;
-    height:76px;
+    border-radius:24px;
 
-    margin-bottom:15px;
+    background:#f0f6f1;
 
-    background:
-        linear-gradient(
-            145deg,
-            #f0f7f2,
-            #e7f1e9
-        );
-
-    border-radius:23px;
-
-    color:#8ba092;
+    color:#8ba094;
 
     font-size:1.55rem;
 }
 
 .empty-cart strong{
-    color:#3f5146;
+    color:#415148;
 
-    font-size:.9rem;
+    font-size:.88rem;
     font-weight:900;
 }
 
 .empty-cart span{
     margin-top:5px;
 
-    color:#89958e;
+    color:#87938c;
 
     font-size:.7rem;
+    font-weight:600;
 }
 
 
-/* =========================================================
+/* ==========================================================
    CART FOOTER
-   ========================================================= */
+   ========================================================== */
 
 .cart-footer{
     padding:16px;
 
-    background:
-        linear-gradient(
-            to bottom,
-            #f8faf8,
-            #f1f6f2
-        );
+    background:#f5f9f6;
 
-    border-top:1px solid #dce7df;
-
-    box-shadow:
-        0 -5px 18px rgba(24,60,37,.04);
+    border-top:1px solid var(--line);
 }
 
 .cart-total{
@@ -1372,14 +1280,14 @@
 
     margin-bottom:12px;
 
-    color:#59685f;
+    color:#65736b;
 
-    font-size:.78rem;
+    font-size:.76rem;
     font-weight:800;
 }
 
 .cart-total strong{
-    color:var(--green-dark);
+    color:var(--green);
 
     font-size:1.08rem;
     font-weight:950;
@@ -1387,186 +1295,191 @@
 
 .checkout-btn{
     min-height:47px;
-
-    margin-top:0;
-
-    border-radius:12px;
 }
 
 
-/* =========================================================
-   MOBILE
-   ========================================================= */
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+
+@media(min-width:700px){
+
+    .market-hero{
+        padding:27px 22px 21px;
+    }
+
+    .market-main{
+        padding-left:20px;
+        padding-right:20px;
+    }
+
+    .product-grid{
+        grid-template-columns:
+            repeat(4,minmax(0,1fr));
+
+        gap:15px;
+    }
+
+    .product-image{
+        aspect-ratio:1 / .82;
+    }
+
+}
+
+@media(min-width:1100px){
+
+    .market-hero{
+        padding-left:30px;
+        padding-right:30px;
+    }
+
+    .market-main{
+        padding-left:24px;
+        padding-right:24px;
+    }
+
+    .product-grid{
+        grid-template-columns:
+            repeat(5,minmax(0,1fr));
+
+        gap:17px;
+    }
+
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+   ========================================================== */
 
 @media(max-width:575px){
 
-    .market-top{
-        padding:17px 13px 13px;
+    .market-hero{
+        padding:18px 12px 15px;
+    }
+
+    .market-title-row{
+        align-items:center;
     }
 
     .market-title{
-        font-size:1.34rem;
+        font-size:1.55rem;
     }
 
-    .market-title-icon{
-        width:34px;
-        height:34px;
-        flex-basis:34px;
-
-        border-radius:10px;
-
-        font-size:.82rem;
-    }
-
-    .market-sub{
-        margin-left:44px;
-
-        font-size:.64rem;
+    .market-description{
+        font-size:.69rem;
     }
 
     .market-cart-button{
-        width:44px;
-        height:44px;
-        flex-basis:44px;
+        min-width:48px;
+        width:48px;
+        height:48px;
 
-        border-radius:13px;
+        padding:0;
+
+        border-radius:14px;
+    }
+
+    .market-cart-button span{
+        display:none;
     }
 
     .market-summary{
         gap:7px;
 
-        padding:
-            0 10px 15px;
+        margin-top:15px;
     }
 
     .summary-card{
-        min-height:76px;
+        flex-direction:column;
+        align-items:flex-start;
 
-        padding:10px 8px;
+        gap:7px;
 
-        border-radius:15px;
+        padding:10px;
+
+        border-radius:13px;
     }
 
     .summary-icon{
         width:31px;
         height:31px;
-        flex-basis:31px;
 
-        margin-right:6px;
+        flex-basis:31px;
 
         border-radius:9px;
 
-        font-size:.7rem;
-    }
-
-    .summary-value{
-        font-size:.92rem;
-    }
-
-    .summary-money .summary-value{
-        font-size:.76rem;
+        font-size:.75rem;
     }
 
     .summary-label{
-        font-size:.48rem;
+        font-size:.5rem;
+        letter-spacing:.4px;
     }
 
-    .products-heading{
-        padding:
-            18px 12px 12px;
+    .summary-value{
+        font-size:.78rem;
     }
 
-    .products-heading-left h2{
-        font-size:.9rem;
+    .market-main{
+        padding-left:11px;
+        padding-right:11px;
     }
 
-    .products-heading-left p{
+    .category-pill{
+        min-height:36px;
+
+        padding:0 14px;
+
+        font-size:.67rem;
+    }
+
+    .product-grid{
+        gap:10px;
+    }
+
+    .product-details{
+        padding:10px 9px 10px;
+    }
+
+    .product-name{
+        font-size:.79rem;
+        min-height:33px;
+    }
+
+    .product-price{
+        font-size:.92rem;
+    }
+
+    .add-to-cart-btn{
+        min-height:38px;
+
         font-size:.61rem;
     }
 
-    .products-count{
-        font-size:.58rem;
-    }
+    .stock-badge{
+        top:8px;
+        left:8px;
 
-    .product-image-wrap{
-        aspect-ratio:1 / .92;
-    }
+        min-height:25px;
 
-    .product-body{
-        padding:10px;
-    }
+        padding:0 8px;
 
-    .prod-name{
-        font-size:.76rem;
-        min-height:32px;
-    }
-
-    .prod-price{
-        font-size:.88rem;
-    }
-
-    .add-btn{
-        min-height:36px;
-
-        margin-top:9px;
-
-        font-size:.56rem;
-    }
-
-    .left-badge{
-        top:7px;
-        left:7px;
-
-        min-height:22px;
-
-        padding:0 6px;
-
-        font-size:.49rem;
-    }
-
-    .market-empty{
-        margin:20px 12px;
-
-        padding:
-            45px 20px 40px;
-
-        border-radius:22px;
-    }
-
-    .empty-visual{
-        width:82px;
-        height:82px;
-
-        border-radius:26px;
-
-        font-size:1.75rem;
-    }
-
-    .market-empty h3{
-        font-size:1rem;
-    }
-
-    .market-empty p{
-        font-size:.7rem;
+        font-size:.57rem;
     }
 
 }
 
 
-/* =========================================================
+/* ==========================================================
    ACCESSIBILITY
-   ========================================================= */
+   ========================================================== */
 
 button:focus-visible,
 a:focus-visible{
-    outline:3px solid rgba(10,77,30,.25);
+    outline:3px solid rgba(10,77,30,.24);
     outline-offset:3px;
 }
-
-
-/* =========================================================
-   REDUCED MOTION
-   ========================================================= */
 
 @media(prefers-reduced-motion:reduce){
 
@@ -1575,333 +1488,370 @@ a:focus-visible{
     *::after{
         scroll-behavior:auto !important;
         transition:none !important;
+        animation:none !important;
     }
 
 }
 
-</style><div class="market-wrap"><div class="market-container">
+</style>
 
 
-    <!-- =================================================
-         MARKETPLACE HEADER
-    ================================================= -->
+<div class="marketplace">
 
-    <header class="market-top">
 
-        <div class="market-heading">
+    <!-- ======================================================
+         MARKETPLACE HERO
+         ====================================================== -->
 
-            <h1 class="market-title">
+    <section class="market-hero">
 
-                <span class="market-title-icon">
-                    <i class="fas fa-store"></i>
-                </span>
+        <div class="market-hero-inner">
 
-                Marketplace
+            <div class="market-title-row">
 
-            </h1>
+                <div class="market-heading">
 
-            <div class="market-sub">
+                    <div class="market-eyebrow">
+                        <i class="fas fa-store"></i>
+                        Marketplace
+                    </div>
 
-                Browse available products and build your order.
+                    <h1 class="market-title">
+                        Shop our products
+                    </h1>
 
-            </div>
-
-        </div>
-
-
-        <!-- CART ICON -->
-
-        <button
-            type="button"
-            id="cartBtn"
-            class="market-cart-button"
-            aria-label="Open shopping cart"
-        >
-
-            <i class="fas fa-shopping-bag"></i>
-
-            <span
-                class="cart-badge"
-                id="cartCount"
-            >
-                <%= cartCount || 0 %>
-            </span>
-
-        </button>
-
-    </header>
-
-
-    <!-- =================================================
-         THREE SUMMARY CARDS
-    ================================================== -->
-
-    <section
-        class="market-summary"
-        aria-label="Marketplace summary"
-    >
-
-
-        <!-- PRODUCTS AVAILABLE -->
-
-        <div class="summary-card summary-products">
-
-            <div class="summary-icon">
-
-                <i class="fas fa-boxes-stacked"></i>
-
-            </div>
-
-            <div class="summary-content">
-
-                <span class="summary-value">
-
-                    <%= products.length %>
-
-                </span>
-
-                <span class="summary-label">
-
-                    Products available
-
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <!-- CART ITEMS -->
-
-        <div class="summary-card summary-cart">
-
-            <div class="summary-icon">
-
-                <i class="fas fa-shopping-basket"></i>
-
-            </div>
-
-            <div class="summary-content">
-
-                <span class="summary-value">
-
-                    <%= cartCount || 0 %>
-
-                </span>
-
-                <span class="summary-label">
-
-                    Items in cart
-
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <!-- CART VALUE -->
-
-        <div class="summary-card summary-money">
-
-            <div class="summary-icon">
-
-                <i class="fas fa-coins"></i>
-
-            </div>
-
-            <div class="summary-content">
-
-                <span class="summary-value">
-
-                    KES
-                    <%= (cartTotal || 0).toLocaleString() %>
-
-                </span>
-
-                <span class="summary-label">
-
-                    Cart value
-
-                </span>
-
-            </div>
-
-        </div>
-
-
-    </section>
-
-
-    <!-- =================================================
-         CATEGORY NAVIGATION
-    ================================================== -->
-
-    <div class="category-shell">
-
-        <nav
-            class="category-bar"
-            aria-label="Product categories"
-        >
-
-            <a
-                href="/products?category=all"
-                class="cat-pill <%= activeCategory === 'all' ? 'active' : '' %>"
-            >
-                All
-            </a>
-
-
-            <% (categories || []).forEach(c => { %>
-
-                <a
-                    href="/products?category=<%= c %>"
-                    class="cat-pill text-capitalize <%= activeCategory === c ? 'active' : '' %>"
-                >
-
-                    <%= c %>
-
-                </a>
-
-            <% }) %>
-
-        </nav>
-
-    </div>
-
-
-    <!-- =================================================
-         PRODUCT AREA
-    ================================================== -->
-
-    <main class="product-section">
-
-
-        <% if (!products || !products.length) { %>
-
-
-            <!-- =================================================
-                 PREMIUM EMPTY STATE
-            ================================================== -->
-
-            <div class="market-empty">
-
-                <div class="empty-visual">
-
-                    <i class="fas fa-store-slash"></i>
-
-                </div>
-
-
-                <h3>
-                    Nothing here just yet
-                </h3>
-
-
-                <p>
-                    There are currently no products available
-                    in this category. Try another category to
-                    discover what's available.
-                </p>
-
-
-                <% if(activeCategory !== 'all'){ %>
-
-                    <a
-                        href="/products?category=all"
-                        class="empty-action"
-                    >
-
-                        <i class="fas fa-layer-group"></i>
-
-                        VIEW ALL PRODUCTS
-
-                    </a>
-
-                <% } %>
-
-            </div>
-
-
-        <% } else { %>
-
-
-            <!-- =================================================
-                 PRODUCT HEADING
-            ================================================== -->
-
-            <div class="products-heading">
-
-                <div class="products-heading-left">
-
-                    <h2>
-                        Available products
-                    </h2>
-
-                    <p>
-                        Select a product to view details
-                        or add it to your cart.
+                    <p class="market-description">
+                        Browse available products and add what you need
+                        to your cart.
                     </p>
 
                 </div>
 
-                <span class="products-count">
 
-                    <%= products.length %>
-                    <%= products.length === 1
-                        ? 'item'
-                        : 'items'
-                    %>
+                <!-- CART BUTTON -->
 
-                </span>
+                <button
+                    type="button"
+                    id="cartBtn"
+                    class="market-cart-button"
+                    aria-label="Open shopping cart"
+                >
+
+                    <i class="fas fa-shopping-cart"></i>
+
+                    <span>
+                        CART
+                    </span>
+
+                </button>
 
             </div>
 
 
-            <% if(products.length < 20){ %>
+            <!-- ==================================================
+                 THREE SUMMARY CARDS
+                 ================================================== -->
+
+            <div class="market-summary">
 
 
-                <!-- =================================================
-                     NORMAL GRID
-                ================================================== -->
+                <!-- PRODUCTS AVAILABLE -->
 
-                <div class="grid-wrap">
+                <div class="summary-card">
+
+                    <div class="summary-icon">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+
+                    <div class="summary-info">
+
+                        <span class="summary-label">
+                            Available
+                        </span>
+
+                        <span class="summary-value">
+                            <%= products.length %>
+                            <%= products.length === 1
+                                ? 'Product'
+                                : 'Products'
+                            %>
+                        </span>
+
+                    </div>
+
+                </div>
 
 
-                    <% products.forEach(p => { %>
+                <!-- CART ITEMS -->
+
+                <div class="summary-card">
+
+                    <div class="summary-icon">
+                        <i class="fas fa-shopping-basket"></i>
+                    </div>
+
+                    <div class="summary-info">
+
+                        <span class="summary-label">
+                            In Cart
+                        </span>
+
+                        <span
+                            class="summary-value"
+                            id="cartCount"
+                        >
+                            <%= cartCount || 0 %>
+                            <%= (cartCount || 0) === 1
+                                ? 'Item'
+                                : 'Items'
+                            %>
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- CART VALUE -->
+
+                <div class="summary-card">
+
+                    <div class="summary-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+
+                    <div class="summary-info">
+
+                        <span class="summary-label">
+                            Cart Value
+                        </span>
+
+                        <span
+                            class="summary-value"
+                            id="cartTotalText"
+                        >
+                            KES
+                            <%= Number(
+                                cartTotal || 0
+                            ).toLocaleString() %>
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ======================================================
+         MAIN
+         ====================================================== -->
+
+    <main class="market-main">
+
+
+        <!-- ==================================================
+             CATEGORIES
+             ================================================== -->
+
+        <section class="category-section">
+
+            <div class="section-heading">
+
+                <div class="section-heading-left">
+
+                    <i class="fas fa-layer-group"></i>
+
+                    <h2 class="section-heading-title">
+                        Categories
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <nav
+                class="category-bar"
+                aria-label="Product categories"
+            >
+
+                <a
+                    href="/products?category=all"
+                    class="category-pill
+                        <%= activeCategory === 'all'
+                            ? 'active'
+                            : '' %>"
+                >
+                    All
+                </a>
+
+
+                <% (categories || []).forEach(category => { %>
+
+                    <a
+                        href="/products?category=<%= category %>"
+                        class="category-pill text-capitalize
+                            <%= activeCategory === category
+                                ? 'active'
+                                : '' %>"
+                    >
+                        <%= category %>
+                    </a>
+
+                <% }) %>
+
+            </nav>
+
+        </section>
+
+
+
+        <!-- ==================================================
+             PRODUCTS
+             ================================================== -->
+
+        <section>
+
+            <% if(!products || !products.length){ %>
+
+
+                <!-- ==========================================
+                     PREMIUM EMPTY STATE
+                     ========================================== -->
+
+                <div class="empty-market">
+
+                    <div class="empty-inner">
+
+                        <div class="empty-icon">
+                            <i class="fas fa-store-slash"></i>
+                        </div>
+
+                        <h3>
+                            Nothing available here yet
+                        </h3>
+
+                        <p>
+
+                            <% if(activeCategory && activeCategory !== 'all'){ %>
+
+                                We don't currently have any
+                                products in the
+                                <strong>
+                                    <%= activeCategory %>
+                                </strong>
+                                category.
+
+                            <% } else { %>
+
+                                There are currently no products
+                                available in the marketplace.
+                                Please check again later.
+
+                            <% } %>
+
+                        </p>
+
+
+                        <% if(
+                            activeCategory &&
+                            activeCategory !== 'all'
+                        ){ %>
+
+                            <a
+                                href="/products?category=all"
+                                class="empty-action"
+                            >
+                                <i class="fas fa-store"></i>
+                                VIEW ALL PRODUCTS
+                            </a>
+
+                        <% } %>
+
+                    </div>
+
+                </div>
+
+
+            <% } else { %>
+
+
+                <!-- ==========================================
+                     PRODUCT HEADER
+                     ========================================== -->
+
+                <div class="products-heading">
+
+                    <div class="section-heading-left">
+
+                        <i class="fas fa-boxes-stacked"></i>
+
+                        <h2 class="section-heading-title">
+                            Products
+                        </h2>
+
+                    </div>
+
+
+                    <div class="products-count">
+
+                        Showing
+
+                        <strong>
+                            <%= products.length %>
+                        </strong>
+
+                        available
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==========================================
+                     PRODUCT GRID
+                     ========================================== -->
+
+                <div class="product-grid">
+
+
+                    <% products.forEach(product => { %>
 
                         <%
-
                             const stock =
-                                Number(p.units || 0);
+                                Number(product.units || 0);
 
                             let stockClass = '';
 
                             if(stock <= 0){
-
-                                stockClass =
-                                    'stock-out';
-
-                            }else if(stock <= 5){
-
-                                stockClass =
-                                    'stock-low';
-
+                                stockClass = 'stock-out';
                             }
-
+                            else if(stock <= 5){
+                                stockClass = 'stock-low';
+                            }
                         %>
 
 
+                        <!-- PRODUCT CARD -->
+
                         <article
-                            class="card-box"
-                            data-product-id="<%= p._id %>"
+                            class="product-card"
+                            data-product-id="<%= product._id %>"
                         >
 
 
-                            <div class="product-image-wrap">
+                            <!-- IMAGE -->
+
+                            <div class="product-image">
 
                                 <span
-                                    class="left-badge <%= stockClass %>"
+                                    class="stock-badge <%= stockClass %>"
                                 >
 
                                     <span class="stock-dot"></span>
@@ -1910,11 +1860,11 @@ a:focus-visible{
 
                                         Out of stock
 
-                                    <% }else if(stock <= 5){ %>
+                                    <% } else if(stock <= 5){ %>
 
                                         Only <%= stock %> left
 
-                                    <% }else{ %>
+                                    <% } else { %>
 
                                         <%= stock %> available
 
@@ -1924,63 +1874,66 @@ a:focus-visible{
 
 
                                 <img
-                                    src="<%= p.image || '/images/no-image.png' %>"
-                                    alt="<%= p.name %>"
-                                    class="product-image"
+                                    src="<%= product.image || '/images/no-image.png' %>"
+                                    alt="<%= product.name %>"
                                     loading="lazy"
+                                    onerror="this.src='/images/no-image.png';"
                                 >
 
                             </div>
 
 
-                            <div class="product-body">
+                            <!-- DETAILS -->
 
-                                <div class="cat-label">
-                                    <%= p.category %>
-                                </div>
+                            <div class="product-details">
 
 
-                                <div class="prod-name">
-                                    <%= p.name %>
-                                </div>
+                                <p class="product-category">
+                                    <%= product.category || 'General' %>
+                                </p>
 
 
-                                <div class="prod-price">
+                                <h3 class="product-name">
+                                    <%= product.name %>
+                                </h3>
 
-                                    <span class="price-label">
+
+                                <div class="product-price">
+
+                                    <span class="currency">
                                         KES
                                     </span>
 
                                     <%= Number(
-                                        p.unitSellPrice || 0
+                                        product.unitSellPrice || 0
                                     ).toLocaleString() %>
 
                                 </div>
 
 
+                                <!-- ADD TO CART -->
+
                                 <button
                                     type="button"
-                                    class="add-btn add-to-cart-btn"
-                                    data-id="<%= p._id %>"
-                                    data-name="<%= p.name %>"
+                                    class="add-to-cart-btn"
+                                    data-id="<%= product._id %>"
+                                    data-name="<%= product.name %>"
                                     data-stock="<%= stock %>"
+
                                     <%= stock <= 0
                                         ? 'disabled'
-                                        : ''
-                                    %>
+                                        : '' %>
                                 >
 
-                                    <i
-                                        class="fas <%= stock <= 0
+                                    <i class="fas
+                                        <%= stock <= 0
                                             ? 'fa-ban'
-                                            : 'fa-cart-plus'
-                                        %>"
+                                            : 'fa-cart-plus' %>"
                                     ></i>
 
                                     <%= stock <= 0
                                         ? 'OUT OF STOCK'
-                                        : 'ADD TO CART'
-                                    %>
+                                        : 'ADD TO CART' %>
 
                                 </button>
 
@@ -1988,470 +1941,357 @@ a:focus-visible{
 
                         </article>
 
-
                     <% }) %>
 
 
                 </div>
 
-
-            <% } else { %>
-
-
-                <!-- =================================================
-                     LARGE COLLECTION
-                ================================================== -->
-
-                <%
-
-                    const chunkSize = 10;
-
-                    for(
-                        let i = 0;
-                        i < products.length;
-                        i += chunkSize
-                    ){
-
-                        const chunk =
-                            products.slice(
-                                i,
-                                i + chunkSize
-                            );
-
-                %>
-
-
-                    <div class="prod-scroll">
-
-
-                        <% chunk.forEach(p => { %>
-
-                            <%
-
-                                const stock =
-                                    Number(p.units || 0);
-
-                                let stockClass = '';
-
-                                if(stock <= 0){
-
-                                    stockClass =
-                                        'stock-out';
-
-                                }else if(stock <= 5){
-
-                                    stockClass =
-                                        'stock-low';
-
-                                }
-
-                            %>
-
-
-                            <article
-                                class="card-box"
-                                data-product-id="<%= p._id %>"
-                            >
-
-
-                                <div class="product-image-wrap">
-
-                                    <span
-                                        class="left-badge <%= stockClass %>"
-                                    >
-
-                                        <span class="stock-dot"></span>
-
-                                        <% if(stock <= 0){ %>
-
-                                            Out
-
-                                        <% }else{ %>
-
-                                            <%= stock %> left
-
-                                        <% } %>
-
-                                    </span>
-
-
-                                    <img
-                                        src="<%= p.image || '/images/no-image.png' %>"
-                                        alt="<%= p.name %>"
-                                        class="product-image"
-                                        loading="lazy"
-                                    >
-
-                                </div>
-
-
-                                <div class="product-body">
-
-                                    <div class="cat-label">
-                                        <%= p.category %>
-                                    </div>
-
-
-                                    <div class="prod-name">
-                                        <%= p.name %>
-                                    </div>
-
-
-                                    <div class="prod-price">
-
-                                        <span class="price-label">
-                                            KES
-                                        </span>
-
-                                        <%= Number(
-                                            p.unitSellPrice || 0
-                                        ).toLocaleString() %>
-
-                                    </div>
-
-
-                                    <button
-                                        type="button"
-                                        class="add-btn add-to-cart-btn"
-                                        data-id="<%= p._id %>"
-                                        data-name="<%= p.name %>"
-                                        data-stock="<%= stock %>"
-                                        <%= stock <= 0
-                                            ? 'disabled'
-                                            : ''
-                                        %>
-                                    >
-
-                                        <i
-                                            class="fas <%= stock <= 0
-                                                ? 'fa-ban'
-                                                : 'fa-cart-plus'
-                                            %>"
-                                        ></i>
-
-                                        <%= stock <= 0
-                                            ? 'OUT'
-                                            : 'ADD CART'
-                                        %>
-
-                                    </button>
-
-                                </div>
-
-                            </article>
-
-
-                        <% }) %>
-
-
-                    </div>
-
-
-                <% } %>
-
-
             <% } %>
 
-
-        <% } %>
+        </section>
 
 
     </main>
 
-
 </div>
 
-</div><!-- =========================================================
+
+
+<!-- ==========================================================
      QUANTITY MODAL
-========================================================= --><div
+     ========================================================== -->
+
+<div
     class="modal fade"
     id="qtyModal"
     tabindex="-1"
     aria-hidden="true"
-><div class="modal-dialog modal-dialog-centered modal-sm">
+>
 
-    <div class="modal-content qty-modal-content">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
 
-        <div class="qty-modal-header">
-
-            <h6
-                class="qty-product-name"
-                id="qtyProductName"
-            ></h6>
-
-            <p class="qty-available">
-
-                Available:
-
-                <strong id="qtyAvailable"></strong>
-
-            </p>
-
-        </div>
+        <div class="modal-content qty-modal">
 
 
-        <div class="modal-body text-center p-4">
+            <!-- HEADER -->
 
-            <div class="qty-selector">
+            <div class="qty-header">
 
-                <button
-                    type="button"
-                    class="qty-control"
-                    id="qtyMinus"
-                    aria-label="Decrease quantity"
-                >
-                    −
-                </button>
+                <div class="qty-icon">
+                    <i class="fas fa-cart-plus"></i>
+                </div>
 
+                <h3
+                    class="qty-product-name"
+                    id="qtyProductName"
+                ></h3>
 
-                <span
-                    id="qtyValue"
-                    class="qty-number"
-                >
-                    1
-                </span>
+                <p class="qty-available">
 
+                    Available:
 
-                <button
-                    type="button"
-                    class="qty-control"
-                    id="qtyPlus"
-                    aria-label="Increase quantity"
-                >
-                    +
-                </button>
+                    <strong id="qtyAvailable">
+                        0
+                    </strong>
+
+                </p>
 
             </div>
 
 
-            <button
-                type="button"
-                class="add-btn qty-confirm"
-                id="qtyConfirm"
-            >
+            <!-- BODY -->
 
-                <i class="fas fa-cart-plus"></i>
+            <div class="qty-body">
 
-                ADD
+                <div class="qty-selector">
 
-                <span id="qtyConfirmCount">
-                    1
-                </span>
-
-                TO CART
-
-            </button>
-
-
-            <button
-                type="button"
-                class="btn btn-link qty-cancel"
-                data-bs-dismiss="modal"
-            >
-                Cancel
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
-
-</div><!-- =========================================================
-     CART SIDEBAR
-========================================================= --><div
-    class="offcanvas offcanvas-end cart-sidebar"
-    tabindex="-1"
-    id="cartSidebar"
-    aria-labelledby="cartSidebarLabel"
-><div class="cart-header">
-
-    <div class="cart-title-wrap">
-
-        <div class="cart-title-icon">
-
-            <i class="fas fa-shopping-bag"></i>
-
-        </div>
-
-
-        <div>
-
-            <h5
-                class="cart-title"
-                id="cartSidebarLabel"
-            >
-                Your Cart
-            </h5>
-
-            <p class="cart-subtitle">
-                Review your selected products
-            </p>
-
-        </div>
-
-    </div>
-
-
-    <button
-        type="button"
-        class="btn-close"
-        data-bs-dismiss="offcanvas"
-        aria-label="Close"
-    ></button>
-
-</div>
-
-
-<div class="offcanvas-body cart-body">
-
-
-    <% if(cart && cart.length){ %>
-
-
-        <% cart.forEach(item => { %>
-
-
-            <div
-                class="cart-item"
-                data-id="<%= item.productId %>"
-            >
-
-                <div class="cart-product-info">
-
-                    <span class="cart-product-name">
-                        <%= item.name %>
-                    </span>
-
-
-                    <span class="cart-product-price">
-
-                        KES
-                        <%= Number(
-                            item.price || 0
-                        ).toLocaleString() %>
-
-                        ×
-
-                        <span class="cart-qty">
-                            <%= item.qty %>
-                        </span>
-
-                    </span>
-
-                </div>
-
-
-                <div class="cart-controls">
 
                     <button
                         type="button"
-                        class="cart-control cart-minus"
-                        data-id="<%= item.productId %>"
+                        class="qty-control"
+                        id="qtyMinus"
                         aria-label="Decrease quantity"
                     >
                         −
                     </button>
 
 
+                    <span
+                        id="qtyValue"
+                        class="qty-number"
+                    >
+                        1
+                    </span>
+
+
                     <button
                         type="button"
-                        class="cart-control cart-plus"
-                        data-id="<%= item.productId %>"
+                        class="qty-control"
+                        id="qtyPlus"
                         aria-label="Increase quantity"
                     >
                         +
                     </button>
 
 
-                    <button
-                        type="button"
-                        class="cart-control cart-remove"
-                        data-id="<%= item.productId %>"
-                        aria-label="Remove product"
-                    >
-                        ×
-                    </button>
-
                 </div>
 
+
+                <button
+                    type="button"
+                    class="add-to-cart-btn qty-confirm"
+                    id="qtyConfirm"
+                >
+
+                    <i class="fas fa-cart-plus"></i>
+
+                    ADD
+
+                    <span id="qtyConfirmCount">
+                        1
+                    </span>
+
+                    TO CART
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="btn btn-link qty-cancel"
+                    data-bs-dismiss="modal"
+                >
+                    Cancel
+                </button>
+
             </div>
 
+        </div>
 
-        <% }) %>
+    </div>
+
+</div>
 
 
-    <% } else { %>
+
+<!-- ==========================================================
+     CART SIDEBAR
+     ========================================================== -->
+
+<div
+    class="offcanvas offcanvas-end cart-sidebar"
+    tabindex="-1"
+    id="cartSidebar"
+    aria-labelledby="cartSidebarLabel"
+>
 
 
-        <div class="empty-cart">
+    <!-- HEADER -->
 
-            <div class="empty-cart-icon">
+    <div class="cart-header">
 
-                <i class="fas fa-shopping-bag"></i>
+        <div class="cart-heading">
 
+            <div class="cart-icon">
+                <i class="fas fa-shopping-basket"></i>
             </div>
 
-            <strong>
-                Your cart is empty
-            </strong>
+            <div>
 
-            <span>
-                Add products from the marketplace
-                to build your order.
-            </span>
+                <h5
+                    class="cart-title"
+                    id="cartSidebarLabel"
+                >
+                    Your Cart
+                </h5>
+
+                <p class="cart-subtitle">
+                    Review your selected products
+                </p>
+
+            </div>
 
         </div>
 
 
-    <% } %>
-
-
-</div>
-
-
-<div class="cart-footer">
-
-    <div class="cart-total">
-
-        <span>
-            Cart total
-        </span>
-
-        <strong>
-            KES
-            <%= (cartTotal || 0).toLocaleString() %>
-        </strong>
+        <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="offcanvas"
+            aria-label="Close"
+        ></button>
 
     </div>
 
 
-    <% if(cart && cart.length){ %>
 
-        <button
-            type="button"
-            class="add-btn checkout-btn"
-            id="checkoutBtn"
-        >
+    <!-- BODY -->
 
-            <i class="fas fa-box"></i>
+    <div class="offcanvas-body cart-body">
 
-            PACKAGE ORDER
 
-        </button>
+        <% if(cart && cart.length){ %>
 
-    <% } %>
+
+            <% cart.forEach(item => { %>
+
+                <div
+                    class="cart-item"
+                    data-id="<%= item.productId %>"
+                >
+
+
+                    <div class="cart-product-info">
+
+                        <span class="cart-product-name">
+                            <%= item.name %>
+                        </span>
+
+
+                        <span class="cart-product-price">
+
+                            KES
+
+                            <strong>
+                                <%= Number(
+                                    item.price || 0
+                                ).toLocaleString() %>
+                            </strong>
+
+                            ×
+
+                            <span class="cart-qty">
+                                <%= item.qty %>
+                            </span>
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="cart-controls">
+
+
+                        <button
+                            type="button"
+                            class="cart-control cart-minus"
+                            data-id="<%= item.productId %>"
+                            aria-label="Decrease quantity"
+                        >
+                            −
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="cart-control cart-plus"
+                            data-id="<%= item.productId %>"
+                            aria-label="Increase quantity"
+                        >
+                            +
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="cart-control cart-remove"
+                            data-id="<%= item.productId %>"
+                            aria-label="Remove product"
+                        >
+                            ×
+                        </button>
+
+
+                    </div>
+
+                </div>
+
+            <% }) %>
+
+
+        <% } else { %>
+
+
+            <!-- EMPTY CART -->
+
+            <div class="empty-cart">
+
+                <div class="empty-cart-icon">
+                    <i class="fas fa-shopping-basket"></i>
+                </div>
+
+                <strong>
+                    Your cart is empty
+                </strong>
+
+                <span>
+                    Products you add will appear here.
+                </span>
+
+            </div>
+
+
+        <% } %>
+
+
+    </div>
+
+
+
+    <!-- FOOTER -->
+
+    <div class="cart-footer">
+
+        <div class="cart-total">
+
+            <span>
+                Cart total
+            </span>
+
+            <strong>
+
+                KES
+
+                <%= Number(
+                    cartTotal || 0
+                ).toLocaleString() %>
+
+            </strong>
+
+        </div>
+
+
+        <% if(cart && cart.length){ %>
+
+            <button
+                type="button"
+                class="add-to-cart-btn checkout-btn"
+                id="checkoutBtn"
+            >
+
+                <i class="fas fa-box"></i>
+
+                PACKAGE ORDER
+
+            </button>
+
+        <% } %>
+
+    </div>
+
 
 </div>
 
-</div><script>
+
+
+<script>
 
 document.addEventListener('DOMContentLoaded', () => {
 
 
-    /* =====================================================
-       ELEMENTS
-    ===================================================== */
+    /* ======================================================
+       BOOTSTRAP COMPONENTS
+       ====================================================== */
 
     const qtyModalElement =
         document.getElementById('qtyModal');
@@ -2461,34 +2301,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     const qtyModal =
-        new bootstrap.Modal(
-            qtyModalElement
-        );
+        new bootstrap.Modal(qtyModalElement);
 
 
     const cartSidebar =
-        new bootstrap.Offcanvas(
-            cartSidebarElement
-        );
+        new bootstrap.Offcanvas(cartSidebarElement);
 
 
-    /* =====================================================
+
+    /* ======================================================
        SELECTED PRODUCT
-    ===================================================== */
+       ====================================================== */
 
     let selected = {
+
         id:null,
+
+        name:'',
+
         stock:0,
+
         qty:1
+
     };
 
 
-    /* =====================================================
-       PRODUCT CARD CLICK
-    ===================================================== */
+
+    /* ======================================================
+       PRODUCT CARD NAVIGATION
+       ====================================================== */
 
     document
-        .querySelectorAll('.card-box')
+        .querySelectorAll('.product-card')
         .forEach(card => {
 
             card.addEventListener(
@@ -2522,29 +2366,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-    /* =====================================================
+
+    /* ======================================================
        ADD TO CART
-    ===================================================== */
+       ====================================================== */
 
     document
         .querySelectorAll('.add-to-cart-btn')
-        .forEach(btn => {
+        .forEach(button => {
 
-            btn.addEventListener(
+            /*
+             * Do not attach the quantity-modal behaviour
+             * to the checkout button.
+             */
+
+            if(
+                button.id === 'qtyConfirm' ||
+                button.id === 'checkoutBtn'
+            ){
+                return;
+            }
+
+
+            button.addEventListener(
                 'click',
                 event => {
 
                     event.preventDefault();
+
                     event.stopPropagation();
 
 
                     selected.id =
-                        btn.dataset.id;
+                        button.dataset.id;
+
+
+                    selected.name =
+                        button.dataset.name;
 
 
                     selected.stock =
                         parseInt(
-                            btn.dataset.stock,
+                            button.dataset.stock,
                             10
                         ) || 0;
 
@@ -2557,7 +2420,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             'qtyProductName'
                         )
                         .innerText =
-                            btn.dataset.name;
+                            selected.name;
 
 
                     document
@@ -2579,9 +2442,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-    /* =====================================================
+
+    /* ======================================================
        QUANTITY DISPLAY
-    ===================================================== */
+       ====================================================== */
 
     function updateQuantityDisplay(){
 
@@ -2599,9 +2463,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    /* =====================================================
+
+    /* ======================================================
        QUANTITY PLUS
-    ===================================================== */
+       ====================================================== */
 
     document
         .getElementById('qtyPlus')
@@ -2624,9 +2489,10 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
 
-    /* =====================================================
+
+    /* ======================================================
        QUANTITY MINUS
-    ===================================================== */
+       ====================================================== */
 
     document
         .getElementById('qtyMinus')
@@ -2634,7 +2500,9 @@ document.addEventListener('DOMContentLoaded', () => {
             'click',
             () => {
 
-                if(selected.qty > 1){
+                if(
+                    selected.qty > 1
+                ){
 
                     selected.qty--;
 
@@ -2646,9 +2514,10 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
 
-    /* =====================================================
+
+    /* ======================================================
        CONFIRM ADD TO CART
-    ===================================================== */
+       ====================================================== */
 
     document
         .getElementById('qtyConfirm')
@@ -2678,14 +2547,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                         'application/json'
                                 },
 
-                                body:
-                                    JSON.stringify({
-                                        productId:
-                                            selected.id,
+                                body:JSON.stringify({
 
-                                        qty:
-                                            selected.qty
-                                    })
+                                    productId:
+                                        selected.id,
+
+                                    qty:
+                                        selected.qty
+
+                                })
                             }
                         );
 
@@ -2701,6 +2571,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             'Unable to add product to cart.'
                         );
 
+
                         button.disabled = false;
 
                         return;
@@ -2710,16 +2581,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     qtyModal.hide();
 
+
                     location.reload();
 
 
-                }catch(error){
+                }
+                catch(error){
 
                     console.error(error);
+
 
                     alert(
                         'Unable to connect to the server.'
                     );
+
 
                     button.disabled = false;
 
@@ -2729,9 +2604,10 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
 
-    /* =====================================================
-       OPEN CART SIDEBAR
-    ===================================================== */
+
+    /* ======================================================
+       OPEN CART
+       ====================================================== */
 
     document
         .getElementById('cartBtn')
@@ -2745,11 +2621,15 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
 
-    /* =====================================================
-       CART REQUEST
-    ===================================================== */
 
-    async function callCart(url, body){
+    /* ======================================================
+       CART REQUEST
+       ====================================================== */
+
+    async function callCart(
+        url,
+        body
+    ){
 
         try{
 
@@ -2790,14 +2670,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return true;
 
-
-        }catch(error){
+        }
+        catch(error){
 
             console.error(error);
+
 
             alert(
                 'Unable to connect to the server.'
             );
+
 
             return false;
 
@@ -2806,9 +2688,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    /* =====================================================
+
+    /* ======================================================
        CART PLUS
-    ===================================================== */
+       ====================================================== */
 
     document
         .querySelectorAll('.cart-plus')
@@ -2856,9 +2739,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-    /* =====================================================
+
+    /* ======================================================
        CART MINUS
-    ===================================================== */
+       ====================================================== */
 
     document
         .querySelectorAll('.cart-minus')
@@ -2920,9 +2804,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-    /* =====================================================
+
+    /* ======================================================
        REMOVE FROM CART
-    ===================================================== */
+       ====================================================== */
 
     document
         .querySelectorAll('.cart-remove')
@@ -2946,9 +2831,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-    /* =====================================================
+
+    /* ======================================================
        PACKAGE ORDER
-    ===================================================== */
+       ====================================================== */
 
     const checkoutButton =
         document.getElementById(
@@ -3008,21 +2894,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     );
 
 
-                    checkoutButton.disabled =
-                        false;
+                    checkoutButton.disabled = false;
 
-
-                }catch(error){
+                }
+                catch(error){
 
                     console.error(error);
+
 
                     alert(
                         'Unable to connect to the server.'
                     );
 
 
-                    checkoutButton.disabled =
-                        false;
+                    checkoutButton.disabled = false;
 
                 }
 
@@ -3030,7 +2915,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
     }
-
 
 });
 
