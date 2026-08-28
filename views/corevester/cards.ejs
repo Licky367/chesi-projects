@@ -1,0 +1,1155 @@
+<% /*
+
+PRODUCT HORIZONTAL CARDS
+
+FILE:
+views/products-patials/cards.ejs
+
+PURPOSE:
+Compact horizontal Product navigator.
+
+Product data is received through:
+
+    products
+ 
+Each card displays:
+
+    - Product image
+    - Product name
+    - Available units
+    - Unit selling price
+
+Clicking the card opens:
+
+    /products/:id
+
+PRODUCT MODEL FIELDS:
+
+image
+    Product display image
+
+name
+    Product name
+
+units
+    Available product quantity
+
+unitSellPrice
+    Selling price per unit
+
+isActive
+    Determines whether the product is displayed
+
+IMPORTANT:
+
+The controller already handles:
+
+    - Category filtering
+    - Search filtering
+
+This partial only handles the presentation
+of the products it receives.
+
+CARDS DO NOT OPEN A POST MODAL.
+
+*/ %>
+
+<%
+/* ======================================================
+SAFE PRODUCT ARRAY
+====================================================== */
+
+const productList =
+    Array.isArray(products)
+        ? products
+        : [];
+
+
+/* ======================================================
+   ONLY ACTIVE PRODUCTS
+====================================================== */
+
+const availableProducts =
+    productList.filter(function (product) {
+
+        if (!product) {
+            return false;
+        }
+
+        return product.isActive === true;
+
+    });
+
+%>
+
+<% if (availableProducts.length) { %>
+
+<section
+    class="product-feed-strip"
+    aria-label="Available products"
+><!-- =====================================================
+     SECTION HEADER
+===================================================== -->
+
+<div class="product-feed-strip-header">
+
+
+    <div class="product-feed-strip-title">
+
+        <strong>
+            Products currently available
+        </strong>
+
+    </div>
+
+
+    <div class="product-feed-strip-description">
+
+        Select a product below to view its details.
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     HORIZONTAL PRODUCT SCROLL
+===================================================== -->
+
+<div
+    class="product-feed-scroll"
+    role="list"
+    aria-label="Available products"
+>
+
+
+    <% availableProducts.forEach(function (product) { %>
+
+        <%
+            /* =================================================
+               SAFETY CHECK
+            ================================================= */
+
+            if (
+                !product ||
+                !product._id
+            ) {
+                return;
+            }
+
+
+            /* =================================================
+               PRODUCT NAME
+            ================================================= */
+
+            const productName =
+                product.name ||
+                "Unnamed Product";
+
+
+            /* =================================================
+               PRODUCT IMAGE
+            ================================================= */
+
+            const productImage =
+                product.image ||
+                (
+                    "https://ui-avatars.com/api/?name=" +
+                    encodeURIComponent(
+                        productName
+                    ) +
+                    "&background=e8f5ee&color=198754"
+                );
+
+
+            /* =================================================
+               AVAILABLE UNITS
+            ================================================= */
+
+            let productUnitsText = "";
+
+
+            if (
+                product.units !== null &&
+                product.units !== undefined &&
+                product.units !== ""
+            ) {
+
+                const units =
+                    Number(product.units);
+
+
+                if (
+                    Number.isFinite(units)
+                ) {
+
+                    productUnitsText =
+                        units.toLocaleString(
+                            "en-KE",
+                            {
+                                maximumFractionDigits: 2
+                            }
+                        );
+
+                }
+
+            }
+
+
+            /* =================================================
+               UNIT SELLING PRICE
+            ================================================= */
+
+            let productPriceText = "";
+
+
+            if (
+                product.unitSellPrice !== null &&
+                product.unitSellPrice !== undefined &&
+                product.unitSellPrice !== ""
+            ) {
+
+                const unitSellPrice =
+                    Number(
+                        product.unitSellPrice
+                    );
+
+
+                if (
+                    Number.isFinite(unitSellPrice)
+                ) {
+
+                    productPriceText =
+                        "KES " +
+                        unitSellPrice.toLocaleString(
+                            "en-KE",
+                            {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            }
+                        );
+
+                }
+
+            }
+        %>
+
+
+
+        <!-- =================================================
+             PRODUCT CARD
+        ================================================== -->
+
+        <a
+            href="/products/<%= product._id %>"
+            class="product-feed-card"
+            role="listitem"
+            aria-label="View <%= productName %>"
+        >
+
+
+            <!-- =============================================
+                 PRODUCT IMAGE
+            ============================================== -->
+
+            <div class="product-feed-image-wrap">
+
+                <img
+                    src="<%= productImage %>"
+                    alt="<%= productName %>"
+                    class="product-feed-image"
+                    loading="lazy"
+                >
+
+            </div>
+
+
+
+            <!-- =============================================
+                 PRODUCT INFORMATION
+            ============================================== -->
+
+            <div class="product-feed-content">
+
+
+                <!-- =========================================
+                     PRODUCT NAME
+                ========================================== -->
+
+                <div class="product-feed-name">
+
+                    <%= productName %>
+
+                </div>
+
+
+
+                <!-- =========================================
+                     PRODUCT TYPE
+                ========================================== -->
+
+                <div class="product-feed-type">
+
+                    <span
+                        class="product-feed-type-icon"
+                        aria-hidden="true"
+                    >
+                        📦
+                    </span>
+
+                    <span>
+                        Product
+                    </span>
+
+                </div>
+
+
+
+                <!-- =========================================
+                     AVAILABLE UNITS
+                ========================================== -->
+
+                <% if (productUnitsText) { %>
+
+                    <div class="product-feed-quantity">
+
+                        <span
+                            class="product-feed-quantity-label"
+                        >
+                            Available:
+                        </span>
+
+                        <span>
+                            <%= productUnitsText %>
+                        </span>
+
+                    </div>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     UNIT SELLING PRICE
+                ========================================== -->
+
+                <% if (productPriceText) { %>
+
+                    <div class="product-feed-price">
+
+                        <span
+                            class="product-feed-price-label"
+                        >
+                            Price:
+                        </span>
+
+                        <span>
+                            <%= productPriceText %>
+                        </span>
+
+                    </div>
+
+                <% } %>
+
+
+            </div>
+
+
+        </a>
+
+
+    <% }); %>
+
+
+</div>
+
+</section><style>
+
+/* ==========================================================
+   PRODUCT STRIP
+========================================================== */
+
+.product-feed-strip {
+
+    width:
+        100%;
+
+    margin:
+        0
+        0
+        16px;
+
+    padding:
+        0;
+
+    overflow:
+        hidden;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+}
+
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.product-feed-strip-header {
+
+    width:
+        100%;
+
+    padding:
+        0
+        2px
+        10px;
+
+}
+
+
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
+.product-feed-strip-title {
+
+    width:
+        100%;
+
+}
+
+
+.product-feed-strip-title strong {
+
+    display:
+        block;
+
+    color:
+        #2A201B;
+
+    font-size:
+        18px;
+
+    font-weight:
+        700;
+
+    line-height:
+        1.35;
+
+}
+
+
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.product-feed-strip-description {
+
+    max-width:
+        620px;
+
+    margin-top:
+        4px;
+
+    color:
+        #7b847e;
+
+    font-size:
+        12px;
+
+    line-height:
+        1.45;
+
+}
+
+
+
+/* ==========================================================
+   HORIZONTAL SCROLL
+========================================================== */
+
+.product-feed-scroll {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    gap:
+        10px;
+
+    overflow-x:
+        auto;
+
+    overflow-y:
+        hidden;
+
+    padding:
+        2px
+        2px
+        8px;
+
+    scroll-behavior:
+        smooth;
+
+    -webkit-overflow-scrolling:
+        touch;
+
+    scrollbar-width:
+        none;
+
+}
+
+
+.product-feed-scroll::-webkit-scrollbar {
+
+    display:
+        none;
+
+}
+
+
+
+/* ==========================================================
+   PRODUCT CARD
+========================================================== */
+
+.product-feed-card {
+
+    position:
+        relative;
+
+    flex:
+        0 0
+        116px;
+
+    width:
+        116px;
+
+    height:
+        210px;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    overflow:
+        hidden;
+
+    text-decoration:
+        none;
+
+    border:
+        1px solid
+        #e4e9e6;
+
+    border-radius:
+        15px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 2px 8px
+        rgba(20, 40, 28, .06);
+
+    transition:
+        transform .16s ease,
+        box-shadow .16s ease;
+
+}
+
+
+
+/* ==========================================================
+   HOVER
+========================================================== */
+
+.product-feed-card:hover {
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 5px 14px
+        rgba(20, 40, 28, .10);
+
+}
+
+
+
+/* ==========================================================
+   ACTIVE
+========================================================== */
+
+.product-feed-card:active {
+
+    transform:
+        scale(.97);
+
+}
+
+
+
+/* ==========================================================
+   IMAGE WRAPPER
+========================================================== */
+
+.product-feed-image-wrap {
+
+    position:
+        relative;
+
+    width:
+        100%;
+
+    height:
+        116px;
+
+    flex:
+        0 0
+        116px;
+
+    overflow:
+        hidden;
+
+    background:
+        #eef3ef;
+
+}
+
+
+
+/* ==========================================================
+   IMAGE
+========================================================== */
+
+.product-feed-image {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    display:
+        block;
+
+    object-fit:
+        cover;
+
+}
+
+
+
+/* ==========================================================
+   PRODUCT CONTENT
+========================================================== */
+
+.product-feed-content {
+
+    width:
+        100%;
+
+    min-width:
+        0;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    flex:
+        1;
+
+}
+
+
+
+/* ==========================================================
+   PRODUCT NAME
+========================================================== */
+
+.product-feed-name {
+
+    width:
+        100%;
+
+    padding:
+        8px
+        8px
+        2px;
+
+    color:
+        #202520;
+
+    font-size:
+        13px;
+
+    font-weight:
+        700;
+
+    line-height:
+        16px;
+
+    overflow:
+        hidden;
+
+    display:
+        -webkit-box;
+
+    -webkit-box-orient:
+        vertical;
+
+    -webkit-line-clamp:
+        2;
+
+}
+
+
+
+/* ==========================================================
+   PRODUCT TYPE
+========================================================== */
+
+.product-feed-type {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        4px;
+
+    padding:
+        1px
+        8px
+        3px;
+
+    color:
+        #7b847e;
+
+    font-size:
+        10px;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* ==========================================================
+   TYPE ICON
+========================================================== */
+
+.product-feed-type-icon {
+
+    flex:
+        0 0
+        auto;
+
+    font-size:
+        10px;
+
+}
+
+
+
+/* ==========================================================
+   TYPE TEXT
+========================================================== */
+
+.product-feed-type span:last-child {
+
+    min-width:
+        0;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
+
+
+/* ==========================================================
+   AVAILABLE UNITS
+========================================================== */
+
+.product-feed-quantity {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        baseline;
+
+    gap:
+        3px;
+
+    padding:
+        1px
+        8px
+        3px;
+
+    color:
+        #198754;
+
+    font-size:
+        10px;
+
+    font-weight:
+        600;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* ==========================================================
+   STOCK LABEL
+========================================================== */
+
+.product-feed-quantity-label {
+
+    flex:
+        0 0
+        auto;
+
+    color:
+        #8a938d;
+
+    font-weight:
+        400;
+
+}
+
+
+
+/* ==========================================================
+   STOCK VALUE
+========================================================== */
+
+.product-feed-quantity > span:last-child {
+
+    min-width:
+        0;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
+
+
+/* ==========================================================
+   PRICE
+========================================================== */
+
+.product-feed-price {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        baseline;
+
+    gap:
+        3px;
+
+    padding:
+        1px
+        8px
+        8px;
+
+    color:
+        #198754;
+
+    font-size:
+        10px;
+
+    font-weight:
+        700;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* ==========================================================
+   PRICE LABEL
+========================================================== */
+
+.product-feed-price-label {
+
+    flex:
+        0 0
+        auto;
+
+    color:
+        #8a938d;
+
+    font-weight:
+        400;
+
+}
+
+
+
+/* ==========================================================
+   PRICE VALUE
+========================================================== */
+
+.product-feed-price > span:last-child {
+
+    min-width:
+        0;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
+
+
+/* ==========================================================
+   FOCUS ACCESSIBILITY
+========================================================== */
+
+.product-feed-card:focus-visible {
+
+    outline:
+        2px solid
+        #198754;
+
+    outline-offset:
+        2px;
+
+}
+
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+
+    .product-feed-strip {
+
+        margin-bottom:
+            14px;
+
+    }
+
+
+
+    /* ==============================================
+       TITLE
+    ============================================== */
+
+    .product-feed-strip-title strong {
+
+        font-size:
+            17px;
+
+        line-height:
+            1.3;
+
+    }
+
+
+
+    /* ==============================================
+       DESCRIPTION
+    ============================================== */
+
+    .product-feed-strip-description {
+
+        font-size:
+            11px;
+
+        line-height:
+            1.4;
+
+    }
+
+
+
+    /* ==============================================
+       CARD
+    ============================================== */
+
+    .product-feed-card {
+
+        flex-basis:
+            112px;
+
+        width:
+            112px;
+
+        height:
+            204px;
+
+        border-radius:
+            14px;
+
+    }
+
+
+
+    /* ==============================================
+       IMAGE
+    ============================================== */
+
+    .product-feed-image-wrap {
+
+        height:
+            112px;
+
+        flex-basis:
+            112px;
+
+    }
+
+
+
+    /* ==============================================
+       NAME
+    ============================================== */
+
+    .product-feed-name {
+
+        padding:
+            7px
+            7px
+            2px;
+
+        font-size:
+            12px;
+
+        line-height:
+            15px;
+
+    }
+
+
+
+    /* ==============================================
+       TYPE
+    ============================================== */
+
+    .product-feed-type {
+
+        padding:
+            1px
+            7px
+            3px;
+
+        font-size:
+            9px;
+
+    }
+
+
+
+    .product-feed-type-icon {
+
+        font-size:
+            9px;
+
+    }
+
+
+
+    /* ==============================================
+       AVAILABLE UNITS
+    ============================================== */
+
+    .product-feed-quantity {
+
+        padding:
+            1px
+            7px
+            3px;
+
+        font-size:
+            9px;
+
+    }
+
+
+
+    /* ==============================================
+       PRICE
+    ============================================== */
+
+    .product-feed-price {
+
+        padding:
+            1px
+            7px
+            7px;
+
+        font-size:
+            9px;
+
+    }
+
+}
+
+</style><% } %>
