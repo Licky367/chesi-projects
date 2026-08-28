@@ -3,113 +3,138 @@
 <style>
 
 /* ==========================================================
-   PRODUCTS / MARKETPLACE
+   COREVESTER MARKETPLACE
    ========================================================== */
 
 .marketplace{
-    --green:#0a4d1e;
-    --green-dark:#073b17;
-    --green-soft:#edf7ef;
-    --green-pale:#f6fbf7;
+
+    --green:#0b5a2a;
+    --green-dark:#073f1d;
+    --green-soft:#edf7f0;
 
     --orange:#e58a22;
     --orange-soft:#fff5e8;
 
-    --ink:#17221b;
+    --ink:#18231c;
     --muted:#718078;
-    --line:#dfe9e1;
-    --line-soft:#ebf1ec;
 
+    --line:#dce8df;
+    --line-soft:#edf2ee;
+
+    width:100%;
     min-height:100vh;
-    background:#f7faf7;
+
+    box-sizing:border-box;
+
+    background:#f7faf8;
+
     color:var(--ink);
 
-    padding-bottom:50px;
+    padding-bottom:35px;
+}
+
+.marketplace *,
+.marketplace *::before,
+.marketplace *::after{
+    box-sizing:border-box;
 }
 
 
 /* ==========================================================
-   HERO
+   COMPACT MARKET HEADER
    ========================================================== */
 
 .market-hero{
-    position:relative;
-    overflow:hidden;
 
-    padding:22px 16px 18px;
+    width:100%;
+
+    padding:18px 14px 15px;
 
     background:
-        radial-gradient(
-            circle at 100% 0%,
-            rgba(10,77,30,.09),
-            transparent 34%
-        ),
         linear-gradient(
-            180deg,
+            135deg,
             #ffffff 0%,
-            #f7fbf8 100%
+            #f4faf5 100%
         );
 
     border-bottom:1px solid var(--line);
 }
 
 .market-hero-inner{
-    width:min(1250px,100%);
+
+    width:100%;
+    max-width:1180px;
+
     margin:0 auto;
 }
 
+
+/* ==========================================================
+   TITLE ROW
+   ========================================================== */
+
 .market-title-row{
+
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:18px;
+
+    gap:15px;
 }
 
 .market-heading{
+
     min-width:0;
 }
 
 .market-eyebrow{
+
     display:flex;
     align-items:center;
-    gap:7px;
 
-    margin-bottom:5px;
+    gap:6px;
 
-    color:#568064;
+    margin-bottom:4px;
 
-    font-size:.67rem;
+    color:#6d8174;
+
+    font-size:.58rem;
     font-weight:900;
 
     text-transform:uppercase;
-    letter-spacing:1.4px;
+    letter-spacing:1.2px;
 }
 
 .market-eyebrow i{
     color:var(--green);
 }
 
+
 .market-title{
+
     margin:0;
 
     color:var(--green);
 
-    font-size:clamp(1.65rem,4vw,2.35rem);
+    font-size:1.35rem;
     font-weight:950;
 
-    letter-spacing:-1px;
     line-height:1.05;
+
+    letter-spacing:-.5px;
 }
 
+
 .market-description{
-    margin:7px 0 0;
+
+    margin:5px 0 0;
 
     color:var(--muted);
 
-    font-size:.78rem;
+    font-size:.66rem;
     font-weight:600;
 
-    line-height:1.45;
+    line-height:1.4;
 }
 
 
@@ -118,240 +143,263 @@
    ========================================================== */
 
 .market-cart-button{
+
     flex:0 0 auto;
 
-    display:inline-flex;
+    width:48px;
+    height:42px;
+
+    display:flex;
     align-items:center;
     justify-content:center;
-    gap:9px;
-
-    min-width:116px;
-    min-height:48px;
-
-    padding:0 16px;
 
     border:0;
-    border-radius:15px;
+    border-radius:12px;
 
     background:var(--green);
-    color:#fff;
 
-    font-size:.76rem;
-    font-weight:900;
+    color:#fff;
 
     cursor:pointer;
 
     box-shadow:
-        0 8px 18px rgba(10,77,30,.18);
+        0 5px 13px rgba(11,90,42,.18);
 
     transition:
-        transform .18s ease,
-        background .18s ease,
-        box-shadow .18s ease;
-}
-
-.market-cart-button i{
-    font-size:1rem;
+        transform .15s ease,
+        background .15s ease;
 }
 
 .market-cart-button:hover{
     background:var(--green-dark);
-
-    transform:translateY(-2px);
-
-    box-shadow:
-        0 11px 24px rgba(10,77,30,.24);
+    transform:translateY(-1px);
 }
 
 .market-cart-button:active{
-    transform:scale(.97);
+    transform:scale(.96);
+}
+
+.market-cart-button i{
+    font-size:.9rem;
+}
+
+.market-cart-button span{
+    display:none;
 }
 
 
 /* ==========================================================
-   THREE SUMMARY CARDS
+   SUMMARY STRIP
    ========================================================== */
 
 .market-summary{
-    width:min(1250px,100%);
 
-    margin:18px auto 0;
+    width:100%;
+
+    margin-top:13px;
 
     display:grid;
 
     grid-template-columns:
         repeat(3,minmax(0,1fr));
 
-    gap:10px;
+    gap:7px;
 }
 
+
 .summary-card{
-    position:relative;
 
     min-width:0;
 
     display:flex;
     align-items:center;
 
-    gap:10px;
+    gap:7px;
 
-    padding:12px;
+    padding:8px 9px;
 
     background:#fff;
 
     border:1px solid var(--line);
 
-    border-radius:15px;
+    border-radius:11px;
 
     box-shadow:
-        0 3px 12px rgba(20,55,31,.045);
-
-    overflow:hidden;
+        0 2px 7px rgba(20,55,31,.035);
 }
 
-.summary-card::after{
-    content:"";
-
-    position:absolute;
-
-    right:-20px;
-    bottom:-25px;
-
-    width:65px;
-    height:65px;
-
-    border-radius:50%;
-
-    background:rgba(10,77,30,.035);
-}
 
 .summary-icon{
-    flex:0 0 38px;
 
-    width:38px;
-    height:38px;
+    flex:0 0 29px;
+
+    width:29px;
+    height:29px;
 
     display:flex;
     align-items:center;
     justify-content:center;
 
-    border-radius:11px;
+    border-radius:8px;
 
     background:var(--green-soft);
+
     color:var(--green);
 
-    font-size:.9rem;
+    font-size:.68rem;
 }
 
-.summary-card:nth-child(2) .summary-icon{
-    background:#f1f5f2;
+
+.summary-card:nth-child(2)
+.summary-icon{
+
+    background:#f2f5f3;
+
+    color:#587064;
 }
 
-.summary-card:nth-child(3) .summary-icon{
+
+.summary-card:nth-child(3)
+.summary-icon{
+
     background:var(--orange-soft);
-    color:#c66f12;
+
+    color:#c56d10;
 }
+
 
 .summary-info{
+
     min-width:0;
 }
 
+
 .summary-label{
+
     display:block;
 
-    margin-bottom:2px;
+    color:#849088;
 
-    color:#7b8981;
-
-    font-size:.58rem;
+    font-size:.46rem;
     font-weight:900;
 
     text-transform:uppercase;
-    letter-spacing:.65px;
+
+    letter-spacing:.45px;
 }
 
+
 .summary-value{
+
     display:block;
+
+    margin-top:2px;
 
     color:var(--green);
 
-    font-size:1rem;
+    font-size:.67rem;
     font-weight:950;
 
     line-height:1.1;
 
     white-space:nowrap;
+
     overflow:hidden;
+
     text-overflow:ellipsis;
 }
 
-.summary-card:nth-child(3) .summary-value{
-    color:#bd6810;
+
+.summary-card:nth-child(3)
+.summary-value{
+
+    color:#b96710;
 }
 
 
 /* ==========================================================
-   MAIN CONTENT
+   MAIN
    ========================================================== */
 
 .market-main{
-    width:min(1250px,100%);
+
+    width:100%;
+    max-width:1180px;
 
     margin:0 auto;
 
-    padding:18px 14px 0;
+    padding:15px 12px 0;
 }
 
 
 /* ==========================================================
-   CATEGORY BAR
+   SECTION HEADING
    ========================================================== */
 
-.category-section{
-    margin-bottom:18px;
-}
-
 .section-heading{
+
     display:flex;
     align-items:center;
     justify-content:space-between;
 
-    margin-bottom:9px;
+    margin-bottom:7px;
 }
+
 
 .section-heading-left{
+
     display:flex;
     align-items:center;
-    gap:7px;
+
+    gap:6px;
 }
+
 
 .section-heading-left i{
+
     color:var(--green);
 
-    font-size:.75rem;
+    font-size:.66rem;
 }
 
+
 .section-heading-title{
+
     margin:0;
 
-    color:#33463a;
+    color:#304237;
 
-    font-size:.72rem;
+    font-size:.68rem;
     font-weight:950;
 
     text-transform:uppercase;
-    letter-spacing:.8px;
+
+    letter-spacing:.65px;
 }
 
+
+/* ==========================================================
+   CATEGORY AREA
+   ========================================================== */
+
+.category-section{
+
+    margin-bottom:14px;
+}
+
+
 .category-bar{
+
     display:flex;
     align-items:center;
 
-    gap:8px;
+    gap:6px;
+
+    width:100%;
 
     overflow-x:auto;
 
-    padding:2px 1px 7px;
+    padding:2px 1px 5px;
 
     scrollbar-width:none;
 
@@ -362,93 +410,167 @@
     display:none;
 }
 
+
 .category-pill{
+
     flex:0 0 auto;
+
+    min-height:31px;
 
     display:inline-flex;
     align-items:center;
     justify-content:center;
 
-    min-height:38px;
+    padding:0 12px;
 
-    padding:0 16px;
+    border:1px solid #d1e0d5;
 
-    border:1px solid #cfe0d3;
     border-radius:50px;
 
     background:#fff;
-    color:#365541;
+
+    color:#3d5848;
 
     text-decoration:none;
 
-    font-size:.71rem;
+    font-size:.59rem;
     font-weight:900;
 
+    white-space:nowrap;
+
     transition:
-        background .18s ease,
-        color .18s ease,
-        border-color .18s ease,
-        transform .18s ease;
+        background .15s ease,
+        color .15s ease,
+        border-color .15s ease;
 }
+
 
 .category-pill:hover{
-    border-color:var(--green);
+
     color:var(--green);
 
-    transform:translateY(-1px);
+    border-color:#a9c7b2;
 }
 
+
 .category-pill.active{
+
     background:var(--green);
-    color:#fff;
 
     border-color:var(--green);
 
+    color:#fff;
+
     box-shadow:
-        0 5px 13px rgba(10,77,30,.16);
+        0 4px 9px rgba(11,90,42,.14);
 }
 
 
 /* ==========================================================
-   PRODUCT SECTION HEADER
+   PRODUCTS HEADER
    ========================================================== */
 
 .products-heading{
+
     display:flex;
     align-items:center;
     justify-content:space-between;
 
-    margin:4px 0 11px;
+    margin:0 0 8px;
 }
 
+
 .products-count{
-    display:inline-flex;
-    align-items:center;
-    gap:7px;
 
-    color:#718078;
+    color:#7b8981;
 
-    font-size:.68rem;
+    font-size:.58rem;
     font-weight:700;
 }
 
+
 .products-count strong{
+
     color:var(--green);
+
     font-weight:950;
 }
 
 
 /* ==========================================================
-   PRODUCT GRID
+   PRODUCT SCROLLER
+   ==========================================================
+
+   IMPORTANT:
+
+   Four cards per row.
+
+   Every card is exactly:
+       116px wide
+       170px high
+
+   The grid itself can overflow horizontally.
+   ========================================================== */
+
+.product-scroll{
+
+    width:100%;
+
+    overflow-x:auto;
+    overflow-y:hidden;
+
+    padding:2px 2px 10px;
+
+    scrollbar-width:thin;
+
+    -webkit-overflow-scrolling:touch;
+}
+
+
+.product-scroll::-webkit-scrollbar{
+    height:5px;
+}
+
+.product-scroll::-webkit-scrollbar-track{
+    background:#e9efeb;
+
+    border-radius:20px;
+}
+
+.product-scroll::-webkit-scrollbar-thumb{
+    background:#a9beb0;
+
+    border-radius:20px;
+}
+
+
+/* ==========================================================
+   FIXED PRODUCT GRID
    ========================================================== */
 
 .product-grid{
+
     display:grid;
 
+    /*
+     * EXACTLY FOUR CARDS PER ROW.
+     */
     grid-template-columns:
-        repeat(2,minmax(0,1fr));
+        repeat(4,116px);
 
-    gap:12px;
+    /*
+     * Every product row is exactly 170px.
+     */
+    grid-auto-rows:170px;
+
+    gap:9px;
+
+    /*
+     * Prevent grid from shrinking.
+     */
+    width:max-content;
+
+    min-width:488px;
 }
 
 
@@ -457,11 +579,20 @@
    ========================================================== */
 
 .product-card{
+
     position:relative;
 
-    min-width:0;
+    width:116px;
+    height:170px;
+
+    min-width:116px;
+    max-width:116px;
+
+    min-height:170px;
+    max-height:170px;
 
     display:flex;
+
     flex-direction:column;
 
     overflow:hidden;
@@ -470,26 +601,28 @@
 
     border:1px solid var(--line);
 
-    border-radius:17px;
+    border-radius:11px;
 
     box-shadow:
-        0 3px 13px rgba(18,54,29,.055);
+        0 2px 8px rgba(18,54,29,.065);
 
     cursor:pointer;
 
     transition:
-        transform .2s ease,
-        box-shadow .2s ease,
-        border-color .2s ease;
+        transform .16s ease,
+        box-shadow .16s ease,
+        border-color .16s ease;
 }
 
-.product-card:hover{
-    transform:translateY(-3px);
 
-    border-color:#c9ddce;
+.product-card:hover{
+
+    transform:translateY(-2px);
+
+    border-color:#bdd2c2;
 
     box-shadow:
-        0 11px 27px rgba(18,54,29,.11);
+        0 7px 16px rgba(18,54,29,.11);
 }
 
 
@@ -498,36 +631,42 @@
    ========================================================== */
 
 .product-image{
+
     position:relative;
 
-    width:100%;
+    flex:0 0 78px;
 
-    aspect-ratio:1 / .87;
+    width:116px;
+    height:78px;
 
     overflow:hidden;
 
-    background:
-        linear-gradient(
-            135deg,
-            #eef6f0,
-            #f7faf7
-        );
+    background:#eef5f0;
 }
 
+
 .product-image img{
-    width:100%;
-    height:100%;
 
     display:block;
 
+    width:116px;
+    height:78px;
+
+    max-width:none;
+
     object-fit:cover;
 
+    object-position:center;
+
     transition:
-        transform .35s ease;
+        transform .25s ease;
 }
 
-.product-card:hover .product-image img{
-    transform:scale(1.045);
+
+.product-card:hover
+.product-image img{
+
+    transform:scale(1.035);
 }
 
 
@@ -536,327 +675,348 @@
    ========================================================== */
 
 .stock-badge{
+
     position:absolute;
 
-    top:10px;
-    left:10px;
+    top:5px;
+    left:5px;
 
     z-index:3;
 
+    max-width:106px;
+
+    min-height:19px;
+
     display:inline-flex;
     align-items:center;
-    gap:6px;
 
-    min-height:27px;
+    gap:4px;
 
-    padding:0 9px;
+    padding:0 6px;
 
-    background:rgba(255,255,255,.96);
+    background:rgba(255,255,255,.94);
 
-    border:1px solid rgba(10,77,30,.18);
+    border:1px solid rgba(11,90,42,.13);
 
-    border-radius:50px;
+    border-radius:20px;
 
     color:var(--green);
 
-    font-size:.62rem;
+    font-size:.42rem;
     font-weight:950;
 
-    box-shadow:
-        0 3px 9px rgba(0,0,0,.09);
+    white-space:nowrap;
+
+    overflow:hidden;
 }
 
+
 .stock-dot{
-    width:6px;
-    height:6px;
+
+    flex:0 0 5px;
+
+    width:5px;
+    height:5px;
 
     border-radius:50%;
 
-    background:#25a34a;
+    background:#28a44d;
 }
 
-.stock-low .stock-dot{
-    background:#e29a20;
-}
 
 .stock-low{
-    color:#a86a0b;
-    border-color:#efd9ad;
+
+    color:#9a650e;
+
+    border-color:#ecd7aa;
 }
+
+
+.stock-low .stock-dot{
+    background:#e39a1d;
+}
+
 
 .stock-out{
-    color:#a52c2c;
-    border-color:#efcaca;
+
+    color:#a52f2f;
+
+    border-color:#edcccc;
 }
 
+
 .stock-out .stock-dot{
-    background:#d63939;
+    background:#d63b3b;
 }
 
 
 /* ==========================================================
-   PRODUCT INFORMATION
+   PRODUCT DETAILS
    ========================================================== */
 
 .product-details{
-    display:flex;
-    flex-direction:column;
 
     flex:1;
 
-    padding:12px 11px 11px;
+    width:116px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    padding:7px 7px 7px;
+
+    overflow:hidden;
 }
+
 
 .product-category{
-    margin:0 0 4px;
 
-    color:#3e7b50;
+    flex:0 0 auto;
 
-    font-size:.59rem;
+    margin:0 0 2px;
+
+    color:#4b7d5a;
+
+    font-size:.43rem;
     font-weight:950;
 
+    line-height:1.1;
+
     text-transform:uppercase;
-    letter-spacing:.65px;
+
+    letter-spacing:.35px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
 }
 
+
 .product-name{
+
     margin:0;
 
-    min-height:36px;
+    min-height:27px;
+    max-height:27px;
 
-    color:#18221c;
+    color:#1c2920;
 
-    font-size:.88rem;
-    font-weight:850;
+    font-size:.63rem;
+    font-weight:900;
 
     line-height:1.25;
 
     display:-webkit-box;
+
     -webkit-box-orient:vertical;
     -webkit-line-clamp:2;
 
     overflow:hidden;
 }
 
+
 .product-price{
+
     display:flex;
     align-items:baseline;
-    gap:4px;
 
-    margin-top:9px;
+    gap:3px;
+
+    margin-top:4px;
 
     color:var(--green);
 
-    font-size:1rem;
+    font-size:.75rem;
     font-weight:950;
+
+    line-height:1;
 }
 
+
 .currency{
-    font-size:.58rem;
-    font-weight:900;
+
+    font-size:.39rem;
+
+    font-weight:950;
 }
 
 
 /* ==========================================================
-   ADD BUTTON
+   ADD TO CART BUTTON
    ========================================================== */
 
 .add-to-cart-btn{
+
     width:100%;
+
+    min-height:27px;
+    height:27px;
+
+    flex:0 0 27px;
 
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:7px;
 
-    min-height:40px;
+    gap:4px;
 
-    margin-top:10px;
+    margin-top:auto;
+
+    padding:0 4px;
 
     border:0;
-    border-radius:10px;
+
+    border-radius:7px;
 
     background:var(--green);
+
     color:#fff;
 
-    font-size:.67rem;
+    font-size:.43rem;
     font-weight:950;
+
+    white-space:nowrap;
 
     cursor:pointer;
 
     transition:
-        background .18s ease,
-        transform .18s ease,
-        box-shadow .18s ease;
+        background .15s ease,
+        transform .15s ease;
 }
+
 
 .add-to-cart-btn:hover{
-    background:var(--green-dark);
 
-    box-shadow:
-        0 5px 12px rgba(10,77,30,.17);
+    background:var(--green-dark);
 }
+
 
 .add-to-cart-btn:active{
-    transform:scale(.98);
+
+    transform:scale(.97);
 }
 
+
 .add-to-cart-btn:disabled{
-    background:#e0e6e2;
-    color:#7e8982;
+
+    background:#dfe6e1;
+
+    color:#7c8981;
 
     cursor:not-allowed;
+}
 
-    box-shadow:none;
+
+.add-to-cart-btn i{
+
+    font-size:.45rem;
 }
 
 
 /* ==========================================================
-   EMPTY STATE
+   EMPTY MARKET
    ========================================================== */
 
 .empty-market{
-    position:relative;
 
-    overflow:hidden;
+    width:100%;
 
-    min-height:390px;
+    min-height:250px;
 
     display:flex;
     align-items:center;
     justify-content:center;
 
-    padding:35px 20px;
+    padding:30px 18px;
 
     background:#fff;
 
     border:1px solid var(--line);
 
-    border-radius:22px;
+    border-radius:16px;
 
     text-align:center;
-
-    box-shadow:
-        0 5px 20px rgba(18,54,29,.045);
 }
 
-.empty-market::before{
-    content:"";
-
-    position:absolute;
-
-    width:220px;
-    height:220px;
-
-    top:-110px;
-    right:-80px;
-
-    border-radius:50%;
-
-    background:rgba(10,77,30,.045);
-}
-
-.empty-market::after{
-    content:"";
-
-    position:absolute;
-
-    width:170px;
-    height:170px;
-
-    bottom:-90px;
-    left:-70px;
-
-    border-radius:50%;
-
-    background:rgba(229,138,34,.045);
-}
 
 .empty-inner{
-    position:relative;
-    z-index:2;
 
-    max-width:430px;
+    max-width:380px;
 }
 
-.empty-icon{
-    width:92px;
-    height:92px;
 
-    margin:0 auto 19px;
+.empty-icon{
+
+    width:60px;
+    height:60px;
+
+    margin:0 auto 12px;
 
     display:flex;
     align-items:center;
     justify-content:center;
 
-    border-radius:27px;
+    border-radius:18px;
 
-    background:
-        linear-gradient(
-            145deg,
-            #eaf6ed,
-            #f6faf7
-        );
+    background:var(--green-soft);
 
     color:var(--green);
 
-    font-size:2rem;
-
-    box-shadow:
-        inset 0 0 0 1px #dceade;
+    font-size:1.35rem;
 }
+
 
 .empty-market h3{
+
     margin:0;
 
-    color:#213329;
+    color:#27382d;
 
-    font-size:1.15rem;
+    font-size:.95rem;
     font-weight:950;
-
-    letter-spacing:-.25px;
 }
 
+
 .empty-market p{
-    margin:8px auto 0;
+
+    margin:7px auto 0;
 
     color:#7a877f;
 
-    font-size:.77rem;
+    font-size:.66rem;
     font-weight:600;
 
-    line-height:1.55;
+    line-height:1.5;
 }
 
+
 .empty-action{
+
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    gap:7px;
 
-    min-height:42px;
+    gap:6px;
 
-    margin-top:18px;
+    min-height:35px;
 
-    padding:0 17px;
+    margin-top:13px;
+
+    padding:0 13px;
+
+    border-radius:8px;
 
     background:var(--green);
-    color:#fff;
 
-    border-radius:11px;
+    color:#fff;
 
     text-decoration:none;
 
-    font-size:.7rem;
+    font-size:.56rem;
     font-weight:900;
-
-    box-shadow:
-        0 6px 14px rgba(10,77,30,.15);
-}
-
-.empty-action:hover{
-    background:var(--green-dark);
-    color:#fff;
 }
 
 
@@ -865,88 +1025,100 @@
    ========================================================== */
 
 .qty-modal{
+
     overflow:hidden;
 
     border:0;
-    border-radius:22px;
+
+    border-radius:18px;
 
     box-shadow:
-        0 25px 65px rgba(0,0,0,.2);
+        0 20px 55px rgba(0,0,0,.2);
 }
 
-.qty-header{
-    padding:20px;
 
-    background:
-        linear-gradient(
-            145deg,
-            #f0f8f2,
-            #fafcfb
-        );
+.qty-header{
+
+    padding:17px;
+
+    background:#f3f8f4;
 
     border-bottom:1px solid var(--line);
 
     text-align:center;
 }
 
-.qty-icon{
-    width:44px;
-    height:44px;
 
-    margin:0 auto 9px;
+.qty-icon{
+
+    width:42px;
+    height:42px;
+
+    margin:0 auto 8px;
 
     display:flex;
     align-items:center;
     justify-content:center;
 
-    border-radius:13px;
+    border-radius:12px;
 
     background:var(--green);
 
     color:#fff;
 
-    font-size:.95rem;
+    font-size:.9rem;
 }
 
+
 .qty-product-name{
+
     margin:0;
 
     color:var(--green);
 
-    font-size:1rem;
+    font-size:.92rem;
     font-weight:950;
 }
 
+
 .qty-available{
-    margin:5px 0 0;
 
-    color:#7a877f;
+    margin:4px 0 0;
 
-    font-size:.7rem;
-    font-weight:600;
+    color:#7b8981;
+
+    font-size:.65rem;
 }
+
 
 .qty-available strong{
-    color:#33483a;
+
+    color:#34483b;
 }
+
 
 .qty-body{
-    padding:22px 20px 18px;
+
+    padding:19px 17px 16px;
 }
 
+
 .qty-selector{
+
     display:flex;
     align-items:center;
     justify-content:center;
 
-    gap:25px;
+    gap:22px;
 
-    margin:4px 0 22px;
+    margin-bottom:19px;
 }
 
+
 .qty-control{
-    width:45px;
-    height:45px;
+
+    width:43px;
+    height:43px;
 
     display:flex;
     align-items:center;
@@ -955,59 +1127,59 @@
     padding:0;
 
     border:2px solid var(--green);
+
     border-radius:50%;
 
     background:#fff;
+
     color:var(--green);
 
-    font-size:1.3rem;
+    font-size:1.2rem;
     font-weight:950;
 
     cursor:pointer;
-
-    transition:
-        background .16s ease,
-        color .16s ease,
-        transform .16s ease;
 }
 
+
 .qty-control:hover{
+
     background:var(--green);
+
     color:#fff;
 }
 
-.qty-control:active{
-    transform:scale(.92);
-}
 
 .qty-number{
-    min-width:55px;
+
+    min-width:45px;
 
     color:var(--green);
 
-    font-size:2.15rem;
+    font-size:2rem;
     font-weight:950;
-
-    line-height:1;
 
     text-align:center;
 }
 
+
 .qty-confirm{
-    margin-top:0;
-    min-height:47px;
+
+    height:44px;
+    min-height:44px;
 }
 
+
 .qty-cancel{
+
     display:block;
 
     width:100%;
 
-    margin-top:7px;
+    margin-top:5px;
 
-    color:#7a867f !important;
+    color:#7c8982 !important;
 
-    font-size:.74rem;
+    font-size:.67rem;
     font-weight:800;
 
     text-decoration:none !important;
@@ -1015,150 +1187,167 @@
 
 
 /* ==========================================================
-   CART OFFCANVAS
+   CART SIDEBAR
    ========================================================== */
 
 .cart-sidebar{
-    width:min(430px,94vw) !important;
+
+    width:min(400px,94vw) !important;
 
     border-left:1px solid var(--line) !important;
 
     box-shadow:
-        -15px 0 45px rgba(0,0,0,.13);
+        -15px 0 45px rgba(0,0,0,.12);
 }
 
+
 .cart-header{
+
     display:flex;
     align-items:center;
     justify-content:space-between;
 
-    gap:12px;
+    gap:10px;
 
-    padding:17px;
+    padding:14px;
 
-    background:
-        linear-gradient(
-            145deg,
-            #f0f8f2,
-            #fff
-        );
+    background:#f2f8f3;
 
     border-bottom:1px solid var(--line);
 }
 
+
 .cart-heading{
+
     display:flex;
     align-items:center;
-    gap:10px;
 
-    min-width:0;
+    gap:9px;
 }
 
-.cart-icon{
-    flex:0 0 42px;
 
-    width:42px;
-    height:42px;
+.cart-icon{
+
+    width:38px;
+    height:38px;
 
     display:flex;
     align-items:center;
     justify-content:center;
 
-    border-radius:13px;
+    border-radius:11px;
 
     background:var(--green);
 
     color:#fff;
 
-    font-size:1rem;
+    font-size:.85rem;
 }
 
+
 .cart-title{
+
     margin:0;
 
     color:var(--green);
 
-    font-size:1rem;
+    font-size:.9rem;
     font-weight:950;
 }
 
+
 .cart-subtitle{
-    margin:3px 0 0;
+
+    margin:2px 0 0;
 
     color:#7c8981;
 
-    font-size:.66rem;
-    font-weight:600;
+    font-size:.6rem;
 }
 
+
 .cart-body{
-    padding:13px !important;
+
+    padding:10px !important;
 
     background:#fff;
 }
 
+
 .cart-item{
+
     display:flex;
     align-items:center;
 
-    gap:10px;
+    gap:8px;
 
-    padding:13px 3px;
+    padding:11px 2px;
 
     border-bottom:1px solid var(--line-soft);
 }
+
 
 .cart-item:last-child{
     border-bottom:0;
 }
 
+
 .cart-product-info{
+
     flex:1;
+
     min-width:0;
 }
 
+
 .cart-product-name{
+
     display:block;
 
-    color:#203027;
+    color:#243229;
 
-    font-size:.79rem;
-    font-weight:850;
+    font-size:.7rem;
+    font-weight:900;
 
-    line-height:1.3;
+    white-space:nowrap;
 
     overflow:hidden;
+
     text-overflow:ellipsis;
-    white-space:nowrap;
 }
+
 
 .cart-product-price{
+
     display:block;
 
-    margin-top:4px;
+    margin-top:3px;
 
-    color:#7b8980;
+    color:#7d8982;
 
-    font-size:.67rem;
-    font-weight:600;
+    font-size:.59rem;
 }
 
+
 .cart-product-price strong{
+
     color:var(--green);
 }
 
+
 .cart-controls{
-    flex:0 0 auto;
 
     display:flex;
     align-items:center;
 
-    gap:4px;
+    gap:3px;
 }
 
+
 .cart-control{
-    width:31px;
-    height:31px;
+
+    width:28px;
+    height:28px;
 
     display:flex;
     align-items:center;
@@ -1166,42 +1355,45 @@
 
     padding:0;
 
-    border:1px solid #cedbd1;
-    border-radius:8px;
+    border:1px solid #cfddd3;
+
+    border-radius:7px;
 
     background:#fff;
+
     color:var(--green);
 
-    font-size:.82rem;
+    font-size:.72rem;
     font-weight:950;
 
     cursor:pointer;
-
-    transition:
-        background .15s ease,
-        border-color .15s ease;
 }
 
+
 .cart-control:hover{
+
     background:var(--green-soft);
 
     border-color:var(--green);
 }
 
-.cart-remove{
-    color:#b52d2d;
 
-    border-color:#efcece;
+.cart-remove{
+
+    color:#b42f2f;
+
+    border-color:#eccccc;
 
     background:#fff8f8;
 }
 
+
 .cart-qty{
-    min-width:22px;
 
-    color:#25352b;
+    min-width:18px;
 
-    font-size:.73rem;
+    color:#26352c;
+
     font-weight:950;
 
     text-align:center;
@@ -1213,51 +1405,58 @@
    ========================================================== */
 
 .empty-cart{
-    min-height:310px;
+
+    min-height:260px;
 
     display:flex;
     flex-direction:column;
+
     align-items:center;
     justify-content:center;
 
-    text-align:center;
+    padding:25px;
 
-    padding:30px 20px;
+    text-align:center;
 }
 
-.empty-cart-icon{
-    width:76px;
-    height:76px;
 
-    margin-bottom:14px;
+.empty-cart-icon{
+
+    width:65px;
+    height:65px;
+
+    margin-bottom:12px;
 
     display:flex;
     align-items:center;
     justify-content:center;
 
-    border-radius:24px;
+    border-radius:20px;
 
-    background:#f0f6f1;
+    background:#f0f5f1;
 
-    color:#8ba094;
+    color:#8a9b91;
 
-    font-size:1.55rem;
+    font-size:1.35rem;
 }
 
-.empty-cart strong{
-    color:#415148;
 
-    font-size:.88rem;
+.empty-cart strong{
+
+    color:#405148;
+
+    font-size:.78rem;
     font-weight:900;
 }
 
+
 .empty-cart span{
-    margin-top:5px;
 
-    color:#87938c;
+    margin-top:4px;
 
-    font-size:.7rem;
-    font-weight:600;
+    color:#87928c;
+
+    font-size:.62rem;
 }
 
 
@@ -1266,206 +1465,162 @@
    ========================================================== */
 
 .cart-footer{
-    padding:16px;
+
+    padding:13px;
 
     background:#f5f9f6;
 
     border-top:1px solid var(--line);
 }
 
+
 .cart-total{
+
     display:flex;
     align-items:center;
     justify-content:space-between;
 
-    margin-bottom:12px;
+    margin-bottom:10px;
 
-    color:#65736b;
+    color:#68766e;
 
-    font-size:.76rem;
+    font-size:.66rem;
     font-weight:800;
 }
 
+
 .cart-total strong{
+
     color:var(--green);
 
-    font-size:1.08rem;
+    font-size:.92rem;
     font-weight:950;
 }
 
+
 .checkout-btn{
-    min-height:47px;
+
+    height:43px;
+
+    min-height:43px;
 }
 
 
 /* ==========================================================
-   RESPONSIVE
+   TABLET / DESKTOP
    ========================================================== */
 
 @media(min-width:700px){
 
     .market-hero{
-        padding:27px 22px 21px;
+
+        padding:
+            22px
+            22px
+            18px;
     }
+
+
+    .market-title{
+
+        font-size:1.65rem;
+    }
+
+
+    .market-description{
+
+        font-size:.7rem;
+    }
+
 
     .market-main{
-        padding-left:20px;
-        padding-right:20px;
+
+        padding:
+            18px
+            20px
+            0;
     }
 
+
+    /*
+     * STILL FOUR CARDS PER ROW.
+     *
+     * Cards DO NOT become larger on desktop.
+     */
     .product-grid{
+
         grid-template-columns:
-            repeat(4,minmax(0,1fr));
+            repeat(4,116px);
 
-        gap:15px;
-    }
+        grid-auto-rows:170px;
 
-    .product-image{
-        aspect-ratio:1 / .82;
-    }
-
-}
-
-@media(min-width:1100px){
-
-    .market-hero{
-        padding-left:30px;
-        padding-right:30px;
-    }
-
-    .market-main{
-        padding-left:24px;
-        padding-right:24px;
-    }
-
-    .product-grid{
-        grid-template-columns:
-            repeat(5,minmax(0,1fr));
-
-        gap:17px;
+        gap:10px;
     }
 
 }
 
 
 /* ==========================================================
-   SMALL MOBILE
+   LARGE DESKTOP
    ========================================================== */
 
-@media(max-width:575px){
+@media(min-width:1100px){
 
     .market-hero{
-        padding:18px 12px 15px;
+
+        padding-left:30px;
+        padding-right:30px;
     }
 
-    .market-title-row{
-        align-items:center;
-    }
-
-    .market-title{
-        font-size:1.55rem;
-    }
-
-    .market-description{
-        font-size:.69rem;
-    }
-
-    .market-cart-button{
-        min-width:48px;
-        width:48px;
-        height:48px;
-
-        padding:0;
-
-        border-radius:14px;
-    }
-
-    .market-cart-button span{
-        display:none;
-    }
-
-    .market-summary{
-        gap:7px;
-
-        margin-top:15px;
-    }
-
-    .summary-card{
-        flex-direction:column;
-        align-items:flex-start;
-
-        gap:7px;
-
-        padding:10px;
-
-        border-radius:13px;
-    }
-
-    .summary-icon{
-        width:31px;
-        height:31px;
-
-        flex-basis:31px;
-
-        border-radius:9px;
-
-        font-size:.75rem;
-    }
-
-    .summary-label{
-        font-size:.5rem;
-        letter-spacing:.4px;
-    }
-
-    .summary-value{
-        font-size:.78rem;
-    }
 
     .market-main{
-        padding-left:11px;
-        padding-right:11px;
+
+        padding-left:30px;
+        padding-right:30px;
     }
 
-    .category-pill{
-        min-height:36px;
+}
 
-        padding:0 14px;
 
-        font-size:.67rem;
+/* ==========================================================
+   VERY SMALL PHONES
+   ========================================================== */
+
+@media(max-width:360px){
+
+    .market-hero{
+
+        padding-left:10px;
+        padding-right:10px;
     }
 
-    .product-grid{
-        gap:10px;
+
+    .market-main{
+
+        padding-left:9px;
+        padding-right:9px;
     }
 
-    .product-details{
-        padding:10px 9px 10px;
+
+    .summary-card{
+
+        padding:
+            7px 6px;
     }
 
-    .product-name{
-        font-size:.79rem;
-        min-height:33px;
+
+    .summary-icon{
+
+        flex-basis:26px;
+
+        width:26px;
+        height:26px;
     }
 
-    .product-price{
-        font-size:.92rem;
-    }
 
-    .add-to-cart-btn{
-        min-height:38px;
+    .summary-value{
 
         font-size:.61rem;
-    }
-
-    .stock-badge{
-        top:8px;
-        left:8px;
-
-        min-height:25px;
-
-        padding:0 8px;
-
-        font-size:.57rem;
     }
 
 }
@@ -1477,17 +1632,24 @@
 
 button:focus-visible,
 a:focus-visible{
-    outline:3px solid rgba(10,77,30,.24);
-    outline-offset:3px;
+
+    outline:
+        3px solid rgba(11,90,42,.23);
+
+    outline-offset:2px;
 }
+
 
 @media(prefers-reduced-motion:reduce){
 
     *,
     *::before,
     *::after{
+
         scroll-behavior:auto !important;
+
         transition:none !important;
+
         animation:none !important;
     }
 
@@ -1500,7 +1662,7 @@ a:focus-visible{
 
 
     <!-- ======================================================
-         MARKETPLACE HERO
+         MARKETPLACE HEADER
          ====================================================== -->
 
     <section class="market-hero">
@@ -1512,23 +1674,29 @@ a:focus-visible{
                 <div class="market-heading">
 
                     <div class="market-eyebrow">
+
                         <i class="fas fa-store"></i>
+
                         Marketplace
+
                     </div>
 
+
                     <h1 class="market-title">
+
                         Shop our products
+
                     </h1>
 
+
                     <p class="market-description">
-                        Browse available products and add what you need
-                        to your cart.
+
+                        Browse available products and add what you need.
+
                     </p>
 
                 </div>
 
-
-                <!-- CART BUTTON -->
 
                 <button
                     type="button"
@@ -1539,29 +1707,26 @@ a:focus-visible{
 
                     <i class="fas fa-shopping-cart"></i>
 
-                    <span>
-                        CART
-                    </span>
-
                 </button>
 
             </div>
 
 
             <!-- ==================================================
-                 THREE SUMMARY CARDS
+                 SUMMARY
                  ================================================== -->
 
             <div class="market-summary">
 
 
-                <!-- PRODUCTS AVAILABLE -->
-
                 <div class="summary-card">
 
                     <div class="summary-icon">
+
                         <i class="fas fa-box-open"></i>
+
                     </div>
+
 
                     <div class="summary-info">
 
@@ -1570,11 +1735,14 @@ a:focus-visible{
                         </span>
 
                         <span class="summary-value">
+
                             <%= products.length %>
+
                             <%= products.length === 1
                                 ? 'Product'
                                 : 'Products'
                             %>
+
                         </span>
 
                     </div>
@@ -1582,13 +1750,14 @@ a:focus-visible{
                 </div>
 
 
-                <!-- CART ITEMS -->
-
                 <div class="summary-card">
 
                     <div class="summary-icon">
+
                         <i class="fas fa-shopping-basket"></i>
+
                     </div>
+
 
                     <div class="summary-info">
 
@@ -1600,11 +1769,14 @@ a:focus-visible{
                             class="summary-value"
                             id="cartCount"
                         >
+
                             <%= cartCount || 0 %>
+
                             <%= (cartCount || 0) === 1
                                 ? 'Item'
                                 : 'Items'
                             %>
+
                         </span>
 
                     </div>
@@ -1612,13 +1784,14 @@ a:focus-visible{
                 </div>
 
 
-                <!-- CART VALUE -->
-
                 <div class="summary-card">
 
                     <div class="summary-icon">
+
                         <i class="fas fa-coins"></i>
+
                     </div>
+
 
                     <div class="summary-info">
 
@@ -1630,15 +1803,19 @@ a:focus-visible{
                             class="summary-value"
                             id="cartTotalText"
                         >
+
                             KES
+
                             <%= Number(
                                 cartTotal || 0
                             ).toLocaleString() %>
+
                         </span>
 
                     </div>
 
                 </div>
+
 
             </div>
 
@@ -1649,7 +1826,7 @@ a:focus-visible{
 
 
     <!-- ======================================================
-         MAIN
+         MAIN CONTENT
          ====================================================== -->
 
     <main class="market-main">
@@ -1660,6 +1837,7 @@ a:focus-visible{
              ================================================== -->
 
         <section class="category-section">
+
 
             <div class="section-heading">
 
@@ -1681,6 +1859,7 @@ a:focus-visible{
                 aria-label="Product categories"
             >
 
+
                 <a
                     href="/products?category=all"
                     class="category-pill
@@ -1688,23 +1867,30 @@ a:focus-visible{
                             ? 'active'
                             : '' %>"
                 >
+
                     All
+
                 </a>
 
 
                 <% (categories || []).forEach(category => { %>
 
+
                     <a
-                        href="/products?category=<%= category %>"
+                        href="/products?category=<%= encodeURIComponent(category) %>"
                         class="category-pill text-capitalize
                             <%= activeCategory === category
                                 ? 'active'
                                 : '' %>"
                     >
+
                         <%= category %>
+
                     </a>
 
+
                 <% }) %>
+
 
             </nav>
 
@@ -1718,28 +1904,40 @@ a:focus-visible{
 
         <section>
 
+
             <% if(!products || !products.length){ %>
 
 
                 <!-- ==========================================
-                     PREMIUM EMPTY STATE
+                     EMPTY
                      ========================================== -->
 
                 <div class="empty-market">
 
                     <div class="empty-inner">
 
+
                         <div class="empty-icon">
+
                             <i class="fas fa-store-slash"></i>
+
                         </div>
 
+
                         <h3>
+
                             Nothing available here yet
+
                         </h3>
+
 
                         <p>
 
-                            <% if(activeCategory && activeCategory !== 'all'){ %>
+
+                            <% if(
+                                activeCategory &&
+                                activeCategory !== 'all'
+                            ){ %>
 
                                 We don't currently have any
                                 products in the
@@ -1748,13 +1946,16 @@ a:focus-visible{
                                 </strong>
                                 category.
 
+
                             <% } else { %>
 
                                 There are currently no products
                                 available in the marketplace.
                                 Please check again later.
 
+
                             <% } %>
+
 
                         </p>
 
@@ -1764,15 +1965,21 @@ a:focus-visible{
                             activeCategory !== 'all'
                         ){ %>
 
+
                             <a
                                 href="/products?category=all"
                                 class="empty-action"
                             >
+
                                 <i class="fas fa-store"></i>
+
                                 VIEW ALL PRODUCTS
+
                             </a>
 
+
                         <% } %>
+
 
                     </div>
 
@@ -1783,17 +1990,20 @@ a:focus-visible{
 
 
                 <!-- ==========================================
-                     PRODUCT HEADER
+                     PRODUCTS HEADER
                      ========================================== -->
 
                 <div class="products-heading">
+
 
                     <div class="section-heading-left">
 
                         <i class="fas fa-boxes-stacked"></i>
 
                         <h2 class="section-heading-title">
+
                             Products
+
                         </h2>
 
                     </div>
@@ -1811,147 +2021,176 @@ a:focus-visible{
 
                     </div>
 
+
                 </div>
 
 
+
                 <!-- ==========================================
-                     PRODUCT GRID
+                     HORIZONTAL PRODUCT VIEWPORT
                      ========================================== -->
 
-                <div class="product-grid">
+                <div class="product-scroll">
 
 
-                    <% products.forEach(product => { %>
-
-                        <%
-                            const stock =
-                                Number(product.units || 0);
-
-                            let stockClass = '';
-
-                            if(stock <= 0){
-                                stockClass = 'stock-out';
-                            }
-                            else if(stock <= 5){
-                                stockClass = 'stock-low';
-                            }
-                        %>
+                    <div class="product-grid">
 
 
-                        <!-- PRODUCT CARD -->
-
-                        <article
-                            class="product-card"
-                            data-product-id="<%= product._id %>"
-                        >
+                        <% products.forEach(product => { %>
 
 
-                            <!-- IMAGE -->
+                            <%
+                                const stock =
+                                    Number(product.units || 0);
 
-                            <div class="product-image">
+                                let stockClass = '';
 
-                                <span
-                                    class="stock-badge <%= stockClass %>"
-                                >
+                                if(stock <= 0){
 
-                                    <span class="stock-dot"></span>
+                                    stockClass =
+                                        'stock-out';
 
-                                    <% if(stock <= 0){ %>
+                                }
+                                else if(stock <= 5){
 
-                                        Out of stock
+                                    stockClass =
+                                        'stock-low';
 
-                                    <% } else if(stock <= 5){ %>
-
-                                        Only <%= stock %> left
-
-                                    <% } else { %>
-
-                                        <%= stock %> available
-
-                                    <% } %>
-
-                                </span>
+                                }
+                            %>
 
 
-                                <img
-                                    src="<%= product.image || '/images/no-image.png' %>"
-                                    alt="<%= product.name %>"
-                                    loading="lazy"
-                                    onerror="this.src='/images/no-image.png';"
-                                >
+                            <!-- ==================================
+                                 PRODUCT CARD
+                                 ================================== -->
 
-                            </div>
-
-
-                            <!-- DETAILS -->
-
-                            <div class="product-details">
+                            <article
+                                class="product-card"
+                                data-product-id="<%= product._id %>"
+                            >
 
 
-                                <p class="product-category">
-                                    <%= product.category || 'General' %>
-                                </p>
+                                <!-- IMAGE -->
+
+                                <div class="product-image">
 
 
-                                <h3 class="product-name">
-                                    <%= product.name %>
-                                </h3>
+                                    <span
+                                        class="stock-badge <%= stockClass %>"
+                                    >
+
+                                        <span class="stock-dot"></span>
 
 
-                                <div class="product-price">
+                                        <% if(stock <= 0){ %>
 
-                                    <span class="currency">
-                                        KES
+                                            Out of stock
+
+                                        <% } else if(stock <= 5){ %>
+
+                                            Only <%= stock %> left
+
+                                        <% } else { %>
+
+                                            <%= stock %> available
+
+                                        <% } %>
+
+
                                     </span>
 
-                                    <%= Number(
-                                        product.unitSellPrice || 0
-                                    ).toLocaleString() %>
+
+                                    <img
+                                        src="<%= product.image || '/images/no-image.png' %>"
+                                        alt="<%= product.name %>"
+                                        loading="lazy"
+                                        onerror="this.src='/images/no-image.png';"
+                                    >
 
                                 </div>
 
 
-                                <!-- ADD TO CART -->
 
-                                <button
-                                    type="button"
-                                    class="add-to-cart-btn"
-                                    data-id="<%= product._id %>"
-                                    data-name="<%= product.name %>"
-                                    data-stock="<%= stock %>"
+                                <!-- DETAILS -->
 
-                                    <%= stock <= 0
-                                        ? 'disabled'
-                                        : '' %>
-                                >
+                                <div class="product-details">
 
-                                    <i class="fas
+
+                                    <p class="product-category">
+
+                                        <%= product.category || 'General' %>
+
+                                    </p>
+
+
+                                    <h3 class="product-name">
+
+                                        <%= product.name %>
+
+                                    </h3>
+
+
+                                    <div class="product-price">
+
+                                        <span class="currency">
+                                            KES
+                                        </span>
+
+                                        <%= Number(
+                                            product.unitSellPrice || 0
+                                        ).toLocaleString() %>
+
+                                    </div>
+
+
+                                    <button
+                                        type="button"
+                                        class="add-to-cart-btn"
+                                        data-id="<%= product._id %>"
+                                        data-name="<%= product.name %>"
+                                        data-stock="<%= stock %>"
                                         <%= stock <= 0
-                                            ? 'fa-ban'
-                                            : 'fa-cart-plus' %>"
-                                    ></i>
+                                            ? 'disabled'
+                                            : '' %>
+                                    >
 
-                                    <%= stock <= 0
-                                        ? 'OUT OF STOCK'
-                                        : 'ADD TO CART' %>
+                                        <i class="fas
+                                            <%= stock <= 0
+                                                ? 'fa-ban'
+                                                : 'fa-cart-plus' %>"
+                                        ></i>
 
-                                </button>
 
-                            </div>
+                                        <%= stock <= 0
+                                            ? 'OUT OF STOCK'
+                                            : 'ADD TO CART' %>
 
-                        </article>
+                                    </button>
 
-                    <% }) %>
+
+                                </div>
+
+
+                            </article>
+
+
+                        <% }) %>
+
+
+                    </div>
 
 
                 </div>
 
+
             <% } %>
+
 
         </section>
 
 
     </main>
+
 
 </div>
 
@@ -1973,18 +2212,20 @@ a:focus-visible{
         <div class="modal-content qty-modal">
 
 
-            <!-- HEADER -->
-
             <div class="qty-header">
 
                 <div class="qty-icon">
+
                     <i class="fas fa-cart-plus"></i>
+
                 </div>
+
 
                 <h3
                     class="qty-product-name"
                     id="qtyProductName"
                 ></h3>
+
 
                 <p class="qty-available">
 
@@ -1999,9 +2240,8 @@ a:focus-visible{
             </div>
 
 
-            <!-- BODY -->
-
             <div class="qty-body">
+
 
                 <div class="qty-selector">
 
@@ -2061,8 +2301,11 @@ a:focus-visible{
                     class="btn btn-link qty-cancel"
                     data-bs-dismiss="modal"
                 >
+
                     Cancel
+
                 </button>
+
 
             </div>
 
@@ -2086,15 +2329,18 @@ a:focus-visible{
 >
 
 
-    <!-- HEADER -->
-
     <div class="cart-header">
+
 
         <div class="cart-heading">
 
+
             <div class="cart-icon">
+
                 <i class="fas fa-shopping-basket"></i>
+
             </div>
+
 
             <div>
 
@@ -2102,14 +2348,20 @@ a:focus-visible{
                     class="cart-title"
                     id="cartSidebarLabel"
                 >
+
                     Your Cart
+
                 </h5>
 
+
                 <p class="cart-subtitle">
+
                     Review your selected products
+
                 </p>
 
             </div>
+
 
         </div>
 
@@ -2121,11 +2373,10 @@ a:focus-visible{
             aria-label="Close"
         ></button>
 
+
     </div>
 
 
-
-    <!-- BODY -->
 
     <div class="offcanvas-body cart-body">
 
@@ -2135,6 +2386,7 @@ a:focus-visible{
 
             <% cart.forEach(item => { %>
 
+
                 <div
                     class="cart-item"
                     data-id="<%= item.productId %>"
@@ -2143,8 +2395,11 @@ a:focus-visible{
 
                     <div class="cart-product-info">
 
+
                         <span class="cart-product-name">
+
                             <%= item.name %>
+
                         </span>
 
 
@@ -2153,18 +2408,23 @@ a:focus-visible{
                             KES
 
                             <strong>
+
                                 <%= Number(
                                     item.price || 0
                                 ).toLocaleString() %>
+
                             </strong>
 
                             ×
 
                             <span class="cart-qty">
+
                                 <%= item.qty %>
+
                             </span>
 
                         </span>
+
 
                     </div>
 
@@ -2204,7 +2464,9 @@ a:focus-visible{
 
                     </div>
 
+
                 </div>
+
 
             <% }) %>
 
@@ -2212,21 +2474,29 @@ a:focus-visible{
         <% } else { %>
 
 
-            <!-- EMPTY CART -->
-
             <div class="empty-cart">
 
+
                 <div class="empty-cart-icon">
+
                     <i class="fas fa-shopping-basket"></i>
+
                 </div>
 
+
                 <strong>
+
                     Your cart is empty
+
                 </strong>
 
+
                 <span>
+
                     Products you add will appear here.
+
                 </span>
+
 
             </div>
 
@@ -2238,15 +2508,15 @@ a:focus-visible{
 
 
 
-    <!-- FOOTER -->
-
     <div class="cart-footer">
+
 
         <div class="cart-total">
 
             <span>
                 Cart total
             </span>
+
 
             <strong>
 
@@ -2263,6 +2533,7 @@ a:focus-visible{
 
         <% if(cart && cart.length){ %>
 
+
             <button
                 type="button"
                 class="add-to-cart-btn checkout-btn"
@@ -2275,7 +2546,9 @@ a:focus-visible{
 
             </button>
 
+
         <% } %>
+
 
     </div>
 
@@ -2290,7 +2563,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     /* ======================================================
-       BOOTSTRAP COMPONENTS
+       BOOTSTRAP
        ====================================================== */
 
     const qtyModalElement =
@@ -2344,7 +2617,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             '.add-to-cart-btn'
                         )
                     ){
+
                         return;
+
                     }
 
 
@@ -2375,16 +2650,14 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelectorAll('.add-to-cart-btn')
         .forEach(button => {
 
-            /*
-             * Do not attach the quantity-modal behaviour
-             * to the checkout button.
-             */
 
             if(
                 button.id === 'qtyConfirm' ||
                 button.id === 'checkoutBtn'
             ){
+
                 return;
+
             }
 
 
@@ -2465,7 +2738,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     /* ======================================================
-       QUANTITY PLUS
+       PLUS
        ====================================================== */
 
     document
@@ -2491,7 +2764,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     /* ======================================================
-       QUANTITY MINUS
+       MINUS
        ====================================================== */
 
     document
@@ -2516,7 +2789,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     /* ======================================================
-       CONFIRM ADD TO CART
+       CONFIRM ADD
        ====================================================== */
 
     document
@@ -2580,7 +2853,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
                     qtyModal.hide();
-
 
                     location.reload();
 
@@ -2712,7 +2984,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
                     if(!quantityElement){
+
                         return;
+
                     }
 
 
@@ -2763,7 +3037,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
                     if(!quantityElement){
+
                         return;
+
                     }
 
 
@@ -2806,7 +3082,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     /* ======================================================
-       REMOVE FROM CART
+       REMOVE
        ====================================================== */
 
     document
@@ -2915,6 +3191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
     }
+
 
 });
 
