@@ -4,7 +4,7 @@ console.log("... Loading services/corevester/packageService.js");
 let Package, Product, productsService;
 
 try {
-    Package = require("../../models/corevester/package");
+    Package = require("../../models/corevester/packages");
     console.log("✅ Package model loaded in packageService");
 } catch (err) {
     console.error("❌ FAILED to load Package model in packageService");
