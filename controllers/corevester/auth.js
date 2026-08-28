@@ -1,45 +1,168 @@
+// ==========================================================
+// controllers/corevester/auth.js
+// ==========================================================
+//
+// COREVESTER AUTH CONTROLLER
+//
+// RESPONSIBILITIES:
+// ----------------------------------------------------------
+// • Render signup page
+// • Render login page
+// • Register new users
+// • Authenticate existing users
+// • Create login sessions
+// • Destroy login sessions
+//
+// AUTH FLOW:
+// ----------------------------------------------------------
+// SIGN UP
+//     POST /auth/signup
+//         ↓
+//     Create account
+//         ↓
+//     Redirect to /auth/login
+//
+// LOGIN
+//     POST /auth/login
+//         ↓
+//     Verify credentials
+//         ↓
+//     Create session
+//         ↓
+//     Redirect to /
+//
+// IMPORTANT:
+// ----------------------------------------------------------
+// Signup does NOT log the user in automatically.
+// All authenticated roles redirect to "/" after login.
+// ==========================================================
+
 const authService = require("../../services/corevester/auth");
 
-exports.showSignup = (req, res) => res.render("signup", { title: "Create Account" });
-exports.showLogin = (req, res) => res.render("login", { title: "Login" });
+// ----------------------------------------------------------
+// SHOW SIGNUP
+// ----------------------------------------------------------
+
+exports.showSignup = (req, res) => {
+  return res.render("signup", {
+    title: "Create Account"
+  });
+};
+
+// ----------------------------------------------------------
+// SHOW LOGIN
+// ----------------------------------------------------------
+
+exports.showLogin = (req, res) => {
+  return res.render("login", {
+    title: "Login"
+  });
+};
+
+// ----------------------------------------------------------
+// SIGNUP
+// ----------------------------------------------------------
 
 exports.signup = async (req, res) => {
-  try{
+  try {
+
     const user = await authService.registerUser(req.body);
-    req.session.userId = user._id;
-    req.session.role = user.role;
-    req.session.user = { id: user._id, fullName: user.fullName, email: user.email, role: user.role };
-    
-    req.session.save((err) => {
-      if(err) return res.status(500).json({ success:false, message: 'Session error' });
-      return res.json({ success:true, redirect:'/' });
+
+    // ------------------------------------------------------
+    // IMPORTANT:
+    // Do NOT create a session here.
+    //
+    // A newly registered user must first go to the
+    // login page and authenticate normally.
+    // ------------------------------------------------------
+
+    return res.json({
+      success: true,
+      redirect: "/auth/login"
     });
-  }catch(err){
-    return res.status(400).json({ success:false, message: err.message });
+
+  } catch (err) {
+
+    console.error("CoreVester signup error:", err);
+
+    return res.status(400).json({
+      success: false,
+      message: err.message || "Unable to create account"
+    });
   }
 };
+
+// ----------------------------------------------------------
+// LOGIN
+// ----------------------------------------------------------
 
 exports.login = async (req, res) => {
-  try{
+  try {
+
     const user = await authService.loginUser(req.body);
-    req.session.userId = user._id;
+
+    // ------------------------------------------------------
+    // CREATE SESSION
+    // ------------------------------------------------------
+
+    req.session.userId = user._id.toString();
     req.session.role = user.role;
-    req.session.user = { id: user._id, fullName: user.fullName, email: user.email, role: user.role };
-    
-    const redirectTo = user.role === 'admin' ? '/admin/products' : '/';
-    
+
+    req.session.user = {
+      id: user._id.toString(),
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role
+    };
+
+    // ------------------------------------------------------
+    // ALL ROLES GO TO "/"
+    // ------------------------------------------------------
+
     req.session.save((err) => {
-      if(err) return res.status(500).json({ success:false, message: 'Session error' });
-      return res.json({ success:true, redirect: redirectTo });
+
+      if (err) {
+        console.error("CoreVester login session error:", err);
+
+        return res.status(500).json({
+          success: false,
+          message: "Session error"
+        });
+      }
+
+      return res.json({
+        success: true,
+        redirect: "/"
+      });
     });
-  }catch(err){
-    return res.status(401).json({ success:false, message: err.message });
+
+  } catch (err) {
+
+    console.error("CoreVester login error:", err);
+
+    return res.status(401).json({
+      success: false,
+      message: err.message || "Invalid credentials"
+    });
   }
 };
 
-exports.logout = (req,res) => {
-  req.session.destroy(() => {
-    res.clearCookie('connect.sid');
-    res.redirect('/auth/login');
+// ----------------------------------------------------------
+// LOGOUT
+// ----------------------------------------------------------
+
+exports.logout = (req, res) => {
+
+  req.session.destroy((err) => {
+
+    if (err) {
+      console.error("CoreVester logout error:", err);
+
+      return res.status(500).send("Unable to logout");
+    }
+
+    res.clearCookie("connect.sid");
+
+    return res.redirect("/auth/login");
   });
 };
