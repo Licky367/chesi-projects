@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('../../models/Product'); // adjust path if needed
+const Product = require('../../models/products'); // adjust path if needed
 
 // Helper to get cart from session
 function getCart(req){
