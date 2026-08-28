@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const userSchema = new mongoose.Schema({
   fullName: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true, select: false }, // stored as salt:hash
+  password: { type: String, required: true, select: false },
   role: { type: String, enum: ['admin','client'], default: 'client' }
 }, { timestamps: true });
 
@@ -13,7 +13,6 @@ function hashPassword(password) {
   const hash = crypto.scryptSync(password, salt, 64).toString('hex');
   return `${salt}:${hash}`;
 }
-
 function verifyPassword(password, stored) {
   const [salt, hash] = stored.split(':');
   const derived = crypto.scryptSync(password, salt, 64).toString('hex');
