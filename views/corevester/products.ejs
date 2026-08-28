@@ -1,101 +1,102 @@
 <%- contentFor('body') %>
 <style>
-:root{ --core-green:#15472E; --core-light:#E8F3EB; --core-accent:#1E6B3A; }
-body{ background:#F5FAF6 !important; }
-.market-title{ color:var(--core-green); font-weight:800; line-height:1; }
-.category-pill{ border:2px solid var(--core-green); color:var(--core-green); background:#fff; font-weight:600; border-radius:50px; padding:6px 16px; text-decoration:none; display:inline-block; }
-.category-pill.active{ background:var(--core-green); color:#fff; }
-.cart-badge{ border:2px solid var(--core-green); background:#fff; color:var(--core-green); border-radius:50px; font-weight:700; }
-.cart-btn{ background:var(--core-green); color:#fff; border-radius:50px; font-weight:700; border:2px solid var(--core-green); }
-.product-card{ border-radius:16px; overflow:hidden; border:2px solid #E5EFE7; background:#fff; cursor:pointer; transition:0.15s; height:100%; }
-.product-card:hover{ transform:translateY(-3px); box-shadow:0 10px 20px rgba(21,71,46,0.15) !important; }
-.stock-tag{ position:absolute; top:8px; left:8px; background:#fff; border:2px solid var(--core-green); color:var(--core-green); border-radius:50px; font-size:0.68rem; font-weight:700; padding:2px 8px; z-index:2; }
-.cat-label{ color:var(--core-accent); font-size:0.68rem; font-weight:800; text-transform:uppercase; }
-.price{ color:var(--core-green); font-weight:800; }
-.add-cart{ background:var(--core-green); color:#fff; font-weight:800; border-radius:10px; border:none; width:100%; padding:10px; font-size:0.85rem; }
-.add-cart:disabled{ background:#9db2a6; }
-.scroll-row{ display:flex; flex-wrap:nowrap; gap:10px; overflow-x:auto; padding-bottom:12px; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
-.scroll-row::-webkit-scrollbar{ height:6px; }
-.scroll-row::-webkit-scrollbar-thumb{ background:var(--core-green); border-radius:10px; }
-.scroll-card{ min-width:48%; max-width:48%; flex:0 0 48%; }
-@media(min-width:768px){ .scroll-card{ min-width:19%; max-width:19%; flex:0 0 19%; } }
-.grid-4{ display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
-@media(min-width:768px){ .grid-4{ grid-template-columns: repeat(4, 1fr); } }
+body{background:#F1F8F2 !important;}
+.market-wrap{padding:0;}
+.market-top{background:#fff;border-bottom:2px solid #15472E;padding:12px 14px;}
+.market-title{color:#15472E;font-weight:800;font-size:1.7rem;margin:0;line-height:1.1;}
+.market-sub{color:#666;font-size:0.85rem;}
+.pill-count{border:2px solid #15472E;border-radius:50px;background:#fff;padding:6px 14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.pill-count b{background:#15472E;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;}
+.cart-main-btn{background:#15472E;color:#fff;border-radius:50px;padding:7px 18px;font-weight:700;border:2px solid #15472E;cursor:pointer;}
+.cat-pill{border:2px solid #C8D9CC;background:#fff;color:#15472E;border-radius:50px;padding:7px 18px;font-weight:600;text-decoration:none;font-size:0.9rem;}
+.cat-pill.active{background:#15472E;color:#fff;border-color:#15472E;}
+.prod-scroll{overflow-x:auto;display:flex;gap:12px;padding:0 12px 10px 12px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
+.prod-scroll::-webkit-scrollbar{height:6px;}
+.prod-scroll::-webkit-scrollbar-thumb{background:#15472E;border-radius:10px;}
+.card-box{min-width:48%;max-width:48%;flex:0 0 48%;background:#fff;border-radius:16px;overflow:hidden;border:2px solid #E4EFE6;scroll-snap-align:start;position:relative;cursor:pointer;transition:0.15s;}
+.card-box:hover{transform:translateY(-3px);}
+@media(min-width:768px){.card-box{min-width:23%;max-width:23%;flex:0 0 23%;}}
+.left-badge{position:absolute;top:8px;left:8px;background:#fff;border:1.5px solid #15472E;color:#15472E;border-radius:50px;padding:2px 8px;font-size:0.7rem;font-weight:700;z-index:2;}
+.cat-label{color:#1E6B3A;font-size:0.7rem;font-weight:800;text-transform:uppercase;}
+.prod-name{font-weight:700;font-size:0.95rem;color:#000;line-height:1.2;min-height:34px;}
+.prod-price{color:#15472E;font-weight:800;margin-top:8px;}
+.add-btn{background:#15472E;color:#fff;border:none;border-radius:10px;width:100%;padding:10px;font-weight:800;margin-top:10px;cursor:pointer;position:relative;z-index:3;}
+.grid-wrap{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:0 12px;}
+@media(min-width:768px){.grid-wrap{grid-template-columns:repeat(4,1fr);}}
+.ten-row{margin-bottom:14px;}
 </style>
 
-<div class="container-fluid p-0">
-    <div class="px-3 py-2 d-flex justify-content-between align-items-center bg-white" style="border-bottom:2px solid #15472E;">
+<div class="market-wrap">
+    <div class="market-top d-flex justify-content-between align-items-center">
         <div>
-            <h2 class="market-title m-0" style="font-size:1.8rem;">Marketplace</h2>
-            <small class="text-muted"><%= products.length %> products • Tap to add</small>
+            <h2 class="market-title">Marketplace</h2>
+            <div class="market-sub"><%= products.length %> products • <%= products.length < 20 ? 'Grid view' : 'Scroll → to see more' %></div>
         </div>
-        <div class="d-flex gap-2 align-items-center">
-            <div class="cart-badge px-3 py-1 d-flex align-items-center gap-2">
-                <span style="background:var(--core-green);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;" id="cartCount"><%= cartCount||0 %></span>
+        <div class="d-flex align-items-center gap-2">
+            <div class="pill-count">
+                <b id="cartCount"><%= cartCount||0 %></b>
                 <span>KES <span id="cartTotalText"><%= (cartTotal||0).toLocaleString() %></span></span>
             </div>
-            <button id="cartBtn" class="cart-btn px-3 py-1">🛒 CART</button>
+            <button id="cartBtn" class="cart-main-btn">🛒 CART</button>
         </div>
     </div>
 
-    <div class="px-3 py-3 d-flex gap-2 overflow-auto">
-        <a href="/products?category=all" class="category-pill <%= activeCategory==='all'?'active':'' %>">ALL</a>
+    <div class="px-2 py-3 d-flex gap-2 overflow-auto" style="white-space:nowrap;">
+        <a href="/products?category=all" class="cat-pill <%= activeCategory==='all'?'active':'' %>">ALL</a>
         <% (categories||[]).forEach(c=>{ %>
-            <a href="/products?category=<%= c %>" class="category-pill text-capitalize <%= activeCategory===c?'active':'' %>"><%= c %></a>
+            <a href="/products?category=<%= c %>" class="cat-pill text-capitalize <%= activeCategory===c?'active':'' %>"><%= c %></a>
         <% }) %>
     </div>
 
-    <div class="px-2 pb-4">
-        <% if(products.length===0){ %>
-            <div class="text-center py-5"><p>No products found</p></div>
-        <% } else if(products.length < 20){ %>
-            <!-- FEW PRODUCTS: 4 cards grid -->
-            <div class="grid-4">
-                <% products.forEach(p=>{ %>
-                    <div class="product-card shadow-sm position-relative" data-product-id="<%= p._id %>">
-                        <span class="stock-tag"><%= p.units %> left</span>
-                        <img src="<%= p.image||'/images/no-image.png' %>" style="width:100%;height:170px;object-fit:cover;">
-                        <div class="p-2 d-flex flex-column">
-                            <span class="cat-label"><%= p.category %></span>
-                            <strong style="font-size:0.9rem;line-height:1.2;"><%= p.name %></strong>
-                            <span class="price mt-2">KES <%= p.unitSellPrice %></span>
-                            <button class="add-cart mt-2 add-to-cart-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>" <%= p.units<=0?'disabled':'' %>><%= p.units<=0?'OUT OF STOCK':'ADD CART' %></button>
-                        </div>
-                    </div>
-                <% }) %>
+    <% if(products.length < 20){ %>
+    <!-- FEW PRODUCTS: 4 CARDS GRID (your rule) -->
+    <div class="grid-wrap">
+        <% products.forEach(p=>{ %>
+        <div class="card-box shadow-sm" style="min-width:100%;max-width:100%;" data-product-id="<%= p._id %>">
+            <span class="left-badge"><%= p.units %> left</span>
+            <img src="<%= p.image||'/images/no-image.png' %>" style="width:100%;height:185px;object-fit:cover;">
+            <div class="p-2">
+                <div class="cat-label"><%= p.category %></div>
+                <div class="prod-name"><%= p.name %></div>
+                <div class="prod-price">KES <%= p.unitSellPrice %></div>
+                <button class="add-btn add-to-cart-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>" <%= p.units<=0?'disabled':'' %>><%= p.units<=0?'OUT OF STOCK':'ADD CART' %></button>
             </div>
-        <% } else { %>
-            <!-- MANY PRODUCTS: 10 per row, horizontally scrollable -->
-            <% 
-                const chunkSize = 10;
-                for(let i=0; i<products.length; i+=chunkSize){
-                    const chunk = products.slice(i, i+chunkSize);
-            %>
-                <div class="scroll-row mb-2">
-                    <% chunk.forEach(p=>{ %>
-                    <div class="scroll-card">
-                        <div class="product-card shadow-sm position-relative" data-product-id="<%= p._id %>">
-                            <span class="stock-tag"><%= p.units %> left</span>
-                            <img src="<%= p.image||'/images/no-image.png' %>" style="width:100%;height:160px;object-fit:cover;">
-                            <div class="p-2 d-flex flex-column">
-                                <span class="cat-label"><%= p.category %></span>
-                                <strong style="font-size:0.85rem;line-height:1.2;white-space:normal;min-height:36px;"><%= p.name %></strong>
-                                <span class="price mt-2">KES <%= p.unitSellPrice %></span>
-                                <button class="add-cart mt-2 add-to-cart-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>" <%= p.units<=0?'disabled':'' %>><%= p.units<=0?'OUT':'ADD CART' %></button>
-                            </div>
-                        </div>
-                    </div>
-                    <% }) %>
+        </div>
+        <% }) %>
+    </div>
+    <% } else { %>
+    <!-- MANY PRODUCTS: FIRST 10 = FIRST ROW, NEXT 10 = NEXT ROW -->
+    <% 
+        const chunkSize = 10;
+        for(let i=0; i<products.length; i+=chunkSize){
+            const chunk = products.slice(i, i+chunkSize);
+    %>
+        <div class="prod-scroll ten-row">
+            <% chunk.forEach(p=>{ %>
+            <div class="card-box shadow-sm" data-product-id="<%= p._id %>">
+                <span class="left-badge"><%= p.units %> left</span>
+                <img src="<%= p.image||'/images/no-image.png' %>" style="width:100%;height:185px;object-fit:cover;">
+                <div class="p-2">
+                    <div class="cat-label"><%= p.category %></div>
+                    <div class="prod-name"><%= p.name %></div>
+                    <div class="prod-price">KES <%= p.unitSellPrice %></div>
+                    <button class="add-btn add-to-cart-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>" <%= p.units<=0?'disabled':'' %>><%= p.units<=0?'OUT':'ADD CART' %></button>
                 </div>
-            <% } %>
-        <% } %>
+            </div>
+            <% }) %>
+        </div>
+    <% } } %>
+
+    <div class="px-3 py-4 d-flex align-items-center gap-3">
+        <strong style="color:#15472E;font-size:0.85rem;">GRID VIEW</strong>
+        <button id="toggleViewBtn" class="cat-pill" style="background:#fff;cursor:pointer;">SWITCH TO GRID</button>
     </div>
 </div>
 
-<!-- QTY MODAL -->
-<div class="modal fade" id="qtyModal" tabindex="-1">
+<!-- QTY POPUP - CLICKABLE -->
+<div class="modal fade" id="qtyModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content" style="border:3px solid #15472E; border-radius:16px;">
+    <div class="modal-content" style="border:3px solid #15472E;border-radius:16px;">
       <div class="modal-body text-center p-4">
         <h6 class="fw-bold" id="qtyProductName" style="color:#15472E;"></h6>
         <p class="small">Available: <strong id="qtyAvailable"></strong></p>
@@ -104,48 +105,51 @@ body{ background:#F5FAF6 !important; }
             <span id="qtyValue" style="font-size:2rem;font-weight:800;color:#15472E;min-width:40px;">1</span>
             <button class="btn rounded-circle" id="qtyPlus" style="width:42px;height:42px;border:2px solid #15472E;color:#15472E;font-weight:bold;">+</button>
         </div>
-        <button class="add-cart" id="qtyConfirm">ADD <span id="qtyConfirmCount">1</span> TO CART</button>
+        <button class="add-btn" id="qtyConfirm">ADD <span id="qtyConfirmCount">1</span> TO CART</button>
         <button class="btn btn-link w-100 mt-2 text-muted" data-bs-dismiss="modal">Cancel</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- CART MODAL -->
-<div class="modal fade" id="cartModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-scrollable">
-    <div class="modal-content" style="border:3px solid #15472E; border-radius:16px;">
-      <div class="modal-header" style="border-bottom:2px solid #15472E;"><h5 class="fw-bold m-0" style="color:#15472E;">Your Cart</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <% if(cart && cart.length){ cart.forEach(item=>{ %>
-            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2 cart-item" data-id="<%= item.productId %>">
-                <div style="max-width:60%"><strong><%= item.name %></strong><br><small>KES <%= item.price %> x <span class="cart-qty"><%= item.qty %></span></small></div>
-                <div class="d-flex align-items-center gap-1">
-                    <button class="btn btn-sm cart-minus" data-id="<%= item.productId %>" style="border:2px solid #15472E;color:#15472E;font-weight:bold;">-</button>
-                    <button class="btn btn-sm cart-plus" data-id="<%= item.productId %>" style="border:2px solid #15472E;color:#15472E;font-weight:bold;">+</button>
-                    <button class="btn btn-sm btn-danger cart-remove ms-1" data-id="<%= item.productId %>">×</button>
-                </div>
+<!-- CART SIDEBAR - CLICKABLE, NOT ON PAGE -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="cartSidebar" style="border-left:4px solid #15472E;">
+  <div class="offcanvas-header" style="border-bottom:2px solid #15472E;">
+    <h5 class="fw-bold m-0" style="color:#15472E;">Your Cart</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+    <% if(cart && cart.length){ cart.forEach(item=>{ %>
+        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2 cart-item" data-id="<%= item.productId %>">
+            <div style="max-width:60%"><strong><%= item.name %></strong><br><small>KES <%= item.price %> x <span class="cart-qty"><%= item.qty %></span></small></div>
+            <div class="d-flex gap-1">
+                <button class="btn btn-sm cart-minus" data-id="<%= item.productId %>" style="border:2px solid #15472E;">-</button>
+                <button class="btn btn-sm cart-plus" data-id="<%= item.productId %>" style="border:2px solid #15472E;">+</button>
+                <button class="btn btn-sm btn-danger cart-remove" data-id="<%= item.productId %>">×</button>
             </div>
-        <% }) } else { %><p class="text-center text-muted py-4">Cart empty</p><% } %>
-      </div>
-      <div class="modal-footer d-block">
-        <div class="d-flex justify-content-between mb-3"><strong>Total:</strong><strong style="color:#15472E;">KES <span id="cartTotal"><%= (cartTotal||0).toLocaleString() %></span></strong></div>
-        <% if(cart && cart.length){ %><button class="add-cart" id="checkoutBtn">PACKAGE ORDER</button><% } %>
-      </div>
-    </div>
+        </div>
+    <% }) } else { %><p class="text-center text-muted py-4">Cart empty</p><% } %>
+  </div>
+  <div class="p-3 border-top">
+    <div class="d-flex justify-content-between mb-3"><strong>Total:</strong><strong style="color:#15472E;">KES <%= (cartTotal||0).toLocaleString() %></strong></div>
+    <% if(cart && cart.length){ %><button class="add-btn" id="checkoutBtn">PACKAGE ORDER</button><% } %>
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
     const qtyModal = new bootstrap.Modal(document.getElementById('qtyModal'));
-    const cartModal = new bootstrap.Modal(document.getElementById('cartModal'));
+    const cartSidebar = new bootstrap.Offcanvas(document.getElementById('cartSidebar'));
     let selected={id:null, stock:0, qty:1};
-    document.querySelectorAll('.product-card').forEach(card=>{
-        card.addEventListener('click', (e)=>{ if(e.target.closest('.add-to-cart-btn')) return; window.location.href='/products/'+card.dataset.productId; });
+
+    // Product cards clickable
+    document.querySelectorAll('.card-box').forEach(card=>{
+        card.addEventListener('click',(e)=>{ if(e.target.closest('.add-to-cart-btn')) return; window.location.href='/products/'+card.dataset.productId; });
     });
+
+    // Add to cart -> qty popup
     document.querySelectorAll('.add-to-cart-btn').forEach(btn=>{
-        btn.addEventListener('click', (e)=>{
+        btn.addEventListener('click',(e)=>{
             e.preventDefault(); e.stopPropagation();
             selected.id=btn.dataset.id; selected.stock=parseInt(btn.dataset.stock); selected.qty=1;
             document.getElementById('qtyProductName').innerText=btn.dataset.name;
@@ -155,17 +159,27 @@ document.addEventListener('DOMContentLoaded', ()=>{
             qtyModal.show();
         });
     });
-    document.getElementById('qtyPlus').onclick=()=>{ if(selected.qty<selected.stock){selected.qty++; document.getElementById('qtyValue').innerText=selected.qty; document.getElementById('qtyConfirmCount').innerText=selected.qty;} };
-    document.getElementById('qtyMinus').onclick=()=>{ if(selected.qty>1){selected.qty--; document.getElementById('qtyValue').innerText=selected.qty; document.getElementById('qtyConfirmCount').innerText=selected.qty;} };
+    document.getElementById('qtyPlus').onclick=()=>{ if(selected.qty<selected.stock){selected.qty++; document.getElementById('qtyValue').innerText=selected.qty; document.getElementById('qtyConfirmCount').innerText=selected.qty;}};
+    document.getElementById('qtyMinus').onclick=()=>{ if(selected.qty>1){selected.qty--; document.getElementById('qtyValue').innerText=selected.qty; document.getElementById('qtyConfirmCount').innerText=selected.qty;}};
     document.getElementById('qtyConfirm').onclick=async()=>{
-        const res=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:selected.id,qty:selected.qty})});
-        const data=await res.json(); if(!data.success){alert(data.message);return;} qtyModal.hide(); location.reload();
+        const r=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:selected.id,qty:selected.qty})});
+        const d=await r.json(); if(!d.success){alert(d.message);return;} qtyModal.hide(); location.reload();
     };
-    document.getElementById('cartBtn').onclick=()=>cartModal.show();
+
+    // Cart button -> sidebar (THIS FIXES YOUR QUESTION)
+    document.getElementById('cartBtn').addEventListener('click', ()=>{ cartSidebar.show(); });
+
     async function callCart(url,body){ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const d=await r.json(); if(!d.success)alert(d.message); else location.reload(); }
     document.querySelectorAll('.cart-plus').forEach(b=>b.onclick=()=>{const id=b.dataset.id; const el=document.querySelector(`.cart-item[data-id="${id}"] .cart-qty`); callCart('/products/update-cart-qty',{productId:id,qty:parseInt(el.innerText)+1});});
     document.querySelectorAll('.cart-minus').forEach(b=>b.onclick=()=>{const id=b.dataset.id; const el=document.querySelector(`.cart-item[data-id="${id}"] .cart-qty`); callCart('/products/update-cart-qty',{productId:id,qty:parseInt(el.innerText)-1});});
     document.querySelectorAll('.cart-remove').forEach(b=>b.onclick=()=>callCart('/products/remove-from-cart',{productId:b.dataset.id}));
-    const checkoutBtn=document.getElementById('checkoutBtn'); if(checkoutBtn){ checkoutBtn.onclick=async()=>{ const r=await fetch('/packages/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}); const d=await r.json(); if(d.success)window.location.href='/packages/'+d.packageId; else alert(d.message); }; }
+    const cb=document.getElementById('checkoutBtn'); if(cb){ cb.onclick=async()=>{ const r=await fetch('/packages/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}); const d=await r.json(); if(d.success)window.location.href='/packages/'+d.packageId; else alert(d.message); };}
+    
+    // toggle view
+    const toggleBtn=document.getElementById('toggleViewBtn');
+    if(toggleBtn){
+        let isGrid = <%= products.length < 20 ? 'true' : 'false' %>;
+        toggleBtn.onclick=()=>{ location.reload(); };
+    }
 });
 </script>
