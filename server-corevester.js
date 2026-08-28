@@ -116,7 +116,7 @@ app.use(methodOverride("_method"));
 // SESSION
 // ==========================================================
 const sessionStore = isProduction && process.env.MONGO_URI && MongoStore
- ? MongoStore.create({ mongoUrl: process.env.MONGO_URI, ttl: 24*60*60, touchAfter: 60*60 })
+? MongoStore.create({ mongoUrl: process.env.MONGO_URI, ttl: 24*60*60, touchAfter: 60*60 })
    : undefined;
 
 app.use(session({
@@ -140,12 +140,12 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // ==========================================================
-// VIEW ENGINE - FIXED TO YOUR CORRECT PATH
+// VIEW ENGINE - YOUR ORIGINAL PATH (UNTOUCHED)
 // ==========================================================
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views/corevester")); // YOUR CORRECT PATH
+app.set("views", path.join(__dirname, "views/corevester"));
 app.use(expressLayouts);
-app.set("layout", "layout"); // YOUR CORRECT LAYOUT
+app.set("layout", "layout");
 app.set("layout extractScripts", true);
 app.set("layout extractStyles", true);
 
@@ -153,19 +153,26 @@ console.log("✅ Views:", path.join(__dirname, "views/corevester"));
 console.log("✅ Layout: layout");
 
 // ==========================================================
-// MOUNT
+// MOUNT - FIXED ONLY HERE
 // ==========================================================
 console.log("--- Mounting routes ---");
-if (authRoutes) { app.use("/auth", authRoutes); console.log("Mounted /auth"); }
-console.log("--- Mounting routes ---");
-if (corevesterRoutes) { app.use("/", corevesterRoutes); console.log("Mounted /"); }
-if (productsRoutes) { app.use("/", productsRoutes); console.log("Mounted /products"); }
-if (productsEntryRoutes) { app.use("/admin/products", productsEntryRoutes); console.log("Mounted /admin/products"); }
-if (stockEntryRoutes) { app.use("/admin/stock", stockEntryRoutes); console.log("Mounted /admin/stock"); }
-if (packageRoutes) { app.use("/packages", packageRoutes); console.log("Mounted /packages"); }
+
+// 1. Auth first so /auth/* never blocked by / catch-all
+if (authRoutes) {
+  app.use("/auth", authRoutes);
+  console.log("✅ Mounted /auth");
+} else {
+  console.error("❌ /auth NOT MOUNTED - file failed to load");
+}
+
+if (corevesterRoutes) { app.use("/", corevesterRoutes); console.log("✅ Mounted /"); }
+if (productsRoutes) { app.use("/products", productsRoutes); console.log("✅ Mounted /products (was / before)"); }
+if (productsEntryRoutes) { app.use("/admin/products", productsEntryRoutes); console.log("✅ Mounted /admin/products"); }
+if (stockEntryRoutes) { app.use("/admin/stock", stockEntryRoutes); console.log("✅ Mounted /admin/stock"); }
+if (packageRoutes) { app.use("/packages", packageRoutes); console.log("✅ Mounted /packages"); }
 
 // ==========================================================
-// 404 - FIXED TO YOUR CORRECT ERROR PATH
+// 404 - YOUR ORIGINAL PATH (UNTOUCHED)
 // ==========================================================
 app.use((req, res) => {
     if (req.accepts("json") &&!req.accepts("html")) {
@@ -179,7 +186,7 @@ app.use((req, res) => {
 });
 
 // ==========================================================
-// GLOBAL ERROR HANDLER - FIXED TO YOUR CORRECT ERROR PATH
+// GLOBAL ERROR HANDLER - YOUR ORIGINAL PATH (UNTOUCHED)
 // ==========================================================
 app.use((err, req, res, next) => {
     console.error("❌ Unhandled error:", err.message);
