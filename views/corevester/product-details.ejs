@@ -1,26 +1,37 @@
 <%- contentFor('body') %>
-<div class="container py-4">
-    <a href="/products" class="btn btn-outline-secondary btn-sm mb-4">← Back to Marketplace</a>
-    <div class="row g-4">
+<style>
+:root{ --core-green:#15472E; }
+body{ background:#F5FAF6 !important; }
+.back-btn{ border:2px solid #15472E; color:#15472E; border-radius:50px; font-weight:700; text-decoration:none; padding:6px 16px; background:#fff; display:inline-block; }
+.detail-card{ background:#fff; border:2px solid #E5EFE7; border-radius:16px; overflow:hidden; }
+.price{ color:#15472E; font-weight:800; font-size:1.6rem; }
+.add-cart{ background:#15472E; color:#fff; font-weight:800; border-radius:10px; border:none; padding:12px; }
+</style>
+
+<div class="container py-3">
+    <a href="/products" class="back-btn">← Back to Marketplace</a>
+    <div class="row g-3 mt-2">
         <div class="col-md-6">
-            <img src="<%= product.image||'/images/no-image.png' %>" class="img-fluid rounded shadow-sm w-100" style="max-height:500px;object-fit:contain;background:#f8f9fa">
+            <div class="detail-card shadow-sm">
+                <span style="position:absolute;margin:10px;background:#fff;border:2px solid #15472E;color:#15472E;border-radius:50px;padding:2px 10px;font-size:0.75rem;font-weight:700;"><%= product.units %> left</span>
+                <img src="<%= product.image||'/images/no-image.png' %>" class="w-100" style="max-height:500px;object-fit:contain;background:#fff;">
+            </div>
         </div>
         <div class="col-md-6">
-            <h2 class="fw-bold"><%= product.name %></h2>
-            <p class="text-muted text-capitalize"><%= product.category %></p>
-            <h3 class="my-3">Ksh <%= product.unitSellPrice.toLocaleString() %></h3>
-            <p class="<%= product.units<=0?'text-danger':'text-success' %> fw-bold"><%= product.units<=0?'Out of Stock': product.units+' units available' %></p>
-            <p class="mt-3"><%= product.description||'No description.' %></p>
-            
-            <div class="mt-4 d-flex gap-2">
-                <div class="input-group" style="max-width:140px;">
-                    <button class="btn btn-outline-secondary" id="detailMinus">-</button>
-                    <input id="detailQty" type="number" class="form-control text-center" value="1" min="1" max="<%= product.units %>">
-                    <button class="btn btn-outline-secondary" id="detailPlus">+</button>
+            <div class="detail-card p-3 shadow-sm">
+                <small style="color:#1E6B3A;font-weight:800;text-transform:uppercase;"><%= product.category %></small>
+                <h2 class="fw-bold mt-1" style="color:#15472E;"><%= product.name %></h2>
+                <p class="price mt-2">KES <%= product.unitSellPrice.toLocaleString() %></p>
+                <p class="<%= product.units<=0?'text-danger':'text-success' %> fw-bold"><%= product.units<=0?'Out of Stock': product.units+' units available' %></p>
+                <p class="text-muted mt-3"><%= product.description||'Quality medical supply from Corevester Investments.' %></p>
+                <div class="mt-4 d-flex gap-2">
+                    <div class="input-group" style="max-width:130px;border:2px solid #15472E;border-radius:10px;overflow:hidden;">
+                        <button class="btn" id="detailMinus" style="color:#15472E;font-weight:bold;">-</button>
+                        <input id="detailQty" type="number" class="form-control text-center border-0 fw-bold" value="1" min="1" max="<%= product.units %>" style="color:#15472E;">
+                        <button class="btn" id="detailPlus" style="color:#15472E;font-weight:bold;">+</button>
+                    </div>
+                    <button class="add-cart flex-grow-1" id="detailAddBtn" data-id="<%= product._id %>" data-stock="<%= product.units %>" <%= product.units<=0?'disabled':'' %>>ADD CART</button>
                 </div>
-                <button class="btn btn-primary flex-grow-1" id="detailAddBtn" data-id="<%= product._id %>" data-stock="<%= product.units %>" <%= product.units<=0?'disabled':'' %>>
-                    Add to Cart
-                </button>
             </div>
         </div>
     </div>
@@ -28,18 +39,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
-    const qtyInput = document.getElementById('detailQty');
-    const stock = parseInt(document.getElementById('detailAddBtn').dataset.stock);
-    document.getElementById('detailPlus').onclick = ()=>{ if(parseInt(qtyInput.value) < stock) qtyInput.value = parseInt(qtyInput.value)+1; };
-    document.getElementById('detailMinus').onclick = ()=>{ if(parseInt(qtyInput.value) > 1) qtyInput.value = parseInt(qtyInput.value)-1; };
-    document.getElementById('detailAddBtn').onclick = async (e)=>{
-        const res = await fetch('/products/add-to-cart', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({productId:e.target.dataset.id, qty: qtyInput.value})
-        });
-        const data = await res.json();
-        if(!data.success) alert(data.message);
-        else { alert('Added to cart'); window.location.href='/products'; }
+    const qtyInput=document.getElementById('detailQty');
+    const stock=parseInt(document.getElementById('detailAddBtn').dataset.stock);
+    document.getElementById('detailPlus').onclick=()=>{ if(parseInt(qtyInput.value)<stock) qtyInput.value=parseInt(qtyInput.value)+1; };
+    document.getElementById('detailMinus').onclick=()=>{ if(parseInt(qtyInput.value)>1) qtyInput.value=parseInt(qtyInput.value)-1; };
+    document.getElementById('detailAddBtn').onclick=async(e)=>{
+        const res=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:e.target.dataset.id,qty:qtyInput.value})});
+        const data=await res.json(); if(!data.success) alert(data.message); else window.location.href='/products';
     };
 });
 </script>
