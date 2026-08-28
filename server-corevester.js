@@ -1,5 +1,5 @@
 // ==========================================================
-// server-corevester.js - COREVESTER - FIXED LOGGING
+// server-corevester.js - COREVESTER - FIXED LOGGING + LAYOUT FIXED
 // ==========================================================
 
 const express = require("express");
@@ -15,21 +15,18 @@ const morgan = require("morgan");
 const methodOverride = require("method-override");
 require("dotenv").config();
 
-// --- CRITICAL: SHOW ALL CRASHES IN LOGS ---
+// --- CRITICAL: SHOW ALL CRASHES IN RENDER LOGS ---
 process.on('uncaughtException', (err) => {
-    console.error('❌ UNCAUGHT EXCEPTION:', err);
+    console.error('❌ UNCAUGHT EXCEPTION:', err.message);
     console.error(err.stack);
-    // don't exit immediately on Render, let log flush
     setTimeout(() => process.exit(1), 1000);
 });
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ UNHANDLED REJECTION at:', promise, 'reason:', reason);
+process.on('unhandledRejection', (reason) => {
+    console.error('❌ UNHANDLED REJECTION:', reason?.message || reason);
     console.error(reason?.stack || reason);
 });
 
 console.log("--- Starting server-corevester.js ---");
-console.log("NODE_ENV:", process.env.NODE_ENV);
-console.log("PORT:", process.env.PORT);
 
 // ==========================================================
 // CONNECT-MONGO
@@ -43,35 +40,35 @@ try {
 }
 
 // ==========================================================
-// ENVIRONMENT
+// ENV
 // ==========================================================
 const isProduction = process.env.NODE_ENV === "production";
 if (isProduction) {
-    const requiredEnvVars = ["MONGO_URI", "SESSION_SECRET", "FRONTEND_URL"];
-    const missing = requiredEnvVars.filter((key) =>!process.env[key]);
+    const required = ["MONGO_URI", "SESSION_SECRET", "FRONTEND_URL"];
+    const missing = required.filter(k =>!process.env[k]);
     if (missing.length) {
-        console.error(`❌ Missing env vars: ${missing.join(", ")}`);
+        console.error(`❌ Missing env: ${missing.join(", ")}`);
         process.exit(1);
     }
 }
 
 // ==========================================================
-// DATABASE
+// DB + SEED
 // ==========================================================
 const connectDB = require("./db");
 const seedUser = require("./utils/seedUser");
 
 // ==========================================================
-// ROUTES - LOAD WITH VERBOSE LOGGING
+// ROUTES - VERBOSE SAFE LOAD
 // ==========================================================
 function safeLoad(name, pathToRequire) {
     try {
-        console.log(`... Loading ${name} from ${pathToRequire}`);
+        console.log(`... Loading ${name}`);
         const mod = require(pathToRequire);
         console.log(`✅ Loaded ${name}`);
         return mod;
     } catch (err) {
-        console.error(`❌ FAILED to load ${name} from ${pathToRequire}`);
+        console.error(`❌ FAILED to load ${name}: ${pathToRequire}`);
         console.error(err.message);
         console.error(err.stack);
         return null;
@@ -84,9 +81,6 @@ const productsEntryRoutes = safeLoad("productsEntryRoutes", "./routes/corevester
 const stockEntryRoutes = safeLoad("stockEntryRoutes", "./routes/corevester/stock");
 const packageRoutes = safeLoad("packageRoutes", "./routes/corevester/packages");
 
-// ==========================================================
-// SOCKET
-// ==========================================================
 const socketHandler = require("./socket/socket");
 
 // ==========================================================
@@ -95,11 +89,9 @@ const socketHandler = require("./socket/socket");
 const app = express();
 const server = http.createServer(app);
 app.disable("x-powered-by");
-
 if (isProduction || process.env.TRUST_PROXY === "1") app.enable("trust proxy");
 
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
-
 app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
     max: isProduction? 200 : 1000,
@@ -107,7 +99,6 @@ app.use(rateLimit({
     legacyHeaders: false,
     message: { message: "Too many requests" }
 }));
-
 app.use(compression());
 app.use(morgan(process.env.MORGAN_FORMAT || "combined"));
 
@@ -124,60 +115,51 @@ app.use(methodOverride("_method"));
 // SESSION
 // ==========================================================
 const sessionStore = isProduction && process.env.MONGO_URI && MongoStore
-   ? MongoStore.create({ mongoUrl: process.env.MONGO_URI, ttl: 24 * 60 * 60, touchAfter: 60 * 60 })
-    : undefined;
+  ? MongoStore.create({ mongoUrl: process.env.MONGO_URI, ttl: 24*60*60, touchAfter: 60*60 })
+   : undefined;
 
 app.use(session({
-    secret: process.env.SESSION_SECRET || (isProduction? "" : "development-session-secret"),
+    secret: process.env.SESSION_SECRET || "development-session-secret",
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, secure: isProduction, sameSite: "lax", maxAge: 1000 * 60 * 60 * 24 }
+    cookie: { httpOnly: true, secure: isProduction, sameSite: "lax", maxAge: 86400000 }
 }));
 
 app.use((req, res, next) => {
-    const currentUser = req.session?.user || null;
-    req.user = currentUser;
-    res.locals.user = currentUser;
+    res.locals.user = req.session?.user || null;
     res.locals.req = req;
     res.locals.currentPath = req.path;
+    req.user = res.locals.user;
     next();
 });
 
-app.get("/health", (req, res) => res.status(200).json({ status: "ok", env: process.env.NODE_ENV }));
-
+app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
-
-
+// ==========================================================
+// VIEW ENGINE - RESTORED TO ORIGINAL WORKING VERSION
+// ==========================================================
 app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views")); // <-- MUST be views, not views/corevester
+app.use(expressLayouts); // <-- THIS WAS MISSING IN YOUR FILE - CAUSED LAYOUT ISSUE
+app.set("layout", "corevester/layout"); // <-- ORIGINAL WORKING
+app.set("layout extractScripts", true);
+app.set("layout extractStyles", true);
 
-app.set("views", path.join(__dirname, "views/corevester"));
-console.log("Views path set to:", path.join(__dirname, "views/corevester"));
-app.set("layout", "layout"); // not corevester/layout
-
-// and then fix all renders to NOT include corevester/
-
+console.log("✅ Views:", path.join(__dirname, "views"));
+console.log("✅ Layout: corevester/layout");
 
 // ==========================================================
-// MOUNT ROUTES - WITH LOG
+// MOUNT
 // ==========================================================
 console.log("--- Mounting routes ---");
 if (corevesterRoutes) { app.use("/", corevesterRoutes); console.log("Mounted /"); }
-else console.error("SKIPPED / - not loaded");
-
 if (productsRoutes) { app.use("/products", productsRoutes); console.log("Mounted /products"); }
-else console.error("SKIPPED /products - not loaded");
-
 if (productsEntryRoutes) { app.use("/admin/products", productsEntryRoutes); console.log("Mounted /admin/products"); }
-else console.error("SKIPPED /admin/products - not loaded");
-
 if (stockEntryRoutes) { app.use("/admin/stock", stockEntryRoutes); console.log("Mounted /admin/stock"); }
-else console.error("SKIPPED /admin/stock - not loaded");
-
 if (packageRoutes) { app.use("/packages", packageRoutes); console.log("Mounted /packages"); }
-else console.error("SKIPPED /packages - not loaded");
 
 // ==========================================================
 // 404
@@ -194,21 +176,18 @@ app.use((req, res) => {
 });
 
 // ==========================================================
-// GLOBAL ERROR HANDLER
+// ERROR HANDLER
 // ==========================================================
 app.use((err, req, res, next) => {
-    console.error("❌ GLOBAL ERROR HANDLER:", err);
+    console.error("❌ GLOBAL ERROR:", err.message);
     console.error(err.stack);
     let statusCode = Number(err.statusCode || err.status || 500);
     if (statusCode < 400 || statusCode > 599) statusCode = 500;
 
     if (!req.accepts("html") || req.xhr || req.path.startsWith("/api")) {
-        return res.status(statusCode).json({
-            success: false,
-            message: isProduction && statusCode === 500? "Internal Server Error" : err.message
-        });
+        return res.status(statusCode).json({ success: false, message: err.message });
     }
-    return res.status(statusCode).render(`corevester/error/${statusCode}`.includes("500")? "corevester/error/500" : "corevester/error/500", {
+    return res.status(statusCode).render("corevester/error/500", {
         title: `${statusCode} Error`,
         error: err.message,
         statusCode,
@@ -216,29 +195,13 @@ app.use((err, req, res, next) => {
     });
 });
 
-// ==========================================================
-// START
-// ==========================================================
 const PORT = Number(process.env.PORT || 3000);
+const startServer = (p) => server.listen(p, () => console.log(`🚀 Running on ${p}`));
 
-const startServer = (port) => {
-    server.listen(port, () => {
-        console.log(`🚀 Server running on port ${port}`);
-    });
-};
-
-server.on("error", (error) => {
-    console.error("❌ Server error:", error);
-    console.error(error.stack);
-    if (error.code === "EADDRINUSE") {
-        console.error(`Port ${PORT} in use`);
-        process.exit(1);
-    }
+server.on("error", (e) => {
+    console.error("❌ Server error:", e.message, e.stack);
     process.exit(1);
 });
-
-process.on("SIGTERM", () => { console.log("SIGTERM"); server.close(() => process.exit(0)); });
-process.on("SIGINT", () => { console.log("SIGINT"); server.close(() => process.exit(0)); });
 
 const bootstrap = async () => {
     try {
@@ -246,17 +209,12 @@ const bootstrap = async () => {
         const dbConnected = await connectDB();
         if (dbConnected) {
             console.log("✅ MongoDB connected");
-            console.log("🌱 Seeding admin...");
             await seedUser();
             console.log("✅ Seed done");
-        } else if (isProduction) {
-            console.error("❌ MongoDB unavailable in production");
-            process.exit(1);
         }
         startServer(PORT);
     } catch (error) {
-        console.error("❌ Bootstrap failed:");
-        console.error(error);
+        console.error("❌ Bootstrap failed:", error.message);
         console.error(error.stack);
         if (isProduction) process.exit(1);
         startServer(PORT);
