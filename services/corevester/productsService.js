@@ -1,1200 +1,213 @@
 // =========================================================
 // services/corevester/productsService.js
+// UPDATED: Cart now reduces Product.units in DB
 // =========================================================
-//
-// COREVESTER MARKETPLACE SERVICE
-//
-// PRODUCT FIELDS
-// ---------------------------------------------------------
-// name
-// category
-// units
-// unitSellPrice
-// image
-//
-// CART
-// ---------------------------------------------------------
-// Cart is maintained per session/user.
-//
-// IMPORTANT:
-// ---------------------------------------------------------
-// Cart quantities DO NOT immediately modify Product.units.
-//
-// Example:
-//
-//     Product.units = 80
-//     Cart.qty      = 3
-//
-// Marketplace availability:
-//     77
-//
-// Database Product.units remains:
-//     80
-//
-// This prevents simply adding something to a cart from
-// permanently consuming stock.
-//
-// =========================================================
+const Product = require("../../models/corevester/products");
 
-const Product =
-    require("../../models/corevester/products");
+const carts = new Map();
 
-
-// =========================================================
-// CART STORAGE
-// =========================================================
-//
-// Map:
-//
-//     sessionId -> [
-//         {
-//             productId,
-//             name,
-//             price,
-//             qty
-//         }
-//     ]
-//
-// =========================================================
-
-const carts =
-    new Map();
-
-
-// =========================================================
-// INTERNAL HELPERS
-// =========================================================
-
-function normalizeString(value) {
-
-    return String(
-        value == null
-            ? ""
-            : value
-    ).trim();
-
-}
-
-
-function normalizeCategory(value) {
-
-    return normalizeString(value);
-
-}
-
-
-function normalizeImage(value) {
-
-    const image =
-        normalizeString(value);
-
-    return image || "";
-
-}
-
-
-function getNumeric(value, fallback = 0) {
-
-    const number =
-        Number(value);
-
-    return Number.isFinite(number)
-        ? number
-        : fallback;
-
-}
-
-
-function getCartInternal(sessionId) {
-
-    const key =
-        normalizeString(sessionId) ||
-        "anonymous";
-
-
-    if (!carts.has(key)) {
-
-        carts.set(
-            key,
-            []
-        );
-
-    }
-
-
+function normalizeString(value){ return String(value == null ? "" : value).trim(); }
+function normalizeCategory(value){ return normalizeString(value); }
+function normalizeImage(value){ const image = normalizeString(value); return image || ""; }
+function getNumeric(value, fallback = 0){ const number = Number(value); return Number.isFinite(number) ? number : fallback; }
+function getCartInternal(sessionId){
+    const key = normalizeString(sessionId) || "anonymous";
+    if (!carts.has(key)){ carts.set(key, []); }
     return carts.get(key);
-
 }
-
-
-function cloneCart(cart) {
-
+function cloneCart(cart){
     return cart.map(item => ({
-
-        productId:
-            String(item.productId),
-
-        name:
-            item.name,
-
-        price:
-            Number(item.price || 0),
-
-        qty:
-            Number(item.qty || 0)
-
+        productId: String(item.productId),
+        name: item.name,
+        price: Number(item.price || 0),
+        qty: Number(item.qty || 0)
     }));
-
 }
 
-
-// =========================================================
-// CLEAN STALE CART ITEMS
-// =========================================================
-//
-// Products can be deleted after somebody has placed them
-// in a cart.
-//
-// Remove those dead references automatically.
-//
-// Also make sure quantities never exceed current Product.units.
-//
-// =========================================================
-
-async function cleanCart(sessionId) {
-
-    const cart =
-        getCartInternal(sessionId);
-
-
-    if (!cart.length) {
-
-        return cart;
-
-    }
-
-
-    const productIds =
-        cart.map(item =>
-            String(item.productId)
-        );
-
-
-    const products =
-        await Product.find({
-            _id: {
-                $in: productIds
-            }
-        })
-        .lean();
-
-
-    const productMap =
-        new Map();
-
-
-    products.forEach(product => {
-
-        productMap.set(
-            String(product._id),
-            product
-        );
-
-    });
-
-
+async function cleanCart(sessionId){
+    const cart = getCartInternal(sessionId);
+    if (!cart.length) return cart;
+    const productIds = cart.map(item => String(item.productId));
+    const products = await Product.find({ _id: { $in: productIds } }).lean();
+    const productMap = new Map();
+    products.forEach(product => { productMap.set(String(product._id), product); });
     const cleaned = [];
-
-
-    for (const item of cart) {
-
-        const product =
-            productMap.get(
-                String(item.productId)
-            );
-
-
-        // Product no longer exists.
-        if (!product) {
-
-            continue;
-
-        }
-
-
-        const stock =
-            Math.max(
-                0,
-                getNumeric(
-                    product.units
-                )
-            );
-
-
-        let quantity =
-            Math.max(
-                0,
-                Number(item.qty || 0)
-            );
-
-
-        // Never allow cart quantity above
-        // the actual database stock.
-        quantity =
-            Math.min(
-                quantity,
-                stock
-            );
-
-
-        if (quantity <= 0) {
-
-            continue;
-
-        }
-
-
-        cleaned.push({
-
-            productId:
-                String(product._id),
-
-            name:
-                product.name,
-
-            price:
-                getNumeric(
-                    product.unitSellPrice
-                ),
-
-            qty:
-                quantity
-
-        });
-
+    for (const item of cart){
+        const product = productMap.get(String(item.productId));
+        if (!product) continue;
+        const stock = Math.max(0, getNumeric(product.units)) + Number(item.qty || 0); // stock + what is in cart
+        let quantity = Math.max(0, Number(item.qty || 0));
+        quantity = Math.min(quantity, stock);
+        if (quantity <= 0) continue;
+        cleaned.push({ productId: String(product._id), name: product.name, price: getNumeric(product.unitSellPrice), qty: quantity });
     }
-
-
-    carts.set(
-        normalizeString(sessionId),
-        cleaned
-    );
-
-
+    carts.set(normalizeString(sessionId), cleaned);
     return cleaned;
-
 }
-
-
-// =========================================================
-// GET CATEGORIES
-// =========================================================
 
 exports.getCategories = async () => {
-
-    const categories =
-        await Product.distinct(
-            "category"
-        );
-
-
-    return categories
-
-        .map(category =>
-            normalizeCategory(category)
-        )
-
-        .filter(Boolean)
-
-        .sort((a, b) =>
-            a.localeCompare(
-                b,
-                undefined,
-                {
-                    sensitivity: "base"
-                }
-            )
-        );
-
+    const categories = await Product.distinct("category");
+    return categories.map(category => normalizeCategory(category)).filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 };
-
-
-// =========================================================
-// GET MARKETPLACE STATS
-// =========================================================
-//
-// These are intentionally named broadly so the EJS can use:
-//
-//     stats.totalProducts
-//     stats.availableProducts
-//     stats.totalUnits
-//
-// =========================================================
 
 exports.getStats = async () => {
-
-    const result =
-        await Product.aggregate([
-
-            {
-                $group: {
-
-                    _id: null,
-
-                    totalProducts: {
-                        $sum: 1
-                    },
-
-                    availableProducts: {
-
-                        $sum: {
-
-                            $cond: [
-
-                                {
-                                    $gt: [
-                                        {
-                                            $ifNull: [
-                                                "$units",
-                                                0
-                                            ]
-                                        },
-                                        0
-                                    ]
-
-                                },
-
-                                1,
-
-                                0
-
-                            ]
-
-                        }
-
-                    },
-
-                    totalUnits: {
-
-                        $sum: {
-
-                            $ifNull: [
-                                "$units",
-                                0
-                            ]
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        ]);
-
-
-    if (!result.length) {
-
-        return {
-
-            totalProducts: 0,
-
-            availableProducts: 0,
-
-            totalUnits: 0
-
-        };
-
-    }
-
-
-    return {
-
-        totalProducts:
-            Number(
-                result[0].totalProducts || 0
-            ),
-
-        availableProducts:
-            Number(
-                result[0].availableProducts || 0
-            ),
-
-        totalUnits:
-            Number(
-                result[0].totalUnits || 0
-            )
-
-    };
-
+    const result = await Product.aggregate([{ $group: { _id: null, totalProducts: { $sum: 1 }, availableProducts: { $sum: { $cond: [{ $gt: [{ $ifNull: ["$units", 0] }, 0] }, 1, 0] } }, totalUnits: { $sum: { $ifNull: ["$units", 0] } } } }]);
+    if (!result.length) return { totalProducts: 0, availableProducts: 0, totalUnits: 0 };
+    return { totalProducts: Number(result[0].totalProducts || 0), availableProducts: Number(result[0].availableProducts || 0), totalUnits: Number(result[0].totalUnits || 0) };
 };
 
-
-// =========================================================
-// GET PRODUCTS
-// =========================================================
-
-exports.getProducts =
-async () => {
-
-    return Product
-        .find({})
-        .sort({
-            category: 1,
-            name: 1
-        })
-        .lean();
-
+exports.getProducts = async () => {
+    return Product.find({}).sort({ category: 1, name: 1 }).lean();
 };
 
-
-// =========================================================
-// GET PRODUCTS WITH CART ADJUSTMENT
-// =========================================================
-//
-// This is what the marketplace page uses.
-//
-// Product database:
-//
-//     units = 80
-//
-// Current session cart:
-//
-//     qty = 3
-//
-// Returned marketplace product:
-//
-//     units = 77
-//
-// Other sessions are unaffected.
-//
-// =========================================================
-
-exports.getProductsWithCartAdjustment =
-async (sessionId) => {
-
-    const products =
-        await Product
-            .find({})
-            .sort({
-                category: 1,
-                name: 1
-            })
-            .lean();
-
-
-    const cart =
-        await cleanCart(
-            sessionId
-        );
-
-
-    const cartMap =
-        new Map();
-
-
-    cart.forEach(item => {
-
-        cartMap.set(
-            String(item.productId),
-            Number(item.qty || 0)
-        );
-
-    });
-
-
-    return products.map(product => {
-
-        const productId =
-            String(product._id);
-
-
-        const cartQty =
-            cartMap.get(productId) || 0;
-
-
-        const databaseUnits =
-            Math.max(
-                0,
-                getNumeric(
-                    product.units
-                )
-            );
-
-
-        const availableUnits =
-            Math.max(
-                0,
-                databaseUnits -
-                cartQty
-            );
-
-
-        return {
-
-            ...product,
-
-            // ------------------------------------------------
-            // IMPORTANT:
-            // Keep the field name as "units".
-            // The EJS expects p.units.
-            // ------------------------------------------------
-
-            units:
-                availableUnits
-
-        };
-
-    });
-
+exports.getProductsWithCartAdjustment = async (sessionId) => {
+    const products = await Product.find({}).sort({ category: 1, name: 1 }).lean();
+    await cleanCart(sessionId);
+    return products;
 };
 
-
-// =========================================================
-// GET CART
-// =========================================================
-
-exports.getCart =
-function(sessionId) {
-
-    const cart =
-        getCartInternal(
-            sessionId
-        );
-
-
+exports.getCart = function(sessionId){
+    const cart = getCartInternal(sessionId);
     return cloneCart(cart);
-
 };
 
-
 // =========================================================
-// ADD TO CART
+// ADD TO CART - NOW REDUCES Product.units
 // =========================================================
+exports.addToCart = async function(sessionId, productId, quantity = 1){
+    const id = normalizeString(productId);
+    if (!id) throw new Error("Product ID is required.");
+    const qty = Number.parseInt(quantity, 10);
+    if (!Number.isInteger(qty) || qty < 1) throw new Error("Quantity must be at least 1.");
 
-exports.addToCart =
-async function(
-    sessionId,
-    productId,
-    quantity = 1
-) {
+    const product = await Product.findById(id);
+    if (!product) throw new Error("Product not found.");
 
-    const id =
-        normalizeString(productId);
+    const stock = Math.max(0, getNumeric(product.units));
+    if (stock <= 0) throw new Error("This product is out of stock.");
+    if (qty > stock) throw new Error(`Only ${stock} unit${stock===1?"":"s"} available.`);
 
+    // 1. REDUCE FROM PRODUCTS MODEL
+    product.units = stock - qty;
+    await product.save();
 
-    if (!id) {
-
-        throw new Error(
-            "Product ID is required."
-        );
-
-    }
-
-
-    const qty =
-        Number.parseInt(
-            quantity,
-            10
-        );
-
-
-    if (
-        !Number.isInteger(qty) ||
-        qty < 1
-    ) {
-
-        throw new Error(
-            "Quantity must be at least 1."
-        );
-
-    }
-
-
-    // -------------------------------------------------------
-    // Verify product
-    // -------------------------------------------------------
-
-    const product =
-        await Product
-            .findById(id)
-            .lean();
-
-
-    if (!product) {
-
-        throw new Error(
-            "Product not found."
-        );
-
-    }
-
-
-    const stock =
-        Math.max(
-            0,
-            getNumeric(
-                product.units
-            )
-        );
-
-
-    if (stock <= 0) {
-
-        throw new Error(
-            "This product is out of stock."
-        );
-
-    }
-
-
-    // -------------------------------------------------------
-    // Current cart
-    // -------------------------------------------------------
-
-    const cart =
-        getCartInternal(
-            sessionId
-        );
-
-
-    const existing =
-        cart.find(item =>
-            String(item.productId) === id
-        );
-
-
-    const currentQty =
-        existing
-            ? Number(existing.qty || 0)
-            : 0;
-
-
-    const newQty =
-        currentQty + qty;
-
-
-    if (newQty > stock) {
-
-        throw new Error(
-
-            `Only ${Math.max(
-                0,
-                stock - currentQty
-            )} more unit${
-                stock - currentQty === 1
-                    ? ""
-                    : "s"
-            } available.`
-
-        );
-
-    }
-
-
-    // -------------------------------------------------------
-    // Add / update
-    // -------------------------------------------------------
-
-    if (existing) {
-
-        existing.qty =
-            newQty;
-
-        existing.name =
-            product.name;
-
-        existing.price =
-            getNumeric(
-                product.unitSellPrice
-            );
-
+    // 2. INCREASE IN CARTS (Map - your carts model)
+    const cart = getCartInternal(sessionId);
+    const existing = cart.find(item => String(item.productId) === id);
+    if (existing){
+        existing.qty += qty;
+        existing.name = product.name;
+        existing.price = getNumeric(product.unitSellPrice);
     } else {
-
-        cart.push({
-
-            productId:
-                String(product._id),
-
-            name:
-                product.name,
-
-            price:
-                getNumeric(
-                    product.unitSellPrice
-                ),
-
-            qty:
-                qty
-
-        });
-
+        cart.push({ productId: String(product._id), name: product.name, price: getNumeric(product.unitSellPrice), qty: qty });
     }
-
 
     return cloneCart(cart);
-
 };
 
-
 // =========================================================
-// UPDATE CART QUANTITY
+// UPDATE CART QTY - ADJUSTS Product.units by diff
 // =========================================================
+exports.updateCartQty = async function(sessionId, productId, quantity){
+    const id = normalizeString(productId);
+    const qty = Number.parseInt(quantity, 10);
+    if (!id) throw new Error("Product ID is required.");
+    if (!Number.isInteger(qty) || qty < 1) throw new Error("Quantity must be at least 1.");
 
-exports.updateCartQty =
-async function(
-    sessionId,
-    productId,
-    quantity
-) {
+    const cart = getCartInternal(sessionId);
+    const existingIndex = cart.findIndex(item => String(item.productId) === id);
+    if (existingIndex === -1) throw new Error("Item not in cart.");
 
-    const id =
-        normalizeString(productId);
+    const product = await Product.findById(id);
+    if (!product) throw new Error("Product not found.");
 
+    const oldQty = Number(cart[existingIndex].qty || 0);
+    const diff = qty - oldQty; // positive = need more stock
 
-    const qty =
-        Number.parseInt(
-            quantity,
-            10
-        );
+    const stock = Math.max(0, getNumeric(product.units));
+    if (diff > 0 && stock < diff) throw new Error(`Only ${stock + oldQty} unit${(stock+oldQty)===1?"":"s"} available.`);
 
+    // Adjust DB stock
+    product.units = Math.max(0, stock - diff);
+    await product.save();
 
-    if (!id) {
-
-        throw new Error(
-            "Product ID is required."
-        );
-
-    }
-
-
-    if (
-        !Number.isInteger(qty) ||
-        qty < 1
-    ) {
-
-        throw new Error(
-            "Quantity must be at least 1."
-        );
-
-    }
-
-
-    const product =
-        await Product
-            .findById(id)
-            .lean();
-
-
-    if (!product) {
-
-        throw new Error(
-            "Product not found."
-        );
-
-    }
-
-
-    const stock =
-        Math.max(
-            0,
-            getNumeric(
-                product.units
-            )
-        );
-
-
-    if (stock <= 0) {
-
-        throw new Error(
-            "This product is out of stock."
-        );
-
-    }
-
-
-    if (qty > stock) {
-
-        throw new Error(
-
-            `Only ${stock} unit${
-                stock === 1
-                    ? ""
-                    : "s"
-            } available.`
-
-        );
-
-    }
-
-
-    const cart =
-        getCartInternal(
-            sessionId
-        );
-
-
-    const existingIndex =
-        cart.findIndex(item =>
-            String(item.productId) === id
-        );
-
-
-    if (existingIndex === -1) {
-
-        // If something calls update directly,
-        // create the cart item rather than failing.
-        cart.push({
-
-            productId:
-                String(product._id),
-
-            name:
-                product.name,
-
-            price:
-                getNumeric(
-                    product.unitSellPrice
-                ),
-
-            qty
-
-        });
-
-    } else {
-
-        cart[existingIndex] = {
-
-            productId:
-                String(product._id),
-
-            name:
-                product.name,
-
-            price:
-                getNumeric(
-                    product.unitSellPrice
-                ),
-
-            qty
-
-        };
-
-    }
-
-
+    cart[existingIndex] = { productId: String(product._id), name: product.name, price: getNumeric(product.unitSellPrice), qty };
     return cloneCart(cart);
-
 };
 
-
 // =========================================================
-// REMOVE FROM CART
+// REMOVE FROM CART - RETURNS STOCK TO PRODUCTS
 // =========================================================
+exports.removeFromCart = async function(sessionId, productId){
+    const id = normalizeString(productId);
+    if (!id) throw new Error("Product ID is required.");
 
-exports.removeFromCart =
-async function(
-    sessionId,
-    productId
-) {
-
-    const id =
-        normalizeString(productId);
-
-
-    if (!id) {
-
-        throw new Error(
-            "Product ID is required."
-        );
-
+    const cart = getCartInternal(sessionId);
+    const item = cart.find(i => String(i.productId) === id);
+    
+    if (item){
+        const product = await Product.findById(id);
+        if (product){
+            product.units = Number(product.units || 0) + Number(item.qty || 0);
+            await product.save();
+        }
     }
 
-
-    const cart =
-        getCartInternal(
-            sessionId
-        );
-
-
-    const filtered =
-        cart.filter(item =>
-            String(item.productId) !== id
-        );
-
-
-    carts.set(
-        normalizeString(sessionId),
-        filtered
-    );
-
-
+    const filtered = cart.filter(item => String(item.productId) !== id);
+    carts.set(normalizeString(sessionId), filtered);
     return cloneCart(filtered);
-
 };
 
-
 // =========================================================
-// CREATE PRODUCT
+// CREATE PRODUCT - NOW SUPPORTS description, usage, precautions
 // =========================================================
-//
-// EXACT FIELD NAMES:
-//
-//     name
-//     category
-//     units
-//     unitSellPrice
-//     image
-//
-// =========================================================
+exports.createProduct = async function(data = {}){
+    const name = normalizeString(data.name);
+    const category = normalizeCategory(data.category);
+    const units = Number.parseInt(data.units, 10);
+    const unitSellPrice = Number(data.unitSellPrice);
+    const image = normalizeImage(data.image);
+    const description = normalizeString(data.description);
+    const usage = normalizeString(data.usage);
+    const precautions = normalizeString(data.precautions);
+    const specifications = normalizeString(data.specifications);
 
-exports.createProduct =
-async function(data = {}) {
+    if (!name) throw new Error("Product name is required.");
+    if (!category) throw new Error("Product category is required.");
+    if (!Number.isInteger(units) || units < 1) throw new Error("Units must be at least 1.");
+    if (!Number.isFinite(unitSellPrice) || unitSellPrice < 0) throw new Error("Selling price must be a valid amount.");
 
-    const name =
-        normalizeString(
-            data.name
-        );
+    const existing = await Product.findOne({
+        name: { $regex: `^${escapeRegex(name)}$`, $options: "i" },
+        category: { $regex: `^${escapeRegex(category)}$`, $options: "i" }
+    }).lean();
+    if (existing) throw new Error(`${name} is already listed in the marketplace.`);
 
-
-    const category =
-        normalizeCategory(
-            data.category
-        );
-
-
-    const units =
-        Number.parseInt(
-            data.units,
-            10
-        );
-
-
-    const unitSellPrice =
-        Number(
-            data.unitSellPrice
-        );
-
-
-    const image =
-        normalizeImage(
-            data.image
-        );
-
-
-    // -------------------------------------------------------
-    // Validation
-    // -------------------------------------------------------
-
-    if (!name) {
-
-        throw new Error(
-            "Product name is required."
-        );
-
-    }
-
-
-    if (!category) {
-
-        throw new Error(
-            "Product category is required."
-        );
-
-    }
-
-
-    if (
-        !Number.isInteger(units) ||
-        units < 1
-    ) {
-
-        throw new Error(
-            "Units must be at least 1."
-        );
-
-    }
-
-
-    if (
-        !Number.isFinite(unitSellPrice) ||
-        unitSellPrice < 0
-    ) {
-
-        throw new Error(
-            "Selling price must be a valid amount."
-        );
-
-    }
-
-
-    // -------------------------------------------------------
-    // Prevent accidental duplicate listing
-    // -------------------------------------------------------
-
-    const existing =
-        await Product.findOne({
-
-            name: {
-                $regex:
-                    `^${escapeRegex(name)}$`,
-                $options: "i"
-            },
-
-            category: {
-                $regex:
-                    `^${escapeRegex(category)}$`,
-                $options: "i"
-            }
-
-        })
-        .lean();
-
-
-    if (existing) {
-
-        throw new Error(
-
-            `${name} is already listed in the marketplace.`
-
-        );
-
-    }
-
-
-    // -------------------------------------------------------
-    // CREATE
-    // -------------------------------------------------------
-
-    const product =
-        await Product.create({
-
-            name,
-
-            category,
-
-            units,
-
-            unitSellPrice,
-
-            image
-
-        });
-
+    const product = await Product.create({
+        name, category, units, unitSellPrice, image,
+        description: description || undefined,
+        usage: usage || undefined,
+        precautions: precautions || undefined,
+        specifications: specifications || undefined
+    });
 
     return product.toObject();
-
 };
 
-
-// =========================================================
-// DELETE PRODUCT
-// =========================================================
-//
-// IMPORTANT:
-//
-// This removes the Product listing.
-//
-// It deliberately does NOT invent a Stock model or modify
-// an unknown stock collection.
-//
-// If your existing stock service already handles returning
-// listed units to warehouse stock, that logic should be
-// called from here using that service.
-//
-// =========================================================
-
-exports.deleteProduct =
-async function(productId) {
-
-    const id =
-        normalizeString(productId);
-
-
-    if (!id) {
-
-        throw new Error(
-            "Product ID is required."
-        );
-
+exports.deleteProduct = async function(productId){
+    const id = normalizeString(productId);
+    if (!id) throw new Error("Product ID is required.");
+    const product = await Product.findById(id);
+    if (!product) throw new Error("Product not found.");
+    const result = product.toObject();
+    await Product.deleteOne({ _id: product._id });
+    for (const [sessionId, cart] of carts.entries()){
+        const filtered = cart.filter(item => String(item.productId) !== String(product._id));
+        carts.set(sessionId, filtered);
     }
-
-
-    const product =
-        await Product
-            .findById(id);
-
-
-    if (!product) {
-
-        throw new Error(
-            "Product not found."
-        );
-
-    }
-
-
-    const result =
-        product.toObject();
-
-
-    await Product
-        .deleteOne({
-            _id: product._id
-        });
-
-
-    // -------------------------------------------------------
-    // Remove deleted product from every in-memory cart.
-    // -------------------------------------------------------
-
-    for (
-        const [
-            sessionId,
-            cart
-        ] of carts.entries()
-    ) {
-
-        const filtered =
-            cart.filter(item =>
-                String(item.productId) !==
-                String(product._id)
-            );
-
-
-        carts.set(
-            sessionId,
-            filtered
-        );
-
-    }
-
-
     return result;
-
 };
 
+function escapeRegex(value){ return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 
-// =========================================================
-// ESCAPE REGEX
-// =========================================================
-
-function escapeRegex(value) {
-
-    return String(value)
-        .replace(
-            /[.*+?^${}()|[\]\\]/g,
-            "\\$&"
-        );
-
-}
-
-
-// =========================================================
-// EXPORTS
-// =========================================================
-
-console.log(
-    "✅ productsService loaded successfully"
-);
+console.log("✅ productsService loaded successfully - NOW WITH STOCK REDUCTION");
