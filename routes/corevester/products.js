@@ -1,7 +1,3 @@
-// =========================================================
-// routes/corevester/products.js
-// =========================================================
-
 const express = require("express");
 const router = express.Router();
 const productsController = require("../../controllers/corevester/productsController");
@@ -9,8 +5,8 @@ const productsController = require("../../controllers/corevester/productsControl
 router.get("/", productsController.productsPage);
 router.post("/add-to-cart", productsController.addToCart);
 router.post("/remove-from-cart", productsController.removeFromCart);
-router.post("/checkout", productsController.checkout);
 
+// details LAST - otherwise / will be confused
 router.get("/:id", productsController.productDetails);
 
 module.exports = router;
