@@ -4,8 +4,8 @@ const router = express.Router();
 
 let Product, Package;
 try {
-    Product = require("../../models/Product");
-    Package = require("../../models/Package");
+    Product = require("../../models/corevester/products");
+    Package = require("../../models/corevester/packages");
     console.log("✅ Product & Package models loaded");
 } catch (err) {
     console.error("❌ FAILED to load models in packages.js", err.message, err.stack);
