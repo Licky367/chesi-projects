@@ -1,38 +1,27 @@
-const authService = require('../../services/corevester/auth');
+const authService = require("../../services/corevester/auth");
 
-exports.showSignup = (req,res) => res.render('signup');
-exports.showLogin = (req,res) => res.render('login');
+exports.showSignup = (req, res) => res.render("signup", { title: "Signup" });
+exports.showLogin = (req, res) => res.render("login", { title: "Login" });
 
-exports.signup = async (req,res) => {
+exports.signup = async (req, res) => {
   try{
-    const { fullName, email, password, role } = req.body;
-    if(!fullName || !email || !password) return res.status(400).json({ success:false, message:'All fields required' });
-    
-    const user = await authService.registerUser({ fullName, email, password, role });
-    
-    // SESSION
+    const user = await authService.registerUser(req.body);
     req.session.userId = user._id;
     req.session.role = user.role;
-    req.session.fullName = user.fullName;
-    
-    return res.json({ success:true, role:user.role, redirect: user.role==='admin'?'/admin/dashboard':'/products' });
+    req.session.user = { id: user._id, fullName: user.fullName, email: user.email, role: user.role };
+    return res.json({ success:true, redirect:'/products' });
   }catch(err){
     return res.status(400).json({ success:false, message: err.message });
   }
 };
 
-exports.login = async (req,res) => {
+exports.login = async (req, res) => {
   try{
-    const { email, password } = req.body;
-    const user = await authService.loginUser({ email, password });
-    
-    // SESSION
+    const user = await authService.loginUser(req.body);
     req.session.userId = user._id;
     req.session.role = user.role;
-    req.session.fullName = user.fullName;
-    req.session.email = user.email;
-    
-    return res.json({ success:true, role:user.role, redirect: user.role==='admin'?'/admin/dashboard':'/products' });
+    req.session.user = { id: user._id, fullName: user.fullName, email: user.email, role: user.role };
+    return res.json({ success:true, redirect: user.role==='admin'?'/admin/products':'/products' });
   }catch(err){
     return res.status(401).json({ success:false, message: err.message });
   }
