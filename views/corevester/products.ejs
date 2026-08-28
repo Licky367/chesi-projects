@@ -1,93 +1,103 @@
 <style>
-/* SAME PAGE STYLE AS YOUR SCREENSHOT */
-.core-page{width:100%;max-width:100vw;overflow-x:hidden;background:#f4f6f4;font-family:"Segoe UI",sans-serif;}
-.core-container{width:100%;max-width:1300px;margin:0 auto;padding:12px 0 30px 0;box-sizing:border-box;overflow-x:hidden;}
+/* PAGE - LOCK WIDTH SO NOTHING CAN BE 40CM WIDE */
+.core-page{width:100%;max-width:100vw;overflow-x:hidden;background:#f4f6f4;font-family:"Segoe UI",sans-serif;box-sizing:border-box;}
+.core-container{width:100%;max-width:1300px;margin:0 auto;overflow:hidden;box-sizing:border-box;}
 
-/* TOP FILTER - LIKE YOUR APP */
-.core-top-filter{display:flex;gap:8px;padding:10px 14px;overflow-x:auto;scrollbar-width:none;background:#fff;border-bottom:2px solid #e8f5e9;}
-.core-top-filter::-webkit-scrollbar{display:none;}
-.core-filter{border:1.5px solid #c8d9cc;background:#fff;color:#0a4d1e;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;}
-.core-filter.active{background:#0a4d1e;color:#fff;border-color:#0a4d1e;}
+/* FILTER PILLS - LIKE YOUR HEADER */
+.core-filters{display:flex;gap:8px;padding:10px 14px;overflow-x:auto;scrollbar-width:none;background:#fff;border-bottom:2px solid #e8f5e9;white-space:nowrap;}
+.core-filters::-webkit-scrollbar{display:none;}
+.core-pill{border:1.5px solid #c8d9cc;background:#fff;color:#0a4d1e;border-radius:20px;padding:6px 16px;font-size:11px;font-weight:800;text-decoration:none;display:inline-block;flex-shrink:0;}
+.core-pill.active{background:#0a4d1e;color:#fff;border-color:#0a4d1e;}
 
-/* CATEGORY TITLE LIKE "Dairy Farms" / "Standalone Assets" */
-.core-category{width:100%;margin:18px 0 0 0;overflow:hidden;}
-.core-cat-title{padding:0 14px;margin:0;}
-.core-cat-title h2{margin:0;color:#111;font-size:20px;font-weight:800;line-height:1.2;}
-.core-cat-title p{margin:2px 0 0 0;color:#777;font-size:12px;line-height:1.4;}
+/* CATEGORY HEADER LIKE "Dairy Farms" / "Gloves" */
+.core-cat{width:100%;max-width:100%;margin:0 0 6px 0;overflow:hidden;}
+.core-cat-head{padding:14px 14px 0 14px;}
+.core-cat-head h2{margin:0;color:#111;font-size:19px;font-weight:800;text-transform:capitalize;line-height:1.2;}
+.core-cat-head p{margin:3px 0 0 0;color:#777;font-size:12px;}
 
-.core-row{width:100%;display:flex;flex-wrap:nowrap;gap:14px;overflow-x:auto;overflow-y:hidden;padding:14px 14px 10px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+/* THE IMPORTANT PART - ONE ROW PER CATEGORY, HORIZONTAL SCROLL */
+.core-row{
+  width:100%;max-width:100%;
+  display:flex;flex-direction:row;flex-wrap:nowrap;
+  gap:14px;
+  overflow-x:auto;overflow-y:hidden;
+  padding:12px 14px 18px 14px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  box-sizing:border-box;
+}
 .core-row::-webkit-scrollbar{display:none;}
 
-/* CARD EXACT LIKE YOUR SCREENSHOT - C KA HM KS */
+/* CARD - EXACTLY LIKE YOUR CFP SCREENSHOT */
 .core-card{
-  flex:0 0 165px;width:165px;min-width:165px;max-width:165px;
-  height:210px;min-height:210px;
-  background:linear-gradient(to bottom, #eef5e9 0%, #e8f0e3 55%, #ffffff 55%, #ffffff 100%);
+  flex:0 0 162px!important;
+  width:162px!important;
+  min-width:162px!important;
+  max-width:162px!important;
+  height:218px;
+  background:#fff;
   border-radius:18px;
   border:1.5px solid #e6efe3;
-  border-left:4px solid #d87c2a;
-  overflow:hidden;
+  border-left:4px solid #0a4d1e;
   display:flex;flex-direction:column;
+  overflow:hidden;
+  flex-shrink:0!important;
+  box-shadow:0 2px 10px rgba(0,0,0,0.05);
   position:relative;
-  box-shadow:0 2px 8px rgba(0,0,0,0.04);
-  cursor:pointer;flex-shrink:0;
+  box-sizing:border-box;
 }
-.core-card.green-left{border-left-color:#0a4d1e;}
-.core-card.orange-left{border-left-color:#c97a2e;}
+.core-card:nth-child(even){border-left-color:#c97a2e;}
 
-.core-badge-top{
-  position:absolute;top:8px;left:50%;transform:translateX(-50%);
-  background:#fff;border:1px solid #e0e0e0;color:#333;
-  font-size:9px;font-weight:800;letter-spacing:0.5px;
-  padding:3px 10px;border-radius:20px;z-index:2;
+.core-top-badge{
+  position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  background:#fff;border:1px solid #e5e5e5;
+  color:#333;font-size:8px;font-weight:800;letter-spacing:0.6px;
+  padding:2px 8px;border-radius:20px;z-index:2;white-space:nowrap;
 }
 
-.core-card-top{
-  height:118px;min-height:118px;
+/* IMAGE BOX - LOCKED TO 108px, IMAGE CONTAINED INSIDE */
+.core-img-box{
+  width:100%!important;
+  height:108px!important;
+  min-height:108px!important;
+  max-height:108px!important;
+  background:linear-gradient(to bottom, #eef4e9, #e4ece0);
   display:flex;align-items:center;justify-content:center;
-  position:relative;padding-top:10px;
+  overflow:hidden;
+  flex-shrink:0;
+  position:relative;
 }
-.core-initials{
-  font-size:52px;font-weight:400;color:#1e5a3a;line-height:1;
-  letter-spacing:-1px;font-family:"Segoe UI", sans-serif;
+.core-img-box img{
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  display:block!important;
 }
-.core-card-top img{width:80%;height:80%;object-fit:contain;}
+.core-initials{font-size:48px;font-weight:300;color:#1e5a3a;line-height:1;}
+.core-stock{position:absolute;bottom:6px;right:6px;background:#fff;border:1px solid #0a4d1e;color:#0a4d1e;font-size:8px;font-weight:800;padding:2px 6px;border-radius:20px;}
 
-.core-card-bottom{
-  background:#fff;
-  padding:10px 12px 10px 12px;
-  flex:1;display:flex;flex-direction:column;
-  border-top:1px solid #f0f0f0;
-}
-.core-name{margin:0;color:#111;font-size:13px;font-weight:800;line-height:1.25;height:34px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
-.core-sub{margin:3px 0 0 0;color:#888;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;}
-.core-code-row{margin-top:auto;display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid #f5f5f5;margin-top:6px;}
-.core-code-label{color:#888;font-size:10px;}
-.core-code-val{background:#f1f8e9;color:#0a4d1e;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;}
+/* DETAILS - CONTAINED TOGETHER INSIDE CARD */
+.core-details{background:#fff;padding:10px 10px 8px 10px;flex:1;display:flex;flex-direction:column;box-sizing:border-box;}
+.core-name{margin:0;color:#111;font-size:12.5px;font-weight:800;line-height:1.25;height:31px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
+.core-meta{margin:4px 0 0 0;color:#888;font-size:10.5px;display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.core-meta i{font-size:9px;color:#0a4d1e;}
+.core-bottom{margin-top:auto;padding-top:6px;border-top:1px solid #f2f2f2;display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+.core-price-lbl{color:#888;font-size:9px;}
+.core-price-val{background:#f1f8e9;color:#0a4d1e;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;}
+.core-add-btn{margin-top:7px;width:100%;background:#0a4d1e;color:#fff;border:none;border-radius:8px;padding:7px 4px;font-size:10px;font-weight:800;cursor:pointer;flex-shrink:0;}
 
-/* ADD CARD LIKE YOUR "Add Dairy Farm" */
-.core-add-card{
-  flex:0 0 165px;width:165px;min-width:165px;max-width:165px;height:210px;
-  background:#fdfdf5;border:1.5px dashed #c5c5b5;border-radius:18px;
-  border-left:4px solid #c97a2e;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:14px;text-align:center;cursor:pointer;flex-shrink:0;
-}
-.core-add-icon{width:56px;height:56px;border-radius:14px;background:#f5f0e8;border:1px solid #e8e0d0;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
-.core-add-title{font-size:14px;font-weight:800;color:#111;margin:0;}
-.core-add-sub{font-size:11px;color:#888;margin-top:4px;}
-
-.core-price-btn{margin-top:6px;width:100%;background:#0a4d1e;color:#fff;border:none;border-radius:8px;padding:6px;font-size:10px;font-weight:800;cursor:pointer;}
-
-#qtyOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1300;display:none;align-items:center;justify-content:center;padding:20px;}
+#qtyOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;}
 #qtyBox{background:#fff;border:3px solid #0a4d1e;border-radius:18px;width:100%;max-width:300px;padding:20px;text-align:center;}
 </style>
 
 <div class="core-page">
-  <div class="core-top-filter">
-    <a href="/products?category=all" class="core-filter <%= activeCategory==='all'?'active':'' %>">ALL</a>
+  <div class="core-filters">
+    <a href="/products?category=all" class="core-pill <%= activeCategory==='all'?'active':'' %>">ALL</a>
     <% (categories||[]).forEach(c=>{ %>
-      <a href="/products?category=<%= c %>" class="core-filter <%= activeCategory===c?'active':'' %>"><%= c.toUpperCase() %></a>
+      <a href="/products?category=<%= c %>" class="core-pill <%= activeCategory===c?'active':'' %>"><%= c.toUpperCase() %></a>
     <% }) %>
   </div>
 
@@ -103,37 +113,38 @@
     <% filtered.forEach(cat=>{
       const list=groups[cat]; if(!list) return;
     %>
-      <div class="core-category">
-        <div class="core-cat-title">
-          <h2 style="text-transform:capitalize;"><%= cat %></h2>
+      <div class="core-cat">
+        <div class="core-cat-head">
+          <h2><%= cat %></h2>
           <p>View and manage all <%= cat %> in the system.</p>
         </div>
 
+        <!-- SAME CATEGORY = SAME HORIZONTAL ROW -->
         <div class="core-row">
           <% list.forEach(p=>{
-            const initials = (p.name||'').split(' ').slice(0,2).map(w=>w[0]).join('').substring(0,2).toUpperCase();
-            const leftColor = Math.random()>0.5? 'green-left' : 'orange-left';
+            const initials = (p.name||'').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
           %>
-            <div class="core-card <%= leftColor %>" data-id="<%= p._id %>">
-              <span class="core-badge-top"><%= cat.toUpperCase().substring(0,8) %></span>
-              <div class="core-card-top">
+            <div class="core-card" data-id="<%= p._id %>">
+              <span class="core-top-badge"><%= cat.substring(0,7).toUpperCase() %></span>
+              <div class="core-img-box">
                 <% if(p.image){ %>
-                  <img src="<%= p.image %>" alt="<%= p.name %>" loading="lazy">
+                  <img src="<%= p.image %>" alt="<%= p.name %>">
                 <% } else { %>
                   <span class="core-initials"><%= initials %></span>
                 <% } %>
+                <span class="core-stock"><%= p.units %> left</span>
               </div>
-              <div class="core-card-bottom">
+              <div class="core-details">
                 <p class="core-name"><%= p.name %></p>
-                <p class="core-sub"><i class="fas fa-box" style="font-size:9px;color:#0a4d1e;"></i> <%= cat %></p>
-                <div class="core-code-row">
-                  <span class="core-code-label">Price</span>
-                  <span class="core-code-val">KES <%= Number(p.unitSellPrice||0).toLocaleString() %></span>
+                <p class="core-meta"><i class="fas fa-boxes-stacked"></i> <%= cat %></p>
+                <div class="core-bottom">
+                  <span class="core-price-lbl">Price</span>
+                  <span class="core-price-val">KES <%= Number(p.unitSellPrice||0).toLocaleString() %></span>
                 </div>
                 <% if(Number(p.units||0)>0){ %>
-                  <button class="core-price-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>">ADD CART • <%= p.units %> left</button>
+                  <button class="core-add-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>">ADD CART</button>
                 <% } else { %>
-                  <button class="core-price-btn" disabled style="background:#eee;color:#999;">OUT</button>
+                  <button class="core-add-btn" disabled style="background:#eee;color:#999;">OUT</button>
                 <% } %>
               </div>
             </div>
@@ -141,53 +152,20 @@
         </div>
       </div>
     <% }) %>
-
-    <!-- STANDALONE ASSETS STYLE - OPTIONAL EXTRA ROW FOR ALL PRODUCTS -->
-    <% if(activeCategory==='all' && Object.keys(groups).length>1){ %>
-      <div class="core-category">
-        <div class="core-cat-title">
-          <h2>All Products</h2>
-          <p>Quick access to all available products.</p>
-        </div>
-        <div class="core-row">
-          <div class="core-add-card" onclick="window.location.href='/products?category=all'">
-            <div class="core-add-icon"><i class="fas fa-plus" style="color:#0a4d1e;"></i></div>
-            <p class="core-add-title">View All</p>
-            <p class="core-add-sub">Browse <%= products.length %> products</p>
-          </div>
-          <% products.slice(0,6).forEach(p=>{
-            const initials = (p.name||'').substring(0,2).toUpperCase();
-          %>
-            <div class="core-card green-left" data-id="<%= p._id %>">
-              <span class="core-badge-top">PRODUCT</span>
-              <div class="core-card-top"><span class="core-initials"><%= initials %></span></div>
-              <div class="core-card-bottom">
-                <p class="core-name"><%= p.name %></p>
-                <p class="core-sub">Condition: Good</p>
-                <div class="core-code-row"><span class="core-code-label">KES</span><span class="core-code-val"><%= Number(p.unitSellPrice||0).toLocaleString() %></span></div>
-              </div>
-            </div>
-          <% }) %>
-        </div>
-      </div>
-    <% } %>
-
   </div>
 </div>
 
-<div id="qtyOverlay">
-  <div id="qtyBox">
-    <h3 id="qtyName" style="margin:0;color:#0a4d1e;font-size:15px;"></h3>
-    <p style="font-size:11px;color:#666;">Available: <b id="qtyAvail"></b></p>
-    <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:18px 0;">
-      <button id="qMinus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;cursor:pointer;">-</button>
-      <span id="qVal" style="font-size:24px;font-weight:900;color:#0a4d1e;">1</span>
-      <button id="qPlus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;cursor:pointer;">+</button>
-    </div>
-    <button id="qConfirm" style="width:100%;padding:10px;background:#0a4d1e;color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer;">ADD <span id="qCount">1</span> TO CART</button>
-    <button onclick="closeQty()" style="width:100%;margin-top:8px;background:none;border:none;color:#888;cursor:pointer;">Cancel</button>
+<div id="qtyOverlay"><div id="qtyBox">
+  <h3 id="qtyName" style="margin:0;color:#0a4d1e;font-size:14px;"></h3>
+  <p style="font-size:11px;color:#666;">Available: <b id="qtyAvail"></b></p>
+  <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:16px 0;">
+    <button id="qMinus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;cursor:pointer;">-</button>
+    <span id="qVal" style="font-size:24px;font-weight:900;color:#0a4d1e;">1</span>
+    <button id="qPlus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;cursor:pointer;">+</button>
   </div>
-</div>
+  <button id="qConfirm" style="width:100%;padding:10px;background:#0a4d1e;color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer;">ADD <span id="qCount">1</span> TO CART</button>
+  <button onclick="closeQty()" style="width:100%;margin-top:8px;background:none;border:none;color:#888;cursor:pointer;">Cancel</button>
+</div></div>
 
 <script>
 (function(){
@@ -198,9 +176,7 @@
   document.getElementById('qMinus').onclick=()=>{ if(sel.qty>1){sel.qty--; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty;}};
   document.getElementById('qConfirm').onclick=async()=>{ const r=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:sel.id,qty:sel.qty})}); const d=await r.json(); if(!d.success){alert(d.message);return;} closeQty(); location.reload(); };
   document.getElementById('qtyOverlay').addEventListener('click',e=>{ if(e.target.id==='qtyOverlay') closeQty(); });
-  document.querySelectorAll('.core-card').forEach(card=>{
-    card.addEventListener('click',e=>{ if(e.target.closest('.core-price-btn')) return; const btn=card.querySelector('.core-price-btn[data-id]'); if(btn) window.location.href='/products/'+btn.dataset.id; });
-  });
-  document.querySelectorAll('.core-price-btn[data-id]').forEach(b=>{ b.addEventListener('click',e=>{ e.stopPropagation(); openQty(b.dataset.id,b.dataset.name,b.dataset.stock); }); });
+  document.querySelectorAll('.core-card').forEach(c=>{ c.addEventListener('click',e=>{ if(e.target.closest('.core-add-btn')) return; const b=c.querySelector('.core-add-btn[data-id]'); if(b) location.href='/products/'+b.dataset.id; }); });
+  document.querySelectorAll('.core-add-btn[data-id]').forEach(b=>{ b.addEventListener('click',e=>{ e.stopPropagation(); openQty(b.dataset.id,b.dataset.name,b.dataset.stock); }); });
 })();
 </script>
