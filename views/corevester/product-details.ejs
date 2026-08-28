@@ -9,7 +9,6 @@
 
     <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;">
       
-      <!-- LEFT - IMAGE -->
       <div style="flex:1 1 340px;min-width:280px;background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.04);">
         <div style="width:100%;height:380px;background:linear-gradient(to bottom,#eef4e9,#e4ece0);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
           <span style="position:absolute;top:12px;left:12px;background:#fff;border:1.5px solid <%= product.units>0?'#15472E':'#c62828' %>;color:<%= product.units>0?'#15472E':'#c62828' %>;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;z-index:2;">
@@ -19,7 +18,6 @@
         </div>
       </div>
 
-      <!-- RIGHT - DETAILS -->
       <div style="flex:1 1 340px;min-width:280px;">
         <div style="background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);">
           <p style="margin:0;color:#2e7d32;font-weight:800;font-size:11px;letter-spacing:1px;text-transform:uppercase;"><%= product.category %></p>
@@ -31,14 +29,12 @@
             <p style="margin-top:12px;color:#555;font-size:13px;line-height:1.5;"><%= product.description.substring(0,180) %></p>
           <% } %>
 
-          <!-- QTY + ADD TO CART - FIXED JS -->
           <div style="margin-top:18px;display:flex;gap:10px;align-items:center;">
             <div style="display:flex;align-items:center;border:2.5px solid #15472E;border-radius:12px;overflow:hidden;background:#fff;height:46px;flex-shrink:0;">
-              <button id="btnMinus" type="button" style="width:44px;height:100%;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
-              <input id="inputQty" type="number" value="1" min="1" max="<%= product.units %>" style="width:56px;height:100%;border:none;border-left:1.5px solid #e0e9dc;border-right:1.5px solid #e0e9dc;text-align:center;font-weight:900;color:#15472E;font-size:18px;outline:none;background:#fff;">
-              <button id="btnPlus" type="button" style="width:44px;height:100%;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+              <button type="button" onclick="var i=document.getElementById('inputQty'); var v=parseInt(i.value)||1; if(v>1) i.value=v-1;" style="width:44px;height:46px;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">−</button>
+              <input id="inputQty" type="number" value="1" min="1" max="<%= product.units %>" style="width:56px;height:46px;border:none;border-left:1.5px solid #e0e9dc;border-right:1.5px solid #e0e9dc;text-align:center;font-weight:900;color:#15472E;font-size:18px;outline:none;background:#fff;">
+              <button type="button" onclick="var i=document.getElementById('inputQty'); var m=parseInt(i.max)||9999; var v=parseInt(i.value)||1; if(v<m) i.value=v+1; else alert('Only '+m+' left');" style="width:44px;height:46px;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">+</button>
             </div>
-
             <button id="btnAddCart" data-id="<%= product._id %>" data-stock="<%= product.units %>" <%= product.units<=0?'disabled':'' %> style="flex:1;height:46px;background:<%= product.units>0?'#15472E':'#ccc' %>;color:#fff;font-weight:800;border:none;border-radius:12px;padding:0 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(21,71,46,0.25);">
               <i class="fas fa-shopping-cart"></i> ADD TO CART
             </button>
@@ -76,64 +72,29 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-  const minus = document.getElementById('btnMinus');
-  const plus = document.getElementById('btnPlus');
-  const qtyInput = document.getElementById('inputQty');
-  const addBtn = document.getElementById('btnAddCart');
-  const msg = document.getElementById('stockMsg');
-  if(!addBtn || !qtyInput) return;
-
-  const maxStock = parseInt(addBtn.dataset.stock) || 0;
-  const productId = addBtn.dataset.id;
-
-  function setQty(v){
-    v = parseInt(v) || 1;
-    if(v < 1) v = 1;
-    if(maxStock > 0 && v > maxStock) v = maxStock;
-    qtyInput.value = v;
-  }
-
-  plus.addEventListener('click', (e)=>{ e.preventDefault(); setQty(parseInt(qtyInput.value)+1); });
-  minus.addEventListener('click', (e)=>{ e.preventDefault(); setQty(parseInt(qtyInput.value)-1); });
-  qtyInput.addEventListener('change', ()=> setQty(qtyInput.value));
-
-  addBtn.addEventListener('click', async (e)=>{
-    e.preventDefault();
-    const qty = parseInt(qtyInput.value) || 1;
-    if(maxStock > 0 && qty > maxStock){ alert('Only '+maxStock+' units left'); return; }
-
-    const originalHTML = addBtn.innerHTML;
-    addBtn.innerHTML = 'Adding...';
-    addBtn.disabled = true;
-
+var addBtn = document.getElementById('btnAddCart');
+if(addBtn){
+  addBtn.onclick = async function(){
+    var pid = this.getAttribute('data-id');
+    var qty = parseInt(document.getElementById('inputQty').value) || 1;
+    var original = this.innerHTML;
+    this.innerHTML = 'Adding...';
+    this.disabled = true;
     try{
-      const res = await fetch('/products/add-to-cart', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
+      var res = await fetch('/products/add-to-cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ productId: productId, qty: qty })
+        body: JSON.stringify({ productId: pid, qty: qty })
       });
-      const data = await res.json();
+      var data = await res.json();
       if(!res.ok || !data.success) throw new Error(data.message || 'Failed');
-
-      msg.style.color='#2e7d32';
-      msg.textContent='✓ Added '+qty+' to cart. Stock reduced.';
-
-      const cartCountEl = document.querySelector('[data-cart-count], #cartCount, #cart-count, .cart-count');
-      if(cartCountEl && data.cartCount !== undefined) cartCountEl.textContent = data.cartCount;
-
-      addBtn.innerHTML = 'Added ✓';
-      setTimeout(()=>{ window.location.href='/cart'; }, 700);
-
-    }catch(err){
-      console.error('Add to cart error:', err);
-      alert(err.message || 'Network error');
-      addBtn.innerHTML = originalHTML;
-      addBtn.disabled = false;
-      msg.style.color='#c62828';
-      msg.textContent = 'Failed: ' + err.message;
+      window.location.href = '/cart';
+    }catch(e){
+      alert(e.message || 'Network error');
+      this.innerHTML = original;
+      this.disabled = false;
     }
-  });
-});
+  };
+}
 </script>
