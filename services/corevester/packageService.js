@@ -1,14 +1,47 @@
-const Package = require("../../models/corevester/package");
-const Product = require("../../models/corevester/products");
-const productsService = require("./productsService");
+console.log("... Loading services/corevester/packageService.js");
+
+let Package, Product, productsService;
+
+try {
+    Package = require("../../models/corevester/package");
+    console.log("✅ Package model loaded in packageService");
+} catch (err) {
+    console.error("❌ FAILED to load Package model in packageService");
+    console.error("Path tried:../../models/corevester/package");
+    console.error(err.message);
+    console.error(err.stack);
+    throw err;
+}
+
+try {
+    Product = require("../../models/corevester/products");
+    console.log("✅ Product model loaded in packageService");
+} catch (err) {
+    console.error("❌ FAILED to load Product model in packageService");
+    console.error(err.message);
+    console.error(err.stack);
+    throw err;
+}
+
+try {
+    productsService = require("./productsService");
+    console.log("✅ productsService loaded in packageService");
+} catch (err) {
+    console.error("❌ FAILED to load productsService in packageService");
+    console.error(err.message);
+    console.error(err.stack);
+    throw err;
+}
 
 module.exports = {
 
     async createFromCart(sessionId){
+        console.log(`[packageService.createFromCart] sessionId=${sessionId}`);
         const cart = productsService.getCart(sessionId);
         if(!cart || cart.length === 0) throw new Error("Cart empty");
 
         const total = cart.reduce((s,i) => s + (i.price * i.qty), 0);
+        console.log(`Cart total: ${total} items: ${cart.length}`);
 
         const pkg = await Package.create({
             clientId: sessionId,
@@ -23,14 +56,14 @@ module.exports = {
             status: "pending"
         });
 
-        // Deduct stock when ordered
+        console.log(`Package created: ${pkg._id}`);
+
         for(let item of cart){
             await Product.findByIdAndUpdate(item.productId, { $inc: { units: -item.qty } });
         }
 
-        // Clear cart correctly
         productsService.clearCart(sessionId);
-
+        console.log("Cart cleared");
         return pkg;
     },
 
@@ -42,3 +75,5 @@ module.exports = {
         return await Package.findById(id).lean();
     }
 };
+
+console.log("✅ packageService loaded successfully");
