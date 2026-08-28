@@ -1,9 +1,10 @@
 const User = require("../../models/corevester/user");
 
 exports.registerUser = async ({ fullName, email, password }) => {
+  if(!fullName || !email || !password) throw new Error('All fields required');
   const exists = await User.findOne({ email });
   if(exists) throw new Error('Email already exists');
-  return await User.create({ fullName, email, password, role: 'client' });
+  return await User.create({ fullName, email, password });
 };
 
 exports.loginUser = async ({ email, password }) => {
