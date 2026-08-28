@@ -1,959 +1,1165 @@
+<!-- =========================================================
+     views/corevester/products.ejs
+     =========================================================
+     
+     CORE VESTER HEALTHCARE
+     PRODUCT MARKETPLACE
+
+     EXPECTED DATA:
+         products
+             Array of Product documents
+
+     PRODUCT FIELDS:
+         name
+         category
+         image
+         units
+         unitSellPrice
+         description
+         isActive
+         isOutOfStock (virtual)
+     ========================================================= -->
+
 <style>
-
-/* ==========================================================
-   MARKETPLACE
-   JUMIA-STYLE CATEGORY / HORIZONTAL PRODUCT RAILS
-========================================================== */
-
-.marketplace {
-
-    --green: #0b5a2a;
-    --green-dark: #073f1d;
-    --green-soft: #edf7f0;
-
-    --orange: #e58a22;
-    --orange-soft: #fff5e8;
-
-    --ink: #18231c;
-    --muted: #718078;
-
-    --line: #e2e9e4;
-
-    width: 100%;
-    min-height: 100vh;
-
-    margin: 0;
-    padding: 0 0 40px;
-
-    background: #f5f7f6;
-
-    color: var(--ink);
-
-    box-sizing: border-box;
-}
-
-
-.marketplace *,
-.marketplace *::before,
-.marketplace *::after {
-
-    box-sizing: border-box;
-
-}
-
-
-/* ==========================================================
-   HERO
-========================================================== */
-
-.market-hero {
-
-    width: 100%;
-
-    background: #ffffff;
-
-    border-bottom: 1px solid var(--line);
-
-}
-
-
-.market-hero-inner {
-
-    width: 100%;
-
-    max-width: 1400px;
-
-    margin: 0 auto;
-
-    padding: 18px 14px 15px;
-
-}
-
-
-/* ==========================================================
-   TITLE
-========================================================== */
-
-.market-title-row {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 15px;
-
-}
-
-
-.market-heading {
-
-    min-width: 0;
-
-}
-
-
-.market-eyebrow {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    margin-bottom: 4px;
-
-    color: var(--muted);
-
-    font-size: 9px;
-
-    font-weight: 900;
-
-    text-transform: uppercase;
-
-    letter-spacing: 1px;
-
-}
-
-
-.market-eyebrow i {
-
-    color: var(--green);
-
-}
-
-
-.market-title {
-
-    margin: 0;
-
-    color: var(--green);
-
-    font-size: 24px;
-
-    font-weight: 900;
-
-    line-height: 1.1;
-
-}
-
-
-.market-description {
-
-    margin: 5px 0 0;
-
-    color: #758179;
-
-    font-size: 11px;
-
-    line-height: 1.45;
-
-}
-
-
-/* ==========================================================
-   CART BUTTON
-========================================================== */
-
-.market-cart-button {
-
-    flex: 0 0 44px;
-
-    width: 44px;
-
-    height: 44px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border: 0;
-
-    border-radius: 50%;
-
-    background: var(--green);
-
-    color: #ffffff;
-
-    cursor: pointer;
-
-    box-shadow: 0 5px 14px rgba(11,90,42,.18);
-
-}
-
-
-.market-cart-button:hover {
-
-    background: var(--green-dark);
-
-}
-
-
-/* ==========================================================
-   SUMMARY
-========================================================== */
-
-.market-summary {
-
-    width: 100%;
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-
-    gap: 7px;
-
-    margin-top: 14px;
-
-}
-
-
-.summary-card {
-
-    min-width: 0;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    padding: 8px;
-
-    background: #ffffff;
-
-    border: 1px solid var(--line);
-
-    border-radius: 10px;
-
-}
-
-
-.summary-icon {
-
-    flex: 0 0 28px;
-
-    width: 28px;
-
-    height: 28px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 8px;
-
-    background: var(--green-soft);
-
-    color: var(--green);
-
-    font-size: 11px;
-
-}
-
-
-.summary-info {
-
-    min-width: 0;
-
-}
-
-
-.summary-label {
-
-    display: block;
-
-    color: #8a958e;
-
-    font-size: 7px;
-
-    font-weight: 900;
-
-    text-transform: uppercase;
-
-}
-
-
-.summary-value {
-
-    display: block;
-
-    margin-top: 2px;
-
-    color: var(--green);
-
-    font-size: 10px;
-
-    font-weight: 900;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-
-}
-
-
-/* ==========================================================
-   MAIN
-========================================================== */
-
-.market-main {
-
-    width: 100%;
-
-    max-width: 1400px;
-
-    margin: 0 auto;
-
-    padding: 14px 0 0;
-
-}
-
-
-/* ==========================================================
-   CATEGORY FILTER BAR
-========================================================== */
-
-.category-section {
-
-    padding: 0 12px;
-
-    margin-bottom: 18px;
-
-}
-
-
-.section-heading {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 10px;
-
-    margin-bottom: 8px;
-
-}
-
-
-.section-heading-left {
-
-    min-width: 0;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-}
-
-
-.section-heading-left i {
-
-    color: var(--green);
-
-    font-size: 11px;
-
-}
-
-
-.section-heading-title {
-
-    margin: 0;
-
-    color: #26352c;
-
-    font-size: 12px;
-
-    font-weight: 900;
-
-    text-transform: uppercase;
-
-    letter-spacing: .6px;
-
-}
-
-
-/* ==========================================================
-   CATEGORY PILLS
-========================================================== */
-
-.category-bar {
-
-    width: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    overflow-x: auto;
-
-    overflow-y: hidden;
-
-    padding: 2px 1px 5px;
-
-    scrollbar-width: none;
-
-    -webkit-overflow-scrolling: touch;
-
-}
-
-
-.category-bar::-webkit-scrollbar {
-
-    display: none;
-
-}
-
-
-.category-pill {
-
-    flex: 0 0 auto;
-
-    min-height: 31px;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 0 14px;
-
-    border: 1px solid #d5dfd8;
-
-    border-radius: 30px;
-
-    background: #ffffff;
-
-    color: #425348;
-
-    text-decoration: none;
-
-    font-size: 9px;
-
-    font-weight: 800;
-
-    white-space: nowrap;
-
-}
-
-
-.category-pill.active {
-
-    background: var(--green);
-
-    border-color: var(--green);
-
-    color: #ffffff;
-
-}
-
-
-/* ==========================================================
-   EMPTY MARKET
-========================================================== */
-
-.empty-market {
-
-    width: calc(100% - 24px);
-
-    margin: 0 12px;
-
-    min-height: 250px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 30px 18px;
-
-    background: #ffffff;
-
-    border: 1px solid var(--line);
-
-    border-radius: 12px;
-
-    text-align: center;
-
-}
-
-
-.empty-inner {
-
-    max-width: 380px;
-
-}
-
-
-.empty-icon {
-
-    width: 58px;
-
-    height: 58px;
-
-    margin: 0 auto 12px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 17px;
-
-    background: var(--green-soft);
-
-    color: var(--green);
-
-    font-size: 21px;
-
-}
-
-
-.empty-market h3 {
-
-    margin: 0;
-
-    color: #27382d;
-
-    font-size: 15px;
-
-    font-weight: 900;
-
-}
-
-
-.empty-market p {
-
-    margin: 7px auto 0;
-
-    color: #7a877f;
-
-    font-size: 10px;
-
-    line-height: 1.5;
-
-}
-
-
-.empty-action {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 6px;
-
-    min-height: 34px;
-
-    margin-top: 13px;
-
-    padding: 0 13px;
-
-    border-radius: 7px;
-
-    background: var(--green);
-
-    color: #ffffff;
-
-    text-decoration: none;
-
-    font-size: 8px;
-
-    font-weight: 900;
-
-}
-
-
-/* ==========================================================
-   TABLET
-========================================================== */
-
-@media (min-width: 600px) {
-
-    .market-hero-inner {
-
-        padding-left: 22px;
-
-        padding-right: 22px;
-
+    /* =========================================================
+       CORE VESTER PRODUCT PAGE
+       ========================================================= */
+
+    :root {
+        --core-green: #0a4d1e;
+        --core-green-dark: #063b17;
+        --core-green-light: #e8f5e9;
+        --core-green-soft: #f1f8e9;
+        --core-border: #dcebdc;
+        --core-background: #f8fdf6;
+        --core-text: #18351f;
+        --core-muted: #6b756d;
+        --core-white: #ffffff;
     }
 
 
-    .category-section {
+    /* =========================================================
+       PAGE
+       ========================================================= */
 
-        padding-left: 20px;
-
-        padding-right: 20px;
-
-    }
-
-}
-
-
-/* ==========================================================
-   DESKTOP
-========================================================== */
-
-@media (min-width: 850px) {
-
-    .market-hero-inner {
-
-        padding:
-            22px
-            28px
-            18px;
-
+    .products-page {
+        min-height: calc(100vh - 80px);
+        background: var(--core-background);
+        padding-bottom: 45px;
+        font-family: "Segoe UI", sans-serif;
+        color: var(--core-text);
+        box-sizing: border-box;
     }
 
 
-    .market-main {
+    /* =========================================================
+       HERO / INTRO
+       ========================================================= */
 
-        padding-top: 20px;
+    .products-hero {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f8fdf6 65%,
+            #f1f8e9 100%
+        );
 
+        border-bottom: 1px solid var(--core-border);
+        padding: 30px 24px 28px;
+    }
+
+    .products-hero::after {
+        content: "";
+        position: absolute;
+        width: 230px;
+        height: 230px;
+        right: -90px;
+        top: -110px;
+        border-radius: 50%;
+        background: rgba(10, 77, 30, 0.035);
+        pointer-events: none;
+    }
+
+    .products-hero-inner {
+        position: relative;
+        z-index: 1;
+        max-width: 1250px;
+        margin: 0 auto;
+    }
+
+    .products-hero h1 {
+        margin: 0;
+        color: var(--core-green);
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .products-hero p {
+        margin: 7px 0 0;
+        color: #536058;
+        font-size: 14px;
+        line-height: 1.5;
     }
 
 
-    .category-section {
+    /* =========================================================
+       PRODUCT CONTENT
+       ========================================================= */
 
-        padding-left: 28px;
-
-        padding-right: 28px;
-
-    }
-
-}
-
-
-/* ==========================================================
-   VERY SMALL PHONES
-========================================================== */
-
-@media (max-width: 360px) {
-
-    .market-hero-inner {
-
-        padding-left: 10px;
-
-        padding-right: 10px;
-
+    .products-container {
+        max-width: 1250px;
+        margin: 0 auto;
+        padding: 28px 20px 0;
     }
 
 
-    .category-section {
+    /* =========================================================
+       CATEGORY SECTION
+       ========================================================= */
 
-        padding-left: 8px;
-
-        padding-right: 8px;
-
+    .product-category {
+        margin-bottom: 34px;
     }
 
-}
+    .product-category:last-child {
+        margin-bottom: 0;
+    }
 
+
+    /* =========================================================
+       CATEGORY HEADER
+       ========================================================= */
+
+    .category-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 13px;
+        padding: 0 3px;
+    }
+
+    .category-title-wrapper {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .category-icon {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: var(--core-green-light);
+        color: var(--core-green);
+
+        border-radius: 10px;
+        font-size: 15px;
+    }
+
+    .category-title {
+        margin: 0;
+        color: #17351f;
+        font-size: 19px;
+        font-weight: 750;
+        text-transform: capitalize;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .category-count {
+        color: #778078;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 3px;
+    }
+
+    .category-scroll-hint {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+
+        color: var(--core-green);
+        font-size: 12px;
+        font-weight: 700;
+
+        white-space: nowrap;
+    }
+
+    .category-scroll-hint i {
+        font-size: 11px;
+    }
+
+
+    /* =========================================================
+       HORIZONTAL PRODUCT ROW
+       ========================================================= */
+
+    .product-row {
+        display: flex;
+        gap: 13px;
+
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        padding: 3px 3px 12px;
+
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+
+        -webkit-overflow-scrolling: touch;
+
+        scrollbar-width: thin;
+        scrollbar-color: rgba(10, 77, 30, 0.35) transparent;
+    }
+
+    .product-row::-webkit-scrollbar {
+        height: 5px;
+    }
+
+    .product-row::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .product-row::-webkit-scrollbar-thumb {
+        background: rgba(10, 77, 30, 0.28);
+        border-radius: 20px;
+    }
+
+    .product-row::-webkit-scrollbar-thumb:hover {
+        background: rgba(10, 77, 30, 0.45);
+    }
+
+
+    /* =========================================================
+       PRODUCT CARD
+       ========================================================= */
+
+    .product-card {
+        position: relative;
+
+        flex: 0 0 205px;
+        width: 205px;
+
+        background: var(--core-white);
+        border: 1px solid #e1e8e2;
+        border-radius: 15px;
+
+        overflow: hidden;
+
+        scroll-snap-align: start;
+
+        box-shadow:
+            0 2px 8px rgba(10, 77, 30, 0.06);
+
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            border-color 0.2s ease;
+    }
+
+    .product-card:hover {
+        transform: translateY(-3px);
+
+        border-color: rgba(10, 77, 30, 0.20);
+
+        box-shadow:
+            0 8px 22px rgba(10, 77, 30, 0.12);
+    }
+
+
+    /* =========================================================
+       PRODUCT IMAGE
+       ========================================================= */
+
+    .product-image-wrapper {
+        position: relative;
+
+        width: 100%;
+        height: 158px;
+
+        background: #f7faf7;
+
+        overflow: hidden;
+    }
+
+    .product-image {
+        width: 100%;
+        height: 100%;
+
+        display: block;
+
+        object-fit: cover;
+
+        transition: transform 0.3s ease;
+    }
+
+    .product-card:hover .product-image {
+        transform: scale(1.035);
+    }
+
+
+    /* =========================================================
+       NO IMAGE
+       ========================================================= */
+
+    .product-no-image {
+        width: 100%;
+        height: 100%;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        color: #9ba59d;
+    }
+
+    .product-no-image i {
+        font-size: 31px;
+        margin-bottom: 7px;
+    }
+
+    .product-no-image span {
+        font-size: 11px;
+    }
+
+
+    /* =========================================================
+       STOCK BADGE
+       ========================================================= */
+
+    .stock-badge {
+        position: absolute;
+        top: 9px;
+        right: 9px;
+
+        padding: 5px 8px;
+
+        border-radius: 8px;
+
+        background: rgba(255, 255, 255, 0.94);
+
+        color: var(--core-green);
+
+        font-size: 10px;
+        font-weight: 750;
+
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.08);
+    }
+
+    .stock-badge.out-of-stock {
+        background: #fff1f1;
+        color: #a52828;
+    }
+
+
+    /* =========================================================
+       CARD CONTENT
+       ========================================================= */
+
+    .product-content {
+        padding: 11px 11px 12px;
+    }
+
+    .product-name {
+        margin: 0;
+
+        color: #183a22;
+
+        font-size: 14px;
+        font-weight: 750;
+
+        line-height: 1.25;
+
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+
+        overflow: hidden;
+
+        min-height: 35px;
+    }
+
+    .product-description {
+        margin: 5px 0 9px;
+
+        color: var(--core-muted);
+
+        font-size: 11px;
+        line-height: 1.4;
+
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+
+        overflow: hidden;
+
+        min-height: 30px;
+    }
+
+
+    /* =========================================================
+       PRICE + CART
+       ========================================================= */
+
+    .product-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 7px;
+    }
+
+    .product-price {
+        color: var(--core-green);
+
+        font-size: 13px;
+        font-weight: 800;
+
+        white-space: nowrap;
+    }
+
+    .product-price-label {
+        display: block;
+
+        color: #879088;
+
+        font-size: 9px;
+        font-weight: 500;
+
+        margin-bottom: 1px;
+    }
+
+
+    /* =========================================================
+       ACTION BUTTON
+       ========================================================= */
+
+    .product-action {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border: 0;
+        border-radius: 9px;
+
+        background: var(--core-green-soft);
+        color: var(--core-green);
+
+        cursor: pointer;
+
+        font-size: 14px;
+
+        transition:
+            background 0.2s ease,
+            color 0.2s ease,
+            transform 0.15s ease;
+    }
+
+    .product-action:hover {
+        background: var(--core-green);
+        color: #ffffff;
+    }
+
+    .product-action:active {
+        transform: scale(0.92);
+    }
+
+    .product-action.disabled {
+        background: #f0f1f0;
+        color: #9a9e9b;
+        cursor: not-allowed;
+    }
+
+    .product-action.disabled:hover {
+        background: #f0f1f0;
+        color: #9a9e9b;
+    }
+
+
+    /* =========================================================
+       OUT OF STOCK CARD
+       ========================================================= */
+
+    .product-card.is-out-of-stock {
+        opacity: 0.82;
+    }
+
+    .product-card.is-out-of-stock .product-image {
+        filter: grayscale(12%);
+    }
+
+
+    /* =========================================================
+       EMPTY STATE
+       ========================================================= */
+
+    .products-empty {
+        max-width: 520px;
+        margin: 50px auto;
+        padding: 40px 25px;
+
+        background: #ffffff;
+        border: 1px solid var(--core-border);
+        border-radius: 18px;
+
+        text-align: center;
+
+        box-shadow: 0 4px 18px rgba(10, 77, 30, 0.06);
+    }
+
+    .products-empty-icon {
+        width: 62px;
+        height: 62px;
+
+        margin: 0 auto 15px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 17px;
+
+        background: var(--core-green-light);
+        color: var(--core-green);
+
+        font-size: 25px;
+    }
+
+    .products-empty h2 {
+        margin: 0 0 7px;
+
+        color: var(--core-green);
+
+        font-size: 19px;
+    }
+
+    .products-empty p {
+        margin: 0;
+
+        color: #707a72;
+
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+
+    /* =========================================================
+       CATEGORY DIVIDER
+       ========================================================= */
+
+    .category-divider {
+        height: 1px;
+
+        margin: 0 3px 30px;
+
+        background: #dfe9e0;
+    }
+
+    .product-category:last-child .category-divider {
+        display: none;
+    }
+
+
+    /* =========================================================
+       MOBILE
+       ========================================================= */
+
+    @media (max-width: 600px) {
+
+        .products-page {
+            padding-bottom: 30px;
+        }
+
+        .products-hero {
+            padding: 24px 17px 23px;
+        }
+
+        .products-hero h1 {
+            font-size: 25px;
+        }
+
+        .products-hero p {
+            font-size: 13px;
+        }
+
+        .products-container {
+            padding: 23px 13px 0;
+        }
+
+        .product-category {
+            margin-bottom: 27px;
+        }
+
+        .category-header {
+            padding: 0 3px;
+            margin-bottom: 11px;
+        }
+
+        .category-icon {
+            width: 31px;
+            height: 31px;
+            flex-basis: 31px;
+            border-radius: 9px;
+        }
+
+        .category-title {
+            font-size: 17px;
+        }
+
+        .category-scroll-hint {
+            font-size: 0;
+        }
+
+        .category-scroll-hint i {
+            font-size: 14px;
+        }
+
+        .product-row {
+            gap: 11px;
+
+            padding-left: 2px;
+            padding-right: 2px;
+        }
+
+        .product-card {
+            flex-basis: 175px;
+            width: 175px;
+            border-radius: 14px;
+        }
+
+        .product-image-wrapper {
+            height: 145px;
+        }
+
+        .product-content {
+            padding: 10px;
+        }
+
+        .product-name {
+            font-size: 13px;
+        }
+
+        .product-description {
+            font-size: 10.5px;
+        }
+
+        .product-price {
+            font-size: 12px;
+        }
+
+        .product-action {
+            width: 32px;
+            height: 32px;
+            flex-basis: 32px;
+        }
+    }
+
+
+    /* =========================================================
+       VERY SMALL PHONES
+       ========================================================= */
+
+    @media (max-width: 380px) {
+
+        .product-card {
+            flex-basis: 160px;
+            width: 160px;
+        }
+
+        .product-image-wrapper {
+            height: 132px;
+        }
+    }
+
+
+    /* =========================================================
+       REDUCE MOTION
+       ========================================================= */
+
+    @media (prefers-reduced-motion: reduce) {
+
+        .product-row {
+            scroll-behavior: auto;
+        }
+
+        .product-card,
+        .product-image,
+        .product-action {
+            transition: none;
+        }
+    }
 </style>
 
 
-<!-- ==========================================================
-     MARKETPLACE
-========================================================== -->
+<!-- =========================================================
+     PRODUCTS PAGE
+     ========================================================= -->
 
-<div class="marketplace">
+<div class="products-page">
 
+    <!-- =====================================================
+         PAGE INTRO
+         ===================================================== -->
 
-    <!-- ======================================================
-         HEADER / HERO
-    ====================================================== -->
+    <section class="products-hero">
 
-    <section class="market-hero">
+        <div class="products-hero-inner">
 
-        <div class="market-hero-inner">
+            <h1>Our Products</h1>
 
-            <div class="market-title-row">
-
-                <div class="market-heading">
-
-                    <div class="market-eyebrow">
-
-                        <i class="fas fa-store"></i>
-
-                        Marketplace
-
-                    </div>
-
-
-                    <h1 class="market-title">
-
-                        Shop our products
-
-                    </h1>
-
-
-                    <p class="market-description">
-
-                        Browse available products and add what you need.
-
-                    </p>
-
-                </div>
-
-
-                <button
-                    type="button"
-                    id="cartBtn"
-                    class="market-cart-button"
-                    aria-label="Open shopping cart"
-                >
-
-                    <i class="fas fa-shopping-cart"></i>
-
-                </button>
-
-            </div>
-
-
-            <!-- ==================================================
-                 SUMMARY
-            ================================================== -->
-
-            <div class="market-summary">
-
-
-                <div class="summary-card">
-
-                    <div class="summary-icon">
-
-                        <i class="fas fa-box-open"></i>
-
-                    </div>
-
-
-                    <div class="summary-info">
-
-                        <span class="summary-label">
-
-                            Available
-
-                        </span>
-
-
-                        <span class="summary-value">
-
-                            <%= (products || []).length %>
-
-                            <%= (products || []).length === 1
-                                ? 'Product'
-                                : 'Products'
-                            %>
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="summary-card">
-
-                    <div class="summary-icon">
-
-                        <i class="fas fa-shopping-basket"></i>
-
-                    </div>
-
-
-                    <div class="summary-info">
-
-                        <span class="summary-label">
-
-                            In Cart
-
-                        </span>
-
-
-                        <span
-                            class="summary-value"
-                            id="cartCount"
-                        >
-
-                            <%= cartCount || 0 %>
-
-                            <%= (cartCount || 0) === 1
-                                ? 'Item'
-                                : 'Items'
-                            %>
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="summary-card">
-
-                    <div class="summary-icon">
-
-                        <i class="fas fa-coins"></i>
-
-                    </div>
-
-
-                    <div class="summary-info">
-
-                        <span class="summary-label">
-
-                            Cart Value
-
-                        </span>
-
-
-                        <span
-                            class="summary-value"
-                            id="cartTotalText"
-                        >
-
-                            KES
-
-                            <%= Number(
-                                cartTotal || 0
-                            ).toLocaleString() %>
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-            </div>
+            <p>
+                Quality medical equipment and hospital supplies
+                you can trust.
+            </p>
 
         </div>
 
     </section>
 
 
-    <!-- ======================================================
-         MAIN
-    ====================================================== -->
+    <!-- =====================================================
+         PRODUCTS
+         ===================================================== -->
 
-    <main class="market-main">
+    <main class="products-container">
+
+        <%
+            /*
+             * -------------------------------------------------
+             * GROUP PRODUCTS BY CATEGORY
+             * -------------------------------------------------
+             */
+
+            const groupedProducts = {};
+
+            if (Array.isArray(products)) {
+
+                products
+                    .filter(product => product && product.isActive !== false)
+                    .forEach(product => {
+
+                        const category =
+                            String(product.category || "other")
+                                .trim()
+                                .toLowerCase();
+
+                        if (!groupedProducts[category]) {
+                            groupedProducts[category] = [];
+                        }
+
+                        groupedProducts[category].push(product);
+                    });
+            }
 
 
-        <!-- ==================================================
-             CATEGORY FILTER
-        ================================================== -->
+            /*
+             * -------------------------------------------------
+             * CATEGORY ICONS
+             * -------------------------------------------------
+             *
+             * These are only visual helpers.
+             * Unknown categories use the boxes icon.
+             */
 
-        <section class="category-section">
+            const categoryIcons = {
+                "medical equipment": "fa-stethoscope",
+                "medical equipment ": "fa-stethoscope",
+                "hospital supplies": "fa-kit-medical",
+                "consumables": "fa-syringe",
+                "medicines": "fa-pills",
+                "pharmaceuticals": "fa-pills",
+                "diagnostics": "fa-microscope",
+                "surgical": "fa-user-doctor",
+                "laboratory": "fa-flask",
+                "laboratory equipment": "fa-flask",
+                "dental": "fa-tooth",
+                "personal care": "fa-hand-holding-medical",
+                "other": "fa-boxes-stacked"
+            };
+        %>
 
 
-            <div class="section-heading">
+        <% if (Object.keys(groupedProducts).length === 0) { %>
 
-                <div class="section-heading-left">
+            <!-- =================================================
+                 EMPTY PRODUCTS
+                 ================================================= -->
 
-                    <i class="fas fa-layer-group"></i>
+            <div class="products-empty">
 
-                    <h2 class="section-heading-title">
-
-                        Categories
-
-                    </h2>
-
+                <div class="products-empty-icon">
+                    <i class="fas fa-box-open"></i>
                 </div>
+
+                <h2>No Products Available</h2>
+
+                <p>
+                    There are currently no products available.
+                    Please check again later.
+                </p>
 
             </div>
 
 
-            <nav
-                class="category-bar"
-                aria-label="Product categories"
-            >
+        <% } else { %>
 
 
-                <a
-                    href="/products?category=all"
-                    class="category-pill <%= activeCategory === 'all' ? 'active' : '' %>"
-                >
+            <!-- =================================================
+                 CATEGORY ROWS
+                 ================================================= -->
 
-                    All
+            <% Object.entries(groupedProducts).forEach(([category, categoryProducts]) => { %>
 
-                </a>
-
-
-                <% (categories || []).forEach(category => { %>
+                <section class="product-category">
 
 
-                    <a
-                        href="/products?category=<%= encodeURIComponent(category) %>"
-                        class="category-pill <%= activeCategory === category ? 'active' : '' %>"
+                    <!-- =========================================
+                         CATEGORY HEADER
+                         ========================================= -->
+
+                    <div class="category-header">
+
+                        <div class="category-title-wrapper">
+
+                            <div class="category-icon">
+
+                                <i class="fas <%= categoryIcons[category] || 'fa-boxes-stacked' %>"></i>
+
+                            </div>
+
+                            <h2 class="category-title">
+                                <%= category %>
+                                <span class="category-count">
+                                    (<%= categoryProducts.length %>)
+                                </span>
+                            </h2>
+
+                        </div>
+
+
+                        <% if (categoryProducts.length > 2) { %>
+
+                            <div class="category-scroll-hint">
+                                <span>Scroll</span>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+
+                        <% } %>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         HORIZONTAL PRODUCT ROW
+                         ========================================= -->
+
+                    <div
+                        class="product-row"
+                        data-category="<%= category %>"
                     >
 
-                        <%= category %>
-
-                    </a>
+                        <% categoryProducts.forEach(product => { %>
 
 
-                <% }) %>
+                            <!-- =================================
+                                 PRODUCT CARD
+                                 ================================= -->
+
+                            <article
+                                class="product-card <%= product.units <= 0 ? 'is-out-of-stock' : '' %>"
+                                data-product-id="<%= product._id %>"
+                            >
 
 
-            </nav>
+                                <!-- =============================
+                                     PRODUCT IMAGE
+                                     ============================= -->
 
-        </section>
+                                <div class="product-image-wrapper">
+
+                                    <% if (product.image) { %>
+
+                                        <img
+                                            class="product-image"
+                                            src="<%= product.image %>"
+                                            alt="<%= product.name %>"
+                                            loading="lazy"
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                        >
+
+                                        <div
+                                            class="product-no-image"
+                                            style="display:none;"
+                                        >
+                                            <i class="fas fa-image"></i>
+                                            <span>Image unavailable</span>
+                                        </div>
+
+                                    <% } else { %>
+
+                                        <div class="product-no-image">
+
+                                            <i class="fas fa-box-open"></i>
+
+                                            <span>
+                                                No image available
+                                            </span>
+
+                                        </div>
+
+                                    <% } %>
 
 
-        <!-- ==================================================
-             PRODUCTS PARTIAL
-             
-             products.ejs is the MOTHER PAGE.
+                                    <!-- =========================
+                                         STOCK BADGE
+                                         ========================= -->
 
-             The product data is explicitly passed to:
+                                    <% if (product.units <= 0) { %>
 
-                 partials-products/cards.ejs
+                                        <span class="stock-badge out-of-stock">
+                                            Out of stock
+                                        </span>
 
-             The cards partial is therefore responsible for:
-                 - grouping products
-                 - displaying category sections
-                 - displaying product cards
-                 - empty-product state
-                 - product rails
-        ================================================== -->
+                                    <% } else { %>
+
+                                        <span class="stock-badge">
+                                            <%= product.units %> units
+                                        </span>
+
+                                    <% } %>
+
+                                </div>
 
 
-            <%- include("cards", {
-            
-            products: products,
+                                <!-- =============================
+                                     PRODUCT INFORMATION
+                                     ============================= -->
 
-            activeCategory: activeCategory,
+                                <div class="product-content">
 
-            categories: categories,
 
-            cart: cart,
+                                    <h3 class="product-name">
+                                        <%= product.name %>
+                                    </h3>
 
-            cartCount: cartCount,
 
-            cartTotal: cartTotal
-                
-            }) %>
+                                    <p class="product-description">
+                                        <%= product.description || "Quality healthcare product." %>
+                                    </p>
 
+
+                                    <div class="product-bottom">
+
+
+                                        <!-- =====================
+                                             PRICE
+                                             ===================== -->
+
+                                        <div>
+
+                                            <span class="product-price-label">
+                                                Price
+                                            </span>
+
+                                            <span class="product-price">
+
+                                                KSh
+                                                <%= Number(product.unitSellPrice || 0).toLocaleString("en-KE") %>
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- =====================
+                                             ACTION
+                                             ===================== -->
+
+                                        <% if (product.units > 0) { %>
+
+                                            <button
+                                                type="button"
+                                                class="product-action"
+                                                title="Add to cart"
+                                                aria-label="Add <%= product.name %> to cart"
+                                                data-product-id="<%= product._id %>"
+                                            >
+                                                <i class="fas fa-cart-plus"></i>
+                                            </button>
+
+                                        <% } else { %>
+
+                                            <button
+                                                type="button"
+                                                class="product-action disabled"
+                                                disabled
+                                                title="Out of stock"
+                                                aria-label="<%= product.name %> is out of stock"
+                                            >
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+
+                                        <% } %>
+
+
+                                    </div>
+
+                                </div>
+
+                            </article>
+
+                        <% }) %>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         CATEGORY DIVIDER
+                         ========================================= -->
+
+                    <div class="category-divider"></div>
+
+                </section>
+
+            <% }) %>
+
+        <% } %>
 
     </main>
 
-
 </div>
+
+
+<!-- =========================================================
+     PRODUCT ROW TOUCH / DRAG SUPPORT
+     ========================================================= -->
+
+<script>
+
+(function () {
+
+    const rows =
+        document.querySelectorAll(".product-row");
+
+
+    rows.forEach(row => {
+
+        let isDown = false;
+        let startX = 0;
+        let scrollLeft = 0;
+
+
+        /* =====================================================
+           MOUSE DRAG
+           ===================================================== */
+
+        row.addEventListener("mousedown", function (event) {
+
+            /*
+             * Only activate drag when there is
+             * actually horizontal overflow.
+             */
+
+            if (row.scrollWidth <= row.clientWidth) {
+                return;
+            }
+
+            isDown = true;
+
+            row.style.cursor = "grabbing";
+
+            startX = event.pageX - row.offsetLeft;
+
+            scrollLeft = row.scrollLeft;
+
+        });
+
+
+        row.addEventListener("mouseleave", function () {
+
+            isDown = false;
+
+            row.style.cursor = "";
+
+        });
+
+
+        row.addEventListener("mouseup", function () {
+
+            isDown = false;
+
+            row.style.cursor = "";
+
+        });
+
+
+        row.addEventListener("mousemove", function (event) {
+
+            if (!isDown) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const x =
+                event.pageX - row.offsetLeft;
+
+            const walk =
+                (x - startX) * 1.25;
+
+            row.scrollLeft =
+                scrollLeft - walk;
+
+        });
+
+
+        /* =====================================================
+           MOUSE WHEEL
+           ===================================================== */
+
+        row.addEventListener(
+            "wheel",
+            function (event) {
+
+                /*
+                 * Convert vertical mouse-wheel movement
+                 * into horizontal movement when the row
+                 * has horizontal overflow.
+                 */
+
+                if (
+                    row.scrollWidth > row.clientWidth &&
+                    Math.abs(event.deltaY) > Math.abs(event.deltaX)
+                ) {
+
+                    event.preventDefault();
+
+                    row.scrollLeft += event.deltaY;
+
+                }
+
+            },
+            {
+                passive: false
+            }
+        );
+
+    });
+
+})();
+
+</script>
