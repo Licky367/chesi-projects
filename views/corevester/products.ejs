@@ -1,217 +1,202 @@
-<div style="max-width:1400px; margin:0 auto; padding:20px; box-sizing:border-box; font-family:system-ui;">
-    
-    <!-- HEADER -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+<div style="max-width:1300px; margin:0 auto; padding:12px; box-sizing:border-box;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
         <div>
-            <h1 style="margin:0; font-size:26px; font-weight:900; color:#0a4d1e;">Marketplace</h1>
-            <p style="margin:4px 0 0 0; color:#666; font-size:13px;"><%= products.length %> products available • Click to add to cart</p>
+            <h1 style="margin:0; font-size:22px; font-weight:900; color:#0a4d1e;">Marketplace</h1>
+            <p style="margin:2px 0 0 0; font-size:11px; color:#666;"><%= products.length %> products • Scroll → to see more</p>
         </div>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <button id="toggleLayout" style="padding:9px 14px; border-radius:20px; border:1.5px solid #0a4d1e; background:white; color:#0a4d1e; font-weight:700; font-size:12px; cursor:pointer;"><i class="fas fa-grip"></i> <span id="layoutLabel">GRID</span></button>
-            <div style="display:flex; gap:8px; background:white; border:1.5px solid #0a4d1e; border-radius:30px; padding:6px 12px; font-size:12px; font-weight:700;">
-                <span id="cartCountBadge" style="background:#0a4d1e; color:white; border-radius:50%; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center;"><%= typeof cartCount!=='undefined'? cartCount : 0 %></span>
-                <span id="cartTotalBadge">KES <%= typeof cartTotal!=='undefined'? cartTotal : 0 %></span>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <div style="background:white; border:1.5px solid #0a4d1e; border-radius:20px; padding:5px 10px; font-size:11px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                <span style="background:#0a4d1e; color:white; border-radius:50%; min-width:18px; height:18px; display:flex; align-items:center; justify-content:center;"><%= cartCount||0 %></span>
+                <span>KES <%= cartTotal||0 %></span>
             </div>
-            <button id="openCartBtn" style="padding:10px 18px; background:#0a4d1e; color:white; border:none; border-radius:24px; font-weight:800; cursor:pointer; font-size:12px;"><i class="fas fa-shopping-bag"></i> CART</button>
+            <button type="button" id="openCartBtn" style="padding:9px 16px; background:#0a4d1e; color:white; border:none; border-radius:22px; font-weight:800; cursor:pointer; font-size:11px;">🛒 CART</button>
         </div>
     </div>
 
-    <!-- CATEGORY FILTER -->
+    <!-- FILTERS -->
     <% if(typeof categories!=='undefined' && categories.length){ %>
-    <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:12px; margin-bottom:16px;">
-        <a href="/products?category=all" style="white-space:nowrap; padding:8px 14px; border-radius:20px; font-size:11px; font-weight:800; text-decoration:none; border:1.5px solid #0a4d1e; background:<%= activeCategory==='all'?'#0a4d1e':'white' %>; color:<%= activeCategory==='all'?'white':'#0a4d1e' %>;">ALL</a>
+    <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:10px; margin-bottom:10px; scrollbar-width:none;">
+        <a href="/products?category=all" style="white-space:nowrap; padding:6px 12px; border-radius:18px; font-size:10px; font-weight:800; text-decoration:none; border:1.5px solid #0a4d1e; background:<%= activeCategory==='all'?'#0a4d1e':'white' %>; color:<%= activeCategory==='all'?'white':'#0a4d1e' %>;">ALL</a>
         <% categories.forEach(cat=>{ %>
-            <a href="/products?category=<%= cat %>" style="white-space:nowrap; padding:8px 14px; border-radius:20px; font-size:11px; font-weight:700; text-decoration:none; border:1px solid #c8e6c9; background:<%= activeCategory===cat?'#e8f5e9':'white' %>; color:#0a4d1e;"><%= cat %></a>
+            <a href="/products?category=<%= cat %>" style="white-space:nowrap; padding:6px 12px; border-radius:18px; font-size:10px; font-weight:700; text-decoration:none; border:1px solid #c8e6c9; background:<%= activeCategory===cat?'#e8f5e9':'white' %>; color:#0a4d1e;"><%= cat %></a>
         <% }) %>
     </div>
     <% } %>
 
-    <!-- PRODUCTS GRID - MAX 10 COLUMNS -->
-    <div id="productsGrid" style="display:grid; grid-template-columns:repeat(10, 1fr); gap:12px; align-items:start;">
-        <% if(products.length===0){ %>
-            <div style="grid-column:1/-1; text-align:center; padding:60px; background:white; border-radius:16px;"><p>No products found</p></div>
-        <% } %>
-        <% products.forEach(p=>{ 
-            const inCart = (typeof cart!=='undefined' && cart.find(c=>c.productId.toString()===p._id.toString())) || null;
-            const left = p.units - (inCart?inCart.qty:0);
-        %>
-        <div class="prod-card" data-id="<%= p._id %>" style="background:white; border-radius:14px; border:1px solid #e8f5e9; overflow:hidden; display:flex; flex-direction:column; transition:0.2s; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <a href="/products/<%= p._id %>" style="text-decoration:none; color:inherit;">
-            <div style="height:140px; background:#f6fbf6; display:flex; align-items:center; justify-content:center; position:relative;">
-                <% if(p.image){ %>
-                    <img src="<%= p.image %>" style="width:100%; height:100%; object-fit:cover;" loading="lazy" />
-                <% } else { %>
-                    <i class="fas fa-box" style="font-size:32px; color:#a5d6a7;"></i>
-                <% } %>
-                <span style="position:absolute; top:8px; left:8px; background:<%= left<=0?'#ffcdd2':'white' %>; border:1px solid <%= left<=0?'#c62828':'#0a4d1e' %>; color:<%= left<=0?'#c62828':'#0a4d1e' %>; font-size:9px; font-weight:800; padding:3px 7px; border-radius:20px;"><%= left %> left</span>
-                <% if(inCart){ %>
-                    <span style="position:absolute; top:8px; right:8px; background:#0a4d1e; color:white; font-size:9px; font-weight:800; padding:3px 7px; border-radius:20px;"><%= inCart.qty %> in cart</span>
-                <% } %>
+    <!-- SCROLLABLE PRODUCTS - REASONABLE SIZE -->
+    <div id="productsWrapper" style="overflow-x:auto; overflow-y:hidden; padding-bottom:12px; -webkit-overflow-scrolling:touch;">
+        <div id="productsGrid" style="display:flex; gap:12px; flex-wrap:nowrap; width:max-content; min-width:100%;">
+            <% products.forEach(p=>{ 
+                const inCart = (typeof cart!=='undefined' && cart.find(c=>c.productId.toString()===p._id.toString())) || null;
+            %>
+            <div class="prod-card" style="width:170px; min-width:170px; max-width:170px; background:white; border-radius:12px; border:1px solid #e0e0e0; overflow:hidden; display:flex; flex-direction:column; flex-shrink:0;">
+                <a href="/products/<%= p._id %>" style="text-decoration:none; color:inherit;">
+                    <div style="height:150px; background:#f6fbf6; position:relative; overflow:hidden;">
+                        <% if(p.image){ %>
+                            <img src="<%= p.image %>" style="width:100%; height:100%; object-fit:cover; display:block;" />
+                        <% } else { %>
+                            <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:30px;">📦</div>
+                        <% } %>
+                        <span style="position:absolute; top:6px; left:6px; background:white; border:1px solid #0a4d1e; color:#0a4d1e; font-size:8px; font-weight:800; padding:2px 6px; border-radius:12px;"><%= p.units %> left</span>
+                    </div>
+                    <div style="padding:8px;">
+                        <p style="margin:0; font-size:8px; color:#2e7d32; font-weight:800; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= p.category %></p>
+                        <p style="margin:3px 0; font-size:12px; font-weight:700; color:#111; line-height:1.2; height:28px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;"><%= p.name %></p>
+                        <p style="margin:0; font-size:13px; font-weight:900; color:#0a4d1e;">KES <%= p.unitSellPrice %></p>
+                    </div>
+                </a>
+                <div style="padding:0 8px 8px 8px; margin-top:auto;">
+                    <% if(inCart){ %>
+                        <div style="display:flex; gap:4px;">
+                            <button type="button" class="btn-remove" data-id="<%= p._id %>" style="flex:1; padding:7px; background:white; border:1px solid #ffcdd2; color:#c62828; border-radius:7px; font-size:10px; font-weight:700; cursor:pointer;">REMOVE</button>
+                            <button type="button" class="btn-add" data-id="<%= p._id %>" style="flex:1; padding:7px; background:#0a4d1e; color:white; border:none; border-radius:7px; font-size:10px; font-weight:700; cursor:pointer;">+1</button>
+                        </div>
+                    <% } else { %>
+                        <button type="button" class="btn-add" data-id="<%= p._id %>" style="width:100%; padding:7px; background:#0a4d1e; color:white; border:none; border-radius:7px; font-size:10px; font-weight:800; cursor:pointer;">ADD CART</button>
+                    <% } %>
+                </div>
             </div>
-            <div style="padding:10px;">
-                <p style="margin:0; font-size:9px; color:#2e7d32; font-weight:800; text-transform:uppercase;"><%= p.category %></p>
-                <p style="margin:3px 0 0 0; font-size:13px; font-weight:700; color:#111; line-height:1.2; height:32px; overflow:hidden;"><%= p.name %></p>
-                <p style="margin:6px 0 0 0; font-size:13px; font-weight:900; color:#0a4d1e;">KES <%= p.unitSellPrice %></p>
-            </div>
-            </a>
-            <div style="padding:0 10px 10px 10px; margin-top:auto; display:flex; gap:6px;">
-                <% if(left<=0){ %>
-                    <button disabled style="flex:1; padding:8px; background:#eee; border:none; border-radius:8px; font-size:11px; font-weight:700; color:#999;">OUT</button>
-                <% } else if(inCart){ %>
-                    <button onclick="removeFromCart('<%= p._id %>')" style="flex:1; padding:8px; background:white; border:1.5px solid #ffcdd2; color:#c62828; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">- REMOVE</button>
-                    <button onclick="addToCart('<%= p._id %>',1)" style="flex:1; padding:8px; background:#0a4d1e; color:white; border:none; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">+1</button>
-                <% } else { %>
-                    <button onclick="addToCart('<%= p._id %>',1)" style="flex:1; padding:8px; background:#0a4d1e; color:white; border:none; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer;"><i class="fas fa-plus"></i> CART</button>
-                <% } %>
-            </div>
+            <% }) %>
         </div>
-        <% }) %>
+    </div>
+
+    <!-- SECOND ROW IF MORE THAN 10 - WRAP INTO ROWS -->
+    <div style="margin-top:14px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span style="font-size:11px; font-weight:800; color:#0a4d1e;">GRID VIEW</span>
+            <button type="button" id="toggleViewBtn" style="padding:5px 10px; border-radius:12px; border:1px solid #0a4d1e; background:white; font-size:10px; font-weight:700; cursor:pointer;">SWITCH TO GRID</button>
+        </div>
+        <div id="gridView" style="display:none; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:12px;">
+            <% products.forEach(p=>{ 
+                const inCart = (typeof cart!=='undefined' && cart.find(c=>c.productId.toString()===p._id.toString())) || null;
+            %>
+            <div style="background:white; border-radius:12px; border:1px solid #e0e0e0; overflow:hidden; display:flex; flex-direction:column;">
+                <a href="/products/<%= p._id %>" style="text-decoration:none; color:inherit;">
+                    <div style="height:140px; background:#f6fbf6;">
+                        <% if(p.image){ %><img src="<%= p.image %>" style="width:100%; height:100%; object-fit:cover;" /><% } else { %><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">📦</div><% } %>
+                    </div>
+                    <div style="padding:8px;">
+                        <p style="margin:0; font-size:8px; color:#2e7d32; font-weight:800;"><%= p.category %></p>
+                        <p style="margin:3px 0; font-size:12px; font-weight:700; height:28px; overflow:hidden;"><%= p.name %></p>
+                        <p style="margin:0; font-size:13px; font-weight:900; color:#0a4d1e;">KES <%= p.unitSellPrice %></p>
+                    </div>
+                </a>
+                <div style="padding:0 8px 8px 8px; margin-top:auto;">
+                    <% if(inCart){ %>
+                        <button type="button" class="btn-remove" data-id="<%= p._id %>" style="width:100%; padding:7px; background:white; border:1px solid #ffcdd2; color:#c62828; border-radius:7px; font-size:10px; font-weight:700; cursor:pointer;">REMOVE (<%= inCart.qty %>)</button>
+                    <% } else { %>
+                        <button type="button" class="btn-add" data-id="<%= p._id %>" style="width:100%; padding:7px; background:#0a4d1e; color:white; border:none; border-radius:7px; font-size:10px; font-weight:800; cursor:pointer;">ADD</button>
+                    <% } %>
+                </div>
+            </div>
+            <% }) %>
+        </div>
     </div>
 </div>
 
-<!-- SIDEBAR CART - CLICKABLE NOW -->
-<div id="cartOverlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9998; display:none; opacity:0; transition:0.3s;"></div>
-<div id="cartSidebar" style="position:fixed; top:0; right:-420px; width:380px; max-width:90vw; height:100vh; background:white; z-index:9999; box-shadow:-10px 0 30px rgba(0,0,0,0.2); display:flex; flex-direction:column; transition: right 0.3s ease;">
-    <div style="padding:18px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0; font-size:14px; font-weight:800; color:#0a4d1e;">YOUR CART (<span id="sideCount"><%= typeof cartCount!=='undefined'? cartCount : 0 %></span>)</h3>
-        <button id="closeCartBtn" style="width:32px; height:32px; border-radius:50%; border:1px solid #ddd; background:white; cursor:pointer;"><i class="fas fa-times"></i></button>
+<!-- CART -->
+<div id="cartOverlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:10000; display:none;"></div>
+<div id="cartSidebar" style="position:fixed; top:0; right:-100%; width:340px; max-width:85vw; height:100%; background:white; z-index:10001; display:flex; flex-direction:column; transition:right 0.28s ease;">
+    <div style="padding:14px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; background:#f9fbe7;">
+        <h3 style="margin:0; font-size:12px; font-weight:800;">CART (<%= cartCount||0 %>)</h3>
+        <button type="button" id="closeCartBtn" style="width:28px; height:28px; border-radius:50%; border:1px solid #ccc; background:white; cursor:pointer;">✕</button>
     </div>
-    <div id="cartItems" style="flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px;">
-        <!-- filled by JS -->
-    </div>
-    <div style="padding:14px; border-top:1px solid #eee; background:#f9fbe7;">
-        <div style="display:flex; justify-content:space-between; font-weight:800; font-size:14px; margin-bottom:12px;">
-            <span>Total:</span><span id="sideTotal">KES <%= typeof cartTotal!=='undefined'? cartTotal : 0 %></span>
-        </div>
-        <button id="checkoutBtn" style="width:100%; padding:12px; background:#0a4d1e; color:white; border:none; border-radius:10px; font-weight:800; cursor:pointer;">CHECKOUT PACKAGE</button>
-        <p id="cartMsg" style="margin:8px 0 0 0; font-size:11px; text-align:center; display:none;"></p>
+    <div id="cartItems" style="flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px;"></div>
+    <div style="padding:12px; border-top:1px solid #eee;">
+        <div style="display:flex; justify-content:space-between; font-weight:800; font-size:13px; margin-bottom:10px;"><span>Total</span><span>KES <%= cartTotal||0 %></span></div>
+        <button type="button" id="checkoutBtn" style="width:100%; padding:11px; background:#0a4d1e; color:white; border:none; border-radius:9px; font-weight:800; cursor:pointer; font-size:11px;">CHECKOUT</button>
+        <p id="cartMsg" style="display:none; font-size:11px; margin-top:8px; text-align:center;"></p>
     </div>
 </div>
 
 <style>
-/* RESPONSIVE: MAX 10 COLUMNS */
-@media(max-width:1400px){ #productsGrid{ grid-template-columns:repeat(8, 1fr) !important; } }
-@media(max-width:1100px){ #productsGrid{ grid-template-columns:repeat(6, 1fr) !important; } }
-@media(max-width:900px){ #productsGrid{ grid-template-columns:repeat(4, 1fr) !important; } }
-@media(max-width:600px){ #productsGrid{ grid-template-columns:repeat(2, 1fr) !important; } }
-/* When only 1 product, don't stretch */
-.prod-card:only-child{ max-width:220px; }
-/* When 2 products, max 2 columns */
-#productsGrid:has(> :nth-child(2):last-child){ grid-template-columns:repeat(2, 220px) !important; justify-content:start; }
-
-.list-mode{ grid-template-columns:1fr !important; }
-.list-mode .prod-card{ flex-direction:row !important; }
-.list-mode .prod-card > a{ display:flex; flex-direction:row; flex:1; }
-.list-mode .prod-card div[style*="height:140px"]{ height:80px !important; width:100px !important; }
+#productsWrapper::-webkit-scrollbar{ height:6px; }
+#productsWrapper::-webkit-scrollbar-thumb{ background:#a5d6a7; border-radius:10px; }
+#productsWrapper::-webkit-scrollbar-track{ background:#f1f8e9; }
+.prod-card{ transition:transform 0.15s; }
+.prod-card:active{ transform:scale(0.97); }
 </style>
 
 <script>
-// CART DATA FROM SERVER
-let cartData = <%- JSON.stringify(typeof cart!=='undefined'? cart : []) %>;
+document.addEventListener('DOMContentLoaded', function(){
+    let cartData = <%- JSON.stringify(typeof cart!=='undefined'? cart:[]) %>;
+    const wrapper = document.getElementById('productsWrapper');
+    const gridFlex = document.getElementById('productsGrid');
+    const gridView = document.getElementById('gridView');
+    const overlay = document.getElementById('cartOverlay');
+    const sidebar = document.getElementById('cartSidebar');
+    let isFlex = true;
 
-function openCart(){
-    document.getElementById('cartSidebar').style.right='0';
-    const ov = document.getElementById('cartOverlay');
-    ov.style.display='block';
-    setTimeout(()=>ov.style.opacity='1',10);
-    renderCart();
-}
-function closeCart(){
-    document.getElementById('cartSidebar').style.right='-420px';
-    const ov = document.getElementById('cartOverlay');
-    ov.style.opacity='0';
-    setTimeout(()=>ov.style.display='none',300);
-}
-
-document.getElementById('openCartBtn').addEventListener('click', openCart);
-document.getElementById('closeCartBtn').addEventListener('click', closeCart);
-document.getElementById('cartOverlay').addEventListener('click', closeCart);
-
-// LAYOUT TOGGLE - SWAPPABLE ROWS/COLUMNS
-let isList=false;
-document.getElementById('toggleLayout').addEventListener('click', function(){
-    isList=!isList;
-    const grid=document.getElementById('productsGrid');
-    const label=document.getElementById('layoutLabel');
-    if(isList){
-        grid.classList.add('list-mode');
-        label.textContent='LIST';
-    }else{
-        grid.classList.remove('list-mode');
-        label.textContent='GRID';
+    // Auto split into rows of 10 if many products - scrollable per row
+    const cards = document.querySelectorAll('.prod-card');
+    if(cards.length <= 2){
+        // Don't force 10 cols - keep reasonable
+        gridFlex.style.width = 'auto';
+        gridFlex.style.display = 'grid';
+        gridFlex.style.gridTemplateColumns = 'repeat(2, 170px)';
     }
+
+    document.getElementById('toggleViewBtn').addEventListener('click', function(){
+        isFlex = !isFlex;
+        if(isFlex){
+            wrapper.style.display='block';
+            gridView.style.display='none';
+            this.textContent='SWITCH TO GRID';
+        }else{
+            wrapper.style.display='none';
+            gridView.style.display='grid';
+            this.textContent='SWITCH TO SCROLL';
+        }
+    });
+
+    function openCart(){ sidebar.style.right='0'; overlay.style.display='block'; renderCart(); }
+    function closeCart(){ sidebar.style.right='-100%'; overlay.style.display='none'; }
+    document.getElementById('openCartBtn').addEventListener('click', openCart);
+    document.getElementById('closeCartBtn').addEventListener('click', closeCart);
+    overlay.addEventListener('click', closeCart);
+
+    document.addEventListener('click', function(e){
+        const add = e.target.closest('.btn-add');
+        const rem = e.target.closest('.btn-remove');
+        if(add){ addToCart(add.dataset.id,1); }
+        if(rem){ removeFromCart(rem.dataset.id); }
+    });
+
+    async function addToCart(id,qty){
+        const btn = document.querySelector(`.btn-add[data-id="${id}"]`);
+        if(btn){ btn.textContent='...'; btn.disabled=true; }
+        try{
+            const res = await fetch('/products/add-to-cart',{method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body:JSON.stringify({productId:id, qty})});
+            const data = await res.json();
+            if(!data.success) throw new Error(data.message);
+            location.reload();
+        }catch(err){ alert(err.message); if(btn){ btn.textContent='ADD CART'; btn.disabled=false; } }
+    }
+    async function removeFromCart(id){
+        try{
+            const res = await fetch('/products/remove-from-cart',{method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body:JSON.stringify({productId:id})});
+            const data = await res.json();
+            if(!data.success) throw new Error(data.message);
+            location.reload();
+        }catch(err){ alert(err.message); }
+    }
+
+    function renderCart(){
+        const c=document.getElementById('cartItems');
+        if(!cartData.length){ c.innerHTML='<p style="text-align:center; color:#888; padding:20px; font-size:12px;">Empty</p>'; return; }
+        c.innerHTML=cartData.map(i=>`<div style="display:flex; gap:8px; border:1px solid #e8f5e9; border-radius:8px; padding:6px; align-items:center;"><div style="width:40px; height:40px; background:#f6fbf6; border-radius:6px; overflow:hidden;">${i.image?`<img src="${i.image}" style="width:100%; height:100%; object-fit:cover;">`:'📦'}</div><div style="flex:1;"><p style="margin:0; font-size:11px; font-weight:700;">${i.name}</p><p style="margin:0; font-size:10px; color:#666;">${i.qty} x KES ${i.price}</p></div></div>`).join('');
+    }
+
+    document.getElementById('checkoutBtn').addEventListener('click', async()=>{
+        const msg=document.getElementById('cartMsg');
+        msg.style.display='block'; msg.textContent='Creating...';
+        try{
+            const res=await fetch('/packages/create-from-cart',{method:'POST', credentials:'same-origin'});
+            const data=await res.json();
+            if(!data.success) throw new Error(data.message);
+            location.href='/packages/'+data.packageId;
+        }catch(e){ msg.textContent=e.message; msg.style.color='#c62828'; }
+    });
 });
-
-async function addToCart(productId, qty){
-    try{
-        const res=await fetch('/products/add-to-cart',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            credentials:'same-origin',
-            body:JSON.stringify({productId, qty})
-        });
-        const data=await res.json();
-        if(!data.success) throw new Error(data.message);
-        location.reload(); // reload to sync cart count and badges correctly
-    }catch(e){ alert(e.message); }
-}
-
-async function removeFromCart(productId){
-    try{
-        const res=await fetch('/products/remove-from-cart',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            credentials:'same-origin',
-            body:JSON.stringify({productId})
-        });
-        const data=await res.json();
-        if(!data.success) throw new Error(data.message);
-        location.reload();
-    }catch(e){ alert(e.message); }
-}
-
-function renderCart(){
-    const container=document.getElementById('cartItems');
-    if(!cartData.length){
-        container.innerHTML='<p style="text-align:center; color:#888; padding:20px;">Cart empty</p>';
-        return;
-    }
-    container.innerHTML=cartData.map(item=>`
-        <div style="display:flex; gap:10px; border:1px solid #e8f5e9; border-radius:10px; padding:8px; align-items:center;">
-            <img src="${item.image||''}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; background:#f6fbf6;" onerror="this.style.display='none'" />
-            <div style="flex:1;">
-                <p style="margin:0; font-size:12px; font-weight:700;">${item.name}</p>
-                <p style="margin:2px 0 0 0; font-size:11px; color:#666;">KES ${item.price} x ${item.qty}</p>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:4px;">
-                <button onclick="addToCart('${item.productId}',1)" style="padding:4px 8px; border-radius:6px; border:1px solid #0a4d1e; background:white; cursor:pointer; font-size:10px;">+1</button>
-                <button onclick="removeFromCart('${item.productId}')" style="padding:4px 8px; border-radius:6px; border:1px solid #ffcdd2; background:white; color:#c62828; cursor:pointer; font-size:10px;"><i class="fas fa-trash"></i></button>
-            </div>
-        </div>
-    `).join('');
-}
-
-document.getElementById('checkoutBtn').addEventListener('click', async()=>{
-    const msg=document.getElementById('cartMsg');
-    msg.style.display='block';
-    msg.style.color='#0a4d1e';
-    msg.textContent='Creating package...';
-    try{
-        const res=await fetch('/packages/create-from-cart',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            credentials:'same-origin'
-        });
-        const data=await res.json();
-        if(!data.success) throw new Error(data.message);
-        msg.textContent='Package created! Redirecting...';
-        window.location.href='/packages/'+data.packageId;
-    }catch(e){
-        msg.style.color='#c62828';
-        msg.textContent=e.message;
-    }
-});
-
-// initial render
-renderCart();
 </script>
