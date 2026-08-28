@@ -156,7 +156,7 @@ console.log("✅ Layout: layout");
 // ==========================================================
 console.log("--- Mounting routes ---");
 if (corevesterRoutes) { app.use("/", corevesterRoutes); console.log("Mounted /"); }
-if (productsRoutes) { app.use("/products", productsRoutes); console.log("Mounted /products"); }
+if (productsRoutes) { app.use("/", productsRoutes); console.log("Mounted /products"); }
 if (productsEntryRoutes) { app.use("/admin/products", productsEntryRoutes); console.log("Mounted /admin/products"); }
 if (stockEntryRoutes) { app.use("/admin/stock", stockEntryRoutes); console.log("Mounted /admin/stock"); }
 if (packageRoutes) { app.use("/packages", packageRoutes); console.log("Mounted /packages"); }
