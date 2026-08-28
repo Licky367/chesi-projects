@@ -1,51 +1,127 @@
 <%- contentFor('body') %>
 <style>
-:root{ --core-green:#15472E; }
-body{ background:#F5FAF6 !important; }
-.back-btn{ border:2px solid #15472E; color:#15472E; border-radius:50px; font-weight:700; text-decoration:none; padding:6px 16px; background:#fff; display:inline-block; }
-.detail-card{ background:#fff; border:2px solid #E5EFE7; border-radius:16px; overflow:hidden; }
-.price{ color:#15472E; font-weight:800; font-size:1.6rem; }
-.add-cart{ background:#15472E; color:#fff; font-weight:800; border-radius:10px; border:none; padding:12px; }
+:root{ --core:#15472E; }
+body{ background:#f4f6f4!important; }
+.detail-wrap{width:100%;max-width:1300px;margin:0 auto;padding:12px 14px 30px 14px;box-sizing:border-box;}
+.back-pill{border:1.5px solid #15472E;color:#15472E;border-radius:20px;font-weight:800;font-size:12px;padding:6px 14px;background:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.d-card{background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.04);}
+.d-img-box{width:100%;height:380px;background:linear-gradient(to bottom,#eef4e9,#e4ece0);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.d-img-box img{width:100%;height:100%;object-fit:contain;display:block;}
+.d-badge{position:absolute;top:12px;left:12px;background:#fff;border:1.5px solid var(--core);color:var(--core);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:800;}
+.d-badge.out{border-color:#c62828;color:#c62828;}
+.d-title{color:var(--core);font-weight:900;font-size:22px;line-height:1.2;margin:0;}
+.d-cat{color:#2e7d32;font-weight:800;font-size:11px;letter-spacing:0.8px;text-transform:uppercase;}
+.d-price{color:var(--core);font-weight:900;font-size:24px;margin:8px 0 0 0;}
+.d-stock{font-size:12px;font-weight:700;margin-top:4px;}
+.d-qty-box{border:2px solid var(--core);border-radius:12px;overflow:hidden;display:flex;align-items:center;max-width:140px;}
+.d-qty-box button{width:40px;height:42px;border:none;background:#fff;color:var(--core);font-weight:900;font-size:18px;cursor:pointer;}
+.d-qty-box input{flex:1;border:none;text-align:center;font-weight:900;color:var(--core);font-size:16px;outline:none;}
+.d-add{flex:1;background:var(--core);color:#fff;font-weight:800;border:none;border-radius:12px;padding:12px;font-size:13px;cursor:pointer;}
+.d-add:disabled{background:#ddd;color:#999;}
+.d-section{margin-top:14px;background:#fff;border:1.5px solid #e0e9dc;border-radius:14px;padding:14px;}
+.d-section h4{margin:0 0 6px 0;color:var(--core);font-size:14px;font-weight:800;display:flex;align-items:center;gap:6px;}
+.d-section p{margin:0;color:#444;font-size:13px;line-height:1.6;white-space:pre-line;}
 </style>
 
-<div class="container py-3">
-    <a href="/products" class="back-btn">← Back to Marketplace</a>
-    <div class="row g-3 mt-2">
-        <div class="col-md-6">
-            <div class="detail-card shadow-sm">
-                <span style="position:absolute;margin:10px;background:#fff;border:2px solid #15472E;color:#15472E;border-radius:50px;padding:2px 10px;font-size:0.75rem;font-weight:700;"><%= product.units %> left</span>
-                <img src="<%= product.image||'/images/no-image.png' %>" class="w-100" style="max-height:500px;object-fit:contain;background:#fff;">
-            </div>
+<div class="detail-wrap">
+  <a href="/products" class="back-pill"><i class="fas fa-arrow-left"></i> Back to Marketplace</a>
+
+  <div class="row g-3 mt-2">
+    <div class="col-md-6">
+      <div class="d-card">
+        <div class="d-img-box">
+          <span class="d-badge <%= product.units<=0?'out':'' %>"><%= product.units>0? product.units+' left' : 'Out of Stock' %></span>
+          <img src="<%= product.image||'/images/no-image.png' %>" alt="<%= product.name %>">
         </div>
-        <div class="col-md-6">
-            <div class="detail-card p-3 shadow-sm">
-                <small style="color:#1E6B3A;font-weight:800;text-transform:uppercase;"><%= product.category %></small>
-                <h2 class="fw-bold mt-1" style="color:#15472E;"><%= product.name %></h2>
-                <p class="price mt-2">KES <%= product.unitSellPrice.toLocaleString() %></p>
-                <p class="<%= product.units<=0?'text-danger':'text-success' %> fw-bold"><%= product.units<=0?'Out of Stock': product.units+' units available' %></p>
-                <p class="text-muted mt-3"><%= product.description||'Quality medical supply from Corevester Investments.' %></p>
-                <div class="mt-4 d-flex gap-2">
-                    <div class="input-group" style="max-width:130px;border:2px solid #15472E;border-radius:10px;overflow:hidden;">
-                        <button class="btn" id="detailMinus" style="color:#15472E;font-weight:bold;">-</button>
-                        <input id="detailQty" type="number" class="form-control text-center border-0 fw-bold" value="1" min="1" max="<%= product.units %>" style="color:#15472E;">
-                        <button class="btn" id="detailPlus" style="color:#15472E;font-weight:bold;">+</button>
-                    </div>
-                    <button class="add-cart flex-grow-1" id="detailAddBtn" data-id="<%= product._id %>" data-stock="<%= product.units %>" <%= product.units<=0?'disabled':'' %>>ADD CART</button>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+
+    <div class="col-md-6">
+      <div class="d-card" style="padding:16px;">
+        <p class="d-cat"><%= product.category %></p>
+        <h1 class="d-title"><%= product.name %></h1>
+        <p class="d-price">KES <%= Number(product.unitSellPrice||0).toLocaleString() %></p>
+        <p class="d-stock <%= product.units<=0?'text-danger':'text-success' %>">
+          <%= product.units<=0? 'Out of Stock' : product.units+' units available' %>
+        </p>
+
+        <!-- ALWAYS SHOW SHORT DESCRIPTION IF EXISTS -->
+        <% if(product.description){ %>
+          <p style="margin-top:12px;color:#666;font-size:13px;line-height:1.5;"><%= product.description %></p>
+        <% } %>
+
+        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;">
+          <div class="d-qty-box">
+            <button id="detailMinus">-</button>
+            <input id="detailQty" type="number" value="1" min="1" max="<%= product.units %>">
+            <button id="detailPlus">+</button>
+          </div>
+          <button class="d-add" id="detailAddBtn" data-id="<%= product._id %>" data-stock="<%= product.units %>" <%= product.units<=0?'disabled':'' %>>
+            <i class="fas fa-shopping-cart"></i> ADD TO CART
+          </button>
+        </div>
+        <p style="margin:8px 0 0 0;font-size:10px;color:#888;">Stock will reduce from products & increase in cart</p>
+      </div>
+
+      <!-- DESCRIPTION / USAGE / PRECAUTIONS - HIDDEN IF NULL -->
+      <% if(product.description){ %>
+        <div class="d-section">
+          <h4><i class="fas fa-file-lines" style="color:#15472E;"></i> Description</h4>
+          <p><%= product.description %></p>
+        </div>
+      <% } %>
+
+      <% if(product.usage){ %>
+        <div class="d-section">
+          <h4><i class="fas fa-hand-holding-medical" style="color:#15472E;"></i> Usage</h4>
+          <p><%= product.usage %></p>
+        </div>
+      <% } %>
+
+      <% if(product.precautions){ %>
+        <div class="d-section">
+          <h4><i class="fas fa-triangle-exclamation" style="color:#c97a2e;"></i> Precautions</h4>
+          <p><%= product.precautions %></p>
+        </div>
+      <% } %>
+
+      <% if(product.specifications){ %>
+        <div class="d-section">
+          <h4><i class="fas fa-list" style="color:#15472E;"></i> Specifications</h4>
+          <p><%= product.specifications %></p>
+        </div>
+      <% } %>
+
+    </div>
+  </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
-    const qtyInput=document.getElementById('detailQty');
-    const stock=parseInt(document.getElementById('detailAddBtn').dataset.stock);
-    document.getElementById('detailPlus').onclick=()=>{ if(parseInt(qtyInput.value)<stock) qtyInput.value=parseInt(qtyInput.value)+1; };
-    document.getElementById('detailMinus').onclick=()=>{ if(parseInt(qtyInput.value)>1) qtyInput.value=parseInt(qtyInput.value)-1; };
-    document.getElementById('detailAddBtn').onclick=async(e)=>{
-        const res=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:e.target.dataset.id,qty:qtyInput.value})});
-        const data=await res.json(); if(!data.success) alert(data.message); else window.location.href='/products';
-    };
+  const qtyInput=document.getElementById('detailQty');
+  const addBtn=document.getElementById('detailAddBtn');
+  if(!addBtn) return;
+  const stock=parseInt(addBtn.dataset.stock)||0;
+
+  document.getElementById('detailPlus').onclick=()=>{ let v=parseInt(qtyInput.value)||1; if(v<stock){ qtyInput.value=v+1; } };
+  document.getElementById('detailMinus').onclick=()=>{ let v=parseInt(qtyInput.value)||1; if(v>1){ qtyInput.value=v-1; } };
+  qtyInput.oninput=()=>{ let v=parseInt(qtyInput.value)||1; if(v<1) v=1; if(v>stock) v=stock; qtyInput.value=v; };
+
+  addBtn.onclick=async()=>{
+    const qty=parseInt(qtyInput.value)||1;
+    if(qty>stock) return alert('Only '+stock+' left');
+    addBtn.innerHTML='Adding...'; addBtn.disabled=true;
+    try{
+      const res=await fetch('/products/add-to-cart',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ productId:addBtn.dataset.id, qty:qty })
+      });
+      const data=await res.json();
+      if(!data.success){ alert(data.message||'Failed'); addBtn.innerHTML='<i class="fas fa-shopping-cart"></i> ADD TO CART'; addBtn.disabled=false; return; }
+      // success -> go to cart or marketplace
+      window.location.href='/cart';
+    }catch(e){ alert('Network error'); addBtn.innerHTML='<i class="fas fa-shopping-cart"></i> ADD TO CART'; addBtn.disabled=false; }
+  };
 });
 </script>
