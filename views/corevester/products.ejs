@@ -1,4 +1,43 @@
-<%- contentFor('body') %>
+<% /*
+=============================================================
+VIEWS/PRODUCTS.EJS
+=============================================================
+
+PURPOSE:
+    Marketplace product catalogue.
+
+IMPORTANT:
+    This file is the BODY rendered by layout.ejs.
+
+    DO NOT put:
+
+        <%- contentFor('body') %>
+
+    here.
+
+    layout.ejs already contains:
+
+        <%- body %>
+
+DATA EXPECTED:
+    products
+    categories
+    activeCategory
+    cart
+    cartCount
+    cartTotal
+
+PRODUCT FIELDS USED:
+    _id
+    name
+    image
+    category
+    units
+    unitSellPrice
+
+=============================================================
+*/ %>
+
 
 <style>
 
@@ -22,15 +61,20 @@
     --line-soft:#edf2ee;
 
     width:100%;
-    min-height:100vh;
+    min-height:calc(100vh - 80px);
 
     margin:0;
-
     padding:0 0 35px;
 
     background:#f6f8f7;
 
     color:var(--ink);
+
+    font-family:
+        'Segoe UI',
+        Arial,
+        Helvetica,
+        sans-serif;
 
     box-sizing:border-box;
 }
@@ -63,12 +107,11 @@
 .market-hero-inner{
 
     width:100%;
-
     max-width:1280px;
 
     margin:0 auto;
 
-    padding:18px 14px 15px;
+    padding:18px 12px 14px;
 
 }
 
@@ -85,7 +128,7 @@
 
     justify-content:space-between;
 
-    gap:15px;
+    gap:12px;
 
 }
 
@@ -133,13 +176,13 @@
 
     color:var(--green);
 
-    font-size:25px;
+    font-size:24px;
 
     font-weight:900;
 
-    line-height:1.1;
+    line-height:1.15;
 
-    letter-spacing:-.5px;
+    letter-spacing:-.4px;
 
 }
 
@@ -165,8 +208,6 @@
 
 .market-cart-button{
 
-    position:relative;
-
     flex:0 0 44px;
 
     width:44px;
@@ -178,6 +219,8 @@
     align-items:center;
 
     justify-content:center;
+
+    padding:0;
 
     border:0;
 
@@ -282,8 +325,7 @@
 }
 
 
-.summary-card:nth-child(2)
-.summary-icon{
+.summary-card:nth-child(2) .summary-icon{
 
     background:#f2f5f3;
 
@@ -292,8 +334,7 @@
 }
 
 
-.summary-card:nth-child(3)
-.summary-icon{
+.summary-card:nth-child(3) .summary-icon{
 
     background:var(--orange-soft);
 
@@ -349,8 +390,7 @@
 }
 
 
-.summary-card:nth-child(3)
-.summary-value{
+.summary-card:nth-child(3) .summary-value{
 
     color:#b96710;
 
@@ -364,12 +404,11 @@
 .market-main{
 
     width:100%;
-
     max-width:1280px;
 
     margin:0 auto;
 
-    padding:16px 12px 0;
+    padding:16px 10px 0;
 
 }
 
@@ -565,11 +604,24 @@
    PRODUCT CATALOGUE
 ==========================================================
 
-   Responsive ecommerce layout.
+   MOBILE:
+       2 cards per row.
 
-   No fixed four-card limit.
-   No horizontal product strip.
-   No product shrinking to fit one row.
+   TABLET:
+       3 cards per row.
+
+   DESKTOP:
+       4 cards per row.
+
+   LARGE DESKTOP:
+       5 cards per row.
+
+   IMPORTANT:
+       This is a normal responsive catalogue.
+
+       Products DO NOT become one enormous image.
+       Products DO NOT form a horizontal strip.
+       Products DO NOT have a four-product limit.
 ========================================================== */
 
 .product-grid{
@@ -581,7 +633,9 @@
     grid-template-columns:
         repeat(2,minmax(0,1fr));
 
-    gap:9px;
+    gap:10px;
+
+    align-items:start;
 
 }
 
@@ -595,11 +649,9 @@
     position:relative;
 
     width:100%;
-
     min-width:0;
 
     display:flex;
-
     flex-direction:column;
 
     overflow:hidden;
@@ -608,7 +660,7 @@
 
     border:1px solid #e1e7e3;
 
-    border-radius:9px;
+    border-radius:10px;
 
     box-shadow:
         0 2px 7px rgba(20,40,28,.055);
@@ -643,7 +695,14 @@
 
 
 /* ==========================================================
-   IMAGE AREA
+   PRODUCT IMAGE CONTAINER
+==========================================================
+
+   THIS IS THE IMPORTANT PART.
+
+   The image is constrained INSIDE the card.
+
+   It cannot grow to viewport width.
 ========================================================== */
 
 .product-image{
@@ -661,7 +720,15 @@
 }
 
 
+/* ==========================================================
+   PRODUCT IMAGE
+========================================================== */
+
 .product-image img{
+
+    position:absolute;
+
+    inset:0;
 
     width:100%;
 
@@ -672,16 +739,6 @@
     object-fit:cover;
 
     object-position:center;
-
-    transition:transform .25s ease;
-
-}
-
-
-.product-card:hover
-.product-image img{
-
-    transform:scale(1.035);
 
 }
 
@@ -695,7 +752,6 @@
     position:absolute;
 
     top:6px;
-
     left:6px;
 
     z-index:3;
@@ -787,7 +843,6 @@
 .product-details{
 
     width:100%;
-
     min-width:0;
 
     display:flex;
@@ -873,7 +928,7 @@
 
     gap:3px;
 
-    margin-top:5px;
+    margin-top:6px;
 
     color:var(--green);
 
@@ -903,19 +958,17 @@
 
     width:100%;
 
-    min-height:28px;
-
-    height:28px;
+    min-height:30px;
+    height:30px;
 
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
     gap:4px;
 
-    margin-top:8px;
+    margin-top:9px;
 
     padding:0 5px;
 
@@ -934,10 +987,6 @@
     white-space:nowrap;
 
     cursor:pointer;
-
-    transition:
-        background .15s ease,
-        transform .15s ease;
 
 }
 
@@ -1068,7 +1117,6 @@
     display:inline-flex;
 
     align-items:center;
-
     justify-content:center;
 
     gap:6px;
@@ -1128,7 +1176,6 @@
 .qty-icon{
 
     width:42px;
-
     height:42px;
 
     margin:0 auto 8px;
@@ -1136,7 +1183,6 @@
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
     border-radius:12px;
@@ -1193,7 +1239,6 @@
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
     gap:22px;
@@ -1206,13 +1251,11 @@
 .qty-control{
 
     width:43px;
-
     height:43px;
 
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
     padding:0;
@@ -1337,13 +1380,11 @@
 .cart-icon{
 
     width:38px;
-
     height:38px;
 
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
     border-radius:11px;
@@ -1474,13 +1515,11 @@
 .cart-control{
 
     width:28px;
-
     height:28px;
 
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
     padding:0;
@@ -1561,7 +1600,6 @@
 .empty-cart-icon{
 
     width:65px;
-
     height:65px;
 
     margin-bottom:12px;
@@ -1569,7 +1607,6 @@
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
     border-radius:20px;
@@ -1668,7 +1705,6 @@
     .market-hero-inner{
 
         padding-left:22px;
-
         padding-right:22px;
 
     }
@@ -1677,7 +1713,6 @@
     .market-main{
 
         padding-left:20px;
-
         padding-right:20px;
 
     }
@@ -1778,7 +1813,6 @@
     .add-to-cart-btn{
 
         min-height:31px;
-
         height:31px;
 
         font-size:8px;
@@ -1797,7 +1831,6 @@
     .market-hero-inner{
 
         padding-left:30px;
-
         padding-right:30px;
 
     }
@@ -1806,7 +1839,6 @@
     .market-main{
 
         padding-left:30px;
-
         padding-right:30px;
 
     }
@@ -1832,18 +1864,16 @@
 
     .market-hero-inner{
 
-        padding-left:10px;
-
-        padding-right:10px;
+        padding-left:9px;
+        padding-right:9px;
 
     }
 
 
     .market-main{
 
-        padding-left:8px;
-
-        padding-right:8px;
+        padding-left:7px;
+        padding-right:7px;
 
     }
 
@@ -1881,7 +1911,6 @@
     .add-to-cart-btn{
 
         min-height:27px;
-
         height:27px;
 
         font-size:6.5px;
@@ -1895,10 +1924,12 @@
    ACCESSIBILITY
 ========================================================== */
 
-button:focus-visible,
-a:focus-visible{
+.marketplace button:focus-visible,
+.marketplace a:focus-visible{
 
-    outline:3px solid rgba(11,90,42,.23);
+    outline:
+        3px solid
+        rgba(11,90,42,.23);
 
     outline-offset:2px;
 
@@ -1907,9 +1938,9 @@ a:focus-visible{
 
 @media(prefers-reduced-motion:reduce){
 
-    *,
-    *::before,
-    *::after{
+    .marketplace *,
+    .marketplace *::before,
+    .marketplace *::after{
 
         scroll-behavior:auto !important;
 
@@ -2112,7 +2143,9 @@ a:focus-visible{
                     <i class="fas fa-layer-group"></i>
 
                     <h2 class="section-heading-title">
+
                         Categories
+
                     </h2>
 
                 </div>
@@ -2283,7 +2316,6 @@ a:focus-visible{
 
                     </div>
 
-
                 </div>
 
 
@@ -2326,7 +2358,7 @@ a:focus-visible{
 
 
                             <!-- =================================
-                                 PRODUCT IMAGE
+                                 IMAGE
                             ================================== -->
 
                             <div class="product-image">
@@ -2359,7 +2391,7 @@ a:focus-visible{
 
                                 <img
                                     src="<%= product.image || '/images/no-image.png' %>"
-                                    alt="<%= product.name %>"
+                                    alt="<%= product.name || 'Product' %>"
                                     loading="lazy"
                                     onerror="this.src='/images/no-image.png';"
                                 >
@@ -2384,7 +2416,7 @@ a:focus-visible{
 
                                 <h3 class="product-name">
 
-                                    <%= product.name %>
+                                    <%= product.name || 'Unnamed Product' %>
 
                                 </h3>
 
@@ -2392,7 +2424,9 @@ a:focus-visible{
                                 <div class="product-price">
 
                                     <span class="currency">
+
                                         KES
+
                                     </span>
 
                                     <%= Number(
@@ -2406,7 +2440,7 @@ a:focus-visible{
                                     type="button"
                                     class="add-to-cart-btn"
                                     data-id="<%= product._id %>"
-                                    data-name="<%= product.name %>"
+                                    data-name="<%= product.name || 'Product' %>"
                                     data-stock="<%= stock %>"
                                     <%= stock <= 0
                                         ? 'disabled'
