@@ -1,5 +1,5 @@
 // ==========================================================
-// server-corevester.js - COREVESTER - FIXED LOGGING + LAYOUT FIXED
+// server-corevester.js - COREVESTER - FIXED LOGGING + YOUR VIEW ENGINE
 // ==========================================================
 
 const express = require("express");
@@ -115,7 +115,7 @@ app.use(methodOverride("_method"));
 // SESSION
 // ==========================================================
 const sessionStore = isProduction && process.env.MONGO_URI && MongoStore
-  ? MongoStore.create({ mongoUrl: process.env.MONGO_URI, ttl: 24*60*60, touchAfter: 60*60 })
+ ? MongoStore.create({ mongoUrl: process.env.MONGO_URI, ttl: 24*60*60, touchAfter: 60*60 })
    : undefined;
 
 app.use(session({
@@ -139,17 +139,17 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // ==========================================================
-// VIEW ENGINE - RESTORED TO ORIGINAL WORKING VERSION
+// VIEW ENGINE - FIXED TO YOUR CORRECT PATH
 // ==========================================================
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views")); // <-- MUST be views, not views/corevester
-app.use(expressLayouts); // <-- THIS WAS MISSING IN YOUR FILE - CAUSED LAYOUT ISSUE
-app.set("layout", "corevester/layout"); // <-- ORIGINAL WORKING
+app.set("views", path.join(__dirname, "views/corevester")); // YOUR CORRECT PATH
+app.use(expressLayouts);
+app.set("layout", "layout"); // YOUR CORRECT LAYOUT
 app.set("layout extractScripts", true);
 app.set("layout extractStyles", true);
 
-console.log("✅ Views:", path.join(__dirname, "views"));
-console.log("✅ Layout: corevester/layout");
+console.log("✅ Views:", path.join(__dirname, "views/corevester"));
+console.log("✅ Layout: layout");
 
 // ==========================================================
 // MOUNT
@@ -162,13 +162,13 @@ if (stockEntryRoutes) { app.use("/admin/stock", stockEntryRoutes); console.log("
 if (packageRoutes) { app.use("/packages", packageRoutes); console.log("Mounted /packages"); }
 
 // ==========================================================
-// 404
+// 404 - FIXED TO YOUR CORRECT ERROR PATH
 // ==========================================================
 app.use((req, res) => {
     if (req.accepts("json") &&!req.accepts("html")) {
         return res.status(404).json({ success: false, message: "Route not found" });
     }
-    return res.status(404).render("corevester/error/404", {
+    return res.status(404).render("error/404", {
         title: "404 - Page Not Found",
         user: req.user || null,
         error: `Cannot ${req.method} ${req.originalUrl}`
@@ -176,21 +176,36 @@ app.use((req, res) => {
 });
 
 // ==========================================================
-// ERROR HANDLER
+// GLOBAL ERROR HANDLER - FIXED TO YOUR CORRECT ERROR PATH
 // ==========================================================
 app.use((err, req, res, next) => {
-    console.error("❌ GLOBAL ERROR:", err.message);
+    console.error("❌ Unhandled error:", err.message);
     console.error(err.stack);
+
     let statusCode = Number(err.statusCode || err.status || 500);
+    if (err && err.name === "MulterError" && err.code === "LIMIT_FILE_SIZE") {
+        statusCode = 400;
+        err.message = "The uploaded image is too large. Maximum size is 5MB.";
+    }
     if (statusCode < 400 || statusCode > 599) statusCode = 500;
 
     if (!req.accepts("html") || req.xhr || req.path.startsWith("/api")) {
-        return res.status(statusCode).json({ success: false, message: err.message });
+        return res.status(statusCode).json({
+            success: false,
+            message: isProduction && statusCode === 500? "Internal Server Error" : err.message || "Something went wrong"
+        });
     }
-    return res.status(statusCode).render("corevester/error/500", {
+
+    const errorViews = {
+        400: "error/400", 401: "error/401", 403: "error/403", 404: "error/404",
+        409: "error/409", 422: "error/422", 429: "error/429", 500: "error/500"
+    };
+    const view = errorViews[statusCode] || "error/500";
+
+    return res.status(statusCode).render(view, {
         title: `${statusCode} Error`,
-        error: err.message,
-        statusCode,
+        error: err.message || "Internal Server Error",
+        statusCode: statusCode,
         user: req.user || null
     });
 });
