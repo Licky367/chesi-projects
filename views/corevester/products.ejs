@@ -4,93 +4,145 @@
 
 /* =========================================================
    MARKETPLACE
-========================================================= */
+   ========================================================= */
 
 .market-wrap{
+    --green-950:#073b1a;
+    --green-900:#0a4d1e;
+    --green-800:#11652a;
+    --green-700:#16803a;
+    --green-100:#e9f5ed;
+    --green-50:#f3f9f5;
+
+    --orange-600:#e88a1a;
+    --orange-100:#fff2df;
+
+    --ink:#17231b;
+    --muted:#718078;
+    --line:#e4ebe6;
+    --surface:#ffffff;
+    --page:#f6f8f6;
+
     min-height:100vh;
-    background:#f5f8f5;
-    color:#17251c;
-    padding-bottom:30px;
+    padding-bottom:40px;
+
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(22,128,58,.055),
+            transparent 28%
+        ),
+        var(--page);
+
+    color:var(--ink);
 }
 
 
 /* =========================================================
-   HEADER
-========================================================= */
+   TOP HEADER
+   ========================================================= */
 
 .market-top{
     position:sticky;
     top:0;
-    z-index:20;
+    z-index:30;
 
     display:flex;
-    justify-content:space-between;
     align-items:center;
+    justify-content:space-between;
+    gap:20px;
 
     padding:14px 16px;
 
-    background:rgba(255,255,255,.96);
-    backdrop-filter:blur(12px);
-    -webkit-backdrop-filter:blur(12px);
+    background:rgba(255,255,255,.94);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
 
-    border-bottom:1px solid #dce9df;
+    border-bottom:1px solid rgba(218,229,220,.9);
 
     box-shadow:
-        0 4px 18px rgba(10,77,30,.07);
+        0 5px 25px rgba(16,52,29,.055);
 }
 
 .market-heading{
     min-width:0;
 }
 
+.market-title-row{
+    display:flex;
+    align-items:center;
+    gap:9px;
+}
+
+.market-title-mark{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    width:34px;
+    height:34px;
+
+    flex:0 0 34px;
+
+    background:var(--green-900);
+    color:#fff;
+
+    border-radius:10px;
+
+    font-size:.9rem;
+
+    box-shadow:
+        0 5px 12px rgba(10,77,30,.15);
+}
+
 .market-title{
     margin:0;
 
-    color:#0a4d1e;
+    color:var(--green-950);
 
-    font-size:1.65rem;
-    font-weight:900;
-    letter-spacing:-.5px;
-    line-height:1.05;
+    font-size:1.45rem;
+    line-height:1;
+    font-weight:950;
+    letter-spacing:-.7px;
 }
 
 .market-sub{
-    margin-top:5px;
+    margin:7px 0 0 43px;
 
-    color:#718078;
+    color:var(--muted);
 
-    font-size:.78rem;
-    font-weight:600;
+    font-size:.72rem;
+    font-weight:650;
 }
 
 
 /* =========================================================
-   CART HEADER
-========================================================= */
+   HEADER ACTIONS
+   ========================================================= */
 
 .market-actions{
     display:flex;
     align-items:center;
     gap:8px;
+    flex:0 0 auto;
 }
 
 .pill-count{
     display:flex;
     align-items:center;
-    gap:7px;
+    gap:8px;
 
     height:42px;
+    padding:4px 12px 4px 5px;
 
-    padding:4px 10px 4px 5px;
+    background:var(--green-50);
 
-    background:#f3f8f4;
-
-    border:1px solid #cfe0d3;
+    border:1px solid #d6e5d9;
     border-radius:50px;
 
-    color:#0a4d1e;
+    color:#557060;
 
-    font-size:.76rem;
+    font-size:.7rem;
     font-weight:800;
 
     white-space:nowrap;
@@ -104,72 +156,81 @@
     width:32px;
     height:32px;
 
-    background:#0a4d1e;
+    background:var(--green-900);
     color:#fff;
 
     border-radius:50%;
 
-    font-size:.78rem;
+    font-size:.76rem;
 }
 
 .cart-main-btn{
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:7px;
+    gap:8px;
 
+    min-width:44px;
     height:42px;
 
-    padding:0 15px;
+    padding:0 14px;
 
-    background:#0a4d1e;
+    background:var(--green-900);
     color:#fff;
 
     border:0;
     border-radius:12px;
 
-    font-size:.78rem;
+    font-size:.7rem;
     font-weight:900;
+    letter-spacing:.3px;
 
     cursor:pointer;
 
-    box-shadow:0 5px 12px rgba(10,77,30,.18);
+    box-shadow:
+        0 6px 15px rgba(10,77,30,.16);
 
     transition:
-        transform .15s ease,
-        box-shadow .15s ease,
-        background .15s ease;
+        transform .18s ease,
+        background .18s ease,
+        box-shadow .18s ease;
 }
 
 .cart-main-btn:hover{
-    background:#083d18;
+    background:var(--green-950);
     transform:translateY(-1px);
-    box-shadow:0 7px 16px rgba(10,77,30,.24);
+
+    box-shadow:
+        0 9px 20px rgba(10,77,30,.21);
 }
 
 .cart-main-btn:active{
-    transform:scale(.97);
+    transform:scale(.96);
 }
 
 
 /* =========================================================
-   CATEGORY NAVIGATION
-========================================================= */
+   CATEGORY BAR
+   ========================================================= */
 
-.category-bar{
-    display:flex;
-    gap:8px;
-
-    overflow-x:auto;
-
-    padding:14px 14px 13px;
+.category-shell{
+    position:relative;
 
     background:#fff;
 
-    border-bottom:1px solid #e3ece5;
+    border-bottom:1px solid var(--line);
+}
+
+.category-bar{
+    display:flex;
+    align-items:center;
+    gap:7px;
+
+    overflow-x:auto;
+
+    padding:11px 14px;
 
     scrollbar-width:none;
-
     -webkit-overflow-scrolling:touch;
 }
 
@@ -178,94 +239,141 @@
 }
 
 .cat-pill{
-    flex:0 0 auto;
-
     display:inline-flex;
     align-items:center;
     justify-content:center;
 
-    min-height:36px;
+    flex:0 0 auto;
 
-    padding:0 16px;
+    min-height:35px;
+    padding:0 15px;
 
     background:#fff;
-    color:#31513c;
+    color:#52665a;
 
-    border:1px solid #d3e1d6;
+    border:1px solid #dce6df;
     border-radius:50px;
 
     text-decoration:none;
 
-    font-size:.76rem;
-    font-weight:800;
-    text-transform:uppercase;
-    letter-spacing:.2px;
+    font-size:.68rem;
+    font-weight:850;
 
     transition:
-        background .15s ease,
-        color .15s ease,
-        border-color .15s ease,
-        transform .15s ease;
+        color .16s ease,
+        background .16s ease,
+        border-color .16s ease,
+        transform .16s ease;
 }
 
 .cat-pill:hover{
-    border-color:#0a4d1e;
-    color:#0a4d1e;
+    color:var(--green-900);
+    border-color:#bcd1c1;
+    background:var(--green-50);
 }
 
 .cat-pill.active{
-    background:#0a4d1e;
+    background:var(--green-900);
     color:#fff;
-    border-color:#0a4d1e;
 
-    box-shadow:0 4px 10px rgba(10,77,30,.15);
+    border-color:var(--green-900);
+
+    box-shadow:
+        0 5px 13px rgba(10,77,30,.14);
 }
 
 
 /* =========================================================
-   PRODUCT AREA
-========================================================= */
+   PRODUCT SECTION
+   ========================================================= */
 
 .product-section{
-    padding-top:14px;
+    padding:18px 0 0;
 }
+
+.products-intro{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 14px 13px;
+}
+
+.products-label{
+    color:#4c6053;
+
+    font-size:.72rem;
+    font-weight:850;
+    text-transform:uppercase;
+    letter-spacing:.55px;
+}
+
+.products-count{
+    color:#8a978f;
+
+    font-size:.66rem;
+    font-weight:700;
+}
+
+
+/* =========================================================
+   GRID
+   ========================================================= */
 
 .grid-wrap{
     display:grid;
 
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns:
+        repeat(2,minmax(0,1fr));
 
-    gap:12px;
+    gap:11px;
 
     padding:0 12px;
 }
 
-@media(min-width:768px){
+@media(min-width:600px){
 
     .grid-wrap{
-        grid-template-columns:repeat(4,minmax(0,1fr));
-        gap:16px;
+        grid-template-columns:
+            repeat(3,minmax(0,1fr));
 
-        padding:0 18px;
+        gap:15px;
+        padding:0 16px;
     }
 
 }
 
-@media(min-width:1200px){
+@media(min-width:900px){
 
     .grid-wrap{
-        grid-template-columns:repeat(5,minmax(0,1fr));
-        gap:18px;
+        grid-template-columns:
+            repeat(4,minmax(0,1fr));
 
+        gap:17px;
         padding:0 22px;
     }
 
 }
 
+@media(min-width:1250px){
+
+    .grid-wrap{
+        grid-template-columns:
+            repeat(5,minmax(0,1fr));
+
+        max-width:1450px;
+        margin:0 auto;
+
+        gap:19px;
+        padding:0 28px;
+    }
+
+}
+
 
 /* =========================================================
-   HORIZONTAL PRODUCT ROW
-========================================================= */
+   LARGE COLLECTION HORIZONTAL ROW
+   ========================================================= */
 
 .prod-scroll{
     display:flex;
@@ -273,35 +381,24 @@
 
     overflow-x:auto;
 
-    padding:0 12px 13px;
+    padding:0 12px 17px;
 
     scroll-snap-type:x mandatory;
 
-    scrollbar-width:thin;
-
+    scrollbar-width:none;
     -webkit-overflow-scrolling:touch;
 }
 
 .prod-scroll::-webkit-scrollbar{
-    height:5px;
-}
-
-.prod-scroll::-webkit-scrollbar-track{
-    background:#e6eee8;
-    border-radius:10px;
-}
-
-.prod-scroll::-webkit-scrollbar-thumb{
-    background:#0a4d1e;
-    border-radius:10px;
+    display:none;
 }
 
 @media(min-width:768px){
 
     .prod-scroll{
         gap:16px;
-        padding-left:18px;
-        padding-right:18px;
+        padding-left:22px;
+        padding-right:22px;
     }
 
 }
@@ -309,7 +406,7 @@
 
 /* =========================================================
    PRODUCT CARD
-========================================================= */
+   ========================================================= */
 
 .card-box{
     position:relative;
@@ -320,37 +417,42 @@
 
     overflow:hidden;
 
-    background:#fff;
+    background:var(--surface);
 
-    border:1px solid #e0eae2;
-
-    border-radius:16px;
+    border:1px solid #e0e8e2;
+    border-radius:17px;
 
     cursor:pointer;
 
     scroll-snap-align:start;
 
     box-shadow:
-        0 3px 12px rgba(21,60,35,.055);
+        0 3px 12px rgba(26,61,38,.045);
 
     transition:
-        transform .18s ease,
-        box-shadow .18s ease,
-        border-color .18s ease;
+        transform .2s ease,
+        box-shadow .2s ease,
+        border-color .2s ease;
 }
 
 .card-box:hover{
-    transform:translateY(-3px);
+    transform:translateY(-4px);
 
-    border-color:#c5dac9;
+    border-color:#c8d9cc;
 
     box-shadow:
-        0 9px 24px rgba(21,60,35,.11);
+        0 12px 28px rgba(26,61,38,.10);
+}
+
+.grid-wrap .card-box{
+    min-width:0;
+    max-width:none;
+    width:100%;
 }
 
 @media(min-width:768px){
 
-    .card-box{
+    .prod-scroll .card-box{
         min-width:calc(25% - 12px);
         max-width:calc(25% - 12px);
         flex:0 0 calc(25% - 12px);
@@ -360,51 +462,69 @@
 
 
 /* =========================================================
-   GRID CARDS
-========================================================= */
-
-.grid-wrap .card-box{
-    min-width:0;
-    max-width:none;
-    width:100%;
-}
-
-
-/* =========================================================
-   PRODUCT IMAGE
-========================================================= */
+   IMAGE
+   ========================================================= */
 
 .product-image-wrap{
     position:relative;
 
     width:100%;
 
-    aspect-ratio:1 / .82;
+    aspect-ratio:1 / .88;
 
     overflow:hidden;
 
-    background:#eef4ef;
+    background:
+        linear-gradient(
+            135deg,
+            #edf5ef,
+            #e4eee7
+        );
 }
 
 .product-image{
+    display:block;
+
     width:100%;
     height:100%;
 
-    display:block;
-
     object-fit:cover;
 
-    transition:transform .35s ease;
+    transition:
+        transform .45s cubic-bezier(.2,.7,.2,1);
 }
 
 .card-box:hover .product-image{
-    transform:scale(1.04);
+    transform:scale(1.055);
+}
+
+
+/* =========================================================
+   IMAGE OVERLAY
+   ========================================================= */
+
+.product-image-wrap::after{
+    content:"";
+
+    position:absolute;
+    inset:0;
+
+    pointer-events:none;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,.08),
+            transparent 35%,
+            transparent 75%,
+            rgba(0,0,0,.08)
+        );
 }
 
 
 /* =========================================================
    STOCK BADGE
-========================================================= */
+   ========================================================= */
 
 .left-badge{
     position:absolute;
@@ -412,26 +532,31 @@
     top:9px;
     left:9px;
 
-    z-index:3;
+    z-index:5;
 
     display:inline-flex;
     align-items:center;
     gap:5px;
 
-    padding:5px 9px;
+    min-height:25px;
+
+    padding:0 8px;
 
     background:rgba(255,255,255,.94);
 
-    color:#0a4d1e;
+    color:var(--green-900);
 
-    border:1px solid rgba(10,77,30,.18);
+    border:1px solid rgba(255,255,255,.7);
 
     border-radius:50px;
 
-    font-size:.65rem;
+    font-size:.59rem;
     font-weight:900;
 
-    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    box-shadow:
+        0 3px 9px rgba(0,0,0,.10);
+
+    backdrop-filter:blur(6px);
 }
 
 .stock-dot{
@@ -440,83 +565,88 @@
 
     border-radius:50%;
 
-    background:#20a04b;
+    background:#23a653;
 }
 
 .stock-low .stock-dot{
-    background:#e49b18;
-}
-
-.stock-out .stock-dot{
-    background:#d63939;
+    background:var(--orange-600);
 }
 
 .stock-out{
-    color:#a72a2a;
-    border-color:#f0caca;
+    color:#a83232;
+    background:#fff7f7;
+    border-color:#f2d5d5;
+}
+
+.stock-out .stock-dot{
+    background:#d74444;
 }
 
 
 /* =========================================================
    PRODUCT BODY
-========================================================= */
+   ========================================================= */
 
 .product-body{
-    padding:11px 11px 12px;
+    padding:12px 11px 12px;
 }
 
 .cat-label{
-    margin-bottom:4px;
+    margin-bottom:5px;
 
-    color:#6c8474;
+    color:#799080;
 
-    font-size:.61rem;
+    font-size:.57rem;
     font-weight:900;
 
     text-transform:uppercase;
-
-    letter-spacing:.55px;
+    letter-spacing:.65px;
 }
 
 .prod-name{
-    color:#18231c;
-
-    font-size:.89rem;
-    font-weight:800;
-
-    line-height:1.25;
-
-    min-height:34px;
+    min-height:35px;
 
     display:-webkit-box;
     -webkit-line-clamp:2;
     -webkit-box-orient:vertical;
 
     overflow:hidden;
+
+    color:#1b2820;
+
+    font-size:.84rem;
+    line-height:1.3;
+    font-weight:850;
 }
 
 .prod-price{
-    margin-top:7px;
+    display:flex;
+    align-items:baseline;
+    gap:3px;
 
-    color:#0a4d1e;
+    margin-top:8px;
+
+    color:var(--green-900);
 
     font-size:1rem;
-    font-weight:900;
+    line-height:1;
+
+    font-weight:950;
 }
 
 .price-label{
-    color:#789080;
+    color:#839088;
 
-    font-size:.6rem;
-    font-weight:700;
+    font-size:.55rem;
+    font-weight:800;
 
-    margin-right:2px;
+    letter-spacing:.2px;
 }
 
 
 /* =========================================================
    ADD BUTTON
-========================================================= */
+   ========================================================= */
 
 .add-btn{
     display:flex;
@@ -525,89 +655,114 @@
     gap:6px;
 
     width:100%;
+    min-height:38px;
 
-    margin-top:10px;
+    margin-top:11px;
 
-    min-height:39px;
+    padding:8px 9px;
 
-    padding:8px 10px;
-
-    background:#0a4d1e;
+    background:var(--green-900);
     color:#fff;
 
     border:0;
     border-radius:10px;
 
-    font-size:.7rem;
+    font-size:.64rem;
     font-weight:900;
+    letter-spacing:.15px;
 
     cursor:pointer;
 
+    box-shadow:
+        0 4px 9px rgba(10,77,30,.10);
+
     transition:
-        background .15s ease,
-        transform .15s ease,
-        box-shadow .15s ease;
+        background .16s ease,
+        transform .16s ease,
+        box-shadow .16s ease;
 }
 
 .add-btn:hover{
-    background:#083d18;
+    background:var(--green-800);
 
     box-shadow:
-        0 5px 12px rgba(10,77,30,.18);
+        0 6px 13px rgba(10,77,30,.17);
 }
 
 .add-btn:active{
-    transform:scale(.98);
+    transform:scale(.975);
 }
 
 .add-btn:disabled{
-    background:#dfe5e1;
-    color:#7d8881;
+    background:#e4e9e5;
+    color:#87928b;
 
     cursor:not-allowed;
-
     box-shadow:none;
 }
 
 
 /* =========================================================
-   EMPTY / GENERAL
-========================================================= */
+   EMPTY PRODUCTS
+   ========================================================= */
 
 .market-empty{
-    margin:15px 12px;
+    max-width:560px;
 
-    padding:45px 20px;
+    margin:30px auto;
+    padding:55px 24px;
 
     text-align:center;
 
     background:#fff;
 
-    border:1px dashed #ccdacf;
+    border:1px dashed #cbd9ce;
+    border-radius:20px;
 
-    border-radius:16px;
+    box-shadow:
+        0 5px 20px rgba(25,59,37,.035);
 
-    color:#718078;
+    color:#77847c;
 }
 
-.market-empty i{
-    font-size:2rem;
-    margin-bottom:10px;
-    color:#9aaca0;
+.market-empty-icon{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    width:68px;
+    height:68px;
+
+    margin:0 auto 15px;
+
+    background:var(--green-50);
+
+    border-radius:20px;
+
+    color:#82a08b;
+
+    font-size:1.5rem;
 }
 
 .market-empty strong{
     display:block;
 
-    color:#34473a;
+    margin-bottom:6px;
 
-    margin-bottom:4px;
+    color:#34463a;
+
+    font-size:.92rem;
+    font-weight:900;
+}
+
+.market-empty span{
+    font-size:.73rem;
 }
 
 
 /* =========================================================
    QUANTITY MODAL
-========================================================= */
+   ========================================================= */
 
 .qty-modal-content{
     overflow:hidden;
@@ -615,47 +770,55 @@
     background:#fff;
 
     border:0;
-
-    border-radius:20px;
+    border-radius:22px;
 
     box-shadow:
-        0 20px 55px rgba(0,0,0,.18);
+        0 25px 70px rgba(12,39,21,.20);
 }
 
 .qty-modal-header{
-    padding:18px 20px 14px;
+    padding:20px 20px 17px;
 
     text-align:center;
 
-    background:#f4f8f5;
+    background:
+        linear-gradient(
+            135deg,
+            #f1f8f3,
+            #f9fbf9
+        );
 
-    border-bottom:1px solid #e0eae2;
+    border-bottom:1px solid #e2ebe4;
 }
 
 .qty-product-name{
     margin:0;
 
-    color:#0a4d1e;
+    color:var(--green-950);
 
     font-size:1rem;
-    font-weight:900;
+    font-weight:950;
 }
 
 .qty-available{
-    margin:5px 0 0;
+    margin:6px 0 0;
 
-    color:#718078;
+    color:#77857c;
 
-    font-size:.76rem;
+    font-size:.72rem;
+}
+
+.qty-available strong{
+    color:var(--green-800);
 }
 
 .qty-selector{
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:22px;
+    gap:23px;
 
-    margin:23px 0;
+    margin:22px 0 24px;
 }
 
 .qty-control{
@@ -663,53 +826,53 @@
     align-items:center;
     justify-content:center;
 
-    width:44px;
-    height:44px;
+    width:45px;
+    height:45px;
 
     padding:0;
 
     background:#fff;
 
-    border:2px solid #0a4d1e;
+    border:1.5px solid #c7d9cc;
     border-radius:50%;
 
-    color:#0a4d1e;
+    color:var(--green-900);
 
-    font-size:1.2rem;
+    font-size:1.25rem;
     font-weight:900;
 
     cursor:pointer;
 
     transition:
-        background .15s ease,
-        color .15s ease,
-        transform .15s ease;
+        background .16s ease,
+        border-color .16s ease,
+        color .16s ease,
+        transform .16s ease;
 }
 
 .qty-control:hover{
-    background:#0a4d1e;
+    background:var(--green-900);
+    border-color:var(--green-900);
     color:#fff;
 }
 
 .qty-control:active{
-    transform:scale(.92);
+    transform:scale(.91);
 }
 
 .qty-number{
-    min-width:45px;
+    min-width:50px;
 
-    text-align:center;
+    color:var(--green-950);
 
-    color:#0a4d1e;
-
-    font-size:2.1rem;
-    font-weight:900;
+    font-size:2.2rem;
     line-height:1;
+
+    font-weight:950;
 }
 
 .qty-confirm{
-    min-height:45px;
-
+    min-height:46px;
     margin-top:0;
 
     border-radius:12px;
@@ -718,46 +881,58 @@
 .qty-cancel{
     width:100%;
 
-    margin-top:5px;
+    margin-top:7px;
 
-    color:#78837d !important;
+    color:#7b8780 !important;
+
+    font-size:.76rem;
+    font-weight:750;
 
     text-decoration:none !important;
-
-    font-size:.8rem;
-    font-weight:700;
 }
 
 
 /* =========================================================
    CART OFFCANVAS
-========================================================= */
+   ========================================================= */
 
 .cart-sidebar{
-    width:min(420px,92vw) !important;
+    width:min(430px,94vw) !important;
+
+    background:#fff;
 
     border-left:1px solid #dce7df !important;
 
     box-shadow:
-        -10px 0 35px rgba(0,0,0,.12);
+        -18px 0 50px rgba(16,46,26,.14);
 }
+
+
+/* =========================================================
+   CART HEADER
+   ========================================================= */
 
 .cart-header{
     display:flex;
     align-items:center;
     justify-content:space-between;
 
-    padding:18px;
+    padding:17px;
 
-    background:#f4f8f5;
+    background:
+        linear-gradient(
+            135deg,
+            #f1f8f3,
+            #fff
+        );
 
-    border-bottom:1px solid #dce7df;
+    border-bottom:1px solid #dfe8e2;
 }
 
 .cart-title-wrap{
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:11px;
 }
 
 .cart-title-icon{
@@ -765,51 +940,57 @@
     align-items:center;
     justify-content:center;
 
-    width:38px;
-    height:38px;
+    width:41px;
+    height:41px;
 
-    background:#0a4d1e;
+    background:var(--green-900);
     color:#fff;
 
-    border-radius:11px;
+    border-radius:12px;
+
+    box-shadow:
+        0 5px 13px rgba(10,77,30,.14);
 }
 
 .cart-title{
     margin:0;
 
-    color:#0a4d1e;
+    color:var(--green-950);
 
     font-size:1rem;
-    font-weight:900;
+    font-weight:950;
 }
 
 .cart-subtitle{
-    margin:2px 0 0;
+    margin:3px 0 0;
 
-    color:#7a887f;
+    color:#7a877f;
 
-    font-size:.68rem;
-    font-weight:600;
+    font-size:.65rem;
+    font-weight:650;
 }
 
+
+/* =========================================================
+   CART BODY
+   ========================================================= */
+
 .cart-body{
-    padding:14px !important;
+    padding:10px 16px 20px !important;
 
     background:#fff;
 }
 
 .cart-item{
     display:flex;
-
     align-items:center;
-    justify-content:space-between;
+    gap:12px;
 
-    gap:10px;
+    margin:0;
 
-    margin-bottom:10px;
-    padding:12px 0;
+    padding:14px 0;
 
-    border-bottom:1px solid #e9efeb !important;
+    border-bottom:1px solid #edf1ee !important;
 }
 
 .cart-item:last-child{
@@ -824,12 +1005,11 @@
 .cart-product-name{
     display:block;
 
-    color:#1d2b22;
+    color:#1c2a21;
 
-    font-size:.82rem;
-    font-weight:800;
-
-    line-height:1.25;
+    font-size:.81rem;
+    line-height:1.3;
+    font-weight:850;
 
     overflow:hidden;
     text-overflow:ellipsis;
@@ -838,17 +1018,29 @@
 .cart-product-price{
     display:block;
 
-    margin-top:4px;
+    margin-top:5px;
 
-    color:#75857b;
+    color:#7b8880;
 
-    font-size:.7rem;
+    font-size:.68rem;
 }
+
+.cart-qty{
+    color:var(--green-900);
+    font-weight:900;
+}
+
+
+/* =========================================================
+   CART CONTROLS
+   ========================================================= */
 
 .cart-controls{
     display:flex;
     align-items:center;
     gap:5px;
+
+    flex:0 0 auto;
 }
 
 .cart-control{
@@ -856,52 +1048,50 @@
     align-items:center;
     justify-content:center;
 
-    width:32px;
-    height:32px;
+    width:31px;
+    height:31px;
 
     padding:0;
 
     background:#fff;
 
-    border:1px solid #cbdacf;
+    border:1px solid #d3dfd6;
     border-radius:8px;
 
-    color:#0a4d1e;
+    color:var(--green-900);
 
-    font-size:.9rem;
+    font-size:.85rem;
     font-weight:900;
 
     cursor:pointer;
+
+    transition:
+        background .15s ease,
+        border-color .15s ease,
+        transform .15s ease;
 }
 
 .cart-control:hover{
-    background:#f0f6f1;
-    border-color:#0a4d1e;
+    background:var(--green-50);
+    border-color:#a9c4af;
+}
+
+.cart-control:active{
+    transform:scale(.92);
 }
 
 .cart-remove{
-    color:#b52d2d !important;
+    color:#b33333 !important;
 
-    border-color:#efcccc !important;
+    background:#fff7f7 !important;
 
-    background:#fff5f5 !important;
-}
-
-.cart-qty{
-    min-width:18px;
-
-    text-align:center;
-
-    color:#17251c;
-
-    font-size:.75rem;
-    font-weight:900;
+    border-color:#efd2d2 !important;
 }
 
 
 /* =========================================================
    EMPTY CART
-========================================================= */
+   ========================================================= */
 
 .empty-cart{
     display:flex;
@@ -909,11 +1099,11 @@
     align-items:center;
     justify-content:center;
 
-    min-height:280px;
+    min-height:310px;
 
     text-align:center;
 
-    color:#87938c;
+    color:#8a968f;
 }
 
 .empty-cart-icon{
@@ -921,43 +1111,59 @@
     align-items:center;
     justify-content:center;
 
-    width:70px;
-    height:70px;
+    width:72px;
+    height:72px;
 
-    margin-bottom:13px;
+    margin-bottom:14px;
 
-    background:#f1f6f2;
+    background:
+        linear-gradient(
+            135deg,
+            #f0f6f2,
+            #e9f2eb
+        );
 
-    border-radius:50%;
+    border-radius:22px;
 
-    color:#8ba093;
+    color:#89a092;
 
-    font-size:1.5rem;
+    font-size:1.45rem;
 }
 
 .empty-cart strong{
-    color:#45564b;
+    color:#45554b;
 
-    font-size:.9rem;
+    font-size:.88rem;
+    font-weight:900;
 }
 
 .empty-cart span{
-    margin-top:4px;
+    margin-top:5px;
 
-    font-size:.72rem;
+    color:#89948d;
+
+    font-size:.7rem;
 }
 
 
 /* =========================================================
    CART FOOTER
-========================================================= */
+   ========================================================= */
 
 .cart-footer{
     padding:16px;
 
-    background:#f5f9f6;
+    background:
+        linear-gradient(
+            to bottom,
+            #f8faf8,
+            #f1f6f2
+        );
 
     border-top:1px solid #dce7df;
+
+    box-shadow:
+        0 -5px 18px rgba(24,60,37,.035);
 }
 
 .cart-total{
@@ -965,22 +1171,23 @@
     align-items:center;
     justify-content:space-between;
 
-    margin-bottom:13px;
+    margin-bottom:12px;
 
-    color:#43534a;
+    color:#59685f;
 
-    font-size:.82rem;
+    font-size:.78rem;
     font-weight:800;
 }
 
 .cart-total strong{
-    color:#0a4d1e;
+    color:var(--green-950);
 
-    font-size:1.05rem;
+    font-size:1.08rem;
+    font-weight:950;
 }
 
 .checkout-btn{
-    min-height:46px;
+    min-height:47px;
 
     margin-top:0;
 
@@ -990,7 +1197,7 @@
 
 /* =========================================================
    MOBILE
-========================================================= */
+   ========================================================= */
 
 @media(max-width:575px){
 
@@ -998,12 +1205,23 @@
         padding:12px;
     }
 
+    .market-title-mark{
+        width:31px;
+        height:31px;
+        flex-basis:31px;
+
+        border-radius:9px;
+    }
+
     .market-title{
-        font-size:1.35rem;
+        font-size:1.28rem;
     }
 
     .market-sub{
-        font-size:.67rem;
+        margin-left:40px;
+        margin-top:6px;
+
+        font-size:.64rem;
     }
 
     .pill-count{
@@ -1011,55 +1229,83 @@
     }
 
     .cart-main-btn{
-        width:43px;
+        width:42px;
+        min-width:42px;
+
         padding:0;
 
         font-size:0;
     }
 
     .cart-main-btn i{
-        font-size:.95rem;
+        font-size:.9rem;
     }
 
-    .product-image-wrap{
-        aspect-ratio:1 / .88;
+    .category-bar{
+        padding:10px 12px;
     }
 
-    .prod-name{
-        font-size:.82rem;
-    }
+    .cat-pill{
+        min-height:34px;
+        padding:0 13px;
 
-    .prod-price{
-        font-size:.92rem;
-    }
-
-    .add-btn{
-        font-size:.65rem;
-    }
-
-}
-
-
-/* =========================================================
-   TABLET / DESKTOP
-========================================================= */
-
-@media(min-width:768px){
-
-    .market-top{
-        padding:17px 22px;
-    }
-
-    .market-title{
-        font-size:1.8rem;
-    }
-
-    .market-sub{
-        font-size:.82rem;
+        font-size:.63rem;
     }
 
     .product-section{
-        padding-top:18px;
+        padding-top:15px;
+    }
+
+    .products-intro{
+        padding-left:12px;
+        padding-right:12px;
+    }
+
+    .products-label{
+        font-size:.65rem;
+    }
+
+    .products-count{
+        font-size:.61rem;
+    }
+
+    .product-image-wrap{
+        aspect-ratio:1 / .91;
+    }
+
+    .product-body{
+        padding:10px;
+    }
+
+    .cat-label{
+        font-size:.52rem;
+    }
+
+    .prod-name{
+        font-size:.77rem;
+        min-height:32px;
+    }
+
+    .prod-price{
+        font-size:.88rem;
+    }
+
+    .add-btn{
+        min-height:36px;
+
+        margin-top:9px;
+
+        font-size:.58rem;
+    }
+
+    .left-badge{
+        top:7px;
+        left:7px;
+
+        min-height:23px;
+        padding:0 7px;
+
+        font-size:.53rem;
     }
 
 }
@@ -1067,77 +1313,133 @@
 
 /* =========================================================
    ACCESSIBILITY
-========================================================= */
+   ========================================================= */
 
 button:focus-visible,
 a:focus-visible{
-    outline:3px solid rgba(10,77,30,.25);
-    outline-offset:2px;
+    outline:3px solid rgba(22,128,58,.24);
+    outline-offset:3px;
 }
 
-</style>
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media(prefers-reduced-motion:reduce){
+
+    .card-box,
+    .product-image,
+    .add-btn,
+    .cart-main-btn,
+    .qty-control,
+    .cart-control{
+        transition:none !important;
+    }
+
+}
 
 
-<div class="market-wrap">
+/* =========================================================
+   TOUCH DEVICES
+   ========================================================= */
 
-    <!-- =====================================================
-         MARKETPLACE HEADER
-    ====================================================== -->
+@media(hover:none){
 
-    <div class="market-top">
+    .card-box:hover{
+        transform:none;
+        box-shadow:
+            0 3px 12px rgba(26,61,38,.045);
+    }
 
-        <div class="market-heading">
+    .card-box:hover .product-image{
+        transform:none;
+    }
 
-            <h2 class="market-title">
-                Marketplace
-            </h2>
+}
 
-            <div class="market-sub">
-                <%= products.length %>
-                <%= products.length === 1 ? 'product' : 'products' %>
-                available
+</style><div class="market-wrap"><!-- =====================================================
+     MARKETPLACE HEADER
+====================================================== -->
+
+<header class="market-top">
+
+    <div class="market-heading">
+
+        <div class="market-title-row">
+
+            <div class="market-title-mark">
+                <i class="fas fa-store"></i>
             </div>
+
+            <h1 class="market-title">
+                Marketplace
+            </h1>
 
         </div>
 
+        <div class="market-sub">
 
-        <div class="market-actions">
-
-            <div class="pill-count">
-
-                <b id="cartCount">
-                    <%= cartCount || 0 %>
-                </b>
-
-                <span>
-                    KES
-                    <span id="cartTotalText">
-                        <%= (cartTotal || 0).toLocaleString() %>
-                    </span>
-                </span>
-
-            </div>
-
-
-            <button
-                type="button"
-                id="cartBtn"
-                class="cart-main-btn"
-            >
-                <i class="fas fa-shopping-cart"></i>
-                <span>CART</span>
-            </button>
+            <%= products.length %>
+            <%= products.length === 1 ? 'product' : 'products' %>
+            available
 
         </div>
 
     </div>
 
 
-    <!-- =====================================================
-         CATEGORY NAVIGATION
-    ====================================================== -->
+    <div class="market-actions">
 
-    <div class="category-bar">
+        <div class="pill-count">
+
+            <b id="cartCount">
+                <%= cartCount || 0 %>
+            </b>
+
+            <span>
+
+                Cart · KES
+
+                <span id="cartTotalText">
+                    <%= (cartTotal || 0).toLocaleString() %>
+                </span>
+
+            </span>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="cartBtn"
+            class="cart-main-btn"
+            aria-label="Open shopping cart"
+        >
+
+            <i class="fas fa-shopping-bag"></i>
+
+            <span>
+                CART
+            </span>
+
+        </button>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     CATEGORY NAVIGATION
+====================================================== -->
+
+<div class="category-shell">
+
+    <nav
+        class="category-bar"
+        aria-label="Product categories"
+    >
 
         <a
             href="/products?category=all"
@@ -1153,80 +1455,124 @@ a:focus-visible{
                 href="/products?category=<%= c %>"
                 class="cat-pill text-capitalize <%= activeCategory === c ? 'active' : '' %>"
             >
+
                 <%= c %>
+
             </a>
 
         <% }) %>
 
-    </div>
+    </nav>
+
+</div>
 
 
-    <!-- =====================================================
-         PRODUCTS
-    ====================================================== -->
+<!-- =====================================================
+     PRODUCTS
+====================================================== -->
 
-    <div class="product-section">
+<main class="product-section">
 
-        <% if (!products || !products.length) { %>
 
-            <div class="market-empty">
+    <% if (!products || !products.length) { %>
 
+
+        <div class="market-empty">
+
+            <div class="market-empty-icon">
                 <i class="fas fa-box-open"></i>
-
-                <strong>
-                    No products available
-                </strong>
-
-                <span>
-                    There are currently no products in this category.
-                </span>
-
             </div>
 
-        <% } else if (products.length < 20) { %>
+            <strong>
+                No products available
+            </strong>
+
+            <span>
+                There are currently no products in this category.
+            </span>
+
+        </div>
+
+
+    <% } else { %>
+
+
+        <div class="products-intro">
+
+            <span class="products-label">
+                Available products
+            </span>
+
+            <span class="products-count">
+                <%= products.length %> items
+            </span>
+
+        </div>
+
+
+        <% if (products.length < 20) { %>
 
 
             <!-- =================================================
-                 NORMAL GRID
+                 STANDARD GRID
             ================================================== -->
 
             <div class="grid-wrap">
 
+
                 <% products.forEach(p => { %>
 
-                    <div
+                    <%
+
+                        const stock =
+                            Number(p.units || 0);
+
+                        let stockClass = '';
+
+                        if(stock <= 0){
+
+                            stockClass =
+                                'stock-out';
+
+                        }else if(stock <= 5){
+
+                            stockClass =
+                                'stock-low';
+
+                        }
+
+                    %>
+
+
+                    <article
                         class="card-box"
                         data-product-id="<%= p._id %>"
                     >
 
-                        <%
-                            const stock = Number(p.units || 0);
 
-                            let stockClass = '';
-
-                            if(stock <= 0){
-                                stockClass = 'stock-out';
-                            } else if(stock <= 5){
-                                stockClass = 'stock-low';
-                            }
-                        %>
-
-
-                        <!-- PRODUCT IMAGE -->
+                        <!-- IMAGE -->
 
                         <div class="product-image-wrap">
 
-                            <span class="left-badge <%= stockClass %>">
+                            <span
+                                class="left-badge <%= stockClass %>"
+                            >
 
-                                <span class="stock-dot"></span>
+                                <span
+                                    class="stock-dot"
+                                ></span>
 
                                 <% if(stock <= 0){ %>
 
                                     Out of stock
 
+                                <% } else if(stock <= 5){ %>
+
+                                    Only <%= stock %> left
+
                                 <% } else { %>
 
-                                    <%= stock %> left
+                                    <%= stock %> available
 
                                 <% } %>
 
@@ -1263,7 +1609,9 @@ a:focus-visible{
                                     KES
                                 </span>
 
-                                <%= Number(p.unitSellPrice || 0).toLocaleString() %>
+                                <%= Number(
+                                    p.unitSellPrice || 0
+                                ).toLocaleString() %>
 
                             </div>
 
@@ -1277,17 +1625,27 @@ a:focus-visible{
                                 <%= stock <= 0 ? 'disabled' : '' %>
                             >
 
-                                <i class="fas <%= stock <= 0 ? 'fa-ban' : 'fa-cart-plus' %>"></i>
+                                <i
+                                    class="fas <%= stock <= 0
+                                        ? 'fa-ban'
+                                        : 'fa-cart-plus'
+                                    %>"
+                                ></i>
 
-                                <%= stock <= 0 ? 'OUT OF STOCK' : 'ADD TO CART' %>
+
+                                <%= stock <= 0
+                                    ? 'OUT OF STOCK'
+                                    : 'ADD TO CART'
+                                %>
 
                             </button>
 
                         </div>
 
-                    </div>
+                    </article>
 
                 <% }) %>
+
 
             </div>
 
@@ -1300,6 +1658,7 @@ a:focus-visible{
             ================================================== -->
 
             <%
+
                 const chunkSize = 10;
 
                 for(
@@ -1309,39 +1668,58 @@ a:focus-visible{
                 ){
 
                     const chunk =
-                        products.slice(i, i + chunkSize);
+                        products.slice(
+                            i,
+                            i + chunkSize
+                        );
+
             %>
 
 
                 <div class="prod-scroll">
 
+
                     <% chunk.forEach(p => { %>
 
                         <%
-                            const stock = Number(p.units || 0);
+
+                            const stock =
+                                Number(p.units || 0);
 
                             let stockClass = '';
 
                             if(stock <= 0){
-                                stockClass = 'stock-out';
-                            } else if(stock <= 5){
-                                stockClass = 'stock-low';
+
+                                stockClass =
+                                    'stock-out';
+
+                            }else if(stock <= 5){
+
+                                stockClass =
+                                    'stock-low';
+
                             }
+
                         %>
 
 
-                        <div
+                        <article
                             class="card-box"
                             data-product-id="<%= p._id %>"
                         >
+
 
                             <!-- IMAGE -->
 
                             <div class="product-image-wrap">
 
-                                <span class="left-badge <%= stockClass %>">
+                                <span
+                                    class="left-badge <%= stockClass %>"
+                                >
 
-                                    <span class="stock-dot"></span>
+                                    <span
+                                        class="stock-dot"
+                                    ></span>
 
                                     <% if(stock <= 0){ %>
 
@@ -1386,7 +1764,9 @@ a:focus-visible{
                                         KES
                                     </span>
 
-                                    <%= Number(p.unitSellPrice || 0).toLocaleString() %>
+                                    <%= Number(
+                                        p.unitSellPrice || 0
+                                    ).toLocaleString() %>
 
                                 </div>
 
@@ -1400,328 +1780,343 @@ a:focus-visible{
                                     <%= stock <= 0 ? 'disabled' : '' %>
                                 >
 
-                                    <i class="fas <%= stock <= 0 ? 'fa-ban' : 'fa-cart-plus' %>"></i>
+                                    <i
+                                        class="fas <%= stock <= 0
+                                            ? 'fa-ban'
+                                            : 'fa-cart-plus'
+                                        %>"
+                                    ></i>
 
-                                    <%= stock <= 0 ? 'OUT' : 'ADD CART' %>
+                                    <%= stock <= 0
+                                        ? 'OUT'
+                                        : 'ADD CART'
+                                    %>
 
                                 </button>
 
                             </div>
 
-                        </div>
+                        </article>
+
 
                     <% }) %>
+
 
                 </div>
 
 
             <% } %>
 
+
         <% } %>
+
+
+    <% } %>
+
+
+</main>
+
+</div><!-- =========================================================
+     QUANTITY MODAL
+========================================================= --><div
+    class="modal fade"
+    id="qtyModal"
+    tabindex="-1"
+    aria-hidden="true"
+><div class="modal-dialog modal-dialog-centered modal-sm">
+
+    <div class="modal-content qty-modal-content">
+
+
+        <div class="qty-modal-header">
+
+            <h6
+                class="qty-product-name"
+                id="qtyProductName"
+            ></h6>
+
+            <p class="qty-available">
+
+                Available:
+
+                <strong id="qtyAvailable"></strong>
+
+            </p>
+
+        </div>
+
+
+        <div class="modal-body text-center p-4">
+
+
+            <div class="qty-selector">
+
+                <button
+                    type="button"
+                    class="qty-control"
+                    id="qtyMinus"
+                    aria-label="Decrease quantity"
+                >
+                    −
+                </button>
+
+
+                <span
+                    id="qtyValue"
+                    class="qty-number"
+                >
+                    1
+                </span>
+
+
+                <button
+                    type="button"
+                    class="qty-control"
+                    id="qtyPlus"
+                    aria-label="Increase quantity"
+                >
+                    +
+                </button>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="add-btn qty-confirm"
+                id="qtyConfirm"
+            >
+
+                <i class="fas fa-cart-plus"></i>
+
+                ADD
+
+                <span id="qtyConfirmCount">
+                    1
+                </span>
+
+                TO CART
+
+            </button>
+
+
+            <button
+                type="button"
+                class="btn btn-link qty-cancel"
+                data-bs-dismiss="modal"
+            >
+                Cancel
+            </button>
+
+
+        </div>
 
     </div>
 
 </div>
 
-
-
-<!-- =========================================================
-     QUANTITY MODAL
-========================================================= -->
-
-<div
-    class="modal fade"
-    id="qtyModal"
+</div><!-- =========================================================
+     CART SIDEBAR
+========================================================= --><div
+    class="offcanvas offcanvas-end cart-sidebar"
     tabindex="-1"
-    aria-hidden="true"
->
+    id="cartSidebar"
+    aria-labelledby="cartSidebarLabel"
+><!-- HEADER -->
 
-    <div class="modal-dialog modal-dialog-centered modal-sm">
+<div class="cart-header">
 
-        <div class="modal-content qty-modal-content">
+    <div class="cart-title-wrap">
 
-            <div class="qty-modal-header">
+        <div class="cart-title-icon">
+            <i class="fas fa-shopping-bag"></i>
+        </div>
 
-                <h6
-                    class="qty-product-name"
-                    id="qtyProductName"
-                ></h6>
+        <div>
 
-                <p class="qty-available">
+            <h5
+                class="cart-title"
+                id="cartSidebarLabel"
+            >
+                Your Cart
+            </h5>
 
-                    Available:
-                    <strong id="qtyAvailable"></strong>
+            <p class="cart-subtitle">
+                Review your selected products
+            </p>
 
-                </p>
+        </div>
 
-            </div>
+    </div>
 
 
-            <div class="modal-body text-center p-4">
+    <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="offcanvas"
+        aria-label="Close"
+    ></button>
 
-                <div class="qty-selector">
+</div>
+
+
+<!-- BODY -->
+
+<div class="offcanvas-body cart-body">
+
+
+    <% if(cart && cart.length){ %>
+
+
+        <% cart.forEach(item => { %>
+
+
+            <div
+                class="cart-item"
+                data-id="<%= item.productId %>"
+            >
+
+
+                <div class="cart-product-info">
+
+                    <span class="cart-product-name">
+                        <%= item.name %>
+                    </span>
+
+
+                    <span class="cart-product-price">
+
+                        KES
+                        <%= Number(
+                            item.price || 0
+                        ).toLocaleString() %>
+
+                        ×
+
+                        <span class="cart-qty">
+                            <%= item.qty %>
+                        </span>
+
+                    </span>
+
+                </div>
+
+
+                <div class="cart-controls">
+
 
                     <button
                         type="button"
-                        class="qty-control"
-                        id="qtyMinus"
+                        class="cart-control cart-minus"
+                        data-id="<%= item.productId %>"
                         aria-label="Decrease quantity"
                     >
                         −
                     </button>
 
 
-                    <span
-                        id="qtyValue"
-                        class="qty-number"
-                    >
-                        1
-                    </span>
-
-
                     <button
                         type="button"
-                        class="qty-control"
-                        id="qtyPlus"
+                        class="cart-control cart-plus"
+                        data-id="<%= item.productId %>"
                         aria-label="Increase quantity"
                     >
                         +
                     </button>
 
+
+                    <button
+                        type="button"
+                        class="cart-control cart-remove"
+                        data-id="<%= item.productId %>"
+                        aria-label="Remove product"
+                    >
+                        ×
+                    </button>
+
+
                 </div>
-
-
-                <button
-                    type="button"
-                    class="add-btn qty-confirm"
-                    id="qtyConfirm"
-                >
-
-                    <i class="fas fa-cart-plus"></i>
-
-                    ADD
-                    <span id="qtyConfirmCount">1</span>
-                    TO CART
-
-                </button>
-
-
-                <button
-                    type="button"
-                    class="btn btn-link qty-cancel"
-                    data-bs-dismiss="modal"
-                >
-                    Cancel
-                </button>
 
             </div>
 
+
+        <% }) %>
+
+
+    <% } else { %>
+
+
+        <div class="empty-cart">
+
+            <div class="empty-cart-icon">
+
+                <i class="fas fa-shopping-bag"></i>
+
+            </div>
+
+            <strong>
+                Your cart is empty
+            </strong>
+
+            <span>
+                Add products to begin your order.
+            </span>
+
         </div>
 
-    </div>
+
+    <% } %>
+
 
 </div>
 
 
+<!-- FOOTER -->
 
-<!-- =========================================================
-     CART SIDEBAR
-========================================================= -->
-
-<div
-    class="offcanvas offcanvas-end cart-sidebar"
-    tabindex="-1"
-    id="cartSidebar"
-    aria-labelledby="cartSidebarLabel"
->
+<div class="cart-footer">
 
 
-    <!-- HEADER -->
+    <div class="cart-total">
 
-    <div class="cart-header">
+        <span>
+            Cart total
+        </span>
 
-        <div class="cart-title-wrap">
+        <strong>
 
-            <div class="cart-title-icon">
+            KES
+            <%= (cartTotal || 0).toLocaleString() %>
 
-                <i class="fas fa-shopping-basket"></i>
+        </strong>
 
-            </div>
+    </div>
 
-            <div>
 
-                <h5
-                    class="cart-title"
-                    id="cartSidebarLabel"
-                >
-                    Your Cart
-                </h5>
-
-                <p class="cart-subtitle">
-                    Review your selected products
-                </p>
-
-            </div>
-
-        </div>
+    <% if(cart && cart.length){ %>
 
 
         <button
             type="button"
-            class="btn-close"
-            data-bs-dismiss="offcanvas"
-            aria-label="Close"
-        ></button>
+            class="add-btn checkout-btn"
+            id="checkoutBtn"
+        >
 
-    </div>
+            <i class="fas fa-box"></i>
 
+            PACKAGE ORDER
 
-    <!-- BODY -->
-
-    <div class="offcanvas-body cart-body">
-
-        <% if(cart && cart.length){ %>
+        </button>
 
 
-            <% cart.forEach(item => { %>
+    <% } %>
 
-                <div
-                    class="cart-item"
-                    data-id="<%= item.productId %>"
-                >
-
-                    <div class="cart-product-info">
-
-                        <span class="cart-product-name">
-                            <%= item.name %>
-                        </span>
-
-                        <span class="cart-product-price">
-
-                            KES
-                            <%= Number(item.price || 0).toLocaleString() %>
-
-                            ×
-
-                            <span class="cart-qty">
-                                <%= item.qty %>
-                            </span>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="cart-controls">
-
-                        <button
-                            type="button"
-                            class="cart-control cart-minus"
-                            data-id="<%= item.productId %>"
-                            aria-label="Decrease quantity"
-                        >
-                            −
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="cart-control cart-plus"
-                            data-id="<%= item.productId %>"
-                            aria-label="Increase quantity"
-                        >
-                            +
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="cart-control cart-remove"
-                            data-id="<%= item.productId %>"
-                            aria-label="Remove product"
-                        >
-                            ×
-                        </button>
-
-                    </div>
-
-                </div>
-
-            <% }) %>
-
-
-        <% } else { %>
-
-
-            <div class="empty-cart">
-
-                <div class="empty-cart-icon">
-
-                    <i class="fas fa-shopping-cart"></i>
-
-                </div>
-
-                <strong>
-                    Your cart is empty
-                </strong>
-
-                <span>
-                    Add products to begin your order.
-                </span>
-
-            </div>
-
-
-        <% } %>
-
-    </div>
-
-
-    <!-- FOOTER -->
-
-    <div class="cart-footer">
-
-        <div class="cart-total">
-
-            <span>
-                Total
-            </span>
-
-            <strong>
-
-                KES
-                <%= (cartTotal || 0).toLocaleString() %>
-
-            </strong>
-
-        </div>
-
-
-        <% if(cart && cart.length){ %>
-
-            <button
-                type="button"
-                class="add-btn checkout-btn"
-                id="checkoutBtn"
-            >
-
-                <i class="fas fa-box"></i>
-
-                PACKAGE ORDER
-
-            </button>
-
-        <% } %>
-
-    </div>
 
 </div>
 
-
-
-<script>
+</div><script>
 
 document.addEventListener('DOMContentLoaded', () => {
+
 
     /* =====================================================
        ELEMENTS
@@ -1733,11 +2128,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartSidebarElement =
         document.getElementById('cartSidebar');
 
+
     const qtyModal =
-        new bootstrap.Modal(qtyModalElement);
+        new bootstrap.Modal(
+            qtyModalElement
+        );
+
 
     const cartSidebar =
-        new bootstrap.Offcanvas(cartSidebarElement);
+        new bootstrap.Offcanvas(
+            cartSidebarElement
+        );
 
 
     /* =====================================================
@@ -1745,9 +2146,13 @@ document.addEventListener('DOMContentLoaded', () => {
     ===================================================== */
 
     let selected = {
-        id: null,
-        stock: 0,
-        qty: 1
+
+        id:null,
+
+        stock:0,
+
+        qty:1
+
     };
 
 
@@ -1759,97 +2164,115 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelectorAll('.card-box')
         .forEach(card => {
 
-            card.addEventListener('click', event => {
+            card.addEventListener(
+                'click',
+                event => {
 
-                if(
-                    event.target.closest('.add-to-cart-btn')
-                ){
-                    return;
+                    if(
+                        event.target.closest(
+                            '.add-to-cart-btn'
+                        )
+                    ){
+
+                        return;
+
+                    }
+
+
+                    const productId =
+                        card.dataset.productId;
+
+
+                    if(productId){
+
+                        window.location.href =
+                            '/products/' +
+                            productId;
+
+                    }
+
                 }
-
-                const productId =
-                    card.dataset.productId;
-
-                if(productId){
-
-                    window.location.href =
-                        '/products/' + productId;
-
-                }
-
-            });
+            );
 
         });
 
 
     /* =====================================================
-       ADD TO CART BUTTON
+       ADD TO CART
     ===================================================== */
 
     document
         .querySelectorAll('.add-to-cart-btn')
         .forEach(btn => {
 
-            btn.addEventListener('click', event => {
+            btn.addEventListener(
+                'click',
+                event => {
 
-                event.preventDefault();
-                event.stopPropagation();
+                    event.preventDefault();
 
-
-                selected.id =
-                    btn.dataset.id;
-
-                selected.stock =
-                    parseInt(
-                        btn.dataset.stock,
-                        10
-                    ) || 0;
-
-                selected.qty = 1;
+                    event.stopPropagation();
 
 
-                document
-                    .getElementById('qtyProductName')
-                    .innerText =
-                        btn.dataset.name;
+                    selected.id =
+                        btn.dataset.id;
 
 
-                document
-                    .getElementById('qtyAvailable')
-                    .innerText =
-                        selected.stock;
+                    selected.stock =
+                        parseInt(
+                            btn.dataset.stock,
+                            10
+                        ) || 0;
 
 
-                document
-                    .getElementById('qtyValue')
-                    .innerText = 1;
+                    selected.qty = 1;
 
 
-                document
-                    .getElementById('qtyConfirmCount')
-                    .innerText = 1;
+                    document
+                        .getElementById(
+                            'qtyProductName'
+                        )
+                        .innerText =
+                            btn.dataset.name;
 
 
-                qtyModal.show();
+                    document
+                        .getElementById(
+                            'qtyAvailable'
+                        )
+                        .innerText =
+                            selected.stock;
 
-            });
+
+                    updateQuantityDisplay();
+
+
+                    qtyModal.show();
+
+                }
+            );
 
         });
 
 
     /* =====================================================
-       UPDATE QUANTITY DISPLAY
+       QUANTITY DISPLAY
     ===================================================== */
 
     function updateQuantityDisplay(){
 
         document
-            .getElementById('qtyValue')
+            .getElementById(
+                'qtyValue'
+            )
             .innerText =
                 selected.qty;
 
+
         document
-            .getElementById('qtyConfirmCount')
+            .getElementById(
+                'qtyConfirmCount'
+            )
             .innerText =
                 selected.qty;
 
@@ -1857,118 +2280,139 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     /* =====================================================
-       QUANTITY PLUS
+       PLUS
     ===================================================== */
 
     document
         .getElementById('qtyPlus')
-        .addEventListener('click', () => {
+        .addEventListener(
+            'click',
+            () => {
 
-            if(
-                selected.qty <
-                selected.stock
-            ){
+                if(
+                    selected.qty <
+                    selected.stock
+                ){
 
-                selected.qty++;
+                    selected.qty++;
 
-                updateQuantityDisplay();
+                    updateQuantityDisplay();
+
+                }
 
             }
-
-        });
+        );
 
 
     /* =====================================================
-       QUANTITY MINUS
+       MINUS
     ===================================================== */
 
     document
         .getElementById('qtyMinus')
-        .addEventListener('click', () => {
+        .addEventListener(
+            'click',
+            () => {
 
-            if(selected.qty > 1){
+                if(
+                    selected.qty > 1
+                ){
 
-                selected.qty--;
+                    selected.qty--;
 
-                updateQuantityDisplay();
+                    updateQuantityDisplay();
+
+                }
 
             }
-
-        });
+        );
 
 
     /* =====================================================
-       CONFIRM ADD TO CART
+       CONFIRM ADD
     ===================================================== */
 
     document
         .getElementById('qtyConfirm')
-        .addEventListener('click', async () => {
+        .addEventListener(
+            'click',
+            async () => {
 
-            const button =
-                document.getElementById('qtyConfirm');
-
-
-            button.disabled = true;
-
-
-            try{
-
-                const response =
-                    await fetch(
-                        '/products/add-to-cart',
-                        {
-                            method:'POST',
-
-                            headers:{
-                                'Content-Type':
-                                    'application/json'
-                            },
-
-                            body:JSON.stringify({
-                                productId:selected.id,
-                                qty:selected.qty
-                            })
-                        }
+                const button =
+                    document.getElementById(
+                        'qtyConfirm'
                     );
 
 
-                const data =
-                    await response.json();
+                button.disabled = true;
 
 
-                if(!data.success){
+                try{
+
+                    const response =
+                        await fetch(
+                            '/products/add-to-cart',
+                            {
+
+                                method:'POST',
+
+                                headers:{
+                                    'Content-Type':
+                                        'application/json'
+                                },
+
+                                body:
+                                    JSON.stringify({
+
+                                        productId:
+                                            selected.id,
+
+                                        qty:
+                                            selected.qty
+
+                                    })
+
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if(!data.success){
+
+                        alert(
+                            data.message ||
+                            'Unable to add product to cart.'
+                        );
+
+                        button.disabled = false;
+
+                        return;
+
+                    }
+
+
+                    qtyModal.hide();
+
+                    location.reload();
+
+
+                }catch(error){
+
+                    console.error(error);
 
                     alert(
-                        data.message ||
-                        'Unable to add product to cart.'
+                        'Unable to connect to the server.'
                     );
 
                     button.disabled = false;
 
-                    return;
-
                 }
 
-
-                qtyModal.hide();
-
-                location.reload();
-
-
-            }catch(error){
-
-                console.error(error);
-
-                alert(
-                    'Unable to connect to the server.'
-                );
-
-                button.disabled = false;
-
             }
-
-        });
+        );
 
 
     /* =====================================================
@@ -1977,18 +2421,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document
         .getElementById('cartBtn')
-        .addEventListener('click', () => {
+        .addEventListener(
+            'click',
+            () => {
 
-            cartSidebar.show();
+                cartSidebar.show();
 
-        });
+            }
+        );
 
 
     /* =====================================================
        CART REQUEST
     ===================================================== */
 
-    async function callCart(url, body){
+    async function callCart(
+        url,
+        body
+    ){
 
         try{
 
@@ -1996,6 +2446,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await fetch(
                     url,
                     {
+
                         method:'POST',
 
                         headers:{
@@ -2003,7 +2454,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 'application/json'
                         },
 
-                        body:JSON.stringify(body)
+                        body:
+                            JSON.stringify(body)
+
                     }
                 );
 
@@ -2052,39 +2505,48 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelectorAll('.cart-plus')
         .forEach(button => {
 
-            button.addEventListener('click', () => {
+            button.addEventListener(
+                'click',
+                () => {
 
-                const id =
-                    button.dataset.id;
+                    const id =
+                        button.dataset.id;
 
 
-                const quantityElement =
-                    document.querySelector(
-                        `.cart-item[data-id="${id}"] .cart-qty`
+                    const quantityElement =
+                        document.querySelector(
+                            `.cart-item[data-id="${id}"] .cart-qty`
+                        );
+
+
+                    if(!quantityElement){
+
+                        return;
+
+                    }
+
+
+                    const currentQuantity =
+                        parseInt(
+                            quantityElement.innerText,
+                            10
+                        ) || 0;
+
+
+                    callCart(
+                        '/products/update-cart-qty',
+                        {
+
+                            productId:id,
+
+                            qty:
+                                currentQuantity + 1
+
+                        }
                     );
 
-
-                if(!quantityElement){
-                    return;
                 }
-
-
-                const currentQuantity =
-                    parseInt(
-                        quantityElement.innerText,
-                        10
-                    ) || 0;
-
-
-                callCart(
-                    '/products/update-cart-qty',
-                    {
-                        productId:id,
-                        qty:currentQuantity + 1
-                    }
-                );
-
-            });
+            );
 
         });
 
@@ -2097,53 +2559,64 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelectorAll('.cart-minus')
         .forEach(button => {
 
-            button.addEventListener('click', () => {
+            button.addEventListener(
+                'click',
+                () => {
 
-                const id =
-                    button.dataset.id;
-
-
-                const quantityElement =
-                    document.querySelector(
-                        `.cart-item[data-id="${id}"] .cart-qty`
-                    );
+                    const id =
+                        button.dataset.id;
 
 
-                if(!quantityElement){
-                    return;
-                }
+                    const quantityElement =
+                        document.querySelector(
+                            `.cart-item[data-id="${id}"] .cart-qty`
+                        );
 
 
-                const currentQuantity =
-                    parseInt(
-                        quantityElement.innerText,
-                        10
-                    ) || 0;
+                    if(!quantityElement){
+
+                        return;
+
+                    }
 
 
-                if(currentQuantity <= 1){
+                    const currentQuantity =
+                        parseInt(
+                            quantityElement.innerText,
+                            10
+                        ) || 0;
+
+
+                    if(
+                        currentQuantity <= 1
+                    ){
+
+                        callCart(
+                            '/products/remove-from-cart',
+                            {
+                                productId:id
+                            }
+                        );
+
+                        return;
+
+                    }
+
 
                     callCart(
-                        '/products/remove-from-cart',
+                        '/products/update-cart-qty',
                         {
-                            productId:id
+
+                            productId:id,
+
+                            qty:
+                                currentQuantity - 1
+
                         }
                     );
 
-                    return;
-
                 }
-
-
-                callCart(
-                    '/products/update-cart-qty',
-                    {
-                        productId:id,
-                        qty:currentQuantity - 1
-                    }
-                );
-
-            });
+            );
 
         });
 
@@ -2156,17 +2629,22 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelectorAll('.cart-remove')
         .forEach(button => {
 
-            button.addEventListener('click', () => {
+            button.addEventListener(
+                'click',
+                () => {
 
-                callCart(
-                    '/products/remove-from-cart',
-                    {
-                        productId:
-                            button.dataset.id
-                    }
-                );
+                    callCart(
+                        '/products/remove-from-cart',
+                        {
 
-            });
+                            productId:
+                                button.dataset.id
+
+                        }
+                    );
+
+                }
+            );
 
         });
 
@@ -2176,7 +2654,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ===================================================== */
 
     const checkoutButton =
-        document.getElementById('checkoutBtn');
+        document.getElementById(
+            'checkoutBtn'
+        );
 
 
     if(checkoutButton){
@@ -2194,6 +2674,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         await fetch(
                             '/packages/create',
                             {
+
                                 method:'POST',
 
                                 headers:{
@@ -2201,7 +2682,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                         'application/json'
                                 },
 
-                                body:JSON.stringify({})
+                                body:
+                                    JSON.stringify({})
+
                             }
                         );
 
@@ -2230,7 +2713,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     );
 
 
-                    checkoutButton.disabled = false;
+                    checkoutButton.disabled =
+                        false;
 
 
                 }catch(error){
@@ -2241,7 +2725,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Unable to connect to the server.'
                     );
 
-                    checkoutButton.disabled = false;
+
+                    checkoutButton.disabled =
+                        false;
 
                 }
 
