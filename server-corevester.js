@@ -75,6 +75,7 @@ function safeLoad(name, pathToRequire) {
     }
 }
 
+const authRoutes = safeLoad("authRoutes", "./routes/corevester/auth");
 const corevesterRoutes = safeLoad("corevesterRoutes", "./routes/corevester/index");
 const productsRoutes = safeLoad("productsRoutes", "./routes/corevester/products");
 const productsEntryRoutes = safeLoad("productsEntryRoutes", "./routes/corevester/adminProducts");
@@ -154,6 +155,8 @@ console.log("✅ Layout: layout");
 // ==========================================================
 // MOUNT
 // ==========================================================
+console.log("--- Mounting routes ---");
+if (authRoutes) { app.use("/auth", authRoutes); console.log("Mounted /auth"); }
 console.log("--- Mounting routes ---");
 if (corevesterRoutes) { app.use("/", corevesterRoutes); console.log("Mounted /"); }
 if (productsRoutes) { app.use("/", productsRoutes); console.log("Mounted /products"); }
