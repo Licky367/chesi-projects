@@ -1,155 +1,977 @@
 // =========================================================
 // controllers/corevester/productsController.js
 // =========================================================
+//
+// COREVESTER MARKETPLACE CONTROLLER
+//
+// Responsible for:
+//     - Rendering marketplace
+//     - Rendering product details
+//     - Cart requests
+//     - Admin product creation
+//     - Admin product deletion
+//
+// Product fields:
+//     name
+//     category
+//     units
+//     unitSellPrice
+//     image
+//
+// =========================================================
+
 console.log("... Loading productsController");
 
-let productsService;
-try {
-    productsService = require("../../services/corevester/productsService");
-    console.log("✅ productsService loaded in controller");
-} catch (err) {
-    console.error("❌ FAILED to load productsService inside productsController");
-    console.error(err.message);
-    console.error(err.stack);
-    throw err;
-}
 
-let Product;
-try {
-    Product = require("../../models/corevester/products");
-    console.log("✅ Product model loaded");
-} catch (err) {
-    console.error("❌ FAILED to load Product model");
-    console.error(err.message);
-    console.error(err.stack);
-    throw err;
-}
+const productsService =
+    require("../../services/corevester/productsService");
 
-const getSessionId = (req) => {
+
+const Product =
+    require("../../models/corevester/products");
+
+
+console.log("✅ productsService loaded in productsController");
+console.log("✅ Product model loaded");
+
+
+// =========================================================
+// SESSION / CART ID
+// =========================================================
+//
+// Prefer authenticated user ID.
+//
+// If the user is not authenticated, use the Express session.
+// This allows the marketplace to remain usable while still
+// giving every browser session its own cart.
+//
+// =========================================================
+
+function getSessionId(req) {
+
     try {
-        if (req.user && req.user._id) return req.user._id.toString();
-        if (req.sessionID) return req.sessionID;
-        if (req.ip) return req.ip;
-        return "anonymous-" + Date.now();
-    } catch (e) {
-        console.error("getSessionId error:", e.message);
+
+        if (
+            req.user &&
+            req.user._id
+        ) {
+
+            return String(req.user._id);
+
+        }
+
+
+        if (req.sessionID) {
+
+            return String(req.sessionID);
+
+        }
+
+
+        if (req.session) {
+
+            if (!req.session.__marketplaceCartId) {
+
+                req.session.__marketplaceCartId =
+                    "market-" +
+                    Date.now() +
+                    "-" +
+                    Math.random()
+                        .toString(36)
+                        .slice(2);
+
+            }
+
+            return String(
+                req.session.__marketplaceCartId
+            );
+
+        }
+
+
+        return (
+            "anonymous-" +
+            String(req.ip || "unknown")
+        );
+
+    } catch (error) {
+
+        console.error(
+            "getSessionId error:",
+            error.message
+        );
+
         return "anonymous";
-    }
-};
 
-// GET /products?page - shop page
+    }
+
+}
+
+
+// =========================================================
+// CART SUMMARY
+// =========================================================
+
+function getCartSummary(cart) {
+
+    const safeCart =
+        Array.isArray(cart)
+            ? cart
+            : [];
+
+    const cartCount =
+        safeCart.reduce(
+            (total, item) =>
+                total +
+                Number(item.qty || 0),
+            0
+        );
+
+
+    const cartTotal =
+        safeCart.reduce(
+            (total, item) =>
+                total +
+                (
+                    Number(item.price || 0) *
+                    Number(item.qty || 0)
+                ),
+            0
+        );
+
+
+    return {
+        cartCount,
+        cartTotal
+    };
+
+}
+
+
+// =========================================================
+// GET /products
+// =========================================================
+
 exports.productsPage = async (req, res) => {
+
     try {
-        const category = req.query.category || 'all';
-        const search = req.query.search || '';
 
-        console.log(`[productsPage] category=${category} search=${search}`);
+        const category =
+            String(
+                req.query.category || "all"
+            ).trim();
 
-        const categories = await productsService.getCategories();
-        const stats = await productsService.getStats();
 
-        const sessionId = getSessionId(req);
-        const products = await productsService.getProductsWithCartAdjustment(sessionId);
+        const search =
+            String(
+                req.query.search || ""
+            ).trim();
 
-        // filter by category
-        let filtered = products;
-        if (category && category !== 'all') {
-            filtered = filtered.filter(p => p.category === category);
-        }
-        if (search) {
-            filtered = filtered.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
-        }
 
-        const cart = productsService.getCart(sessionId);
-        const cartCount = cart.reduce((s, i) => s + i.qty, 0);
-        const cartTotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+        console.log(
+            `[productsPage] category=${category} search=${search}`
+        );
 
-        return res.render("products", {
-            title: "Products - COREVESTER",
-            products: filtered,
+
+        // -------------------------------------------------
+        // SESSION
+        // -------------------------------------------------
+
+        const sessionId =
+            getSessionId(req);
+
+
+        // -------------------------------------------------
+        // LOAD MARKET DATA
+        // -------------------------------------------------
+
+        const [
             categories,
-            activeCategory: category,
             stats,
-            cart,
-            cartCount,
-            cartTotal,
-            currentPath: req.path
-        });
+            products
+        ] = await Promise.all([
 
-    } catch (err) {
-        console.error("❌ productsPage ERROR:", err.message);
-        console.error(err.stack);
-        return res.status(500).send("productsPage error: " + err.message + "<pre>" + err.stack + "</pre>");
-    }
-};
+            productsService.getCategories(),
 
-// GET /products/:id - details
-exports.productDetails = async (req, res) => {
-    try {
-        console.log(`[productDetails] id=${req.params.id}`);
-        const product = await Product.findById(req.params.id).lean();
-        if (!product) {
-            console.warn(`Product not found: ${req.params.id}`);
-            return res.status(404).render("error/404", {
-                title: "Product Not Found",
-                error: "Product not found",
-                user: req.user || null
-            });
+            productsService.getStats(),
+
+            productsService.getProductsWithCartAdjustment(
+                sessionId
+            )
+
+        ]);
+
+
+        // -------------------------------------------------
+        // FILTER CATEGORY
+        // -------------------------------------------------
+
+        let filtered =
+            Array.isArray(products)
+                ? products
+                : [];
+
+
+        if (
+            category &&
+            category.toLowerCase() !== "all"
+        ) {
+
+            const categoryLower =
+                category.toLowerCase();
+
+            filtered =
+                filtered.filter(product => {
+
+                    return String(
+                        product.category || ""
+                    ).toLowerCase() ===
+                    categoryLower;
+
+                });
+
         }
 
-        const sessionId = getSessionId(req);
-        const cart = productsService.getCart(sessionId);
-        const inCart = cart.find(c => c.productId.toString() === product._id.toString());
-        const cartCount = cart.reduce((s, i) => s + i.qty, 0);
-        const cartTotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
 
-        return res.render("product-details", {
-            title: product.name + " - COREVESTER",
-            product,
-            inCartQty: inCart ? inCart.qty : 0,
-            availableUnits: product.units - (inCart ? inCart.qty : 0),
+        // -------------------------------------------------
+        // FILTER SEARCH
+        // -------------------------------------------------
+
+        if (search) {
+
+            const searchLower =
+                search.toLowerCase();
+
+
+            filtered =
+                filtered.filter(product => {
+
+                    const name =
+                        String(
+                            product.name || ""
+                        ).toLowerCase();
+
+
+                    const productCategory =
+                        String(
+                            product.category || ""
+                        ).toLowerCase();
+
+
+                    return (
+                        name.includes(searchLower) ||
+                        productCategory.includes(searchLower)
+                    );
+
+                });
+
+        }
+
+
+        // -------------------------------------------------
+        // CART
+        // -------------------------------------------------
+
+        const cart =
+            productsService.getCart(
+                sessionId
+            );
+
+
+        const {
             cartCount,
-            cartTotal,
+            cartTotal
+        } =
+            getCartSummary(cart);
+
+
+        // -------------------------------------------------
+        // RENDER
+        // -------------------------------------------------
+
+        return res.render(
+            "products",
+            {
+
+                title:
+                    "Marketplace - COREVESTER",
+
+                products:
+                    filtered,
+
+                categories:
+                    categories || [],
+
+                activeCategory:
+                    category || "all",
+
+                search,
+
+                stats:
+                    stats || {
+                        totalProducts: 0,
+                        availableProducts: 0,
+                        totalUnits: 0
+                    },
+
+                cart,
+
+                cartCount,
+
+                cartTotal,
+
+                currentPath:
+                    req.path
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ productsPage ERROR:",
+            error.message
+        );
+
+        console.error(error.stack);
+
+
+        return res.status(500).send(
+            "Unable to load marketplace."
+        );
+
+    }
+
+};
+
+
+// =========================================================
+// GET /products/:id
+// =========================================================
+
+exports.productDetails = async (req, res) => {
+
+    try {
+
+        const productId =
+            String(
+                req.params.id || ""
+            ).trim();
+
+
+        console.log(
+            `[productDetails] id=${productId}`
+        );
+
+
+        if (!productId) {
+
+            return res.status(404).render(
+                "error/404",
+                {
+                    title:
+                        "Product Not Found",
+
+                    error:
+                        "Product not found.",
+
+                    user:
+                        req.user || null
+                }
+            );
+
+        }
+
+
+        // -------------------------------------------------
+        // LOAD PRODUCT
+        // -------------------------------------------------
+
+        const product =
+            await Product
+                .findById(productId)
+                .lean();
+
+
+        if (!product) {
+
+            return res.status(404).render(
+                "error/404",
+                {
+                    title:
+                        "Product Not Found",
+
+                    error:
+                        "Product not found.",
+
+                    user:
+                        req.user || null
+                }
+            );
+
+        }
+
+
+        // -------------------------------------------------
+        // CART
+        // -------------------------------------------------
+
+        const sessionId =
+            getSessionId(req);
+
+
+        const cart =
+            productsService.getCart(
+                sessionId
+            );
+
+
+        const cartItem =
+            cart.find(item => {
+
+                return String(
+                    item.productId
+                ) ===
+                String(product._id);
+
+            });
+
+
+        const inCartQty =
+            cartItem
+                ? Number(cartItem.qty || 0)
+                : 0;
+
+
+        const cartSummary =
+            getCartSummary(cart);
+
+
+        // -------------------------------------------------
+        // AVAILABLE UNITS
+        // -------------------------------------------------
+
+        const productUnits =
+            Number(
+                product.units || 0
+            );
+
+
+        const availableUnits =
+            Math.max(
+                0,
+                productUnits -
+                inCartQty
+            );
+
+
+        // -------------------------------------------------
+        // RENDER
+        // -------------------------------------------------
+
+        return res.render(
+            "product-details",
+            {
+
+                title:
+                    `${product.name || "Product"} - COREVESTER`,
+
+                product,
+
+                inCartQty,
+
+                availableUnits,
+
+                cartCount:
+                    cartSummary.cartCount,
+
+                cartTotal:
+                    cartSummary.cartTotal,
+
+                cart,
+
+                currentPath:
+                    req.path
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ productDetails ERROR:",
+            error.message
+        );
+
+        console.error(error.stack);
+
+
+        return res.status(500).send(
+            "Unable to load product."
+        );
+
+    }
+
+};
+
+
+// =========================================================
+// POST /products/add-to-cart
+// =========================================================
+
+exports.addToCart = async (req, res) => {
+
+    try {
+
+        const {
+            productId,
+            qty
+        } = req.body || {};
+
+
+        if (!productId) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Product ID is required."
+
+            });
+
+        }
+
+
+        const quantity =
+            Number.parseInt(
+                qty,
+                10
+            );
+
+
+        if (
+            !Number.isInteger(quantity) ||
+            quantity < 1
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Quantity must be at least 1."
+
+            });
+
+        }
+
+
+        const sessionId =
+            getSessionId(req);
+
+
+        const cart =
+            await productsService.addToCart(
+                sessionId,
+                productId,
+                quantity
+            );
+
+
+        const summary =
+            getCartSummary(cart);
+
+
+        return res.json({
+
+            success: true,
+
             cart,
-            currentPath: req.path
+
+            cartCount:
+                summary.cartCount,
+
+            cartTotal:
+                summary.cartTotal
+
         });
 
-    } catch (err) {
-        console.error("❌ productDetails ERROR:", err.message);
-        console.error(err.stack);
-        return res.status(500).send("productDetails error: " + err.message + "<pre>" + err.stack + "</pre>");
+
+    } catch (error) {
+
+        console.error(
+            "❌ addToCart ERROR:",
+            error.message
+        );
+
+
+        return res.status(400).json({
+
+            success: false,
+
+            message:
+                error.message ||
+                "Unable to add product to cart."
+
+        });
+
     }
+
 };
 
-// POST /products/add-to-cart
-exports.addToCart = async (req, res) => {
+
+// =========================================================
+// POST /products/update-cart-qty
+// =========================================================
+
+exports.updateCartQty = async (req, res) => {
+
     try {
-        const { productId, qty } = req.body;
-        console.log(`[addToCart] productId=${productId} qty=${qty}`);
-        if (!productId) throw new Error("productId required");
 
-        const sessionId = getSessionId(req);
-        const cart = await productsService.addToCart(sessionId, productId, parseInt(qty) || 1);
+        const {
+            productId,
+            qty
+        } = req.body || {};
 
-        return res.json({ success: true, cartCount: cart.reduce((s, i) => s + i.qty, 0) });
-    } catch (err) {
-        console.error("❌ addToCart ERROR:", err.message);
-        return res.status(400).json({ success: false, message: err.message });
+
+        if (!productId) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Product ID is required."
+
+            });
+
+        }
+
+
+        const quantity =
+            Number.parseInt(
+                qty,
+                10
+            );
+
+
+        if (
+            !Number.isInteger(quantity) ||
+            quantity < 1
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Quantity must be at least 1."
+
+            });
+
+        }
+
+
+        const sessionId =
+            getSessionId(req);
+
+
+        const cart =
+            await productsService.updateCartQty(
+                sessionId,
+                productId,
+                quantity
+            );
+
+
+        const summary =
+            getCartSummary(cart);
+
+
+        return res.json({
+
+            success: true,
+
+            cart,
+
+            cartCount:
+                summary.cartCount,
+
+            cartTotal:
+                summary.cartTotal
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ updateCartQty ERROR:",
+            error.message
+        );
+
+
+        return res.status(400).json({
+
+            success: false,
+
+            message:
+                error.message ||
+                "Unable to update cart."
+
+        });
+
     }
+
 };
 
+
+// =========================================================
 // POST /products/remove-from-cart
+// =========================================================
+
 exports.removeFromCart = async (req, res) => {
+
     try {
-        const { productId } = req.body;
-        console.log(`[removeFromCart] productId=${productId}`);
-        const sessionId = getSessionId(req);
-        const cart = await productsService.removeFromCart(sessionId, productId);
-        return res.json({ success: true, cart });
-    } catch (err) {
-        console.error("❌ removeFromCart ERROR:", err.message);
-        return res.status(400).json({ success: false, message: err.message });
+
+        const {
+            productId
+        } = req.body || {};
+
+
+        if (!productId) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Product ID is required."
+
+            });
+
+        }
+
+
+        const sessionId =
+            getSessionId(req);
+
+
+        const cart =
+            await productsService.removeFromCart(
+                sessionId,
+                productId
+            );
+
+
+        const summary =
+            getCartSummary(cart);
+
+
+        return res.json({
+
+            success: true,
+
+            cart,
+
+            cartCount:
+                summary.cartCount,
+
+            cartTotal:
+                summary.cartTotal
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ removeFromCart ERROR:",
+            error.message
+        );
+
+
+        return res.status(400).json({
+
+            success: false,
+
+            message:
+                error.message ||
+                "Unable to remove product."
+
+        });
+
     }
+
 };
 
-console.log("✅ productsController loaded successfully");
+
+// =========================================================
+// POST /admin/products/create
+// =========================================================
+//
+// FIELD NAMES ARE EXACTLY THOSE FROM THE PRODUCT ENTRY PAGE:
+//
+//     name
+//     category
+//     units
+//     unitSellPrice
+//     image
+//
+// =========================================================
+
+exports.createProduct = async (req, res) => {
+
+    try {
+
+        const {
+            name,
+            category,
+            units,
+            unitSellPrice,
+            image
+        } = req.body || {};
+
+
+        console.log(
+            "[createProduct]",
+            {
+                name,
+                category,
+                units,
+                unitSellPrice
+            }
+        );
+
+
+        const product =
+            await productsService.createProduct({
+
+                name,
+
+                category,
+
+                units,
+
+                unitSellPrice,
+
+                image
+
+            });
+
+
+        return res.status(201).json({
+
+            success: true,
+
+            message:
+                "Product added to marketplace.",
+
+            product
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ createProduct ERROR:",
+            error.message
+        );
+
+        console.error(error.stack);
+
+
+        return res.status(400).json({
+
+            success: false,
+
+            message:
+                error.message ||
+                "Unable to create product."
+
+        });
+
+    }
+
+};
+
+
+// =========================================================
+// DELETE /admin/products/:id
+// =========================================================
+
+exports.deleteProduct = async (req, res) => {
+
+    try {
+
+        const productId =
+            String(
+                req.params.id || ""
+            ).trim();
+
+
+        if (!productId) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Product ID is required."
+
+            });
+
+        }
+
+
+        const result =
+            await productsService.deleteProduct(
+                productId
+            );
+
+
+        return res.json({
+
+            success: true,
+
+            message:
+                "Product removed from marketplace.",
+
+            product:
+                result
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ deleteProduct ERROR:",
+            error.message
+        );
+
+        console.error(error.stack);
+
+
+        return res.status(400).json({
+
+            success: false,
+
+            message:
+                error.message ||
+                "Unable to remove product."
+
+        });
+
+    }
+
+};
+
+
+console.log(
+    "✅ productsController loaded successfully"
+);
