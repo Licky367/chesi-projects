@@ -1,90 +1,111 @@
 <style>
 .core-page{width:100%;max-width:100vw;overflow-x:hidden;background:#f8fdf6;font-family:"Segoe UI",sans-serif;}
-.core-container{width:100%;max-width:1300px;margin:0 auto;padding:16px 12px;box-sizing:border-box;overflow-x:hidden;}
-.core-header{margin-bottom:20px;}
-.core-header h1{margin:0;color:#0a4d1e;font-size:24px;font-weight:900;}
-.core-header p{margin:4px 0 0 0;color:#666;font-size:13px;}
+.core-container{width:100%;max-width:1300px;margin:0 auto;padding:0;box-sizing:border-box;overflow-x:hidden;}
 
-.core-category{width:100%;max-width:100%;margin:0 0 28px 0;overflow:hidden;}
-.core-cat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;}
-.core-cat-title{display:flex;align-items:center;gap:8px;min-width:0;}
-.core-cat-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#e8f5e9;border:1px solid #c5e1a5;border-radius:8px;color:#0a4d1e;font-size:14px;flex-shrink:0;}
-.core-cat-title h2{margin:0;color:#0a4d1e;font-size:16px;font-weight:800;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.core-cat-count{color:#777;font-size:11px;margin-left:4px;}
+/* TOP BAR LIKE MARKETPLACE ENTRY */
+.core-topbar{background:#fff;border-bottom:3px solid #0a4d1e;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:80px;z-index:800;}
+.core-top-title{color:#0a4d1e;font-weight:900;font-size:18px;margin:0;line-height:1;}
+.core-top-sub{color:#666;font-size:11px;margin-top:2px;}
+.core-pill{border:1.5px solid #c5e1a5;background:#fff;color:#0a4d1e;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;}
+.core-pill.active{background:#0a4d1e;color:#fff;border-color:#0a4d1e;}
+
+/* CATEGORY SECTION - ONE ROW PER CATEGORY */
+.core-category{width:100%;max-width:100%;margin:18px 0 0 0;padding:0;overflow:hidden;}
+.core-cat-head{padding:0 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.core-cat-left{display:flex;align-items:center;gap:8px;min-width:0;}
+.core-cat-icon{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:#e8f5e9;border:1px solid #c5e1a5;border-radius:8px;color:#0a4d1e;font-size:13px;flex-shrink:0;}
+.core-cat-name{margin:0;color:#0a4d1e;font-size:15px;font-weight:800;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.core-cat-count{color:#777;font-size:11px;font-weight:600;margin-left:4px;}
 .core-cat-hint{color:#0a4d1e;font-size:10px;font-weight:700;flex-shrink:0;}
 
-.core-row{width:100%;max-width:100%;display:flex;flex-wrap:nowrap;gap:12px;overflow-x:auto;overflow-y:hidden;padding:2px 2px 12px 2px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
-.core-row::-webkit-scrollbar{height:4px;}
-.core-row::-webkit-scrollbar-thumb{background:#a5d6a7;border-radius:10px;}
+/* HORIZONTAL ROW - SAME CATEGORY IN SAME ROW */
+.core-row{width:100%;max-width:100%;display:flex;flex-wrap:nowrap;gap:12px;overflow-x:auto;overflow-y:hidden;padding:2px 14px 14px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.core-row::-webkit-scrollbar{display:none;}
 
-.core-card{flex:0 0 170px;width:170px;min-width:170px;max-width:170px;background:#fff;border:1px solid #e8f5e9;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 6px rgba(0,0,0,0.04);cursor:pointer;}
-.core-img-box{width:100%;height:110px;min-height:110px;max-height:110px;background:#f6fbf6;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;flex-shrink:0;}
-.core-img-box img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;max-width:100%;max-height:100%;}
-.core-no-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#a5d6a7;font-size:28px;}
-.core-stock{position:absolute;top:6px;left:6px;background:#fff;border:1px solid #0a4d1e;color:#0a4d1e;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;z-index:2;}
-.core-stock.empty{border-color:#c62828;color:#c62828;}
+/* CARD - FIXED SIZE, IMAGE NEVER HUGE */
+.core-card{flex:0 0 165px;width:165px;min-width:165px;max-width:165px;background:#fff;border:1.5px solid #e8f5e9;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 8px rgba(0,0,0,0.04);cursor:pointer;flex-shrink:0;}
+.core-img{width:100%;height:110px;min-height:110px;max-height:110px;background:#f6fbf6;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;flex-shrink:0;}
+.core-img img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;}
+.core-noimg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#a5d6a7;font-size:26px;}
+.core-badge{position:absolute;top:6px;left:6px;background:#fff;border:1px solid #0a4d1e;color:#0a4d1e;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;z-index:2;}
+.core-badge.empty{border-color:#c62828;color:#c62828;}
 .core-info{padding:10px;flex:1;display:flex;flex-direction:column;}
 .core-cat-label{margin:0;color:#2e7d32;font-size:9px;font-weight:800;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.core-name{margin:3px 0 0 0;color:#111;font-size:13px;font-weight:700;line-height:1.25;height:32px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
-.core-desc{margin:4px 0 0 0;color:#777;font-size:10px;line-height:1.3;height:26px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
-.core-price-box{margin-top:8px;background:#f9fbe7;border-radius:6px;padding:6px;}
-.core-price-label{margin:0;color:#888;font-size:8px;}
+.core-name{margin:3px 0 0 0;color:#111;font-size:12.5px;font-weight:700;line-height:1.25;height:32px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
+.core-price{margin-top:8px;background:#f9fbe7;border-radius:6px;padding:6px;}
+.core-price-lbl{margin:0;color:#888;font-size:8px;}
 .core-price-val{margin:0;color:#0a4d1e;font-size:12px;font-weight:800;}
-.core-footer{padding:0 10px 10px 10px;}
+.core-foot{padding:0 10px 10px 10px;}
 .core-btn{width:100%;padding:8px;border:none;border-radius:7px;background:#0a4d1e;color:#fff;font-size:10px;font-weight:800;cursor:pointer;}
-.core-btn:disabled{background:#eee;color:#999;}
 
-@media(min-width:600px){.core-card{flex-basis:200px;width:200px;min-width:200px;max-width:200px;}.core-img-box{height:125px;min-height:125px;max-height:125px;} }
+@media(min-width:768px){
+ .core-card{flex-basis:200px;width:200px;min-width:200px;max-width:200px;}
+ .core-img{height:130px;min-height:130px;max-height:130px;}
+}
 
-#qtyOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1200;display:none;align-items:center;justify-content:center;padding:20px;}
+#qtyOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1300;display:none;align-items:center;justify-content:center;padding:20px;}
 #qtyBox{background:#fff;border:3px solid #0a4d1e;border-radius:16px;width:100%;max-width:300px;padding:20px;text-align:center;}
 </style>
 
 <div class="core-page">
-  <div class="core-container">
-    <div class="core-header"><h1>Our Products</h1><p>Quality medical equipment and hospital supplies you can trust.</p></div>
+  <!-- TOP BAR -->
+  <div class="core-topbar">
+    <div>
+      <p class="core-top-title">Marketplace</p>
+      <p class="core-top-sub"><%= products.length %> products • Swipe →</p>
+    </div>
+    <div style="display:flex;gap:6px;overflow-x:auto;max-width:55%;scrollbar-width:none;">
+      <a href="/products?category=all" class="core-pill <%= activeCategory==='all'?'active':'' %>">ALL</a>
+      <% (categories||[]).slice(0,4).forEach(c=>{ %>
+        <a href="/products?category=<%= c %>" class="core-pill <%= activeCategory===c?'active':'' %>"><%= c.toUpperCase() %></a>
+      <% }) %>
+    </div>
+  </div>
 
+  <div class="core-container">
     <%
       const groups={};
       if(Array.isArray(products)){ products.filter(p=>p&&p.isActive!==false).forEach(p=>{
         const c=String(p.category||"other").trim().toLowerCase(); if(!groups[c]) groups[c]=[]; groups[c].push(p);
       });}
       const icons={"medical equipment":"fa-stethoscope","hospital supplies":"fa-kit-medical","surgical":"fa-user-doctor","diagnostics":"fa-microscope","laboratory":"fa-flask","consumables":"fa-boxes-stacked","medicines":"fa-pills","other":"fa-box-open"};
+      const filteredCats = activeCategory && activeCategory!=='all'? [activeCategory.toLowerCase()] : Object.keys(groups);
     %>
 
-    <% if(Object.keys(groups).length===0){ %>
-      <div style="background:#fff;border-top:4px solid #0a4d1e;border-radius:16px;padding:40px 20px;text-align:center;"><i class="fas fa-box-open" style="font-size:30px;color:#0a4d1e;"></i><h3 style="color:#0a4d1e;">No Products</h3></div>
-    <% } else { %>
-      <% Object.keys(groups).forEach(cat=>{
-        const list=groups[cat]; const icon=icons[cat]||"fa-boxes-stacked";
-      %>
-        <div class="core-category">
-          <div class="core-cat-head">
-            <div class="core-cat-title"><div class="core-cat-icon"><i class="fas <%= icon %>"></i></div><h2><%= cat %><span class="core-cat-count">(<%= list.length %>)</span></h2></div>
-            <% if(list.length>2){ %><div class="core-cat-hint">Swipe <i class="fas fa-arrow-right"></i></div><% } %>
+    <% filteredCats.forEach(cat=>{
+      const list=groups[cat]; if(!list) return;
+      const icon=icons[cat]||"fa-box-open";
+    %>
+      <div class="core-category">
+        <div class="core-cat-head">
+          <div class="core-cat-left">
+            <div class="core-cat-icon"><i class="fas <%= icon %>"></i></div>
+            <h2 class="core-cat-name"><%= cat %><span class="core-cat-count">(<%= list.length %>)</span></h2>
           </div>
-          <div class="core-row">
-            <% list.forEach(p=>{ %>
-              <div class="core-card" data-id="<%= p._id %>">
-                <div class="core-img-box">
-                  <% if(p.image){ %><img src="<%= p.image %>" alt="<%= p.name %>" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><div class="core-no-img" style="display:none;"><i class="fas fa-image"></i></div><% } else { %><div class="core-no-img"><i class="fas fa-box-open"></i></div><% } %>
-                  <% if(Number(p.units||0)>0){ %><span class="core-stock"><%= p.units %> left</span><% } else { %><span class="core-stock empty">Out</span><% } %>
-                </div>
-                <div class="core-info">
-                  <p class="core-cat-label"><%= cat %></p>
-                  <p class="core-name"><%= p.name %></p>
-                  <p class="core-desc"><%= p.description||"Quality healthcare product." %></p>
-                  <div class="core-price-box"><p class="core-price-label">PRICE</p><p class="core-price-val">KES <%= Number(p.unitSellPrice||0).toLocaleString() %></p></div>
-                </div>
-                <div class="core-footer">
-                  <% if(Number(p.units||0)>0){ %><button class="core-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>"><i class="fas fa-cart-plus"></i> ADD CART</button><% } else { %><button class="core-btn" disabled>OUT OF STOCK</button><% } %>
-                </div>
-              </div>
-            <% }) %>
-          </div>
+          <% if(list.length>2){ %><div class="core-cat-hint"><%= list.length %> items • Swipe <i class="fas fa-arrow-right"></i></div><% } %>
         </div>
-      <% }) %>
-    <% } %>
+
+        <!-- SAME CATEGORY = SAME ROW -->
+        <div class="core-row">
+          <% list.forEach(p=>{ %>
+            <div class="core-card" data-id="<%= p._id %>">
+              <div class="core-img">
+                <% if(p.image){ %><img src="<%= p.image %>" alt="<%= p.name %>" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="core-noimg" style="display:none;"><i class="fas fa-image"></i></div><% } else { %><div class="core-noimg"><i class="fas fa-box-open"></i></div><% } %>
+                <% if(Number(p.units||0)>0){ %><span class="core-badge"><%= p.units %> left</span><% } else { %><span class="core-badge empty">Out</span><% } %>
+              </div>
+              <div class="core-info">
+                <p class="core-cat-label"><%= cat %></p>
+                <p class="core-name"><%= p.name %></p>
+                <div class="core-price"><p class="core-price-lbl">PRICE</p><p class="core-price-val">KES <%= Number(p.unitSellPrice||0).toLocaleString() %></p></div>
+              </div>
+              <div class="core-foot">
+                <% if(Number(p.units||0)>0){ %><button class="core-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>">ADD CART</button><% } else { %><button class="core-btn" disabled>OUT</button><% } %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% }) %>
   </div>
 </div>
 
@@ -105,28 +126,18 @@
 <script>
 (function(){
   let sel={id:null,stock:0,qty:1};
-  function openQty(id,name,stock){ sel={id,stock:parseInt(stock),qty:1}; document.getElementById('qtyName').innerText=name; document.getElementById('qtyAvail').innerText=stock; document.getElementById('qVal').innerText=1; document.getElementById('qCount').innerText=1; document.getElementById('qtyOverlay').style.display='flex'; }
   window.closeQty=()=>document.getElementById('qtyOverlay').style.display='none';
-  document.getElementById('qPlus').onclick=()=>{ if(sel.qty<sel.stock){sel.qty++; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty; } };
-  document.getElementById('qMinus').onclick=()=>{ if(sel.qty>1){sel.qty--; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty; } };
+  function openQty(id,name,stock){ sel={id,stock:parseInt(stock),qty:1}; document.getElementById('qtyName').innerText=name; document.getElementById('qtyAvail').innerText=stock; document.getElementById('qVal').innerText=1; document.getElementById('qCount').innerText=1; document.getElementById('qtyOverlay').style.display='flex'; }
+  document.getElementById('qPlus').onclick=()=>{ if(sel.qty<sel.stock){sel.qty++; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty;}};
+  document.getElementById('qMinus').onclick=()=>{ if(sel.qty>1){sel.qty--; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty;}};
   document.getElementById('qConfirm').onclick=async()=>{ const r=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:sel.id,qty:sel.qty})}); const d=await r.json(); if(!d.success){alert(d.message);return;} closeQty(); location.reload(); };
   document.getElementById('qtyOverlay').addEventListener('click',e=>{ if(e.target.id==='qtyOverlay') closeQty(); });
-
   document.querySelectorAll('.core-card').forEach(card=>{
-    card.addEventListener('click',e=>{
-      if(e.target.closest('.core-btn')) return;
-      const btn=card.querySelector('.core-btn[data-id]'); if(btn) window.location.href='/products/'+btn.dataset.id;
-    });
+    card.addEventListener('click',e=>{ if(e.target.closest('.core-btn')) return; const btn=card.querySelector('.core-btn[data-id]'); if(btn) window.location.href='/products/'+btn.dataset.id; });
   });
-  document.querySelectorAll('.core-btn[data-id]').forEach(b=>{
-    b.addEventListener('click',e=>{ e.stopPropagation(); openQty(b.dataset.id,b.dataset.name,b.dataset.stock); });
-  });
-
+  document.querySelectorAll('.core-btn[data-id]').forEach(b=>{ b.addEventListener('click',e=>{ e.stopPropagation(); openQty(b.dataset.id,b.dataset.name,b.dataset.stock); }); });
   document.querySelectorAll('.core-row').forEach(row=>{
-    let drag=false,sx=0,ss=0;
-    row.addEventListener('mousedown',e=>{ drag=true; sx=e.pageX-row.offsetLeft; ss=row.scrollLeft; });
-    row.addEventListener('mousemove',e=>{ if(!drag) return; e.preventDefault(); row.scrollLeft=ss-(e.pageX-row.offsetLeft-sx); });
-    row.addEventListener('mouseup',()=>drag=false); row.addEventListener('mouseleave',()=>drag=false);
+    let drag=false,sx=0,ss=0; row.addEventListener('mousedown',e=>{drag=true;sx=e.pageX-row.offsetLeft;ss=row.scrollLeft;}); row.addEventListener('mousemove',e=>{if(!drag) return; e.preventDefault(); row.scrollLeft=ss-(e.pageX-row.offsetLeft-sx);}); row.addEventListener('mouseup',()=>drag=false); row.addEventListener('mouseleave',()=>drag=false);
   });
 })();
 </script>
