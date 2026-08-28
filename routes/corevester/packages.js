@@ -37,7 +37,7 @@ router.post("/create-from-cart", async (req,res)=>{
 router.get("/", async (req,res)=>{
     try{
         const packages = await packageService.getClientPackages(getSessionId(req));
-        res.render("corevester/packages", { packages, title: "My Packages", currentPath: req.path });
+        res.render("packages", { packages, title: "My Packages", currentPath: req.path });
     }catch(err){
         console.error("GET /packages error:", err.message, err.stack);
         res.status(500).send(err.message + "<pre>" + err.stack + "</pre>");
