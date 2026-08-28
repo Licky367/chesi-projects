@@ -1,1 +1,958 @@
-<%-include("products-patials/cards")%>
+<style>
+
+/* ==========================================================
+   MARKETPLACE
+   JUMIA-STYLE CATEGORY / HORIZONTAL PRODUCT RAILS
+========================================================== */
+
+.marketplace {
+
+    --green: #0b5a2a;
+    --green-dark: #073f1d;
+    --green-soft: #edf7f0;
+
+    --orange: #e58a22;
+    --orange-soft: #fff5e8;
+
+    --ink: #18231c;
+    --muted: #718078;
+
+    --line: #e2e9e4;
+
+    width: 100%;
+    min-height: 100vh;
+
+    margin: 0;
+    padding: 0 0 40px;
+
+    background: #f5f7f6;
+
+    color: var(--ink);
+
+    box-sizing: border-box;
+}
+
+
+.marketplace *,
+.marketplace *::before,
+.marketplace *::after {
+
+    box-sizing: border-box;
+
+}
+
+
+/* ==========================================================
+   HERO
+========================================================== */
+
+.market-hero {
+
+    width: 100%;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid var(--line);
+
+}
+
+
+.market-hero-inner {
+
+    width: 100%;
+
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    padding: 18px 14px 15px;
+
+}
+
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
+.market-title-row {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+}
+
+
+.market-heading {
+
+    min-width: 0;
+
+}
+
+
+.market-eyebrow {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    margin-bottom: 4px;
+
+    color: var(--muted);
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
+
+}
+
+
+.market-eyebrow i {
+
+    color: var(--green);
+
+}
+
+
+.market-title {
+
+    margin: 0;
+
+    color: var(--green);
+
+    font-size: 24px;
+
+    font-weight: 900;
+
+    line-height: 1.1;
+
+}
+
+
+.market-description {
+
+    margin: 5px 0 0;
+
+    color: #758179;
+
+    font-size: 11px;
+
+    line-height: 1.45;
+
+}
+
+
+/* ==========================================================
+   CART BUTTON
+========================================================== */
+
+.market-cart-button {
+
+    flex: 0 0 44px;
+
+    width: 44px;
+
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: var(--green);
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    box-shadow: 0 5px 14px rgba(11,90,42,.18);
+
+}
+
+
+.market-cart-button:hover {
+
+    background: var(--green-dark);
+
+}
+
+
+/* ==========================================================
+   SUMMARY
+========================================================== */
+
+.market-summary {
+
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 7px;
+
+    margin-top: 14px;
+
+}
+
+
+.summary-card {
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 8px;
+
+    background: #ffffff;
+
+    border: 1px solid var(--line);
+
+    border-radius: 10px;
+
+}
+
+
+.summary-icon {
+
+    flex: 0 0 28px;
+
+    width: 28px;
+
+    height: 28px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background: var(--green-soft);
+
+    color: var(--green);
+
+    font-size: 11px;
+
+}
+
+
+.summary-info {
+
+    min-width: 0;
+
+}
+
+
+.summary-label {
+
+    display: block;
+
+    color: #8a958e;
+
+    font-size: 7px;
+
+    font-weight: 900;
+
+    text-transform: uppercase;
+
+}
+
+
+.summary-value {
+
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--green);
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+}
+
+
+/* ==========================================================
+   MAIN
+========================================================== */
+
+.market-main {
+
+    width: 100%;
+
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    padding: 14px 0 0;
+
+}
+
+
+/* ==========================================================
+   CATEGORY FILTER BAR
+========================================================== */
+
+.category-section {
+
+    padding: 0 12px;
+
+    margin-bottom: 18px;
+
+}
+
+
+.section-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-bottom: 8px;
+
+}
+
+
+.section-heading-left {
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+}
+
+
+.section-heading-left i {
+
+    color: var(--green);
+
+    font-size: 11px;
+
+}
+
+
+.section-heading-title {
+
+    margin: 0;
+
+    color: #26352c;
+
+    font-size: 12px;
+
+    font-weight: 900;
+
+    text-transform: uppercase;
+
+    letter-spacing: .6px;
+
+}
+
+
+/* ==========================================================
+   CATEGORY PILLS
+========================================================== */
+
+.category-bar {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding: 2px 1px 5px;
+
+    scrollbar-width: none;
+
+    -webkit-overflow-scrolling: touch;
+
+}
+
+
+.category-bar::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+.category-pill {
+
+    flex: 0 0 auto;
+
+    min-height: 31px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 0 14px;
+
+    border: 1px solid #d5dfd8;
+
+    border-radius: 30px;
+
+    background: #ffffff;
+
+    color: #425348;
+
+    text-decoration: none;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+}
+
+
+.category-pill.active {
+
+    background: var(--green);
+
+    border-color: var(--green);
+
+    color: #ffffff;
+
+}
+
+
+/* ==========================================================
+   EMPTY MARKET
+========================================================== */
+
+.empty-market {
+
+    width: calc(100% - 24px);
+
+    margin: 0 12px;
+
+    min-height: 250px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 30px 18px;
+
+    background: #ffffff;
+
+    border: 1px solid var(--line);
+
+    border-radius: 12px;
+
+    text-align: center;
+
+}
+
+
+.empty-inner {
+
+    max-width: 380px;
+
+}
+
+
+.empty-icon {
+
+    width: 58px;
+
+    height: 58px;
+
+    margin: 0 auto 12px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 17px;
+
+    background: var(--green-soft);
+
+    color: var(--green);
+
+    font-size: 21px;
+
+}
+
+
+.empty-market h3 {
+
+    margin: 0;
+
+    color: #27382d;
+
+    font-size: 15px;
+
+    font-weight: 900;
+
+}
+
+
+.empty-market p {
+
+    margin: 7px auto 0;
+
+    color: #7a877f;
+
+    font-size: 10px;
+
+    line-height: 1.5;
+
+}
+
+
+.empty-action {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 6px;
+
+    min-height: 34px;
+
+    margin-top: 13px;
+
+    padding: 0 13px;
+
+    border-radius: 7px;
+
+    background: var(--green);
+
+    color: #ffffff;
+
+    text-decoration: none;
+
+    font-size: 8px;
+
+    font-weight: 900;
+
+}
+
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (min-width: 600px) {
+
+    .market-hero-inner {
+
+        padding-left: 22px;
+
+        padding-right: 22px;
+
+    }
+
+
+    .category-section {
+
+        padding-left: 20px;
+
+        padding-right: 20px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   DESKTOP
+========================================================== */
+
+@media (min-width: 850px) {
+
+    .market-hero-inner {
+
+        padding:
+            22px
+            28px
+            18px;
+
+    }
+
+
+    .market-main {
+
+        padding-top: 20px;
+
+    }
+
+
+    .category-section {
+
+        padding-left: 28px;
+
+        padding-right: 28px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL PHONES
+========================================================== */
+
+@media (max-width: 360px) {
+
+    .market-hero-inner {
+
+        padding-left: 10px;
+
+        padding-right: 10px;
+
+    }
+
+
+    .category-section {
+
+        padding-left: 8px;
+
+        padding-right: 8px;
+
+    }
+
+}
+
+</style>
+
+
+<!-- ==========================================================
+     MARKETPLACE
+========================================================== -->
+
+<div class="marketplace">
+
+
+    <!-- ======================================================
+         HEADER / HERO
+    ====================================================== -->
+
+    <section class="market-hero">
+
+        <div class="market-hero-inner">
+
+            <div class="market-title-row">
+
+                <div class="market-heading">
+
+                    <div class="market-eyebrow">
+
+                        <i class="fas fa-store"></i>
+
+                        Marketplace
+
+                    </div>
+
+
+                    <h1 class="market-title">
+
+                        Shop our products
+
+                    </h1>
+
+
+                    <p class="market-description">
+
+                        Browse available products and add what you need.
+
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="cartBtn"
+                    class="market-cart-button"
+                    aria-label="Open shopping cart"
+                >
+
+                    <i class="fas fa-shopping-cart"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- ==================================================
+                 SUMMARY
+            ================================================== -->
+
+            <div class="market-summary">
+
+
+                <div class="summary-card">
+
+                    <div class="summary-icon">
+
+                        <i class="fas fa-box-open"></i>
+
+                    </div>
+
+
+                    <div class="summary-info">
+
+                        <span class="summary-label">
+
+                            Available
+
+                        </span>
+
+
+                        <span class="summary-value">
+
+                            <%= (products || []).length %>
+
+                            <%= (products || []).length === 1
+                                ? 'Product'
+                                : 'Products'
+                            %>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <div class="summary-icon">
+
+                        <i class="fas fa-shopping-basket"></i>
+
+                    </div>
+
+
+                    <div class="summary-info">
+
+                        <span class="summary-label">
+
+                            In Cart
+
+                        </span>
+
+
+                        <span
+                            class="summary-value"
+                            id="cartCount"
+                        >
+
+                            <%= cartCount || 0 %>
+
+                            <%= (cartCount || 0) === 1
+                                ? 'Item'
+                                : 'Items'
+                            %>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <div class="summary-icon">
+
+                        <i class="fas fa-coins"></i>
+
+                    </div>
+
+
+                    <div class="summary-info">
+
+                        <span class="summary-label">
+
+                            Cart Value
+
+                        </span>
+
+
+                        <span
+                            class="summary-value"
+                            id="cartTotalText"
+                        >
+
+                            KES
+
+                            <%= Number(
+                                cartTotal || 0
+                            ).toLocaleString() %>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ======================================================
+         MAIN
+    ====================================================== -->
+
+    <main class="market-main">
+
+
+        <!-- ==================================================
+             CATEGORY FILTER
+        ================================================== -->
+
+        <section class="category-section">
+
+
+            <div class="section-heading">
+
+                <div class="section-heading-left">
+
+                    <i class="fas fa-layer-group"></i>
+
+                    <h2 class="section-heading-title">
+
+                        Categories
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <nav
+                class="category-bar"
+                aria-label="Product categories"
+            >
+
+
+                <a
+                    href="/products?category=all"
+                    class="category-pill <%= activeCategory === 'all' ? 'active' : '' %>"
+                >
+
+                    All
+
+                </a>
+
+
+                <% (categories || []).forEach(category => { %>
+
+
+                    <a
+                        href="/products?category=<%= encodeURIComponent(category) %>"
+                        class="category-pill <%= activeCategory === category ? 'active' : '' %>"
+                    >
+
+                        <%= category %>
+
+                    </a>
+
+
+                <% }) %>
+
+
+            </nav>
+
+        </section>
+
+
+        <!-- ==================================================
+             PRODUCTS PARTIAL
+             
+             products.ejs is the MOTHER PAGE.
+
+             The product data is explicitly passed to:
+
+                 partials-products/cards.ejs
+
+             The cards partial is therefore responsible for:
+                 - grouping products
+                 - displaying category sections
+                 - displaying product cards
+                 - empty-product state
+                 - product rails
+        ================================================== -->
+
+        <%- include('partials-products/cards.ejs', {
+            
+            products: products,
+
+            activeCategory: activeCategory,
+
+            categories: categories,
+
+            cart: cart,
+
+            cartCount: cartCount,
+
+            cartTotal: cartTotal
+
+        }) %>
+
+
+    </main>
+
+
+</div>
