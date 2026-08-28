@@ -1,90 +1,43 @@
-<% /*
-=============================================================
-VIEWS/PRODUCTS.EJS
-=============================================================
-
-PURPOSE:
-    Marketplace product catalogue.
-
-IMPORTANT:
-    This file is the BODY rendered by layout.ejs.
-
-    DO NOT put:
-
-        <%- contentFor('body') %>
-
-    here.
-
-    layout.ejs already contains:
-
-        <%- body %>
-
-DATA EXPECTED:
-    products
-    categories
-    activeCategory
-    cart
-    cartCount
-    cartTotal
-
-PRODUCT FIELDS USED:
-    _id
-    name
-    image
-    category
-    units
-    unitSellPrice
-
-=============================================================
-*/ %>
-
-
 <style>
 
 /* ==========================================================
    MARKETPLACE
 ========================================================== */
 
-.marketplace{
+.marketplace {
 
-    --green:#0b5a2a;
-    --green-dark:#073f1d;
-    --green-soft:#edf7f0;
+    --green: #0b5a2a;
+    --green-dark: #073f1d;
+    --green-soft: #edf7f0;
 
-    --orange:#e58a22;
-    --orange-soft:#fff5e8;
+    --orange: #e58a22;
+    --orange-soft: #fff5e8;
 
-    --ink:#18231c;
-    --muted:#718078;
+    --ink: #18231c;
+    --muted: #718078;
 
-    --line:#e2e9e4;
-    --line-soft:#edf2ee;
+    --line: #e2e9e4;
+    --line-soft: #edf2ee;
 
-    width:100%;
-    min-height:calc(100vh - 80px);
+    width: 100%;
+    min-height: 100vh;
 
-    margin:0;
-    padding:0 0 35px;
+    margin: 0;
+    padding: 0 0 35px;
 
-    background:#f6f8f7;
+    background: #f6f8f7;
 
-    color:var(--ink);
+    color: var(--ink);
 
-    font-family:
-        'Segoe UI',
-        Arial,
-        Helvetica,
-        sans-serif;
-
-    box-sizing:border-box;
+    box-sizing: border-box;
 }
 
 
 .marketplace *,
 .marketplace *::before,
-.marketplace *::after{
+.marketplace *::after {
 
-    box-sizing:border-box;
+    box-sizing: border-box;
 
 }
 
@@ -93,111 +46,108 @@ PRODUCT FIELDS USED:
    HERO
 ========================================================== */
 
-.market-hero{
+.market-hero {
 
-    width:100%;
+    width: 100%;
 
-    background:#ffffff;
+    background: #ffffff;
 
-    border-bottom:1px solid var(--line);
+    border-bottom: 1px solid var(--line);
 
 }
 
 
-.market-hero-inner{
+.market-hero-inner {
 
-    width:100%;
-    max-width:1280px;
+    width: 100%;
 
-    margin:0 auto;
+    max-width: 1280px;
 
-    padding:18px 12px 14px;
+    margin: 0 auto;
+
+    padding: 18px 14px 15px;
 
 }
 
 
 /* ==========================================================
-   TITLE ROW
+   TITLE
 ========================================================== */
 
-.market-title-row{
+.market-title-row {
 
-    display:flex;
+    display: flex;
 
-    align-items:center;
+    align-items: center;
 
-    justify-content:space-between;
+    justify-content: space-between;
 
-    gap:12px;
-
-}
-
-
-.market-heading{
-
-    min-width:0;
+    gap: 15px;
 
 }
 
 
-.market-eyebrow{
+.market-heading {
 
-    display:flex;
-
-    align-items:center;
-
-    gap:6px;
-
-    margin-bottom:4px;
-
-    color:#718078;
-
-    font-size:10px;
-
-    font-weight:800;
-
-    text-transform:uppercase;
-
-    letter-spacing:1px;
+    min-width: 0;
 
 }
 
 
-.market-eyebrow i{
+.market-eyebrow {
 
-    color:var(--green);
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    margin-bottom: 4px;
+
+    color: #718078;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
 
 }
 
 
-.market-title{
+.market-eyebrow i {
 
-    margin:0;
-
-    color:var(--green);
-
-    font-size:24px;
-
-    font-weight:900;
-
-    line-height:1.15;
-
-    letter-spacing:-.4px;
+    color: var(--green);
 
 }
 
 
-.market-description{
+.market-title {
 
-    margin:5px 0 0;
+    margin: 0;
 
-    color:#758179;
+    color: var(--green);
 
-    font-size:11px;
+    font-size: 25px;
 
-    font-weight:500;
+    font-weight: 900;
 
-    line-height:1.45;
+    line-height: 1.1;
+
+}
+
+
+.market-description {
+
+    margin: 5px 0 0;
+
+    color: #758179;
+
+    font-size: 11px;
+
+    line-height: 1.45;
 
 }
 
@@ -206,55 +156,38 @@ PRODUCT FIELDS USED:
    CART BUTTON
 ========================================================== */
 
-.market-cart-button{
+.market-cart-button {
 
-    flex:0 0 44px;
+    flex: 0 0 44px;
 
-    width:44px;
+    width: 44px;
 
-    height:44px;
+    height: 44px;
 
-    display:flex;
+    display: flex;
 
-    align-items:center;
+    align-items: center;
 
-    justify-content:center;
+    justify-content: center;
 
-    padding:0;
+    border: 0;
 
-    border:0;
+    border-radius: 12px;
 
-    border-radius:12px;
+    background: var(--green);
 
-    background:var(--green);
+    color: #ffffff;
 
-    color:#ffffff;
+    cursor: pointer;
 
-    cursor:pointer;
-
-    box-shadow:
-        0 5px 14px rgba(11,90,42,.18);
+    box-shadow: 0 5px 14px rgba(11,90,42,.18);
 
 }
 
 
-.market-cart-button:hover{
+.market-cart-button:hover {
 
-    background:var(--green-dark);
-
-}
-
-
-.market-cart-button:active{
-
-    transform:scale(.96);
-
-}
-
-
-.market-cart-button i{
-
-    font-size:15px;
+    background: var(--green-dark);
 
 }
 
@@ -263,136 +196,106 @@ PRODUCT FIELDS USED:
    SUMMARY
 ========================================================== */
 
-.market-summary{
+.market-summary {
 
-    width:100%;
+    width: 100%;
 
-    display:grid;
+    display: grid;
 
-    grid-template-columns:
-        repeat(3,minmax(0,1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 
-    gap:7px;
+    gap: 7px;
 
-    margin-top:14px;
-
-}
-
-
-.summary-card{
-
-    min-width:0;
-
-    display:flex;
-
-    align-items:center;
-
-    gap:7px;
-
-    padding:8px;
-
-    background:#ffffff;
-
-    border:1px solid var(--line);
-
-    border-radius:10px;
+    margin-top: 14px;
 
 }
 
 
-.summary-icon{
+.summary-card {
 
-    flex:0 0 28px;
+    min-width: 0;
 
-    width:28px;
+    display: flex;
 
-    height:28px;
+    align-items: center;
 
-    display:flex;
+    gap: 7px;
 
-    align-items:center;
+    padding: 8px;
 
-    justify-content:center;
+    background: #ffffff;
 
-    border-radius:8px;
+    border: 1px solid var(--line);
 
-    background:var(--green-soft);
-
-    color:var(--green);
-
-    font-size:11px;
+    border-radius: 10px;
 
 }
 
 
-.summary-card:nth-child(2) .summary-icon{
+.summary-icon {
 
-    background:#f2f5f3;
+    flex: 0 0 28px;
 
-    color:#587064;
+    width: 28px;
 
-}
+    height: 28px;
 
+    display: flex;
 
-.summary-card:nth-child(3) .summary-icon{
+    align-items: center;
 
-    background:var(--orange-soft);
+    justify-content: center;
 
-    color:#c56d10;
+    border-radius: 8px;
 
-}
+    background: var(--green-soft);
 
+    color: var(--green);
 
-.summary-info{
-
-    min-width:0;
-
-}
-
-
-.summary-label{
-
-    display:block;
-
-    color:#8a958e;
-
-    font-size:7px;
-
-    font-weight:900;
-
-    text-transform:uppercase;
-
-    letter-spacing:.4px;
+    font-size: 11px;
 
 }
 
 
-.summary-value{
+.summary-info {
 
-    display:block;
-
-    margin-top:2px;
-
-    color:var(--green);
-
-    font-size:10px;
-
-    font-weight:900;
-
-    line-height:1.1;
-
-    white-space:nowrap;
-
-    overflow:hidden;
-
-    text-overflow:ellipsis;
+    min-width: 0;
 
 }
 
 
-.summary-card:nth-child(3) .summary-value{
+.summary-label {
 
-    color:#b96710;
+    display: block;
+
+    color: #8a958e;
+
+    font-size: 7px;
+
+    font-weight: 900;
+
+    text-transform: uppercase;
+
+}
+
+
+.summary-value {
+
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--green);
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
 
 }
 
@@ -401,457 +304,15 @@ PRODUCT FIELDS USED:
    MAIN
 ========================================================== */
 
-.market-main{
+.market-main {
 
-    width:100%;
-    max-width:1280px;
+    width: 100%;
 
-    margin:0 auto;
+    max-width: 1280px;
 
-    padding:16px 10px 0;
+    margin: 0 auto;
 
-}
-
-
-/* ==========================================================
-   CATEGORY SECTION
-========================================================== */
-
-.category-section{
-
-    margin-bottom:17px;
-
-}
-
-
-.section-heading{
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:space-between;
-
-    margin-bottom:8px;
-
-}
-
-
-.section-heading-left{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:6px;
-
-}
-
-
-.section-heading-left i{
-
-    color:var(--green);
-
-    font-size:11px;
-
-}
-
-
-.section-heading-title{
-
-    margin:0;
-
-    color:#26352c;
-
-    font-size:12px;
-
-    font-weight:900;
-
-    text-transform:uppercase;
-
-    letter-spacing:.6px;
-
-}
-
-
-/* ==========================================================
-   CATEGORY BAR
-========================================================== */
-
-.category-bar{
-
-    width:100%;
-
-    display:flex;
-
-    align-items:center;
-
-    gap:7px;
-
-    overflow-x:auto;
-
-    overflow-y:hidden;
-
-    padding:2px 1px 5px;
-
-    scrollbar-width:none;
-
-    -webkit-overflow-scrolling:touch;
-
-}
-
-
-.category-bar::-webkit-scrollbar{
-
-    display:none;
-
-}
-
-
-.category-pill{
-
-    flex:0 0 auto;
-
-    min-height:30px;
-
-    display:inline-flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    padding:0 13px;
-
-    border:1px solid #d5dfd8;
-
-    border-radius:30px;
-
-    background:#ffffff;
-
-    color:#425348;
-
-    text-decoration:none;
-
-    font-size:9px;
-
-    font-weight:800;
-
-    white-space:nowrap;
-
-}
-
-
-.category-pill:hover{
-
-    border-color:#a8c5b1;
-
-    color:var(--green);
-
-}
-
-
-.category-pill.active{
-
-    background:var(--green);
-
-    border-color:var(--green);
-
-    color:#ffffff;
-
-}
-
-
-/* ==========================================================
-   PRODUCTS HEADER
-========================================================== */
-
-.products-heading{
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:space-between;
-
-    gap:10px;
-
-    margin-bottom:9px;
-
-}
-
-
-.products-count{
-
-    color:#849089;
-
-    font-size:9px;
-
-    font-weight:600;
-
-}
-
-
-.products-count strong{
-
-    color:var(--green);
-
-    font-weight:900;
-
-}
-
-
-/* ==========================================================
-   PRODUCT CATALOGUE
-==========================================================
-
-   MOBILE:
-       2 cards per row.
-
-   TABLET:
-       3 cards per row.
-
-   DESKTOP:
-       4 cards per row.
-
-   LARGE DESKTOP:
-       5 cards per row.
-
-   IMPORTANT:
-       This is a normal responsive catalogue.
-
-       Products DO NOT become one enormous image.
-       Products DO NOT form a horizontal strip.
-       Products DO NOT have a four-product limit.
-========================================================== */
-
-.product-grid{
-
-    width:100%;
-
-    display:grid;
-
-    grid-template-columns:
-        repeat(2,minmax(0,1fr));
-
-    gap:10px;
-
-    align-items:start;
-
-}
-
-
-/* ==========================================================
-   PRODUCT CARD
-========================================================== */
-
-.product-card{
-
-    position:relative;
-
-    width:100%;
-    min-width:0;
-
-    display:flex;
-    flex-direction:column;
-
-    overflow:hidden;
-
-    background:#ffffff;
-
-    border:1px solid #e1e7e3;
-
-    border-radius:10px;
-
-    box-shadow:
-        0 2px 7px rgba(20,40,28,.055);
-
-    cursor:pointer;
-
-    transition:
-        transform .16s ease,
-        box-shadow .16s ease,
-        border-color .16s ease;
-
-}
-
-
-.product-card:hover{
-
-    transform:translateY(-2px);
-
-    border-color:#cbd9cf;
-
-    box-shadow:
-        0 7px 17px rgba(20,40,28,.10);
-
-}
-
-
-.product-card:active{
-
-    transform:scale(.985);
-
-}
-
-
-/* ==========================================================
-   PRODUCT IMAGE CONTAINER
-==========================================================
-
-   THIS IS THE IMPORTANT PART.
-
-   The image is constrained INSIDE the card.
-
-   It cannot grow to viewport width.
-========================================================== */
-
-.product-image{
-
-    position:relative;
-
-    width:100%;
-
-    aspect-ratio:1 / 1;
-
-    overflow:hidden;
-
-    background:#f0f4f1;
-
-}
-
-
-/* ==========================================================
-   PRODUCT IMAGE
-========================================================== */
-
-.product-image img{
-
-    position:absolute;
-
-    inset:0;
-
-    width:100%;
-
-    height:100%;
-
-    display:block;
-
-    object-fit:cover;
-
-    object-position:center;
-
-}
-
-
-/* ==========================================================
-   STOCK BADGE
-========================================================== */
-
-.stock-badge{
-
-    position:absolute;
-
-    top:6px;
-    left:6px;
-
-    z-index:3;
-
-    max-width:calc(100% - 12px);
-
-    min-height:18px;
-
-    display:inline-flex;
-
-    align-items:center;
-
-    gap:4px;
-
-    padding:0 6px;
-
-    border:1px solid rgba(11,90,42,.12);
-
-    border-radius:20px;
-
-    background:rgba(255,255,255,.94);
-
-    color:var(--green);
-
-    font-size:7px;
-
-    font-weight:900;
-
-    white-space:nowrap;
-
-    overflow:hidden;
-
-    text-overflow:ellipsis;
-
-}
-
-
-.stock-dot{
-
-    flex:0 0 5px;
-
-    width:5px;
-
-    height:5px;
-
-    border-radius:50%;
-
-    background:#2da653;
-
-}
-
-
-.stock-low{
-
-    color:#9a650e;
-
-    border-color:#ecd7aa;
-
-}
-
-
-.stock-low .stock-dot{
-
-    background:#e39a1d;
-
-}
-
-
-.stock-out{
-
-    color:#a52f2f;
-
-    border-color:#edcccc;
-
-}
-
-
-.stock-out .stock-dot{
-
-    background:#d63b3b;
-
-}
-
-
-/* ==========================================================
-   PRODUCT DETAILS
-========================================================== */
-
-.product-details{
-
-    width:100%;
-    min-width:0;
-
-    display:flex;
-
-    flex-direction:column;
-
-    flex:1;
-
-    padding:8px;
+    padding: 16px 12px 0;
 
 }
 
@@ -860,58 +321,438 @@ PRODUCT FIELDS USED:
    CATEGORY
 ========================================================== */
 
-.product-category{
+.category-section {
 
-    width:100%;
+    margin-bottom: 17px;
 
-    margin:0 0 3px;
+}
 
-    color:#4b7d5a;
 
-    font-size:7px;
+.section-heading {
 
-    font-weight:900;
+    display: flex;
 
-    line-height:1.1;
+    align-items: center;
 
-    text-transform:uppercase;
+    justify-content: space-between;
 
-    letter-spacing:.35px;
+    margin-bottom: 8px;
 
-    white-space:nowrap;
+}
 
-    overflow:hidden;
 
-    text-overflow:ellipsis;
+.section-heading-left {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+}
+
+
+.section-heading-left i {
+
+    color: var(--green);
+
+    font-size: 11px;
+
+}
+
+
+.section-heading-title {
+
+    margin: 0;
+
+    color: #26352c;
+
+    font-size: 12px;
+
+    font-weight: 900;
+
+    text-transform: uppercase;
+
+    letter-spacing: .6px;
 
 }
 
 
 /* ==========================================================
-   PRODUCT NAME
+   CATEGORY BAR
 ========================================================== */
 
-.product-name{
+.category-bar {
 
-    margin:0;
+    width: 100%;
 
-    min-height:30px;
+    display: flex;
 
-    color:#202a23;
+    align-items: center;
 
-    font-size:11px;
+    gap: 7px;
 
-    font-weight:700;
+    overflow-x: auto;
 
-    line-height:15px;
+    overflow-y: hidden;
 
-    display:-webkit-box;
+    padding: 2px 1px 5px;
 
-    -webkit-box-orient:vertical;
+    scrollbar-width: none;
 
-    -webkit-line-clamp:2;
+}
 
-    overflow:hidden;
+
+.category-bar::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+.category-pill {
+
+    flex: 0 0 auto;
+
+    min-height: 30px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 0 13px;
+
+    border: 1px solid #d5dfd8;
+
+    border-radius: 30px;
+
+    background: #ffffff;
+
+    color: #425348;
+
+    text-decoration: none;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+}
+
+
+.category-pill.active {
+
+    background: var(--green);
+
+    border-color: var(--green);
+
+    color: #ffffff;
+
+}
+
+
+/* ==========================================================
+   PRODUCTS HEADER
+========================================================== */
+
+.products-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-bottom: 9px;
+
+}
+
+
+.products-count {
+
+    color: #849089;
+
+    font-size: 9px;
+
+    font-weight: 600;
+
+}
+
+
+.products-count strong {
+
+    color: var(--green);
+
+    font-weight: 900;
+
+}
+
+
+/* ==========================================================
+   PRODUCT CATALOGUE
+========================================================== */
+
+.product-grid {
+
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 10px;
+
+}
+
+
+/* ==========================================================
+   PRODUCT CARD
+========================================================== */
+
+.product-card {
+
+    position: relative;
+
+    width: 100%;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    display: flex;
+
+    flex-direction: column;
+
+    background: #ffffff;
+
+    border: 1px solid #e1e7e3;
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 2px 7px rgba(20,40,28,.055);
+
+    cursor: pointer;
+
+}
+
+
+/* ==========================================================
+   PRODUCT IMAGE CONTAINER
+
+   IMPORTANT:
+   The image is constrained INSIDE the card.
+
+   It cannot become a full-screen image.
+========================================================== */
+
+.product-image {
+
+    position: relative;
+
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    overflow: hidden;
+
+    background: #f0f4f1;
+
+}
+
+
+/* ==========================================================
+   PRODUCT IMAGE
+========================================================== */
+
+.product-image img {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: contain;
+
+    object-position: center;
+
+}
+
+
+/* ==========================================================
+   STOCK BADGE
+========================================================== */
+
+.stock-badge {
+
+    position: absolute;
+
+    top: 6px;
+
+    left: 6px;
+
+    z-index: 2;
+
+    max-width: calc(100% - 12px);
+
+    min-height: 18px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    padding: 0 6px;
+
+    border: 1px solid rgba(11,90,42,.12);
+
+    border-radius: 20px;
+
+    background: rgba(255,255,255,.94);
+
+    color: var(--green);
+
+    font-size: 7px;
+
+    font-weight: 900;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+}
+
+
+.stock-dot {
+
+    flex: 0 0 5px;
+
+    width: 5px;
+
+    height: 5px;
+
+    border-radius: 50%;
+
+    background: #2da653;
+
+}
+
+
+.stock-low {
+
+    color: #9a650e;
+
+    border-color: #ecd7aa;
+
+}
+
+
+.stock-low .stock-dot {
+
+    background: #e39a1d;
+
+}
+
+
+.stock-out {
+
+    color: #a52f2f;
+
+    border-color: #edcccc;
+
+}
+
+
+.stock-out .stock-dot {
+
+    background: #d63b3b;
+
+}
+
+
+/* ==========================================================
+   PRODUCT DETAILS
+========================================================== */
+
+.product-details {
+
+    width: 100%;
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    flex: 1;
+
+    padding: 8px;
+
+}
+
+
+/* ==========================================================
+   CATEGORY
+========================================================== */
+
+.product-category {
+
+    width: 100%;
+
+    margin: 0 0 3px;
+
+    color: #4b7d5a;
+
+    font-size: 7px;
+
+    font-weight: 900;
+
+    text-transform: uppercase;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+}
+
+
+/* ==========================================================
+   NAME
+========================================================== */
+
+.product-name {
+
+    margin: 0;
+
+    min-height: 30px;
+
+    color: #202a23;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    line-height: 15px;
+
+    display: -webkit-box;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 2;
+
+    overflow: hidden;
 
 }
 
@@ -920,32 +761,32 @@ PRODUCT FIELDS USED:
    PRICE
 ========================================================== */
 
-.product-price{
+.product-price {
 
-    display:flex;
+    display: flex;
 
-    align-items:baseline;
+    align-items: baseline;
 
-    gap:3px;
+    gap: 3px;
 
-    margin-top:6px;
+    margin-top: 5px;
 
-    color:var(--green);
+    color: var(--green);
 
-    font-size:13px;
+    font-size: 13px;
 
-    font-weight:900;
+    font-weight: 900;
 
-    line-height:1;
+    line-height: 1;
 
 }
 
 
-.currency{
+.currency {
 
-    font-size:7px;
+    font-size: 7px;
 
-    font-weight:900;
+    font-weight: 900;
 
 }
 
@@ -954,71 +795,50 @@ PRODUCT FIELDS USED:
    ADD TO CART
 ========================================================== */
 
-.add-to-cart-btn{
+.add-to-cart-btn {
 
-    width:100%;
+    width: 100%;
 
-    min-height:30px;
-    height:30px;
+    min-height: 29px;
 
-    display:flex;
+    height: 29px;
 
-    align-items:center;
-    justify-content:center;
+    display: flex;
 
-    gap:4px;
+    align-items: center;
 
-    margin-top:9px;
+    justify-content: center;
 
-    padding:0 5px;
+    gap: 4px;
 
-    border:0;
+    margin-top: 8px;
 
-    border-radius:6px;
+    padding: 0 5px;
 
-    background:var(--green);
+    border: 0;
 
-    color:#ffffff;
+    border-radius: 6px;
 
-    font-size:7px;
+    background: var(--green);
 
-    font-weight:900;
+    color: #ffffff;
 
-    white-space:nowrap;
+    font-size: 7px;
 
-    cursor:pointer;
+    font-weight: 900;
 
-}
-
-
-.add-to-cart-btn:hover{
-
-    background:var(--green-dark);
+    cursor: pointer;
 
 }
 
 
-.add-to-cart-btn:active{
+.add-to-cart-btn:disabled {
 
-    transform:scale(.97);
+    background: #dfe6e1;
 
-}
+    color: #7c8981;
 
-
-.add-to-cart-btn:disabled{
-
-    background:#dfe6e1;
-
-    color:#7c8981;
-
-    cursor:not-allowed;
-
-}
-
-
-.add-to-cart-btn i{
-
-    font-size:8px;
+    cursor: not-allowed;
 
 }
 
@@ -1027,671 +847,116 @@ PRODUCT FIELDS USED:
    EMPTY MARKET
 ========================================================== */
 
-.empty-market{
+.empty-market {
 
-    width:100%;
+    width: 100%;
 
-    min-height:250px;
+    min-height: 250px;
 
-    display:flex;
+    display: flex;
 
-    align-items:center;
+    align-items: center;
 
-    justify-content:center;
+    justify-content: center;
 
-    padding:30px 18px;
+    padding: 30px 18px;
 
-    background:#ffffff;
+    background: #ffffff;
 
-    border:1px solid var(--line);
+    border: 1px solid var(--line);
 
-    border-radius:12px;
+    border-radius: 12px;
 
-    text-align:center;
-
-}
-
-
-.empty-inner{
-
-    max-width:380px;
+    text-align: center;
 
 }
 
 
-.empty-icon{
+.empty-inner {
 
-    width:58px;
-
-    height:58px;
-
-    margin:0 auto 12px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    border-radius:17px;
-
-    background:var(--green-soft);
-
-    color:var(--green);
-
-    font-size:21px;
+    max-width: 380px;
 
 }
 
 
-.empty-market h3{
+.empty-icon {
 
-    margin:0;
+    width: 58px;
 
-    color:#27382d;
+    height: 58px;
 
-    font-size:15px;
+    margin: 0 auto 12px;
 
-    font-weight:900;
+    display: flex;
 
-}
+    align-items: center;
 
+    justify-content: center;
 
-.empty-market p{
+    border-radius: 17px;
 
-    margin:7px auto 0;
+    background: var(--green-soft);
 
-    color:#7a877f;
+    color: var(--green);
 
-    font-size:10px;
-
-    font-weight:600;
-
-    line-height:1.5;
+    font-size: 21px;
 
 }
 
 
-.empty-action{
+.empty-market h3 {
 
-    display:inline-flex;
+    margin: 0;
 
-    align-items:center;
-    justify-content:center;
+    color: #27382d;
 
-    gap:6px;
+    font-size: 15px;
 
-    min-height:34px;
-
-    margin-top:13px;
-
-    padding:0 13px;
-
-    border-radius:7px;
-
-    background:var(--green);
-
-    color:#ffffff;
-
-    text-decoration:none;
-
-    font-size:8px;
-
-    font-weight:900;
+    font-weight: 900;
 
 }
 
 
-/* ==========================================================
-   QUANTITY MODAL
-========================================================== */
+.empty-market p {
 
-.qty-modal{
+    margin: 7px auto 0;
 
-    overflow:hidden;
+    color: #7a877f;
 
-    border:0;
+    font-size: 10px;
 
-    border-radius:18px;
-
-    box-shadow:
-        0 20px 55px rgba(0,0,0,.2);
+    line-height: 1.5;
 
 }
 
 
-.qty-header{
+.empty-action {
 
-    padding:17px;
+    display: inline-flex;
 
-    background:#f3f8f4;
+    align-items: center;
 
-    border-bottom:1px solid var(--line);
+    justify-content: center;
 
-    text-align:center;
+    gap: 6px;
 
-}
+    min-height: 34px;
 
+    margin-top: 13px;
 
-.qty-icon{
+    padding: 0 13px;
 
-    width:42px;
-    height:42px;
+    border-radius: 7px;
 
-    margin:0 auto 8px;
+    background: var(--green);
 
-    display:flex;
+    color: #ffffff;
 
-    align-items:center;
-    justify-content:center;
+    text-decoration: none;
 
-    border-radius:12px;
+    font-size: 8px;
 
-    background:var(--green);
-
-    color:#ffffff;
-
-    font-size:15px;
-
-}
-
-
-.qty-product-name{
-
-    margin:0;
-
-    color:var(--green);
-
-    font-size:15px;
-
-    font-weight:900;
-
-}
-
-
-.qty-available{
-
-    margin:4px 0 0;
-
-    color:#7b8981;
-
-    font-size:10px;
-
-}
-
-
-.qty-available strong{
-
-    color:#34483b;
-
-}
-
-
-.qty-body{
-
-    padding:19px 17px 16px;
-
-}
-
-
-.qty-selector{
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    gap:22px;
-
-    margin-bottom:19px;
-
-}
-
-
-.qty-control{
-
-    width:43px;
-    height:43px;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    padding:0;
-
-    border:2px solid var(--green);
-
-    border-radius:50%;
-
-    background:#ffffff;
-
-    color:var(--green);
-
-    font-size:19px;
-
-    font-weight:900;
-
-    cursor:pointer;
-
-}
-
-
-.qty-control:hover{
-
-    background:var(--green);
-
-    color:#ffffff;
-
-}
-
-
-.qty-number{
-
-    min-width:45px;
-
-    color:var(--green);
-
-    font-size:30px;
-
-    font-weight:900;
-
-    text-align:center;
-
-}
-
-
-.qty-confirm{
-
-    height:44px;
-
-    min-height:44px;
-
-    font-size:10px;
-
-}
-
-
-.qty-cancel{
-
-    display:block;
-
-    width:100%;
-
-    margin-top:5px;
-
-    color:#7c8982 !important;
-
-    font-size:10px;
-
-    font-weight:800;
-
-    text-decoration:none !important;
-
-}
-
-
-/* ==========================================================
-   CART SIDEBAR
-========================================================== */
-
-.cart-sidebar{
-
-    width:min(400px,94vw) !important;
-
-    border-left:1px solid var(--line) !important;
-
-    box-shadow:
-        -15px 0 45px rgba(0,0,0,.12);
-
-}
-
-
-.cart-header{
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:space-between;
-
-    gap:10px;
-
-    padding:14px;
-
-    background:#f2f8f3;
-
-    border-bottom:1px solid var(--line);
-
-}
-
-
-.cart-heading{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:9px;
-
-}
-
-
-.cart-icon{
-
-    width:38px;
-    height:38px;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    border-radius:11px;
-
-    background:var(--green);
-
-    color:#ffffff;
-
-    font-size:14px;
-
-}
-
-
-.cart-title{
-
-    margin:0;
-
-    color:var(--green);
-
-    font-size:15px;
-
-    font-weight:900;
-
-}
-
-
-.cart-subtitle{
-
-    margin:2px 0 0;
-
-    color:#7c8981;
-
-    font-size:9px;
-
-}
-
-
-.cart-body{
-
-    padding:10px !important;
-
-    background:#ffffff;
-
-}
-
-
-.cart-item{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:8px;
-
-    padding:11px 2px;
-
-    border-bottom:1px solid var(--line-soft);
-
-}
-
-
-.cart-item:last-child{
-
-    border-bottom:0;
-
-}
-
-
-.cart-product-info{
-
-    flex:1;
-
-    min-width:0;
-
-}
-
-
-.cart-product-name{
-
-    display:block;
-
-    color:#243229;
-
-    font-size:11px;
-
-    font-weight:900;
-
-    white-space:nowrap;
-
-    overflow:hidden;
-
-    text-overflow:ellipsis;
-
-}
-
-
-.cart-product-price{
-
-    display:block;
-
-    margin-top:3px;
-
-    color:#7d8982;
-
-    font-size:9px;
-
-}
-
-
-.cart-product-price strong{
-
-    color:var(--green);
-
-}
-
-
-.cart-controls{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:3px;
-
-}
-
-
-.cart-control{
-
-    width:28px;
-    height:28px;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    padding:0;
-
-    border:1px solid #cfddd3;
-
-    border-radius:7px;
-
-    background:#ffffff;
-
-    color:var(--green);
-
-    font-size:14px;
-
-    font-weight:900;
-
-    cursor:pointer;
-
-}
-
-
-.cart-control:hover{
-
-    background:var(--green-soft);
-
-    border-color:var(--green);
-
-}
-
-
-.cart-remove{
-
-    color:#b42f2f;
-
-    border-color:#eccccc;
-
-    background:#fff8f8;
-
-}
-
-
-.cart-qty{
-
-    min-width:18px;
-
-    color:#26352c;
-
-    font-weight:900;
-
-    text-align:center;
-
-}
-
-
-/* ==========================================================
-   EMPTY CART
-========================================================== */
-
-.empty-cart{
-
-    min-height:260px;
-
-    display:flex;
-
-    flex-direction:column;
-
-    align-items:center;
-
-    justify-content:center;
-
-    padding:25px;
-
-    text-align:center;
-
-}
-
-
-.empty-cart-icon{
-
-    width:65px;
-    height:65px;
-
-    margin-bottom:12px;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    border-radius:20px;
-
-    background:#f0f5f1;
-
-    color:#8a9b91;
-
-    font-size:21px;
-
-}
-
-
-.empty-cart strong{
-
-    color:#405148;
-
-    font-size:12px;
-
-    font-weight:900;
-
-}
-
-
-.empty-cart span{
-
-    margin-top:4px;
-
-    color:#87928c;
-
-    font-size:9px;
-
-}
-
-
-/* ==========================================================
-   CART FOOTER
-========================================================== */
-
-.cart-footer{
-
-    padding:13px;
-
-    background:#f5f9f6;
-
-    border-top:1px solid var(--line);
-
-}
-
-
-.cart-total{
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:space-between;
-
-    margin-bottom:10px;
-
-    color:#68766e;
-
-    font-size:10px;
-
-    font-weight:800;
-
-}
-
-
-.cart-total strong{
-
-    color:var(--green);
-
-    font-size:15px;
-
-    font-weight:900;
-
-}
-
-
-.checkout-btn{
-
-    height:43px;
-
-    min-height:43px;
+    font-weight: 900;
 
 }
 
@@ -1700,44 +965,46 @@ PRODUCT FIELDS USED:
    TABLET
 ========================================================== */
 
-@media (min-width:600px){
+@media (min-width: 600px) {
 
-    .market-hero-inner{
+    .market-hero-inner {
 
-        padding-left:22px;
-        padding-right:22px;
+        padding-left: 22px;
 
-    }
-
-
-    .market-main{
-
-        padding-left:20px;
-        padding-right:20px;
+        padding-right: 22px;
 
     }
 
 
-    .product-grid{
+    .market-main {
+
+        padding-left: 20px;
+
+        padding-right: 20px;
+
+    }
+
+
+    .product-grid {
 
         grid-template-columns:
-            repeat(3,minmax(0,1fr));
+            repeat(3, minmax(0, 1fr));
 
-        gap:11px;
-
-    }
-
-
-    .product-name{
-
-        font-size:12px;
+        gap: 11px;
 
     }
 
 
-    .product-price{
+    .product-name {
 
-        font-size:14px;
+        font-size: 12px;
+
+    }
+
+
+    .product-price {
+
+        font-size: 14px;
 
     }
 
@@ -1748,9 +1015,9 @@ PRODUCT FIELDS USED:
    DESKTOP
 ========================================================== */
 
-@media (min-width:850px){
+@media (min-width: 850px) {
 
-    .market-hero-inner{
+    .market-hero-inner {
 
         padding:
             22px
@@ -1760,7 +1027,7 @@ PRODUCT FIELDS USED:
     }
 
 
-    .market-main{
+    .market-main {
 
         padding:
             20px
@@ -1770,52 +1037,53 @@ PRODUCT FIELDS USED:
     }
 
 
-    .product-grid{
+    .product-grid {
 
         grid-template-columns:
-            repeat(4,minmax(0,1fr));
+            repeat(4, minmax(0, 1fr));
 
-        gap:13px;
-
-    }
-
-
-    .product-details{
-
-        padding:10px;
+        gap: 13px;
 
     }
 
 
-    .product-category{
+    .product-details {
 
-        font-size:8px;
-
-    }
-
-
-    .product-name{
-
-        font-size:13px;
-
-        line-height:17px;
+        padding: 10px;
 
     }
 
 
-    .product-price{
+    .product-category {
 
-        font-size:15px;
+        font-size: 8px;
 
     }
 
 
-    .add-to-cart-btn{
+    .product-name {
 
-        min-height:31px;
-        height:31px;
+        font-size: 13px;
 
-        font-size:8px;
+        line-height: 17px;
+
+    }
+
+
+    .product-price {
+
+        font-size: 15px;
+
+    }
+
+
+    .add-to-cart-btn {
+
+        min-height: 31px;
+
+        height: 31px;
+
+        font-size: 8px;
 
     }
 
@@ -1826,30 +1094,32 @@ PRODUCT FIELDS USED:
    LARGE DESKTOP
 ========================================================== */
 
-@media (min-width:1100px){
+@media (min-width: 1100px) {
 
-    .market-hero-inner{
+    .market-hero-inner {
 
-        padding-left:30px;
-        padding-right:30px;
+        padding-left: 30px;
 
-    }
-
-
-    .market-main{
-
-        padding-left:30px;
-        padding-right:30px;
+        padding-right: 30px;
 
     }
 
 
-    .product-grid{
+    .market-main {
+
+        padding-left: 30px;
+
+        padding-right: 30px;
+
+    }
+
+
+    .product-grid {
 
         grid-template-columns:
-            repeat(5,minmax(0,1fr));
+            repeat(5, minmax(0, 1fr));
 
-        gap:14px;
+        gap: 14px;
 
     }
 
@@ -1860,93 +1130,63 @@ PRODUCT FIELDS USED:
    VERY SMALL PHONES
 ========================================================== */
 
-@media (max-width:360px){
+@media (max-width: 360px) {
 
-    .market-hero-inner{
+    .market-hero-inner {
 
-        padding-left:9px;
-        padding-right:9px;
+        padding-left: 10px;
 
-    }
-
-
-    .market-main{
-
-        padding-left:7px;
-        padding-right:7px;
+        padding-right: 10px;
 
     }
 
 
-    .product-grid{
+    .market-main {
 
-        gap:7px;
+        padding-left: 8px;
 
-    }
-
-
-    .product-details{
-
-        padding:7px;
+        padding-right: 8px;
 
     }
 
 
-    .product-name{
+    .product-grid {
 
-        font-size:10px;
-
-        line-height:14px;
+        gap: 7px;
 
     }
 
 
-    .product-price{
+    .product-details {
 
-        font-size:12px;
+        padding: 7px;
+
+    }
+
+
+    .product-name {
+
+        font-size: 10px;
+
+        line-height: 14px;
 
     }
 
 
-    .add-to-cart-btn{
+    .product-price {
 
-        min-height:27px;
-        height:27px;
-
-        font-size:6.5px;
+        font-size: 12px;
 
     }
 
-}
 
+    .add-to-cart-btn {
 
-/* ==========================================================
-   ACCESSIBILITY
-========================================================== */
+        min-height: 27px;
 
-.marketplace button:focus-visible,
-.marketplace a:focus-visible{
+        height: 27px;
 
-    outline:
-        3px solid
-        rgba(11,90,42,.23);
-
-    outline-offset:2px;
-
-}
-
-
-@media(prefers-reduced-motion:reduce){
-
-    .marketplace *,
-    .marketplace *::before,
-    .marketplace *::after{
-
-        scroll-behavior:auto !important;
-
-        transition:none !important;
-
-        animation:none !important;
+        font-size: 6.5px;
 
     }
 
@@ -1955,11 +1195,15 @@ PRODUCT FIELDS USED:
 </style>
 
 
+<!-- ==========================================================
+     MARKETPLACE
+========================================================== -->
+
 <div class="marketplace">
 
 
     <!-- ======================================================
-         MARKET HEADER
+         HEADER
     ====================================================== -->
 
     <section class="market-hero">
@@ -2143,9 +1387,7 @@ PRODUCT FIELDS USED:
                     <i class="fas fa-layer-group"></i>
 
                     <h2 class="section-heading-title">
-
                         Categories
-
                     </h2>
 
                 </div>
@@ -2158,35 +1400,24 @@ PRODUCT FIELDS USED:
                 aria-label="Product categories"
             >
 
-
                 <a
                     href="/products?category=all"
-                    class="category-pill
-                        <%= activeCategory === 'all'
-                            ? 'active'
-                            : '' %>"
+                    class="category-pill <%= activeCategory === 'all' ? 'active' : '' %>"
                 >
-
                     All
-
                 </a>
 
 
                 <% (categories || []).forEach(category => { %>
 
-
                     <a
                         href="/products?category=<%= encodeURIComponent(category) %>"
-                        class="category-pill
-                            <%= activeCategory === category
-                                ? 'active'
-                                : '' %>"
+                        class="category-pill <%= activeCategory === category ? 'active' : '' %>"
                     >
 
                         <%= category %>
 
                     </a>
-
 
                 <% }) %>
 
@@ -2204,13 +1435,12 @@ PRODUCT FIELDS USED:
         <section>
 
 
-            <% if(!products || !products.length){ %>
+            <% if (!products || !products.length) { %>
 
 
                 <div class="empty-market">
 
                     <div class="empty-inner">
-
 
                         <div class="empty-icon">
 
@@ -2220,19 +1450,16 @@ PRODUCT FIELDS USED:
 
 
                         <h3>
-
                             Nothing available here yet
-
                         </h3>
 
 
                         <p>
 
-
-                            <% if(
+                            <% if (
                                 activeCategory &&
                                 activeCategory !== 'all'
-                            ){ %>
+                            ) { %>
 
                                 We don't currently have any
                                 products in the
@@ -2241,25 +1468,20 @@ PRODUCT FIELDS USED:
                                 </strong>
                                 category.
 
-
                             <% } else { %>
 
                                 There are currently no products
                                 available in the marketplace.
-                                Please check again later.
-
 
                             <% } %>
-
 
                         </p>
 
 
-                        <% if(
+                        <% if (
                             activeCategory &&
                             activeCategory !== 'all'
-                        ){ %>
-
+                        ) { %>
 
                             <a
                                 href="/products?category=all"
@@ -2272,7 +1494,6 @@ PRODUCT FIELDS USED:
 
                             </a>
 
-
                         <% } %>
 
 
@@ -2284,21 +1505,18 @@ PRODUCT FIELDS USED:
             <% } else { %>
 
 
-                <!-- ==========================================
+                <!-- ==================================================
                      PRODUCTS HEADER
-                =========================================== -->
+                ================================================== -->
 
                 <div class="products-heading">
-
 
                     <div class="section-heading-left">
 
                         <i class="fas fa-boxes-stacked"></i>
 
                         <h2 class="section-heading-title">
-
                             Products
-
                         </h2>
 
                     </div>
@@ -2320,9 +1538,9 @@ PRODUCT FIELDS USED:
 
 
 
-                <!-- ==========================================
-                     PRODUCT CATALOGUE
-                =========================================== -->
+                <!-- ==================================================
+                     PRODUCT CARDS
+                ================================================== -->
 
                 <div class="product-grid">
 
@@ -2336,16 +1554,13 @@ PRODUCT FIELDS USED:
 
                             let stockClass = '';
 
-                            if(stock <= 0){
+                            if (stock <= 0) {
 
-                                stockClass =
-                                    'stock-out';
+                                stockClass = 'stock-out';
 
-                            }
-                            else if(stock <= 5){
+                            } else if (stock <= 5) {
 
-                                stockClass =
-                                    'stock-low';
+                                stockClass = 'stock-low';
 
                             }
                         %>
@@ -2357,9 +1572,9 @@ PRODUCT FIELDS USED:
                         >
 
 
-                            <!-- =================================
+                            <!-- ======================================
                                  IMAGE
-                            ================================== -->
+                            ======================================= -->
 
                             <div class="product-image">
 
@@ -2371,11 +1586,11 @@ PRODUCT FIELDS USED:
                                     <span class="stock-dot"></span>
 
 
-                                    <% if(stock <= 0){ %>
+                                    <% if (stock <= 0) { %>
 
                                         Out of stock
 
-                                    <% } else if(stock <= 5){ %>
+                                    <% } else if (stock <= 5) { %>
 
                                         Only <%= stock %> left
 
@@ -2385,7 +1600,6 @@ PRODUCT FIELDS USED:
 
                                     <% } %>
 
-
                                 </span>
 
 
@@ -2393,16 +1607,16 @@ PRODUCT FIELDS USED:
                                     src="<%= product.image || '/images/no-image.png' %>"
                                     alt="<%= product.name || 'Product' %>"
                                     loading="lazy"
-                                    onerror="this.src='/images/no-image.png';"
+                                    onerror="this.onerror=null;this.src='/images/no-image.png';"
                                 >
 
                             </div>
 
 
 
-                            <!-- =================================
+                            <!-- ======================================
                                  DETAILS
-                            ================================== -->
+                            ======================================= -->
 
                             <div class="product-details">
 
@@ -2424,9 +1638,7 @@ PRODUCT FIELDS USED:
                                 <div class="product-price">
 
                                     <span class="currency">
-
                                         KES
-
                                     </span>
 
                                     <%= Number(
@@ -2440,19 +1652,12 @@ PRODUCT FIELDS USED:
                                     type="button"
                                     class="add-to-cart-btn"
                                     data-id="<%= product._id %>"
-                                    data-name="<%= product.name || 'Product' %>"
+                                    data-name="<%= product.name || '' %>"
                                     data-stock="<%= stock %>"
-                                    <%= stock <= 0
-                                        ? 'disabled'
-                                        : '' %>
+                                    <%= stock <= 0 ? 'disabled' : '' %>
                                 >
 
-                                    <i class="fas
-                                        <%= stock <= 0
-                                            ? 'fa-ban'
-                                            : 'fa-cart-plus' %>"
-                                    ></i>
-
+                                    <i class="fas <%= stock <= 0 ? 'fa-ban' : 'fa-cart-plus' %>"></i>
 
                                     <%= stock <= 0
                                         ? 'OUT OF STOCK'
@@ -2532,15 +1737,12 @@ PRODUCT FIELDS USED:
 
             <div class="qty-body">
 
-
                 <div class="qty-selector">
-
 
                     <button
                         type="button"
                         class="qty-control"
                         id="qtyMinus"
-                        aria-label="Decrease quantity"
                     >
                         −
                     </button>
@@ -2558,11 +1760,9 @@ PRODUCT FIELDS USED:
                         type="button"
                         class="qty-control"
                         id="qtyPlus"
-                        aria-label="Increase quantity"
                     >
                         +
                     </button>
-
 
                 </div>
 
@@ -2596,7 +1796,6 @@ PRODUCT FIELDS USED:
 
                 </button>
 
-
             </div>
 
         </div>
@@ -2615,15 +1814,11 @@ PRODUCT FIELDS USED:
     class="offcanvas offcanvas-end cart-sidebar"
     tabindex="-1"
     id="cartSidebar"
-    aria-labelledby="cartSidebarLabel"
 >
-
 
     <div class="cart-header">
 
-
         <div class="cart-heading">
-
 
             <div class="cart-icon">
 
@@ -2634,10 +1829,7 @@ PRODUCT FIELDS USED:
 
             <div>
 
-                <h5
-                    class="cart-title"
-                    id="cartSidebarLabel"
-                >
+                <h5 class="cart-title">
 
                     Your Cart
 
@@ -2652,7 +1844,6 @@ PRODUCT FIELDS USED:
 
             </div>
 
-
         </div>
 
 
@@ -2663,28 +1854,22 @@ PRODUCT FIELDS USED:
             aria-label="Close"
         ></button>
 
-
     </div>
-
 
 
     <div class="offcanvas-body cart-body">
 
-
-        <% if(cart && cart.length){ %>
+        <% if (cart && cart.length) { %>
 
 
             <% cart.forEach(item => { %>
-
 
                 <div
                     class="cart-item"
                     data-id="<%= item.productId %>"
                 >
 
-
                     <div class="cart-product-info">
-
 
                         <span class="cart-product-name">
 
@@ -2715,18 +1900,15 @@ PRODUCT FIELDS USED:
 
                         </span>
 
-
                     </div>
 
 
                     <div class="cart-controls">
 
-
                         <button
                             type="button"
                             class="cart-control cart-minus"
                             data-id="<%= item.productId %>"
-                            aria-label="Decrease quantity"
                         >
                             −
                         </button>
@@ -2736,7 +1918,6 @@ PRODUCT FIELDS USED:
                             type="button"
                             class="cart-control cart-plus"
                             data-id="<%= item.productId %>"
-                            aria-label="Increase quantity"
                         >
                             +
                         </button>
@@ -2746,17 +1927,13 @@ PRODUCT FIELDS USED:
                             type="button"
                             class="cart-control cart-remove"
                             data-id="<%= item.productId %>"
-                            aria-label="Remove product"
                         >
                             ×
                         </button>
 
-
                     </div>
 
-
                 </div>
-
 
             <% }) %>
 
@@ -2765,7 +1942,6 @@ PRODUCT FIELDS USED:
 
 
             <div class="empty-cart">
-
 
                 <div class="empty-cart-icon">
 
@@ -2787,19 +1963,15 @@ PRODUCT FIELDS USED:
 
                 </span>
 
-
             </div>
 
 
         <% } %>
 
-
     </div>
 
 
-
     <div class="cart-footer">
-
 
         <div class="cart-total">
 
@@ -2821,8 +1993,7 @@ PRODUCT FIELDS USED:
         </div>
 
 
-        <% if(cart && cart.length){ %>
-
+        <% if (cart && cart.length) { %>
 
             <button
                 type="button"
@@ -2836,12 +2007,9 @@ PRODUCT FIELDS USED:
 
             </button>
 
-
         <% } %>
 
-
     </div>
-
 
 </div>
 
@@ -2849,7 +2017,7 @@ PRODUCT FIELDS USED:
 
 <script>
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
 
 
     const qtyModalElement =
@@ -2866,38 +2034,36 @@ document.addEventListener('DOMContentLoaded', () => {
         new bootstrap.Offcanvas(cartSidebarElement);
 
 
-
     let selected = {
 
-        id:null,
+        id: null,
 
-        name:'',
+        name: '',
 
-        stock:0,
+        stock: 0,
 
-        qty:1
+        qty: 1
 
     };
 
 
-
     /* ======================================================
-       PRODUCT CARD NAVIGATION
+       PRODUCT CARD CLICK
     ====================================================== */
 
     document
         .querySelectorAll('.product-card')
-        .forEach(card => {
+        .forEach(function (card) {
 
             card.addEventListener(
                 'click',
-                event => {
+                function (event) {
 
-                    if(
+                    if (
                         event.target.closest(
                             '.add-to-cart-btn'
                         )
-                    ){
+                    ) {
 
                         return;
 
@@ -2908,7 +2074,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         card.dataset.productId;
 
 
-                    if(productId){
+                    if (productId) {
 
                         window.location.href =
                             '/products/' +
@@ -2922,29 +2088,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-
     /* ======================================================
        ADD TO CART
     ====================================================== */
 
     document
-        .querySelectorAll('.add-to-cart-btn')
-        .forEach(button => {
-
-
-            if(
-                button.id === 'qtyConfirm' ||
-                button.id === 'checkoutBtn'
-            ){
-
-                return;
-
-            }
-
+        .querySelectorAll('.product-card .add-to-cart-btn')
+        .forEach(function (button) {
 
             button.addEventListener(
                 'click',
-                event => {
+                function (event) {
 
                     event.preventDefault();
 
@@ -2967,17 +2121,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
                     document
-                        .getElementById(
-                            'qtyProductName'
-                        )
+                        .getElementById('qtyProductName')
                         .innerText =
                             selected.name;
 
 
                     document
-                        .getElementById(
-                            'qtyAvailable'
-                        )
+                        .getElementById('qtyAvailable')
                         .innerText =
                             selected.stock;
 
@@ -2993,12 +2143,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-
     /* ======================================================
        QUANTITY DISPLAY
     ====================================================== */
 
-    function updateQuantityDisplay(){
+    function updateQuantityDisplay() {
 
         document
             .getElementById('qtyValue')
@@ -3014,7 +2163,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-
     /* ======================================================
        PLUS
     ====================================================== */
@@ -3023,12 +2171,12 @@ document.addEventListener('DOMContentLoaded', () => {
         .getElementById('qtyPlus')
         .addEventListener(
             'click',
-            () => {
+            function () {
 
-                if(
+                if (
                     selected.qty <
                     selected.stock
-                ){
+                ) {
 
                     selected.qty++;
 
@@ -3040,7 +2188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
 
-
     /* ======================================================
        MINUS
     ====================================================== */
@@ -3049,11 +2196,9 @@ document.addEventListener('DOMContentLoaded', () => {
         .getElementById('qtyMinus')
         .addEventListener(
             'click',
-            () => {
+            function () {
 
-                if(
-                    selected.qty > 1
-                ){
+                if (selected.qty > 1) {
 
                     selected.qty--;
 
@@ -3065,7 +2210,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
 
-
     /* ======================================================
        CONFIRM ADD
     ====================================================== */
@@ -3074,7 +2218,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .getElementById('qtyConfirm')
         .addEventListener(
             'click',
-            async () => {
+            async function () {
 
                 const button =
                     document.getElementById(
@@ -3085,20 +2229,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.disabled = true;
 
 
-                try{
+                try {
 
                     const response =
                         await fetch(
                             '/products/add-to-cart',
                             {
-                                method:'POST',
+                                method: 'POST',
 
-                                headers:{
+                                headers: {
                                     'Content-Type':
                                         'application/json'
                                 },
 
-                                body:JSON.stringify({
+                                body: JSON.stringify({
 
                                     productId:
                                         selected.id,
@@ -3115,13 +2259,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         await response.json();
 
 
-                    if(!data.success){
+                    if (!data.success) {
 
                         alert(
                             data.message ||
                             'Unable to add product to cart.'
                         );
-
 
                         button.disabled = false;
 
@@ -3135,15 +2278,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     location.reload();
 
                 }
-                catch(error){
+                catch (error) {
 
                     console.error(error);
-
 
                     alert(
                         'Unable to connect to the server.'
                     );
-
 
                     button.disabled = false;
 
@@ -3153,16 +2294,15 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
 
-
     /* ======================================================
-       OPEN CART
+       CART
     ====================================================== */
 
     document
         .getElementById('cartBtn')
         .addEventListener(
             'click',
-            () => {
+            function () {
 
                 cartSidebar.show();
 
@@ -3170,25 +2310,21 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
 
-
     /* ======================================================
        CART REQUEST
     ====================================================== */
 
-    async function callCart(
-        url,
-        body
-    ){
+    async function callCart(url, body) {
 
-        try{
+        try {
 
             const response =
                 await fetch(
                     url,
                     {
-                        method:'POST',
+                        method: 'POST',
 
-                        headers:{
+                        headers: {
                             'Content-Type':
                                 'application/json'
                         },
@@ -3203,7 +2339,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await response.json();
 
 
-            if(!data.success){
+            if (!data.success) {
 
                 alert(
                     data.message ||
@@ -3220,15 +2356,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
 
         }
-        catch(error){
+        catch (error) {
 
             console.error(error);
-
 
             alert(
                 'Unable to connect to the server.'
             );
-
 
             return false;
 
@@ -3237,18 +2371,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-
     /* ======================================================
        CART PLUS
     ====================================================== */
 
     document
         .querySelectorAll('.cart-plus')
-        .forEach(button => {
+        .forEach(function (button) {
 
             button.addEventListener(
                 'click',
-                () => {
+                function () {
 
                     const id =
                         button.dataset.id;
@@ -3256,11 +2389,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const quantityElement =
                         document.querySelector(
-                            `.cart-item[data-id="${id}"] .cart-qty`
+                            '.cart-item[data-id="' +
+                            id +
+                            '"] .cart-qty'
                         );
 
 
-                    if(!quantityElement){
+                    if (!quantityElement) {
 
                         return;
 
@@ -3277,7 +2412,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     callCart(
                         '/products/update-cart-qty',
                         {
-                            productId:id,
+                            productId: id,
 
                             qty:
                                 currentQuantity + 1
@@ -3290,18 +2425,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-
     /* ======================================================
        CART MINUS
     ====================================================== */
 
     document
         .querySelectorAll('.cart-minus')
-        .forEach(button => {
+        .forEach(function (button) {
 
             button.addEventListener(
                 'click',
-                () => {
+                function () {
 
                     const id =
                         button.dataset.id;
@@ -3309,11 +2443,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const quantityElement =
                         document.querySelector(
-                            `.cart-item[data-id="${id}"] .cart-qty`
+                            '.cart-item[data-id="' +
+                            id +
+                            '"] .cart-qty'
                         );
 
 
-                    if(!quantityElement){
+                    if (!quantityElement) {
 
                         return;
 
@@ -3327,12 +2463,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         ) || 0;
 
 
-                    if(currentQuantity <= 1){
+                    if (currentQuantity <= 1) {
 
                         callCart(
                             '/products/remove-from-cart',
                             {
-                                productId:id
+                                productId: id
                             }
                         );
 
@@ -3344,7 +2480,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     callCart(
                         '/products/update-cart-qty',
                         {
-                            productId:id,
+                            productId: id,
 
                             qty:
                                 currentQuantity - 1
@@ -3357,18 +2493,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-
     /* ======================================================
        REMOVE
     ====================================================== */
 
     document
         .querySelectorAll('.cart-remove')
-        .forEach(button => {
+        .forEach(function (button) {
 
             button.addEventListener(
                 'click',
-                () => {
+                function () {
 
                     callCart(
                         '/products/remove-from-cart',
@@ -3384,7 +2519,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-
     /* ======================================================
        PACKAGE ORDER
     ====================================================== */
@@ -3395,24 +2529,24 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
 
-    if(checkoutButton){
+    if (checkoutButton) {
 
         checkoutButton.addEventListener(
             'click',
-            async () => {
+            async function () {
 
                 checkoutButton.disabled = true;
 
 
-                try{
+                try {
 
                     const response =
                         await fetch(
                             '/packages/create',
                             {
-                                method:'POST',
+                                method: 'POST',
 
-                                headers:{
+                                headers: {
                                     'Content-Type':
                                         'application/json'
                                 },
@@ -3427,10 +2561,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         await response.json();
 
 
-                    if(
+                    if (
                         data.success &&
                         data.packageId
-                    ){
+                    ) {
 
                         window.location.href =
                             '/packages/' +
@@ -3450,15 +2584,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     checkoutButton.disabled = false;
 
                 }
-                catch(error){
+                catch (error) {
 
                     console.error(error);
-
 
                     alert(
                         'Unable to connect to the server.'
                     );
-
 
                     checkoutButton.disabled = false;
 
@@ -3468,7 +2600,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
     }
-
 
 });
 
