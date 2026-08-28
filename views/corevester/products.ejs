@@ -2,6 +2,7 @@
 
 /* ==========================================================
    MARKETPLACE
+    PRODUCT RAILS
 ========================================================== */
 
 .marketplace {
@@ -17,15 +18,14 @@
     --muted: #718078;
 
     --line: #e2e9e4;
-    --line-soft: #edf2ee;
 
     width: 100%;
     min-height: 100vh;
 
     margin: 0;
-    padding: 0 0 35px;
+    padding: 0 0 40px;
 
-    background: #f6f8f7;
+    background: #f5f7f6;
 
     color: var(--ink);
 
@@ -61,7 +61,7 @@
 
     width: 100%;
 
-    max-width: 1280px;
+    max-width: 1400px;
 
     margin: 0 auto;
 
@@ -104,11 +104,11 @@
 
     margin-bottom: 4px;
 
-    color: #718078;
+    color: var(--muted);
 
-    font-size: 10px;
+    font-size: 9px;
 
-    font-weight: 800;
+    font-weight: 900;
 
     text-transform: uppercase;
 
@@ -130,7 +130,7 @@
 
     color: var(--green);
 
-    font-size: 25px;
+    font-size: 24px;
 
     font-weight: 900;
 
@@ -172,7 +172,7 @@
 
     border: 0;
 
-    border-radius: 12px;
+    border-radius: 50%;
 
     background: var(--green);
 
@@ -202,7 +202,8 @@
 
     display: grid;
 
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
 
     gap: 7px;
 
@@ -308,22 +309,24 @@
 
     width: 100%;
 
-    max-width: 1280px;
+    max-width: 1400px;
 
     margin: 0 auto;
 
-    padding: 16px 12px 0;
+    padding: 14px 0 0;
 
 }
 
 
 /* ==========================================================
-   CATEGORY
+   CATEGORY FILTER BAR
 ========================================================== */
 
 .category-section {
 
-    margin-bottom: 17px;
+    padding: 0 12px;
+
+    margin-bottom: 18px;
 
 }
 
@@ -336,12 +339,16 @@
 
     justify-content: space-between;
 
+    gap: 10px;
+
     margin-bottom: 8px;
 
 }
 
 
 .section-heading-left {
+
+    min-width: 0;
 
     display: flex;
 
@@ -379,7 +386,7 @@
 
 
 /* ==========================================================
-   CATEGORY BAR
+   CATEGORY PILLS
 ========================================================== */
 
 .category-bar {
@@ -400,6 +407,8 @@
 
     scrollbar-width: none;
 
+    -webkit-overflow-scrolling: touch;
+
 }
 
 
@@ -414,7 +423,7 @@
 
     flex: 0 0 auto;
 
-    min-height: 30px;
+    min-height: 31px;
 
     display: inline-flex;
 
@@ -422,7 +431,7 @@
 
     justify-content: center;
 
-    padding: 0 13px;
+    padding: 0 14px;
 
     border: 1px solid #d5dfd8;
 
@@ -455,10 +464,31 @@
 
 
 /* ==========================================================
-   PRODUCTS HEADER
+   PRODUCT CATEGORY SECTION
+
+   THIS IS THE IMPORTANT PART.
+
+   Each category gets its own horizontal row.
 ========================================================== */
 
-.products-heading {
+.product-category-section {
+
+    width: 100%;
+
+    margin: 0 0 20px;
+
+    padding: 0 0 2px;
+
+}
+
+
+/* ==========================================================
+   CATEGORY TITLE
+========================================================== */
+
+.product-section-header {
+
+    width: 100%;
 
     display: flex;
 
@@ -468,58 +498,136 @@
 
     gap: 10px;
 
-    margin-bottom: 9px;
+    padding: 0 12px;
+
+    margin-bottom: 8px;
 
 }
 
 
-.products-count {
+.product-section-title-wrap {
 
-    color: #849089;
+    min-width: 0;
 
-    font-size: 9px;
+    display: flex;
 
-    font-weight: 600;
+    align-items: center;
+
+    gap: 7px;
 
 }
 
 
-.products-count strong {
+.product-section-icon {
+
+    width: 28px;
+
+    height: 28px;
+
+    flex: 0 0 28px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background: var(--green-soft);
 
     color: var(--green);
 
+    font-size: 10px;
+
+}
+
+
+.product-section-title {
+
+    margin: 0;
+
+    color: #27342c;
+
+    font-size: 18px;
+
     font-weight: 900;
+
+    line-height: 1.1;
+
+}
+
+
+.product-section-count {
+
+    flex: 0 0 auto;
+
+    color: #829087;
+
+    font-size: 8px;
+
+    font-weight: 700;
 
 }
 
 
 /* ==========================================================
-   PRODUCT CATALOGUE
+   CATEGORY PRODUCT RAIL
+
+   HORIZONTAL SCROLLING.
+
+   This is what makes it behave like Jumia.
 ========================================================== */
 
-.product-grid {
+.product-rail {
 
     width: 100%;
 
-    display: grid;
+    display: flex;
 
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
+    align-items: stretch;
 
-    gap: 10px;
+    gap: 9px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding: 2px 12px 8px;
+
+    scrollbar-width: none;
+
+    -webkit-overflow-scrolling: touch;
+
+    scroll-snap-type: x proximity;
+
+}
+
+
+.product-rail::-webkit-scrollbar {
+
+    display: none;
 
 }
 
 
 /* ==========================================================
    PRODUCT CARD
+
+   IMPORTANT:
+
+   Cards DO NOT shrink.
+
+   This creates the horizontal catalogue.
 ========================================================== */
 
 .product-card {
 
     position: relative;
 
-    width: 100%;
+    flex: 0 0 43%;
+
+    width: 43%;
 
     min-width: 0;
 
@@ -533,23 +641,20 @@
 
     border: 1px solid #e1e7e3;
 
-    border-radius: 10px;
+    border-radius: 13px;
 
     box-shadow:
-        0 2px 7px rgba(20,40,28,.055);
+        0 2px 8px rgba(20,40,28,.065);
 
     cursor: pointer;
+
+    scroll-snap-align: start;
 
 }
 
 
 /* ==========================================================
-   PRODUCT IMAGE CONTAINER
-
-   IMPORTANT:
-   The image is constrained INSIDE the card.
-
-   It cannot become a full-screen image.
+   IMAGE
 ========================================================== */
 
 .product-image {
@@ -562,14 +667,10 @@
 
     overflow: hidden;
 
-    background: #f0f4f1;
+    background: #f3f5f4;
 
 }
 
-
-/* ==========================================================
-   PRODUCT IMAGE
-========================================================== */
 
 .product-image img {
 
@@ -594,13 +695,13 @@
 
     position: absolute;
 
-    top: 6px;
+    top: 7px;
 
-    left: 6px;
+    left: 7px;
 
     z-index: 2;
 
-    max-width: calc(100% - 12px);
+    max-width: calc(100% - 14px);
 
     min-height: 18px;
 
@@ -616,7 +717,7 @@
 
     border-radius: 20px;
 
-    background: rgba(255,255,255,.94);
+    background: rgba(255,255,255,.95);
 
     color: var(--green);
 
@@ -702,7 +803,7 @@
 
 
 /* ==========================================================
-   CATEGORY
+   PRODUCT CATEGORY LABEL
 ========================================================== */
 
 .product-category {
@@ -729,7 +830,7 @@
 
 
 /* ==========================================================
-   NAME
+   PRODUCT NAME
 ========================================================== */
 
 .product-name {
@@ -769,11 +870,11 @@
 
     gap: 3px;
 
-    margin-top: 5px;
+    margin-top: 6px;
 
     color: var(--green);
 
-    font-size: 13px;
+    font-size: 14px;
 
     font-weight: 900;
 
@@ -799,9 +900,9 @@
 
     width: 100%;
 
-    min-height: 29px;
+    min-height: 30px;
 
-    height: 29px;
+    height: 30px;
 
     display: flex;
 
@@ -817,7 +918,7 @@
 
     border: 0;
 
-    border-radius: 6px;
+    border-radius: 7px;
 
     background: var(--green);
 
@@ -844,12 +945,46 @@
 
 
 /* ==========================================================
+   SCROLL HINT
+========================================================== */
+
+.product-scroll-hint {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    margin-right: 12px;
+
+    color: var(--green);
+
+    font-size: 8px;
+
+    font-weight: 900;
+
+    white-space: nowrap;
+
+}
+
+
+.product-scroll-hint i {
+
+    font-size: 9px;
+
+}
+
+
+/* ==========================================================
    EMPTY MARKET
 ========================================================== */
 
 .empty-market {
 
-    width: 100%;
+    width: calc(100% - 24px);
+
+    margin: 0 12px;
 
     min-height: 250px;
 
@@ -976,7 +1111,7 @@
     }
 
 
-    .market-main {
+    .category-section {
 
         padding-left: 20px;
 
@@ -985,12 +1120,31 @@
     }
 
 
-    .product-grid {
+    .product-section-header {
 
-        grid-template-columns:
-            repeat(3, minmax(0, 1fr));
+        padding-left: 20px;
+
+        padding-right: 20px;
+
+    }
+
+
+    .product-rail {
+
+        padding-left: 20px;
+
+        padding-right: 20px;
 
         gap: 11px;
+
+    }
+
+
+    .product-card {
+
+        flex-basis: 29%;
+
+        width: 29%;
 
     }
 
@@ -1004,7 +1158,7 @@
 
     .product-price {
 
-        font-size: 14px;
+        font-size: 15px;
 
     }
 
@@ -1029,20 +1183,52 @@
 
     .market-main {
 
-        padding:
-            20px
-            28px
-            0;
+        padding-top: 20px;
 
     }
 
 
-    .product-grid {
+    .category-section {
 
-        grid-template-columns:
-            repeat(4, minmax(0, 1fr));
+        padding-left: 28px;
+
+        padding-right: 28px;
+
+    }
+
+
+    .product-section-header {
+
+        padding-left: 28px;
+
+        padding-right: 28px;
+
+    }
+
+
+    .product-rail {
+
+        padding-left: 28px;
+
+        padding-right: 28px;
 
         gap: 13px;
+
+    }
+
+
+    .product-card {
+
+        flex-basis: 21%;
+
+        width: 21%;
+
+    }
+
+
+    .product-section-title {
+
+        font-size: 20px;
 
     }
 
@@ -1072,16 +1258,16 @@
 
     .product-price {
 
-        font-size: 15px;
+        font-size: 16px;
 
     }
 
 
     .add-to-cart-btn {
 
-        min-height: 31px;
+        min-height: 32px;
 
-        height: 31px;
+        height: 32px;
 
         font-size: 8px;
 
@@ -1094,32 +1280,20 @@
    LARGE DESKTOP
 ========================================================== */
 
-@media (min-width: 1100px) {
+@media (min-width: 1200px) {
 
-    .market-hero-inner {
-
-        padding-left: 30px;
-
-        padding-right: 30px;
-
-    }
-
-
-    .market-main {
-
-        padding-left: 30px;
-
-        padding-right: 30px;
-
-    }
-
-
-    .product-grid {
-
-        grid-template-columns:
-            repeat(5, minmax(0, 1fr));
+    .product-rail {
 
         gap: 14px;
+
+    }
+
+
+    .product-card {
+
+        flex-basis: 18%;
+
+        width: 18%;
 
     }
 
@@ -1141,7 +1315,7 @@
     }
 
 
-    .market-main {
+    .category-section {
 
         padding-left: 8px;
 
@@ -1150,9 +1324,31 @@
     }
 
 
-    .product-grid {
+    .product-section-header {
+
+        padding-left: 8px;
+
+        padding-right: 8px;
+
+    }
+
+
+    .product-rail {
+
+        padding-left: 8px;
+
+        padding-right: 8px;
 
         gap: 7px;
+
+    }
+
+
+    .product-card {
+
+        flex-basis: 45%;
+
+        width: 45%;
 
     }
 
@@ -1357,13 +1553,11 @@
 
                 </div>
 
-
             </div>
 
         </div>
 
     </section>
-
 
 
     <!-- ======================================================
@@ -1374,7 +1568,7 @@
 
 
         <!-- ==================================================
-             CATEGORIES
+             CATEGORY FILTER
         ================================================== -->
 
         <section class="category-section">
@@ -1421,11 +1615,9 @@
 
                 <% }) %>
 
-
             </nav>
 
         </section>
-
 
 
         <!-- ==================================================
@@ -1437,6 +1629,10 @@
 
             <% if (!products || !products.length) { %>
 
+
+                <!-- ==========================================
+                     EMPTY STATE
+                =========================================== -->
 
                 <div class="empty-market">
 
@@ -1450,7 +1646,9 @@
 
 
                         <h3>
+
                             Nothing available here yet
+
                         </h3>
 
 
@@ -1496,7 +1694,6 @@
 
                         <% } %>
 
-
                     </div>
 
                 </div>
@@ -1506,176 +1703,275 @@
 
 
                 <!-- ==================================================
-                     PRODUCTS HEADER
+                     BUILD CATEGORY GROUPS
+
+                     Products are grouped here by product.category.
+
+                     Example:
+
+                     TVs
+                       product
+                       product
+                       product
+
+                     Phones
+                       product
+                       product
+                       product
+
+                     Laptops
+                       product
+                       product
                 ================================================== -->
 
-                <div class="products-heading">
+                <%
 
-                    <div class="section-heading-left">
+                    const groupedProducts = {};
 
-                        <i class="fas fa-boxes-stacked"></i>
+                    products.forEach(function(product) {
 
-                        <h2 class="section-heading-title">
-                            Products
-                        </h2>
+                        const category =
+                            product.category ||
+                            'General';
 
-                    </div>
+                        if (!groupedProducts[category]) {
 
+                            groupedProducts[category] = [];
 
-                    <div class="products-count">
+                        }
 
-                        Showing
+                        groupedProducts[category].push(product);
 
-                        <strong>
-                            <%= products.length %>
-                        </strong>
+                    });
 
-                        available
+                    const categoryNames =
+                        Object.keys(groupedProducts);
 
-                    </div>
-
-                </div>
-
+                %>
 
 
                 <!-- ==================================================
-                     PRODUCT CARDS
+                     CATEGORY ROWS
                 ================================================== -->
 
-                <div class="product-grid">
+                <% categoryNames.forEach(function(category) { %>
 
 
-                    <% products.forEach(product => { %>
+                    <section
+                        class="product-category-section"
+                        data-category="<%= category %>"
+                    >
 
 
-                        <%
-                            const stock =
-                                Number(product.units || 0);
+                        <!-- ==========================================
+                             CATEGORY HEADER
+                        =========================================== -->
 
-                            let stockClass = '';
-
-                            if (stock <= 0) {
-
-                                stockClass = 'stock-out';
-
-                            } else if (stock <= 5) {
-
-                                stockClass = 'stock-low';
-
-                            }
-                        %>
+                        <div class="product-section-header">
 
 
-                        <article
-                            class="product-card"
-                            data-product-id="<%= product._id %>"
-                        >
+                            <div class="product-section-title-wrap">
 
 
-                            <!-- ======================================
-                                 IMAGE
-                            ======================================= -->
+                                <div class="product-section-icon">
 
-                            <div class="product-image">
-
-
-                                <span
-                                    class="stock-badge <%= stockClass %>"
-                                >
-
-                                    <span class="stock-dot"></span>
-
-
-                                    <% if (stock <= 0) { %>
-
-                                        Out of stock
-
-                                    <% } else if (stock <= 5) { %>
-
-                                        Only <%= stock %> left
-
-                                    <% } else { %>
-
-                                        <%= stock %> available
-
-                                    <% } %>
-
-                                </span>
-
-
-                                <img
-                                    src="<%= product.image || '/images/no-image.png' %>"
-                                    alt="<%= product.name || 'Product' %>"
-                                    loading="lazy"
-                                    onerror="this.onerror=null;this.src='/images/no-image.png';"
-                                >
-
-                            </div>
-
-
-
-                            <!-- ======================================
-                                 DETAILS
-                            ======================================= -->
-
-                            <div class="product-details">
-
-
-                                <p class="product-category">
-
-                                    <%= product.category || 'General' %>
-
-                                </p>
-
-
-                                <h3 class="product-name">
-
-                                    <%= product.name || 'Unnamed Product' %>
-
-                                </h3>
-
-
-                                <div class="product-price">
-
-                                    <span class="currency">
-                                        KES
-                                    </span>
-
-                                    <%= Number(
-                                        product.unitSellPrice || 0
-                                    ).toLocaleString() %>
+                                    <i class="fas fa-box"></i>
 
                                 </div>
 
 
-                                <button
-                                    type="button"
-                                    class="add-to-cart-btn"
-                                    data-id="<%= product._id %>"
-                                    data-name="<%= product.name || '' %>"
-                                    data-stock="<%= stock %>"
-                                    <%= stock <= 0 ? 'disabled' : '' %>
-                                >
+                                <h2 class="product-section-title">
 
-                                    <i class="fas <%= stock <= 0 ? 'fa-ban' : 'fa-cart-plus' %>"></i>
+                                    <%= category %>
 
-                                    <%= stock <= 0
-                                        ? 'OUT OF STOCK'
-                                        : 'ADD TO CART' %>
-
-                                </button>
+                                </h2>
 
 
                             </div>
 
 
-                        </article>
+                            <div class="product-section-count">
+
+                                <%= groupedProducts[category].length %>
+
+                                <%= groupedProducts[category].length === 1
+                                    ? 'item'
+                                    : 'items'
+                                %>
+
+                            </div>
 
 
-                    <% }) %>
+                        </div>
 
 
-                </div>
+                        <!-- ==========================================
+                             HORIZONTAL PRODUCT RAIL
+
+                             IMPORTANT:
+
+                             Products belonging to this category
+                             stay on THIS row.
+
+                             The row scrolls horizontally.
+                        =========================================== -->
+
+                        <div
+                            class="product-rail"
+                            aria-label="<%= category %> products"
+                        >
+
+
+                            <% groupedProducts[category].forEach(function(product) { %>
+
+
+                                <%
+
+                                    const stock =
+                                        Number(
+                                            product.units || 0
+                                        );
+
+                                    let stockClass = '';
+
+                                    if (stock <= 0) {
+
+                                        stockClass =
+                                            'stock-out';
+
+                                    } else if (stock <= 5) {
+
+                                        stockClass =
+                                            'stock-low';
+
+                                    }
+
+                                %>
+
+
+                                <article
+                                    class="product-card"
+                                    data-product-id="<%= product._id %>"
+                                >
+
+
+                                    <!-- ==================================
+                                         IMAGE
+                                    =================================== -->
+
+                                    <div class="product-image">
+
+
+                                        <span
+                                            class="stock-badge <%= stockClass %>"
+                                        >
+
+                                            <span class="stock-dot"></span>
+
+
+                                            <% if (stock <= 0) { %>
+
+                                                Out of stock
+
+                                            <% } else if (stock <= 5) { %>
+
+                                                Only
+                                                <%= stock %>
+                                                left
+
+                                            <% } else { %>
+
+                                                <%= stock %>
+                                                available
+
+                                            <% } %>
+
+                                        </span>
+
+
+                                        <img
+                                            src="<%= product.image || '/images/no-image.png' %>"
+                                            alt="<%= product.name || 'Product' %>"
+                                            loading="lazy"
+                                            onerror="this.onerror=null;this.src='/images/no-image.png';"
+                                        >
+
+
+                                    </div>
+
+
+                                    <!-- ==================================
+                                         DETAILS
+                                    =================================== -->
+
+                                    <div class="product-details">
+
+
+                                        <p class="product-category">
+
+                                            <%= product.category || 'General' %>
+
+                                        </p>
+
+
+                                        <h3 class="product-name">
+
+                                            <%= product.name || 'Unnamed Product' %>
+
+                                        </h3>
+
+
+                                        <div class="product-price">
+
+                                            <span class="currency">
+                                                KES
+                                            </span>
+
+                                            <%= Number(
+                                                product.unitSellPrice || 0
+                                            ).toLocaleString() %>
+
+                                        </div>
+
+
+                                        <button
+                                            type="button"
+                                            class="add-to-cart-btn"
+                                            data-id="<%= product._id %>"
+                                            data-name="<%= product.name || '' %>"
+                                            data-stock="<%= stock %>"
+                                            <%= stock <= 0 ? 'disabled' : '' %>
+                                        >
+
+                                            <i class="fas <%= stock <= 0
+                                                ? 'fa-ban'
+                                                : 'fa-cart-plus' %>"
+                                            ></i>
+
+
+                                            <%= stock <= 0
+                                                ? 'OUT OF STOCK'
+                                                : 'ADD TO CART' %>
+
+                                        </button>
+
+
+                                    </div>
+
+
+                                </article>
+
+
+                            <% }) %>
+
+
+                        </div>
+
+
+                    </section>
+
+
+                <% }) %>
 
 
             <% } %>
@@ -1686,921 +1982,4 @@
 
     </main>
 
-
 </div>
-
-
-
-<!-- ==========================================================
-     QUANTITY MODAL
-========================================================== -->
-
-<div
-    class="modal fade"
-    id="qtyModal"
-    tabindex="-1"
-    aria-hidden="true"
->
-
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-
-        <div class="modal-content qty-modal">
-
-
-            <div class="qty-header">
-
-                <div class="qty-icon">
-
-                    <i class="fas fa-cart-plus"></i>
-
-                </div>
-
-
-                <h3
-                    class="qty-product-name"
-                    id="qtyProductName"
-                ></h3>
-
-
-                <p class="qty-available">
-
-                    Available:
-
-                    <strong id="qtyAvailable">
-                        0
-                    </strong>
-
-                </p>
-
-            </div>
-
-
-            <div class="qty-body">
-
-                <div class="qty-selector">
-
-                    <button
-                        type="button"
-                        class="qty-control"
-                        id="qtyMinus"
-                    >
-                        −
-                    </button>
-
-
-                    <span
-                        id="qtyValue"
-                        class="qty-number"
-                    >
-                        1
-                    </span>
-
-
-                    <button
-                        type="button"
-                        class="qty-control"
-                        id="qtyPlus"
-                    >
-                        +
-                    </button>
-
-                </div>
-
-
-                <button
-                    type="button"
-                    class="add-to-cart-btn qty-confirm"
-                    id="qtyConfirm"
-                >
-
-                    <i class="fas fa-cart-plus"></i>
-
-                    ADD
-
-                    <span id="qtyConfirmCount">
-                        1
-                    </span>
-
-                    TO CART
-
-                </button>
-
-
-                <button
-                    type="button"
-                    class="btn btn-link qty-cancel"
-                    data-bs-dismiss="modal"
-                >
-
-                    Cancel
-
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-
-<!-- ==========================================================
-     CART SIDEBAR
-========================================================== -->
-
-<div
-    class="offcanvas offcanvas-end cart-sidebar"
-    tabindex="-1"
-    id="cartSidebar"
->
-
-    <div class="cart-header">
-
-        <div class="cart-heading">
-
-            <div class="cart-icon">
-
-                <i class="fas fa-shopping-basket"></i>
-
-            </div>
-
-
-            <div>
-
-                <h5 class="cart-title">
-
-                    Your Cart
-
-                </h5>
-
-
-                <p class="cart-subtitle">
-
-                    Review your selected products
-
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="offcanvas"
-            aria-label="Close"
-        ></button>
-
-    </div>
-
-
-    <div class="offcanvas-body cart-body">
-
-        <% if (cart && cart.length) { %>
-
-
-            <% cart.forEach(item => { %>
-
-                <div
-                    class="cart-item"
-                    data-id="<%= item.productId %>"
-                >
-
-                    <div class="cart-product-info">
-
-                        <span class="cart-product-name">
-
-                            <%= item.name %>
-
-                        </span>
-
-
-                        <span class="cart-product-price">
-
-                            KES
-
-                            <strong>
-
-                                <%= Number(
-                                    item.price || 0
-                                ).toLocaleString() %>
-
-                            </strong>
-
-                            ×
-
-                            <span class="cart-qty">
-
-                                <%= item.qty %>
-
-                            </span>
-
-                        </span>
-
-                    </div>
-
-
-                    <div class="cart-controls">
-
-                        <button
-                            type="button"
-                            class="cart-control cart-minus"
-                            data-id="<%= item.productId %>"
-                        >
-                            −
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="cart-control cart-plus"
-                            data-id="<%= item.productId %>"
-                        >
-                            +
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="cart-control cart-remove"
-                            data-id="<%= item.productId %>"
-                        >
-                            ×
-                        </button>
-
-                    </div>
-
-                </div>
-
-            <% }) %>
-
-
-        <% } else { %>
-
-
-            <div class="empty-cart">
-
-                <div class="empty-cart-icon">
-
-                    <i class="fas fa-shopping-basket"></i>
-
-                </div>
-
-
-                <strong>
-
-                    Your cart is empty
-
-                </strong>
-
-
-                <span>
-
-                    Products you add will appear here.
-
-                </span>
-
-            </div>
-
-
-        <% } %>
-
-    </div>
-
-
-    <div class="cart-footer">
-
-        <div class="cart-total">
-
-            <span>
-                Cart total
-            </span>
-
-
-            <strong>
-
-                KES
-
-                <%= Number(
-                    cartTotal || 0
-                ).toLocaleString() %>
-
-            </strong>
-
-        </div>
-
-
-        <% if (cart && cart.length) { %>
-
-            <button
-                type="button"
-                class="add-to-cart-btn checkout-btn"
-                id="checkoutBtn"
-            >
-
-                <i class="fas fa-box"></i>
-
-                PACKAGE ORDER
-
-            </button>
-
-        <% } %>
-
-    </div>
-
-</div>
-
-
-
-<script>
-
-document.addEventListener('DOMContentLoaded', function () {
-
-
-    const qtyModalElement =
-        document.getElementById('qtyModal');
-
-    const cartSidebarElement =
-        document.getElementById('cartSidebar');
-
-
-    const qtyModal =
-        new bootstrap.Modal(qtyModalElement);
-
-    const cartSidebar =
-        new bootstrap.Offcanvas(cartSidebarElement);
-
-
-    let selected = {
-
-        id: null,
-
-        name: '',
-
-        stock: 0,
-
-        qty: 1
-
-    };
-
-
-    /* ======================================================
-       PRODUCT CARD CLICK
-    ====================================================== */
-
-    document
-        .querySelectorAll('.product-card')
-        .forEach(function (card) {
-
-            card.addEventListener(
-                'click',
-                function (event) {
-
-                    if (
-                        event.target.closest(
-                            '.add-to-cart-btn'
-                        )
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    const productId =
-                        card.dataset.productId;
-
-
-                    if (productId) {
-
-                        window.location.href =
-                            '/products/' +
-                            productId;
-
-                    }
-
-                }
-            );
-
-        });
-
-
-    /* ======================================================
-       ADD TO CART
-    ====================================================== */
-
-    document
-        .querySelectorAll('.product-card .add-to-cart-btn')
-        .forEach(function (button) {
-
-            button.addEventListener(
-                'click',
-                function (event) {
-
-                    event.preventDefault();
-
-                    event.stopPropagation();
-
-
-                    selected.id =
-                        button.dataset.id;
-
-                    selected.name =
-                        button.dataset.name;
-
-                    selected.stock =
-                        parseInt(
-                            button.dataset.stock,
-                            10
-                        ) || 0;
-
-                    selected.qty = 1;
-
-
-                    document
-                        .getElementById('qtyProductName')
-                        .innerText =
-                            selected.name;
-
-
-                    document
-                        .getElementById('qtyAvailable')
-                        .innerText =
-                            selected.stock;
-
-
-                    updateQuantityDisplay();
-
-
-                    qtyModal.show();
-
-                }
-            );
-
-        });
-
-
-    /* ======================================================
-       QUANTITY DISPLAY
-    ====================================================== */
-
-    function updateQuantityDisplay() {
-
-        document
-            .getElementById('qtyValue')
-            .innerText =
-                selected.qty;
-
-
-        document
-            .getElementById('qtyConfirmCount')
-            .innerText =
-                selected.qty;
-
-    }
-
-
-    /* ======================================================
-       PLUS
-    ====================================================== */
-
-    document
-        .getElementById('qtyPlus')
-        .addEventListener(
-            'click',
-            function () {
-
-                if (
-                    selected.qty <
-                    selected.stock
-                ) {
-
-                    selected.qty++;
-
-                    updateQuantityDisplay();
-
-                }
-
-            }
-        );
-
-
-    /* ======================================================
-       MINUS
-    ====================================================== */
-
-    document
-        .getElementById('qtyMinus')
-        .addEventListener(
-            'click',
-            function () {
-
-                if (selected.qty > 1) {
-
-                    selected.qty--;
-
-                    updateQuantityDisplay();
-
-                }
-
-            }
-        );
-
-
-    /* ======================================================
-       CONFIRM ADD
-    ====================================================== */
-
-    document
-        .getElementById('qtyConfirm')
-        .addEventListener(
-            'click',
-            async function () {
-
-                const button =
-                    document.getElementById(
-                        'qtyConfirm'
-                    );
-
-
-                button.disabled = true;
-
-
-                try {
-
-                    const response =
-                        await fetch(
-                            '/products/add-to-cart',
-                            {
-                                method: 'POST',
-
-                                headers: {
-                                    'Content-Type':
-                                        'application/json'
-                                },
-
-                                body: JSON.stringify({
-
-                                    productId:
-                                        selected.id,
-
-                                    qty:
-                                        selected.qty
-
-                                })
-                            }
-                        );
-
-
-                    const data =
-                        await response.json();
-
-
-                    if (!data.success) {
-
-                        alert(
-                            data.message ||
-                            'Unable to add product to cart.'
-                        );
-
-                        button.disabled = false;
-
-                        return;
-
-                    }
-
-
-                    qtyModal.hide();
-
-                    location.reload();
-
-                }
-                catch (error) {
-
-                    console.error(error);
-
-                    alert(
-                        'Unable to connect to the server.'
-                    );
-
-                    button.disabled = false;
-
-                }
-
-            }
-        );
-
-
-    /* ======================================================
-       CART
-    ====================================================== */
-
-    document
-        .getElementById('cartBtn')
-        .addEventListener(
-            'click',
-            function () {
-
-                cartSidebar.show();
-
-            }
-        );
-
-
-    /* ======================================================
-       CART REQUEST
-    ====================================================== */
-
-    async function callCart(url, body) {
-
-        try {
-
-            const response =
-                await fetch(
-                    url,
-                    {
-                        method: 'POST',
-
-                        headers: {
-                            'Content-Type':
-                                'application/json'
-                        },
-
-                        body:
-                            JSON.stringify(body)
-                    }
-                );
-
-
-            const data =
-                await response.json();
-
-
-            if (!data.success) {
-
-                alert(
-                    data.message ||
-                    'Cart update failed.'
-                );
-
-                return false;
-
-            }
-
-
-            location.reload();
-
-            return true;
-
-        }
-        catch (error) {
-
-            console.error(error);
-
-            alert(
-                'Unable to connect to the server.'
-            );
-
-            return false;
-
-        }
-
-    }
-
-
-    /* ======================================================
-       CART PLUS
-    ====================================================== */
-
-    document
-        .querySelectorAll('.cart-plus')
-        .forEach(function (button) {
-
-            button.addEventListener(
-                'click',
-                function () {
-
-                    const id =
-                        button.dataset.id;
-
-
-                    const quantityElement =
-                        document.querySelector(
-                            '.cart-item[data-id="' +
-                            id +
-                            '"] .cart-qty'
-                        );
-
-
-                    if (!quantityElement) {
-
-                        return;
-
-                    }
-
-
-                    const currentQuantity =
-                        parseInt(
-                            quantityElement.innerText,
-                            10
-                        ) || 0;
-
-
-                    callCart(
-                        '/products/update-cart-qty',
-                        {
-                            productId: id,
-
-                            qty:
-                                currentQuantity + 1
-                        }
-                    );
-
-                }
-            );
-
-        });
-
-
-    /* ======================================================
-       CART MINUS
-    ====================================================== */
-
-    document
-        .querySelectorAll('.cart-minus')
-        .forEach(function (button) {
-
-            button.addEventListener(
-                'click',
-                function () {
-
-                    const id =
-                        button.dataset.id;
-
-
-                    const quantityElement =
-                        document.querySelector(
-                            '.cart-item[data-id="' +
-                            id +
-                            '"] .cart-qty'
-                        );
-
-
-                    if (!quantityElement) {
-
-                        return;
-
-                    }
-
-
-                    const currentQuantity =
-                        parseInt(
-                            quantityElement.innerText,
-                            10
-                        ) || 0;
-
-
-                    if (currentQuantity <= 1) {
-
-                        callCart(
-                            '/products/remove-from-cart',
-                            {
-                                productId: id
-                            }
-                        );
-
-                        return;
-
-                    }
-
-
-                    callCart(
-                        '/products/update-cart-qty',
-                        {
-                            productId: id,
-
-                            qty:
-                                currentQuantity - 1
-                        }
-                    );
-
-                }
-            );
-
-        });
-
-
-    /* ======================================================
-       REMOVE
-    ====================================================== */
-
-    document
-        .querySelectorAll('.cart-remove')
-        .forEach(function (button) {
-
-            button.addEventListener(
-                'click',
-                function () {
-
-                    callCart(
-                        '/products/remove-from-cart',
-                        {
-                            productId:
-                                button.dataset.id
-                        }
-                    );
-
-                }
-            );
-
-        });
-
-
-    /* ======================================================
-       PACKAGE ORDER
-    ====================================================== */
-
-    const checkoutButton =
-        document.getElementById(
-            'checkoutBtn'
-        );
-
-
-    if (checkoutButton) {
-
-        checkoutButton.addEventListener(
-            'click',
-            async function () {
-
-                checkoutButton.disabled = true;
-
-
-                try {
-
-                    const response =
-                        await fetch(
-                            '/packages/create',
-                            {
-                                method: 'POST',
-
-                                headers: {
-                                    'Content-Type':
-                                        'application/json'
-                                },
-
-                                body:
-                                    JSON.stringify({})
-                            }
-                        );
-
-
-                    const data =
-                        await response.json();
-
-
-                    if (
-                        data.success &&
-                        data.packageId
-                    ) {
-
-                        window.location.href =
-                            '/packages/' +
-                            data.packageId;
-
-                        return;
-
-                    }
-
-
-                    alert(
-                        data.message ||
-                        'Unable to create package order.'
-                    );
-
-
-                    checkoutButton.disabled = false;
-
-                }
-                catch (error) {
-
-                    console.error(error);
-
-                    alert(
-                        'Unable to connect to the server.'
-                    );
-
-                    checkoutButton.disabled = false;
-
-                }
-
-            }
-        );
-
-    }
-
-});
-
-</script>
