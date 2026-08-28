@@ -1,237 +1,132 @@
-<!-- CORE VESTER - CUSTOMER MARKETPLACE - NO BOOTSTRAP -->
-
 <style>
-.core-products-page{width:100%;min-height:calc(100vh - 80px);background:#f8fdf6;font-family:"Segoe UI",sans-serif;box-sizing:border-box;overflow-x:hidden;}
-.core-products-container{width:100%;max-width:1300px;margin:0 auto;padding:20px;box-sizing:border-box;}
-.core-products-header{width:100%;margin-bottom:25px;}
-.core-products-header h1{margin:0;color:#0a4d1e;font-size:26px;font-weight:900;line-height:1.2;}
-.core-products-header p{margin:5px 0 0 0;color:#666;font-size:13px;line-height:1.5;}
+.core-page{width:100%;max-width:100vw;overflow-x:hidden;background:#f8fdf6;font-family:"Segoe UI",sans-serif;}
+.core-container{width:100%;max-width:1300px;margin:0 auto;padding:16px 12px;box-sizing:border-box;overflow-x:hidden;}
+.core-header{margin-bottom:20px;}
+.core-header h1{margin:0;color:#0a4d1e;font-size:24px;font-weight:900;}
+.core-header p{margin:4px 0 0 0;color:#666;font-size:13px;}
 
-.core-category{width:100%;margin:0 0 30px 0;}
-.core-category-header{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
-.core-category-title{display:flex;align-items:center;gap:9px;min-width:0;}
-.core-category-icon{width:34px;height:34px;min-width:34px;display:flex;align-items:center;justify-content:center;background:#e8f5e9;border:1px solid #c5e1a5;border-radius:10px;color:#0a4d1e;font-size:14px;}
-.core-category-title h2{margin:0;color:#0a4d1e;font-size:17px;font-weight:850;text-transform:capitalize;}
-.core-category-count{color:#777;font-size:11px;font-weight:600;margin-left:4px;}
-.core-category-scroll{flex-shrink:0;color:#0a4d1e;font-size:10px;font-weight:700;white-space:nowrap;}
-.core-category-scroll i{margin-left:3px;}
+.core-category{width:100%;max-width:100%;margin:0 0 28px 0;overflow:hidden;}
+.core-cat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;}
+.core-cat-title{display:flex;align-items:center;gap:8px;min-width:0;}
+.core-cat-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#e8f5e9;border:1px solid #c5e1a5;border-radius:8px;color:#0a4d1e;font-size:14px;flex-shrink:0;}
+.core-cat-title h2{margin:0;color:#0a4d1e;font-size:16px;font-weight:800;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.core-cat-count{color:#777;font-size:11px;margin-left:4px;}
+.core-cat-hint{color:#0a4d1e;font-size:10px;font-weight:700;flex-shrink:0;}
 
-.core-products-row{width:100%;max-width:100%;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:14px;overflow-x:auto;overflow-y:hidden;padding:2px 2px 14px 2px;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:#a5d6a7 transparent;}
-.core-products-row::-webkit-scrollbar{height:5px;}
-.core-products-row::-webkit-scrollbar-thumb{background:#a5d6a7;border-radius:20px;}
+.core-row{width:100%;max-width:100%;display:flex;flex-wrap:nowrap;gap:12px;overflow-x:auto;overflow-y:hidden;padding:2px 2px 12px 2px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
+.core-row::-webkit-scrollbar{height:4px;}
+.core-row::-webkit-scrollbar-thumb{background:#a5d6a7;border-radius:10px;}
 
-.core-product-card{flex:0 0 220px;width:220px;min-width:220px;max-width:220px;background:#ffffff;border:1px solid #e8f5e9;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.04);display:flex;flex-direction:column;position:relative;}
-.core-product-image-window{position:relative;width:220px;max-width:220px;height:130px!important;min-height:130px!important;max-height:130px!important;flex:0 0 130px;background:#f6fbf6;overflow:hidden!important;display:block;margin:0;padding:0;}
-.core-product-image-window img{position:absolute!important;top:0!important;left:0!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;margin:0!important;padding:0!important;border:0!important;display:block!important;}
-.core-product-no-image{position:absolute;inset:0;width:100%;height:130px;display:flex;align-items:center;justify-content:center;background:#f6fbf6;}
-.core-product-no-image i{color:#a5d6a7;font-size:36px;}
-.core-product-stock{position:absolute;top:8px;left:8px;z-index:5;background:#fff;border:1px solid #0a4d1e;color:#0a4d1e;font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;}
-.core-product-stock.empty{border-color:#c62828;color:#c62828;}
-.core-product-info{width:100%;padding:12px;flex:1 1 auto;}
-.core-product-category{margin:0;color:#2e7d32;font-size:10px;font-weight:800;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.core-product-name{margin:4px 0 0 0;color:#111;font-size:14px;line-height:1.3;font-weight:700;height:36px;min-height:36px;max-height:36px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
-.core-product-description{margin:6px 0 0 0;color:#777;font-size:11px;line-height:1.35;height:30px;min-height:30px;max-height:30px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
-.core-product-price{width:100%;margin-top:10px;padding:8px;background:#f9fbe7;border-radius:8px;}
-.core-product-price-label{margin:0;color:#888;font-size:9px;}
-.core-product-price-value{margin:1px 0 0 0;color:#0a4d1e;font-size:13px;font-weight:800;}
-.core-product-footer{width:100%;padding:0 12px 12px 12px;}
-.core-product-button{width:100%;margin:0;padding:9px;border:none;border-radius:8px;background:#0a4d1e;color:#fff;font-family:inherit;font-size:11px;font-weight:800;cursor:pointer;}
-.core-product-button:active{transform:scale(0.98);}
-.core-product-button.disabled{background:#eeeeee;color:#999;cursor:not-allowed;}
-.core-category-divider{width:100%;height:1px;margin-top:22px;background:#e8f5e9;}
-.core-products-empty{width:100%;background:#fff;border-top:4px solid #0a4d1e;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.06);padding:45px 20px;text-align:center;}
-.core-products-empty-icon{width:60px;height:60px;margin:0 auto 15px auto;display:flex;align-items:center;justify-content:center;background:#e8f5e9;color:#0a4d1e;border-radius:16px;font-size:25px;}
-.core-products-empty h2{margin:0;color:#0a4d1e;font-size:19px;}
-.core-products-empty p{margin:6px 0 0 0;color:#777;font-size:13px;}
+.core-card{flex:0 0 170px;width:170px;min-width:170px;max-width:170px;background:#fff;border:1px solid #e8f5e9;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 6px rgba(0,0,0,0.04);cursor:pointer;}
+.core-img-box{width:100%;height:110px;min-height:110px;max-height:110px;background:#f6fbf6;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;flex-shrink:0;}
+.core-img-box img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;max-width:100%;max-height:100%;}
+.core-no-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#a5d6a7;font-size:28px;}
+.core-stock{position:absolute;top:6px;left:6px;background:#fff;border:1px solid #0a4d1e;color:#0a4d1e;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;z-index:2;}
+.core-stock.empty{border-color:#c62828;color:#c62828;}
+.core-info{padding:10px;flex:1;display:flex;flex-direction:column;}
+.core-cat-label{margin:0;color:#2e7d32;font-size:9px;font-weight:800;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.core-name{margin:3px 0 0 0;color:#111;font-size:13px;font-weight:700;line-height:1.25;height:32px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
+.core-desc{margin:4px 0 0 0;color:#777;font-size:10px;line-height:1.3;height:26px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
+.core-price-box{margin-top:8px;background:#f9fbe7;border-radius:6px;padding:6px;}
+.core-price-label{margin:0;color:#888;font-size:8px;}
+.core-price-val{margin:0;color:#0a4d1e;font-size:12px;font-weight:800;}
+.core-footer{padding:0 10px 10px 10px;}
+.core-btn{width:100%;padding:8px;border:none;border-radius:7px;background:#0a4d1e;color:#fff;font-size:10px;font-weight:800;cursor:pointer;}
+.core-btn:disabled{background:#eee;color:#999;}
 
-@media(max-width:600px){
- .core-products-container{padding:16px 12px;}
- .core-products-header h1{font-size:25px;}
- .core-category-title h2{font-size:16px;}
- .core-category-scroll{font-size:0;}
- .core-category-scroll i{font-size:13px;}
- .core-products-row{gap:12px;}
-}
-@media(max-width:360px){
- .core-product-card{flex-basis:205px;width:205px;min-width:205px;max-width:205px;}
- .core-product-image-window{width:205px;}
-}
+@media(min-width:600px){.core-card{flex-basis:200px;width:200px;min-width:200px;max-width:200px;}.core-img-box{height:125px;min-height:125px;max-height:125px;} }
 
-/* CART SIDEBAR - PURE CSS NO BOOTSTRAP */
-#coreCartOverlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:1000;display:none;opacity:0;transition:opacity 0.3s;}
-#coreCartSidebar{position:fixed;top:0;right:-380px;width:360px;max-width:90vw;height:100vh;background:#fff;border-left:5px solid #0a4d1e;z-index:1100;transition:right 0.35s;display:flex;flex-direction:column;}
-#qtyPopupOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1200;display:none;align-items:center;justify-content:center;padding:20px;}
-#qtyPopupBox{background:#fff;border:3px solid #0a4d1e;border-radius:16px;width:100%;max-width:300px;padding:24px;text-align:center;}
+#qtyOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1200;display:none;align-items:center;justify-content:center;padding:20px;}
+#qtyBox{background:#fff;border:3px solid #0a4d1e;border-radius:16px;width:100%;max-width:300px;padding:20px;text-align:center;}
 </style>
 
-<div class="core-products-page">
-    <div class="core-products-container">
-        <div class="core-products-header">
-            <h1>Our Products</h1>
-            <p>Quality medical equipment and hospital supplies you can trust.</p>
+<div class="core-page">
+  <div class="core-container">
+    <div class="core-header"><h1>Our Products</h1><p>Quality medical equipment and hospital supplies you can trust.</p></div>
+
+    <%
+      const groups={};
+      if(Array.isArray(products)){ products.filter(p=>p&&p.isActive!==false).forEach(p=>{
+        const c=String(p.category||"other").trim().toLowerCase(); if(!groups[c]) groups[c]=[]; groups[c].push(p);
+      });}
+      const icons={"medical equipment":"fa-stethoscope","hospital supplies":"fa-kit-medical","surgical":"fa-user-doctor","diagnostics":"fa-microscope","laboratory":"fa-flask","consumables":"fa-boxes-stacked","medicines":"fa-pills","other":"fa-box-open"};
+    %>
+
+    <% if(Object.keys(groups).length===0){ %>
+      <div style="background:#fff;border-top:4px solid #0a4d1e;border-radius:16px;padding:40px 20px;text-align:center;"><i class="fas fa-box-open" style="font-size:30px;color:#0a4d1e;"></i><h3 style="color:#0a4d1e;">No Products</h3></div>
+    <% } else { %>
+      <% Object.keys(groups).forEach(cat=>{
+        const list=groups[cat]; const icon=icons[cat]||"fa-boxes-stacked";
+      %>
+        <div class="core-category">
+          <div class="core-cat-head">
+            <div class="core-cat-title"><div class="core-cat-icon"><i class="fas <%= icon %>"></i></div><h2><%= cat %><span class="core-cat-count">(<%= list.length %>)</span></h2></div>
+            <% if(list.length>2){ %><div class="core-cat-hint">Swipe <i class="fas fa-arrow-right"></i></div><% } %>
+          </div>
+          <div class="core-row">
+            <% list.forEach(p=>{ %>
+              <div class="core-card" data-id="<%= p._id %>">
+                <div class="core-img-box">
+                  <% if(p.image){ %><img src="<%= p.image %>" alt="<%= p.name %>" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><div class="core-no-img" style="display:none;"><i class="fas fa-image"></i></div><% } else { %><div class="core-no-img"><i class="fas fa-box-open"></i></div><% } %>
+                  <% if(Number(p.units||0)>0){ %><span class="core-stock"><%= p.units %> left</span><% } else { %><span class="core-stock empty">Out</span><% } %>
+                </div>
+                <div class="core-info">
+                  <p class="core-cat-label"><%= cat %></p>
+                  <p class="core-name"><%= p.name %></p>
+                  <p class="core-desc"><%= p.description||"Quality healthcare product." %></p>
+                  <div class="core-price-box"><p class="core-price-label">PRICE</p><p class="core-price-val">KES <%= Number(p.unitSellPrice||0).toLocaleString() %></p></div>
+                </div>
+                <div class="core-footer">
+                  <% if(Number(p.units||0)>0){ %><button class="core-btn" data-id="<%= p._id %>" data-name="<%= p.name %>" data-stock="<%= p.units %>"><i class="fas fa-cart-plus"></i> ADD CART</button><% } else { %><button class="core-btn" disabled>OUT OF STOCK</button><% } %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
         </div>
-
-        <%
-            const categoryGroups = {};
-            if(Array.isArray(products)){
-                products.filter(p=>p && p.isActive!==false).forEach(product=>{
-                    const category = String(product.category||"other").trim().toLowerCase();
-                    if(!categoryGroups[category]) categoryGroups[category]=[];
-                    categoryGroups[category].push(product);
-                });
-            }
-            const categoryIcons = {
-                "medical equipment":"fa-stethoscope","hospital supplies":"fa-kit-medical","surgical":"fa-user-doctor","surgical equipment":"fa-user-doctor","diagnostics":"fa-microscope","laboratory":"fa-flask","laboratory equipment":"fa-flask","consumables":"fa-boxes-stacked","medicines":"fa-pills","pharmaceuticals":"fa-pills","dental":"fa-tooth","personal care":"fa-hand-holding-medical","other":"fa-box-open"
-            };
-        %>
-
-        <% if(Object.keys(categoryGroups).length===0){ %>
-            <div class="core-products-empty">
-                <div class="core-products-empty-icon"><i class="fas fa-box-open"></i></div>
-                <h2>No Products Available</h2>
-                <p>There are currently no products available in the marketplace.</p>
-            </div>
-        <% } else { %>
-            <% Object.keys(categoryGroups).forEach(function(category){
-                const categoryProducts = categoryGroups[category];
-                const icon = categoryIcons[category] || "fa-boxes-stacked";
-            %>
-                <section class="core-category">
-                    <div class="core-category-header">
-                        <div class="core-category-title">
-                            <div class="core-category-icon"><i class="fas <%= icon %>"></i></div>
-                            <h2><%= category %> <span class="core-category-count">(<%= categoryProducts.length %>)</span></h2>
-                        </div>
-                        <% if(categoryProducts.length>1){ %><div class="core-category-scroll">Swipe <i class="fas fa-arrow-right"></i></div><% } %>
-                    </div>
-                    <div class="core-products-row">
-                        <% categoryProducts.forEach(function(product){ %>
-                            <article class="core-product-card">
-                                <div class="core-product-image-window">
-                                    <% if(product.image){ %>
-                                        <img src="<%= product.image %>" alt="<%= product.name %>" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                        <div class="core-product-no-image" style="display:none;"><i class="fas fa-box-open"></i></div>
-                                    <% } else { %>
-                                        <div class="core-product-no-image"><i class="fas fa-box-open"></i></div>
-                                    <% } %>
-                                    <% if(Number(product.units||0)>0){ %>
-                                        <span class="core-product-stock"><%= product.units %> units</span>
-                                    <% } else { %>
-                                        <span class="core-product-stock empty">Out of stock</span>
-                                    <% } %>
-                                </div>
-                                <div class="core-product-info">
-                                    <p class="core-product-category"><%= category %></p>
-                                    <p class="core-product-name"><%= product.name %></p>
-                                    <p class="core-product-description"><%= product.description || "Quality healthcare product." %></p>
-                                    <div class="core-product-price">
-                                        <p class="core-product-price-label">PRICE</p>
-                                        <p class="core-product-price-value">KES <%= Number(product.unitSellPrice||0).toLocaleString("en-KE") %></p>
-                                    </div>
-                                </div>
-                                <div class="core-product-footer">
-                                    <% if(Number(product.units||0)>0){ %>
-                                        <button type="button" class="core-product-button" data-product-id="<%= product._id %>" data-product-name="<%= product.name %>" data-stock="<%= product.units %>"><i class="fas fa-cart-plus"></i> Add to Cart</button>
-                                    <% } else { %>
-                                        <button type="button" class="core-product-button disabled" disabled><i class="fas fa-ban"></i> Out of Stock</button>
-                                    <% } %>
-                                </div>
-                            </article>
-                        <% }); %>
-                    </div>
-                    <div class="core-category-divider"></div>
-                </section>
-            <% }); %>
-        <% } %>
-    </div>
-</div>
-
-<!-- QTY POPUP -->
-<div id="qtyPopupOverlay">
-  <div id="qtyPopupBox">
-    <h3 id="qtyProductName" style="color:#0a4d1e;margin:0 0 6px 0;font-size:16px;"></h3>
-    <p style="font-size:12px;color:#666;">Available: <b id="qtyAvailable"></b></p>
-    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:20px 0;">
-      <button id="qtyMinus" style="width:42px;height:42px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;color:#0a4d1e;font-weight:900;font-size:18px;cursor:pointer;">-</button>
-      <span id="qtyValue" style="font-size:28px;font-weight:900;color:#0a4d1e;min-width:40px;">1</span>
-      <button id="qtyPlus" style="width:42px;height:42px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;color:#0a4d1e;font-weight:900;font-size:18px;cursor:pointer;">+</button>
-    </div>
-    <button id="qtyConfirm" style="width:100%;padding:11px;background:#0a4d1e;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;">ADD <span id="qtyConfirmCount">1</span> TO CART</button>
-    <button onclick="closeQtyPopup()" style="width:100%;margin-top:8px;background:none;border:none;color:#888;font-size:12px;cursor:pointer;">Cancel</button>
+      <% }) %>
+    <% } %>
   </div>
 </div>
 
-<!-- CART SIDEBAR -->
-<div id="coreCartOverlay" onclick="closeCartSidebar()"></div>
-<div id="coreCartSidebar">
-  <div style="height:70px;border-bottom:3px solid #0a4d1e;display:flex;align-items:center;justify-content:space-between;padding:0 18px;">
-    <b style="color:#0a4d1e;">Your Cart</b>
-    <button onclick="closeCartSidebar()" style="width:32px;height:32px;border-radius:8px;border:1px solid #c5e1a5;background:#f1f8e9;cursor:pointer;"><i class="fas fa-times"></i></button>
-  </div>
-  <div id="coreCartBody" style="flex:1;overflow-y:auto;padding:16px;">
-    <p style="text-align:center;color:#888;margin-top:30px;">Cart empty</p>
-  </div>
-  <div style="padding:16px;border-top:1px solid #e8f5e9;background:#f9fbe7;">
-    <div style="display:flex;justify-content:space-between;margin-bottom:10px;"><b>Total:</b><b style="color:#0a4d1e;">KES <span id="coreCartTotal">0</span></b></div>
-    <button id="checkoutBtn" style="width:100%;padding:11px;background:#0a4d1e;color:#fff;border:none;border-radius:8px;font-weight:800;display:none;">PACKAGE ORDER</button>
+<div id="qtyOverlay">
+  <div id="qtyBox">
+    <h3 id="qtyName" style="margin:0;color:#0a4d1e;font-size:15px;"></h3>
+    <p style="font-size:11px;color:#666;">Available: <b id="qtyAvail"></b></p>
+    <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin:18px 0;">
+      <button id="qMinus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;cursor:pointer;">-</button>
+      <span id="qVal" style="font-size:24px;font-weight:900;color:#0a4d1e;">1</span>
+      <button id="qPlus" style="width:40px;height:40px;border-radius:50%;border:2px solid #0a4d1e;background:#fff;font-weight:900;cursor:pointer;">+</button>
+    </div>
+    <button id="qConfirm" style="width:100%;padding:10px;background:#0a4d1e;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;">ADD <span id="qCount">1</span> TO CART</button>
+    <button onclick="closeQty()" style="width:100%;margin-top:8px;background:none;border:none;color:#888;cursor:pointer;">Cancel</button>
   </div>
 </div>
 
 <script>
 (function(){
-  const rows = document.querySelectorAll(".core-products-row");
-  rows.forEach(row=>{
-    let dragging=false,startX=0,startingScroll=0;
-    row.addEventListener("mousedown",e=>{ if(row.scrollWidth<=row.clientWidth) return; dragging=true; startX=e.pageX-row.offsetLeft; startingScroll=row.scrollLeft; row.style.cursor="grabbing"; });
-    row.addEventListener("mousemove",e=>{ if(!dragging) return; e.preventDefault(); const x=e.pageX-row.offsetLeft; row.scrollLeft=startingScroll-(x-startX)*1.2; });
-    row.addEventListener("mouseup",()=>{ dragging=false; row.style.cursor=""; });
-    row.addEventListener("mouseleave",()=>{ dragging=false; row.style.cursor=""; });
-    row.addEventListener("wheel",e=>{ if(row.scrollWidth>row.clientWidth && Math.abs(e.deltaY)>Math.abs(e.deltaX)){ e.preventDefault(); row.scrollLeft+=e.deltaY; }},{passive:false});
-  });
+  let sel={id:null,stock:0,qty:1};
+  function openQty(id,name,stock){ sel={id,stock:parseInt(stock),qty:1}; document.getElementById('qtyName').innerText=name; document.getElementById('qtyAvail').innerText=stock; document.getElementById('qVal').innerText=1; document.getElementById('qCount').innerText=1; document.getElementById('qtyOverlay').style.display='flex'; }
+  window.closeQty=()=>document.getElementById('qtyOverlay').style.display='none';
+  document.getElementById('qPlus').onclick=()=>{ if(sel.qty<sel.stock){sel.qty++; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty; } };
+  document.getElementById('qMinus').onclick=()=>{ if(sel.qty>1){sel.qty--; document.getElementById('qVal').innerText=sel.qty; document.getElementById('qCount').innerText=sel.qty; } };
+  document.getElementById('qConfirm').onclick=async()=>{ const r=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:sel.id,qty:sel.qty})}); const d=await r.json(); if(!d.success){alert(d.message);return;} closeQty(); location.reload(); };
+  document.getElementById('qtyOverlay').addEventListener('click',e=>{ if(e.target.id==='qtyOverlay') closeQty(); });
 
-  let selected={id:null,name:null,stock:0,qty:1};
-  function openQtyPopup(id,name,stock){
-    selected={id,name,stock:parseInt(stock),qty:1};
-    document.getElementById('qtyProductName').innerText=name;
-    document.getElementById('qtyAvailable').innerText=stock;
-    document.getElementById('qtyValue').innerText='1';
-    document.getElementById('qtyConfirmCount').innerText='1';
-    document.getElementById('qtyPopupOverlay').style.display='flex';
-  }
-  window.closeQtyPopup=()=>{ document.getElementById('qtyPopupOverlay').style.display='none'; };
-  document.getElementById('qtyPlus').onclick=()=>{ if(selected.qty<selected.stock){selected.qty++; document.getElementById('qtyValue').innerText=selected.qty; document.getElementById('qtyConfirmCount').innerText=selected.qty; } };
-  document.getElementById('qtyMinus').onclick=()=>{ if(selected.qty>1){selected.qty--; document.getElementById('qtyValue').innerText=selected.qty; document.getElementById('qtyConfirmCount').innerText=selected.qty; } };
-  document.getElementById('qtyConfirm').onclick=async()=>{
-    const r=await fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:selected.id,qty:selected.qty})});
-    const d=await r.json(); if(!d.success){alert(d.message);return;} closeQtyPopup(); location.reload();
-  };
-  document.getElementById('qtyPopupOverlay').addEventListener('click',e=>{ if(e.target.id==='qtyPopupOverlay') closeQtyPopup(); });
-
-  window.openCartSidebar=()=>{
-    const ov=document.getElementById('coreCartOverlay'); const sb=document.getElementById('coreCartSidebar');
-    ov.style.display='block'; ov.offsetHeight; ov.style.opacity='1'; sb.style.right='0';
-  };
-  window.closeCartSidebar=()=>{
-    const ov=document.getElementById('coreCartOverlay'); const sb=document.getElementById('coreCartSidebar');
-    sb.style.right='-380px'; ov.style.opacity='0'; setTimeout(()=>ov.style.display='none',300);
-  };
-
-  document.addEventListener('click',e=>{
-    const btn=e.target.closest('.core-product-button:not(.disabled)');
-    if(!btn) return;
-    openQtyPopup(btn.dataset.productId, btn.dataset.productName, btn.dataset.stock);
-  });
-
-  // If you have a cart button in header with id="coreCartBtn", hook it
-  const cartBtn=document.getElementById('coreCartBtn')||document.getElementById('cartBtn');
-  if(cartBtn) cartBtn.onclick=openCartSidebar;
-
-  // Also hook product cards to detail page
-  document.querySelectorAll('.core-product-card').forEach(card=>{
+  document.querySelectorAll('.core-card').forEach(card=>{
     card.addEventListener('click',e=>{
-      if(e.target.closest('.core-product-button')) return;
-      const btn=card.querySelector('.core-product-button'); if(btn && btn.dataset.productId) window.location.href='/products/'+btn.dataset.productId;
+      if(e.target.closest('.core-btn')) return;
+      const btn=card.querySelector('.core-btn[data-id]'); if(btn) window.location.href='/products/'+btn.dataset.id;
     });
+  });
+  document.querySelectorAll('.core-btn[data-id]').forEach(b=>{
+    b.addEventListener('click',e=>{ e.stopPropagation(); openQty(b.dataset.id,b.dataset.name,b.dataset.stock); });
+  });
+
+  document.querySelectorAll('.core-row').forEach(row=>{
+    let drag=false,sx=0,ss=0;
+    row.addEventListener('mousedown',e=>{ drag=true; sx=e.pageX-row.offsetLeft; ss=row.scrollLeft; });
+    row.addEventListener('mousemove',e=>{ if(!drag) return; e.preventDefault(); row.scrollLeft=ss-(e.pageX-row.offsetLeft-sx); });
+    row.addEventListener('mouseup',()=>drag=false); row.addEventListener('mouseleave',()=>drag=false);
   });
 })();
 </script>
