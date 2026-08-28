@@ -1,35 +1,288 @@
 <style>
-.auth-wrap{ min-height:80vh; display:flex; align-items:center; justify-content:center; padding:20px; }
-.auth-box{ background:#fff; width:100%; max-width:400px; padding:32px; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,0.08); }
-.auth-box h2{ margin-bottom:20px; text-align:center; }
-.auth-box input{ width:100%; padding:12px 14px; margin-bottom:14px; border:1px solid #ddd; border-radius:8px; font-size:15px; }
-.auth-box button{ width:100%; padding:12px; background:#111; color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; }
-.auth-box button:hover{ background:#000; }
-#errorBox{ background:#ffe1e1; color:#c00; padding:10px; border-radius:8px; margin-bottom:12px; display:none; }
-</style>
+/* ==========================================================
+   COREVESTER SIGNUP / AUTH UI
+   ========================================================== */
 
-<div class="auth-wrap">
-  <div class="auth-box">
-    <h2>Create Account</h2>
-    <div id="errorBox"></div>
-    <form id="signupForm">
-      <input type="text" name="fullName" placeholder="Full Name" required>
-      <input type="email" name="email" placeholder="Email" required>
-      <input type="password" name="password" placeholder="Password" required>
-      <button type="submit">Sign Up</button>
-    </form>
-    <p style="text-align:center; margin-top:16px;">Already have account? <a href="/auth/login">Login</a></p>
-  </div>
-</div>
+.auth-wrap {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 18px;
+  background: #f8fdf6;
+}
 
-<script>
-document.getElementById('signupForm').addEventListener('submit', async (e)=>{
+.auth-box {
+  width: 100%;
+  max-width: 410px;
+  background: #ffffff;
+  padding: 38px 34px 32px;
+  border: 1px solid #e8f5e9;
+  border-radius: 20px;
+  box-shadow: 0 12px 35px rgba(10, 77, 30, 0.10);
+}
+
+/* ==========================================================
+   TITLE
+   ========================================================== */
+
+.auth-box h2 {
+  margin: 0 0 8px;
+  text-align: center;
+  color: #0a4d1e;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.auth-box h2::after {
+  content: "";
+  display: block;
+  width: 42px;
+  height: 3px;
+  margin: 12px auto 22px;
+  background: #c5e1a5;
+  border-radius: 10px;
+}
+
+/* ==========================================================
+   ERROR MESSAGE
+   ========================================================== */
+
+#errorBox {
+  display: none;
+  background: #fff1f1;
+  color: #b42318;
+  border: 1px solid #ffd0d0;
+  padding: 11px 13px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* ==========================================================
+   INPUTS
+   ========================================================== */
+
+.auth-box input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 13px 14px;
+  margin-bottom: 14px;
+
+  border: 1px solid #d8e5da;
+  border-radius: 10px;
+
+  background: #fbfefb;
+  color: #17351f;
+
+  font-size: 15px;
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.auth-box input::placeholder {
+  color: #8a9a8d;
+}
+
+.auth-box input:hover {
+  border-color: #b8ceb9;
+}
+
+.auth-box input:focus {
+  border-color: #0a4d1e;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(10, 77, 30, 0.09);
+}
+
+/* ==========================================================
+   SIGN UP BUTTON
+   ========================================================== */
+
+.auth-box button {
+  width: 100%;
+  padding: 13px 16px;
+  margin-top: 3px;
+
+  background: #0a4d1e;
+  color: #ffffff;
+
+  border: none;
+  border-radius: 10px;
+
+  cursor: pointer;
+
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.auth-box button:hover {
+  background: #083d18;
+  box-shadow: 0 7px 18px rgba(10, 77, 30, 0.18);
+}
+
+.auth-box button:active {
+  transform: translateY(1px);
+}
+
+.auth-box button.loading {
+  opacity: 0.75;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ==========================================================
+   LOGIN LINK
+   ========================================================== */
+
+.auth-box p {
+  margin: 18px 0 0;
+  text-align: center;
+  color: #6d7d70;
+  font-size: 14px;
+}
+
+.auth-box a {
+  color: #0a4d1e;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-box a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 480px) {
+
+  .auth-wrap {
+    min-height: 78vh;
+    padding: 20px 14px;
+  }
+
+  .auth-box {
+    padding: 30px 22px 26px;
+    border-radius: 17px;
+  }
+
+  .auth-box h2 {
+    font-size: 24px;
+  }
+
+  .auth-box input {
+    padding: 12px 13px;
+  }
+
+  .auth-box button {
+    padding: 13px;
+  }
+}
+</style><div class="auth-wrap">  <div class="auth-box"><h2>Create Account</h2>
+
+<div id="errorBox"></div>
+
+<form id="signupForm">
+
+  <input
+    type="text"
+    name="fullName"
+    placeholder="Full Name"
+    autocomplete="name"
+    required
+  >
+
+  <input
+    type="email"
+    name="email"
+    placeholder="Email"
+    autocomplete="email"
+    required
+  >
+
+  <input
+    type="password"
+    name="password"
+    placeholder="Password"
+    autocomplete="new-password"
+    required
+  >
+
+  <button type="submit" id="signupButton">
+    Sign Up
+  </button>
+
+</form>
+
+<p>
+  Already have an account?
+  <a href="/auth/login">Login</a>
+</p>
+
+  </div></div><script>
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
+
   e.preventDefault();
+
   const box = document.getElementById('errorBox');
-  box.style.display='none';
-  const res = await fetch('/auth/signup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
-  const data = await res.json();
-  if(data.success) window.location.href = '/';
-  else { box.textContent = data.message; box.style.display='block'; }
+  const button = document.getElementById('signupButton');
+
+  box.style.display = 'none';
+  box.textContent = '';
+
+  button.classList.add('loading');
+  button.textContent = 'Creating account...';
+
+  try {
+
+    const res = await fetch('/auth/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(
+        Object.fromEntries(new FormData(e.target))
+      )
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      window.location.href = '/';
+      return;
+    }
+
+    box.textContent =
+      data.message || 'Unable to create your account. Please try again.';
+
+    box.style.display = 'block';
+
+  } catch (error) {
+
+    box.textContent =
+      'Unable to connect. Please try again.';
+
+    box.style.display = 'block';
+
+  } finally {
+
+    button.classList.remove('loading');
+    button.textContent = 'Sign Up';
+
+  }
+
 });
 </script>
