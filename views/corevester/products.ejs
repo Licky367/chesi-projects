@@ -1,1985 +1,1144 @@
-<style>
+<% /*
+
+PRODUCT HORIZONTAL CARDS
+
+FILE:
+views/update/product-cards.ejs
+
+PURPOSE:
+Compact horizontal Product navigator.
+
+The section:
+    - Displays active Product records
+    - Shows the Product image
+    - Shows the Product name
+    - Shows available quantity from units
+    - Shows the unit selling price
+    - Links directly to the Product details page
+    - Provides a Product-specific heading
+
+PRODUCT RULES:
+
+Product source:
+    products
+
+Availability:
+    product.isActive === true
+
+STOCK:
+    product.units
+
+PRICE:
+    product.unitSellPrice
+
+IMAGE:
+    product.image
+
+NAME:
+    product.name
+
+CARDS DO NOT OPEN A POST MODAL.
+
+Clicking a Product takes the user directly to:
+
+/products/:id
+
+==========================================================
+*/ %>
+
+<%
+/* ======================================================
+SAFE PRODUCT ARRAY
+====================================================== */
+
+const productList =
+    Array.isArray(products)
+        ? products
+        : [];
+
+
+/* ======================================================
+   ONLY ACTIVE PRODUCTS
+====================================================== */
+
+const activeProducts =
+    productList.filter(function (product) {
+
+        if (!product) {
+            return false;
+        }
+
+        return product.isActive === true;
+
+    });
+
+%>
+
+<% if (activeProducts.length) { %>
+
+<section
+    class="product-feed-strip"
+    aria-label="Available products"
+><!-- =====================================================
+     SECTION HEADER
+===================================================== -->
+
+<div class="product-feed-strip-header">
+
+
+    <div class="product-feed-strip-title">
+
+        <strong>
+            Products currently available
+        </strong>
+
+    </div>
+
+
+    <div class="product-feed-strip-description">
+
+        Select a product below to view its details and
+        manage its available stock and selling price.
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     HORIZONTAL PRODUCT SCROLL
+===================================================== -->
+
+<div
+    class="product-feed-scroll"
+    role="list"
+    aria-label="Available products"
+>
+
+
+    <% activeProducts.forEach(function (product) { %>
+
+        <%
+            /* =================================================
+               SAFETY CHECK
+            ================================================= */
+
+            if (
+                !product ||
+                !product._id
+            ) {
+                return;
+            }
+
+
+            /* =================================================
+               PRODUCT NAME
+            ================================================= */
+
+            const productName =
+                product.name ||
+                "Unnamed Product";
+
+
+            /* =================================================
+               PRODUCT IMAGE
+            ================================================= */
+
+            const productImage =
+                product.image ||
+                (
+                    "https://ui-avatars.com/api/?name=" +
+                    encodeURIComponent(
+                        productName
+                    ) +
+                    "&background=e8f5ee&color=198754"
+                );
+
+
+            /* =================================================
+               AVAILABLE UNITS
+            ================================================= */
+
+            let productUnitsText = "";
+
+
+            if (
+                product.units !== null &&
+                product.units !== undefined &&
+                product.units !== ""
+            ) {
+
+                const units =
+                    Number(product.units);
+
+
+                if (
+                    Number.isFinite(units)
+                ) {
+
+                    productUnitsText =
+                        `${units}`;
+
+                }
+
+            }
+
+
+            /* =================================================
+               UNIT SELLING PRICE
+            ================================================= */
+
+            let productPriceText = "";
+
+
+            if (
+                product.unitSellPrice !== null &&
+                product.unitSellPrice !== undefined &&
+                product.unitSellPrice !== ""
+            ) {
+
+                const unitSellPrice =
+                    Number(
+                        product.unitSellPrice
+                    );
+
+
+                if (
+                    Number.isFinite(unitSellPrice)
+                ) {
+
+                    productPriceText =
+                        `KES ${unitSellPrice.toLocaleString(
+                            "en-KE",
+                            {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            }
+                        )}`;
+
+                }
+
+            }
+        %>
+
+
+
+        <!-- =================================================
+             PRODUCT CARD
+        ================================================== -->
+
+        <a
+            href="/products/<%= product._id %>"
+            class="product-feed-card"
+            role="listitem"
+            aria-label="View <%= productName %>"
+        >
+
+
+            <!-- =============================================
+                 IMAGE
+            ============================================== -->
+
+            <div class="product-feed-image-wrap">
+
+                <img
+                    src="<%= productImage %>"
+                    alt="<%= productName %>"
+                    class="product-feed-image"
+                    loading="lazy"
+                >
+
+            </div>
+
+
+
+            <!-- =============================================
+                 PRODUCT INFORMATION
+            ============================================== -->
+
+            <div class="product-feed-content">
+
+
+                <!-- =========================================
+                     PRODUCT NAME
+                ========================================== -->
+
+                <div class="product-feed-name">
+
+                    <%= productName %>
+
+                </div>
+
+
+
+                <!-- =========================================
+                     PRODUCT TYPE
+                ========================================== -->
+
+                <div class="product-feed-type">
+
+                    <span
+                        class="product-feed-type-icon"
+                        aria-hidden="true"
+                    >
+                        📦
+                    </span>
+
+                    <span>
+                        Product
+                    </span>
+
+                </div>
+
+
+
+                <!-- =========================================
+                     AVAILABLE STOCK
+                ========================================== -->
+
+                <% if (productUnitsText) { %>
+
+                    <div class="product-feed-quantity">
+
+                        <span
+                            class="product-feed-quantity-label"
+                        >
+                            Available:
+                        </span>
+
+                        <span>
+                            <%= productUnitsText %>
+                        </span>
+
+                    </div>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     UNIT SELLING PRICE
+                ========================================== -->
+
+                <% if (productPriceText) { %>
+
+                    <div class="product-feed-price">
+
+                        <span
+                            class="product-feed-price-label"
+                        >
+                            Price:
+                        </span>
+
+                        <span>
+                            <%= productPriceText %>
+                        </span>
+
+                    </div>
+
+                <% } %>
+
+
+            </div>
+
+
+        </a>
+
+
+    <% }); %>
+
+
+</div>
+
+</section><style>
 
 /* ==========================================================
-   MARKETPLACE
-    PRODUCT RAILS
+   PRODUCT STRIP
+
+   Namespaced specifically for this component.
 ========================================================== */
 
-.marketplace {
+.product-feed-strip {
 
-    --green: #0b5a2a;
-    --green-dark: #073f1d;
-    --green-soft: #edf7f0;
+    width:
+        100%;
 
-    --orange: #e58a22;
-    --orange-soft: #fff5e8;
+    margin:
+        0
+        0
+        16px;
 
-    --ink: #18231c;
-    --muted: #718078;
+    padding:
+        0;
 
-    --line: #e2e9e4;
+    overflow:
+        hidden;
 
-    width: 100%;
-    min-height: 100vh;
-
-    margin: 0;
-    padding: 0 0 40px;
-
-    background: #f5f7f6;
-
-    color: var(--ink);
-
-    box-sizing: border-box;
-}
-
-
-.marketplace *,
-.marketplace *::before,
-.marketplace *::after {
-
-    box-sizing: border-box;
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
 }
+
 
 
 /* ==========================================================
-   HERO
+   HEADER
 ========================================================== */
 
-.market-hero {
+.product-feed-strip-header {
 
-    width: 100%;
+    width:
+        100%;
 
-    background: #ffffff;
-
-    border-bottom: 1px solid var(--line);
-
-}
-
-
-.market-hero-inner {
-
-    width: 100%;
-
-    max-width: 1400px;
-
-    margin: 0 auto;
-
-    padding: 18px 14px 15px;
+    padding:
+        0
+        2px
+        10px;
 
 }
+
 
 
 /* ==========================================================
    TITLE
 ========================================================== */
 
-.market-title-row {
+.product-feed-strip-title {
 
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 15px;
+    width:
+        100%;
 
 }
 
 
-.market-heading {
+.product-feed-strip-title strong {
 
-    min-width: 0;
+    display:
+        block;
 
-}
+    color:
+        #2A201B;
 
+    font-size:
+        18px;
 
-.market-eyebrow {
+    font-weight:
+        700;
 
-    display: flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    margin-bottom: 4px;
-
-    color: var(--muted);
-
-    font-size: 9px;
-
-    font-weight: 900;
-
-    text-transform: uppercase;
-
-    letter-spacing: 1px;
+    line-height:
+        1.35;
 
 }
 
-
-.market-eyebrow i {
-
-    color: var(--green);
-
-}
-
-
-.market-title {
-
-    margin: 0;
-
-    color: var(--green);
-
-    font-size: 24px;
-
-    font-weight: 900;
-
-    line-height: 1.1;
-
-}
-
-
-.market-description {
-
-    margin: 5px 0 0;
-
-    color: #758179;
-
-    font-size: 11px;
-
-    line-height: 1.45;
-
-}
 
 
 /* ==========================================================
-   CART BUTTON
+   DESCRIPTION
 ========================================================== */
 
-.market-cart-button {
+.product-feed-strip-description {
 
-    flex: 0 0 44px;
+    max-width:
+        620px;
 
-    width: 44px;
+    margin-top:
+        4px;
 
-    height: 44px;
+    color:
+        #7b847e;
 
-    display: flex;
+    font-size:
+        12px;
 
-    align-items: center;
-
-    justify-content: center;
-
-    border: 0;
-
-    border-radius: 50%;
-
-    background: var(--green);
-
-    color: #ffffff;
-
-    cursor: pointer;
-
-    box-shadow: 0 5px 14px rgba(11,90,42,.18);
+    line-height:
+        1.45;
 
 }
 
-
-.market-cart-button:hover {
-
-    background: var(--green-dark);
-
-}
 
 
 /* ==========================================================
-   SUMMARY
+   HORIZONTAL SCROLL
 ========================================================== */
 
-.market-summary {
+.product-feed-scroll {
 
-    width: 100%;
+    width:
+        100%;
 
-    display: grid;
+    display:
+        flex;
 
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+    gap:
+        10px;
 
-    gap: 7px;
+    overflow-x:
+        auto;
 
-    margin-top: 14px;
+    overflow-y:
+        hidden;
 
-}
+    padding:
+        2px
+        2px
+        8px;
 
+    scroll-behavior:
+        smooth;
 
-.summary-card {
+    -webkit-overflow-scrolling:
+        touch;
 
-    min-width: 0;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    padding: 8px;
-
-    background: #ffffff;
-
-    border: 1px solid var(--line);
-
-    border-radius: 10px;
+    scrollbar-width:
+        none;
 
 }
 
 
-.summary-icon {
+.product-feed-scroll::-webkit-scrollbar {
 
-    flex: 0 0 28px;
-
-    width: 28px;
-
-    height: 28px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 8px;
-
-    background: var(--green-soft);
-
-    color: var(--green);
-
-    font-size: 11px;
+    display:
+        none;
 
 }
 
-
-.summary-info {
-
-    min-width: 0;
-
-}
-
-
-.summary-label {
-
-    display: block;
-
-    color: #8a958e;
-
-    font-size: 7px;
-
-    font-weight: 900;
-
-    text-transform: uppercase;
-
-}
-
-
-.summary-value {
-
-    display: block;
-
-    margin-top: 2px;
-
-    color: var(--green);
-
-    font-size: 10px;
-
-    font-weight: 900;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-
-}
-
-
-/* ==========================================================
-   MAIN
-========================================================== */
-
-.market-main {
-
-    width: 100%;
-
-    max-width: 1400px;
-
-    margin: 0 auto;
-
-    padding: 14px 0 0;
-
-}
-
-
-/* ==========================================================
-   CATEGORY FILTER BAR
-========================================================== */
-
-.category-section {
-
-    padding: 0 12px;
-
-    margin-bottom: 18px;
-
-}
-
-
-.section-heading {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 10px;
-
-    margin-bottom: 8px;
-
-}
-
-
-.section-heading-left {
-
-    min-width: 0;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-}
-
-
-.section-heading-left i {
-
-    color: var(--green);
-
-    font-size: 11px;
-
-}
-
-
-.section-heading-title {
-
-    margin: 0;
-
-    color: #26352c;
-
-    font-size: 12px;
-
-    font-weight: 900;
-
-    text-transform: uppercase;
-
-    letter-spacing: .6px;
-
-}
-
-
-/* ==========================================================
-   CATEGORY PILLS
-========================================================== */
-
-.category-bar {
-
-    width: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    overflow-x: auto;
-
-    overflow-y: hidden;
-
-    padding: 2px 1px 5px;
-
-    scrollbar-width: none;
-
-    -webkit-overflow-scrolling: touch;
-
-}
-
-
-.category-bar::-webkit-scrollbar {
-
-    display: none;
-
-}
-
-
-.category-pill {
-
-    flex: 0 0 auto;
-
-    min-height: 31px;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 0 14px;
-
-    border: 1px solid #d5dfd8;
-
-    border-radius: 30px;
-
-    background: #ffffff;
-
-    color: #425348;
-
-    text-decoration: none;
-
-    font-size: 9px;
-
-    font-weight: 800;
-
-    white-space: nowrap;
-
-}
-
-
-.category-pill.active {
-
-    background: var(--green);
-
-    border-color: var(--green);
-
-    color: #ffffff;
-
-}
-
-
-/* ==========================================================
-   PRODUCT CATEGORY SECTION
-
-   THIS IS THE IMPORTANT PART.
-
-   Each category gets its own horizontal row.
-========================================================== */
-
-.product-category-section {
-
-    width: 100%;
-
-    margin: 0 0 20px;
-
-    padding: 0 0 2px;
-
-}
-
-
-/* ==========================================================
-   CATEGORY TITLE
-========================================================== */
-
-.product-section-header {
-
-    width: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 10px;
-
-    padding: 0 12px;
-
-    margin-bottom: 8px;
-
-}
-
-
-.product-section-title-wrap {
-
-    min-width: 0;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-}
-
-
-.product-section-icon {
-
-    width: 28px;
-
-    height: 28px;
-
-    flex: 0 0 28px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 8px;
-
-    background: var(--green-soft);
-
-    color: var(--green);
-
-    font-size: 10px;
-
-}
-
-
-.product-section-title {
-
-    margin: 0;
-
-    color: #27342c;
-
-    font-size: 18px;
-
-    font-weight: 900;
-
-    line-height: 1.1;
-
-}
-
-
-.product-section-count {
-
-    flex: 0 0 auto;
-
-    color: #829087;
-
-    font-size: 8px;
-
-    font-weight: 700;
-
-}
-
-
-/* ==========================================================
-   CATEGORY PRODUCT RAIL
-
-   HORIZONTAL SCROLLING.
-
-   This is what makes it behave like Jumia.
-========================================================== */
-
-.product-rail {
-
-    width: 100%;
-
-    display: flex;
-
-    align-items: stretch;
-
-    gap: 9px;
-
-    overflow-x: auto;
-
-    overflow-y: hidden;
-
-    padding: 2px 12px 8px;
-
-    scrollbar-width: none;
-
-    -webkit-overflow-scrolling: touch;
-
-    scroll-snap-type: x proximity;
-
-}
-
-
-.product-rail::-webkit-scrollbar {
-
-    display: none;
-
-}
 
 
 /* ==========================================================
    PRODUCT CARD
-
-   IMPORTANT:
-
-   Cards DO NOT shrink.
-
-   This creates the horizontal catalogue.
 ========================================================== */
 
-.product-card {
+.product-feed-card {
 
-    position: relative;
+    position:
+        relative;
 
-    flex: 0 0 43%;
+    flex:
+        0 0
+        116px;
 
-    width: 43%;
+    width:
+        116px;
 
-    min-width: 0;
+    height:
+        210px;
 
-    overflow: hidden;
+    display:
+        flex;
 
-    display: flex;
+    flex-direction:
+        column;
 
-    flex-direction: column;
+    overflow:
+        hidden;
 
-    background: #ffffff;
+    text-decoration:
+        none;
 
-    border: 1px solid #e1e7e3;
+    border:
+        1px solid
+        #e4e9e6;
 
-    border-radius: 13px;
+    border-radius:
+        15px;
+
+    background:
+        #ffffff;
 
     box-shadow:
-        0 2px 8px rgba(20,40,28,.065);
+        0 2px 8px
+        rgba(20, 40, 28, .06);
 
-    cursor: pointer;
-
-    scroll-snap-align: start;
+    transition:
+        transform .16s ease,
+        box-shadow .16s ease;
 
 }
+
+
+
+/* ==========================================================
+   CARD HOVER
+========================================================== */
+
+.product-feed-card:hover {
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 5px 14px
+        rgba(20, 40, 28, .10);
+
+}
+
+
+
+/* ==========================================================
+   CARD ACTIVE
+========================================================== */
+
+.product-feed-card:active {
+
+    transform:
+        scale(.97);
+
+}
+
+
+
+/* ==========================================================
+   IMAGE WRAPPER
+========================================================== */
+
+.product-feed-image-wrap {
+
+    position:
+        relative;
+
+    width:
+        100%;
+
+    height:
+        116px;
+
+    flex:
+        0 0
+        116px;
+
+    overflow:
+        hidden;
+
+    background:
+        #eef3ef;
+
+}
+
 
 
 /* ==========================================================
    IMAGE
 ========================================================== */
 
-.product-image {
+.product-feed-image {
 
-    position: relative;
+    width:
+        100%;
 
-    width: 100%;
+    height:
+        100%;
 
-    aspect-ratio: 1 / 1;
+    display:
+        block;
 
-    overflow: hidden;
-
-    background: #f3f5f4;
-
-}
-
-
-.product-image img {
-
-    width: 100%;
-
-    height: 100%;
-
-    display: block;
-
-    object-fit: contain;
-
-    object-position: center;
+    object-fit:
+        cover;
 
 }
+
 
 
 /* ==========================================================
-   STOCK BADGE
+   PRODUCT CONTENT
 ========================================================== */
 
-.stock-badge {
+.product-feed-content {
 
-    position: absolute;
+    width:
+        100%;
 
-    top: 7px;
+    min-width:
+        0;
 
-    left: 7px;
+    display:
+        flex;
 
-    z-index: 2;
+    flex-direction:
+        column;
 
-    max-width: calc(100% - 14px);
-
-    min-height: 18px;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 4px;
-
-    padding: 0 6px;
-
-    border: 1px solid rgba(11,90,42,.12);
-
-    border-radius: 20px;
-
-    background: rgba(255,255,255,.95);
-
-    color: var(--green);
-
-    font-size: 7px;
-
-    font-weight: 900;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
+    flex:
+        1;
 
 }
 
-
-.stock-dot {
-
-    flex: 0 0 5px;
-
-    width: 5px;
-
-    height: 5px;
-
-    border-radius: 50%;
-
-    background: #2da653;
-
-}
-
-
-.stock-low {
-
-    color: #9a650e;
-
-    border-color: #ecd7aa;
-
-}
-
-
-.stock-low .stock-dot {
-
-    background: #e39a1d;
-
-}
-
-
-.stock-out {
-
-    color: #a52f2f;
-
-    border-color: #edcccc;
-
-}
-
-
-.stock-out .stock-dot {
-
-    background: #d63b3b;
-
-}
-
-
-/* ==========================================================
-   PRODUCT DETAILS
-========================================================== */
-
-.product-details {
-
-    width: 100%;
-
-    min-width: 0;
-
-    display: flex;
-
-    flex-direction: column;
-
-    flex: 1;
-
-    padding: 8px;
-
-}
-
-
-/* ==========================================================
-   PRODUCT CATEGORY LABEL
-========================================================== */
-
-.product-category {
-
-    width: 100%;
-
-    margin: 0 0 3px;
-
-    color: #4b7d5a;
-
-    font-size: 7px;
-
-    font-weight: 900;
-
-    text-transform: uppercase;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-
-}
 
 
 /* ==========================================================
    PRODUCT NAME
 ========================================================== */
 
-.product-name {
+.product-feed-name {
 
-    margin: 0;
+    width:
+        100%;
 
-    min-height: 30px;
+    padding:
+        8px
+        8px
+        2px;
 
-    color: #202a23;
+    color:
+        #202520;
 
-    font-size: 11px;
+    font-size:
+        13px;
 
-    font-weight: 700;
+    font-weight:
+        700;
 
-    line-height: 15px;
+    line-height:
+        16px;
 
-    display: -webkit-box;
+    overflow:
+        hidden;
 
-    -webkit-box-orient: vertical;
+    display:
+        -webkit-box;
 
-    -webkit-line-clamp: 2;
+    -webkit-box-orient:
+        vertical;
 
-    overflow: hidden;
+    -webkit-line-clamp:
+        2;
 
 }
+
+
+
+/* ==========================================================
+   PRODUCT TYPE
+========================================================== */
+
+.product-feed-type {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        4px;
+
+    padding:
+        1px
+        8px
+        3px;
+
+    color:
+        #7b847e;
+
+    font-size:
+        10px;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* ==========================================================
+   TYPE ICON
+========================================================== */
+
+.product-feed-type-icon {
+
+    flex:
+        0 0
+        auto;
+
+    font-size:
+        10px;
+
+}
+
+
+
+/* ==========================================================
+   TYPE TEXT
+========================================================== */
+
+.product-feed-type span:last-child {
+
+    min-width:
+        0;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
+
+
+/* ==========================================================
+   AVAILABLE STOCK
+========================================================== */
+
+.product-feed-quantity {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        baseline;
+
+    gap:
+        3px;
+
+    padding:
+        1px
+        8px
+        3px;
+
+    color:
+        #198754;
+
+    font-size:
+        10px;
+
+    font-weight:
+        600;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* ==========================================================
+   STOCK LABEL
+========================================================== */
+
+.product-feed-quantity-label {
+
+    flex:
+        0 0
+        auto;
+
+    color:
+        #8a938d;
+
+    font-weight:
+        400;
+
+}
+
+
+
+/* ==========================================================
+   STOCK VALUE
+========================================================== */
+
+.product-feed-quantity > span:last-child {
+
+    min-width:
+        0;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
 
 
 /* ==========================================================
    PRICE
 ========================================================== */
 
-.product-price {
+.product-feed-price {
 
-    display: flex;
+    width:
+        100%;
 
-    align-items: baseline;
+    display:
+        flex;
 
-    gap: 3px;
+    align-items:
+        baseline;
 
-    margin-top: 6px;
+    gap:
+        3px;
 
-    color: var(--green);
+    padding:
+        1px
+        8px
+        8px;
 
-    font-size: 14px;
+    color:
+        #198754;
 
-    font-weight: 900;
+    font-size:
+        10px;
 
-    line-height: 1;
+    font-weight:
+        700;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
 
 }
 
-
-.currency {
-
-    font-size: 7px;
-
-    font-weight: 900;
-
-}
 
 
 /* ==========================================================
-   ADD TO CART
+   PRICE LABEL
 ========================================================== */
 
-.add-to-cart-btn {
+.product-feed-price-label {
 
-    width: 100%;
+    flex:
+        0 0
+        auto;
 
-    min-height: 30px;
+    color:
+        #8a938d;
 
-    height: 30px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 4px;
-
-    margin-top: 8px;
-
-    padding: 0 5px;
-
-    border: 0;
-
-    border-radius: 7px;
-
-    background: var(--green);
-
-    color: #ffffff;
-
-    font-size: 7px;
-
-    font-weight: 900;
-
-    cursor: pointer;
+    font-weight:
+        400;
 
 }
 
-
-.add-to-cart-btn:disabled {
-
-    background: #dfe6e1;
-
-    color: #7c8981;
-
-    cursor: not-allowed;
-
-}
 
 
 /* ==========================================================
-   SCROLL HINT
+   PRICE VALUE
 ========================================================== */
 
-.product-scroll-hint {
+.product-feed-price > span:last-child {
 
-    display: flex;
+    min-width:
+        0;
 
-    align-items: center;
+    overflow:
+        hidden;
 
-    gap: 4px;
+    text-overflow:
+        ellipsis;
 
-    margin-right: 12px;
-
-    color: var(--green);
-
-    font-size: 8px;
-
-    font-weight: 900;
-
-    white-space: nowrap;
+    white-space:
+        nowrap;
 
 }
 
-
-.product-scroll-hint i {
-
-    font-size: 9px;
-
-}
 
 
 /* ==========================================================
-   EMPTY MARKET
+   FOCUS ACCESSIBILITY
 ========================================================== */
 
-.empty-market {
+.product-feed-card:focus-visible {
 
-    width: calc(100% - 24px);
+    outline:
+        2px solid
+        #198754;
 
-    margin: 0 12px;
-
-    min-height: 250px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 30px 18px;
-
-    background: #ffffff;
-
-    border: 1px solid var(--line);
-
-    border-radius: 12px;
-
-    text-align: center;
+    outline-offset:
+        2px;
 
 }
 
-
-.empty-inner {
-
-    max-width: 380px;
-
-}
-
-
-.empty-icon {
-
-    width: 58px;
-
-    height: 58px;
-
-    margin: 0 auto 12px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 17px;
-
-    background: var(--green-soft);
-
-    color: var(--green);
-
-    font-size: 21px;
-
-}
-
-
-.empty-market h3 {
-
-    margin: 0;
-
-    color: #27382d;
-
-    font-size: 15px;
-
-    font-weight: 900;
-
-}
-
-
-.empty-market p {
-
-    margin: 7px auto 0;
-
-    color: #7a877f;
-
-    font-size: 10px;
-
-    line-height: 1.5;
-
-}
-
-
-.empty-action {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 6px;
-
-    min-height: 34px;
-
-    margin-top: 13px;
-
-    padding: 0 13px;
-
-    border-radius: 7px;
-
-    background: var(--green);
-
-    color: #ffffff;
-
-    text-decoration: none;
-
-    font-size: 8px;
-
-    font-weight: 900;
-
-}
 
 
 /* ==========================================================
-   TABLET
+   MOBILE
 ========================================================== */
 
-@media (min-width: 600px) {
-
-    .market-hero-inner {
-
-        padding-left: 22px;
-
-        padding-right: 22px;
-
-    }
+@media (max-width: 600px) {
 
 
-    .category-section {
+    .product-feed-strip {
 
-        padding-left: 20px;
-
-        padding-right: 20px;
+        margin-bottom:
+            14px;
 
     }
 
 
-    .product-section-header {
 
-        padding-left: 20px;
+    /* ==============================================
+       TITLE
+    ============================================== */
 
-        padding-right: 20px;
+    .product-feed-strip-title strong {
 
-    }
+        font-size:
+            17px;
 
-
-    .product-rail {
-
-        padding-left: 20px;
-
-        padding-right: 20px;
-
-        gap: 11px;
+        line-height:
+            1.3;
 
     }
 
 
-    .product-card {
 
-        flex-basis: 29%;
+    /* ==============================================
+       DESCRIPTION
+    ============================================== */
 
-        width: 29%;
+    .product-feed-strip-description {
+
+        font-size:
+            11px;
+
+        line-height:
+            1.4;
+
+    }
+
+
+
+    /* ==============================================
+       CARD
+    ============================================== */
+
+    .product-feed-card {
+
+        flex-basis:
+            112px;
+
+        width:
+            112px;
+
+        height:
+            204px;
+
+        border-radius:
+            14px;
 
     }
 
 
-    .product-name {
 
-        font-size: 12px;
+    /* ==============================================
+       IMAGE
+    ============================================== */
+
+    .product-feed-image-wrap {
+
+        height:
+            112px;
+
+        flex-basis:
+            112px;
 
     }
 
 
-    .product-price {
 
-        font-size: 15px;
+    /* ==============================================
+       NAME
+    ============================================== */
 
-    }
-
-}
-
-
-/* ==========================================================
-   DESKTOP
-========================================================== */
-
-@media (min-width: 850px) {
-
-    .market-hero-inner {
+    .product-feed-name {
 
         padding:
-            22px
-            28px
-            18px;
+            7px
+            7px
+            2px;
+
+        font-size:
+            12px;
+
+        line-height:
+            15px;
 
     }
 
 
-    .market-main {
 
-        padding-top: 20px;
+    /* ==============================================
+       TYPE
+    ============================================== */
 
-    }
+    .product-feed-type {
 
+        padding:
+            1px
+            7px
+            3px;
 
-    .category-section {
-
-        padding-left: 28px;
-
-        padding-right: 28px;
-
-    }
-
-
-    .product-section-header {
-
-        padding-left: 28px;
-
-        padding-right: 28px;
+        font-size:
+            9px;
 
     }
 
 
-    .product-rail {
 
-        padding-left: 28px;
+    .product-feed-type-icon {
 
-        padding-right: 28px;
-
-        gap: 13px;
+        font-size:
+            9px;
 
     }
 
 
-    .product-card {
 
-        flex-basis: 21%;
+    /* ==============================================
+       STOCK
+    ============================================== */
 
-        width: 21%;
+    .product-feed-quantity {
 
-    }
+        padding:
+            1px
+            7px
+            3px;
 
-
-    .product-section-title {
-
-        font-size: 20px;
-
-    }
-
-
-    .product-details {
-
-        padding: 10px;
+        font-size:
+            9px;
 
     }
 
 
-    .product-category {
 
-        font-size: 8px;
+    /* ==============================================
+       PRICE
+    ============================================== */
 
-    }
+    .product-feed-price {
 
+        padding:
+            1px
+            7px
+            7px;
 
-    .product-name {
-
-        font-size: 13px;
-
-        line-height: 17px;
-
-    }
-
-
-    .product-price {
-
-        font-size: 16px;
-
-    }
-
-
-    .add-to-cart-btn {
-
-        min-height: 32px;
-
-        height: 32px;
-
-        font-size: 8px;
+        font-size:
+            9px;
 
     }
 
 }
 
-
-/* ==========================================================
-   LARGE DESKTOP
-========================================================== */
-
-@media (min-width: 1200px) {
-
-    .product-rail {
-
-        gap: 14px;
-
-    }
-
-
-    .product-card {
-
-        flex-basis: 18%;
-
-        width: 18%;
-
-    }
-
-}
-
-
-/* ==========================================================
-   VERY SMALL PHONES
-========================================================== */
-
-@media (max-width: 360px) {
-
-    .market-hero-inner {
-
-        padding-left: 10px;
-
-        padding-right: 10px;
-
-    }
-
-
-    .category-section {
-
-        padding-left: 8px;
-
-        padding-right: 8px;
-
-    }
-
-
-    .product-section-header {
-
-        padding-left: 8px;
-
-        padding-right: 8px;
-
-    }
-
-
-    .product-rail {
-
-        padding-left: 8px;
-
-        padding-right: 8px;
-
-        gap: 7px;
-
-    }
-
-
-    .product-card {
-
-        flex-basis: 45%;
-
-        width: 45%;
-
-    }
-
-
-    .product-details {
-
-        padding: 7px;
-
-    }
-
-
-    .product-name {
-
-        font-size: 10px;
-
-        line-height: 14px;
-
-    }
-
-
-    .product-price {
-
-        font-size: 12px;
-
-    }
-
-
-    .add-to-cart-btn {
-
-        min-height: 27px;
-
-        height: 27px;
-
-        font-size: 6.5px;
-
-    }
-
-}
-
-</style>
-
-
-<!-- ==========================================================
-     MARKETPLACE
-========================================================== -->
-
-<div class="marketplace">
-
-
-    <!-- ======================================================
-         HEADER
-    ====================================================== -->
-
-    <section class="market-hero">
-
-        <div class="market-hero-inner">
-
-            <div class="market-title-row">
-
-                <div class="market-heading">
-
-                    <div class="market-eyebrow">
-
-                        <i class="fas fa-store"></i>
-
-                        Marketplace
-
-                    </div>
-
-
-                    <h1 class="market-title">
-
-                        Shop our products
-
-                    </h1>
-
-
-                    <p class="market-description">
-
-                        Browse available products and add what you need.
-
-                    </p>
-
-                </div>
-
-
-                <button
-                    type="button"
-                    id="cartBtn"
-                    class="market-cart-button"
-                    aria-label="Open shopping cart"
-                >
-
-                    <i class="fas fa-shopping-cart"></i>
-
-                </button>
-
-            </div>
-
-
-            <!-- ==================================================
-                 SUMMARY
-            ================================================== -->
-
-            <div class="market-summary">
-
-
-                <div class="summary-card">
-
-                    <div class="summary-icon">
-
-                        <i class="fas fa-box-open"></i>
-
-                    </div>
-
-
-                    <div class="summary-info">
-
-                        <span class="summary-label">
-                            Available
-                        </span>
-
-                        <span class="summary-value">
-
-                            <%= products.length %>
-
-                            <%= products.length === 1
-                                ? 'Product'
-                                : 'Products'
-                            %>
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="summary-card">
-
-                    <div class="summary-icon">
-
-                        <i class="fas fa-shopping-basket"></i>
-
-                    </div>
-
-
-                    <div class="summary-info">
-
-                        <span class="summary-label">
-                            In Cart
-                        </span>
-
-                        <span
-                            class="summary-value"
-                            id="cartCount"
-                        >
-
-                            <%= cartCount || 0 %>
-
-                            <%= (cartCount || 0) === 1
-                                ? 'Item'
-                                : 'Items'
-                            %>
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="summary-card">
-
-                    <div class="summary-icon">
-
-                        <i class="fas fa-coins"></i>
-
-                    </div>
-
-
-                    <div class="summary-info">
-
-                        <span class="summary-label">
-                            Cart Value
-                        </span>
-
-                        <span
-                            class="summary-value"
-                            id="cartTotalText"
-                        >
-
-                            KES
-
-                            <%= Number(
-                                cartTotal || 0
-                            ).toLocaleString() %>
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- ======================================================
-         MAIN
-    ====================================================== -->
-
-    <main class="market-main">
-
-
-        <!-- ==================================================
-             CATEGORY FILTER
-        ================================================== -->
-
-        <section class="category-section">
-
-
-            <div class="section-heading">
-
-                <div class="section-heading-left">
-
-                    <i class="fas fa-layer-group"></i>
-
-                    <h2 class="section-heading-title">
-                        Categories
-                    </h2>
-
-                </div>
-
-            </div>
-
-
-            <nav
-                class="category-bar"
-                aria-label="Product categories"
-            >
-
-                <a
-                    href="/products?category=all"
-                    class="category-pill <%= activeCategory === 'all' ? 'active' : '' %>"
-                >
-                    All
-                </a>
-
-
-                <% (categories || []).forEach(category => { %>
-
-                    <a
-                        href="/products?category=<%= encodeURIComponent(category) %>"
-                        class="category-pill <%= activeCategory === category ? 'active' : '' %>"
-                    >
-
-                        <%= category %>
-
-                    </a>
-
-                <% }) %>
-
-            </nav>
-
-        </section>
-
-
-        <!-- ==================================================
-             PRODUCTS
-        ================================================== -->
-
-        <section>
-
-
-            <% if (!products || !products.length) { %>
-
-
-                <!-- ==========================================
-                     EMPTY STATE
-                =========================================== -->
-
-                <div class="empty-market">
-
-                    <div class="empty-inner">
-
-                        <div class="empty-icon">
-
-                            <i class="fas fa-store-slash"></i>
-
-                        </div>
-
-
-                        <h3>
-
-                            Nothing available here yet
-
-                        </h3>
-
-
-                        <p>
-
-                            <% if (
-                                activeCategory &&
-                                activeCategory !== 'all'
-                            ) { %>
-
-                                We don't currently have any
-                                products in the
-                                <strong>
-                                    <%= activeCategory %>
-                                </strong>
-                                category.
-
-                            <% } else { %>
-
-                                There are currently no products
-                                available in the marketplace.
-
-                            <% } %>
-
-                        </p>
-
-
-                        <% if (
-                            activeCategory &&
-                            activeCategory !== 'all'
-                        ) { %>
-
-                            <a
-                                href="/products?category=all"
-                                class="empty-action"
-                            >
-
-                                <i class="fas fa-store"></i>
-
-                                VIEW ALL PRODUCTS
-
-                            </a>
-
-                        <% } %>
-
-                    </div>
-
-                </div>
-
-
-            <% } else { %>
-
-
-                <!-- ==================================================
-                     BUILD CATEGORY GROUPS
-
-                     Products are grouped here by product.category.
-
-                     Example:
-
-                     TVs
-                       product
-                       product
-                       product
-
-                     Phones
-                       product
-                       product
-                       product
-
-                     Laptops
-                       product
-                       product
-                ================================================== -->
-
-                <%
-
-                    const groupedProducts = {};
-
-                    products.forEach(function(product) {
-
-                        const category =
-                            product.category ||
-                            'General';
-
-                        if (!groupedProducts[category]) {
-
-                            groupedProducts[category] = [];
-
-                        }
-
-                        groupedProducts[category].push(product);
-
-                    });
-
-                    const categoryNames =
-                        Object.keys(groupedProducts);
-
-                %>
-
-
-                <!-- ==================================================
-                     CATEGORY ROWS
-                ================================================== -->
-
-                <% categoryNames.forEach(function(category) { %>
-
-
-                    <section
-                        class="product-category-section"
-                        data-category="<%= category %>"
-                    >
-
-
-                        <!-- ==========================================
-                             CATEGORY HEADER
-                        =========================================== -->
-
-                        <div class="product-section-header">
-
-
-                            <div class="product-section-title-wrap">
-
-
-                                <div class="product-section-icon">
-
-                                    <i class="fas fa-box"></i>
-
-                                </div>
-
-
-                                <h2 class="product-section-title">
-
-                                    <%= category %>
-
-                                </h2>
-
-
-                            </div>
-
-
-                            <div class="product-section-count">
-
-                                <%= groupedProducts[category].length %>
-
-                                <%= groupedProducts[category].length === 1
-                                    ? 'item'
-                                    : 'items'
-                                %>
-
-                            </div>
-
-
-                        </div>
-
-
-                        <!-- ==========================================
-                             HORIZONTAL PRODUCT RAIL
-
-                             IMPORTANT:
-
-                             Products belonging to this category
-                             stay on THIS row.
-
-                             The row scrolls horizontally.
-                        =========================================== -->
-
-                        <div
-                            class="product-rail"
-                            aria-label="<%= category %> products"
-                        >
-
-
-                            <% groupedProducts[category].forEach(function(product) { %>
-
-
-                                <%
-
-                                    const stock =
-                                        Number(
-                                            product.units || 0
-                                        );
-
-                                    let stockClass = '';
-
-                                    if (stock <= 0) {
-
-                                        stockClass =
-                                            'stock-out';
-
-                                    } else if (stock <= 5) {
-
-                                        stockClass =
-                                            'stock-low';
-
-                                    }
-
-                                %>
-
-
-                                <article
-                                    class="product-card"
-                                    data-product-id="<%= product._id %>"
-                                >
-
-
-                                    <!-- ==================================
-                                         IMAGE
-                                    =================================== -->
-
-                                    <div class="product-image">
-
-
-                                        <span
-                                            class="stock-badge <%= stockClass %>"
-                                        >
-
-                                            <span class="stock-dot"></span>
-
-
-                                            <% if (stock <= 0) { %>
-
-                                                Out of stock
-
-                                            <% } else if (stock <= 5) { %>
-
-                                                Only
-                                                <%= stock %>
-                                                left
-
-                                            <% } else { %>
-
-                                                <%= stock %>
-                                                available
-
-                                            <% } %>
-
-                                        </span>
-
-
-                                        <img
-                                            src="<%= product.image || '/images/no-image.png' %>"
-                                            alt="<%= product.name || 'Product' %>"
-                                            loading="lazy"
-                                            onerror="this.onerror=null;this.src='/images/no-image.png';"
-                                        >
-
-
-                                    </div>
-
-
-                                    <!-- ==================================
-                                         DETAILS
-                                    =================================== -->
-
-                                    <div class="product-details">
-
-
-                                        <p class="product-category">
-
-                                            <%= product.category || 'General' %>
-
-                                        </p>
-
-
-                                        <h3 class="product-name">
-
-                                            <%= product.name || 'Unnamed Product' %>
-
-                                        </h3>
-
-
-                                        <div class="product-price">
-
-                                            <span class="currency">
-                                                KES
-                                            </span>
-
-                                            <%= Number(
-                                                product.unitSellPrice || 0
-                                            ).toLocaleString() %>
-
-                                        </div>
-
-
-                                        <button
-                                            type="button"
-                                            class="add-to-cart-btn"
-                                            data-id="<%= product._id %>"
-                                            data-name="<%= product.name || '' %>"
-                                            data-stock="<%= stock %>"
-                                            <%= stock <= 0 ? 'disabled' : '' %>
-                                        >
-
-                                            <i class="fas <%= stock <= 0
-                                                ? 'fa-ban'
-                                                : 'fa-cart-plus' %>"
-                                            ></i>
-
-
-                                            <%= stock <= 0
-                                                ? 'OUT OF STOCK'
-                                                : 'ADD TO CART' %>
-
-                                        </button>
-
-
-                                    </div>
-
-
-                                </article>
-
-
-                            <% }) %>
-
-
-                        </div>
-
-
-                    </section>
-
-
-                <% }) %>
-
-
-            <% } %>
-
-
-        </section>
-
-
-    </main>
-
-</div>
+</style><% } %>
