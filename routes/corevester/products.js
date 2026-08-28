@@ -1,101 +1,178 @@
-const express = require('express');
-const router = express.Router();
-const Product = require('../../models/corevester/products');
+// =========================================================
+// routes/corevester/products.js
+// =========================================================
+//
+// COREVESTER MARKETPLACE ROUTES
+//
+// PUBLIC / USER:
+//     GET  /products
+//     GET  /products/:id
+//
+// CART:
+//     POST /products/add-to-cart
+//     POST /products/update-cart-qty
+//     POST /products/remove-from-cart
+//
+// ADMIN:
+//     POST   /admin/products/create
+//     DELETE /admin/products/:id
+//
+// =========================================================
 
-function getCart(req){
-    if(!req.session.cart) req.session.cart = [];
-    return req.session.cart;
+const express = require("express");
+
+const router = express.Router();
+
+const productsController =
+    require("../../controllers/corevester/productsController");
+
+
+// =========================================================
+// OPTIONAL AUTH HELPERS
+// =========================================================
+//
+// The marketplace itself can be viewed without forcing an
+// authentication middleware here.
+//
+// Cart identity is handled by productsController using:
+//     req.user._id
+//     req.sessionID
+//
+// Admin operations are protected locally below.
+// =========================================================
+
+
+function requireAdmin(req, res, next) {
+
+    try {
+
+        if (!req.user) {
+
+            return res.status(401).json({
+                success: false,
+                message: "Login required."
+            });
+
+        }
+
+        if (req.user.role !== "admin") {
+
+            return res.status(403).json({
+                success: false,
+                message: "Administrator access required."
+            });
+
+        }
+
+        next();
+
+    } catch (error) {
+
+        console.error(
+            "❌ requireAdmin ERROR:",
+            error.message
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to verify administrator access."
+        });
+
+    }
+
 }
 
-router.get('/', async (req,res)=>{
-    try{
-        const category = req.query.category;
-        const filter = category && category!=='all' ? {category, isActive:true} : {isActive:true};
-        const products = await Product.find(filter).sort({createdAt:-1});
-        const categories = await Product.distinct('category', {isActive:true});
-        const cart = getCart(req);
-        const cartCount = cart.reduce((a,c)=>a+c.qty,0);
-        const cartTotal = cart.reduce((a,c)=>a+(c.price*c.qty),0);
-        res.render('products', { 
-            products, categories, activeCategory: category||'all', 
-            cart, cartCount, cartTotal,
-            title:"Marketplace", 
-            user:req.session?.user||null,
-            currentPath:req.path
-        });
-    }catch(e){ 
-        console.error("GET /products error:", e.message, e.stack);
-        res.status(500).render('error/500', {error:e.message, statusCode:500, title:"Error", user:req.session?.user||null}); 
-    }
-});
 
-router.get('/:id', async (req,res)=>{
-    try{
-        if(!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-            return res.status(404).render('error/404', {title:"Not Found", user:req.session?.user||null, error:"Product not found"});
-        }
-        const product = await Product.findById(req.params.id);
-        if(!product) return res.status(404).render('error/404', {title:"Not Found", user:req.session?.user||null, error:"Product not found"});
-        const cart = getCart(req);
-        const cartCount = cart.reduce((a,c)=>a+c.qty,0);
-        const cartTotal = cart.reduce((a,c)=>a+(c.price*c.qty),0);
-        res.render('product-detail', { 
-            product, cart, cartCount, cartTotal,
-            title: product.name, 
-            user:req.session?.user||null,
-            currentPath:req.path
-        });
-    }catch(e){ 
-        console.error("GET /products/:id error:", e.message);
-        res.status(500).render('error/500', {error:e.message, statusCode:500, title:"Error", user:req.session?.user||null}); 
-    }
-});
+// =========================================================
+// MARKETPLACE
+// =========================================================
 
-router.post('/add-to-cart', async (req,res)=>{
-    try{
-        const { productId, qty } = req.body;
-        const quantity = Math.max(1, parseInt(qty)||1);
-        if(!productId) return res.json({success:false, message:"No product"});
-        const product = await Product.findById(productId);
-        if(!product) return res.json({success:false, message:"Product not found"});
-        if(product.units <=0) return res.json({success:false, message:"Out of stock"});
-        const cart = getCart(req);
-        const existing = cart.find(c=> c.productId.toString() === productId.toString());
-        const inCart = existing?existing.qty:0;
-        if(inCart + quantity > product.units){
-            return res.json({success:false, message:`Only ${product.units} available. You have ${inCart} in cart. You can add ${product.units - inCart} more.`});
-        }
-        if(existing) existing.qty += quantity;
-        else cart.push({ productId: product._id.toString(), name: product.name, price: product.unitSellPrice, qty: quantity, image: product.image, stock: product.units });
-        req.session.cart = cart;
-        const cartCount = cart.reduce((a,c)=>a+c.qty,0);
-        const cartTotal = cart.reduce((a,c)=>a+(c.price*c.qty),0);
-        res.json({success:true, cart, cartCount, cartTotal});
-    }catch(e){ console.error(e); res.json({success:false, message:e.message}); }
-});
+router.get(
+    "/products",
+    productsController.productsPage
+);
 
-router.post('/update-cart-qty', async (req,res)=>{
-    try{
-        const { productId, qty } = req.body;
-        const newQty = parseInt(qty);
-        if(!productId || isNaN(newQty)) return res.json({success:false, message:"Invalid qty"});
-        const product = await Product.findById(productId);
-        if(!product) return res.json({success:false, message:"Product not found"});
-        if(newQty > product.units) return res.json({success:false, message:`Only ${product.units} available`});
-        let cart = getCart(req);
-        if(newQty<=0) cart = cart.filter(c=> c.productId.toString() !== productId.toString());
-        else { const it = cart.find(c=> c.productId.toString()===productId.toString()); if(it) it.qty=newQty; }
-        req.session.cart = cart;
-        res.json({success:true});
-    }catch(e){ res.json({success:false, message:e.message}); }
-});
 
-router.post('/remove-from-cart', (req,res)=>{
-    try{
-        const { productId } = req.body;
-        req.session.cart = getCart(req).filter(c=> c.productId.toString() !== productId.toString());
-        res.json({success:true});
-    }catch(e){ res.json({success:false, message:e.message}); }
-});
+// =========================================================
+// PRODUCT DETAILS
+// =========================================================
+//
+// IMPORTANT:
+// This must remain after /products and before any generic
+// /products route that might capture the ID.
+// =========================================================
+
+router.get(
+    "/products/:id",
+    productsController.productDetails
+);
+
+
+// =========================================================
+// CART
+// =========================================================
+
+router.post(
+    "/products/add-to-cart",
+    productsController.addToCart
+);
+
+
+router.post(
+    "/products/update-cart-qty",
+    productsController.updateCartQty
+);
+
+
+router.post(
+    "/products/remove-from-cart",
+    productsController.removeFromCart
+);
+
+
+// =========================================================
+// ADMIN — CREATE MARKET PRODUCT
+// =========================================================
+//
+// Matches the product-entry EJS:
+//
+// POST /admin/products/create
+//
+// Body:
+//     name
+//     category
+//     units
+//     unitSellPrice
+//     image
+//
+// =========================================================
+
+router.post(
+    "/admin/products/create",
+    requireAdmin,
+    productsController.createProduct
+);
+
+
+// =========================================================
+// ADMIN — REMOVE MARKET PRODUCT
+// =========================================================
+//
+// Matches:
+//
+// DELETE /admin/products/:id
+//
+// =========================================================
+
+router.delete(
+    "/admin/products/:id",
+    requireAdmin,
+    productsController.deleteProduct
+);
+
+
+// =========================================================
+// EXPORT
+// =========================================================
 
 module.exports = router;
