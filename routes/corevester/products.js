@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('../../models/products');
+const Product = require('../../models/corevester/products');
 
 function getCart(req){
     if(!req.session.cart) req.session.cart = [];
