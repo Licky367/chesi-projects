@@ -1,168 +1,624 @@
 // ==========================================================
 // controllers/corevester/auth.js
 // ==========================================================
-//
-// COREVESTER AUTH CONTROLLER
-//
-// RESPONSIBILITIES:
-// ----------------------------------------------------------
-// • Render signup page
-// • Render login page
-// • Register new users
-// • Authenticate existing users
-// • Create login sessions
-// • Destroy login sessions
-//
-// AUTH FLOW:
-// ----------------------------------------------------------
-// SIGN UP
-//     POST /auth/signup
-//         ↓
-//     Create account
-//         ↓
-//     Redirect to /auth/login
-//
-// LOGIN
-//     POST /auth/login
-//         ↓
-//     Verify credentials
-//         ↓
-//     Create session
-//         ↓
-//     Redirect to /
-//
-// IMPORTANT:
-// ----------------------------------------------------------
-// Signup does NOT log the user in automatically.
-// All authenticated roles redirect to "/" after login.
+
+const authService =
+  require("../../services/corevester/auth");
+
+
+// ==========================================================
+// RENDER SIGNUP PAGE
 // ==========================================================
 
-const authService = require("../../services/corevester/auth");
+exports.renderSignup = (req, res) => {
 
-// ----------------------------------------------------------
-// SHOW SIGNUP
-// ----------------------------------------------------------
+  res.render(
+    "signup",
+    {
+      title: "Sign Up",
+      error: null
+    }
+  );
 
-exports.showSignup = (req, res) => {
-  return res.render("signup", {
-    title: "Create Account"
-  });
 };
 
-// ----------------------------------------------------------
-// SHOW LOGIN
-// ----------------------------------------------------------
 
-exports.showLogin = (req, res) => {
-  return res.render("login", {
-    title: "Login"
-  });
+// ==========================================================
+// RENDER LOGIN PAGE
+// ==========================================================
+
+exports.renderLogin = (req, res) => {
+
+  res.render(
+    "login",
+    {
+      title: "Login",
+      error: null
+    }
+  );
+
 };
 
-// ----------------------------------------------------------
+
+// ==========================================================
+// RENDER FORGOT PASSWORD PAGE
+// ==========================================================
+
+exports.renderForgot = (req, res) => {
+
+  res.render(
+    "forgot-password",
+    {
+      title: "Forgot Password",
+      error: null,
+      success: null
+    }
+  );
+
+};
+
+
+// ==========================================================
+// RENDER RESET PASSWORD PAGE
+// ==========================================================
+
+exports.renderReset = (req, res) => {
+
+  res.render(
+    "reset-password",
+    {
+      title: "Reset Password",
+      token: req.params.token,
+      error: null
+    }
+  );
+
+};
+
+
+// ==========================================================
 // SIGNUP
-// ----------------------------------------------------------
+// ==========================================================
 
 exports.signup = async (req, res) => {
+
   try {
 
-    const user = await authService.registerUser(req.body);
+    let {
+      name,
+      email,
+      password,
+      phone
+    } = req.body;
 
-    // ------------------------------------------------------
-    // IMPORTANT:
-    // Do NOT create a session here.
+
+    // ======================================================
+    // NORMALIZE EMAIL
+    // ======================================================
+
+    email =
+      email
+        .toLowerCase()
+        .trim();
+
+
+    // ======================================================
+    // PROFILE IMAGE
+    // ======================================================
+
+    const profileImage =
+      req.file
+        ? req.file.filename
+        : "";
+
+
+    // ======================================================
+    // BASIC VALIDATION
+    // ======================================================
+
+    if (
+      !name ||
+      !email ||
+      !password
+    ) {
+
+      return res.render(
+        "signup",
+        {
+          title: "Sign Up",
+          error:
+            "All required fields must be filled"
+        }
+      );
+
+    }
+
+
+    // ======================================================
+    // PASSWORD VALIDATION
+    // ======================================================
+
+    if (
+      password.length < 6
+    ) {
+
+      return res.render(
+        "signup",
+        {
+          title: "Sign Up",
+          error:
+            "Password must be at least 6 characters"
+        }
+      );
+
+    }
+
+
+    // ======================================================
+    // CREATE USER
     //
-    // A newly registered user must first go to the
-    // login page and authenticate normally.
-    // ------------------------------------------------------
+    // authService handles:
+    //
+    // - invitation validation
+    // - role assignment
+    // - user creation
+    //
+    // ======================================================
 
-    return res.json({
-      success: true,
-      redirect: "/auth/login"
+    await authService.signup({
+
+      name,
+
+      email,
+
+      password,
+
+      phone,
+
+      profileImage
+
     });
+
+
+    // ======================================================
+    // AFTER SIGNUP
+    // ======================================================
+
+    return res.redirect(
+      "/login"
+    );
 
   } catch (err) {
 
-    console.error("CoreVester signup error:", err);
+    console.error(
+      "Signup error:",
+      err
+    );
 
-    return res.status(400).json({
-      success: false,
-      message: err.message || "Unable to create account"
-    });
+
+    return res.render(
+      "signup",
+      {
+        title: "Sign Up",
+        error: err.message
+      }
+    );
+
   }
+
 };
 
-// ----------------------------------------------------------
+
+// ==========================================================
 // LOGIN
-// ----------------------------------------------------------
+// ==========================================================
 
 exports.login = async (req, res) => {
+
   try {
 
-    const user = await authService.loginUser(req.body);
+    let {
+      email,
+      password
+    } = req.body;
 
-    // ------------------------------------------------------
-    // CREATE SESSION
-    // ------------------------------------------------------
 
-    req.session.userId = user._id.toString();
-    req.session.role = user.role;
+    // ======================================================
+    // NORMALIZE EMAIL
+    // ======================================================
+
+    email =
+      email
+        .toLowerCase()
+        .trim();
+
+
+    // ======================================================
+    // AUTHENTICATE USER
+    // ======================================================
+
+    const user =
+      await authService.login({
+
+        email,
+
+        password
+
+      });
+
+
+    // ======================================================
+    // STORE USER IN SESSION
+    //
+    // assignedFarm contains the Dairy Farm IDs assigned
+    // to this dairyWorker.
+    //
+    // The first assigned farm is used for the login
+    // redirect.
+    //
+    // ======================================================
 
     req.session.user = {
-      id: user._id.toString(),
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role
+
+      _id:
+        user._id,
+
+      id:
+        user._id,
+
+      name:
+        user.name,
+
+      role:
+        user.role,
+
+      profileImage:
+        user.profileImage || "",
+
+      assignedFarm:
+        user.assignedFarm || []
+
     };
 
-    // ------------------------------------------------------
-    // ALL ROLES GO TO "/"
-    // ------------------------------------------------------
 
-    req.session.save((err) => {
+    // ======================================================
+    // SAVE SESSION BEFORE REDIRECT
+    //
+    // This is especially important when using a persistent
+    // session store such as MongoDB.
+    //
+    // ======================================================
 
-      if (err) {
-        console.error("CoreVester login session error:", err);
+    req.session.save(
+      (sessionError) => {
 
-        return res.status(500).json({
-          success: false,
-          message: "Session error"
-        });
+        if (sessionError) {
+
+          console.error(
+            "Session save error:",
+            sessionError
+          );
+
+
+          return res.status(500).render(
+            "login",
+            {
+              title: "Login",
+
+              error:
+                "Login succeeded, but your session could not be saved. Please try again."
+            }
+          );
+
+        }
+
+
+        // ==================================================
+        // ADMINISTRATOR
+        //
+        // Administrators always go directly to the
+        // Dairy dashboard after successful login.
+        // ==================================================
+
+        if (
+          user.role === "admin"
+        ) {
+
+          return res.redirect(
+            "/dashboard/dairy"
+          );
+
+        }
+
+
+        // ==================================================
+        // DAIRY WORKER
+        // ==================================================
+
+        if (
+          user.role === "dairyWorker"
+        ) {
+
+          const assignedFarms =
+            user.assignedFarm || [];
+
+
+          // =================================================
+          // FIRST ASSIGNED FARM
+          // =================================================
+
+          if (
+            assignedFarms.length > 0
+          ) {
+
+            const firstFarm =
+              assignedFarms[0];
+
+
+            return res.redirect(
+              `/dairy/${firstFarm}`
+            );
+
+          }
+
+        }
+
+
+        // ==================================================
+        // DEFAULT REDIRECT
+        //
+        // Used for:
+        //
+        // - Dairy worker without assigned farms
+        // - Poultry worker
+        //
+        // ==================================================
+
+        return res.redirect(
+          "/"
+        );
+
       }
-
-      return res.json({
-        success: true,
-        redirect: "/"
-      });
-    });
+    );
 
   } catch (err) {
 
-    console.error("CoreVester login error:", err);
+    console.error(
+      "Login error:",
+      err
+    );
 
-    return res.status(401).json({
-      success: false,
-      message: err.message || "Invalid credentials"
-    });
+
+    return res.render(
+      "login",
+      {
+        title: "Login",
+
+        error:
+          err.message
+      }
+    );
+
   }
+
 };
 
-// ----------------------------------------------------------
+
+// ==========================================================
 // LOGOUT
-// ----------------------------------------------------------
+// ==========================================================
 
 exports.logout = (req, res) => {
 
-  req.session.destroy((err) => {
+  req.session.destroy(
+    (err) => {
 
-    if (err) {
-      console.error("CoreVester logout error:", err);
+      if (err) {
 
-      return res.status(500).send("Unable to logout");
+        console.error(
+          "Logout session destruction error:",
+          err
+        );
+
+      }
+
+
+      // ----------------------------------------------------
+      // Remove session cookie
+      // ----------------------------------------------------
+
+      res.clearCookie(
+        "connect.sid"
+      );
+
+
+      // ----------------------------------------------------
+      // Return to login
+      // ----------------------------------------------------
+
+      return res.redirect(
+        "/login"
+      );
+
+    }
+  );
+
+};
+
+
+// ==========================================================
+// FORGOT PASSWORD
+// ==========================================================
+
+exports.forgotPassword =
+async (req, res) => {
+
+  try {
+
+    let {
+      email
+    } = req.body;
+
+
+    // ======================================================
+    // NORMALIZE EMAIL
+    // ======================================================
+
+    email =
+      email
+        .toLowerCase()
+        .trim();
+
+
+    // ======================================================
+    // REQUEST ORIGIN
+    // ======================================================
+
+    const requestOrigin =
+      process.env.FRONTEND_URL ||
+      `${req.protocol}://${req.get("host")}`;
+
+
+    // ======================================================
+    // SEND RESET EMAIL
+    // ======================================================
+
+    await authService.forgotPassword(
+
+      email,
+
+      requestOrigin
+
+    );
+
+
+    // ======================================================
+    // SUCCESS
+    // ======================================================
+
+    return res.render(
+      "forgot-password",
+      {
+        title: "Forgot Password",
+
+        success:
+          "Reset link sent successfully.",
+
+        error:
+          null
+      }
+    );
+
+  } catch (err) {
+
+    console.error(
+      "Forgot password error:",
+      err
+    );
+
+
+    return res.render(
+      "forgot-password",
+      {
+        title: "Forgot Password",
+
+        error:
+          err.message,
+
+        success:
+          null
+      }
+    );
+
+  }
+
+};
+
+
+// ==========================================================
+// RESET PASSWORD
+// ==========================================================
+
+exports.resetPassword =
+async (req, res) => {
+
+  try {
+
+    const {
+      password
+    } = req.body;
+
+
+    const token =
+      req.params.token;
+
+
+    // ======================================================
+    // PASSWORD VALIDATION
+    // ======================================================
+
+    if (
+      !password ||
+      password.length < 6
+    ) {
+
+      return res.render(
+        "reset-password",
+        {
+          title: "Reset Password",
+
+          token,
+
+          error:
+            "Password must be at least 6 characters"
+        }
+      );
+
     }
 
-    res.clearCookie("connect.sid");
 
-    return res.redirect("/auth/login");
-  });
+    // ======================================================
+    // RESET PASSWORD
+    // ======================================================
+
+    await authService.resetPassword(
+
+      token,
+
+      password
+
+    );
+
+
+    // ======================================================
+    // RETURN TO LOGIN
+    // ======================================================
+
+    return res.redirect(
+      "/login"
+    );
+
+  } catch (err) {
+
+    console.error(
+      "Reset password error:",
+      err
+    );
+
+
+    return res.render(
+      "reset-password",
+      {
+        title: "Reset Password",
+
+        token:
+          req.params.token,
+
+        error:
+          err.message
+      }
+    );
+
+  }
+
 };
