@@ -1,51 +1,56 @@
 // ==========================================================
-// server-corevester.js - COREVESTER
+// server-corevester.js - COREVESTER - FIXED LOGGING
 // ==========================================================
 
 const express = require("express");
 const http = require("http");
 const path = require("path");
-
 const expressLayouts = require("express-ejs-layouts");
 const session = require("express-session");
-
 const { rateLimit } = require("express-rate-limit");
 const { Server } = require("socket.io");
-
 const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
 const methodOverride = require("method-override");
-
 require("dotenv").config();
+
+// --- CRITICAL: SHOW ALL CRASHES IN LOGS ---
+process.on('uncaughtException', (err) => {
+    console.error('❌ UNCAUGHT EXCEPTION:', err);
+    console.error(err.stack);
+    // don't exit immediately on Render, let log flush
+    setTimeout(() => process.exit(1), 1000);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ UNHANDLED REJECTION at:', promise, 'reason:', reason);
+    console.error(reason?.stack || reason);
+});
+
+console.log("--- Starting server-corevester.js ---");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("PORT:", process.env.PORT);
 
 // ==========================================================
 // CONNECT-MONGO
 // ==========================================================
-
 let MongoStore;
-
 try {
     MongoStore = require("connect-mongo");
+    console.log("✅ connect-mongo loaded");
 } catch (error) {
-    console.warn(
-        "⚠️ connect-mongo is not installed; falling back to default session storage"
-    );
+    console.warn("⚠️ connect-mongo not installed:", error.message);
 }
 
 // ==========================================================
 // ENVIRONMENT
 // ==========================================================
-
 const isProduction = process.env.NODE_ENV === "production";
-
 if (isProduction) {
     const requiredEnvVars = ["MONGO_URI", "SESSION_SECRET", "FRONTEND_URL"];
     const missing = requiredEnvVars.filter((key) =>!process.env[key]);
     if (missing.length) {
-        console.error(
-            `❌ Production startup failed: missing required environment variables: ${missing.join(", ")}`
-        );
+        console.error(`❌ Missing env vars: ${missing.join(", ")}`);
         process.exit(1);
     }
 }
@@ -53,212 +58,82 @@ if (isProduction) {
 // ==========================================================
 // DATABASE
 // ==========================================================
-
 const connectDB = require("./db");
-
-// ==========================================================
-// DEFAULT ADMIN USER SEEDER
-// ==========================================================
-
 const seedUser = require("./utils/seedUser");
 
 // ==========================================================
-// ROUTES - ONLY COREVESTER
+// ROUTES - LOAD WITH VERBOSE LOGGING
 // ==========================================================
-
-let corevesterRoutes;
-
-try {
-    corevesterRoutes = require("./routes/corevester/index");
-} catch (err) {
-    console.warn(
-        "Warning: failed to load Core Vester routes:",
-        err.message
-    );
+function safeLoad(name, pathToRequire) {
+    try {
+        console.log(`... Loading ${name} from ${pathToRequire}`);
+        const mod = require(pathToRequire);
+        console.log(`✅ Loaded ${name}`);
+        return mod;
+    } catch (err) {
+        console.error(`❌ FAILED to load ${name} from ${pathToRequire}`);
+        console.error(err.message);
+        console.error(err.stack);
+        return null;
+    }
 }
 
+const corevesterRoutes = safeLoad("corevesterRoutes", "./routes/corevester/index");
+const productsRoutes = safeLoad("productsRoutes", "./routes/corevester/products");
+const productsEntryRoutes = safeLoad("productsEntryRoutes", "./routes/corevester/adminProducts");
+const stockEntryRoutes = safeLoad("stockEntryRoutes", "./routes/corevester/stock");
+const packageRoutes = safeLoad("packageRoutes", "./routes/corevester/packages");
 
-let productsRoutes;
-
-try {
-    productsRoutes = require("./routes/corevester/products");
-} catch (err) {
-    console.warn(
-        "Warning: failed to load products routes:",
-        err.message
-    );
-}
-
-
-let productsEntryRoutes;
-
-try {
-    productsEntryRoutes = require("./routes/corevester/adminProducts");
-} catch (err) {
-    console.warn(
-        "Warning: failed to load products-entry routes:",
-        err.message
-    );
-}
-
-let stockEntryRoutes;
-
-try {
-    stockEntryRoutes = require("./routes/corevester/stock");
-} catch (err) {
-    console.warn(
-        "Warning: failed to load stock-entry routes:",
-        err.message
-    );
-}
-
-let stockEntryRoutes;
-
-try {
-    packageRoutes = require("./routes/corevester/packages");
-} catch (err) {
-    console.warn(
-        "Warning: failed to load package routes:",
-        err.message
-    );
-}
 // ==========================================================
-// SOCKET HANDLER
+// SOCKET
 // ==========================================================
-
 const socketHandler = require("./socket/socket");
 
 // ==========================================================
 // APP
 // ==========================================================
-
 const app = express();
 const server = http.createServer(app);
-
 app.disable("x-powered-by");
 
-// ==========================================================
-// TRUST PROXY
-// ==========================================================
+if (isProduction || process.env.TRUST_PROXY === "1") app.enable("trust proxy");
 
-if (isProduction || process.env.TRUST_PROXY === "1") {
-    app.enable("trust proxy");
-} else {
-    app.disable("trust proxy");
-}
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 
-// ==========================================================
-// SECURITY
-// ==========================================================
-
-app.use(
-    helmet({
-        contentSecurityPolicy: false,
-        crossOriginEmbedderPolicy: false
-    })
-);
-
-// ==========================================================
-// RATE LIMIT
-// ==========================================================
-
-app.use(
-    rateLimit({
-        windowMs: 15 * 60 * 1000,
-        max: isProduction? 200 : 1000,
-        standardHeaders: true,
-        legacyHeaders: false,
-        message: {
-            message: "Too many requests, please try again later."
-        }
-    })
-);
-
-// ==========================================================
-// COMPRESSION
-// ==========================================================
+app.use(rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: isProduction? 200 : 1000,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many requests" }
+}));
 
 app.use(compression());
-
-// ==========================================================
-// LOGGING
-// ==========================================================
-
 app.use(morgan(process.env.MORGAN_FORMAT || "combined"));
 
-// ==========================================================
-// SOCKET.IO
-// ==========================================================
-
-const allowedOrigin =
-    process.env.FRONTEND_URL || (isProduction? false : "*");
-
-const io = new Server(server, {
-    cors: {
-        origin: allowedOrigin,
-        methods: ["GET", "POST"]
-    }
-});
-
+const allowedOrigin = process.env.FRONTEND_URL || (isProduction? false : "*");
+const io = new Server(server, { cors: { origin: allowedOrigin, methods: ["GET", "POST"] } });
 app.set("io", io);
 socketHandler(io);
 
-// ==========================================================
-// BODY PARSERS
-// ==========================================================
-
-app.use(
-    express.urlencoded({
-        extended: true,
-        limit: "10mb"
-    })
-);
-
-app.use(
-    express.json({
-        limit: "10mb"
-    })
-);
-
-// ==========================================================
-// METHOD OVERRIDE
-// ==========================================================
-
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(methodOverride("_method"));
 
 // ==========================================================
 // SESSION
 // ==========================================================
+const sessionStore = isProduction && process.env.MONGO_URI && MongoStore
+   ? MongoStore.create({ mongoUrl: process.env.MONGO_URI, ttl: 24 * 60 * 60, touchAfter: 60 * 60 })
+    : undefined;
 
-const sessionStore =
-    isProduction && process.env.MONGO_URI && MongoStore
-       ? MongoStore.create({
-              mongoUrl: process.env.MONGO_URI,
-              ttl: 24 * 60 * 60,
-              touchAfter: 60 * 60
-          })
-        : undefined;
-
-app.use(
-    session({
-        secret:
-            process.env.SESSION_SECRET ||
-            (isProduction? "" : "development-session-secret"),
-        store: sessionStore,
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: "lax",
-            maxAge: 1000 * 60 * 60 * 24
-        }
-    })
-);
-
-// ==========================================================
-// GLOBAL USER
-// ==========================================================
+app.use(session({
+    secret: process.env.SESSION_SECRET || (isProduction? "" : "development-session-secret"),
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true, secure: isProduction, sameSite: "lax", maxAge: 1000 * 60 * 60 * 24 }
+}));
 
 app.use((req, res, next) => {
     const currentUser = req.session?.user || null;
@@ -269,73 +144,43 @@ app.use((req, res, next) => {
     next();
 });
 
-// ==========================================================
-// HEALTH CHECK
-// ==========================================================
-
-app.get("/health", (req, res) => {
-    return res.status(200).json({
-        status: "ok",
-        environment: process.env.NODE_ENV || "development"
-    });
-});
-
-// ==========================================================
-// STATIC FILES
-// ==========================================================
+app.get("/health", (req, res) => res.status(200).json({ status: "ok", env: process.env.NODE_ENV }));
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
-// ==========================================================
-// VIEW ENGINE
-// ==========================================================
-
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views/corevester"));
-
+app.set("views", path.join(__dirname, "views"));
 app.use(expressLayouts);
-app.set("layout", "layout");
+app.set("layout", "corevester/layout");
 
 // ==========================================================
-// ROUTE MOUNTING - ONLY COREVESTER
+// MOUNT ROUTES - WITH LOG
 // ==========================================================
+console.log("--- Mounting routes ---");
+if (corevesterRoutes) { app.use("/", corevesterRoutes); console.log("Mounted /"); }
+else console.error("SKIPPED / - not loaded");
 
-if (corevesterRoutes) {
-    app.use("/", corevesterRoutes);
-}
+if (productsRoutes) { app.use("/products", productsRoutes); console.log("Mounted /products"); }
+else console.error("SKIPPED /products - not loaded");
 
-if (productsRoutes) {
-    app.use("/products", productsRoutes);
-}
+if (productsEntryRoutes) { app.use("/admin/products", productsEntryRoutes); console.log("Mounted /admin/products"); }
+else console.error("SKIPPED /admin/products - not loaded");
 
-if (productsEntryRoutes) {
-    app.use("/admin/products", productsEntryRoutes);
-}
+if (stockEntryRoutes) { app.use("/admin/stock", stockEntryRoutes); console.log("Mounted /admin/stock"); }
+else console.error("SKIPPED /admin/stock - not loaded");
 
-
-if (stockEntryRoutes) {
-    app.use("/admin/stock", stockEntryRoutes);
-}
-
-if (packageRoutes) {
-    app.use("/packages", packageRoutes);
-}
+if (packageRoutes) { app.use("/packages", packageRoutes); console.log("Mounted /packages"); }
+else console.error("SKIPPED /packages - not loaded");
 
 // ==========================================================
-// 404 - PERFECT HANDLER
+// 404
 // ==========================================================
-
 app.use((req, res) => {
-    // If API / JSON request, send JSON
     if (req.accepts("json") &&!req.accepts("html")) {
-        return res.status(404).json({
-            success: false,
-            message: "Route not found"
-        });
+        return res.status(404).json({ success: false, message: "Route not found" });
     }
-
-    return res.status(404).render("error/404", {
+    return res.status(404).render("corevester/error/404", {
         title: "404 - Page Not Found",
         user: req.user || null,
         error: `Cannot ${req.method} ${req.originalUrl}`
@@ -343,67 +188,32 @@ app.use((req, res) => {
 });
 
 // ==========================================================
-// GLOBAL ERROR HANDLER - PERFECT
+// GLOBAL ERROR HANDLER
 // ==========================================================
-
 app.use((err, req, res, next) => {
-    console.error("❌ Unhandled error:", err);
-
+    console.error("❌ GLOBAL ERROR HANDLER:", err);
+    console.error(err.stack);
     let statusCode = Number(err.statusCode || err.status || 500);
+    if (statusCode < 400 || statusCode > 599) statusCode = 500;
 
-    // Multer file too large
-    if (err && err.name === "MulterError" && err.code === "LIMIT_FILE_SIZE") {
-        statusCode = 400;
-        err.message = "The uploaded image is too large. Maximum size is 5MB.";
-    }
-
-    // Ensure valid status code
-    if (statusCode < 400 || statusCode > 599) {
-        statusCode = 500;
-    }
-
-    // JSON response for API
     if (!req.accepts("html") || req.xhr || req.path.startsWith("/api")) {
         return res.status(statusCode).json({
             success: false,
-            message:
-                isProduction && statusCode === 500
-                   ? "Internal Server Error"
-                    : err.message || "Something went wrong"
+            message: isProduction && statusCode === 500? "Internal Server Error" : err.message
         });
     }
-
-    // HTML response
-    const errorViews = {
-        400: "error/400",
-        401: "error/401",
-        403: "error/403",
-        404: "error/404",
-        409: "error/409",
-        422: "error/422",
-        429: "error/429",
-        500: "error/500"
-    };
-
-    const view = errorViews[statusCode] || "error/500";
-
-    return res.status(statusCode).render(view, {
+    return res.status(statusCode).render(`corevester/error/${statusCode}`.includes("500")? "corevester/error/500" : "corevester/error/500", {
         title: `${statusCode} Error`,
-        error: err.message || "Internal Server Error",
-        statusCode: statusCode,
+        error: err.message,
+        statusCode,
         user: req.user || null
     });
 });
 
 // ==========================================================
-// PORT
+// START
 // ==========================================================
-
 const PORT = Number(process.env.PORT || 3000);
-
-// ==========================================================
-// START SERVER
-// ==========================================================
 
 const startServer = (port) => {
     server.listen(port, () => {
@@ -411,79 +221,40 @@ const startServer = (port) => {
     });
 };
 
-// ==========================================================
-// SERVER ERROR
-// ==========================================================
-
 server.on("error", (error) => {
+    console.error("❌ Server error:", error);
+    console.error(error.stack);
     if (error.code === "EADDRINUSE") {
-        console.error(
-            `❌ Port ${PORT} is already in use. Free it or set a different port in the environment.`
-        );
+        console.error(`Port ${PORT} in use`);
         process.exit(1);
     }
-    console.error("❌ Server error:", error.message);
     process.exit(1);
 });
 
-// ==========================================================
-// GRACEFUL SHUTDOWN
-// ==========================================================
-
-process.on("SIGTERM", () => {
-    console.log("🛑 Received SIGTERM. Shutting down gracefully...");
-    server.close(() => process.exit(0));
-});
-
-process.on("SIGINT", () => {
-    console.log("🛑 Received SIGINT. Shutting down gracefully...");
-    server.close(() => process.exit(0));
-});
-
-// ==========================================================
-// DATABASE BOOTSTRAP
-// ==========================================================
+process.on("SIGTERM", () => { console.log("SIGTERM"); server.close(() => process.exit(0)); });
+process.on("SIGINT", () => { console.log("SIGINT"); server.close(() => process.exit(0)); });
 
 const bootstrap = async () => {
     try {
+        console.log("--- Connecting DB ---");
         const dbConnected = await connectDB();
-
         if (dbConnected) {
-            console.log("✅ MongoDB connected.");
-        } else if (isProduction) {
-            console.error("❌ Production startup failed: MongoDB is unavailable.");
-            process.exit(1);
-        } else {
-            console.warn(
-                "⚠️ MongoDB is unavailable. Starting server without database initialization."
-            );
-        }
-
-        if (dbConnected) {
-            console.log("\n🌱 Checking default admin user...");
+            console.log("✅ MongoDB connected");
+            console.log("🌱 Seeding admin...");
             await seedUser();
-            console.log("✅ Default admin user check completed.");
+            console.log("✅ Seed done");
+        } else if (isProduction) {
+            console.error("❌ MongoDB unavailable in production");
+            process.exit(1);
         }
-
         startServer(PORT);
     } catch (error) {
-        console.error("\n❌ Application bootstrap failed:");
+        console.error("❌ Bootstrap failed:");
         console.error(error);
-
-        if (isProduction) {
-            console.error("\n🛑 Server startup aborted.");
-            process.exit(1);
-        }
-
-        console.warn(
-            "\n⚠️ Database initialization failed. Starting server in development mode."
-        );
+        console.error(error.stack);
+        if (isProduction) process.exit(1);
         startServer(PORT);
     }
 };
-
-// ==========================================================
-// START APPLICATION
-// ==========================================================
 
 bootstrap();
