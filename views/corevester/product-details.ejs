@@ -35,7 +35,7 @@
               <input id="inputQty" type="number" value="1" min="1" max="<%= product.units %>" style="width:56px;height:46px;border:none;border-left:1.5px solid #e0e9dc;border-right:1.5px solid #e0e9dc;text-align:center;font-weight:900;color:#15472E;font-size:18px;outline:none;background:#fff;">
               <button type="button" onclick="var i=document.getElementById('inputQty'); var m=parseInt(i.max)||9999; var v=parseInt(i.value)||1; if(v<m) i.value=v+1; else alert('Only '+m+' left');" style="width:44px;height:46px;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">+</button>
             </div>
-            <button id="btnAddCart" data-id="<%= product._id %>" data-stock="<%= product.units %>" <%= product.units<=0?'disabled':'' %> style="flex:1;height:46px;background:<%= product.units>0?'#15472E':'#ccc' %>;color:#fff;font-weight:800;border:none;border-radius:12px;padding:0 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(21,71,46,0.25);">
+            <button id="btnAddCart" type="button" onclick="addToCartNow(this)" data-id="<%= product._id %>" data-stock="<%= product.units %>" <%= product.units<=0?'disabled':'' %> style="flex:1;height:46px;background:<%= product.units>0?'#15472E':'#ccc' %>;color:#fff;font-weight:800;border:none;border-radius:12px;padding:0 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(21,71,46,0.25);">
               <i class="fas fa-shopping-cart"></i> ADD TO CART
             </button>
           </div>
@@ -72,29 +72,31 @@
 </div>
 
 <script>
-var addBtn = document.getElementById('btnAddCart');
-if(addBtn){
-  addBtn.onclick = async function(){
-    var pid = this.getAttribute('data-id');
-    var qty = parseInt(document.getElementById('inputQty').value) || 1;
-    var original = this.innerHTML;
-    this.innerHTML = 'Adding...';
-    this.disabled = true;
-    try{
-      var res = await fetch('/products/add-to-cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ productId: pid, qty: qty })
-      });
-      var data = await res.json();
-      if(!res.ok || !data.success) throw new Error(data.message || 'Failed');
-      window.location.href = '/cart';
-    }catch(e){
-      alert(e.message || 'Network error');
-      this.innerHTML = original;
-      this.disabled = false;
-    }
-  };
+function addToCartNow(btn){
+  var pid = btn.getAttribute('data-id');
+  var qtyInput = document.getElementById('inputQty');
+  var qty = parseInt(qtyInput.value) || 1;
+  var original = btn.innerHTML;
+  btn.innerHTML = 'Adding...';
+  btn.disabled = true;
+
+  fetch('/products/add-to-cart', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ productId: pid, qty: qty })
+  })
+  .then(function(res){ return res.text().then(function(t){ return {ok:res.ok, status:res.status, text:t}; }); })
+  .then(function(r){
+    var data;
+    try{ data = JSON.parse(r.text); }catch(e){ throw new Error('Server error '+r.status+': '+r.text.substring(0,150)); }
+    if(!r.ok || !data.success) throw new Error(data.message || 'Failed');
+    window.location.href = '/cart';
+  })
+  .catch(function(err){
+    alert(err.message);
+    btn.innerHTML = original;
+    btn.disabled = false;
+  });
 }
 </script>
