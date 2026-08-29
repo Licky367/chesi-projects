@@ -1,0 +1,45 @@
+<section class="shop-page">
+  <h1 class="page-title">Your Cart</h1>
+  <p class="page-subtitle">Products you have reserved for checkout.</p>
+
+  <% if (typeof error !== "undefined" && error) { %>
+    <div class="error"><%= error %></div>
+  <% } %>
+
+  <% if (!cart || !cart.items || !cart.items.length) { %>
+    <div class="empty" style="margin-top:24px">
+      <i class="fas fa-shopping-basket"></i>
+      <div>Your cart is empty.</div>
+      <div style="margin-top:14px"><a class="primary-btn" href="/products">Browse Products</a></div>
+    </div>
+  <% } else { %>
+    <div class="cart-list">
+      <% cart.items.forEach(item => { %>
+        <a href="/carts/<%= item.productId %>" class="list-card">
+          <div class="list-thumb">
+            <% if (item.image) { %><img src="<%= item.image %>" alt="<%= item.name %>"><% } %>
+          </div>
+          <div class="list-main">
+            <h3><%= item.name %></h3>
+            <div class="list-meta">Quantity: <strong><%= item.qty %></strong></div>
+            <div class="list-meta">Unit price: <span class="list-price">KSh <%= Number(item.price).toLocaleString() %></span></div>
+          </div>
+          <i class="fas fa-chevron-right" style="color:#9aaa9d"></i>
+        </a>
+      <% }) %>
+    </div>
+
+    <div class="summary">
+      <div class="total-line">
+        <span>Total</span>
+        <span style="color:var(--green)">KSh <%= Number(total).toLocaleString() %></span>
+      </div>
+      <div style="margin-top:12px;color:var(--muted);font-size:12px">
+        Select any cart item for its details, or continue below to checkout.
+      </div>
+      <div style="margin-top:15px">
+        <a class="primary-btn" href="/carts/<%= cart.items[0].productId %>">Checkout</a>
+      </div>
+    </div>
+  <% } %>
+</section>

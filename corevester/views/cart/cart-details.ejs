@@ -1,0 +1,93 @@
+<section class="shop-page">
+  <div style="margin-bottom:15px">
+    <a href="/carts" class="secondary-btn"><i class="fas fa-arrow-left"></i> Cart</a>
+  </div>
+
+  <div class="detail-card">
+    <div class="detail-grid">
+      <div class="detail-image">
+        <% if (item.image) { %>
+          <img src="<%= item.image %>" alt="<%= item.name %>">
+        <% } else { %>
+          <div class="placeholder"><i class="fas fa-box"></i></div>
+        <% } %>
+      </div>
+
+      <div class="detail-content">
+        <span class="detail-category">Cart item</span>
+        <h1><%= item.name %></h1>
+        <div class="detail-price">KSh <%= Number(item.price).toLocaleString() %></div>
+
+        <p class="detail-description">
+          Quantity reserved: <strong><%= item.qty %></strong><br>
+          Item total: <strong>KSh <%= Number(item.price * item.qty).toLocaleString() %></strong>
+        </p>
+
+        <form action="/carts/<%= item.productId %>/remove" method="POST" style="margin-bottom:22px">
+          <button class="secondary-btn" type="submit">
+            <i class="fas fa-trash"></i> Remove item
+          </button>
+        </form>
+
+        <div class="summary" style="margin-top:0">
+          <div class="total-line">
+            <span>Cart total</span>
+            <span style="color:var(--green)">KSh <%= Number(total).toLocaleString() %></span>
+          </div>
+
+          <% if (typeof error !== "undefined" && error) { %>
+            <div class="error"><%= error %></div>
+          <% } %>
+
+          <form action="/carts/checkout" method="POST" class="checkout-box" id="checkoutForm">
+            <h3 style="margin:0 0 10px">Checkout</h3>
+
+            <label class="payment-choice">
+              <input type="radio" name="paymentMethod" value="mpesa" required>
+              <span>
+                <strong>Pay now with M-Pesa</strong><br>
+                <small style="color:var(--muted)">An STK Push will be sent to your phone.</small>
+              </span>
+            </label>
+
+            <div id="phoneField" class="phone-field">
+              <input
+                type="tel"
+                name="phoneNumber"
+                id="phoneNumber"
+                placeholder="0712345678"
+                inputmode="numeric"
+                style="width:100%;padding:12px;border:1px solid #ced9cf;border-radius:10px"
+              >
+            </div>
+
+            <label class="payment-choice">
+              <input type="radio" name="paymentMethod" value="pay_on_delivery" required>
+              <span>
+                <strong>Pay upon delivery</strong><br>
+                <small style="color:var(--muted)">Your package will be created immediately.</small>
+              </span>
+            </label>
+
+            <button class="primary-btn" type="submit" style="width:100%;margin-top:9px">
+              <i class="fas fa-check-circle"></i> Continue Checkout
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const phoneField = document.getElementById("phoneField");
+  const phoneInput = document.getElementById("phoneNumber");
+
+  document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+      const mpesa = radio.value === "mpesa" && radio.checked;
+      phoneField.classList.toggle("show", mpesa);
+      phoneInput.required = mpesa;
+    });
+  });
+</script>
