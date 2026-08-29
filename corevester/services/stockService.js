@@ -11,7 +11,7 @@
 // ==========================================================
 const mongoose = require("mongoose");
 const Product = require("../models/products");
-const Stock = require("../models/corevester/stock");
+const Stock = require("../corevester/corevester/stock");
 
 function cleanString(value) {
   return String(value ?? "").trim();
