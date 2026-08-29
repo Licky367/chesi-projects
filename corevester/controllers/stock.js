@@ -1,16 +1,9 @@
-// =========================================================
-// controllers/stock.js
-// MANAGEMENT / STOCK CONTROLLER
-//
-// /stock              -> stock.ejs
-// /stock/new          -> product-entry.ejs
-// /stock/:id          -> stock-entry.ejs
-// =========================================================
 const stockService = require("../services/stockService");
 
 exports.list = async (req, res) => {
   try {
     const stocks = await stockService.listStock();
+
     res.render("stock/stock", {
       title: "Stock Management | CoreVester",
       stocks,
@@ -19,30 +12,33 @@ exports.list = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+
     res.status(500).render("stock/stock", {
       title: "Stock Management | CoreVester",
       stocks: [],
-      error: "Unable to load stock."
+      error: "Unable to load stock.",
+      query: ""
     });
   }
 };
 
-exports.newProductForm = async (req, res) => {
+exports.newStockForm = async (req, res) => {
   res.render("stock/product-entry", {
-    title: "Add Product | CoreVester",
+    title: "Add Stock | CoreVester",
     error: null,
     old: {}
   });
 };
 
-exports.createProduct = async (req, res) => {
+exports.createStock = async (req, res) => {
   try {
-    await stockService.createProductAndStock(req.body);
-    res.redirect("/stock");
+    await stockService.createStock(req.body);
+    res.redirect("/stock?saved=1");
   } catch (err) {
     console.error(err);
+
     res.status(400).render("stock/product-entry", {
-      title: "Add Product | CoreVester",
+      title: "Add Stock | CoreVester",
       error: err.message,
       old: req.body
     });
@@ -51,15 +47,21 @@ exports.createProduct = async (req, res) => {
 
 exports.entry = async (req, res) => {
   try {
-    const stock = await stockService.getStock(req.params.id);
+    const [stock, substations] = await Promise.all([
+      stockService.getStock(req.params.id),
+      stockService.getSubstations()
+    ]);
 
-    if (!stock) return res.status(404).redirect("/stock?error=Stock+item+not+found.");
+    if (!stock) {
+      return res.status(404).redirect("/stock?error=Stock+item+not+found.");
+    }
 
     res.render("stock/stock-entry", {
-      title: `${stock.name} | Stock | CoreVester`,
+      title: `${stock.name} | Product Entry | CoreVester`,
       stock,
+      substations,
       error: req.query.error || null,
-      query: req.query.saved || ""
+      old: {}
     });
   } catch (err) {
     console.error(err);
@@ -67,12 +69,26 @@ exports.entry = async (req, res) => {
   }
 };
 
-exports.update = async (req, res) => {
+exports.createProduct = async (req, res) => {
   try {
-    await stockService.updateStockAndProduct(req.params.id, req.body);
+    await stockService.createProductFromStock(req.params.id, req.body);
     res.redirect(`/stock/${req.params.id}?saved=1`);
   } catch (err) {
     console.error(err);
-    res.redirect(`/stock/${req.params.id}?error=${encodeURIComponent(err.message)}`);
+
+    const [stock, substations] = await Promise.all([
+      stockService.getStock(req.params.id),
+      stockService.getSubstations()
+    ]);
+
+    if (!stock) return res.status(404).redirect("/stock");
+
+    res.status(400).render("stock/stock-entry", {
+      title: `${stock.name} | Product Entry | CoreVester`,
+      stock,
+      substations,
+      error: err.message,
+      old: req.body
+    });
   }
 };
