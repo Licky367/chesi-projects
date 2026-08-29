@@ -71,8 +71,38 @@
   </div>
 </div>
 
+<!-- LOGIN REQUIRED POPUP -->
+<div id="loginPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:18px;max-width:340px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+    <div style="width:56px;height:56px;border-radius:50%;background:#fff3cd;border:2px solid #ffc107;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:28px;">🔒</div>
+    <h3 style="margin:0;color:#15472E;font-weight:900;font-size:18px;">You're not logged in</h3>
+    <p style="margin:8px 0 0 0;color:#666;font-size:13px;line-height:1.5;">Please log in to continue adding items to your cart.</p>
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button onclick="closeLoginPopup()" style="flex:1;height:42px;border:1.5px solid #e0e9dc;background:#fff;border-radius:10px;font-weight:800;color:#444;cursor:pointer;">Cancel</button>
+      <a href="/auth/login?redirect=<%= encodeURIComponent('/products/' + product._id) %>" style="flex:1;height:42px;background:#15472E;color:#fff;border-radius:10px;font-weight:800;text-decoration:none;display:flex;align-items:center;justify-content:center;">Log In</a>
+    </div>
+  </div>
+</div>
+
 <script>
+var IS_LOGGED_IN = <%= (typeof user !== 'undefined' && user) || (typeof currentUser !== 'undefined' && currentUser) || (typeof session !== 'undefined' && session.userId) ? 'true' : 'false' %>;
+
+function openLoginPopup(){
+  var p = document.getElementById('loginPopup');
+  p.style.display = 'flex';
+}
+function closeLoginPopup(){
+  document.getElementById('loginPopup').style.display = 'none';
+}
+document.getElementById('loginPopup').addEventListener('click', function(e){
+  if(e.target === this) closeLoginPopup();
+});
+
 function addToCartNow(btn){
+  if(!IS_LOGGED_IN){
+    openLoginPopup();
+    return;
+  }
   var pid = btn.getAttribute('data-id');
   var qtyInput = document.getElementById('inputQty');
   var qty = parseInt(qtyInput.value) || 1;
@@ -86,15 +116,28 @@ function addToCartNow(btn){
     credentials: 'include',
     body: JSON.stringify({ productId: pid, qty: qty })
   })
-  .then(function(res){ return res.text().then(function(t){ return {ok:res.ok, status:res.status, text:t}; }); })
+  .then(function(res){
+    return res.text().then(function(t){ return {ok:res.ok, status:res.status, text:t}; });
+  })
   .then(function(r){
     var data;
-    try{ data = JSON.parse(r.text); }catch(e){ throw new Error('Server error '+r.status+': '+r.text.substring(0,150)); }
+    try{ data = JSON.parse(r.text); }catch(e){
+      if(r.status === 401){ openLoginPopup(); throw new Error('LOGIN_REQUIRED'); }
+      throw new Error('Server error '+r.status);
+    }
+    if(r.status === 401 || data.message === 'LOGIN_REQUIRED'){
+      openLoginPopup();
+      throw new Error('LOGIN_REQUIRED');
+    }
     if(!r.ok || !data.success) throw new Error(data.message || 'Failed');
     window.location.href = '/cart';
   })
   .catch(function(err){
-    alert(err.message);
+    if(err.message === 'LOGIN_REQUIRED') {
+      // keep popup open, don't alert
+    } else {
+      alert(err.message);
+    }
     btn.innerHTML = original;
     btn.disabled = false;
   });
