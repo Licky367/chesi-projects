@@ -1,0 +1,51 @@
+<style>
+.auth-page{min-height:calc(100vh - 90px);display:flex;align-items:center;justify-content:center;padding:32px 16px 60px;box-sizing:border-box}
+.auth-card{width:100%;max-width:430px;background:#fff;border:1px solid #dcebdc;border-radius:20px;box-shadow:0 12px 35px rgba(10,77,30,.10);overflow:hidden}
+.auth-head{padding:28px 26px 22px;background:#f1f8e9;border-bottom:1px solid #dcebdc;text-align:center}
+.auth-icon{width:58px;height:58px;margin:0 auto 12px;border-radius:16px;background:#0a4d1e;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px}
+.auth-head h1{margin:0;color:#0a4d1e;font-size:25px}.auth-head p{margin:7px 0 0;color:#6b776d;font-size:14px}
+.auth-body{padding:26px}.auth-error{padding:12px 14px;margin-bottom:18px;border-radius:10px;background:#ffebee;border:1px solid #ffcdd2;color:#b71c1c;font-size:14px;font-weight:600}
+.auth-field{margin-bottom:17px}.auth-field label{display:block;margin-bottom:7px;color:#26352a;font-size:13px;font-weight:700}
+.auth-field input{width:100%;box-sizing:border-box;border:1.5px solid #cbdacb;border-radius:11px;padding:13px 14px;font-size:15px;outline:none;background:#fff}
+.auth-field input:focus{border-color:#0a4d1e;box-shadow:0 0 0 3px rgba(10,77,30,.08)}
+.auth-submit{width:100%;border:0;border-radius:11px;padding:14px;background:#0a4d1e;color:#fff;font-weight:800;font-size:15px;cursor:pointer}
+.auth-footer{text-align:center;margin-top:20px;color:#6b776d;font-size:14px}.auth-footer a{color:#0a4d1e;font-weight:800;text-decoration:none}
+</style>
+
+<div class="auth-page">
+<section class="auth-card">
+<div class="auth-head">
+<div class="auth-icon"><i class="fas fa-right-to-bracket"></i></div>
+<h1>Welcome Back</h1>
+<p>Log in to your COREVESTER account.</p>
+</div>
+
+<div class="auth-body">
+<% if (error) { %>
+<div class="auth-error"><i class="fas fa-circle-exclamation"></i> <%= error %></div>
+<% } %>
+
+<form method="POST" action="/auth/login" autocomplete="on">
+<input type="hidden" name="returnTo" value="<%= returnTo || '/' %>">
+
+<div class="auth-field">
+<label for="email">Email address</label>
+<input id="email" type="email" name="email" value="<%= email || '' %>" placeholder="you@example.com" autocomplete="email" required>
+</div>
+
+<div class="auth-field">
+<label for="password">Password</label>
+<input id="password" type="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+</div>
+
+<button type="submit" class="auth-submit">
+<i class="fas fa-right-to-bracket"></i> Log In
+</button>
+</form>
+
+<div class="auth-footer">
+Don't have an account? <a href="/auth/register">Sign Up</a>
+</div>
+</div>
+</section>
+</div>
