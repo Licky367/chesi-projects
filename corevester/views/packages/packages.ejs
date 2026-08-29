@@ -1,0 +1,38 @@
+<section class="shop-page">
+  <h1 class="page-title">My Packages</h1>
+  <p class="page-subtitle">Orders created from your completed checkout.</p>
+
+  <% if (typeof error !== "undefined" && error) { %>
+    <div class="error"><%= error %></div>
+  <% } %>
+
+  <% if (!packages.length) { %>
+    <div class="empty" style="margin-top:24px">
+      <i class="fas fa-box-open"></i>
+      <div>You do not have any packages yet.</div>
+      <div style="margin-top:14px"><a class="primary-btn" href="/products">Shop Products</a></div>
+    </div>
+  <% } else { %>
+    <div class="package-list">
+      <% packages.forEach(pkg => { %>
+        <a href="/packages/<%= pkg._id %>" class="list-card package-card">
+          <div class="list-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--green);font-size:25px">
+            <i class="fas fa-box"></i>
+          </div>
+          <div class="list-main">
+            <div class="package-top">
+              <h3>Package <%= String(pkg._id).slice(-8) %></h3>
+              <span class="status <%= pkg.status %>"><%= pkg.status %></span>
+            </div>
+            <div class="package-items">
+              <%= pkg.items.reduce((sum, item) => sum + Number(item.qty || 0), 0) %> item(s)
+              · KSh <%= Number(pkg.totalAmount).toLocaleString() %>
+              · <%= pkg.paymentMethod === "mpesa" ? "M-Pesa" : "Pay on delivery" %>
+            </div>
+          </div>
+          <i class="fas fa-chevron-right" style="color:#9aaa9d"></i>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</section>

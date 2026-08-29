@@ -1,0 +1,50 @@
+<section class="shop-page">
+  <div style="margin-bottom:15px">
+    <a href="/packages" class="secondary-btn"><i class="fas fa-arrow-left"></i> Packages</a>
+  </div>
+
+  <% if (packageDoc) { %>
+    <div class="summary">
+      <div class="package-top">
+        <div>
+          <h1 style="margin:0">Package <%= String(packageDoc._id).slice(-8) %></h1>
+          <p style="margin:6px 0;color:var(--muted)">
+            <%= new Date(packageDoc.createdAt).toLocaleString() %>
+          </p>
+        </div>
+        <span class="status <%= packageDoc.status %>"><%= packageDoc.status %></span>
+      </div>
+
+      <div class="cart-list">
+        <% packageDoc.items.forEach(item => { %>
+          <div class="list-card">
+            <div class="list-thumb">
+              <% if (item.image) { %><img src="<%= item.image %>" alt="<%= item.name %>"><% } %>
+            </div>
+            <div class="list-main">
+              <h3><%= item.name %></h3>
+              <div class="list-meta">Quantity: <strong><%= item.qty %></strong></div>
+              <div class="list-meta">KSh <%= Number(item.price).toLocaleString() %> each</div>
+            </div>
+            <strong class="list-price">KSh <%= Number(item.price * item.qty).toLocaleString() %></strong>
+          </div>
+        <% }) %>
+      </div>
+
+      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:15px">
+        <div class="total-line">
+          <span>Total</span>
+          <span style="color:var(--green)">KSh <%= Number(packageDoc.totalAmount).toLocaleString() %></span>
+        </div>
+        <div style="margin-top:10px;color:var(--muted);font-size:13px">
+          Payment: <strong><%= packageDoc.paymentMethod === "mpesa" ? "M-Pesa" : "Pay upon delivery" %></strong>
+          <% if (packageDoc.mpesaReceiptNumber) { %>
+            · Receipt: <strong><%= packageDoc.mpesaReceiptNumber %></strong>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="error"><%= error || "Package not found." %></div>
+  <% } %>
+</section>
