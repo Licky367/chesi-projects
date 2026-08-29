@@ -1,10 +1,10 @@
 <%- contentFor('body') %>
 <div style="width:100%;background:#f4f6f4;min-height:100vh;padding-bottom:30px;font-family:sans-serif;">
   <div style="max-width:1100px;margin:0 auto;padding:12px 14px;">
-    <a href="/products" style="display:inline-flex;align-items:center;gap:8px;border:2px solid #15472E;background:#fff;color:#15472E;border-radius:50px;padding:8px 16px;font-size:12px;font-weight:800;text-decoration:none;">← Back</a>
+    <a href="/products" style="display:inline-flex;border:2px solid #15472E;background:#fff;color:#15472E;border-radius:50px;padding:8px 16px;font-size:12px;font-weight:800;text-decoration:none;">← Back</a>
     <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;">
       <div style="flex:1 1 340px;background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;overflow:hidden;">
-        <div style="width:100%;height:380px;display:flex;align-items:center;justify-content:center;"><img src="<%= product.image||'/images/no-image.png' %>" style="width:100%;height:100%;object-fit:contain;"></div>
+        <div style="width:100%;height:380px;display:flex;align-items:center;justify-content:center;background:#fff;"><img src="<%= product.image||'/images/no-image.png' %>" style="width:100%;height:100%;object-fit:contain;"></div>
       </div>
       <div style="flex:1 1 340px;">
         <div style="background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;padding:18px;">
@@ -13,11 +13,11 @@
           
           <div style="margin-top:18px;display:flex;gap:10px;align-items:center;">
             <div style="display:flex;align-items:center;border:2.5px solid #15472E;border-radius:12px;overflow:hidden;background:#fff;height:46px;">
-              <button type="button" id="btnMinus" style="width:44px;height:46px;border:none;background:#eee;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">−</button>
-              <input id="inputQty" type="number" value="1" min="1" max="<%= product.units %>" style="width:56px;height:46px;border:none;border-left:1.5px solid #ddd;border-right:1.5px solid #ddd;text-align:center;font-weight:900;color:#15472E;font-size:18px;outline:none;">
-              <button type="button" id="btnPlus" style="width:44px;height:46px;border:none;background:#eee;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">+</button>
+              <button type="button" onclick="changeQty(-1)" style="width:44px;height:46px;border:none;background:#e8f5e9;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">−</button>
+              <input id="qtyInput" type="number" value="1" min="1" max="<%= product.units %>" readonly style="width:56px;height:46px;border:none;border-left:1.5px solid #ddd;border-right:1.5px solid #ddd;text-align:center;font-weight:900;color:#15472E;font-size:18px;outline:none;background:#fff;">
+              <button type="button" onclick="changeQty(1)" style="width:44px;height:46px;border:none;background:#e8f5e9;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">+</button>
             </div>
-            <button type="button" id="btnAddCart" data-id="<%= product._id %>" style="flex:1;height:46px;background:#15472E;color:#fff;font-weight:800;border:none;border-radius:12px;cursor:pointer;">ADD TO CART</button>
+            <button type="button" onclick="doAddToCart()" id="addBtn" style="flex:1;height:46px;background:#15472E;color:#fff;font-weight:800;border:none;border-radius:12px;cursor:pointer;">ADD TO CART</button>
           </div>
         </div>
       </div>
@@ -25,83 +25,51 @@
   </div>
 </div>
 
-<div id="loginPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;align-items:center;justify-content:center;padding:16px;">
+<div id="loginPop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;align-items:center;justify-content:center;padding:16px;">
   <div style="background:#fff;border-radius:18px;max-width:320px;width:100%;padding:24px;text-align:center;">
-    <h3 style="color:#15472E;">Not logged in</h3>
+    <h3 style="color:#15472E;">Please Log In</h3>
+    <p style="font-size:13px;color:#666;">You need to log in to add to cart</p>
     <div style="display:flex;gap:10px;margin-top:16px;">
-      <button type="button" id="closeLogin" style="flex:1;height:42px;border:1px solid #ccc;background:#fff;border-radius:10px;cursor:pointer;">Cancel</button>
+      <button type="button" onclick="document.getElementById('loginPop').style.display='none'" style="flex:1;height:42px;border:1px solid #ccc;background:#fff;border-radius:10px;cursor:pointer;">Cancel</button>
       <a href="/auth/login" style="flex:1;height:42px;background:#15472E;color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:800;">Log In</a>
     </div>
   </div>
 </div>
 
 <script>
-// PUT THIS LAST - GUARANTEED TO RUN
-setTimeout(function(){
-  var qtyInput = document.getElementById('inputQty');
-  var btnMinus = document.getElementById('btnMinus');
-  var btnPlus = document.getElementById('btnPlus');
-  var btnAdd = document.getElementById('btnAddCart');
-  var popup = document.getElementById('loginPopup');
-  var closePop = document.getElementById('closeLogin');
+var IS_LOGGED = <%- (typeof user !== 'undefined' && user) ? 'true' : 'false' %>;
+var PRODUCT_ID = "<%= product._id %>";
+var MAX_STOCK = <%= product.units %>;
 
-  console.log('Buttons found:', btnMinus, btnPlus, btnAdd);
+function changeQty(n){
+  var input = document.getElementById('qtyInput');
+  var v = parseInt(input.value) || 1;
+  v = v + n;
+  if(v < 1) v = 1;
+  if(v > MAX_STOCK) v = MAX_STOCK;
+  input.value = v;
+}
 
-  btnMinus.addEventListener('click', function(e){
-    e.preventDefault();
-    var v = parseInt(qtyInput.value) || 1;
-    if(v>1){ qtyInput.value = v-1; }
-    console.log('MINUS clicked ->', qtyInput.value);
-  });
+function doAddToCart(){
+  if(!IS_LOGGED){
+    document.getElementById('loginPop').style.display = 'flex';
+    return;
+  }
+  var q = document.getElementById('qtyInput').value;
+  var btn = document.getElementById('addBtn');
+  btn.innerText = 'Adding...';
+  btn.disabled = true;
 
-  btnPlus.addEventListener('click', function(e){
-    e.preventDefault();
-    var max = parseInt(qtyInput.getAttribute('max')) || 9999;
-    var v = parseInt(qtyInput.value) || 1;
-    if(v < max){ qtyInput.value = v+1; }
-    console.log('PLUS clicked ->', qtyInput.value);
-  });
-
-  closePop.addEventListener('click', function(){ popup.style.display='none'; });
-  popup.addEventListener('click', function(e){ if(e.target===popup) popup.style.display='none'; });
-
-  var IS_LOGGED = <%= (typeof user !== 'undefined' && user) ? 'true' : 'false' %>;
-  console.log('Is logged?', IS_LOGGED);
-
-  btnAdd.addEventListener('click', function(e){
-    e.preventDefault();
-    console.log('ADD TO CART clicked');
-    if(!IS_LOGGED){
-      popup.style.display='flex';
-      return;
-    }
-    var pid = btnAdd.getAttribute('data-id');
-    var q = parseInt(qtyInput.value)||1;
-    btnAdd.textContent = 'Adding...';
-    btnAdd.disabled = true;
-    
-    fetch('/products/add-to-cart', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId: pid, qty: q })
-    })
-    .then(function(res){ 
-      console.log('Response status', res.status);
-      return res.text(); 
-    })
-    .then(function(txt){
-      console.log('Response text', txt.substring(0,200));
-      try{
-        var data = JSON.parse(txt);
-        if(data.success){ window.location.href = '/cart'; }
-        else{ alert(data.message); btnAdd.textContent='ADD TO CART'; btnAdd.disabled=false; }
-      }catch(err){
-        alert('Server did not return JSON. Check your route /products/add-to-cart. Response: ' + txt.substring(0,200));
-        btnAdd.textContent='ADD TO CART'; btnAdd.disabled=false;
-      }
-    })
-    .catch(function(err){ alert('Fetch error: '+err); btnAdd.textContent='ADD TO CART'; btnAdd.disabled=false; });
-  });
-
-}, 500);
+  fetch('/products/add-to-cart', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({productId: PRODUCT_ID, qty: parseInt(q)})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if(d.success){ window.location.href = '/cart'; }
+    else{ alert(d.message || 'Failed'); btn.innerText='ADD TO CART'; btn.disabled=false; }
+  })
+  .catch(e => { alert('Error: '+e.message); btn.innerText='ADD TO CART'; btn.disabled=false; });
+}
 </script>
