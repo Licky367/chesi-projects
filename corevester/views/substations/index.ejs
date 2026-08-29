@@ -1,1 +1,204 @@
-<section class="shop-page"><div class="page-head"><div><h1 class="page-title">Substations</h1></div><a href="/substations/new" class="primary-btn">New Substation</a></div><% if(error){ %><div class="error"><%=error%></div><% } %><div class="product-row"><% substations.forEach(s=>{ %><a href="/substations/<%=s._id%>" class="product-card"><div class="product-info"><div class="product-name"><%=s.name%></div><div class="stock-text"><%=s.location||'No location'%></div></div></a><% }) %></div></section>
+<section class="shop-page">
+
+  <div class="page-head">
+
+    <div>
+      <h1 class="page-title">Substations</h1>
+
+      <p class="page-subtitle">
+        Select a substation to view the products assigned to it.
+      </p>
+    </div>
+
+    <a
+      href="/substations/new"
+      class="primary-btn"
+    >
+      <i class="fas fa-plus"></i>
+      New Substation
+    </a>
+
+  </div>
+
+
+  <% if (error) { %>
+
+    <div class="error">
+      <%= error %>
+    </div>
+
+  <% } %>
+
+
+  <% if (saved === "1") { %>
+
+    <div class="notice">
+      Substation created successfully.
+    </div>
+
+  <% } %>
+
+
+  <% if (!substations || substations.length === 0) { %>
+
+    <div class="empty">
+
+      <i class="fas fa-bolt"></i>
+
+      <p>
+        No substations have been created yet.
+      </p>
+
+      <a
+        href="/substations/new"
+        class="primary-btn"
+      >
+        Create First Substation
+      </a>
+
+    </div>
+
+  <% } else { %>
+
+
+    <ol class="substations-list">
+
+      <% substations.forEach(substation => { %>
+
+        <li class="substation-item">
+
+          <a
+            href="/substations/<%= substation._id %>"
+            class="substation-link"
+          >
+
+            <div class="substation-main">
+
+              <strong class="substation-name">
+                <%= substation.name %>
+              </strong>
+
+
+              <% if (substation.location) { %>
+
+                <span class="substation-location">
+                  <%= substation.location %>
+                </span>
+
+              <% } %>
+
+            </div>
+
+
+            <i
+              class="fas fa-chevron-right substation-arrow"
+            ></i>
+
+          </a>
+
+        </li>
+
+      <% }) %>
+
+    </ol>
+
+
+  <% } %>
+
+</section>
+
+
+<style>
+
+.substations-list {
+
+  margin-top: 25px;
+
+  padding-left: 28px;
+
+}
+
+
+.substation-item {
+
+  margin-bottom: 12px;
+
+  padding-left: 8px;
+
+}
+
+
+.substation-link {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 16px 20px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 10px;
+
+  text-decoration: none;
+
+  color: inherit;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+}
+
+
+.substation-link:hover {
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 6px 18px
+    rgba(0, 0, 0, 0.08);
+
+}
+
+
+.substation-main {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+}
+
+
+.substation-name {
+
+  font-size: 16px;
+
+}
+
+
+.substation-location {
+
+  font-size: 13px;
+
+  color: #6b7280;
+
+}
+
+
+.substation-arrow {
+
+  color: #0b5d1e;
+
+}
+
+</style>
