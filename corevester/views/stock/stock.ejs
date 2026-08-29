@@ -1,0 +1,64 @@
+<section class="shop-page">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:end;flex-wrap:wrap">
+    <div>
+      <h1 class="page-title">Stock Management</h1>
+      <p class="page-subtitle">Manage product quantity, buying price, selling price and image URLs.</p>
+    </div>
+    <a href="/stock/new" class="primary-btn"><i class="fas fa-plus"></i> Add Product</a>
+  </div>
+
+  <% if (error) { %><div class="error"><%= error %></div><% } %>
+  <% if (typeof query !== "undefined" && query === "1") { %><div class="notice">Stock updated successfully.</div><% } %>
+
+  <% if (!stocks.length) { %>
+    <div class="empty" style="margin-top:25px">
+      <i class="fas fa-warehouse"></i>
+      <div>No stock records exist yet.</div>
+    </div>
+  <% } else { %>
+    <section class="category-section">
+      <div class="category-head">
+        <h2>All Stock</h2>
+        <span>Swipe left/right →</span>
+      </div>
+
+      <div class="product-row">
+        <% stocks.forEach(stock => { %>
+          <a href="/stock/<%= stock._id %>" class="product-card stock-card">
+            <div class="product-image">
+              <% if (stock.image) { %>
+                <img src="<%= stock.image %>" alt="<%= stock.name %>" loading="lazy">
+              <% } else { %>
+                <div class="placeholder"><i class="fas fa-box"></i></div>
+              <% } %>
+            </div>
+
+            <div class="product-info">
+              <div class="product-name"><%= stock.name %></div>
+              <div class="stock-text"><%= stock.category || "uncategorized" %></div>
+
+              <div class="stock-data">
+                <div class="data-cell">
+                  <small>Units</small>
+                  <strong><%= stock.units %></strong>
+                </div>
+                <div class="data-cell">
+                  <small>Buy / unit</small>
+                  <strong>KSh <%= Number(stock.unitBuyPrice || 0).toLocaleString() %></strong>
+                </div>
+                <div class="data-cell">
+                  <small>Sell / unit</small>
+                  <strong>KSh <%= Number(stock.unitSellPrice || 0).toLocaleString() %></strong>
+                </div>
+                <div class="data-cell">
+                  <small>Margin</small>
+                  <strong>KSh <%= Number((stock.unitSellPrice || 0) - (stock.unitBuyPrice || 0)).toLocaleString() %></strong>
+                </div>
+              </div>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+</section>

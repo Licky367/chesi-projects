@@ -1,0 +1,58 @@
+<section class="shop-page">
+  <div style="margin-bottom:15px">
+    <a href="/stock" class="secondary-btn"><i class="fas fa-arrow-left"></i> Stock</a>
+  </div>
+
+  <div class="form-card">
+    <h1 class="page-title">Add Product</h1>
+    <p class="page-subtitle">Create a marketplace product and its management stock record.</p>
+
+    <% if (error) { %><div class="error"><%= error %></div><% } %>
+
+    <form action="/stock" method="POST">
+      <div class="form-grid">
+        <div class="field">
+          <label for="name">Product name</label>
+          <input id="name" name="name" value="<%= old.name || '' %>" required>
+        </div>
+
+        <div class="field">
+          <label for="category">Category</label>
+          <input id="category" name="category" value="<%= old.category || '' %>" placeholder="e.g. feeds" required>
+        </div>
+
+        <div class="field full">
+          <label for="image">Product image URL</label>
+          <input id="image" name="image" type="url" value="<%= old.image || '' %>"
+                 placeholder="https://example.com/product-image.jpg">
+          <small style="color:var(--muted)">Paste an image URL. No image upload is used.</small>
+        </div>
+
+        <div class="field">
+          <label for="units">Opening units</label>
+          <input id="units" name="units" type="number" min="0" step="1" value="<%= old.units || 0 %>" required>
+        </div>
+
+        <div class="field">
+          <label for="buyPrice">Unit buy price (KSh)</label>
+          <input id="buyPrice" name="buyPrice" type="number" min="0" step="0.01" value="<%= old.buyPrice || 0 %>">
+        </div>
+
+        <div class="field">
+          <label for="unitSellPrice">Unit selling price (KSh)</label>
+          <input id="unitSellPrice" name="unitSellPrice" type="number" min="0" step="0.01" value="<%= old.unitSellPrice || 0 %>" required>
+        </div>
+
+        <div class="field full">
+          <label for="description">Description</label>
+          <textarea id="description" name="description"><%= old.description || '' %></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="primary-btn"><i class="fas fa-plus-circle"></i> Create Product</button>
+        <a href="/stock" class="secondary-btn">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
