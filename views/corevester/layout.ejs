@@ -43,8 +43,22 @@
 <div style="width:100%;"><%- body %></div>
 
 <script>
-function openMenu(){ document.getElementById('menuSidebar').style.right='0'; document.getElementById('menuOverlay').style.display='block'; }
-function closeMenu(){ document.getElementById('menuSidebar').style.right='-320px'; document.getElementById('menuOverlay').style.display='none'; }
+(function () {
+
+  function openMenu() {
+    document.getElementById('menuSidebar').style.right = '0';
+    document.getElementById('menuOverlay').style.display = 'block';
+  }
+
+  function closeMenu() {
+    document.getElementById('menuSidebar').style.right = '-320px';
+    document.getElementById('menuOverlay').style.display = 'none';
+  }
+
+  window.openMenu = openMenu;
+  window.closeMenu = closeMenu;
+
+})();
 </script>
 </body>
 </html>
