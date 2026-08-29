@@ -104,7 +104,7 @@ const connectDB =
     require("./db");
 
 const seedUser =
-    require("./utils/seedUser");
+    require("./corevester/utils/seeder");
 
 
 // ==========================================================
