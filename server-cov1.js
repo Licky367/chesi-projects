@@ -600,7 +600,7 @@ console.log(
 if (authRoutes) {
 
     app.use(
-        "/auth",
+        "/",
         authRoutes
     );
 
