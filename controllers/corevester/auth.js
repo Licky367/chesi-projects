@@ -1,624 +1,164 @@
-// ==========================================================
-// controllers/corevester/auth.js
-// ==========================================================
-
-const authService =
-  require("../../services/corevester/auth");
-
+const authService = require("../../services/corevester/auth");
 
 // ==========================================================
-// RENDER SIGNUP PAGE
+// RENDER PAGES
 // ==========================================================
-
 exports.renderSignup = (req, res) => {
-
-  res.render(
-    "signup",
-    {
-      title: "Sign Up",
-      error: null
-    }
-  );
-
+  res.render("corevester/signup", { title: "Sign Up - Corevester", error: null });
 };
-
-
-// ==========================================================
-// RENDER LOGIN PAGE
-// ==========================================================
 
 exports.renderLogin = (req, res) => {
-
-  res.render(
-    "login",
-    {
-      title: "Login",
-      error: null
-    }
-  );
-
+  res.render("corevester/login", { title: "Login - Corevester", error: null });
 };
-
-
-// ==========================================================
-// RENDER FORGOT PASSWORD PAGE
-// ==========================================================
 
 exports.renderForgot = (req, res) => {
-
-  res.render(
-    "forgot-password",
-    {
-      title: "Forgot Password",
-      error: null,
-      success: null
-    }
-  );
-
+  res.render("corevester/forgot-password", { title: "Forgot Password", error: null, success: null });
 };
-
-
-// ==========================================================
-// RENDER RESET PASSWORD PAGE
-// ==========================================================
 
 exports.renderReset = (req, res) => {
-
-  res.render(
-    "reset-password",
-    {
-      title: "Reset Password",
-      token: req.params.token,
-      error: null
-    }
-  );
-
+  res.render("corevester/reset-password", { title: "Reset Password", token: req.params.token, error: null });
 };
-
 
 // ==========================================================
 // SIGNUP
 // ==========================================================
-
 exports.signup = async (req, res) => {
-
   try {
+    let { name, fullName, email, password, phone } = req.body;
+    email = email.toLowerCase().trim();
+    const profileImage = req.file ? req.file.filename : "";
 
-    let {
-      name,
-      email,
-      password,
-      phone
-    } = req.body;
-
-
-    // ======================================================
-    // NORMALIZE EMAIL
-    // ======================================================
-
-    email =
-      email
-        .toLowerCase()
-        .trim();
-
-
-    // ======================================================
-    // PROFILE IMAGE
-    // ======================================================
-
-    const profileImage =
-      req.file
-        ? req.file.filename
-        : "";
-
-
-    // ======================================================
-    // BASIC VALIDATION
-    // ======================================================
-
-    if (
-      !name ||
-      !email ||
-      !password
-    ) {
-
-      return res.render(
-        "signup",
-        {
-          title: "Sign Up",
-          error:
-            "All required fields must be filled"
-        }
-      );
-
+    if (!email || !password || (!name && !fullName)) {
+      const msg = "All required fields must be filled";
+      if (req.xhr) return res.status(400).json({ success: false, message: msg });
+      return res.render("corevester/signup", { title: "Sign Up - Corevester", error: msg });
     }
 
-
-    // ======================================================
-    // PASSWORD VALIDATION
-    // ======================================================
-
-    if (
-      password.length < 6
-    ) {
-
-      return res.render(
-        "signup",
-        {
-          title: "Sign Up",
-          error:
-            "Password must be at least 6 characters"
-        }
-      );
-
+    if (password.length < 6) {
+      const msg = "Password must be at least 6 characters";
+      if (req.xhr) return res.status(400).json({ success: false, message: msg });
+      return res.render("corevester/signup", { title: "Sign Up - Corevester", error: msg });
     }
 
+    const user = await authService.signup({ name, fullName, email, password, phone, profileImage });
 
-    // ======================================================
-    // CREATE USER
-    //
-    // authService handles:
-    //
-    // - invitation validation
-    // - role assignment
-    // - user creation
-    //
-    // ======================================================
+    // Auto login after signup for Corevester
+    req.session.userId = user._id;
+    req.session.role = user.role;
+    req.session.user = { _id: user._id, id: user._id, name: user.fullName || user.name, fullName: user.fullName, email: user.email, role: user.role };
 
-    await authService.signup({
-
-      name,
-
-      email,
-
-      password,
-
-      phone,
-
-      profileImage
-
+    req.session.save((err) => {
+      if (err) {
+        if (req.xhr) return res.status(500).json({ success: false, message: "Session save failed" });
+        return res.render("corevester/signup", { title: "Sign Up - Corevester", error: "Signup ok but session failed" });
+      }
+      if (req.xhr) return res.json({ success: true, redirect: "/" });
+      return res.redirect("/");
     });
 
-
-    // ======================================================
-    // AFTER SIGNUP
-    // ======================================================
-
-    return res.redirect(
-      "/login"
-    );
-
   } catch (err) {
-
-    console.error(
-      "Signup error:",
-      err
-    );
-
-
-    return res.render(
-      "signup",
-      {
-        title: "Sign Up",
-        error: err.message
-      }
-    );
-
+    console.error("Signup error:", err);
+    if (req.xhr) return res.status(400).json({ success: false, message: err.message });
+    return res.render("corevester/signup", { title: "Sign Up - Corevester", error: err.message });
   }
-
 };
-
 
 // ==========================================================
 // LOGIN
 // ==========================================================
-
 exports.login = async (req, res) => {
-
   try {
+    let { email, password } = req.body;
+    email = email.toLowerCase().trim();
 
-    let {
-      email,
-      password
-    } = req.body;
+    const user = await authService.login({ email, password });
 
-
-    // ======================================================
-    // NORMALIZE EMAIL
-    // ======================================================
-
-    email =
-      email
-        .toLowerCase()
-        .trim();
-
-
-    // ======================================================
-    // AUTHENTICATE USER
-    // ======================================================
-
-    const user =
-      await authService.login({
-
-        email,
-
-        password
-
-      });
-
-
-    // ======================================================
-    // STORE USER IN SESSION
-    //
-    // assignedFarm contains the Dairy Farm IDs assigned
-    // to this dairyWorker.
-    //
-    // The first assigned farm is used for the login
-    // redirect.
-    //
-    // ======================================================
-
+    req.session.userId = user._id;
+    req.session.role = user.role;
     req.session.user = {
-
-      _id:
-        user._id,
-
-      id:
-        user._id,
-
-      name:
-        user.name,
-
-      role:
-        user.role,
-
-      profileImage:
-        user.profileImage || "",
-
-      assignedFarm:
-        user.assignedFarm || []
-
+      _id: user._id,
+      id: user._id,
+      name: user.fullName || user.name,
+      fullName: user.fullName,
+      role: user.role,
+      email: user.email,
+      profileImage: user.profileImage || ""
     };
 
-
-    // ======================================================
-    // SAVE SESSION BEFORE REDIRECT
-    //
-    // This is especially important when using a persistent
-    // session store such as MongoDB.
-    //
-    // ======================================================
-
-    req.session.save(
-      (sessionError) => {
-
-        if (sessionError) {
-
-          console.error(
-            "Session save error:",
-            sessionError
-          );
-
-
-          return res.status(500).render(
-            "login",
-            {
-              title: "Login",
-
-              error:
-                "Login succeeded, but your session could not be saved. Please try again."
-            }
-          );
-
-        }
-
-
-        // ==================================================
-        // ADMINISTRATOR
-        //
-        // Administrators always go directly to the
-        // Dairy dashboard after successful login.
-        // ==================================================
-
-        if (
-          user.role === "admin"
-        ) {
-
-          return res.redirect(
-            "/dashboard/dairy"
-          );
-
-        }
-
-
-        // ==================================================
-        // DAIRY WORKER
-        // ==================================================
-
-        if (
-          user.role === "dairyWorker"
-        ) {
-
-          const assignedFarms =
-            user.assignedFarm || [];
-
-
-          // =================================================
-          // FIRST ASSIGNED FARM
-          // =================================================
-
-          if (
-            assignedFarms.length > 0
-          ) {
-
-            const firstFarm =
-              assignedFarms[0];
-
-
-            return res.redirect(
-              `/dairy/${firstFarm}`
-            );
-
-          }
-
-        }
-
-
-        // ==================================================
-        // DEFAULT REDIRECT
-        //
-        // Used for:
-        //
-        // - Dairy worker without assigned farms
-        // - Poultry worker
-        //
-        // ==================================================
-
-        return res.redirect(
-          "/"
-        );
-
+    req.session.save((sessionError) => {
+      if (sessionError) {
+        console.error("Session save error:", sessionError);
+        if (req.xhr) return res.status(500).json({ success: false, message: "Session save failed" });
+        return res.status(500).render("corevester/login", { title: "Login - Corevester", error: "Login succeeded, but session could not be saved." });
       }
-    );
+
+      const redirectTo = user.role === "admin" ? "/admin/products" : "/";
+
+      if (req.xhr) return res.json({ success: true, redirect: redirectTo });
+      return res.redirect(redirectTo);
+    });
 
   } catch (err) {
-
-    console.error(
-      "Login error:",
-      err
-    );
-
-
-    return res.render(
-      "login",
-      {
-        title: "Login",
-
-        error:
-          err.message
-      }
-    );
-
+    console.error("Login error:", err);
+    if (req.xhr) return res.status(401).json({ success: false, message: err.message });
+    return res.render("corevester/login", { title: "Login - Corevester", error: err.message });
   }
-
 };
-
 
 // ==========================================================
 // LOGOUT
 // ==========================================================
-
 exports.logout = (req, res) => {
-
-  req.session.destroy(
-    (err) => {
-
-      if (err) {
-
-        console.error(
-          "Logout session destruction error:",
-          err
-        );
-
-      }
-
-
-      // ----------------------------------------------------
-      // Remove session cookie
-      // ----------------------------------------------------
-
-      res.clearCookie(
-        "connect.sid"
-      );
-
-
-      // ----------------------------------------------------
-      // Return to login
-      // ----------------------------------------------------
-
-      return res.redirect(
-        "/login"
-      );
-
-    }
-  );
-
+  req.session.destroy((err) => {
+    if (err) console.error("Logout error:", err);
+    res.clearCookie("connect.sid");
+    return res.redirect("/auth/login");
+  });
 };
-
 
 // ==========================================================
 // FORGOT PASSWORD
 // ==========================================================
-
-exports.forgotPassword =
-async (req, res) => {
-
+exports.forgotPassword = async (req, res) => {
   try {
+    let { email } = req.body;
+    email = email.toLowerCase().trim();
+    const requestOrigin = process.env.FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
 
-    let {
-      email
-    } = req.body;
+    await authService.forgotPassword(email, requestOrigin);
 
-
-    // ======================================================
-    // NORMALIZE EMAIL
-    // ======================================================
-
-    email =
-      email
-        .toLowerCase()
-        .trim();
-
-
-    // ======================================================
-    // REQUEST ORIGIN
-    // ======================================================
-
-    const requestOrigin =
-      process.env.FRONTEND_URL ||
-      `${req.protocol}://${req.get("host")}`;
-
-
-    // ======================================================
-    // SEND RESET EMAIL
-    // ======================================================
-
-    await authService.forgotPassword(
-
-      email,
-
-      requestOrigin
-
-    );
-
-
-    // ======================================================
-    // SUCCESS
-    // ======================================================
-
-    return res.render(
-      "forgot-password",
-      {
-        title: "Forgot Password",
-
-        success:
-          "Reset link sent successfully.",
-
-        error:
-          null
-      }
-    );
+    if (req.xhr) return res.json({ success: true, message: "Reset link sent" });
+    return res.render("corevester/forgot-password", { title: "Forgot Password", success: "Reset link sent successfully.", error: null });
 
   } catch (err) {
-
-    console.error(
-      "Forgot password error:",
-      err
-    );
-
-
-    return res.render(
-      "forgot-password",
-      {
-        title: "Forgot Password",
-
-        error:
-          err.message,
-
-        success:
-          null
-      }
-    );
-
+    console.error("Forgot password error:", err);
+    if (req.xhr) return res.status(400).json({ success: false, message: err.message });
+    return res.render("corevester/forgot-password", { title: "Forgot Password", error: err.message, success: null });
   }
-
 };
-
 
 // ==========================================================
 // RESET PASSWORD
 // ==========================================================
-
-exports.resetPassword =
-async (req, res) => {
-
+exports.resetPassword = async (req, res) => {
   try {
+    const { password } = req.body;
+    const token = req.params.token;
 
-    const {
-      password
-    } = req.body;
-
-
-    const token =
-      req.params.token;
-
-
-    // ======================================================
-    // PASSWORD VALIDATION
-    // ======================================================
-
-    if (
-      !password ||
-      password.length < 6
-    ) {
-
-      return res.render(
-        "reset-password",
-        {
-          title: "Reset Password",
-
-          token,
-
-          error:
-            "Password must be at least 6 characters"
-        }
-      );
-
+    if (!password || password.length < 6) {
+      const msg = "Password must be at least 6 characters";
+      if (req.xhr) return res.status(400).json({ success: false, message: msg });
+      return res.render("corevester/reset-password", { title: "Reset Password", token, error: msg });
     }
 
+    await authService.resetPassword(token, password);
 
-    // ======================================================
-    // RESET PASSWORD
-    // ======================================================
-
-    await authService.resetPassword(
-
-      token,
-
-      password
-
-    );
-
-
-    // ======================================================
-    // RETURN TO LOGIN
-    // ======================================================
-
-    return res.redirect(
-      "/login"
-    );
+    if (req.xhr) return res.json({ success: true, redirect: "/auth/login" });
+    return res.redirect("/auth/login");
 
   } catch (err) {
-
-    console.error(
-      "Reset password error:",
-      err
-    );
-
-
-    return res.render(
-      "reset-password",
-      {
-        title: "Reset Password",
-
-        token:
-          req.params.token,
-
-        error:
-          err.message
-      }
-    );
-
+    console.error("Reset password error:", err);
+    if (req.xhr) return res.status(400).json({ success: false, message: err.message });
+    return res.render("corevester/reset-password", { title: "Reset Password", token: req.params.token, error: err.message });
   }
-
 };
