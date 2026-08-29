@@ -1,65 +1,620 @@
-<style>
-.auth-page{min-height:calc(100vh - 90px);display:flex;align-items:center;justify-content:center;padding:32px 16px 60px;box-sizing:border-box}
-.auth-card{width:100%;max-width:460px;background:#fff;border:1px solid #dcebdc;border-radius:20px;box-shadow:0 12px 35px rgba(10,77,30,.10);overflow:hidden}
-.auth-head{padding:28px 26px 22px;background:#f1f8e9;border-bottom:1px solid #dcebdc;text-align:center}
-.auth-icon{width:58px;height:58px;margin:0 auto 12px;border-radius:16px;background:#0a4d1e;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px}
-.auth-head h1{margin:0;color:#0a4d1e;font-size:25px}.auth-head p{margin:7px 0 0;color:#6b776d;font-size:14px}
-.auth-body{padding:26px}.auth-error{padding:12px 14px;margin-bottom:18px;border-radius:10px;background:#ffebee;border:1px solid #ffcdd2;color:#b71c1c;font-size:14px;font-weight:600}
-.auth-field{margin-bottom:17px}.auth-field label{display:block;margin-bottom:7px;color:#26352a;font-size:13px;font-weight:700}
-.auth-field input{width:100%;box-sizing:border-box;border:1.5px solid #cbdacb;border-radius:11px;padding:13px 14px;font-size:15px;outline:none;background:#fff}
-.auth-field input:focus{border-color:#0a4d1e;box-shadow:0 0 0 3px rgba(10,77,30,.08)}
-.auth-submit{width:100%;border:0;border-radius:11px;padding:14px;background:#0a4d1e;color:#fff;font-weight:800;font-size:15px;cursor:pointer}
-.auth-footer{text-align:center;margin-top:20px;color:#6b776d;font-size:14px}.auth-footer a{color:#0a4d1e;font-weight:800;text-decoration:none}
-.auth-note{margin-top:16px;padding:11px 13px;background:#f8fdf6;border:1px dashed #c5e1a5;border-radius:10px;color:#647066;font-size:12px;line-height:1.5}
-</style>
+<section class="shop-page auth-page">
 
-<div class="auth-page">
-<section class="auth-card">
-<div class="auth-head">
-<div class="auth-icon"><i class="fas fa-user-plus"></i></div>
-<h1>Create Account</h1>
-<p>Join COREVESTER and start shopping.</p>
-</div>
+  <div class="auth-card">
 
-<div class="auth-body">
-<% if (error) { %>
-<div class="auth-error"><i class="fas fa-circle-exclamation"></i> <%= error %></div>
-<% } %>
+    <!-- =========================
+         HEADER
+    ========================== -->
 
-<form method="POST" action="/auth/register" autocomplete="on">
-<div class="auth-field">
-<label for="name">Full name</label>
-<input id="name" type="text" name="name" value="<%= name || '' %>" placeholder="Your full name" autocomplete="name" maxlength="200" required>
-</div>
+    <div class="auth-heading">
 
-<div class="auth-field">
-<label for="email">Email address</label>
-<input id="email" type="email" name="email" value="<%= email || '' %>" placeholder="you@example.com" autocomplete="email" required>
-</div>
+      <div class="auth-icon">
 
-<div class="auth-field">
-<label for="password">Password</label>
-<input id="password" type="password" name="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required>
-</div>
+        <i class="fas fa-user-plus"></i>
 
-<div class="auth-field">
-<label for="confirmPassword">Confirm password</label>
-<input id="confirmPassword" type="password" name="confirmPassword" placeholder="Enter the password again" autocomplete="new-password" minlength="8" required>
-</div>
+      </div>
 
-<button type="submit" class="auth-submit">
-<i class="fas fa-user-plus"></i> Create Account
-</button>
-</form>
 
-<div class="auth-footer">
-Already have an account? <a href="/auth/login">Log In</a>
-</div>
+      <h1 class="page-title">
 
-<div class="auth-note">
-<i class="fas fa-lock"></i>
-Your password is stored as a secure hash and is never placed in the session.
-</div>
-</div>
+        Create Account
+
+      </h1>
+
+
+      <p class="page-subtitle">
+
+        Join CoreVester and manage your account.
+
+      </p>
+
+    </div>
+
+
+    <!-- =========================
+         ERROR
+    ========================== -->
+
+    <% if (typeof error !== "undefined" && error) { %>
+
+      <div class="error">
+
+        <%= error %>
+
+      </div>
+
+    <% } %>
+
+
+    <!-- =========================
+         FORM
+    ========================== -->
+
+    <form
+      action="/auth/register"
+      method="POST"
+      class="auth-form"
+    >
+
+
+      <!-- =========================
+           NAME
+      ========================== -->
+
+      <div class="field">
+
+        <label for="name">
+
+          <i class="fas fa-user"></i>
+
+          Full Name
+
+        </label>
+
+
+        <input
+          id="name"
+          type="text"
+          name="name"
+          value="<%= typeof name !== 'undefined' ? name : '' %>"
+          placeholder="Enter your full name"
+          autocomplete="name"
+          required
+        >
+
+      </div>
+
+
+      <!-- =========================
+           EMAIL
+      ========================== -->
+
+      <div class="field">
+
+        <label for="email">
+
+          <i class="fas fa-envelope"></i>
+
+          Email Address
+
+        </label>
+
+
+        <input
+          id="email"
+          type="email"
+          name="email"
+          value="<%= typeof email !== 'undefined' ? email : '' %>"
+          placeholder="Enter your email address"
+          autocomplete="email"
+          required
+        >
+
+      </div>
+
+
+      <!-- =========================
+           PASSWORD
+      ========================== -->
+
+      <div class="field">
+
+        <label for="password">
+
+          <i class="fas fa-lock"></i>
+
+          Password
+
+        </label>
+
+
+        <div class="password-input">
+
+          <input
+            id="password"
+            type="password"
+            name="password"
+            placeholder="At least 8 characters"
+            minlength="8"
+            autocomplete="new-password"
+            required
+          >
+
+
+          <button
+            type="button"
+            class="password-toggle"
+            onclick="togglePassword('password', 'passwordIcon')"
+            aria-label="Show password"
+          >
+
+            <i
+              id="passwordIcon"
+              class="fas fa-eye"
+            ></i>
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           CONFIRM PASSWORD
+      ========================== -->
+
+      <div class="field">
+
+        <label for="confirmPassword">
+
+          <i class="fas fa-lock"></i>
+
+          Confirm Password
+
+        </label>
+
+
+        <div class="password-input">
+
+          <input
+            id="confirmPassword"
+            type="password"
+            name="confirmPassword"
+            placeholder="Enter the password again"
+            minlength="8"
+            autocomplete="new-password"
+            required
+          >
+
+
+          <button
+            type="button"
+            class="password-toggle"
+            onclick="togglePassword('confirmPassword', 'confirmPasswordIcon')"
+            aria-label="Show password"
+          >
+
+            <i
+              id="confirmPasswordIcon"
+              class="fas fa-eye"
+            ></i>
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           SUBMIT
+      ========================== -->
+
+      <div class="form-actions">
+
+        <button
+          type="submit"
+          class="primary-btn auth-submit"
+        >
+
+          <i class="fas fa-user-plus"></i>
+
+          Create Account
+
+        </button>
+
+      </div>
+
+
+    </form>
+
+
+    <!-- =========================
+         LOGIN
+    ========================== -->
+
+    <div class="auth-footer">
+
+      <span>
+
+        Already have an account?
+
+      </span>
+
+
+      <a
+        href="/auth/login"
+      >
+
+        Log In
+
+      </a>
+
+    </div>
+
+
+  </div>
+
 </section>
-</div>
+
+
+<script>
+
+function togglePassword(
+  inputId,
+  iconId
+) {
+
+  const input =
+    document.getElementById(
+      inputId
+    );
+
+
+  const icon =
+    document.getElementById(
+      iconId
+    );
+
+
+  if (
+    input.type ===
+    "password"
+  ) {
+
+    input.type =
+      "text";
+
+
+    icon.classList.remove(
+      "fa-eye"
+    );
+
+
+    icon.classList.add(
+      "fa-eye-slash"
+    );
+
+  } else {
+
+    input.type =
+      "password";
+
+
+    icon.classList.remove(
+      "fa-eye-slash"
+    );
+
+
+    icon.classList.add(
+      "fa-eye"
+    );
+
+  }
+
+}
+
+
+// ==========================================================
+// CLIENT-SIDE PASSWORD MATCH CHECK
+// ==========================================================
+
+document
+  .querySelector(
+    ".auth-form"
+  )
+  .addEventListener(
+    "submit",
+    function(event) {
+
+      const password =
+        document.getElementById(
+          "password"
+        );
+
+
+      const confirmPassword =
+        document.getElementById(
+          "confirmPassword"
+        );
+
+
+      if (
+        password.value !==
+        confirmPassword.value
+      ) {
+
+        event.preventDefault();
+
+
+        confirmPassword.focus();
+
+
+        alert(
+          "Passwords do not match."
+        );
+
+      }
+
+    }
+  );
+
+</script>
+
+
+<style>
+
+.auth-page {
+
+  min-height: 70vh;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+}
+
+
+.auth-card {
+
+  width: 100%;
+
+  max-width: 460px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 18px;
+
+  padding: 30px 24px;
+
+  box-shadow:
+
+    0 10px 30px
+
+    rgba(0, 0, 0, 0.08);
+
+}
+
+
+.auth-heading {
+
+  text-align: center;
+
+  margin-bottom: 25px;
+
+}
+
+
+.auth-heading .page-title {
+
+  margin-bottom: 8px;
+
+}
+
+
+.auth-icon {
+
+  width: 60px;
+
+  height: 60px;
+
+  margin: 0 auto 15px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #f0f7f2;
+
+  color: #0b5d1e;
+
+  font-size: 23px;
+
+}
+
+
+.auth-form {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 18px;
+
+}
+
+
+.field {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+
+}
+
+
+.field label {
+
+  font-weight: 600;
+
+  color: #263238;
+
+}
+
+
+.field label i {
+
+  color: #0b5d1e;
+
+  margin-right: 5px;
+
+}
+
+
+.field input {
+
+  width: 100%;
+
+  padding: 13px 14px;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 10px;
+
+  font-size: 15px;
+
+  box-sizing: border-box;
+
+}
+
+
+.field input:focus {
+
+  outline: none;
+
+  border-color: #0b5d1e;
+
+  box-shadow:
+
+    0 0 0 3px
+
+    rgba(11, 93, 30, 0.1);
+
+}
+
+
+.password-input {
+
+  position: relative;
+
+}
+
+
+.password-input input {
+
+  padding-right: 48px;
+
+}
+
+
+.password-toggle {
+
+  position: absolute;
+
+  right: 0;
+
+  top: 0;
+
+  height: 100%;
+
+  width: 48px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #0b5d1e;
+
+  cursor: pointer;
+
+}
+
+
+.auth-submit {
+
+  width: 100%;
+
+  justify-content: center;
+
+  border: none;
+
+  cursor: pointer;
+
+}
+
+
+.auth-footer {
+
+  margin-top: 25px;
+
+  padding-top: 20px;
+
+  border-top: 1px solid #e5e7eb;
+
+  text-align: center;
+
+  display: flex;
+
+  justify-content: center;
+
+  gap: 6px;
+
+  flex-wrap: wrap;
+
+}
+
+
+.auth-footer a {
+
+  color: #0b5d1e;
+
+  font-weight: 700;
+
+  text-decoration: none;
+
+}
+
+
+.auth-footer a:hover {
+
+  text-decoration: underline;
+
+}
+
+
+@media (
+  max-width: 600px
+) {
+
+  .auth-card {
+
+    padding: 24px 18px;
+
+    border-radius: 14px;
+
+  }
+
+}
+
+</style>
