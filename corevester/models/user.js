@@ -8,16 +8,23 @@ const crypto = require("crypto");
 
 
 // ==========================================================
-// PASSWORD HASHING
+// PASSWORD CONFIGURATION
 // ==========================================================
 
 const SALT_LENGTH = 32;
 const KEY_LENGTH = 64;
 
+
+// ==========================================================
+// HASH PASSWORD
+// ==========================================================
+
 function hashPassword(password) {
+
     return new Promise((resolve, reject) => {
 
-        const salt = crypto.randomBytes(SALT_LENGTH);
+        const salt =
+            crypto.randomBytes(SALT_LENGTH);
 
         crypto.scrypt(
             password,
@@ -29,8 +36,14 @@ function hashPassword(password) {
                     return reject(err);
                 }
 
+                const saltHex =
+                    salt.toString("hex");
+
+                const hashHex =
+                    derivedKey.toString("hex");
+
                 resolve(
-                    `${salt.toString("hex")}:${derivedKey.toString("hex")}`
+                    `${saltHex}:${hashHex}`
                 );
             }
         );
@@ -39,10 +52,14 @@ function hashPassword(password) {
 
 
 // ==========================================================
-// PASSWORD VERIFICATION
+// VERIFY PASSWORD
 // ==========================================================
 
-function verifyPassword(password, storedPassword) {
+function verifyPassword(
+    password,
+    storedPassword
+) {
+
     return new Promise((resolve, reject) => {
 
         if (
@@ -52,20 +69,42 @@ function verifyPassword(password, storedPassword) {
             return resolve(false);
         }
 
-        const [saltHex, hashHex] =
+        const parts =
             storedPassword.split(":");
 
-        if (!saltHex || !hashHex) {
+        if (parts.length !== 2) {
             return resolve(false);
         }
+
+        const saltHex = parts[0];
+        const hashHex = parts[1];
 
         let salt;
         let originalHash;
 
         try {
-            salt = Buffer.from(saltHex, "hex");
-            originalHash = Buffer.from(hashHex, "hex");
+
+            salt =
+                Buffer.from(
+                    saltHex,
+                    "hex"
+                );
+
+            originalHash =
+                Buffer.from(
+                    hashHex,
+                    "hex"
+                );
+
         } catch (err) {
+
+            return resolve(false);
+        }
+
+        if (
+            !salt.length ||
+            !originalHash.length
+        ) {
             return resolve(false);
         }
 
@@ -86,12 +125,13 @@ function verifyPassword(password, storedPassword) {
                     return resolve(false);
                 }
 
-                resolve(
+                const valid =
                     crypto.timingSafeEqual(
                         derivedKey,
                         originalHash
-                    )
-                );
+                    );
+
+                resolve(valid);
             }
         );
     });
@@ -99,69 +139,97 @@ function verifyPassword(password, storedPassword) {
 
 
 // ==========================================================
-// SCHEMA
+// USER SCHEMA
 // ==========================================================
 
-const userSchema = new mongoose.Schema(
-    {
+const userSchema =
+    new mongoose.Schema(
+        {
 
-        // --------------------------------------------------
-        // NAME
-        // --------------------------------------------------
-        //
-        // Matches the signup EJS:
-        //
-        // <input name="name">
-        //
-        // --------------------------------------------------
+            // ------------------------------------------------
+            // NAME
+            // ------------------------------------------------
+            //
+            // Matches the signup EJS:
+            //
+            // <input name="name">
+            //
+            // ------------------------------------------------
 
-        name: {
-            type: String,
-            required: true,
-            trim: true,
-            maxlength: 200
+            name: {
+                type: String,
+                required: true,
+                trim: true,
+                maxlength: 200
+            },
+
+
+            // ------------------------------------------------
+            // EMAIL
+            // ------------------------------------------------
+
+            email: {
+                type: String,
+                required: true,
+                unique: true,
+                trim: true,
+                lowercase: true,
+                index: true
+            },
+
+
+            // ------------------------------------------------
+            // PASSWORD
+            // ------------------------------------------------
+            //
+            // Matches:
+            //
+            // <input name="password">
+            //
+            // Stored as:
+            //
+            //     salt:hash
+            //
+            // ------------------------------------------------
+
+            password: {
+                type: String,
+                required: true,
+                select: false
+            },
+
+
+            // ------------------------------------------------
+            // ROLE
+            // ------------------------------------------------
+            //
+            // Allowed:
+            //
+            //     admin
+            //     client
+            //
+            // Default:
+            //
+            //     client
+            //
+            // ------------------------------------------------
+
+            role: {
+                type: String,
+                enum: [
+                    "admin",
+                    "client"
+                ],
+                default: "client",
+                required: true
+            }
+
         },
 
-
-        // --------------------------------------------------
-        // EMAIL
-        // --------------------------------------------------
-
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-            trim: true,
-            lowercase: true,
-            index: true
-        },
-
-
-        // --------------------------------------------------
-        // PASSWORD
-        // --------------------------------------------------
-        //
-        // Matches:
-        //
-        // <input name="password">
-        //
-        // The password is hashed automatically before save.
-        //
-        // It is excluded from normal queries.
-        //
-        // --------------------------------------------------
-
-        password: {
-            type: String,
-            required: true,
-            select: false
+        {
+            timestamps: true
         }
-
-    },
-    {
-        timestamps: true
-    }
-);
+    );
 
 
 // ==========================================================
@@ -173,6 +241,7 @@ userSchema.pre(
     function(next) {
 
         if (this.email) {
+
             this.email =
                 String(this.email)
                     .trim()
@@ -187,6 +256,12 @@ userSchema.pre(
 // ==========================================================
 // HASH PASSWORD BEFORE SAVE
 // ==========================================================
+//
+// Only hashes when password is new or modified.
+//
+// This prevents an existing hash from being hashed again
+// when another user field is changed.
+// ==========================================================
 
 userSchema.pre(
     "save",
@@ -194,17 +269,19 @@ userSchema.pre(
 
         try {
 
-            // Do not hash again when another field changes.
             if (!this.isModified("password")) {
                 return next();
             }
 
             this.password =
-                await hashPassword(this.password);
+                await hashPassword(
+                    this.password
+                );
 
             next();
 
         } catch (err) {
+
             next(err);
         }
     }
@@ -215,7 +292,7 @@ userSchema.pre(
 // COMPARE PASSWORD
 // ==========================================================
 //
-// Used by authentication:
+// Authentication service can use:
 //
 //     user.comparePassword(password)
 //
@@ -224,7 +301,10 @@ userSchema.pre(
 userSchema.methods.comparePassword =
     async function(password) {
 
-        if (!password || !this.password) {
+        if (
+            !password ||
+            !this.password
+        ) {
             return false;
         }
 
@@ -236,7 +316,11 @@ userSchema.methods.comparePassword =
 
 
 // ==========================================================
-// REMOVE PASSWORD FROM JSON
+// SAFE JSON OUTPUT
+// ==========================================================
+//
+// Never expose the password hash when converting the user
+// document to JSON.
 // ==========================================================
 
 userSchema.methods.toJSON =
