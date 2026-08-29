@@ -1,88 +1,259 @@
-const bcrypt = require("bcryptjs");
-const User = require("../models/projectUser");
+// ==========================================================
+// corevester/services/auth.js
+// COREVESTER AUTH SERVICE
+// ==========================================================
+//
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// Password hashing and password verification are handled by
+// the User model.
+//
+// THIS SERVICE DOES NOT:
+//
+//     • require bcryptjs
+//     • hash passwords
+//     • generate password hashes
+//     • contain hashing logic
+//
+// The service is responsible for:
+//
+//     • normalizing login data
+//     • finding the User
+//     • delegating password verification to the model
+//     • creating the safe session-user object
+// ==========================================================
 
-function passwordPath() {
-    if (User.schema.path("passwordHash")) return "passwordHash";
-    if (User.schema.path("password")) return "password";
+const User =
+    require("../models/projectUser");
 
-    const err = new Error(
-        "User model must contain passwordHash or password for CoreVester authentication."
-    );
-    err.status = 500;
-    throw err;
-}
+
+// ==========================================================
+// NORMALIZE EMAIL
+// ==========================================================
 
 function normalizeEmail(email) {
-    return String(email || "").trim().toLowerCase();
+
+    return String(
+        email || ""
+    )
+    .trim()
+    .toLowerCase();
 }
 
-exports.login = async ({ email, password }) => {
-    const user = await User.findOne({
-        email: normalizeEmail(email)
-    }).select("+password +passwordHash");
 
-    if (!user) return null;
+// ==========================================================
+// LOGIN
+// ==========================================================
+//
+// Password verification belongs to the User model.
+//
+// Replace the model verification call below ONLY if your
+// projectUser model uses a different method name.
+//
+// ==========================================================
 
-    const field = passwordPath();
-    const hash = user[field];
+exports.login =
+    async ({
+        email,
+        password
+    }) => {
 
-    if (!hash) return null;
+        const normalizedEmail =
+            normalizeEmail(
+                email
+            );
 
-    const valid = await bcrypt.compare(password, hash);
 
-    return valid ? user : null;
-};
+        if (!normalizedEmail || !password) {
+            return null;
+        }
 
-exports.register = async ({ name, email, password }) => {
-    const normalizedEmail = normalizeEmail(email);
 
-    if (!normalizedEmail) {
-        const err = new Error("Email is required.");
-        err.status = 400;
-        throw err;
-    }
+        const user =
+            await User.findOne({
+                email:
+                    normalizedEmail
+            });
 
-    const existing = await User.findOne({
-        email: normalizedEmail
-    }).select("_id");
 
-    if (existing) {
-        const err = new Error(
-            "An account with that email already exists."
-        );
-        err.status = 400;
-        throw err;
-    }
+        if (!user) {
+            return null;
+        }
 
-    const field = passwordPath();
 
-    const data = {
-        email: normalizedEmail,
-        [field]: await bcrypt.hash(password, 12)
+        // --------------------------------------------------
+        // PASSWORD VERIFICATION
+        // --------------------------------------------------
+        //
+        // The model is responsible for verifying the
+        // supplied password against its stored hash.
+        //
+        // IMPORTANT:
+        // Do NOT put bcrypt/bcryptjs here.
+        //
+        // --------------------------------------------------
+
+        const valid =
+            await user.comparePassword(
+                password
+            );
+
+
+        if (!valid) {
+            return null;
+        }
+
+
+        return user;
     };
 
-    if (User.schema.path("name")) {
-        data.name = String(name || "").trim();
-    }
 
-    const user = new User(data);
-    await user.save();
+// ==========================================================
+// REGISTER
+// ==========================================================
+//
+// The User model is responsible for hashing the password
+// when the User document is created/saved.
+//
+// Therefore this service passes the plain password to the
+// model and performs NO hashing itself.
+// ==========================================================
 
-    return user;
-};
+exports.register =
+    async ({
+        name,
+        email,
+        password
+    }) => {
 
-exports.toSessionUser = user => ({
-    id: String(user._id),
-    _id: String(user._id),
-    name: user.name || user.fullName || user.username || "",
-    email: user.email || "",
-    role: user.role || null
-});
+        const normalizedEmail =
+            normalizeEmail(
+                email
+            );
 
-exports.requireLogin = (req, res, next) => {
-    if (req.user) return next();
 
-    const returnTo = encodeURIComponent(req.originalUrl || "/");
+        if (!normalizedEmail) {
 
-    return res.redirect(`/auth/login?returnTo=${returnTo}`);
-};
+            const error =
+                new Error(
+                    "Email is required."
+                );
+
+            error.status = 400;
+
+            throw error;
+        }
+
+
+        const existing =
+            await User.findOne({
+                email:
+                    normalizedEmail
+            })
+            .select("_id");
+
+
+        if (existing) {
+
+            const error =
+                new Error(
+                    "An account with that email already exists."
+                );
+
+            error.status = 400;
+
+            throw error;
+        }
+
+
+        // --------------------------------------------------
+        // IMPORTANT
+        // --------------------------------------------------
+        //
+        // DO NOT HASH password here.
+        //
+        // The User model handles hashing when the document
+        // is saved.
+        //
+        // --------------------------------------------------
+
+        const user =
+            new User({
+                name:
+                    String(
+                        name || ""
+                    ).trim(),
+
+                email:
+                    normalizedEmail,
+
+                password
+            });
+
+
+        await user.save();
+
+
+        return user;
+    };
+
+
+// ==========================================================
+// SESSION USER
+// ==========================================================
+//
+// Never put the password or password hash into the session.
+// ==========================================================
+
+exports.toSessionUser =
+    user => ({
+
+        id:
+            String(
+                user._id
+            ),
+
+        _id:
+            String(
+                user._id
+            ),
+
+        name:
+            user.name ||
+            user.fullName ||
+            user.username ||
+            "",
+
+        email:
+            user.email ||
+            "",
+
+        role:
+            user.role ||
+            null
+    });
+
+
+// ==========================================================
+// REQUIRE LOGIN
+// ==========================================================
+
+exports.requireLogin =
+    (req, res, next) => {
+
+        if (req.user) {
+            return next();
+        }
+
+
+        const returnTo =
+            encodeURIComponent(
+                req.originalUrl || "/"
+            );
+
+
+        return res.redirect(
+            `/auth/login?returnTo=${returnTo}`
+        );
+    };
