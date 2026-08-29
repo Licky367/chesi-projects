@@ -1,6 +1,5 @@
 // ==========================================================
-// server-corevester.js
-// COREVESTER
+// server-corevester.js - COREVESTER
 // ==========================================================
 
 const express = require("express");
@@ -35,7 +34,9 @@ process.on("unhandledRejection", (reason) => {
         reason?.message || reason
     );
 
-    console.error(reason?.stack || reason);
+    console.error(
+        reason?.stack || reason
+    );
 });
 
 console.log("--- Starting server-corevester.js ---");
@@ -51,7 +52,9 @@ try {
     MongoStore = require("connect-mongo");
 
     console.log("✅ connect-mongo loaded");
+
 } catch (error) {
+
     console.warn(
         "⚠️ connect-mongo not installed:",
         error.message
@@ -141,26 +144,23 @@ function safeLoad(name, pathToRequire) {
 // ROUTES
 // ==========================================================
 //
-// IMPORTANT PATH CONTRACT:
+// ALL COREVESTER ROUTES ARE LOCATED:
 //
-// Auth:
-//     /routes/auth.js
-//
-// CoreVester:
-//     /routes/index.js
-//
-// Shop:
-//     /routes/products.js
-//     /routes/carts.js
-//     /routes/stock.js
-//     /routes/packages.js
-//     /routes/mpesa.js
+//     ./corevester/routes/
 //
 // ==========================================================
 
 
 // ----------------------------------------------------------
 // AUTH
+// ----------------------------------------------------------
+//
+// File:
+//     ./corevester/routes/auth.js
+//
+// Mount:
+//     /auth
+//
 // ----------------------------------------------------------
 
 const authRoutes =
@@ -173,6 +173,14 @@ const authRoutes =
 // ----------------------------------------------------------
 // COREVERSTER MAIN ROUTES
 // ----------------------------------------------------------
+//
+// File:
+//     ./corevester/routes/index.js
+//
+// Mount:
+//     /
+//
+// ----------------------------------------------------------
 
 const corevesterRoutes =
     safeLoad(
@@ -182,7 +190,15 @@ const corevesterRoutes =
 
 
 // ----------------------------------------------------------
-// SHOP ROUTES
+// PRODUCTS
+// ----------------------------------------------------------
+//
+// File:
+//     ./corevester/routes/products.js
+//
+// Mount:
+//     /products
+//
 // ----------------------------------------------------------
 
 const productsRoutes =
@@ -191,11 +207,37 @@ const productsRoutes =
         "./corevester/routes/products"
     );
 
+
+// ----------------------------------------------------------
+// CARTS
+// ----------------------------------------------------------
+//
+// File:
+//     ./corevester/routes/carts.js
+//
+// Mount:
+//     /carts
+//
+// ----------------------------------------------------------
+
 const cartsRoutes =
     safeLoad(
         "cartsRoutes",
         "./corevester/routes/carts"
     );
+
+
+// ----------------------------------------------------------
+// STOCK
+// ----------------------------------------------------------
+//
+// File:
+//     ./corevester/routes/stock.js
+//
+// Mount:
+//     /stock
+//
+// ----------------------------------------------------------
 
 const stockRoutes =
     safeLoad(
@@ -203,11 +245,37 @@ const stockRoutes =
         "./corevester/routes/stock"
     );
 
+
+// ----------------------------------------------------------
+// PACKAGES
+// ----------------------------------------------------------
+//
+// File:
+//     ./corevester/routes/packages.js
+//
+// Mount:
+//     /packages
+//
+// ----------------------------------------------------------
+
 const packageRoutes =
     safeLoad(
         "packageRoutes",
         "./corevester/routes/packages"
     );
+
+
+// ----------------------------------------------------------
+// MPESA
+// ----------------------------------------------------------
+//
+// File:
+//     ./corevester/routes/mpesa.js
+//
+// Mount:
+//     /mpesa
+//
+// ----------------------------------------------------------
 
 const mpesaRoutes =
     safeLoad(
@@ -217,7 +285,7 @@ const mpesaRoutes =
 
 
 // ==========================================================
-// SOCKET HANDLER
+// SOCKET
 // ==========================================================
 
 const socketHandler =
@@ -457,13 +525,9 @@ app.use(
 // VIEW ENGINE
 // ==========================================================
 //
-// COREVERSTER VIEW DIRECTORY:
+// View directory:
 //
-//     /corevester/views
-//
-// Therefore:
-//
-//     __dirname/corevester/views
+//     ./corevester/views
 //
 // ==========================================================
 
@@ -523,22 +587,6 @@ console.log(
 // ==========================================================
 // ROUTE MOUNTING
 // ==========================================================
-//
-// ORDER IS IMPORTANT.
-//
-// Specific shop routes are mounted BEFORE the "/" router.
-//
-// This prevents routes/index.js from accidentally catching:
-//
-//     /products
-//     /carts
-//     /stock
-//     /packages
-//     /mpesa
-//
-// Auth is also mounted independently at /auth.
-//
-// ==========================================================
 
 console.log(
     "--- Mounting routes ---"
@@ -547,14 +595,6 @@ console.log(
 
 // ==========================================================
 // 1. AUTH
-// ==========================================================
-//
-// File:
-//     /routes/auth.js
-//
-// URL:
-//     /auth/*
-//
 // ==========================================================
 
 if (authRoutes) {
@@ -579,17 +619,6 @@ if (authRoutes) {
 // ==========================================================
 // 2. PRODUCTS
 // ==========================================================
-//
-// File:
-//     /routes/products.js
-//
-// URLs:
-//
-//     GET  /products
-//     GET  /products/:id
-//     POST /products/:id/cart
-//
-// ==========================================================
 
 if (productsRoutes) {
 
@@ -612,20 +641,6 @@ if (productsRoutes) {
 
 // ==========================================================
 // 3. CARTS
-// ==========================================================
-//
-// File:
-//     /routes/carts.js
-//
-// URLs:
-//
-//     GET  /carts
-//     GET  /carts/:id
-//     POST /carts/:id/remove
-//     POST /carts/checkout
-//     GET  /carts/payment/:id
-//     GET  /carts/payment/:id/status
-//
 // ==========================================================
 
 if (cartsRoutes) {
@@ -650,19 +665,6 @@ if (cartsRoutes) {
 // ==========================================================
 // 4. STOCK
 // ==========================================================
-//
-// File:
-//     /routes/stock.js
-//
-// URLs:
-//
-//     GET  /stock
-//     GET  /stock/new
-//     POST /stock
-//     GET  /stock/:id
-//     POST /stock/:id
-//
-// ==========================================================
 
 if (stockRoutes) {
 
@@ -686,16 +688,6 @@ if (stockRoutes) {
 // ==========================================================
 // 5. PACKAGES
 // ==========================================================
-//
-// File:
-//     /routes/packages.js
-//
-// URLs:
-//
-//     GET /packages
-//     GET /packages/:id
-//
-// ==========================================================
 
 if (packageRoutes) {
 
@@ -717,18 +709,7 @@ if (packageRoutes) {
 
 
 // ==========================================================
-// 6. MPESA CALLBACK
-// ==========================================================
-//
-// File:
-//     /routes/mpesa.js
-//
-// URL:
-//
-//     POST /mpesa/callback
-//
-// Safaricom/Daraja calls this endpoint directly.
-//
+// 6. MPESA
 // ==========================================================
 
 if (mpesaRoutes) {
@@ -755,16 +736,15 @@ if (mpesaRoutes) {
 // ==========================================================
 //
 // File:
-//     /routes/index.js
 //
-// Mounted at:
+//     ./corevester/routes/index.js
+//
+// Mount:
 //
 //     /
 //
-// IMPORTANT:
-// This is deliberately mounted AFTER the specific
-// shop routes above.
-//
+// This is intentionally mounted LAST among the application
+// routes so that the specific shop routes above get priority.
 // ==========================================================
 
 if (corevesterRoutes) {
