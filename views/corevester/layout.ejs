@@ -3,38 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><%= typeof title !== 'undefined' ? title : 'COREVESTER' %></title>
+<title>COREVESTER</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-<body style="margin:0;padding:0;background:#f8fdf6;font-family:'Segoe UI',sans-serif;overflow-x:hidden;">
-
-<header style="height:80px;background:#fff;border-top:4px solid #0a4d1e;border-bottom:4px solid #0a4d1e;display:flex;align-items:center;justify-content:space-between;padding:0 14px;position:sticky;top:0;z-index:800;">
-  <a href="/" style="text-decoration:none;display:flex;align-items:center;"><img src="/images/corevester.png" alt="CoreVester" style="height:52px;display:block;"></a>
+<body style="margin:0;padding:0;background:#f8fdf6;font-family:'Segoe UI',sans-serif;">
+<header style="height:80px;background:#fff;border-top:4px solid #0a4d1e;border-bottom:4px solid #0a4d1e;display:flex;align-items:center;justify-content:space-between;padding:0 14px;position:sticky;top:0;z-index:50;">
+  <a href="/" style="text-decoration:none;display:flex;align-items:center;"><img src="/images/corevester.png" alt="CoreVester" style="height:52px;"></a>
   <div style="display:flex;gap:10px;align-items:center;">
-    <a href="/cart" style="display:flex;align-items:center;gap:6px;border:1.5px solid #0a4d1e;border-radius:50px;padding:6px 12px;background:#fff;text-decoration:none;color:#0a4d1e;font-weight:700;font-size:12px;"><i class="fas fa-shopping-cart"></i> <span><%= typeof cartCount !== 'undefined' ? cartCount : 0 %></span></a>
-    <button type="button" id="openMenuBtn" style="width:44px;height:44px;border-radius:10px;background:#e8f5e9;border:1.5px solid #0a4d1e;color:#0a4d1e;cursor:pointer;"><i class="fas fa-bars"></i></button>
+    <a href="/cart" style="display:flex;align-items:center;gap:6px;border:1.5px solid #0a4d1e;border-radius:50px;padding:6px 12px;background:#fff;text-decoration:none;color:#0a4d1e;font-weight:700;font-size:12px;"><i class="fas fa-shopping-cart"></i> <%= typeof cartCount !== 'undefined' ? cartCount : 0 %></a>
+    <button type="button" onclick="openMenu()" style="width:44px;height:44px;border-radius:10px;background:#e8f5e9;border:1.5px solid #0a4d1e;color:#0a4d1e;cursor:pointer;"><i class="fas fa-bars"></i></button>
   </div>
 </header>
 
-<div id="menuOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;"></div>
-<div id="menuSidebar" style="position:fixed;top:0;right:-320px;width:300px;max-width:85vw;height:100%;background:#fff;border-left:5px solid #0a4d1e;z-index:1100;transition:right 0.3s;display:flex;flex-direction:column;">
-  <div style="height:80px;border-bottom:3px solid #0a4d1e;display:flex;align-items:center;justify-content:space-between;padding:0 20px;"><b style="color:#0a4d1e;letter-spacing:2px;">COREVESTER</b><button type="button" id="closeMenuBtn" style="width:36px;height:36px;border-radius:8px;background:#f1f8e9;border:1px solid #c5e1a5;color:#0a4d1e;cursor:pointer;"><i class="fas fa-times"></i></button></div>
+<div id="menuOverlay" onclick="closeMenu()" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;"></div>
+<div id="menuSidebar" style="position:fixed;top:0;right:-320px;width:300px;max-width:85vw;height:100%;background:#fff;border-left:5px solid #0a4d1e;z-index:101;transition:right 0.3s;display:flex;flex-direction:column;">
+  <div style="height:80px;border-bottom:3px solid #0a4d1e;display:flex;align-items:center;justify-content:space-between;padding:0 20px;"><b style="color:#0a4d1e;">COREVESTER</b><button type="button" onclick="closeMenu()" style="width:36px;height:36px;border-radius:8px;background:#f1f8e9;border:1px solid #c5e1a5;cursor:pointer;"><i class="fas fa-times"></i></button></div>
   <nav style="flex:1;padding:20px;display:flex;flex-direction:column;gap:8px;">
-    <a href="/" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#0a4d1e;background:#e8f5e9;font-weight:600;"><i class="fas fa-home" style="width:20px;"></i> Home</a>
-    <a href="/products" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#333;font-weight:500;"><i class="fas fa-boxes" style="width:20px;color:#0a4d1e;"></i> Products</a>
-    <a href="/about" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#333;"><i class="fas fa-info-circle" style="width:20px;color:#0a4d1e;"></i> About</a>
-    <a href="/contact" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#333;"><i class="fas fa-phone" style="width:20px;color:#0a4d1e;"></i> Contact</a>
+    <a href="/" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#0a4d1e;background:#e8f5e9;font-weight:600;">Home</a>
+    <a href="/products" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#333;">Products</a>
+    <a href="/about" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#333;">About</a>
+    <a href="/contact" style="padding:14px 16px;border-radius:10px;text-decoration:none;color:#333;">Contact</a>
   </nav>
 </div>
 
-<div style="width:100%;min-height:calc(100vh - 80px);"><%- body %></div>
+<div style="width:100%;"><%- body %></div>
 
 <script>
-var menu = document.getElementById('menuSidebar');
-var over = document.getElementById('menuOverlay');
-document.getElementById('openMenuBtn').onclick = function(){ menu.style.right='0'; over.style.display='block'; };
-document.getElementById('closeMenuBtn').onclick = function(){ menu.style.right='-320px'; over.style.display='none'; };
-over.onclick = function(){ menu.style.right='-320px'; over.style.display='none'; };
+function openMenu(){ document.getElementById('menuSidebar').style.right='0'; document.getElementById('menuOverlay').style.display='block'; }
+function closeMenu(){ document.getElementById('menuSidebar').style.right='-320px'; document.getElementById('menuOverlay').style.display='none'; }
 </script>
 </body>
 </html>
