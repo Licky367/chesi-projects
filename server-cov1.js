@@ -249,6 +249,26 @@ const stockRoutes =
 
 
 // ----------------------------------------------------------
+// SUBSTATIONS 
+// ----------------------------------------------------------
+//
+// File:
+//     ./corevester/routes/substations.js
+//
+// Mount:
+//     /
+//
+// ----------------------------------------------------------
+
+const substationsRoutes =
+    safeLoad(
+        "substationsRoutes",
+        "./corevester/routes/substations"
+    );
+
+
+
+// ----------------------------------------------------------
 // PACKAGES
 // ----------------------------------------------------------
 //
@@ -683,6 +703,29 @@ if (stockRoutes) {
 
     console.error(
         "❌ /stock NOT MOUNTED"
+    );
+}
+
+
+// ==========================================================
+// SUBSTATIONS 
+// ==========================================================
+
+if (substationsRoutes) {
+
+    app.use(
+        "/",
+        substationsRoutes
+    );
+
+    console.log(
+        "✅ Mounted /substations"
+    );
+
+} else {
+
+    console.error(
+        "❌ /substations NOT MOUNTED"
     );
 }
 
