@@ -1,75 +1,638 @@
-<%- contentFor('body') %>
-<div style="width:100%;background:#f4f6f4;min-height:100vh;padding-bottom:30px;font-family:sans-serif;">
-  <div style="max-width:1100px;margin:0 auto;padding:12px 14px;">
-    <a href="/products" style="display:inline-flex;border:2px solid #15472E;background:#fff;color:#15472E;border-radius:50px;padding:8px 16px;font-size:12px;font-weight:800;text-decoration:none;">← Back</a>
-    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;">
-      <div style="flex:1 1 340px;background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;overflow:hidden;">
-        <div style="width:100%;height:380px;display:flex;align-items:center;justify-content:center;background:#fff;"><img src="<%= product.image||'/images/no-image.png' %>" style="width:100%;height:100%;object-fit:contain;"></div>
-      </div>
-      <div style="flex:1 1 340px;">
-        <div style="background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;padding:18px;">
-          <h1 style="margin:0;color:#15472E;font-weight:900;font-size:22px;"><%= product.name %></h1>
-          <p style="margin:10px 0 0 0;color:#15472E;font-weight:900;font-size:22px;">KES <%= Number(product.unitSellPrice||0).toLocaleString() %></p>
-          
-          <div style="margin-top:18px;display:flex;gap:10px;align-items:center;">
-            <div style="display:flex;align-items:center;border:2.5px solid #15472E;border-radius:12px;overflow:hidden;background:#fff;height:46px;">
-              <button type="button" onclick="changeQty(-1)" style="width:44px;height:46px;border:none;background:#e8f5e9;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">−</button>
-              <input id="qtyInput" type="number" value="1" min="1" max="<%= product.units %>" readonly style="width:56px;height:46px;border:none;border-left:1.5px solid #ddd;border-right:1.5px solid #ddd;text-align:center;font-weight:900;color:#15472E;font-size:18px;outline:none;background:#fff;">
-              <button type="button" onclick="changeQty(1)" style="width:44px;height:46px;border:none;background:#e8f5e9;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">+</button>
-            </div>
-            <button type="button" onclick="doAddToCart()" id="addBtn" style="flex:1;height:46px;background:#15472E;color:#fff;font-weight:800;border:none;border-radius:12px;cursor:pointer;">ADD TO CART</button>
-          </div>
+<div
+  style="
+    width:100%;
+    background:#f4f6f4;
+    min-height:100vh;
+    padding-bottom:30px;
+    font-family:sans-serif;
+  "
+>
+
+  <div
+    style="
+      max-width:1100px;
+      margin:0 auto;
+      padding:12px 14px;
+    "
+  >
+
+    <!-- BACK -->
+    <a
+      href="/products"
+      style="
+        display:inline-flex;
+        border:2px solid #15472E;
+        background:#fff;
+        color:#15472E;
+        border-radius:50px;
+        padding:8px 16px;
+        font-size:12px;
+        font-weight:800;
+        text-decoration:none;
+      "
+    >
+      ← Back
+    </a>
+
+
+    <!-- PRODUCT CONTENT -->
+    <div
+      style="
+        display:flex;
+        flex-wrap:wrap;
+        gap:14px;
+        margin-top:14px;
+      "
+    >
+
+      <!-- PRODUCT IMAGE -->
+      <div
+        style="
+          flex:1 1 340px;
+          background:#fff;
+          border:1.5px solid #e0e9dc;
+          border-radius:18px;
+          overflow:hidden;
+        "
+      >
+
+        <div
+          style="
+            width:100%;
+            height:380px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#fff;
+          "
+        >
+
+          <img
+            src="<%= product.image || '/images/no-image.png' %>"
+            alt="<%= product.name %>"
+            style="
+              width:100%;
+              height:100%;
+              object-fit:contain;
+            "
+          >
+
         </div>
+
       </div>
+
+
+      <!-- PRODUCT INFORMATION -->
+      <div style="flex:1 1 340px;">
+
+        <div
+          style="
+            background:#fff;
+            border:1.5px solid #e0e9dc;
+            border-radius:18px;
+            padding:18px;
+          "
+        >
+
+          <!-- PRODUCT NAME -->
+          <h1
+            style="
+              margin:0;
+              color:#15472E;
+              font-weight:900;
+              font-size:22px;
+            "
+          >
+            <%= product.name %>
+          </h1>
+
+
+          <!-- PRODUCT PRICE -->
+          <p
+            style="
+              margin:10px 0 0 0;
+              color:#15472E;
+              font-weight:900;
+              font-size:22px;
+            "
+          >
+            KES
+            <%= Number(product.unitSellPrice || 0).toLocaleString() %>
+          </p>
+
+
+          <!-- QUANTITY + ADD TO CART -->
+          <div
+            style="
+              margin-top:18px;
+              display:flex;
+              gap:10px;
+              align-items:center;
+            "
+          >
+
+            <!-- QUANTITY SELECTOR -->
+            <div
+              style="
+                display:flex;
+                align-items:center;
+                border:2.5px solid #15472E;
+                border-radius:12px;
+                overflow:hidden;
+                background:#fff;
+                height:46px;
+              "
+            >
+
+              <!-- DECREASE -->
+              <button
+                type="button"
+                id="decreaseQty"
+                aria-label="Decrease quantity"
+                style="
+                  width:44px;
+                  height:46px;
+                  border:none;
+                  background:#e8f5e9;
+                  color:#15472E;
+                  font-weight:900;
+                  font-size:20px;
+                  cursor:pointer;
+                "
+              >
+                −
+              </button>
+
+
+              <!-- QUANTITY -->
+              <input
+                id="qtyInput"
+                type="number"
+                value="1"
+                min="1"
+                max="<%= product.units %>"
+                readonly
+                aria-label="Quantity"
+                style="
+                  width:56px;
+                  height:46px;
+                  border:none;
+                  border-left:1.5px solid #ddd;
+                  border-right:1.5px solid #ddd;
+                  text-align:center;
+                  font-weight:900;
+                  color:#15472E;
+                  font-size:18px;
+                  outline:none;
+                  background:#fff;
+                "
+              >
+
+
+              <!-- INCREASE -->
+              <button
+                type="button"
+                id="increaseQty"
+                aria-label="Increase quantity"
+                style="
+                  width:44px;
+                  height:46px;
+                  border:none;
+                  background:#e8f5e9;
+                  color:#15472E;
+                  font-weight:900;
+                  font-size:20px;
+                  cursor:pointer;
+                "
+              >
+                +
+              </button>
+
+            </div>
+
+
+            <!-- ADD TO CART -->
+            <button
+              type="button"
+              id="addBtn"
+              style="
+                flex:1;
+                height:46px;
+                background:#15472E;
+                color:#fff;
+                font-weight:800;
+                border:none;
+                border-radius:12px;
+                cursor:pointer;
+              "
+            >
+              ADD TO CART
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
+
   </div>
+
 </div>
 
-<div id="loginPop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#fff;border-radius:18px;max-width:320px;width:100%;padding:24px;text-align:center;">
-    <h3 style="color:#15472E;">Please Log In</h3>
-    <p style="font-size:13px;color:#666;">You need to log in to add to cart</p>
-    <div style="display:flex;gap:10px;margin-top:16px;">
-      <button type="button" onclick="document.getElementById('loginPop').style.display='none'" style="flex:1;height:42px;border:1px solid #ccc;background:#fff;border-radius:10px;cursor:pointer;">Cancel</button>
-      <a href="/auth/login" style="flex:1;height:42px;background:#15472E;color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:800;">Log In</a>
+
+<!-- LOGIN POPUP -->
+<div
+  id="loginPop"
+  style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    z-index:99999;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  "
+>
+
+  <div
+    style="
+      background:#fff;
+      border-radius:18px;
+      max-width:320px;
+      width:100%;
+      padding:24px;
+      text-align:center;
+    "
+  >
+
+    <h3 style="color:#15472E;">
+      Please Log In
+    </h3>
+
+    <p
+      style="
+        font-size:13px;
+        color:#666;
+      "
+    >
+      You need to log in to add to cart
+    </p>
+
+
+    <div
+      style="
+        display:flex;
+        gap:10px;
+        margin-top:16px;
+      "
+    >
+
+      <!-- CANCEL -->
+      <button
+        type="button"
+        id="closeLoginPop"
+        style="
+          flex:1;
+          height:42px;
+          border:1px solid #ccc;
+          background:#fff;
+          border-radius:10px;
+          cursor:pointer;
+        "
+      >
+        Cancel
+      </button>
+
+
+      <!-- LOGIN -->
+      <a
+        href="/auth/login"
+        style="
+          flex:1;
+          height:42px;
+          background:#15472E;
+          color:#fff;
+          border-radius:10px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          text-decoration:none;
+          font-weight:800;
+        "
+      >
+        Log In
+      </a>
+
     </div>
+
   </div>
+
 </div>
+
 
 <script>
-var IS_LOGGED = <%- (typeof user !== 'undefined' && user) ? 'true' : 'false' %>;
-var PRODUCT_ID = "<%= product._id %>";
-var MAX_STOCK = <%= product.units %>;
+(function () {
 
-function changeQty(n){
-  var input = document.getElementById('qtyInput');
-  var v = parseInt(input.value) || 1;
-  v = v + n;
-  if(v < 1) v = 1;
-  if(v > MAX_STOCK) v = MAX_STOCK;
-  input.value = v;
-}
+  /*
+  ==========================================================
+  PRODUCT PAGE JAVASCRIPT
+  ==========================================================
+  */
 
-function doAddToCart(){
-  if(!IS_LOGGED){
-    document.getElementById('loginPop').style.display = 'flex';
-    return;
+  var IS_LOGGED =
+    <%- (typeof user !== 'undefined' && user) ? 'true' : 'false' %>;
+
+  var PRODUCT_ID =
+    "<%= product._id %>";
+
+  var MAX_STOCK =
+    <%= Number(product.units || 0) %>;
+
+
+  /*
+  ==========================================================
+  ELEMENTS
+  ==========================================================
+  */
+
+  var qtyInput =
+    document.getElementById('qtyInput');
+
+  var decreaseQty =
+    document.getElementById('decreaseQty');
+
+  var increaseQty =
+    document.getElementById('increaseQty');
+
+  var addBtn =
+    document.getElementById('addBtn');
+
+  var loginPop =
+    document.getElementById('loginPop');
+
+  var closeLoginPop =
+    document.getElementById('closeLoginPop');
+
+
+  /*
+  ==========================================================
+  QUANTITY
+  ==========================================================
+  */
+
+  function updateQuantity(amount) {
+
+    if (!qtyInput) {
+      return;
+    }
+
+    var current =
+      parseInt(qtyInput.value, 10) || 1;
+
+    var next =
+      current + amount;
+
+
+    if (next < 1) {
+      next = 1;
+    }
+
+
+    if (next > MAX_STOCK) {
+      next = MAX_STOCK;
+    }
+
+
+    qtyInput.value = next;
   }
-  var q = document.getElementById('qtyInput').value;
-  var btn = document.getElementById('addBtn');
-  btn.innerText = 'Adding...';
-  btn.disabled = true;
 
-  fetch('/products/add-to-cart', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({productId: PRODUCT_ID, qty: parseInt(q)})
-  })
-  .then(r => r.json())
-  .then(d => {
-    if(d.success){ window.location.href = '/cart'; }
-    else{ alert(d.message || 'Failed'); btn.innerText='ADD TO CART'; btn.disabled=false; }
-  })
-  .catch(e => { alert('Error: '+e.message); btn.innerText='ADD TO CART'; btn.disabled=false; });
-}
+
+  /*
+  ==========================================================
+  DECREASE
+  ==========================================================
+  */
+
+  if (decreaseQty) {
+
+    decreaseQty.addEventListener(
+      'click',
+      function () {
+
+        updateQuantity(-1);
+
+      }
+    );
+
+  }
+
+
+  /*
+  ==========================================================
+  INCREASE
+  ==========================================================
+  */
+
+  if (increaseQty) {
+
+    increaseQty.addEventListener(
+      'click',
+      function () {
+
+        updateQuantity(1);
+
+      }
+    );
+
+  }
+
+
+  /*
+  ==========================================================
+  CLOSE LOGIN POPUP
+  ==========================================================
+  */
+
+  if (closeLoginPop) {
+
+    closeLoginPop.addEventListener(
+      'click',
+      function () {
+
+        loginPop.style.display = 'none';
+
+      }
+    );
+
+  }
+
+
+  /*
+  ==========================================================
+  ADD TO CART
+  ==========================================================
+  */
+
+  if (addBtn) {
+
+    addBtn.addEventListener(
+      'click',
+      function () {
+
+        /*
+        ----------------------------------------------------
+        USER IS NOT LOGGED IN
+        ----------------------------------------------------
+        */
+
+        if (!IS_LOGGED) {
+
+          loginPop.style.display = 'flex';
+
+          return;
+        }
+
+
+        /*
+        ----------------------------------------------------
+        GET QUANTITY
+        ----------------------------------------------------
+        */
+
+        var quantity =
+          parseInt(qtyInput.value, 10) || 1;
+
+
+        /*
+        ----------------------------------------------------
+        SAFETY LIMIT
+        ----------------------------------------------------
+        */
+
+        if (quantity < 1) {
+          quantity = 1;
+        }
+
+        if (quantity > MAX_STOCK) {
+          quantity = MAX_STOCK;
+        }
+
+
+        /*
+        ----------------------------------------------------
+        DISABLE BUTTON
+        ----------------------------------------------------
+        */
+
+        addBtn.innerText =
+          'Adding...';
+
+        addBtn.disabled =
+          true;
+
+
+        /*
+        ----------------------------------------------------
+        SEND REQUEST
+        ----------------------------------------------------
+        */
+
+        fetch(
+          '/products/add-to-cart',
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+              productId: PRODUCT_ID,
+              qty: quantity
+            })
+          }
+        )
+
+        .then(
+          function (response) {
+
+            if (!response.ok) {
+
+              throw new Error(
+                'Server returned ' +
+                response.status
+              );
+
+            }
+
+            return response.json();
+
+          }
+        )
+
+        .then(
+          function (data) {
+
+            /*
+            ------------------------------------------------
+            SUCCESS
+            ------------------------------------------------
+            */
+
+            if (data.success) {
+
+              window.location.href =
+                '/cart';
+
+              return;
+            }
+
+
+            /*
+            ------------------------------------------------
+            BACKEND FAILURE
+            ------------------------------------------------
+            */
+
+            alert(
+              data.message ||
+              'Failed to add product to cart.'
+            );
+
+            addBtn.innerText =
+              'ADD TO CART';
+
+            addBtn.disabled =
+              false;
+
+          }
+        )
+
+        .catch(
+          function (error) {
+
+            alert(
+              'Error: ' +
+              error.message
+            );
+
+            addBtn.innerText =
+              'ADD TO CART';
+
+            addBtn.disabled =
+              false;
+
+          }
+        );
+
+      }
+    );
+
+  }
+
+
+})();
 </script>
