@@ -21,33 +21,47 @@ const KEY_LENGTH = 64;
 
 function hashPassword(password) {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(
+        (resolve, reject) => {
 
-        const salt =
-            crypto.randomBytes(SALT_LENGTH);
-
-        crypto.scrypt(
-            password,
-            salt,
-            KEY_LENGTH,
-            (err, derivedKey) => {
-
-                if (err) {
-                    return reject(err);
-                }
-
-                const saltHex =
-                    salt.toString("hex");
-
-                const hashHex =
-                    derivedKey.toString("hex");
-
-                resolve(
-                    `${saltHex}:${hashHex}`
+            const salt =
+                crypto.randomBytes(
+                    SALT_LENGTH
                 );
-            }
-        );
-    });
+
+
+            crypto.scrypt(
+                String(password),
+                salt,
+                KEY_LENGTH,
+                (
+                    err,
+                    derivedKey
+                ) => {
+
+                    if (err) {
+                        return reject(err);
+                    }
+
+
+                    const saltHex =
+                        salt.toString("hex");
+
+
+                    const hashHex =
+                        derivedKey.toString("hex");
+
+
+                    resolve(
+                        `${saltHex}:${hashHex}`
+                    );
+
+                }
+            );
+
+        }
+    );
+
 }
 
 
@@ -60,81 +74,164 @@ function verifyPassword(
     storedPassword
 ) {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(
+        (resolve, reject) => {
 
-        if (
-            typeof storedPassword !== "string" ||
-            !storedPassword.includes(":")
-        ) {
-            return resolve(false);
-        }
+            if (
+                typeof password !== "string" ||
+                typeof storedPassword !== "string"
+            ) {
+                return resolve(false);
+            }
 
-        const parts =
-            storedPassword.split(":");
 
-        if (parts.length !== 2) {
-            return resolve(false);
-        }
+            const parts =
+                storedPassword.split(":");
 
-        const saltHex = parts[0];
-        const hashHex = parts[1];
 
-        let salt;
-        let originalHash;
+            if (
+                parts.length !== 2
+            ) {
+                return resolve(false);
+            }
 
-        try {
 
-            salt =
-                Buffer.from(
-                    saltHex,
-                    "hex"
-                );
+            const [
+                saltHex,
+                hashHex
+            ] = parts;
 
-            originalHash =
-                Buffer.from(
-                    hashHex,
-                    "hex"
-                );
 
-        } catch (err) {
+            if (
+                !saltHex ||
+                !hashHex
+            ) {
+                return resolve(false);
+            }
 
-            return resolve(false);
-        }
 
-        if (
-            !salt.length ||
-            !originalHash.length
-        ) {
-            return resolve(false);
-        }
+            let salt;
+            let originalHash;
 
-        crypto.scrypt(
-            password,
-            salt,
-            originalHash.length,
-            (err, derivedKey) => {
 
-                if (err) {
-                    return reject(err);
-                }
+            try {
 
-                if (
-                    derivedKey.length !==
-                    originalHash.length
-                ) {
-                    return resolve(false);
-                }
-
-                const valid =
-                    crypto.timingSafeEqual(
-                        derivedKey,
-                        originalHash
+                salt =
+                    Buffer.from(
+                        saltHex,
+                        "hex"
                     );
 
-                resolve(valid);
+
+                originalHash =
+                    Buffer.from(
+                        hashHex,
+                        "hex"
+                    );
+
+
+            } catch (err) {
+
+                return resolve(false);
+
             }
-        );
-    });
+
+
+            if (
+                !salt.length ||
+                !originalHash.length
+            ) {
+                return resolve(false);
+            }
+
+
+            crypto.scrypt(
+                password,
+                salt,
+                originalHash.length,
+                (
+                    err,
+                    derivedKey
+                ) => {
+
+                    if (err) {
+                        return reject(err);
+                    }
+
+
+                    if (
+                        derivedKey.length !==
+                        originalHash.length
+                    ) {
+                        return resolve(false);
+                    }
+
+
+                    return resolve(
+                        crypto.timingSafeEqual(
+                            derivedKey,
+                            originalHash
+                        )
+                    );
+
+                }
+            );
+
+        }
+    );
+
+}
+
+
+// ==========================================================
+// CHECK HASH FORMAT
+// ==========================================================
+//
+// Prevents accidental double hashing.
+//
+// A valid stored password is:
+//
+//     saltHex:hashHex
+//
+// ==========================================================
+
+function isPasswordHash(
+    password
+) {
+
+    if (
+        typeof password !== "string"
+    ) {
+        return false;
+    }
+
+
+    const parts =
+        password.split(":");
+
+
+    if (
+        parts.length !== 2
+    ) {
+        return false;
+    }
+
+
+    const [
+        saltHex,
+        hashHex
+    ] = parts;
+
+
+    return (
+        /^[a-f0-9]+$/i.test(
+            saltHex
+        ) &&
+        /^[a-f0-9]+$/i.test(
+            hashHex
+        )
+    );
+
 }
 
 
@@ -148,12 +245,6 @@ const userSchema =
 
             // ------------------------------------------------
             // NAME
-            // ------------------------------------------------
-            //
-            // Matches the signup EJS:
-            //
-            // <input name="name">
-            //
             // ------------------------------------------------
 
             name: {
@@ -182,13 +273,14 @@ const userSchema =
             // PASSWORD
             // ------------------------------------------------
             //
-            // Matches:
-            //
-            // <input name="password">
-            //
-            // Stored as:
+            // Stored internally as:
             //
             //     salt:hash
+            //
+            // select: false means authentication must explicitly
+            // request it with:
+            //
+            // .select("+password")
             //
             // ------------------------------------------------
 
@@ -202,25 +294,17 @@ const userSchema =
             // ------------------------------------------------
             // ROLE
             // ------------------------------------------------
-            //
-            // Allowed:
-            //
-            //     admin
-            //     client
-            //
-            // Default:
-            //
-            //     client
-            //
-            // ------------------------------------------------
 
             role: {
                 type: String,
+
                 enum: [
                     "admin",
                     "client"
                 ],
+
                 default: "client",
+
                 required: true
             }
 
@@ -238,17 +322,25 @@ const userSchema =
 
 userSchema.pre(
     "validate",
+
     function(next) {
 
-        if (this.email) {
+        if (
+            this.email
+        ) {
 
             this.email =
-                String(this.email)
+                String(
+                    this.email
+                )
                     .trim()
                     .toLowerCase();
+
         }
 
+
         next();
+
     }
 );
 
@@ -257,33 +349,62 @@ userSchema.pre(
 // HASH PASSWORD BEFORE SAVE
 // ==========================================================
 //
-// Only hashes when password is new or modified.
+// Password is hashed only when:
 //
-// This prevents an existing hash from being hashed again
-// when another user field is changed.
+// 1. It is new or modified
+// 2. It is NOT already a salt:hash value
+//
 // ==========================================================
 
 userSchema.pre(
     "save",
+
     async function(next) {
 
         try {
 
-            if (!this.isModified("password")) {
+            if (
+                !this.isModified(
+                    "password"
+                )
+            ) {
                 return next();
             }
+
+
+            if (
+                !this.password
+            ) {
+                return next();
+            }
+
+
+            // Prevent accidental double hashing.
+
+            if (
+                isPasswordHash(
+                    this.password
+                )
+            ) {
+                return next();
+            }
+
 
             this.password =
                 await hashPassword(
                     this.password
                 );
 
+
             next();
+
 
         } catch (err) {
 
             next(err);
+
         }
+
     }
 );
 
@@ -292,9 +413,17 @@ userSchema.pre(
 // COMPARE PASSWORD
 // ==========================================================
 //
-// Authentication service can use:
+// IMPORTANT:
 //
-//     user.comparePassword(password)
+// Because password has:
+//
+//     select: false
+//
+// The login service MUST retrieve it:
+//
+// const user =
+//     await User.findOne({ email })
+//         .select("+password");
 //
 // ==========================================================
 
@@ -308,19 +437,17 @@ userSchema.methods.comparePassword =
             return false;
         }
 
+
         return verifyPassword(
-            password,
+            String(password),
             this.password
         );
+
     };
 
 
 // ==========================================================
 // SAFE JSON OUTPUT
-// ==========================================================
-//
-// Never expose the password hash when converting the user
-// document to JSON.
 // ==========================================================
 
 userSchema.methods.toJSON =
@@ -329,9 +456,12 @@ userSchema.methods.toJSON =
         const user =
             this.toObject();
 
+
         delete user.password;
 
+
         return user;
+
     };
 
 
