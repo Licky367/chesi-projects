@@ -1,0 +1,1 @@
+const router=require('express').Router(),c=require('../controllers/substations');router.get('/',c.list);router.get('/new',c.newForm);router.post('/',c.create);router.get('/product/:id',c.productDetail);router.get('/:id',c.detail);module.exports=router;

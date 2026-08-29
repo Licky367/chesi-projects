@@ -1,13 +1,1 @@
-const express = require("express");
-const router = express.Router();
-const controller = require("../controllers/stock");
-
-router.get("/", controller.list);
-
-router.get("/new", controller.newStockForm);
-router.post("/", controller.createStock);
-
-router.get("/:id", controller.entry);
-router.post("/:id", controller.createProduct);
-
-module.exports = router;
+const router=require('express').Router(),c=require('../controllers/stock');router.get('/',c.list);router.get('/new',c.newStockForm);router.post('/',c.createStock);router.get('/:id',c.entry);router.post('/:id',c.createProduct);module.exports=router;
