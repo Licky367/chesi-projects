@@ -1,53 +1,27 @@
-// =========================================================
-// models/products.js
-// MARKETPLACE PRODUCT MODEL
-// =========================================================
 const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
+    stock: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Stock",
       required: true,
-      trim: true,
       index: true
     },
-    category: {
-      type: String,
-      required: true,
-      trim: true,
-      lowercase: true,
+    name: { type: String, required: true, trim: true, index: true },
+    category: { type: String, required: true, trim: true, lowercase: true, index: true },
+    image: { type: String, trim: true, default: "" },
+    units: { type: Number, required: true, min: 0, default: 0 },
+    buyPrice: { type: Number, min: 0, default: 0 },
+    unitSellPrice: { type: Number, required: true, min: 0 },
+    description: { type: String, default: "" },
+    substation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Substation",
+      default: null,
       index: true
     },
-    image: {
-      type: String,
-      trim: true,
-      default: ""
-    },
-    units: {
-      type: Number,
-      required: true,
-      min: 0,
-      default: 0
-    },
-    buyPrice: {
-      type: Number,
-      min: 0,
-      default: 0
-    },
-    unitSellPrice: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-    description: {
-      type: String,
-      default: ""
-    },
-    isActive: {
-      type: Boolean,
-      default: true
-    }
+    isActive: { type: Boolean, default: true }
   },
   { timestamps: true }
 );
