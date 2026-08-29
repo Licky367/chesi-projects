@@ -8,7 +8,7 @@ const User =
 
 
 // ==========================================================
-// HELPERS
+// CLEAN STRING
 // ==========================================================
 
 function cleanString(
@@ -23,6 +23,10 @@ function cleanString(
 }
 
 
+// ==========================================================
+// NORMALIZE EMAIL
+// ==========================================================
+
 function normalizeEmail(
     email
 ) {
@@ -36,22 +40,70 @@ function normalizeEmail(
 
 
 // ==========================================================
+// SAFE SESSION USER
+// ==========================================================
+//
+// This is the function expected by:
+//
+//     controllers/auth.js
+//
+// It removes sensitive/internal information before the user
+// is stored inside the session.
+//
+// ==========================================================
+
+exports.toSessionUser =
+function(
+    user
+) {
+
+    if (
+        !user
+    ) {
+        return null;
+    }
+
+
+    return {
+
+        _id:
+            String(
+                user._id
+            ),
+
+        name:
+            user.name,
+
+        email:
+            user.email,
+
+        role:
+            user.role
+
+    };
+
+};
+
+
+// ==========================================================
 // REGISTER USER
 // ==========================================================
 //
 // IMPORTANT:
 //
-// Do NOT hash the password here.
+// Password hashing DOES NOT happen here.
 //
-// The User model is responsible for:
+// The plaintext password is passed to:
 //
-//     password
-//         ↓
-//     User pre("save")
-//         ↓
-//     scrypt
-//         ↓
-//     salt:hash
+//     new User({ password })
+//
+// Then:
+//
+//     user.save()
+//
+// triggers the pre("save") middleware in:
+//
+//     models/user.js
 //
 // ==========================================================
 
@@ -59,6 +111,14 @@ exports.register =
 async function(
     data
 ) {
+
+    data =
+        data || {};
+
+
+    // ------------------------------------------------------
+    // READ INPUT
+    // ------------------------------------------------------
 
     const name =
         cleanString(
@@ -79,61 +139,82 @@ async function(
 
 
     // ------------------------------------------------------
-    // VALIDATION
+    // VALIDATE NAME
     // ------------------------------------------------------
 
     if (
         !name
     ) {
+
         throw new Error(
             "Name is required."
         );
+
     }
 
+
+    // ------------------------------------------------------
+    // VALIDATE EMAIL
+    // ------------------------------------------------------
 
     if (
         !email
     ) {
+
         throw new Error(
             "Email is required."
         );
+
     }
 
+
+    // ------------------------------------------------------
+    // VALIDATE PASSWORD
+    // ------------------------------------------------------
 
     if (
         !password
     ) {
+
         throw new Error(
             "Password is required."
         );
+
     }
 
 
     if (
         password.length < 6
     ) {
+
         throw new Error(
             "Password must be at least 6 characters."
         );
+
     }
 
 
     // ------------------------------------------------------
-    // CHECK EXISTING EMAIL
+    // CHECK EXISTING USER
     // ------------------------------------------------------
 
     const existingUser =
-        await User.findOne({
-            email: email
-        });
+        await User.findOne(
+            {
+                email:
+                    email
+            }
+        );
 
 
     if (
         existingUser
     ) {
+
         throw new Error(
             "An account with this email already exists."
         );
+
     }
 
 
@@ -141,37 +222,39 @@ async function(
     // CREATE USER
     // ------------------------------------------------------
     //
-    // Password is intentionally passed as plaintext.
+    // DO NOT HASH PASSWORD HERE.
     //
-    // models/user.js hashes it inside:
+    // models/user.js handles hashing in:
     //
     //     pre("save")
     //
     // ------------------------------------------------------
 
     const user =
-        new User({
+        new User(
+            {
 
-            name,
+                name:
+                    name,
 
-            email,
+                email:
+                    email,
 
-            password,
+                password:
+                    password,
 
-            role: "client"
+                role:
+                    "client"
 
-        });
+            }
+        );
 
 
     // ------------------------------------------------------
-    // SAVE
+    // SAVE USER
     // ------------------------------------------------------
     //
-    // This triggers:
-    //
-    // User pre("save")
-    //     ↓
-    // password hashing
+    // This triggers the User model's password hashing hook.
     //
     // ------------------------------------------------------
 
@@ -179,24 +262,10 @@ async function(
 
 
     // ------------------------------------------------------
-    // RETURN SAFE USER
+    // RETURN USER
     // ------------------------------------------------------
 
-    return {
-
-        _id:
-            user._id,
-
-        name:
-            user.name,
-
-        email:
-            user.email,
-
-        role:
-            user.role
-
-    };
+    return user;
 
 };
 
@@ -209,6 +278,14 @@ exports.login =
 async function(
     data
 ) {
+
+    data =
+        data || {};
+
+
+    // ------------------------------------------------------
+    // READ INPUT
+    // ------------------------------------------------------
 
     const email =
         normalizeEmail(
@@ -223,16 +300,18 @@ async function(
 
 
     // ------------------------------------------------------
-    // VALIDATION
+    // VALIDATE
     // ------------------------------------------------------
 
     if (
         !email ||
         !password
     ) {
+
         throw new Error(
             "Email and password are required."
         );
+
     }
 
 
@@ -242,63 +321,50 @@ async function(
     //
     // CRITICAL:
     //
-    // models/user.js contains:
+    // password in models/user.js uses:
     //
-    // password: {
     //     select: false
-    // }
     //
-    // Therefore a normal:
+    // Therefore we MUST explicitly request it.
     //
-    // User.findOne({ email })
+    // Without this:
     //
-    // DOES NOT return the password hash.
+    //     user.password === undefined
     //
-    // We MUST explicitly include it.
+    // and comparePassword() always fails.
     //
     // ------------------------------------------------------
 
     const user =
         await User
-            .findOne({
-
-                email: email
-
-            })
+            .findOne(
+                {
+                    email:
+                        email
+                }
+            )
             .select(
                 "+password"
             );
 
 
     // ------------------------------------------------------
-    // USER DOES NOT EXIST
+    // USER NOT FOUND
     // ------------------------------------------------------
 
     if (
         !user
     ) {
+
         throw new Error(
             "Invalid email or password."
         );
+
     }
 
 
     // ------------------------------------------------------
-    // VERIFY PASSWORD
-    // ------------------------------------------------------
-    //
-    // models/user.js:
-    //
-    // user.comparePassword(password)
-    //
-    // compares:
-    //
-    // entered plaintext password
-    //
-    // against:
-    //
-    // stored salt:hash
-    //
+    // COMPARE PASSWORD
     // ------------------------------------------------------
 
     const isPasswordCorrect =
@@ -307,38 +373,26 @@ async function(
         );
 
 
+    // ------------------------------------------------------
+    // PASSWORD INCORRECT
+    // ------------------------------------------------------
+
     if (
         !isPasswordCorrect
     ) {
+
         throw new Error(
             "Invalid email or password."
         );
+
     }
 
 
     // ------------------------------------------------------
-    // RETURN SAFE USER
-    // ------------------------------------------------------
-    //
-    // Never return the password hash.
-    //
+    // LOGIN SUCCESS
     // ------------------------------------------------------
 
-    return {
-
-        _id:
-            user._id,
-
-        name:
-            user.name,
-
-        email:
-            user.email,
-
-        role:
-            user.role
-
-    };
+    return user;
 
 };
 
@@ -365,27 +419,6 @@ async function(
         );
 
 
-    if (
-        !user
-    ) {
-        return null;
-    }
-
-
-    return {
-
-        _id:
-            user._id,
-
-        name:
-            user.name,
-
-        email:
-            user.email,
-
-        role:
-            user.role
-
-    };
+    return user;
 
 };
