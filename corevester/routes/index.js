@@ -2,16 +2,6 @@ const express = require("express");
 const router = express.Router();
 
 // =========================
-// AUTH MIDDLEWARE
-// =========================
-const requireLogin = (req, res, next) => {
-  if (!req.session.user) {
-    return res.redirect("/auth/login");
-  }
-  next();
-};
-
-// =========================
 // CONTROLLER
 // =========================
 const indexController = {
