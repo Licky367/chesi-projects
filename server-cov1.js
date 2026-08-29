@@ -1,3 +1,35 @@
+app.use((req, res, next) => {
+
+    const originalRedirect = res.redirect.bind(res);
+
+    res.redirect = function (statusOrUrl, maybeUrl) {
+
+        const url =
+            typeof statusOrUrl === "number"
+                ? maybeUrl
+                : statusOrUrl;
+
+        console.error(
+            "🔴 REDIRECT:",
+            req.method,
+            req.originalUrl,
+            "→",
+            url
+        );
+
+        console.error(
+            new Error("REDIRECT STACK").stack
+        );
+
+        return originalRedirect(
+            statusOrUrl,
+            maybeUrl
+        );
+    };
+
+    next();
+});
+
 // ==========================================================
 // server-corevester.js - COREVESTER
 // ==========================================================
