@@ -1,0 +1,48 @@
+<section class="shop-page">
+  <div>
+    <h1 class="page-title">Products</h1>
+    <p class="page-subtitle">Browse products by category and choose what you need.</p>
+  </div>
+
+  <% if (typeof error !== "undefined" && error) { %>
+    <div class="error"><%= error %></div>
+  <% } %>
+
+  <% if (!categories.length) { %>
+    <div class="empty" style="margin-top:25px">
+      <i class="fas fa-box-open"></i>
+      <div>No products are available right now.</div>
+    </div>
+  <% } %>
+
+  <% categories.forEach(group => { %>
+    <section class="category-section">
+      <div class="category-head">
+        <h2><%= group.label %></h2>
+        <span>Swipe left/right →</span>
+      </div>
+
+      <div class="product-row">
+        <% group.products.forEach(product => { %>
+          <a class="product-card" href="/products/<%= product._id %>">
+            <div class="product-image">
+              <% if (product.image) { %>
+                <img src="<%= product.image %>" alt="<%= product.name %>" loading="lazy">
+              <% } else { %>
+                <div class="placeholder"><i class="fas fa-box"></i></div>
+              <% } %>
+            </div>
+
+            <div class="product-info">
+              <div class="product-name"><%= product.name %></div>
+              <div class="product-price">KSh <%= Number(product.unitSellPrice || 0).toLocaleString() %></div>
+              <div class="stock-text <%= product.units <= 0 ? 'out' : '' %>">
+                <%= product.units > 0 ? `${product.units} available` : "Out of stock" %>
+              </div>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    </section>
+  <% }) %>
+</section>
