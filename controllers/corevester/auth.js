@@ -4,19 +4,19 @@ const authService = require("../../services/corevester/auth");
 // RENDER PAGES
 // ==========================================================
 exports.renderSignup = (req, res) => {
-  res.render("corevester/signup", { title: "Sign Up - Corevester", error: null });
+  res.render("signup", { title: "Sign Up - Corevester", error: null });
 };
 
 exports.renderLogin = (req, res) => {
-  res.render("corevester/login", { title: "Login - Corevester", error: null });
+  res.render("login", { title: "Login - Corevester", error: null });
 };
 
 exports.renderForgot = (req, res) => {
-  res.render("corevester/forgot-password", { title: "Forgot Password", error: null, success: null });
+  res.render("forgot-password", { title: "Forgot Password", error: null, success: null });
 };
 
 exports.renderReset = (req, res) => {
-  res.render("corevester/reset-password", { title: "Reset Password", token: req.params.token, error: null });
+  res.render("reset-password", { title: "Reset Password", token: req.params.token, error: null });
 };
 
 // ==========================================================
