@@ -1,240 +1,104 @@
-// ==========================================================
-// models/user.js
-// USER MODEL
-// ==========================================================
-
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 
+// ==========================================================
+// HASH HELPERS - using native crypto, no bcrypt install needed
+// ==========================================================
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, stored) {
+  if (!stored || !stored.includes(":")) return false;
+  const [salt, hash] = stored.split(":");
+  const derived = crypto.scryptSync(password, salt, 64).toString("hex");
+  return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(derived));
+}
 
 // ==========================================================
-// USER SCHEMA
+// SCHEMA
 // ==========================================================
-
 const userSchema = new mongoose.Schema(
   {
-
-    // --------------------------------------------------------
-    // BASIC INFORMATION
-    // --------------------------------------------------------
-
-    name: {
+    fullName: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
-
+    name: {
+      type: String,
+      trim: true,
+    },
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
-      trim: true
-    },
-
-    phone: {
-      type: String,
       trim: true,
-      default: ""
     },
-
-
-    // --------------------------------------------------------
-    // PASSWORD
-    // --------------------------------------------------------
-
     password: {
       type: String,
       required: true,
-      minlength: 6,
-      select: false
+      select: false,
     },
-
-
-    // --------------------------------------------------------
-    // USER ROLE
-    // --------------------------------------------------------
-
+    phone: {
+      type: String,
+      trim: true,
+    },
     role: {
       type: String,
-      default: "user",
-      trim: true
+      enum: ["admin", "client"],
+      default: "client",
     },
-
-
-    // --------------------------------------------------------
-    // ASSIGNED FARMS
-    // --------------------------------------------------------
-
-    assignedFarm: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Dairy"
-      }
-    ],
-
-
-    // --------------------------------------------------------
-    // LOGIN INFORMATION
-    // --------------------------------------------------------
-
     lastLogin: {
       type: Date,
-      default: null
     },
-
-
-    // --------------------------------------------------------
-    // PASSWORD RESET
-    // --------------------------------------------------------
-
     resetToken: {
       type: String,
       default: undefined,
-      select: false
     },
-
     resetTokenExpiry: {
       type: Date,
       default: undefined,
-      select: false
-    }
-
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
+// ==========================================================
+// PRE SAVE - HASH + SYNC name / fullName
+// ==========================================================
+userSchema.pre("save", function (next) {
+  // Keep name and fullName in sync
+  if (this.fullName && !this.name) this.name = this.fullName;
+  if (this.name && !this.fullName) this.fullName = this.name;
+
+  if (!this.isModified("password")) return next();
+
+  this.password = hashPassword(this.password);
+  next();
+});
 
 // ==========================================================
-// HASH PASSWORD
+// METHODS
 // ==========================================================
-
-function hashPassword(password) {
-
-  const salt =
-    crypto.randomBytes(16).toString("hex");
-
-  const hash =
-    crypto
-      .scryptSync(
-        password,
-        salt,
-        64
-      )
-      .toString("hex");
-
-  return `${salt}:${hash}`;
-
-}
-
-
-// ==========================================================
-// VERIFY PASSWORD
-// ==========================================================
-
-function verifyPassword(
-  password,
-  storedPassword
-) {
-
-  if (!storedPassword) {
-    return false;
-  }
-
-  const parts =
-    storedPassword.split(":");
-
-  if (parts.length !== 2) {
-    return false;
-  }
-
-  const [
-    salt,
-    storedHash
-  ] = parts;
-
-  const hash =
-    crypto
-      .scryptSync(
-        password,
-        salt,
-        64
-      )
-      .toString("hex");
-
-  const storedHashBuffer =
-    Buffer.from(
-      storedHash,
-      "hex"
-    );
-
-  const hashBuffer =
-    Buffer.from(
-      hash,
-      "hex"
-    );
-
-  if (
-    storedHashBuffer.length !==
-    hashBuffer.length
-  ) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(
-    storedHashBuffer,
-    hashBuffer
-  );
-
-}
-
-
-// ==========================================================
-// HASH PASSWORD BEFORE SAVE
-// ==========================================================
-
-userSchema.pre(
-  "save",
-  function (next) {
-
-    if (!this.isModified("password")) {
-      return next();
-    }
-
-    this.password =
-      hashPassword(
-        this.password
-      );
-
-    next();
-
-  }
-);
-
-
-// ==========================================================
-// COMPARE PASSWORD
-// ==========================================================
-
-userSchema.methods.comparePassword =
-function (candidatePassword) {
-
-  return verifyPassword(
-    candidatePassword,
-    this.password
-  );
-
+userSchema.methods.comparePassword = function (candidatePassword) {
+  return verifyPassword(candidatePassword, this.password);
 };
 
-
-// ==========================================================
-// MODEL
-// ==========================================================
+// Hide sensitive fields in JSON
+userSchema.methods.toJSON = function () {
+  const obj = this.toObject();
+  delete obj.password;
+  delete obj.resetToken;
+  delete obj.resetTokenExpiry;
+  return obj;
+};
 
 module.exports =
-  mongoose.model(
-    "User",
-    userSchema
-  );
+  mongoose.models.CorevesterUser ||
+  mongoose.model("CorevesterUser", userSchema, "corevester_users");
