@@ -1,30 +1,54 @@
+// ==========================================================
+// routes/index.js
+// COREVESTER ONLINE STORE ROUTES
+// ==========================================================
+//
+// PURPOSE
+// ----------------------------------------------------------
+//
+// Public storefront routes for Corevester Investments Limited.
+//
+// Corevester is an ONLINE MEDICAL EQUIPMENT & HEALTHCARE
+// SUPPLIES BUSINESS.
+//
+// This router is responsible for the public storefront,
+// beginning with:
+//
+//     GET /
+//
+// ==========================================================
+
 const express = require("express");
+
 const router = express.Router();
 
-// =========================
-// CONTROLLER
-// =========================
-const indexController = {
-  home: (req, res) => {
-    try {
-      // No need to pass 'user' because server.js already sets:
-      // res.locals.user = req.session.user;
-      // res.locals.currentPath = req.path;
 
-      res.render("index");
-    } catch (error) {
-      console.error("Index Error:", error);
+// ==========================================================
+// HOME
+// ==========================================================
+//
+// GET
+// /
+//
+// Render the Corevester online medical-equipment storefront.
+//
+// View:
+//
+//     views/index.ejs
+//
+// ==========================================================
 
-      res.status(500).render("index", {
-        error: "An unexpected error occurred."
-      });
-    }
-  }
-};
+router.get("/", (req, res) => {
 
-// =========================
-// ROUTES
-// =========================
-router.get("/", requireLogin, indexController.home);
+    res.render("index", {
+        user: req.user || null
+    });
+
+});
+
+
+// ==========================================================
+// EXPORT
+// ==========================================================
 
 module.exports = router;
