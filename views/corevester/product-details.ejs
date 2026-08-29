@@ -1,152 +1,68 @@
 <%- contentFor('body') %>
-<div style="width:100%;max-width:100vw;overflow-x:hidden;background:#f4f6f4;min-height:100vh;padding-bottom:30px;box-sizing:border-box;font-family:sans-serif;">
-
-  <div style="width:100%;max-width:1100px;margin:0 auto;padding:12px 14px;box-sizing:border-box;">
-    
-    <a href="/products" style="display:inline-flex;align-items:center;gap:8px;border:2px solid #15472E;background:#fff;color:#15472E;border-radius:50px;padding:8px 16px;font-size:12px;font-weight:800;text-decoration:none;letter-spacing:0.3px;box-shadow:0 2px 6px rgba(0,0,0,0.05);">
-      <span style="font-size:14px;">←</span> Back to Marketplace
-    </a>
-
+<div style="width:100%;background:#f4f6f4;min-height:100vh;padding-bottom:30px;font-family:sans-serif;">
+  <div style="max-width:1100px;margin:0 auto;padding:12px 14px;">
+    <a href="/products" style="display:inline-flex;align-items:center;gap:8px;border:2px solid #15472E;background:#fff;color:#15472E;border-radius:50px;padding:8px 16px;font-size:12px;font-weight:800;text-decoration:none;">← Back to Marketplace</a>
     <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;">
-      
-      <div style="flex:1 1 340px;min-width:280px;background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.04);">
-        <div style="width:100%;height:380px;background:linear-gradient(to bottom,#eef4e9,#e4ece0);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
-          <span style="position:absolute;top:12px;left:12px;background:#fff;border:1.5px solid <%= product.units>0?'#15472E':'#c62828' %>;color:<%= product.units>0?'#15472E':'#c62828' %>;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;z-index:2;">
-            <%= product.units>0? product.units+' left' : 'Out of Stock' %>
-          </span>
-          <img src="<%= product.image||'/images/no-image.png' %>" alt="<%= product.name %>" style="width:100%;height:100%;object-fit:contain;display:block;background:#fff;">
+      <div style="flex:1 1 340px;min-width:280px;background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;overflow:hidden;">
+        <div style="width:100%;height:380px;background:#eef4e9;display:flex;align-items:center;justify-content:center;position:relative;">
+          <span style="position:absolute;top:12px;left:12px;background:#fff;border:1.5px solid #15472E;color:#15472E;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;"><%= product.units>0? product.units+' left' : 'Out' %></span>
+          <img src="<%= product.image||'/images/no-image.png' %>" style="width:100%;height:100%;object-fit:contain;background:#fff;">
         </div>
       </div>
-
       <div style="flex:1 1 340px;min-width:280px;">
-        <div style="background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,0.04);">
+        <div style="background:#fff;border:1.5px solid #e0e9dc;border-radius:18px;padding:18px;">
           <p style="margin:0;color:#2e7d32;font-weight:800;font-size:11px;letter-spacing:1px;text-transform:uppercase;"><%= product.category %></p>
-          <h1 style="margin:6px 0 0 0;color:#15472E;font-weight:900;font-size:24px;line-height:1.2;"><%= product.name %></h1>
+          <h1 style="margin:6px 0 0 0;color:#15472E;font-weight:900;font-size:24px;"><%= product.name %></h1>
           <p style="margin:10px 0 0 0;color:#15472E;font-weight:900;font-size:22px;">KES <%= Number(product.unitSellPrice||0).toLocaleString() %></p>
-          <p style="margin:6px 0 0 0;font-size:12px;font-weight:700;color:<%= product.units>0?'#2e7d32':'#c62828' %>;"><%= product.units>0? product.units+' units available' : 'Out of Stock' %></p>
-
-          <% if(product.description){ %>
-            <p style="margin-top:12px;color:#555;font-size:13px;line-height:1.5;"><%= product.description.substring(0,180) %></p>
-          <% } %>
-
           <div style="margin-top:18px;display:flex;gap:10px;align-items:center;">
-            <div style="display:flex;align-items:center;border:2.5px solid #15472E;border-radius:12px;overflow:hidden;background:#fff;height:46px;flex-shrink:0;">
+            <div style="display:flex;align-items:center;border:2.5px solid #15472E;border-radius:12px;overflow:hidden;background:#fff;height:46px;">
               <button type="button" id="btnMinus" style="width:44px;height:46px;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">−</button>
-              <input id="inputQty" type="number" value="1" min="1" max="<%= product.units %>" style="width:56px;height:46px;border:none;border-left:1.5px solid #e0e9dc;border-right:1.5px solid #e0e9dc;text-align:center;font-weight:900;color:#15472E;font-size:18px;outline:none;background:#fff;">
+              <input id="inputQty" type="number" value="1" min="1" max="<%= product.units %>" style="width:56px;height:46px;border:none;border-left:1.5px solid #e0e9dc;border-right:1.5px solid #e0e9dc;text-align:center;font-weight:900;color:#15472E;font-size:18px;outline:none;">
               <button type="button" id="btnPlus" style="width:44px;height:46px;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">+</button>
             </div>
-            <button id="btnAddCart" type="button" data-id="<%= product._id %>" data-stock="<%= product.units %>" <%= product.units<=0?'disabled':'' %> style="flex:1;height:46px;background:<%= product.units>0?'#15472E':'#ccc' %>;color:#fff;font-weight:800;border:none;border-radius:12px;padding:0 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(21,71,46,0.25);">
-              <i class="fas fa-shopping-cart"></i> ADD TO CART
-            </button>
+            <button type="button" id="btnAddCart" style="flex:1;height:46px;background:<%= product.units>0?'#15472E':'#ccc' %>;color:#fff;font-weight:800;border:none;border-radius:12px;padding:0 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="fas fa-shopping-cart"></i> ADD TO CART</button>
           </div>
-          <p id="stockMsg" style="margin:8px 0 0 0;font-size:11px;color:#888;">Stock will reduce from products & increase in cart</p>
         </div>
-
-        <% if(product.description && product.description.length>5){ %>
-          <div style="margin-top:12px;background:#fff;border:1.5px solid #e0e9dc;border-radius:14px;padding:14px;">
-            <h4 style="margin:0 0 6px 0;color:#15472E;font-size:13px;font-weight:800;">Description</h4>
-            <p style="margin:0;color:#444;font-size:13px;line-height:1.6;white-space:pre-line;"><%= product.description %></p>
-          </div>
-        <% } %>
-        <% if(product.usage){ %>
-          <div style="margin-top:12px;background:#fff;border:1.5px solid #e0e9dc;border-radius:14px;padding:14px;">
-            <h4 style="margin:0 0 6px 0;color:#15472E;font-size:13px;font-weight:800;">Usage</h4>
-            <p style="margin:0;color:#444;font-size:13px;line-height:1.6;white-space:pre-line;"><%= product.usage %></p>
-          </div>
-        <% } %>
-        <% if(product.precautions){ %>
-          <div style="margin-top:12px;background:#fff;border:1.5px solid #ffe0b2;border-radius:14px;padding:14px;background:#fffaf0;">
-            <h4 style="margin:0 0 6px 0;color:#c97a2e;font-size:13px;font-weight:800;">Precautions</h4>
-            <p style="margin:0;color:#5d4037;font-size:13px;line-height:1.6;white-space:pre-line;"><%= product.precautions %></p>
-          </div>
-        <% } %>
-        <% if(product.specifications){ %>
-          <div style="margin-top:12px;background:#fff;border:1.5px solid #e0e9dc;border-radius:14px;padding:14px;">
-            <h4 style="margin:0 0 6px 0;color:#15472E;font-size:13px;font-weight:800;">Specifications</h4>
-            <p style="margin:0;color:#444;font-size:13px;line-height:1.6;white-space:pre-line;"><%= product.specifications %></p>
-          </div>
-        <% } %>
       </div>
     </div>
   </div>
 </div>
 
-<!-- LOGIN POPUP -->
-<div id="loginPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#fff;border-radius:18px;max-width:340px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.2);">
-    <div style="width:56px;height:56px;border-radius:50%;background:#fff3cd;border:2px solid #ffc107;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:28px;">🔒</div>
-    <h3 style="margin:0;color:#15472E;font-weight:900;font-size:18px;">You're not logged in</h3>
-    <p style="margin:8px 0 0 0;color:#666;font-size:13px;line-height:1.5;">Please log in to continue adding items to your cart.</p>
-    <div style="display:flex;gap:10px;margin-top:18px;">
-      <button type="button" id="popupCancel" style="flex:1;height:42px;border:1.5px solid #e0e9dc;background:#fff;border-radius:10px;font-weight:800;color:#444;cursor:pointer;">Cancel</button>
-      <a href="/auth/login?redirect=/products/<%= product._id %>" style="flex:1;height:42px;background:#15472E;color:#fff;border-radius:10px;font-weight:800;text-decoration:none;display:flex;align-items:center;justify-content:center;">Log In</a>
+<div id="loginPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:18px;max-width:320px;width:100%;padding:24px;text-align:center;">
+    <h3 style="margin:0;color:#15472E;">Not logged in</h3>
+    <p style="color:#666;font-size:13px;">Please log in to add to cart</p>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button type="button" id="closeLogin" style="flex:1;height:42px;border:1px solid #ccc;background:#fff;border-radius:10px;cursor:pointer;">Cancel</button>
+      <a href="/auth/login?redirect=/products/<%= product._id %>" style="flex:1;height:42px;background:#15472E;color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:800;">Log In</a>
     </div>
   </div>
 </div>
 
 <script>
-// Safe login flag - will not crash
-var IS_LOGGED_IN = <%- (typeof user !== 'undefined' && user) ? 'true' : 'false' %>;
-
+var IS_LOGGED = <%- (typeof user !== 'undefined' && user) ? 'true' : 'false' %>;
 (function(){
   var qty = document.getElementById('inputQty');
   var minus = document.getElementById('btnMinus');
   var plus = document.getElementById('btnPlus');
-  var addBtn = document.getElementById('btnAddCart');
-  var popup = document.getElementById('loginPopup');
-  var cancel = document.getElementById('popupCancel');
+  var add = document.getElementById('btnAddCart');
+  var pop = document.getElementById('loginPopup');
+  var close = document.getElementById('closeLogin');
+  
+  minus.onclick = function(){ var v=parseInt(qty.value)||1; if(v>1) qty.value=v-1; };
+  plus.onclick = function(){ var m=parseInt(qty.max)||9999; var v=parseInt(qty.value)||1; if(v<m) qty.value=v+1; };
+  close.onclick = function(){ pop.style.display='none'; };
+  pop.onclick = function(e){ if(e.target===pop) pop.style.display='none'; };
 
-  // + and - WORKING
-  minus.addEventListener('click', function(){
-    var v = parseInt(qty.value)||1;
-    if(v>1) qty.value = v-1;
-  });
-  plus.addEventListener('click', function(){
-    var max = parseInt(qty.max)||9999;
-    var v = parseInt(qty.value)||1;
-    if(v<max) qty.value = v+1;
-    else alert('Only '+max+' left');
-  });
-
-  function openPopup(){ popup.style.display='flex'; }
-  function closePopup(){ popup.style.display='none'; }
-  cancel.addEventListener('click', closePopup);
-  popup.addEventListener('click', function(e){ if(e.target===popup) closePopup(); });
-
-  // ADD TO CART WORKING + LOGIN CHECK
-  addBtn.addEventListener('click', function(){
-    if(!IS_LOGGED_IN){
-      openPopup();
-      return;
-    }
-    var pid = addBtn.getAttribute('data-id');
+  add.onclick = function(){
+    if(!IS_LOGGED){ pop.style.display='flex'; return; }
     var q = parseInt(qty.value)||1;
-    var original = addBtn.innerHTML;
-    addBtn.innerHTML = 'Adding...';
-    addBtn.disabled = true;
-
-    fetch('/products/add-to-cart', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      credentials:'include',
-      body: JSON.stringify({productId: pid, qty: q})
-    })
-    .then(function(res){ return res.json().then(function(d){ return {status:res.status, data:d}; }); })
-    .then(function(r){
-      if(r.status===401 || (r.data && r.data.message==='LOGIN_REQUIRED')){
-        openPopup();
-        addBtn.innerHTML = original;
-        addBtn.disabled = false;
-        return;
-      }
-      if(!r.data.success) throw new Error(r.data.message||'Failed');
-      window.location.href='/cart';
-    })
-    .catch(function(err){
-      alert(err.message);
-      addBtn.innerHTML = original;
-      addBtn.disabled = false;
-    });
-  });
+    add.textContent='Adding...'; add.disabled=true;
+    fetch('/products/add-to-cart',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({productId:'<%= product._id %>',qty:q})})
+    .then(r=>r.json()).then(d=>{
+      if(d.success) window.location.href='/cart';
+      else { alert(d.message||'Failed'); add.textContent='ADD TO CART'; add.disabled=false; }
+    }).catch(()=>{ add.textContent='ADD TO CART'; add.disabled=false; });
+  };
 })();
 </script>
