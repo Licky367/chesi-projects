@@ -29,13 +29,13 @@
             <p style="margin-top:12px;color:#555;font-size:13px;line-height:1.5;"><%= product.description.substring(0,180) %></p>
           <% } %>
 
-          <div style="margin-top:18px;display:flex;gap:10px;align-items:center;">
+          <div style="margin-top:18px;display:flex;gap:10px;align-items:center;position:relative;z-index:10;">
             <div style="display:flex;align-items:center;border:2.5px solid #15472E;border-radius:12px;overflow:hidden;background:#fff;height:46px;flex-shrink:0;">
-              <button type="button" onclick="var i=document.getElementById('inputQty'); var v=parseInt(i.value)||1; if(v>1) i.value=v-1;" style="width:44px;height:46px;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">−</button>
+              <button type="button" id="btnMinus" style="width:44px;height:46px;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">−</button>
               <input id="inputQty" type="number" value="1" min="1" max="<%= product.units %>" style="width:56px;height:46px;border:none;border-left:1.5px solid #e0e9dc;border-right:1.5px solid #e0e9dc;text-align:center;font-weight:900;color:#15472E;font-size:18px;outline:none;background:#fff;">
-              <button type="button" onclick="var i=document.getElementById('inputQty'); var m=parseInt(i.max)||9999; var v=parseInt(i.value)||1; if(v<m) i.value=v+1; else alert('Only '+m+' left');" style="width:44px;height:46px;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">+</button>
+              <button type="button" id="btnPlus" style="width:44px;height:46px;border:none;background:#fff;color:#15472E;font-weight:900;font-size:20px;cursor:pointer;">+</button>
             </div>
-            <button id="btnAddCart" type="button" onclick="addToCartNow(this)" data-id="<%= product._id %>" data-stock="<%= product.units %>" <%= product.units<=0?'disabled':'' %> style="flex:1;height:46px;background:<%= product.units>0?'#15472E':'#ccc' %>;color:#fff;font-weight:800;border:none;border-radius:12px;padding:0 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(21,71,46,0.25);">
+            <button id="btnAddCart" type="button" data-id="<%= product._id %>" <%= product.units<=0?'disabled':'' %> style="flex:1;height:46px;background:<%= product.units>0?'#15472E':'#ccc' %>;color:#fff;font-weight:800;border:none;border-radius:12px;padding:0 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(21,71,46,0.25);pointer-events:auto;position:relative;z-index:10;">
               <i class="fas fa-shopping-cart"></i> ADD TO CART
             </button>
           </div>
@@ -71,75 +71,82 @@
   </div>
 </div>
 
-<!-- LOGIN REQUIRED POPUP -->
-<div id="loginPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+<!-- LOGIN REQUIRED POPUP - ALWAYS ON TOP -->
+<div id="loginPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;align-items:center;justify-content:center;padding:16px;">
   <div style="background:#fff;border-radius:18px;max-width:340px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.2);">
     <div style="width:56px;height:56px;border-radius:50%;background:#fff3cd;border:2px solid #ffc107;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:28px;">🔒</div>
     <h3 style="margin:0;color:#15472E;font-weight:900;font-size:18px;">You're not logged in</h3>
-    <p style="margin:8px 0 0 0;color:#666;font-size:13px;line-height:1.5;">Please log in to continue adding items to your cart.</p>
+    <p style="margin:8px 0 0 0;color:#666;font-size:13px;line-height:1.5;">Log in to continue adding to cart.</p>
     <div style="display:flex;gap:10px;margin-top:18px;">
-      <button onclick="closeLoginPopup()" style="flex:1;height:42px;border:1.5px solid #e0e9dc;background:#fff;border-radius:10px;font-weight:800;color:#444;cursor:pointer;">Cancel</button>
-      <a href="/auth/login?redirect=<%= encodeURIComponent('/products/' + product._id) %>" style="flex:1;height:42px;background:#15472E;color:#fff;border-radius:10px;font-weight:800;text-decoration:none;display:flex;align-items:center;justify-content:center;">Log In</a>
+      <button type="button" id="closePopupBtn" style="flex:1;height:42px;border:1.5px solid #e0e9dc;background:#fff;border-radius:10px;font-weight:800;color:#444;cursor:pointer;">Cancel</button>
+      <a href="/auth/login?redirect=/products/<%= product._id %>" style="flex:1;height:42px;background:#15472E;color:#fff;border-radius:10px;font-weight:800;text-decoration:none;display:flex;align-items:center;justify-content:center;">Log In</a>
     </div>
   </div>
 </div>
 
 <script>
-var IS_LOGGED_IN = <%= (typeof user !== 'undefined' && user) || (typeof currentUser !== 'undefined' && currentUser) || (typeof session !== 'undefined' && session.userId) ? 'true' : 'false' %>;
+// NO CRASH LOGIC - SAFE CHECK
+var IS_LOGGED_IN = false;
+<% if(typeof user !== 'undefined' && user){ %>IS_LOGGED_IN = true;<% } %>
 
-function openLoginPopup(){
-  var p = document.getElementById('loginPopup');
-  p.style.display = 'flex';
-}
-function closeLoginPopup(){
-  document.getElementById('loginPopup').style.display = 'none';
-}
-document.getElementById('loginPopup').addEventListener('click', function(e){
-  if(e.target === this) closeLoginPopup();
-});
-
-function addToCartNow(btn){
-  if(!IS_LOGGED_IN){
-    openLoginPopup();
-    return;
-  }
-  var pid = btn.getAttribute('data-id');
+document.addEventListener('DOMContentLoaded', function(){
   var qtyInput = document.getElementById('inputQty');
-  var qty = parseInt(qtyInput.value) || 1;
-  var original = btn.innerHTML;
-  btn.innerHTML = 'Adding...';
-  btn.disabled = true;
+  var btnMinus = document.getElementById('btnMinus');
+  var btnPlus = document.getElementById('btnPlus');
+  var btnCart = document.getElementById('btnAddCart');
+  var popup = document.getElementById('loginPopup');
+  var closeBtn = document.getElementById('closePopupBtn');
 
-  fetch('/products/add-to-cart', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ productId: pid, qty: qty })
-  })
-  .then(function(res){
-    return res.text().then(function(t){ return {ok:res.ok, status:res.status, text:t}; });
-  })
-  .then(function(r){
-    var data;
-    try{ data = JSON.parse(r.text); }catch(e){
-      if(r.status === 401){ openLoginPopup(); throw new Error('LOGIN_REQUIRED'); }
-      throw new Error('Server error '+r.status);
-    }
-    if(r.status === 401 || data.message === 'LOGIN_REQUIRED'){
-      openLoginPopup();
-      throw new Error('LOGIN_REQUIRED');
-    }
-    if(!r.ok || !data.success) throw new Error(data.message || 'Failed');
-    window.location.href = '/cart';
-  })
-  .catch(function(err){
-    if(err.message === 'LOGIN_REQUIRED') {
-      // keep popup open, don't alert
-    } else {
-      alert(err.message);
-    }
-    btn.innerHTML = original;
-    btn.disabled = false;
-  });
-}
+  if(btnMinus){ btnMinus.addEventListener('click', function(){ var v=parseInt(qtyInput.value)||1; if(v>1) qtyInput.value=v-1; }); }
+  if(btnPlus){ btnPlus.addEventListener('click', function(){ var m=parseInt(qtyInput.max)||9999; var v=parseInt(qtyInput.value)||1; if(v<m) qtyInput.value=v+1; else alert('Only '+m+' left'); }); }
+  
+  function openLoginPopup(){ popup.style.display='flex'; }
+  function closeLoginPopup(){ popup.style.display='none'; }
+  
+  closeBtn.addEventListener('click', closeLoginPopup);
+  popup.addEventListener('click', function(e){ if(e.target===popup) closeLoginPopup(); });
+
+  if(btnCart){
+    btnCart.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if(!IS_LOGGED_IN){
+        openLoginPopup();
+        return;
+      }
+
+      var pid = btnCart.getAttribute('data-id');
+      var qty = parseInt(qtyInput.value) || 1;
+      var original = btnCart.innerHTML;
+      btnCart.innerHTML = 'Adding...';
+      btnCart.disabled = true;
+
+      fetch('/products/add-to-cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ productId: pid, qty: qty })
+      })
+      .then(function(res){
+        return res.json().then(function(data){ return {status:res.status, ok:res.ok, data:data}; });
+      })
+      .then(function(r){
+        if(r.status===401 || (r.data && r.data.message==='LOGIN_REQUIRED')){
+          openLoginPopup();
+          btnCart.innerHTML = original;
+          btnCart.disabled = false;
+          return;
+        }
+        if(!r.ok || !r.data.success) throw new Error(r.data.message||'Failed');
+        window.location.href = '/cart';
+      })
+      .catch(function(err){
+        if(err.message!=='LOGIN_REQUIRED') alert(err.message);
+        btnCart.innerHTML = original;
+        btnCart.disabled = false;
+      });
+    });
+  }
+});
 </script>
