@@ -714,7 +714,7 @@ if (stockRoutes) {
 if (substationsRoutes) {
 
     app.use(
-        "/",
+        "/substations",
         substationsRoutes
     );
 
