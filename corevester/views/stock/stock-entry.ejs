@@ -1,58 +1,86 @@
 <section class="shop-page">
   <div style="margin-bottom:15px">
-    <a href="/stock" class="secondary-btn"><i class="fas fa-arrow-left"></i> Stock</a>
+    <a href="/stock" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i> Stock
+    </a>
   </div>
 
   <div class="form-card">
-    <h1 class="page-title">Update Product</h1>
-    <p class="page-subtitle">Changes here update both the management stock record and the marketplace Product.</p>
+    <h1 class="page-title">Enter Product</h1>
+    <p class="page-subtitle">
+      <strong><%= stock.name %></strong> and <strong><%= stock.category %></strong> come from Stock.
+      Enter the product-specific details below. Added units are deducted from the Stock record and added to the Product record.
+    </p>
 
-    <% if (error) { %><div class="error"><%= error %></div><% } %>
-    <% if (typeof query !== "undefined" && query === "1") { %><div class="notice">Product and stock updated successfully.</div><% } %>
+    <% if (error) { %>
+      <div class="error"><%= error %></div>
+    <% } %>
+
+    <% if (typeof query !== "undefined" && query === "1") { %>
+      <div class="notice">Product created and stock quantity updated successfully.</div>
+    <% } %>
 
     <form action="/stock/<%= stock._id %>" method="POST">
       <div class="form-grid">
         <div class="field">
-          <label for="name">Product name</label>
-          <input id="name" name="name" value="<%= stock.name || '' %>" required>
+          <label>Product name</label>
+          <input value="<%= stock.name %>" readonly>
         </div>
 
         <div class="field">
-          <label for="category">Category</label>
-          <input id="category" name="category" value="<%= stock.category || (stock.product && stock.product.category) || '' %>" required>
+          <label>Category</label>
+          <input value="<%= stock.category %>" readonly>
+        </div>
+
+        <div class="field">
+          <label>Units currently in stock</label>
+          <input value="<%= stock.units %>" readonly>
+        </div>
+
+        <div class="field">
+          <label for="units">Units to add to product</label>
+          <input id="units" name="units" type="number" min="1" step="1" value="<%= old.units || '' %>" required>
         </div>
 
         <div class="field full">
           <label for="image">Product image URL</label>
-          <input id="image" name="image" type="url" value="<%= stock.image || (stock.product && stock.product.image) || '' %>"
-                 placeholder="https://example.com/product-image.jpg">
-          <small style="color:var(--muted)">Paste a URL only. There is no file upload.</small>
+          <input id="image" name="image" type="url" value="<%= old.image || '' %>" placeholder="https://example.com/product-image.jpg">
         </div>
 
         <div class="field">
-          <label for="units">Units</label>
-          <input id="units" name="units" type="number" min="0" step="1" value="<%= stock.units %>" required>
-        </div>
-
-        <div class="field">
-          <label for="unitBuyPrice">Unit buy price (KSh)</label>
-          <input id="unitBuyPrice" name="unitBuyPrice" type="number" min="0" step="0.01" value="<%= stock.unitBuyPrice %>">
+          <label for="buyPrice">Unit buy price (KSh)</label>
+          <input id="buyPrice" name="buyPrice" type="number" min="0" step="0.01" value="<%= old.buyPrice ?? stock.buyPrice ?? 0 %>">
         </div>
 
         <div class="field">
           <label for="unitSellPrice">Unit selling price (KSh)</label>
-          <input id="unitSellPrice" name="unitSellPrice" type="number" min="0" step="0.01" value="<%= stock.unitSellPrice || (stock.product && stock.product.unitSellPrice) || 0 %>" required>
+          <input id="unitSellPrice" name="unitSellPrice" type="number" min="0" step="0.01" value="<%= old.unitSellPrice ?? 0 %>" required>
+        </div>
+
+        <div class="field">
+          <label for="substation">Substation</label>
+          <select id="substation" name="substation">
+            <option value="">Do not save to a substation</option>
+            <% substations.forEach(substation => { %>
+              <option value="<%= substation._id %>" <%= String(old.substation || '') === String(substation._id) ? 'selected' : '' %>>
+                <%= substation.name %>
+              </option>
+            <% }) %>
+          </select>
         </div>
 
         <div class="field full">
           <label for="description">Description</label>
-          <textarea id="description" name="description"><%= (stock.product && stock.product.description) || '' %></textarea>
+          <textarea id="description" name="description"><%= old.description || '' %></textarea>
         </div>
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="primary-btn"><i class="fas fa-save"></i> Save Changes</button>
-        <a href="/products/<%= stock.product && stock.product._id ? stock.product._id : '' %>" class="secondary-btn">View Product</a>
+        <button type="submit" class="primary-btn">
+          <i class="fas fa-plus-circle"></i> Add Product
+        </button>
+
+        <a href="/stock" class="secondary-btn">Cancel</a>
       </div>
     </form>
   </div>

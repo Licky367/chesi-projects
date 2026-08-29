@@ -2,13 +2,21 @@
   <div style="display:flex;justify-content:space-between;gap:12px;align-items:end;flex-wrap:wrap">
     <div>
       <h1 class="page-title">Stock Management</h1>
-      <p class="page-subtitle">Manage product quantity, buying price, selling price and image URLs.</p>
+      <p class="page-subtitle">Add stock records first, then open a stock card to enter marketplace product details.</p>
     </div>
-    <a href="/stock/new" class="primary-btn"><i class="fas fa-plus"></i> Add Product</a>
+
+    <a href="/stock/new" class="primary-btn">
+      <i class="fas fa-plus"></i> Add Stock
+    </a>
   </div>
 
-  <% if (error) { %><div class="error"><%= error %></div><% } %>
-  <% if (typeof query !== "undefined" && query === "1") { %><div class="notice">Stock updated successfully.</div><% } %>
+  <% if (error) { %>
+    <div class="error"><%= error %></div>
+  <% } %>
+
+  <% if (typeof query !== "undefined" && query === "1") { %>
+    <div class="notice">Stock saved successfully.</div>
+  <% } %>
 
   <% if (!stocks.length) { %>
     <div class="empty" style="margin-top:25px">
@@ -19,7 +27,7 @@
     <section class="category-section">
       <div class="category-head">
         <h2>All Stock</h2>
-        <span>Swipe left/right →</span>
+        <span>Tap a card to enter a product →</span>
       </div>
 
       <div class="product-row">
@@ -39,20 +47,13 @@
 
               <div class="stock-data">
                 <div class="data-cell">
-                  <small>Units</small>
+                  <small>Available units</small>
                   <strong><%= stock.units %></strong>
                 </div>
+
                 <div class="data-cell">
                   <small>Buy / unit</small>
-                  <strong>KSh <%= Number(stock.unitBuyPrice || 0).toLocaleString() %></strong>
-                </div>
-                <div class="data-cell">
-                  <small>Sell / unit</small>
-                  <strong>KSh <%= Number(stock.unitSellPrice || 0).toLocaleString() %></strong>
-                </div>
-                <div class="data-cell">
-                  <small>Margin</small>
-                  <strong>KSh <%= Number((stock.unitSellPrice || 0) - (stock.unitBuyPrice || 0)).toLocaleString() %></strong>
+                  <strong>KSh <%= Number(stock.buyPrice || 0).toLocaleString() %></strong>
                 </div>
               </div>
             </div>
