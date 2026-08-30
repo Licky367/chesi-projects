@@ -3,82 +3,254 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= typeof title !== "undefined" ? title : "COREVESTER" %></title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <title>
+    <%= typeof title !== "undefined" ? title : "COREVESTER" %>
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  >
+
   <link rel="stylesheet" href="/css/shopt.css">
 </head>
+
 <body>
+
 <header class="site-header">
+
   <a href="/" class="brand">
-    <img src="/images/corevester.png" alt="CoreVester">
+    <img
+      src="/images/corevester.png"
+      alt="CoreVester"
+    >
   </a>
 
   <div class="header-actions">
-    <a href="/carts" class="cart-pill" aria-label="Shopping cart">
+
+    <a
+      href="/carts"
+      class="cart-pill"
+      aria-label="Shopping cart"
+    >
       <i class="fas fa-shopping-cart"></i>
-      <span><%= typeof cartCount !== "undefined" ? cartCount : 0 %></span>
+
+      <span>
+        <%= typeof cartCount !== "undefined" ? cartCount : 0 %>
+      </span>
     </a>
-    <button type="button" class="menu-button" onclick="openMenu()" aria-label="Open menu">
+
+    <button
+      type="button"
+      class="menu-button"
+      onclick="openMenu()"
+      aria-label="Open menu"
+    >
       <i class="fas fa-bars"></i>
     </button>
+
   </div>
+
 </header>
 
-<div id="menuOverlay" class="menu-overlay" onclick="closeMenu()"></div>
 
-<aside id="menuSidebar" class="menu-sidebar">
+<div
+  id="menuOverlay"
+  class="menu-overlay"
+  onclick="closeMenu()"
+></div>
+
+
+<aside
+  id="menuSidebar"
+  class="menu-sidebar"
+>
+
   <div class="menu-head">
-    <strong>COREVESTER</strong>
-    <button type="button" onclick="closeMenu()" class="close-button">
+
+    <strong>
+      COREVESTER
+    </strong>
+
+    <button
+      type="button"
+      onclick="closeMenu()"
+      class="close-button"
+    >
       <i class="fas fa-times"></i>
     </button>
+
   </div>
 
+
   <nav class="menu-nav">
-    <a href="/"><i class="fas fa-home"></i> Home</a>
-    <a href="/products"><i class="fas fa-boxes"></i> Products</a>
-    <a href="/carts"><i class="fas fa-shopping-basket"></i> Cart</a>
-    <a href="/packages"><i class="fas fa-truck"></i> Packages</a>
-    <a href="/stock"><i class="fas fa-warehouse"></i> Stock</a>
-    <a href="/about"><i class="fas fa-info-circle"></i> About</a>
-    <a href="/contact"><i class="fas fa-phone"></i> Contact</a>
+
+    <a href="/">
+      <i class="fas fa-home"></i>
+      Home
+    </a>
+
+
+    <a href="/products">
+      <i class="fas fa-boxes"></i>
+      Products
+    </a>
+
+
+    <a href="/carts">
+      <i class="fas fa-shopping-basket"></i>
+      Cart
+    </a>
+
+
+    <a href="/packages">
+      <i class="fas fa-truck"></i>
+      Packages
+    </a>
+
+
+    <% if (
+      typeof user !== "undefined" &&
+      user &&
+      user.role === "admin"
+    ) { %>
+
+      <a href="/stock">
+        <i class="fas fa-warehouse"></i>
+        Stock
+      </a>
+
+
+      <a href="/substations">
+        <i class="fas fa-store"></i>
+        Substations
+      </a>
+
+    <% } %>
+
+
+    <a href="/about">
+      <i class="fas fa-info-circle"></i>
+      About
+    </a>
+
+
+    <a href="/contact">
+      <i class="fas fa-phone"></i>
+      Contact
+    </a>
+
 
     <div class="menu-divider"></div>
 
-    <% if (typeof user !== "undefined" && user) { %>
+
+    <% if (
+      typeof user !== "undefined" &&
+      user
+    ) { %>
+
       <div class="user-box">
+
         <i class="fas fa-user-circle"></i>
-        <span><%= user.name || user.email || "Account" %></span>
+
+        <span>
+          <%= user.name || user.email || "Account" %>
+        </span>
+
       </div>
-      <a href="/auth/logout" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+
+
+      <a
+        href="/auth/logout"
+        class="logout-link"
+      >
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
+      </a>
+
     <% } else { %>
-      <a href="/auth/login" class="login-link"><i class="fas fa-sign-in-alt"></i> Log In</a>
-      <a href="/auth/register" class="signup-link"><i class="fas fa-user-plus"></i> Sign Up</a>
+
+      <a
+        href="/auth/login"
+        class="login-link"
+      >
+        <i class="fas fa-sign-in-alt"></i>
+        Log In
+      </a>
+
+
+      <a
+        href="/auth/register"
+        class="signup-link"
+      >
+        <i class="fas fa-user-plus"></i>
+        Sign Up
+      </a>
+
     <% } %>
+
   </nav>
+
 </aside>
 
+
 <main class="page-shell">
+
   <%- body %>
+
 </main>
 
+
 <script>
+
 (function () {
+
   function openMenu() {
-    document.getElementById("menuSidebar").classList.add("open");
-    document.getElementById("menuOverlay").classList.add("show");
-    document.body.classList.add("menu-open");
+
+    document
+      .getElementById("menuSidebar")
+      .classList
+      .add("open");
+
+    document
+      .getElementById("menuOverlay")
+      .classList
+      .add("show");
+
+    document.body
+      .classList
+      .add("menu-open");
   }
+
 
   function closeMenu() {
-    document.getElementById("menuSidebar").classList.remove("open");
-    document.getElementById("menuOverlay").classList.remove("show");
-    document.body.classList.remove("menu-open");
+
+    document
+      .getElementById("menuSidebar")
+      .classList
+      .remove("open");
+
+    document
+      .getElementById("menuOverlay")
+      .classList
+      .remove("show");
+
+    document.body
+      .classList
+      .remove("menu-open");
   }
 
-  window.openMenu = openMenu;
-  window.closeMenu = closeMenu;
+
+  window.openMenu =
+    openMenu;
+
+  window.closeMenu =
+    closeMenu;
+
 })();
+
 </script>
+
 </body>
 </html>
