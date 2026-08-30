@@ -3,8 +3,8 @@ const router = express.Router();
 
 const controller = require('../controllers/packages');
 const requireLogin = require('../middleware/requireLogin');
+const requireStaffOrAdmin = require('../middleware/requireStaffOrAdmin');
 const requireStaff = require('../middleware/requireStaff');
-const requireStaffOrAdmin = requireStaff;
 
 // IMPORTANT: staff routes must be declared before /:id.
 router.get('/staff', requireStaffOrAdmin, controller.staffList);
