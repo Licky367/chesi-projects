@@ -5,70 +5,111 @@ const filtered = currentTab==="all" ? userList : userList.filter(u=>String(u.rol
 const adminCount = userList.filter(u=>u.role==="admin").length;
 const staffCount = userList.filter(u=>u.role==="staff").length;
 const clientCount = userList.filter(u=>u.role==="client").length;
+const totalCount = userList.length;
+
+function isActive(t){ return currentTab===t; }
 %>
 
 <div style="max-width:1240px;margin:0 auto;padding:12px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif;background:#f6fbf6;">
-  
-  <!-- GRID: left 260px + right 1fr -->
-  <div style="display:grid;grid-template-columns:260px 1fr;gap:14px;align-items:start;">
 
-    <!-- LEFT -->
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:10px;">
-        <div style="font-size:11px;font-weight:800;color:#3a6b4a;letter-spacing:0.8px;padding:6px 8px;">SECTIONS</div>
-        <a href="/auth/users?tab=all" style="display:flex;align-items:center;gap:10px;padding:12px 12px;border-radius:10px;text-decoration:none;font-weight:800;font-size:13px;<%= currentTab==='all' ? 'background:#0a4d1e;color:#fff;' : 'background:#fff;color:#1a3d1a;border:1px solid #dbe9dc;' %>"><span style="width:22px;">👥</span> All Users</a>
-        <a href="/auth/users?tab=admin" style="display:flex;align-items:center;gap:10px;padding:12px 12px;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;margin-top:6px;<%= currentTab==='admin' ? 'background:#0a4d1e;color:#fff;' : 'background:#fff;color:#1a3d1a;border:1px solid #dbe9dc;' %>"><span style="width:22px;">🛡️</span> Administrators</a>
-        <a href="/auth/users?tab=staff" style="display:flex;align-items:center;gap:10px;padding:12px 12px;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;margin-top:6px;<%= currentTab==='staff' ? 'background:#0a4d1e;color:#fff;' : 'background:#fff;color:#1a3d1a;border:1px solid #dbe9dc;' %>"><span style="width:22px;">⚙️</span> Staff</a>
-        <a href="/auth/users?tab=client" style="display:flex;align-items:center;gap:10px;padding:12px 12px;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;margin-top:6px;<%= currentTab==='client' ? 'background:#0a4d1e;color:#fff;' : 'background:#fff;color:#1a3d1a;border:1px solid #dbe9dc;' %>"><span style="width:22px;">👤</span> Clients</a>
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:start;">
+
+    <!-- LEFT: OVERVIEW NOW DOES THE FILTERING -->
+    <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:11px;font-weight:900;letter-spacing:0.8px;color:#2e5a36;padding:4px 6px 6px 6px;">OVERVIEW</div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <!-- Total Users = All -->
+        <a href="/auth/users?tab=all" style="display:flex;justify-content:space-between;align-items:center;padding:13px 12px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:<%= isActive('all')?'900':'600' %>;<%= isActive('all') ? 'background:#0a4d1e;color:#fff;border:1.5px solid #0a4d1e;' : 'background:#fff;color:#1a3d1a;border:1.5px solid #dbe9dc;' %>">
+          <span style="display:flex;align-items:center;gap:8px;">👥 Total Users</span>
+          <span style="min-width:22px;height:22px;display:grid;place-items:center;border-radius:20px;font-size:11px;font-weight:800;<%= isActive('all') ? 'background:#fff;color:#0a4d1e;' : 'background:#e8f2e6;color:#0a4d1e;' %>"><%= totalCount %></span>
+        </a>
+
+        <a href="/auth/users?tab=admin" style="display:flex;justify-content:space-between;align-items:center;padding:13px 12px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:<%= isActive('admin')?'900':'600' %>;<%= isActive('admin') ? 'background:#0a4d1e;color:#fff;border:1.5px solid #0a4d1e;' : 'background:#fff;color:#1a3d1a;border:1.5px solid #dbe9dc;' %>">
+          <span style="display:flex;align-items:center;gap:8px;">🛡️ Administrators</span>
+          <span style="min-width:22px;height:22px;display:grid;place-items:center;border-radius:20px;font-size:11px;font-weight:800;<%= isActive('admin') ? 'background:#fff;color:#0a4d1e;' : 'background:#e8f2e6;color:#0a4d1e;' %>"><%= adminCount %></span>
+        </a>
+
+        <a href="/auth/users?tab=staff" style="display:flex;justify-content:space-between;align-items:center;padding:13px 12px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:<%= isActive('staff')?'900':'600' %>;<%= isActive('staff') ? 'background:#0a4d1e;color:#fff;border:1.5px solid #0a4d1e;' : 'background:#fff;color:#1a3d1a;border:1.5px solid #dbe9dc;' %>">
+          <span style="display:flex;align-items:center;gap:8px;">⚙️ Staff</span>
+          <span style="min-width:22px;height:22px;display:grid;place-items:center;border-radius:20px;font-size:11px;font-weight:800;<%= isActive('staff') ? 'background:#fff;color:#0a4d1e;' : 'background:#e8f2e6;color:#0a4d1e;' %>"><%= staffCount %></span>
+        </a>
+
+        <a href="/auth/users?tab=client" style="display:flex;justify-content:space-between;align-items:center;padding:13px 12px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:<%= isActive('client')?'900':'600' %>;<%= isActive('client') ? 'background:#0a4d1e;color:#fff;border:1.5px solid #0a4d1e;' : 'background:#fff;color:#1a3d1a;border:1.5px solid #dbe9dc;' %>">
+          <span style="display:flex;align-items:center;gap:8px;">👤 Clients</span>
+          <span style="min-width:22px;height:22px;display:grid;place-items:center;border-radius:20px;font-size:11px;font-weight:800;<%= isActive('client') ? 'background:#fff;color:#0a4d1e;' : 'background:#e8f2e6;color:#0a4d1e;' %>"><%= clientCount %></span>
+        </a>
       </div>
 
-      <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:10px;">
-        <div style="font-size:11px;font-weight:800;color:#3a6b4a;letter-spacing:0.8px;padding:6px 8px;">OVERVIEW</div>
-        <div style="background:#fff;border-radius:10px;padding:4px 8px;">
-          <div style="display:flex;justify-content:space-between;padding:10px 4px;font-size:13px;border-bottom:1px solid #eef2ee;"><span>👥 Total Users</span><b><%= userList.length %></b></div>
-          <div style="display:flex;justify-content:space-between;padding:10px 4px;font-size:13px;border-bottom:1px solid #eef2ee;"><span>🛡️ Administrators</span><b><%= adminCount %></b></div>
-          <div style="display:flex;justify-content:space-between;padding:10px 4px;font-size:13px;border-bottom:1px solid #eef2ee;"><span>⚙️ Staff</span><b><%= staffCount %></b></div>
-          <div style="display:flex;justify-content:space-between;padding:10px 4px;font-size:13px;"><span>👤 Clients</span><b><%= clientCount %></b></div>
-        </div>
-        <a href="/auth/users/invitation" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;padding:12px;border:1.5px solid #0a4d1e;border-radius:10px;background:#fff;color:#0a4d1e;font-weight:800;text-decoration:none;font-size:13px;">+ Invite User</a>
-      </div>
+      <a href="/auth/users/invitation" style="margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1.5px solid #0a4d1e;border-radius:10px;background:#fff;color:#0a4d1e;font-weight:800;text-decoration:none;font-size:13px;">+ Invite User</a>
     </div>
 
-    <!-- RIGHT -->
+    <!-- RIGHT: ORDERLY CONTAINERS -->
     <div style="display:flex;flex-direction:column;gap:14px;">
-      <div style="background:#e8f2e6;border:1.5px solid #cfe1d3;border-radius:14px;padding:16px;display:flex;align-items:center;gap:16px;">
-        <div style="width:56px;height:56px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;">👥</div>
-        <div><div style="font-size:14px;font-weight:900;color:#0a4d1e;letter-spacing:0.5px;">USER MANAGEMENT</div><div style="font-size:12px;color:#5a7d5a;margin-top:2px;">Organize accounts, roles and staff assignments.</div></div>
+
+      <!-- 1. USER MANAGEMENT HEADER -->
+      <div style="background:#e8f2e6;border:1.5px solid #cfe1d3;border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:16px;">
+        <div style="width:56px;height:56px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.06);">👥</div>
+        <div>
+          <div style="font-size:14px;font-weight:900;letter-spacing:0.5px;color:#0a4d1e;">USER MANAGEMENT</div>
+          <div style="font-size:12px;color:#5a7d5a;margin-top:3px;">Organize accounts, roles and staff assignments.</div>
+        </div>
       </div>
 
+      <!-- 2. ACCOUNTS CONTAINER -->
       <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:10px;">
-        <div style="background:#fff;border-radius:12px;padding:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-            <div><div style="font-size:13px;font-weight:900;display:flex;align-items:center;gap:6px;">👥 ALL USERS</div><div style="font-size:11px;color:#777;margin-top:2px;">Accounts currently shown in this section.</div></div>
-            <select onchange="location.href='/auth/users?tab='+this.value" style="padding:8px 12px;border-radius:8px;border:1.5px solid #d5e8d0;background:#fff;font-size:12px;">
-              <option value="all" <%= currentTab==='all'?'selected':'' %>>All Users</option><option value="admin" <%= currentTab==='admin'?'selected':'' %>>Administrators</option><option value="staff" <%= currentTab==='staff'?'selected':'' %>>Staff</option><option value="client" <%= currentTab==='client'?'selected':'' %>>Clients</option>
-            </select>
+        <div style="background:#fff;border:1.5px solid #e6efe6;border-radius:12px;padding:12px 14px;">
+          
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid #eef2ee;">
+            <div>
+              <div style="font-size:12px;font-weight:900;letter-spacing:0.4px;color:#0a4d1e;">👥 <%= currentTab==='all' ? 'ALL USERS' : currentTab.toUpperCase()+'S' %></div>
+              <div style="font-size:11px;color:#7a8a7a;margin-top:2px;">Accounts currently shown in this section.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;font-weight:800;background:#e8f2e6;color:#0a4d1e;padding:6px 10px;border-radius:20px;"><%= filtered.length %> shown</span>
+            </div>
           </div>
 
           <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px;">
-            <% filtered.forEach(acc=>{ %>
-            <div style="background:#fff;border:1.5px solid #dbe9dc;border-radius:12px;padding:14px;display:flex;align-items:center;gap:14px;">
-              <div style="width:52px;height:52px;background:#d9efdb;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">👤</div>
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:14px;font-weight:800;color:#0a2e14;"><%= acc.name %></div>
-                <div style="display:inline-flex;margin-top:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;<%= acc.role==='admin'?'background:#e8e0f7;color:#4a2c8a;':acc.role==='staff'?'background:#dbeeff;color:#0a4d8a;':'background:#fff3cd;color:#7a5a00;' %>"><%= acc.role %></div>
-                <div style="margin-top:6px;font-size:11px;color:#555;overflow-wrap:break-word;">✉️ <%= acc.email %></div>
-                <div style="margin-top:2px;font-size:11px;color:#555;">📅 Joined <%= acc.createdAt ? new Date(acc.createdAt).toDateString() : 'Recently' %></div>
+            <% if(!filtered.length){ %>
+              <div style="padding:30px;text-align:center;border:1.5px dashed #cfe1d3;border-radius:10px;background:#f9fcf9;">
+                <div style="font-size:28px;">🙈</div>
+                <div style="font-size:13px;font-weight:800;margin-top:6px;">No users in this section</div>
               </div>
-              <button type="button" onclick="document.getElementById('m-<%= acc._id %>').style.display = document.getElementById('m-<%= acc._id %>').style.display==='block' ? 'none' : 'block'" style="padding:8px 12px;border-radius:8px;border:1.5px solid #b8d8b8;background:#f5faf5;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">⋮ Actions</button>
-            </div>
-            <% }) %>
+            <% } else { %>
+              <% filtered.forEach(acc=>{ %>
+                <div style="background:#fff;border:1.5px solid #dce9dc;border-radius:12px;padding:14px;display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;">
+                  <div style="width:52px;height:52px;background:#d9efdb;border-radius:50%;display:grid;place-items:center;font-size:24px;">👤</div>
+                  <div style="min-width:0;">
+                    <div style="font-size:14px;font-weight:800;color:#0a2e14;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= acc.name %></div>
+                    <div style="margin-top:4px;display:inline-flex;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:800;<%= acc.role==='admin'?'background:#e8e0f7;color:#4a2c8a;':acc.role==='staff'?'background:#dbeeff;color:#164a7a;':'background:#fff6c5;color:#7a5a00;' %>"><%= acc.role.toUpperCase() %></div>
+                    <div style="margin-top:6px;font-size:11px;color:#555;">✉️ <%= acc.email %></div>
+                    <div style="font-size:11px;color:#777;margin-top:2px;">📅 Joined <%= acc.createdAt ? new Date(acc.createdAt).toISOString().slice(0,10) : 'Recently' %></div>
+                  </div>
+                  <div style="position:relative;">
+                    <button type="button" onclick="var m=document.getElementById('m-<%= acc._id %>'); m.style.display=m.style.display==='block'?'none':'block'" style="padding:8px 12px;border-radius:8px;border:1.5px solid #b8d8b8;background:#f5faf5;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">⋮ Actions</button>
+                    <div id="m-<%= acc._id %>" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1.5px solid #ddd;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,0.12);z-index:10;min-width:150px;overflow:hidden;">
+                      <form action="/auth/users/<%= acc._id %>/role" method="POST" style="padding:8px;display:flex;flex-direction:column;gap:6px;">
+                        <select name="role" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:12px;"><option value="admin" <%= acc.role==='admin'?'selected':'' %>>Admin</option><option value="staff" <%= acc.role==='staff'?'selected':'' %>>Staff</option><option value="client" <%= acc.role==='client'?'selected':'' %>>Client</option></select>
+                        <button type="submit" style="padding:8px;background:#0a4d1e;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;">Save Role</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              <% }) %>
+            <% } %>
           </div>
+
         </div>
       </div>
-    </div>
 
+    </div>
   </div>
 </div>
 
-<style>@media(max-width:800px){ div[style*="grid-template-columns:260px 1fr"]{grid-template-columns:1fr !important;}}</style>
+<style>
+@media(max-width:860px){
+  div[style*="grid-template-columns:280px 1fr"]{grid-template-columns:1fr !important;}
+  div[style*="grid-template-columns:52px 1fr auto"]{grid-template-columns:52px 1fr !important;}
+}
+</style>
