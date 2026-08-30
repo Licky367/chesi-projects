@@ -1,0 +1,616 @@
+<section class="shop-page">
+
+  <div style="margin-bottom:15px">
+    <a
+      href="/packages/<%= packageDoc._id %>"
+      class="secondary-btn"
+    >
+      <i class="fas fa-arrow-left"></i>
+      Package
+    </a>
+  </div>
+
+  <% if (error) { %>
+    <div
+      class="error"
+      style="max-width:760px;margin:0 auto 15px"
+    >
+      <%= error %>
+    </div>
+  <% } %>
+
+  <div
+    class="summary"
+    style="
+      max-width:760px;
+      margin:0 auto
+    "
+  >
+
+    <div class="package-top">
+
+      <div>
+        <h1 style="margin:0">
+          Payment Summary
+        </h1>
+
+        <p
+          style="
+            margin:7px 0 0;
+            color:var(--muted)
+          "
+        >
+          Package
+          <strong>
+            #<%= String(
+              packageDoc._id
+            ).slice(-8) %>
+          </strong>
+        </p>
+      </div>
+
+      <span
+        id="payment-status"
+        class="status"
+      >
+        <%= summary.paymentStatus === "partialPaid"
+          ? "PARTIALLY PAID"
+          : summary.paymentStatus === "paid"
+            ? "PAID"
+            : "UNPAID" %>
+      </span>
+
+    </div>
+
+    <!-- AMOUNTS -->
+
+    <div
+      style="
+        margin-top:22px
+      "
+    >
+
+      <div class="total-line">
+        <span>
+          Total amount
+        </span>
+
+        <strong>
+          KSh
+          <%= Number(
+            summary.totalAmount
+          ).toLocaleString() %>
+        </strong>
+      </div>
+
+      <div
+        class="total-line"
+        style="margin-top:10px"
+      >
+        <span>
+          Total paid
+        </span>
+
+        <strong
+          id="total-paid"
+        >
+          KSh
+          <%= Number(
+            summary.totalPaid
+          ).toLocaleString() %>
+        </strong>
+      </div>
+
+      <div
+        class="total-line"
+        style="margin-top:10px"
+      >
+        <span>
+          Arrears
+        </span>
+
+        <strong
+          id="arrears"
+        >
+          KSh
+          <%= Number(
+            summary.arrearsAmount
+          ).toLocaleString() %>
+        </strong>
+      </div>
+
+    </div>
+
+    <!-- PAYMENT FORM -->
+
+    <div
+      id="payment-area"
+      <% if (summary.paymentStatus === "paid") { %>
+        style="display:none"
+      <% } %>
+      style="
+        margin-top:24px;
+        padding-top:22px;
+        border-top:1px solid var(--border)
+      "
+    >
+
+      <h2
+        style="
+          margin:0 0 8px;
+          font-size:20px
+        "
+      >
+        Verify M-Pesa Payment
+      </h2>
+
+      <p
+        style="
+          margin:0;
+          color:var(--muted);
+          line-height:1.5
+        "
+      >
+        Enter the transaction code from the
+        M-Pesa confirmation message. The amount
+        will be obtained from M-Pesa. You do not
+        enter the amount yourself.
+      </p>
+
+      <form
+        id="verification-form"
+        action="/packages/<%= packageDoc._id %>/payment-summary/verify"
+        method="POST"
+        style="margin-top:18px"
+      >
+
+        <label
+          for="transactionCode"
+          style="
+            display:block;
+            margin-bottom:7px;
+            font-weight:600
+          "
+        >
+          M-Pesa transaction code
+        </label>
+
+        <input
+          id="transactionCode"
+          name="transactionCode"
+          type="text"
+          maxlength="30"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="Enter transaction code"
+          required
+          style="
+            width:100%;
+            box-sizing:border-box;
+            padding:14px;
+            border:1px solid var(--border);
+            border-radius:9px;
+            background:var(--card);
+            color:inherit;
+            font-size:16px;
+            text-transform:uppercase
+          "
+        >
+
+        <button
+          id="verify-button"
+          type="submit"
+          class="primary-btn"
+          style="
+            width:100%;
+            margin-top:12px
+          "
+        >
+          <i class="fas fa-check-circle"></i>
+          Verify Payment
+        </button>
+
+      </form>
+
+      <div
+        id="message"
+        role="status"
+        aria-live="polite"
+        style="
+          display:none;
+          margin-top:14px;
+          padding:13px;
+          border-radius:9px;
+          line-height:1.5
+        "
+      ></div>
+
+    </div>
+
+    <!-- PAID -->
+
+    <div
+      id="paid-message"
+      <% if (summary.paymentStatus !== "paid") { %>
+        style="display:none"
+      <% } %>
+      style="
+        margin-top:24px;
+        padding:16px;
+        border-radius:10px;
+        background:rgba(46,204,113,.10);
+        border:1px solid rgba(46,204,113,.25)
+      "
+    >
+
+      <strong>
+        Payment complete
+      </strong>
+
+      <div
+        style="
+          margin-top:5px;
+          color:var(--muted)
+        "
+      >
+        This package has been fully paid.
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+<script>
+(function () {
+
+  const form =
+    document.getElementById(
+      "verification-form"
+    );
+
+  const input =
+    document.getElementById(
+      "transactionCode"
+    );
+
+  const button =
+    document.getElementById(
+      "verify-button"
+    );
+
+  const message =
+    document.getElementById(
+      "message"
+    );
+
+  const statusElement =
+    document.getElementById(
+      "payment-status"
+    );
+
+  const totalPaidElement =
+    document.getElementById(
+      "total-paid"
+    );
+
+  const arrearsElement =
+    document.getElementById(
+      "arrears"
+    );
+
+  const paymentArea =
+    document.getElementById(
+      "payment-area"
+    );
+
+  const paidMessage =
+    document.getElementById(
+      "paid-message"
+    );
+
+  const packageId =
+    "<%= packageDoc._id %>";
+
+  let pollTimer =
+    null;
+
+  let pollCount =
+    0;
+
+  function setMessage(
+    text,
+    type
+  ) {
+    message.style.display =
+      "block";
+
+    message.textContent =
+      text;
+
+    if (type === "error") {
+      message.style.background =
+        "rgba(231,76,60,.10)";
+
+      message.style.border =
+        "1px solid rgba(231,76,60,.25)";
+    } else {
+      message.style.background =
+        "rgba(52,152,219,.10)";
+
+      message.style.border =
+        "1px solid rgba(52,152,219,.25)";
+    }
+  }
+
+  function updateSummary(
+    data
+  ) {
+    totalPaidElement.textContent =
+      "KSh " +
+      Number(
+        data.totalPaid || 0
+      ).toLocaleString();
+
+    arrearsElement.textContent =
+      "KSh " +
+      Number(
+        data.arrearsAmount || 0
+      ).toLocaleString();
+
+    if (
+      data.paymentStatus ===
+      "paid"
+    ) {
+      statusElement.textContent =
+        "PAID";
+
+      statusElement.className =
+        "status paid";
+
+      paymentArea.style.display =
+        "none";
+
+      paidMessage.style.display =
+        "block";
+
+      return true;
+    }
+
+    if (
+      data.paymentStatus ===
+      "partialPaid"
+    ) {
+      statusElement.textContent =
+        "PARTIALLY PAID";
+
+      statusElement.className =
+        "status partialPaid";
+    } else {
+      statusElement.textContent =
+        "UNPAID";
+
+      statusElement.className =
+        "status unpaid";
+    }
+
+    return false;
+  }
+
+  async function checkStatus() {
+    try {
+      const response =
+        await fetch(
+          `/packages/${packageId}/payment-summary/status`,
+          {
+            method:
+              "GET",
+
+            headers: {
+              Accept:
+                "application/json"
+            },
+
+            cache:
+              "no-store"
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!data.ok) {
+        return;
+      }
+
+      const paid =
+        updateSummary(
+          data
+        );
+
+      const verification =
+        data.verification;
+
+      if (
+        verification &&
+        verification.status ===
+          "confirmed"
+      ) {
+        setMessage(
+          "Payment verified successfully. The package payment totals have been updated.",
+          "success"
+        );
+
+        if (paid) {
+          clearInterval(
+            pollTimer
+          );
+        }
+
+        return;
+      }
+
+      if (
+        verification &&
+        verification.status ===
+          "failed"
+      ) {
+        setMessage(
+          verification.message ||
+          "M-Pesa could not verify this transaction.",
+          "error"
+        );
+
+        button.disabled =
+          false;
+
+        input.disabled =
+          false;
+
+        clearInterval(
+          pollTimer
+        );
+      }
+
+    } catch (err) {
+      console.error(
+        "Payment status polling:",
+        err
+      );
+    }
+  }
+
+  function startPolling() {
+    pollCount = 0;
+
+    clearInterval(
+      pollTimer
+    );
+
+    pollTimer =
+      setInterval(
+        async function () {
+          pollCount++;
+
+          await checkStatus();
+
+          if (
+            pollCount >= 40
+          ) {
+            clearInterval(
+              pollTimer
+            );
+
+            button.disabled =
+              false;
+
+            input.disabled =
+              false;
+
+            setMessage(
+              "Verification is still pending. You may leave this page and return later. The package will update when M-Pesa sends the verification result.",
+              "info"
+            );
+          }
+        },
+        3000
+      );
+  }
+
+  form.addEventListener(
+    "submit",
+    async function (event) {
+      event.preventDefault();
+
+      const code =
+        input.value
+          .trim()
+          .toUpperCase();
+
+      if (!code) {
+        setMessage(
+          "Enter the M-Pesa transaction code.",
+          "error"
+        );
+
+        return;
+      }
+
+      button.disabled =
+        true;
+
+      input.disabled =
+        true;
+
+      setMessage(
+        "Sending the transaction code for M-Pesa verification...",
+        "info"
+      );
+
+      try {
+        const response =
+          await fetch(
+            form.action,
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/x-www-form-urlencoded;charset=UTF-8",
+
+                Accept:
+                  "application/json"
+              },
+
+              body:
+                new URLSearchParams({
+                  transactionCode:
+                    code
+                })
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (
+          !response.ok ||
+          !data.ok
+        ) {
+          throw new Error(
+            data.message ||
+            "Unable to start M-Pesa verification."
+          );
+        }
+
+        setMessage(
+          data.message ||
+          "Transaction submitted. Waiting for M-Pesa confirmation...",
+          "info"
+        );
+
+        startPolling();
+
+      } catch (err) {
+        button.disabled =
+          false;
+
+        input.disabled =
+          false;
+
+        setMessage(
+          err.message ||
+          "Unable to verify this transaction.",
+          "error"
+        );
+      }
+    }
+  );
+
+  checkStatus();
+
+})();
+</script>

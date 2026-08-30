@@ -1,0 +1,289 @@
+<section class="shop-page">
+
+  <div style="margin-bottom:15px">
+    <a
+      href="/packages"
+      class="secondary-btn"
+    >
+      <i class="fas fa-arrow-left"></i>
+      Packages
+    </a>
+  </div>
+
+  <% if (packageDoc) { %>
+
+    <% if (error) { %>
+      <div
+        class="error"
+        style="margin-bottom:15px"
+      >
+        <%= error %>
+      </div>
+    <% } %>
+
+    <div class="summary">
+
+      <div class="package-top">
+
+        <div>
+          <h1 style="margin:0">
+            Package
+            <%= String(
+              packageDoc._id
+            ).slice(-8) %>
+          </h1>
+
+          <p
+            style="
+              margin:6px 0;
+              color:var(--muted)
+            "
+          >
+            <%= new Date(
+              packageDoc.createdAt
+            ).toLocaleString() %>
+          </p>
+        </div>
+
+        <span
+          class="status <%= packageDoc.status %>"
+        >
+          <%= packageDoc.status %>
+        </span>
+
+      </div>
+
+      <div class="cart-list">
+
+        <% packageDoc.items.forEach(item => { %>
+
+          <div class="list-card">
+
+            <div class="list-thumb">
+
+              <% if (item.image) { %>
+
+                <img
+                  src="<%= item.image %>"
+                  alt="<%= item.name %>"
+                >
+
+              <% } %>
+
+            </div>
+
+            <div class="list-main">
+
+              <h3>
+                <%= item.name %>
+              </h3>
+
+              <div class="list-meta">
+                Quantity:
+                <strong>
+                  <%= item.qty %>
+                </strong>
+              </div>
+
+              <div class="list-meta">
+                KSh
+                <%= Number(
+                  item.price
+                ).toLocaleString() %>
+                each
+              </div>
+
+            </div>
+
+            <strong class="list-price">
+              KSh
+              <%= Number(
+                item.price *
+                item.qty
+              ).toLocaleString() %>
+            </strong>
+
+          </div>
+
+        <% }) %>
+
+      </div>
+
+      <!-- PAYMENT SUMMARY -->
+
+      <div
+        style="
+          margin-top:18px;
+          border-top:1px solid var(--border);
+          padding-top:15px;
+        "
+      >
+
+        <div class="total-line">
+          <span>
+            Total
+          </span>
+
+          <span
+            style="
+              color:var(--green);
+              font-weight:700
+            "
+          >
+            KSh
+            <%= Number(
+              packageDoc.totalAmount
+            ).toLocaleString() %>
+          </span>
+        </div>
+
+        <div
+          class="total-line"
+          style="margin-top:8px"
+        >
+          <span>
+            Paid
+          </span>
+
+          <strong>
+            KSh
+            <%= Number(
+              packageDoc.paidAmount || 0
+            ).toLocaleString() %>
+          </strong>
+        </div>
+
+        <div
+          class="total-line"
+          style="margin-top:8px"
+        >
+          <span>
+            Arrears
+          </span>
+
+          <strong>
+            KSh
+            <%= Math.max(
+              0,
+              Number(
+                packageDoc.totalAmount || 0
+              ) -
+              Number(
+                packageDoc.paidAmount || 0
+              )
+            ).toLocaleString() %>
+          </strong>
+        </div>
+
+        <div
+          style="
+            margin-top:10px;
+            color:var(--muted);
+            font-size:13px
+          "
+        >
+          Payment method:
+
+          <strong>
+            <%= packageDoc.paymentMethod === "mpesa"
+              ? "M-Pesa"
+              : "Pay on delivery" %>
+          </strong>
+
+          ·
+
+          Payment status:
+
+          <strong>
+            <%= packageDoc.paymentStatus === "partialPaid"
+              ? "Partially paid"
+              : packageDoc.paymentStatus === "paid"
+                ? "Paid"
+                : "Unpaid" %>
+          </strong>
+
+          <% if (
+            packageDoc.mpesaReceiptNumber
+          ) { %>
+
+            · Receipt:
+
+            <strong>
+              <%= packageDoc.mpesaReceiptNumber %>
+            </strong>
+
+          <% } %>
+
+        </div>
+
+      </div>
+
+      <!-- PAYMENT BUTTON -->
+
+      <% if (
+        packageDoc.paymentStatus !==
+        "paid"
+      ) { %>
+
+        <div
+          style="
+            margin-top:18px
+          "
+        >
+
+          <a
+            href="/packages/<%= packageDoc._id %>/payment-summary"
+            class="primary-btn"
+            style="
+              display:block;
+              width:100%;
+              box-sizing:border-box;
+              text-align:center;
+              text-decoration:none
+            "
+          >
+            <i class="fas fa-mobile-alt"></i>
+            Pay with M-Pesa
+          </a>
+
+        </div>
+
+      <% } else { %>
+
+        <div
+          style="
+            margin-top:18px;
+            padding:14px;
+            border-radius:10px;
+            background:rgba(46,204,113,.10);
+            border:1px solid rgba(46,204,113,.25)
+          "
+        >
+          <strong>
+            Payment complete
+          </strong>
+
+          <div
+            style="
+              margin-top:4px;
+              color:var(--muted)
+            "
+          >
+            This package has been fully paid.
+          </div>
+        </div>
+
+      <% } %>
+
+    </div>
+
+  <% } else { %>
+
+    <div class="error">
+      <%= error ||
+        "Package not found." %>
+    </div>
+
+  <% } %>
+
+</section>
