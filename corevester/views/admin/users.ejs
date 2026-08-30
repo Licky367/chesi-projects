@@ -1,0 +1,716 @@
+<section class="admin-users-page">
+
+    <div class="admin-users-header">
+        <div>
+            <div class="admin-eyebrow">
+                <i class="fas fa-user-shield"></i>
+                Administration
+            </div>
+
+            <h1 class="page-title">
+                User Management
+            </h1>
+
+            <p class="page-subtitle">
+                Invite users, control roles and assign staff to substations.
+            </p>
+        </div>
+    </div>
+
+    <% if (typeof error !== "undefined" && error) { %>
+        <div class="admin-alert admin-alert-error">
+            <%= error %>
+        </div>
+    <% } %>
+
+    <% if (typeof success !== "undefined" && success) { %>
+        <div class="admin-alert admin-alert-success">
+            <%= success %>
+        </div>
+    <% } %>
+
+    <% if (req.query && req.query.error) { %>
+        <div class="admin-alert admin-alert-error">
+            <%= req.query.error %>
+        </div>
+    <% } %>
+
+    <% if (req.query && req.query.success) { %>
+        <div class="admin-alert admin-alert-success">
+            <%= req.query.success %>
+        </div>
+    <% } %>
+
+    <!-- =====================================================
+         INVITE
+    ====================================================== -->
+
+    <div class="admin-panel invite-panel">
+
+        <div class="panel-heading">
+            <div>
+                <h2>
+                    <i class="fas fa-user-plus"></i>
+                    Invite / Pre-assign Role
+                </h2>
+
+                <p>
+                    The role saved here is automatically given when
+                    the person signs up with this exact email.
+                </p>
+            </div>
+        </div>
+
+        <form
+            action="/auth/users/invite"
+            method="POST"
+            class="invite-form"
+        >
+
+            <div class="field">
+                <label for="inviteEmail">
+                    Email Address
+                </label>
+
+                <input
+                    id="inviteEmail"
+                    type="email"
+                    name="email"
+                    placeholder="person@example.com"
+                    required
+                >
+            </div>
+
+            <div class="field">
+                <label for="inviteRole">
+                    Role
+                </label>
+
+                <select
+                    id="inviteRole"
+                    name="role"
+                    required
+                >
+                    <option value="staff">
+                        Staff
+                    </option>
+
+                    <option value="client">
+                        Client
+                    </option>
+
+                    <option value="admin">
+                        Admin
+                    </option>
+                </select>
+            </div>
+
+            <button
+                type="submit"
+                class="primary-btn"
+            >
+                <i class="fas fa-paper-plane"></i>
+                Save Invitation
+            </button>
+
+        </form>
+
+        <div class="invite-note">
+            <i class="fas fa-circle-info"></i>
+            An email that does not have an invitation always registers
+            as <strong>client</strong>.
+        </div>
+
+    </div>
+
+    <!-- =====================================================
+         USER TABS
+    ====================================================== -->
+
+    <nav class="user-tabs">
+
+        <a
+            href="/auth/users?tab=all"
+            class="<%= tab === 'all' ? 'active' : '' %>"
+        >
+            All
+            <span><%= users.length %></span>
+        </a>
+
+        <a
+            href="/auth/users?tab=admin"
+            class="<%= tab === 'admin' ? 'active' : '' %>"
+        >
+            Admin
+            <span>
+                <%= users.filter(u => u.role === 'admin').length %>
+            </span>
+        </a>
+
+        <a
+            href="/auth/users?tab=staff"
+            class="<%= tab === 'staff' ? 'active' : '' %>"
+        >
+            Staff
+            <span>
+                <%= users.filter(u => u.role === 'staff').length %>
+            </span>
+        </a>
+
+        <a
+            href="/auth/users?tab=client"
+            class="<%= tab === 'client' ? 'active' : '' %>"
+        >
+            Clients
+            <span>
+                <%= users.filter(u => u.role === 'client').length %>
+            </span>
+        </a>
+
+        <a
+            href="/auth/users?tab=invitations"
+            class="<%= tab === 'invitations' ? 'active' : '' %>"
+        >
+            Invitations
+            <span><%= invitations.length %></span>
+        </a>
+
+    </nav>
+
+    <!-- =====================================================
+         USERS
+    ====================================================== -->
+
+    <% if (tab !== "invitations") { %>
+
+        <div class="admin-panel users-panel">
+
+            <div class="panel-heading">
+                <div>
+                    <h2>
+                        <i class="fas fa-users"></i>
+                        <%= tab === "all" ? "All Users" : tab.charAt(0).toUpperCase() + tab.slice(1) + " Users" %>
+                    </h2>
+
+                    <p>
+                        Manage registered CoreVester accounts.
+                    </p>
+                </div>
+            </div>
+
+            <% const visibleUsers =
+                tab === "all"
+                    ? users
+                    : users.filter(u => u.role === tab);
+            %>
+
+            <% if (!visibleUsers.length) { %>
+
+                <div class="empty-state">
+                    <i class="fas fa-user-slash"></i>
+                    <strong>No users in this tab.</strong>
+                </div>
+
+            <% } else { %>
+
+                <div class="users-list">
+
+                    <% visibleUsers.forEach(account => { %>
+
+                        <article class="user-card">
+
+                            <div class="user-main">
+
+                                <div class="user-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+
+                                <div class="user-identity">
+
+                                    <h3>
+                                        <%= account.name %>
+                                    </h3>
+
+                                    <p>
+                                        <%= account.email %>
+                                    </p>
+
+                                    <span class="role-badge role-<%= account.role %>">
+                                        <%= account.role %>
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                            <div class="user-actions">
+
+                                <form
+                                    action="/auth/users/<%= account._id %>/role"
+                                    method="POST"
+                                    class="inline-form"
+                                >
+
+                                    <label>
+                                        Role
+                                    </label>
+
+                                    <select
+                                        name="role"
+                                        aria-label="Change role for <%= account.email %>"
+                                    >
+                                        <option
+                                            value="admin"
+                                            <%= account.role === "admin" ? "selected" : "" %>
+                                        >
+                                            Admin
+                                        </option>
+
+                                        <option
+                                            value="staff"
+                                            <%= account.role === "staff" ? "selected" : "" %>
+                                        >
+                                            Staff
+                                        </option>
+
+                                        <option
+                                            value="client"
+                                            <%= account.role === "client" ? "selected" : "" %>
+                                        >
+                                            Client
+                                        </option>
+                                    </select>
+
+                                    <button
+                                        type="submit"
+                                        class="secondary-btn"
+                                    >
+                                        Update Role
+                                    </button>
+
+                                </form>
+
+                                <% if (account.role === "staff") { %>
+
+                                    <form
+                                        action="/auth/users/<%= account._id %>/substation"
+                                        method="POST"
+                                        class="inline-form staff-form"
+                                    >
+
+                                        <label>
+                                            Substation
+                                        </label>
+
+                                        <select
+                                            name="assignedSubstation"
+                                            aria-label="Assign substation to <%= account.email %>"
+                                        >
+                                            <option value="">
+                                                Unassigned
+                                            </option>
+
+                                            <% substations.forEach(substation => { %>
+
+                                                <option
+                                                    value="<%= substation._id %>"
+                                                    <%= account.assignedSubstation &&
+                                                        String(account.assignedSubstation._id) === String(substation._id)
+                                                        ? "selected"
+                                                        : "" %>
+                                                >
+                                                    <%= substation.name %>
+                                                </option>
+
+                                            <% }) %>
+
+                                        </select>
+
+                                        <button
+                                            type="submit"
+                                            class="secondary-btn"
+                                        >
+                                            Assign
+                                        </button>
+
+                                    </form>
+
+                                <% } %>
+
+                            </div>
+
+                        </article>
+
+                    <% }) %>
+
+                </div>
+
+            <% } %>
+
+        </div>
+
+    <% } %>
+
+    <!-- =====================================================
+         INVITATIONS
+    ====================================================== -->
+
+    <% if (tab === "invitations") { %>
+
+        <div class="admin-panel">
+
+            <div class="panel-heading">
+                <div>
+                    <h2>
+                        <i class="fas fa-envelope-open-text"></i>
+                        Pending Invitations
+                    </h2>
+
+                    <p>
+                        These email addresses have a role waiting for registration.
+                    </p>
+                </div>
+            </div>
+
+            <% if (!invitations.length) { %>
+
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <strong>No pending invitations.</strong>
+                </div>
+
+            <% } else { %>
+
+                <div class="invitation-list">
+
+                    <% invitations.forEach(invitation => { %>
+
+                        <div class="invitation-row">
+
+                            <div>
+                                <strong>
+                                    <%= invitation.email %>
+                                </strong>
+
+                                <small>
+                                    Invited by
+                                    <%= invitation.invitedBy?.name || invitation.invitedBy?.email || "Admin" %>
+                                </small>
+                            </div>
+
+                            <span class="role-badge role-<%= invitation.role %>">
+                                <%= invitation.role %>
+                            </span>
+
+                        </div>
+
+                    <% }) %>
+
+                </div>
+
+            <% } %>
+
+        </div>
+
+    <% } %>
+
+</section>
+
+<style>
+.admin-users-page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 16px 60px;
+}
+
+.admin-users-header {
+    margin-bottom: 24px;
+}
+
+.admin-eyebrow {
+    color: #0b5d1e;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 8px;
+}
+
+.admin-panel {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.05);
+    margin-bottom: 22px;
+}
+
+.panel-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.panel-heading h2 {
+    margin: 0 0 6px;
+    color: #263238;
+}
+
+.panel-heading p {
+    margin: 0;
+    color: #6b7280;
+}
+
+.invite-form {
+    display: grid;
+    grid-template-columns: 1.5fr .8fr auto;
+    gap: 14px;
+    align-items: end;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.field label,
+.inline-form label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #374151;
+}
+
+.field input,
+.field select,
+.inline-form select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.field input:focus,
+.field select:focus,
+.inline-form select:focus {
+    outline: none;
+    border-color: #0b5d1e;
+    box-shadow: 0 0 0 3px rgba(11,93,30,.1);
+}
+
+.primary-btn,
+.secondary-btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 12px 15px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.primary-btn {
+    background: #0b5d1e;
+    color: #fff;
+}
+
+.secondary-btn {
+    background: #f0f7f2;
+    color: #0b5d1e;
+}
+
+.invite-note {
+    margin-top: 15px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #f7faf8;
+    color: #536168;
+    font-size: 13px;
+}
+
+.admin-alert {
+    border-radius: 10px;
+    padding: 13px 15px;
+    margin-bottom: 18px;
+}
+
+.admin-alert-error {
+    background: #fff1f2;
+    color: #991b1b;
+    border: 1px solid #fecdd3;
+}
+
+.admin-alert-success {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.user-tabs {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+    margin-bottom: 22px;
+}
+
+.user-tabs a {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    text-decoration: none;
+    color: #536168;
+    background: #f7f7f7;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 9px 13px;
+    font-weight: 700;
+}
+
+.user-tabs a.active {
+    background: #0b5d1e;
+    border-color: #0b5d1e;
+    color: #fff;
+}
+
+.user-tabs span {
+    font-size: 12px;
+    opacity: .8;
+}
+
+.users-list {
+    display: grid;
+    gap: 13px;
+}
+
+.user-card {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.user-main {
+    display: flex;
+    gap: 13px;
+    min-width: 0;
+}
+
+.user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #f0f7f2;
+    color: #0b5d1e;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+.user-identity h3 {
+    margin: 0 0 3px;
+}
+
+.user-identity p {
+    margin: 0 0 8px;
+    color: #6b7280;
+    overflow-wrap: anywhere;
+}
+
+.role-badge {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.role-admin {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.role-staff {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.role-client {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.user-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 300px;
+}
+
+.inline-form {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.inline-form label {
+    margin: 0;
+}
+
+.empty-state {
+    padding: 42px 20px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.empty-state i {
+    display: block;
+    font-size: 30px;
+    margin-bottom: 10px;
+}
+
+.invitation-list {
+    display: grid;
+    gap: 10px;
+}
+
+.invitation-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.invitation-row small {
+    display: block;
+    margin-top: 4px;
+    color: #6b7280;
+}
+
+@media (max-width: 800px) {
+    .invite-form {
+        grid-template-columns: 1fr;
+    }
+
+    .user-card {
+        flex-direction: column;
+    }
+
+    .user-actions {
+        min-width: 0;
+    }
+
+    .inline-form {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
