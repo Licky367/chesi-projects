@@ -1,0 +1,135 @@
+<div
+  class="payment-summary"
+  style="
+    margin-top:18px;
+    padding:16px;
+    border:1px solid var(--border);
+    border-radius:12px;
+  "
+>
+  <div
+    style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    "
+  >
+    <strong>Payment</strong>
+
+    <span
+      id="package-payment-status"
+      class="status <%= packageDoc.paymentStatus %>"
+    >
+      <%= packageDoc.paymentStatus %>
+    </span>
+  </div>
+
+  <div
+    style="
+      display:grid;
+      gap:8px;
+      margin-top:14px;
+    "
+  >
+    <div class="total-line">
+      <span>Total amount</span>
+      <strong>
+        KSh
+        <%= Number(
+          packageDoc.totalAmount || 0
+        ).toLocaleString() %>
+      </strong>
+    </div>
+
+    <div class="total-line">
+      <span>Total paid</span>
+      <strong>
+        KSh
+        <span id="package-total-paid">
+          <%= Number(
+            packageDoc.paidAmount || 0
+          ).toLocaleString() %>
+        </span>
+      </strong>
+    </div>
+
+    <div class="total-line">
+      <span>Arrears</span>
+      <strong>
+        KSh
+        <span id="package-arrears">
+          <%= Number(
+            Math.max(
+              0,
+              Number(packageDoc.totalAmount || 0) -
+              Number(packageDoc.paidAmount || 0)
+            )
+          ).toLocaleString() %>
+        </span>
+      </strong>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const packageId =
+    "<%= packageDoc._id %>";
+
+  const statusEl =
+    document.getElementById(
+      "package-payment-status"
+    );
+
+  const paidEl =
+    document.getElementById(
+      "package-total-paid"
+    );
+
+  const arrearsEl =
+    document.getElementById(
+      "package-arrears"
+    );
+
+  async function refresh() {
+    try {
+      const response = await fetch(
+        `/packages/${packageId}/payment-summary`,
+        {
+          headers: {
+            Accept: "application/json"
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.ok) return;
+
+      statusEl.textContent =
+        data.paymentStatus;
+
+      statusEl.className =
+        "status " + data.paymentStatus;
+
+      paidEl.textContent =
+        Number(
+          data.totalPaid || 0
+        ).toLocaleString();
+
+      arrearsEl.textContent =
+        Number(
+          data.arrearsAmount || 0
+        ).toLocaleString();
+    } catch (err) {
+      console.error(
+        "Payment summary refresh:",
+        err
+      );
+    }
+  }
+
+  refresh();
+})();
+</script>
