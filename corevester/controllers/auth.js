@@ -1,6 +1,5 @@
 const authService = require("../services/auth");
 
-
 function safeReturnTo(value) {
     if (
         typeof value !== "string" ||
