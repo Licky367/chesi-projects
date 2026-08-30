@@ -1,13 +1,16 @@
 // ==========================================================
 // server-cov1.js - COREVESTER
 // ==========================================================
+
 const express = require("express");
 const http = require("http");
 const path = require("path");
+
 const expressLayouts = require("express-ejs-layouts");
 const session = require("express-session");
 const { rateLimit } = require("express-rate-limit");
 const { Server } = require("socket.io");
+
 const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
@@ -15,8 +18,9 @@ const methodOverride = require("method-override");
 
 require("dotenv").config();
 
+
 // ==========================================================
-// CRASH LOGGING
+// PROCESS / CRASH LOGGING
 // ==========================================================
 
 process.on("uncaughtException", (err) => {
@@ -37,27 +41,9 @@ process.on("unhandledRejection", (reason) => {
     );
 });
 
-console.log("--- Starting server-corevester.js ---");
-
-
-// ==========================================================
-// CONNECT-MONGO
-// ==========================================================
-
-let MongoStore;
-
-try {
-    MongoStore = require("connect-mongo");
-
-    console.log("✅ connect-mongo loaded");
-
-} catch (error) {
-
-    console.warn(
-        "⚠️ connect-mongo not installed:",
-        error.message
-    );
-}
+console.log("==========================================================");
+console.log("🚀 Starting COREVESTER server");
+console.log("==========================================================");
 
 
 // ==========================================================
@@ -67,24 +53,42 @@ try {
 const isProduction =
     process.env.NODE_ENV === "production";
 
+const PORT =
+    Number(process.env.PORT || 3000);
+
+const SESSION_MAX_AGE =
+    10 *
+    365 *
+    24 *
+    60 *
+    60 *
+    1000;
+
+const SESSION_TTL =
+    Math.floor(SESSION_MAX_AGE / 1000);
+
+
+// ==========================================================
+// PRODUCTION ENVIRONMENT VALIDATION
+// ==========================================================
 
 if (isProduction) {
 
-    const required = [
+    const requiredEnvironment = [
         "MONGO_URI",
         "SESSION_SECRET",
         "FRONTEND_URL"
     ];
 
-    const missing =
-        required.filter(
-            key => !process.env[key]
+    const missingEnvironment =
+        requiredEnvironment.filter(
+            (key) => !process.env[key]
         );
 
-    if (missing.length) {
+    if (missingEnvironment.length) {
 
         console.error(
-            `❌ Missing env: ${missing.join(", ")}`
+            `❌ Missing environment variables: ${missingEnvironment.join(", ")}`
         );
 
         process.exit(1);
@@ -93,7 +97,37 @@ if (isProduction) {
 
 
 // ==========================================================
-// DATABASE + SEED
+// CONNECT-MONGO
+// ==========================================================
+
+let MongoStore = null;
+
+try {
+
+    MongoStore = require("connect-mongo");
+
+    console.log("✅ connect-mongo loaded");
+
+} catch (error) {
+
+    console.warn(
+        "⚠️ connect-mongo unavailable:",
+        error.message
+    );
+
+    if (isProduction) {
+
+        console.error(
+            "❌ connect-mongo is required in production."
+        );
+
+        process.exit(1);
+    }
+}
+
+
+// ==========================================================
+// DATABASE + SEEDER
 // ==========================================================
 
 const connectDB =
@@ -104,34 +138,43 @@ const seedUser =
 
 
 // ==========================================================
-// SAFE ROUTE LOADER
+// ROUTE LOADER
 // ==========================================================
 
-function safeLoad(name, pathToRequire) {
+/**
+ * Loads a route module without allowing a single broken route
+ * to crash the entire application during startup.
+ *
+ * @param {string} name
+ * @param {string} routePath
+ * @returns {object|null}
+ */
+
+function safeLoad(name, routePath) {
 
     try {
 
         console.log(
-            `... Loading ${name}: ${pathToRequire}`
+            `... Loading ${name}: ${routePath}`
         );
 
-        const mod =
-            require(pathToRequire);
+        const route =
+            require(routePath);
 
         console.log(
             `✅ Loaded ${name}`
         );
 
-        return mod;
+        return route;
 
-    } catch (err) {
+    } catch (error) {
 
         console.error(
-            `❌ FAILED to load ${name}: ${pathToRequire}`
+            `❌ Failed to load ${name}: ${routePath}`
         );
 
-        console.error(err.message);
-        console.error(err.stack);
+        console.error(error.message);
+        console.error(error.stack);
 
         return null;
     }
@@ -141,23 +184,9 @@ function safeLoad(name, pathToRequire) {
 // ==========================================================
 // ROUTES
 // ==========================================================
-//
-// ALL COREVESTER ROUTES ARE LOCATED:
-//
-//     ./corevester/routes/
-//
-// ==========================================================
 
 // ----------------------------------------------------------
 // AUTH
-// ----------------------------------------------------------
-//
-// File:
-//     ./corevester/routes/auth.js
-//
-// Mount:
-//     /auth
-//
 // ----------------------------------------------------------
 
 const authRoutes =
@@ -168,15 +197,7 @@ const authRoutes =
 
 
 // ----------------------------------------------------------
-// COREVERSTER MAIN ROUTES
-// ----------------------------------------------------------
-//
-// File:
-//     ./corevester/routes/index.js
-//
-// Mount:
-//     /
-//
+// COREVERSTER MAIN
 // ----------------------------------------------------------
 
 const corevesterRoutes =
@@ -189,14 +210,6 @@ const corevesterRoutes =
 // ----------------------------------------------------------
 // PRODUCTS
 // ----------------------------------------------------------
-//
-// File:
-//     ./corevester/routes/products.js
-//
-// Mount:
-//     /products
-//
-// ----------------------------------------------------------
 
 const productsRoutes =
     safeLoad(
@@ -207,14 +220,6 @@ const productsRoutes =
 
 // ----------------------------------------------------------
 // CARTS
-// ----------------------------------------------------------
-//
-// File:
-//     ./corevester/routes/carts.js
-//
-// Mount:
-//     /carts
-//
 // ----------------------------------------------------------
 
 const cartsRoutes =
@@ -227,14 +232,6 @@ const cartsRoutes =
 // ----------------------------------------------------------
 // STOCK
 // ----------------------------------------------------------
-//
-// File:
-//     ./corevester/routes/stock.js
-//
-// Mount:
-//     /stock
-//
-// ----------------------------------------------------------
 
 const stockRoutes =
     safeLoad(
@@ -245,14 +242,6 @@ const stockRoutes =
 
 // ----------------------------------------------------------
 // SUBSTATIONS
-// ----------------------------------------------------------
-//
-// File:
-//     ./corevester/routes/substations.js
-//
-// Mount:
-//     /substations
-//
 // ----------------------------------------------------------
 
 const substationsRoutes =
@@ -266,11 +255,45 @@ const substationsRoutes =
 // PACKAGES
 // ----------------------------------------------------------
 //
-// File:
-//     ./corevester/routes/packages.js
+// Package workflow:
 //
-// Mount:
+// CLIENT
 //     /packages
+//
+// STAFF / ADMIN
+//     /packages/staff
+//
+// STAFF / ADMIN PACKAGE DETAILS
+//     /packages/staff/:id
+//
+// Staff:
+//
+//     pending
+//        ↓
+//     confirmed
+//        ↓
+//     delivered
+//
+// Only the staff member who confirmed a package may deliver it.
+//
+// Admin:
+//
+//     • may view all packages
+//     • may view all staff confirmations/deliveries
+//     • may update payment on delivered packages
+//     • may NOT confirm packages
+//     • may NOT deliver packages
+//
+// Inventory:
+//
+//     Product.units is reduced during the existing cart/order
+//     reservation flow.
+//
+//     Delivery MUST NOT reduce Product.units again.
+//
+//     Instead, delivery records the reduction against the
+//     delivering staff member's assigned substation using the
+//     dedicated substation product-reduction field.
 //
 // ----------------------------------------------------------
 
@@ -284,14 +307,6 @@ const packageRoutes =
 // ----------------------------------------------------------
 // MPESA
 // ----------------------------------------------------------
-//
-// File:
-//     ./corevester/routes/mpesa.js
-//
-// Mount:
-//     /mpesa
-//
-// ----------------------------------------------------------
 
 const mpesaRoutes =
     safeLoad(
@@ -301,15 +316,7 @@ const mpesaRoutes =
 
 
 // ----------------------------------------------------------
-// CONTACTS
-// ----------------------------------------------------------
-//
-// File:
-//     ./corevester/routes/contact.js
-//
-// Mount:
-//     /contact
-//
+// CONTACT
 // ----------------------------------------------------------
 
 const contactRoutes =
@@ -318,8 +325,9 @@ const contactRoutes =
         "./corevester/routes/contact"
     );
 
+
 // ==========================================================
-// SOCKET
+// SOCKET.IO
 // ==========================================================
 
 const socketHandler =
@@ -327,7 +335,7 @@ const socketHandler =
 
 
 // ==========================================================
-// APP
+// APPLICATION
 // ==========================================================
 
 const app =
@@ -336,9 +344,12 @@ const app =
 const server =
     http.createServer(app);
 
-
 app.disable("x-powered-by");
 
+
+// ==========================================================
+// TRUST PROXY
+// ==========================================================
 
 if (
     isProduction ||
@@ -361,29 +372,45 @@ app.use(
 );
 
 
+// ==========================================================
+// RATE LIMITING
+// ==========================================================
+
 app.use(
     rateLimit({
-        windowMs: 15 * 60 * 1000,
+
+        windowMs:
+            15 * 60 * 1000,
 
         max:
             isProduction
                 ? 200
                 : 1000,
 
-        standardHeaders: true,
-        legacyHeaders: false,
+        standardHeaders:
+            true,
+
+        legacyHeaders:
+            false,
 
         message: {
-            message: "Too many requests"
+            success:
+                false,
+
+            message:
+                "Too many requests. Please try again later."
         }
     })
 );
 
 
+// ==========================================================
+// PERFORMANCE / LOGGING
+// ==========================================================
+
 app.use(
     compression()
 );
-
 
 app.use(
     morgan(
@@ -405,15 +432,18 @@ const allowedOrigin =
             : "*"
     );
 
-
 const io =
     new Server(server, {
+
         cors: {
-            origin: allowedOrigin,
-            methods: ["GET", "POST"]
+
+            origin:
+                allowedOrigin,
+
+            methods:
+                ["GET", "POST"]
         }
     });
-
 
 app.set("io", io);
 
@@ -431,13 +461,26 @@ app.use(
     })
 );
 
-
 app.use(
     express.json({
         limit: "10mb"
     })
 );
 
+
+// ==========================================================
+// METHOD OVERRIDE
+// ==========================================================
+//
+// Allows forms to perform PUT/PATCH/DELETE using:
+//
+//     ?_method=PUT
+//
+// or:
+//
+//     <input name="_method" value="PUT">
+//
+// ==========================================================
 
 app.use(
     methodOverride("_method")
@@ -447,35 +490,20 @@ app.use(
 // ==========================================================
 // SESSION
 // ==========================================================
-//
-// Persistent session storage.
-//
-// Users remain logged in when they close and reopen the
-// browser, until the session expires or they explicitly
-// log out.
-//
-// ==========================================================
 
-const SESSION_MAX_AGE =
-    10 *
-    365 *
-    24 *
-    60 *
-    60 *
-    1000;
-
-
-const SESSION_TTL =
-    Math.floor(
-        SESSION_MAX_AGE / 1000
-    );
-
+/**
+ * In production sessions are stored in MongoDB.
+ *
+ * In development, if connect-mongo/MONGO_URI is unavailable,
+ * express-session's default MemoryStore is used.
+ */
 
 const sessionStore =
     isProduction &&
     process.env.MONGO_URI &&
     MongoStore
         ? MongoStore.create({
+
             mongoUrl:
                 process.env.MONGO_URI,
 
@@ -490,6 +518,7 @@ const sessionStore =
 
 app.use(
     session({
+
         secret:
             process.env.SESSION_SECRET ||
             "development-session-secret",
@@ -507,6 +536,7 @@ app.use(
             true,
 
         cookie: {
+
             httpOnly:
                 true,
 
@@ -526,12 +556,25 @@ app.use(
 // ==========================================================
 // REQUEST / USER CONTEXT
 // ==========================================================
+//
+// Makes the logged-in user available to:
+//
+//     req.user
+//
+// and EJS:
+//
+//     res.locals.user
+//
+// ==========================================================
 
 app.use((req, res, next) => {
 
-    res.locals.user =
+    const currentUser =
         req.session?.user ||
         null;
+
+    res.locals.user =
+        currentUser;
 
     res.locals.req =
         req;
@@ -540,7 +583,7 @@ app.use((req, res, next) => {
         req.path;
 
     req.user =
-        res.locals.user;
+        currentUser;
 
     next();
 });
@@ -554,8 +597,13 @@ app.get(
     "/health",
     (req, res) => {
 
-        res.json({
-            status: "ok"
+        return res.json({
+
+            success:
+                true,
+
+            status:
+                "ok"
         });
     }
 );
@@ -574,27 +622,21 @@ app.use(
     )
 );
 
-
 app.use(
     "/uploads",
     express.static(
         path.join(
             __dirname,
-            "public/uploads"
+            "public",
+            "uploads"
         )
     )
 );
 
 
 // ==========================================================
-// VIEW ENGINE
+// EJS VIEW ENGINE
 // ==========================================================
-
-app.set(
-    "view engine",
-    "ejs"
-);
-
 
 const viewsPath =
     path.join(
@@ -603,6 +645,10 @@ const viewsPath =
         "views"
     );
 
+app.set(
+    "view engine",
+    "ejs"
+);
 
 app.set(
     "views",
@@ -610,34 +656,33 @@ app.set(
 );
 
 
+// ==========================================================
+// EXPRESS EJS LAYOUTS
+// ==========================================================
+
 app.use(
     expressLayouts
 );
-
 
 app.set(
     "layout",
     "layout"
 );
 
-
 app.set(
     "layout extractScripts",
     true
 );
-
 
 app.set(
     "layout extractStyles",
     true
 );
 
-
 console.log(
     "✅ Views:",
     viewsPath
 );
-
 
 console.log(
     "✅ Layout: layout"
@@ -648,13 +693,13 @@ console.log(
 // ROUTE MOUNTING
 // ==========================================================
 
-console.log(
-    "--- Mounting routes ---"
-);
+console.log("==========================================================");
+console.log("📡 Mounting COREVESTER routes");
+console.log("==========================================================");
 
 
 // ==========================================================
-// 1. AUTH
+// AUTH
 // ==========================================================
 
 if (authRoutes) {
@@ -671,17 +716,13 @@ if (authRoutes) {
 } else {
 
     console.error(
-        "❌ /auth NOT MOUNTED - route failed to load"
+        "❌ /auth was not mounted"
     );
 }
 
 
 // ==========================================================
-// 2. PRODUCTS
-// ==========================================================
-//
-// /products is the actual COREVESTER home page.
-//
+// PRODUCTS
 // ==========================================================
 
 if (productsRoutes) {
@@ -698,13 +739,13 @@ if (productsRoutes) {
 } else {
 
     console.error(
-        "❌ /products NOT MOUNTED"
+        "❌ /products was not mounted"
     );
 }
 
 
 // ==========================================================
-// 3. CARTS
+// CARTS
 // ==========================================================
 
 if (cartsRoutes) {
@@ -721,13 +762,13 @@ if (cartsRoutes) {
 } else {
 
     console.error(
-        "❌ /carts NOT MOUNTED"
+        "❌ /carts was not mounted"
     );
 }
 
 
 // ==========================================================
-// 4. STOCK
+// STOCK
 // ==========================================================
 
 if (stockRoutes) {
@@ -744,13 +785,13 @@ if (stockRoutes) {
 } else {
 
     console.error(
-        "❌ /stock NOT MOUNTED"
+        "❌ /stock was not mounted"
     );
 }
 
 
 // ==========================================================
-// 5. SUBSTATIONS
+// SUBSTATIONS
 // ==========================================================
 
 if (substationsRoutes) {
@@ -767,13 +808,31 @@ if (substationsRoutes) {
 } else {
 
     console.error(
-        "❌ /substations NOT MOUNTED"
+        "❌ /substations was not mounted"
     );
 }
 
 
 // ==========================================================
-// 6. PACKAGES
+// PACKAGES
+// ==========================================================
+//
+// IMPORTANT:
+//
+// Both client and staff/admin package endpoints are mounted
+// through the SAME package router.
+//
+// The router itself determines:
+//
+//     client
+//         → /packages
+//
+//     staff/admin
+//         → /packages/staff
+//
+// Authorization belongs inside the package routes/services,
+// NOT inside this server bootstrap file.
+//
 // ==========================================================
 
 if (packageRoutes) {
@@ -790,13 +849,13 @@ if (packageRoutes) {
 } else {
 
     console.error(
-        "❌ /packages NOT MOUNTED"
+        "❌ /packages was not mounted"
     );
 }
 
 
 // ==========================================================
-// 7. MPESA
+// MPESA
 // ==========================================================
 
 if (mpesaRoutes) {
@@ -813,17 +872,22 @@ if (mpesaRoutes) {
 } else {
 
     console.error(
-        "❌ /mpesa NOT MOUNTED"
+        "❌ /mpesa was not mounted"
     );
 }
 
 
 // ==========================================================
-// 8. COREVERSTER MAIN ROUTES
+// COREVERSTER MAIN / ABOUT
 // ==========================================================
 //
-// These routes remain mounted at / exactly as before.
-// They are NOT being changed to become the Home page.
+// Existing application structure is preserved:
+//
+//     ./corevester/routes/index.js
+//
+// is mounted at:
+//
+//     /about
 //
 // ==========================================================
 
@@ -835,18 +899,19 @@ if (corevesterRoutes) {
     );
 
     console.log(
-        "✅ Mounted CoreVester /about"
+        "✅ Mounted /about"
     );
 
 } else {
 
     console.error(
-        "❌ CoreVester / NOT MOUNTED"
+        "❌ /about was not mounted"
     );
 }
 
+
 // ==========================================================
-// 9. CONTACT
+// CONTACT
 // ==========================================================
 
 if (contactRoutes) {
@@ -863,25 +928,24 @@ if (contactRoutes) {
 } else {
 
     console.error(
-        "❌ /contact NOT MOUNTED"
+        "❌ /contact was not mounted"
     );
 }
 
+
 // ==========================================================
-// ROOT → PRODUCTS
+// ROOT
 // ==========================================================
 //
-// / is only a redirect.
-//
-// The actual Home page is:
+// The actual product/home page is:
 //
 //     /products
 //
 // Therefore:
 //
-//     https://your-domain.com/
-//             ↓
-//     https://your-domain.com/products
+//     /
+//       ↓
+//     /products
 //
 // ==========================================================
 
@@ -897,31 +961,36 @@ app.get(
 
 
 // ==========================================================
-// 404
+// 404 HANDLER
 // ==========================================================
 
 app.use(
     (req, res) => {
 
-        if (
+        const wantsJson =
             req.accepts("json") &&
-            !req.accepts("html")
-        ) {
+            !req.accepts("html");
+
+        if (wantsJson) {
 
             return res
                 .status(404)
                 .json({
-                    success: false,
-                    message: "Route not found"
+
+                    success:
+                        false,
+
+                    message:
+                        "Route not found"
                 });
         }
-
 
         return res
             .status(404)
             .render(
                 "error/404",
                 {
+
                     title:
                         "404 - Page Not Found",
 
@@ -945,7 +1014,7 @@ app.use(
     (err, req, res, next) => {
 
         console.error(
-            "❌ Unhandled error:",
+            "❌ Unhandled application error:",
             err.message
         );
 
@@ -962,8 +1031,11 @@ app.use(
             );
 
 
+        // ------------------------------------------------------
+        // Multer file-size error
+        // ------------------------------------------------------
+
         if (
-            err &&
             err.name === "MulterError" &&
             err.code === "LIMIT_FILE_SIZE"
         ) {
@@ -976,6 +1048,10 @@ app.use(
         }
 
 
+        // ------------------------------------------------------
+        // Normalize invalid status codes
+        // ------------------------------------------------------
+
         if (
             statusCode < 400 ||
             statusCode > 599
@@ -985,6 +1061,10 @@ app.use(
                 500;
         }
 
+
+        // ------------------------------------------------------
+        // JSON/API response
+        // ------------------------------------------------------
 
         if (
             !req.accepts("html") ||
@@ -1012,6 +1092,10 @@ app.use(
                 });
         }
 
+
+        // ------------------------------------------------------
+        // HTML error views
+        // ------------------------------------------------------
 
         const errorViews = {
 
@@ -1051,12 +1135,20 @@ app.use(
             .render(
                 view,
                 {
+
                     title:
                         `${statusCode} Error`,
 
                     error:
-                        err.message ||
-                        "Internal Server Error",
+                        isProduction &&
+                        statusCode === 500
+
+                            ? "Internal Server Error"
+
+                            : (
+                                err.message ||
+                                "Something went wrong"
+                            ),
 
                     statusCode,
 
@@ -1070,39 +1162,20 @@ app.use(
 
 
 // ==========================================================
-// SERVER
+// SERVER ERROR HANDLER
 // ==========================================================
-
-const PORT =
-    Number(
-        process.env.PORT ||
-        3000
-    );
-
-
-const startServer =
-    (port) => {
-
-        server.listen(
-            port,
-            () => {
-
-                console.log(
-                    `🚀 Running on ${port}`
-                );
-            }
-        );
-    };
-
 
 server.on(
     "error",
-    (e) => {
+    (error) => {
 
         console.error(
-            "❌ Server error:",
-            e.message,
-            e.stack
+            "❌ HTTP server error:",
+            error.message
+        );
+
+        console.error(
+            error.stack
         );
 
         process.exit(1);
@@ -1111,62 +1184,98 @@ server.on(
 
 
 // ==========================================================
-// BOOTSTRAP
+// START SERVER
 // ==========================================================
 
-const bootstrap =
-    async () => {
+function startServer(port) {
 
-        try {
+    server.listen(
+        port,
+        () => {
+
+            console.log("==========================================================");
+            console.log(`🚀 COREVESTER running on port ${port}`);
+            console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+            console.log("==========================================================");
+        }
+    );
+}
+
+
+// ==========================================================
+// DATABASE BOOTSTRAP
+// ==========================================================
+
+async function bootstrap() {
+
+    try {
+
+        console.log("==========================================================");
+        console.log("🔌 Connecting to MongoDB");
+        console.log("==========================================================");
+
+
+        const dbConnected =
+            await connectDB();
+
+
+        if (dbConnected) {
 
             console.log(
-                "--- Connecting DB ---"
+                "✅ MongoDB connected"
             );
 
 
-            const dbConnected =
-                await connectDB();
+            await seedUser();
 
 
-            if (dbConnected) {
-
-                console.log(
-                    "✅ MongoDB connected"
-                );
-
-
-                await seedUser();
-
-
-                console.log(
-                    "✅ Seed done"
-                );
-            }
-
-
-            startServer(PORT);
-
-        } catch (error) {
-
-            console.error(
-                "❌ Bootstrap failed:",
-                error.message
+            console.log(
+                "✅ User seed completed"
             );
 
-            console.error(
-                error.stack
+        } else {
+
+            console.warn(
+                "⚠️ Database connection was not established"
             );
-
-
-            if (isProduction) {
-
-                process.exit(1);
-            }
-
-
-            startServer(PORT);
         }
-    };
 
+
+        startServer(PORT);
+
+    } catch (error) {
+
+        console.error(
+            "❌ Bootstrap failed:",
+            error.message
+        );
+
+        console.error(
+            error.stack
+        );
+
+
+        if (isProduction) {
+
+            console.error(
+                "❌ Production server will not start."
+            );
+
+            process.exit(1);
+        }
+
+
+        console.warn(
+            "⚠️ Development mode: starting server without confirmed DB connection."
+        );
+
+        startServer(PORT);
+    }
+}
+
+
+// ==========================================================
+// START
+// ==========================================================
 
 bootstrap();
