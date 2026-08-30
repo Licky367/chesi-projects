@@ -290,6 +290,16 @@ exports.showUsers = [
     }
 ];
 
+exports.showInvitation = [
+    requireAdmin,
+    async (req, res, next) => {
+        try {
+            const invitations = await authService.getInvitations();
+            return res.render("admin/invitation", { title: "Invite User - COREVESTER", user: req.user, invitations, error: null, success: null });
+        } catch (err) { return next(err); }
+    }
+];
+
 exports.inviteUser = [
     requireAdmin,
     async (req, res, next) => {
@@ -301,7 +311,7 @@ exports.inviteUser = [
             });
 
             return res.redirect(
-                "/auth/users?tab=invitations&success=" +
+                "/auth/users/invitation?success=" +
                 encodeURIComponent(
                     "Invitation role saved successfully."
                 )
