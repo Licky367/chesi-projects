@@ -1,460 +1,548 @@
 <%
 const list = Array.isArray(users) ? users : [];
-const activeTab = ["all", "admin", "staff", "client"].includes(tab) ? tab : "all";
-const visibleUsers = activeTab === "all" ? list : list.filter(user => user.role === activeTab);
-const roleCount = role => list.filter(user => user.role === role).length;
+const t = ['all','admin','staff','client'].includes(tab) ? tab : 'all';
+const shown = t === 'all' ? list : list.filter(u => u.role === t);
+const count = r => list.filter(u => u.role === r).length;
 %>
 
-<section class="users-page">
+<section class="um">
+
   <!-- =========================================================
        PAGE HEADER
   ========================================================== -->
-  <header class="page-header">
-    <div class="page-header__copy">
-      <span class="section-label">ADMINISTRATION</span>
-      <h1>User Management</h1>
-      <p>Manage accounts, roles and staff assignments from one place.</p>
+  <header class="um-header">
+    <div class="um-header-copy">
+      <span class="eyebrow">USER MANAGEMENT</span>
+      <h1>Manage Users</h1>
+      <p>Organize accounts, roles and staff assignments.</p>
     </div>
 
-    <a class="header-action" href="/auth/users/invitation">
+    <a class="um-primary-button" href="/auth/users/invitation">
       <i class="fas fa-user-plus"></i>
       <span>Invite User</span>
     </a>
   </header>
 
   <!-- =========================================================
-       FLASH MESSAGES
+       ALERTS
   ========================================================== -->
   <% if (req.query?.error) { %>
-    <div class="message message--error">
+    <div class="um-alert um-alert-error">
       <i class="fas fa-circle-exclamation"></i>
       <span><%= req.query.error %></span>
     </div>
   <% } %>
 
   <% if (req.query?.success) { %>
-    <div class="message message--success">
+    <div class="um-alert um-alert-success">
       <i class="fas fa-circle-check"></i>
       <span><%= req.query.success %></span>
     </div>
   <% } %>
 
   <!-- =========================================================
-       SUMMARY SECTION
+       SUMMARY CONTAINERS
   ========================================================== -->
-  <section class="summary-section" aria-label="User summary">
-    <div class="summary-card summary-card--total">
-      <span class="summary-card__icon"><i class="fas fa-users"></i></span>
+  <section class="um-summary" aria-label="User summary">
+
+    <div class="um-summary-card">
+      <div class="um-summary-icon"><i class="fas fa-users"></i></div>
       <div>
         <strong><%= list.length %></strong>
         <span>Total Users</span>
       </div>
     </div>
 
-    <div class="summary-card">
-      <span class="summary-card__icon"><i class="fas fa-shield-halved"></i></span>
+    <div class="um-summary-card">
+      <div class="um-summary-icon"><i class="fas fa-shield-halved"></i></div>
       <div>
-        <strong><%= roleCount("admin") %></strong>
+        <strong><%= count('admin') %></strong>
         <span>Administrators</span>
       </div>
     </div>
 
-    <div class="summary-card">
-      <span class="summary-card__icon"><i class="fas fa-user-gear"></i></span>
+    <div class="um-summary-card">
+      <div class="um-summary-icon"><i class="fas fa-user-gear"></i></div>
       <div>
-        <strong><%= roleCount("staff") %></strong>
+        <strong><%= count('staff') %></strong>
         <span>Staff</span>
       </div>
     </div>
 
-    <div class="summary-card">
-      <span class="summary-card__icon"><i class="fas fa-user"></i></span>
+    <div class="um-summary-card">
+      <div class="um-summary-icon"><i class="fas fa-user"></i></div>
       <div>
-        <strong><%= roleCount("client") %></strong>
+        <strong><%= count('client') %></strong>
         <span>Clients</span>
       </div>
     </div>
+
   </section>
 
   <!-- =========================================================
-       MAIN CONTENT
+       MAIN ARRANGEMENT
        LEFT  = SECTION BAR
-       RIGHT = USERS SECTION
+       RIGHT = USER CONTAINERS
   ========================================================== -->
-  <section class="management-section">
+  <section class="um-workspace">
 
-    <!-- ===================== SECTION BAR ====================== -->
-    <aside class="section-bar">
-      <div class="section-bar__header">
-        <span class="section-label">USER SECTIONS</span>
-        <p>Choose what you want to view.</p>
+    <!-- =======================================================
+         SECTION BAR
+    ======================================================== -->
+    <aside class="um-section-bar">
+
+      <div class="um-section-bar-title">
+        <span class="eyebrow">SECTIONS</span>
+        <h2>User Accounts</h2>
+        <p>Choose a group to display.</p>
       </div>
 
-      <nav class="section-buttons" aria-label="User sections">
-        <a class="section-button <%= activeTab === 'all' ? 'is-active' : '' %>"
+      <nav class="um-section-buttons" aria-label="User account sections">
+
+        <a class="um-section-button <%= t === 'all' ? 'active' : '' %>"
            href="/auth/users?tab=all">
-          <span class="section-button__icon"><i class="fas fa-users"></i></span>
-          <span class="section-button__text">
+          <span class="um-section-button-icon">
+            <i class="fas fa-users"></i>
+          </span>
+          <span class="um-section-button-copy">
             <strong>All Users</strong>
             <small>Every account</small>
           </span>
           <b><%= list.length %></b>
         </a>
 
-        <a class="section-button <%= activeTab === 'admin' ? 'is-active' : '' %>"
+        <a class="um-section-button <%= t === 'admin' ? 'active' : '' %>"
            href="/auth/users?tab=admin">
-          <span class="section-button__icon"><i class="fas fa-shield-halved"></i></span>
-          <span class="section-button__text">
+          <span class="um-section-button-icon">
+            <i class="fas fa-shield-halved"></i>
+          </span>
+          <span class="um-section-button-copy">
             <strong>Administrators</strong>
             <small>Admin accounts</small>
           </span>
-          <b><%= roleCount("admin") %></b>
+          <b><%= count('admin') %></b>
         </a>
 
-        <a class="section-button <%= activeTab === 'staff' ? 'is-active' : '' %>"
+        <a class="um-section-button <%= t === 'staff' ? 'active' : '' %>"
            href="/auth/users?tab=staff">
-          <span class="section-button__icon"><i class="fas fa-user-gear"></i></span>
-          <span class="section-button__text">
+          <span class="um-section-button-icon">
+            <i class="fas fa-user-gear"></i>
+          </span>
+          <span class="um-section-button-copy">
             <strong>Staff</strong>
             <small>Staff accounts</small>
           </span>
-          <b><%= roleCount("staff") %></b>
+          <b><%= count('staff') %></b>
         </a>
 
-        <a class="section-button <%= activeTab === 'client' ? 'is-active' : '' %>"
+        <a class="um-section-button <%= t === 'client' ? 'active' : '' %>"
            href="/auth/users?tab=client">
-          <span class="section-button__icon"><i class="fas fa-user"></i></span>
-          <span class="section-button__text">
+          <span class="um-section-button-icon">
+            <i class="fas fa-user"></i>
+          </span>
+          <span class="um-section-button-copy">
             <strong>Clients</strong>
             <small>Client accounts</small>
           </span>
-          <b><%= roleCount("client") %></b>
+          <b><%= count('client') %></b>
         </a>
+
       </nav>
 
-      <div class="section-bar__footer">
+      <div class="um-section-bar-note">
         <i class="fas fa-circle-info"></i>
-        <span>Use the sections above to keep the account list focused.</span>
+        <span>Select a section to keep the list focused.</span>
       </div>
+
     </aside>
 
-    <!-- ====================== USERS SECTION =================== -->
-    <main class="users-section">
-      <header class="users-section__header">
+    <!-- =======================================================
+         USERS
+    ======================================================== -->
+    <main class="um-users">
+
+      <div class="um-users-heading">
         <div>
-          <span class="section-label">ACCOUNTS</span>
+          <span class="eyebrow">ACCOUNTS</span>
           <h2>
-            <%= activeTab === "all"
-              ? "All Users"
-              : activeTab.charAt(0).toUpperCase() + activeTab.slice(1) + " Users" %>
+            <%= t === 'all'
+              ? 'All Users'
+              : t.charAt(0).toUpperCase() + t.slice(1) + ' Users' %>
           </h2>
-          <p>
-            <%= visibleUsers.length %>
-            account<%= visibleUsers.length === 1 ? "" : "s" %> in this section.
-          </p>
+          <p>Accounts currently shown in this section.</p>
         </div>
-      </header>
 
-      <% if (!visibleUsers.length) { %>
+        <span class="um-result-count">
+          <%= shown.length %> account<%= shown.length === 1 ? '' : 's' %>
+        </span>
+      </div>
 
-        <div class="empty-section">
-          <div class="empty-section__icon">
+      <% if (!shown.length) { %>
+
+        <div class="um-empty">
+          <div class="um-empty-icon">
             <i class="fas fa-user-slash"></i>
           </div>
-          <h3>No users in this section</h3>
-          <p>There are currently no accounts matching this section.</p>
+          <h3>No users here yet</h3>
+          <p>There are no accounts in this category.</p>
         </div>
 
       <% } else { %>
 
-        <!-- IMPORTANT: USERS ARE A LIST -->
-        <ul class="user-list">
-          <% visibleUsers.forEach(account => { %>
+        <!-- USER LIST -->
+        <ul class="um-user-list">
 
-            <li class="user-card">
-              <!-- USER IDENTITY -->
-              <div class="user-card__identity">
-                <div class="user-avatar">
+          <% shown.forEach(account => { %>
+
+            <!-- =================================================
+                 ONE LARGE USER CONTAINER
+            ================================================== -->
+            <li class="um-user-card">
+
+              <!-- USER HEADER -->
+              <div class="um-user-card-header">
+
+                <div class="um-avatar">
                   <i class="fas fa-user"></i>
                 </div>
 
-                <div class="user-card__name">
+                <div class="um-user-identity">
                   <h3><%= account.name %></h3>
-                  <p><i class="fas fa-envelope"></i> <%= account.email %></p>
+                  <p>
+                    <i class="fas fa-envelope"></i>
+                    <%= account.email %>
+                  </p>
                 </div>
 
-                <span class="role-badge role-badge--<%= account.role %>">
+                <em class="um-role um-role-<%= account.role %>">
                   <%= account.role %>
-                </span>
+                </em>
+
               </div>
 
               <!-- USER INFORMATION -->
-              <div class="user-card__details">
-                <div class="detail-item">
-                  <span class="detail-item__label">ACCOUNT</span>
-                  <span class="detail-item__value">
+              <div class="um-user-information">
+
+                <div class="um-information-item">
+                  <span>ACCOUNT</span>
+                  <strong>
                     <i class="fas fa-circle-check"></i>
-                    Active account
-                  </span>
+                    Active
+                  </strong>
                 </div>
 
-                <div class="detail-item">
-                  <span class="detail-item__label">ROLE</span>
-                  <span class="detail-item__value">
-                    <%= account.role %>
-                  </span>
+                <div class="um-information-item">
+                  <span>ROLE</span>
+                  <strong><%= account.role %></strong>
                 </div>
 
-                <% if (account.role === "staff") { %>
-                  <div class="detail-item">
-                    <span class="detail-item__label">SUBSTATION</span>
-                    <span class="detail-item__value">
-                      <%= account.assignedSubstation?.name || "Unassigned" %>
-                    </span>
-                  </div>
-                <% } %>
+                <div class="um-information-item">
+                  <span>SUBSTATION</span>
+                  <strong>
+                    <%= account.assignedSubstation?.name || 'Not assigned' %>
+                  </strong>
+                </div>
+
               </div>
 
-              <!-- USER CONTROLS -->
-              <div class="user-card__controls">
+              <!-- ROLE FORM -->
+              <form
+                action="/auth/users/<%= account._id %>/role"
+                method="POST"
+                class="um-form">
 
-                <form action="/auth/users/<%= account._id %>/role"
-                      method="POST"
-                      class="control-block">
+                <div class="um-form-heading">
+                  <div>
+                    <span>ACCOUNT ROLE</span>
+                    <p>Change the access level for this account.</p>
+                  </div>
+                </div>
 
-                  <label for="role-<%= account._id %>">ACCOUNT ROLE</label>
+                <div class="um-form-row">
 
-                  <div class="control-row">
-                    <select id="role-<%= account._id %>" name="role">
-                      <option value="admin" <%= account.role === "admin" ? "selected" : "" %>>
-                        Admin
-                      </option>
-                      <option value="staff" <%= account.role === "staff" ? "selected" : "" %>>
-                        Staff
-                      </option>
-                      <option value="client" <%= account.role === "client" ? "selected" : "" %>>
-                        Client
-                      </option>
-                    </select>
+                  <div class="um-field">
+                    <label for="role-<%= account._id %>">Role</label>
+                    <div class="um-select-wrap">
+                      <i class="fas fa-user-tag"></i>
+                      <select id="role-<%= account._id %>" name="role">
+                        <option value="admin" <%= account.role === 'admin' ? 'selected' : '' %>>
+                          Admin
+                        </option>
+                        <option value="staff" <%= account.role === 'staff' ? 'selected' : '' %>>
+                          Staff
+                        </option>
+                        <option value="client" <%= account.role === 'client' ? 'selected' : '' %>>
+                          Client
+                        </option>
+                      </select>
+                    </div>
+                  </div>
 
-                    <button type="submit" class="control-button">
-                      <i class="fas fa-check"></i>
-                      Save Role
+                  <button type="submit" class="um-form-button">
+                    <i class="fas fa-check"></i>
+                    <span>Save Role</span>
+                  </button>
+
+                </div>
+              </form>
+
+              <!-- STAFF SUBSTATION FORM -->
+              <% if (account.role === 'staff') { %>
+
+                <form
+                  action="/auth/users/<%= account._id %>/substation"
+                  method="POST"
+                  class="um-form um-form-staff">
+
+                  <div class="um-form-heading">
+                    <div>
+                      <span>STAFF ASSIGNMENT</span>
+                      <p>Choose the substation assigned to this staff account.</p>
+                    </div>
+                  </div>
+
+                  <div class="um-form-row">
+
+                    <div class="um-field">
+                      <label for="substation-<%= account._id %>">
+                        Substation
+                      </label>
+
+                      <div class="um-select-wrap">
+                        <i class="fas fa-location-dot"></i>
+
+                        <select
+                          id="substation-<%= account._id %>"
+                          name="assignedSubstation">
+
+                          <option value="">Unassigned</option>
+
+                          <% substations.forEach(s => { %>
+                            <option
+                              value="<%= s._id %>"
+                              <%= account.assignedSubstation &&
+                                  String(account.assignedSubstation._id) === String(s._id)
+                                  ? 'selected'
+                                  : '' %>>
+                              <%= s.name %>
+                            </option>
+                          <% }) %>
+
+                        </select>
+                      </div>
+                    </div>
+
+                    <button type="submit" class="um-form-button">
+                      <i class="fas fa-location-dot"></i>
+                      <span>Assign Staff</span>
                     </button>
+
                   </div>
                 </form>
 
-                <% if (account.role === "staff") { %>
+              <% } else { %>
 
-                  <form action="/auth/users/<%= account._id %>/substation"
-                        method="POST"
-                        class="control-block">
+                <div class="um-card-note">
+                  <i class="fas fa-location-dot"></i>
+                  <span>Substation assignment is available for staff accounts.</span>
+                </div>
 
-                    <label for="substation-<%= account._id %>">
-                      ASSIGNED SUBSTATION
-                    </label>
+              <% } %>
 
-                    <div class="control-row">
-                      <select id="substation-<%= account._id %>"
-                              name="assignedSubstation">
-
-                        <option value="">Unassigned</option>
-
-                        <% substations.forEach(s => { %>
-                          <option value="<%= s._id %>"
-                            <%= account.assignedSubstation &&
-                                String(account.assignedSubstation._id) === String(s._id)
-                                ? "selected"
-                                : "" %>>
-                            <%= s.name %>
-                          </option>
-                        <% }) %>
-
-                      </select>
-
-                      <button type="submit" class="control-button">
-                        <i class="fas fa-location-dot"></i>
-                        Assign
-                      </button>
-                    </div>
-                  </form>
-
-                <% } %>
-
-              </div>
             </li>
 
           <% }) %>
+
         </ul>
 
       <% } %>
+
     </main>
+
   </section>
+
 </section>
 
 <style>
 /* ==============================================================
-   USER MANAGEMENT
-   Structured into:
-   1. Header
-   2. Summary
-   3. Section bar
-   4. Users section
-   5. Individual user cards
+   USER MANAGEMENT UI
+   --------------------------------------------------------------
+   Design direction:
+   - Green / cream administration theme
+   - Large rounded containers
+   - Clear section boundaries
+   - Vertical section bar
+   - One user per large card
+   - Properly designed forms
+   - Comfortable spacing
 ================================================================ */
 
-.users-page {
-  --green: #0b5d1e;
-  --green-soft: #edf6ef;
-  --ink: #1d2921;
-  --text: #435048;
-  --muted: #77827a;
-  --line: #e1e8e3;
-  --surface: #ffffff;
-  --background: #f6f8f6;
+.um {
+  --um-green: #176b2c;
+  --um-green-dark: #0d4f1e;
+  --um-green-light: #eaf5ed;
+  --um-green-pale: #f5faf6;
+  --um-ink: #203027;
+  --um-text: #536158;
+  --um-muted: #7c887f;
+  --um-line: #dfe8e1;
+  --um-line-light: #edf2ee;
+  --um-white: #ffffff;
+  --um-page: #f4f8f4;
 
-  max-width: 1240px;
+  width: 100%;
+  max-width: 1220px;
   margin: 0 auto;
-  padding: 28px 20px 70px;
-  color: var(--ink);
+  padding: 30px 20px 75px;
+  box-sizing: border-box;
+  color: var(--um-ink);
+}
+
+/* ==============================================================
+   SHARED
+================================================================ */
+
+.um * {
+  box-sizing: border-box;
+}
+
+.um .eyebrow {
+  display: block;
+  color: var(--um-green);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .14em;
 }
 
 /* ==============================================================
    PAGE HEADER
 ================================================================ */
 
-.page-header {
+.um-header {
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
-  gap: 25px;
+  justify-content: space-between;
+  gap: 24px;
   margin-bottom: 22px;
 }
 
-.section-label {
-  display: block;
-  color: var(--green);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .14em;
-}
-
-.page-header h1 {
-  margin: 7px 0 6px;
-  font-size: clamp(30px, 5vw, 44px);
+.um-header h1 {
+  margin: 7px 0 5px;
+  color: var(--um-ink);
+  font-size: clamp(30px, 5vw, 43px);
   line-height: 1.05;
   letter-spacing: -.025em;
 }
 
-.page-header p {
+.um-header p {
   margin: 0;
-  color: var(--muted);
+  color: var(--um-muted);
   font-size: 13px;
 }
 
-.header-action {
+.um-primary-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
   min-height: 44px;
   padding: 0 17px;
-  border-radius: 12px;
-  background: var(--green);
+  border-radius: 11px;
+  background: var(--um-green);
   color: #fff;
   text-decoration: none;
-  font-size: 12px;
-  font-weight: 850;
-  box-shadow: 0 7px 20px rgba(11, 93, 30, .12);
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: 0 7px 17px rgba(23, 107, 44, .13);
+  transition: transform .15s ease, background .15s ease;
 }
 
-.header-action:hover {
-  filter: brightness(.96);
+.um-primary-button:hover {
+  background: var(--um-green-dark);
+  transform: translateY(-1px);
 }
 
 /* ==============================================================
-   MESSAGES
+   ALERTS
 ================================================================ */
 
-.message {
+.um-alert {
   display: flex;
   align-items: center;
   gap: 9px;
   margin-bottom: 15px;
   padding: 12px 14px;
   border-radius: 11px;
-  font-size: 12px;
+  font-size: 11px;
 }
 
-.message--error {
-  color: #991b1b;
-  background: #fff1f2;
+.um-alert-error {
+  background: #fff0f1;
+  color: #9b2027;
 }
 
-.message--success {
+.um-alert-success {
+  background: #edf9f0;
   color: #166534;
-  background: #f0fdf4;
 }
 
 /* ==============================================================
    SUMMARY
 ================================================================ */
 
-.summary-section {
+.um-summary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 11px;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
-.summary-card {
+.um-summary-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 72px;
+  min-height: 76px;
   padding: 13px 15px;
-  box-sizing: border-box;
-  border: 1px solid var(--line);
+  border: 1px solid var(--um-line);
   border-radius: 15px;
-  background: var(--surface);
-  box-shadow: 0 5px 18px rgba(24, 43, 29, .035);
+  background: var(--um-white);
+  box-shadow: 0 4px 16px rgba(23, 58, 32, .035);
 }
 
-.summary-card__icon {
+.um-summary-icon {
   width: 39px;
   height: 39px;
   flex: 0 0 39px;
   display: grid;
   place-items: center;
   border-radius: 11px;
-  background: var(--green-soft);
-  color: var(--green);
+  background: var(--um-green-light);
+  color: var(--um-green);
+  font-size: 12px;
 }
 
-.summary-card strong {
+.um-summary-card strong {
   display: block;
+  color: var(--um-ink);
   font-size: 22px;
   line-height: 1;
 }
 
-.summary-card div span {
+.um-summary-card span {
   display: block;
   margin-top: 5px;
-  color: var(--muted);
+  color: var(--um-muted);
   font-size: 10px;
 }
 
 /* ==============================================================
-   MAIN MANAGEMENT SECTION
-   THIS IS THE MAJOR STRUCTURAL SECTION:
-   LEFT = VERTICAL BAR
-   RIGHT = USER LIST
+   MAIN WORKSPACE
 ================================================================ */
 
-.management-section {
+.um-workspace {
   display: grid;
-  grid-template-columns: 245px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: 238px minmax(0, 1fr);
+  gap: 17px;
   align-items: start;
 }
 
@@ -462,390 +550,492 @@ const roleCount = role => list.filter(user => user.role === role).length;
    VERTICAL SECTION BAR
 ================================================================ */
 
-.section-bar {
+.um-section-bar {
   position: sticky;
   top: 15px;
-  padding: 12px;
-  border: 1px solid var(--line);
+  padding: 13px;
+  border: 1px solid var(--um-line);
   border-radius: 17px;
-  background: var(--surface);
-  box-shadow: 0 6px 20px rgba(24, 43, 29, .04);
+  background: var(--um-white);
+  box-shadow: 0 5px 18px rgba(23, 58, 32, .035);
 }
 
-.section-bar__header {
-  padding: 7px 9px 13px;
-  border-bottom: 1px solid #edf0ed;
-  margin-bottom: 7px;
+.um-section-bar-title {
+  padding: 5px 7px 14px;
+  border-bottom: 1px solid var(--um-line-light);
 }
 
-.section-bar__header p {
-  margin: 5px 0 0;
-  color: var(--muted);
+.um-section-bar-title h2 {
+  margin: 5px 0 3px;
+  color: var(--um-ink);
+  font-size: 15px;
+}
+
+.um-section-bar-title p {
+  margin: 0;
+  color: var(--um-muted);
   font-size: 10px;
-  line-height: 1.4;
 }
 
-.section-buttons {
+.um-section-buttons {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  padding-top: 8px;
 }
 
-/* Each tab is a proper button-like section item */
-.section-button {
+/* Large, clean button-like section containers */
+.um-section-button {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   align-items: center;
   gap: 9px;
-  min-height: 54px;
-  padding: 7px 8px;
-  box-sizing: border-box;
+  min-height: 58px;
+  padding: 8px;
+  border: 1px solid transparent;
   border-radius: 12px;
+  color: #68746c;
   text-decoration: none;
-  color: #667169;
-  transition: background .15s ease, color .15s ease, transform .15s ease;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
 }
 
-.section-button:hover {
-  background: #f6f9f6;
-  color: var(--green);
+.um-section-button:hover {
+  border-color: var(--um-line);
+  background: var(--um-green-pale);
+  color: var(--um-green);
 }
 
-.section-button.is-active {
-  background: var(--green-soft);
-  color: var(--green);
-  box-shadow: inset 3px 0 0 var(--green);
+.um-section-button.active {
+  border-color: #d4e6d7;
+  background: var(--um-green-light);
+  color: var(--um-green-dark);
+  box-shadow: inset 3px 0 0 var(--um-green);
 }
 
-.section-button__icon {
-  width: 34px;
-  height: 34px;
+.um-section-button-icon {
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   border-radius: 10px;
-  background: #f5f7f5;
+  background: #f1f4f1;
+  color: #667269;
   font-size: 11px;
 }
 
-.section-button.is-active .section-button__icon {
+.um-section-button.active .um-section-button-icon {
   background: #fff;
+  color: var(--um-green);
 }
 
-.section-button__text {
+.um-section-button-copy {
   min-width: 0;
 }
 
-.section-button__text strong {
+.um-section-button-copy strong {
   display: block;
-  font-size: 11px;
-  line-height: 1.2;
+  font-size: 10px;
+  line-height: 1.25;
 }
 
-.section-button__text small {
+.um-section-button-copy small {
   display: block;
   margin-top: 3px;
-  color: #8a938d;
-  font-size: 9px;
+  color: #89948c;
+  font-size: 8px;
 }
 
-.section-button b {
+.um-section-button b {
   min-width: 22px;
-  box-sizing: border-box;
   padding: 4px 5px;
   border-radius: 20px;
   background: #f0f3f0;
-  color: #69746d;
+  color: #667269;
   text-align: center;
-  font-size: 9px;
+  font-size: 8px;
 }
 
-.section-button.is-active b {
+.um-section-button.active b {
   background: #fff;
-  color: var(--green);
+  color: var(--um-green);
 }
 
-.section-bar__footer {
+.um-section-bar-note {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 7px;
   margin-top: 10px;
   padding: 10px;
   border-radius: 10px;
-  background: #f7f9f7;
-  color: #7c867f;
-  font-size: 9px;
+  background: var(--um-green-pale);
+  color: #7a867d;
+  font-size: 8px;
   line-height: 1.45;
 }
 
-.section-bar__footer i {
-  color: var(--green);
+.um-section-bar-note i {
+  color: var(--um-green);
   margin-top: 1px;
 }
 
 /* ==============================================================
-   USERS SECTION
+   USERS AREA
 ================================================================ */
 
-.users-section {
+.um-users {
   min-width: 0;
 }
 
-.users-section__header {
+.um-users-heading {
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
+  justify-content: space-between;
+  gap: 15px;
   margin-bottom: 12px;
-  padding: 2px 1px 0;
+  padding: 2px 2px 0;
 }
 
-.users-section__header h2 {
+.um-users-heading h2 {
   margin: 5px 0 3px;
-  font-size: 22px;
-  letter-spacing: -.01em;
+  color: var(--um-ink);
+  font-size: 21px;
 }
 
-.users-section__header p {
+.um-users-heading p {
   margin: 0;
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--um-muted);
+  font-size: 10px;
+}
+
+.um-result-count {
+  padding: 6px 9px;
+  border-radius: 20px;
+  background: var(--um-green-light);
+  color: var(--um-green);
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 /* ==============================================================
    USER LIST
 ================================================================ */
 
-.user-list {
-  list-style: none;
+.um-user-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin: 0;
   padding: 0;
+  list-style: none;
 }
 
 /* ==============================================================
-   INDIVIDUAL USER CARD
+   LARGE USER CONTAINER
 ================================================================ */
 
-.user-card {
+.um-user-card {
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--um-line);
   border-radius: 17px;
-  background: var(--surface);
-  box-shadow: 0 6px 20px rgba(24, 43, 29, .04);
+  background: var(--um-white);
+  box-shadow: 0 6px 20px rgba(23, 58, 32, .045);
 }
 
-/* User identity row */
-.user-card__identity {
+/* Top identity area */
+.um-user-card-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 17px;
+  min-height: 76px;
+  padding: 15px 17px;
+  background:
+    linear-gradient(
+      90deg,
+      #f4faf5 0%,
+      #ffffff 55%
+    );
 }
 
-.user-avatar {
+.um-avatar {
   width: 46px;
   height: 46px;
   flex: 0 0 46px;
   display: grid;
   place-items: center;
+  border: 1px solid #d7e8da;
   border-radius: 13px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 15px;
+  background: var(--um-green-light);
+  color: var(--um-green);
+  font-size: 14px;
 }
 
-.user-card__name {
+.um-user-identity {
   min-width: 0;
   flex: 1;
 }
 
-.user-card__name h3 {
+.um-user-identity h3 {
+  overflow-wrap: anywhere;
   margin: 0 0 4px;
-  color: #27332b;
+  color: var(--um-ink);
   font-size: 15px;
 }
 
-.user-card__name p {
+.um-user-identity p {
   overflow-wrap: anywhere;
   margin: 0;
-  color: #78827b;
-  font-size: 11px;
+  color: var(--um-muted);
+  font-size: 10px;
 }
 
-.user-card__name p i {
+.um-user-identity p i {
   margin-right: 3px;
-  font-size: 9px;
+  color: var(--um-green);
+  font-size: 8px;
 }
 
-.role-badge {
+.um-role {
   flex: 0 0 auto;
   padding: 5px 9px;
   border-radius: 20px;
-  font-size: 9px;
+  font-size: 8px;
   font-style: normal;
   font-weight: 900;
-  letter-spacing: .02em;
   text-transform: uppercase;
 }
 
-.role-badge--admin {
-  color: #6433a5;
+.um-role-admin {
   background: #f0eafd;
+  color: #6333a2;
 }
 
-.role-badge--staff {
-  color: #12617d;
-  background: #e6f3fa;
+.um-role-staff {
+  background: #e7f3f8;
+  color: #14627c;
 }
 
-.role-badge--client {
-  color: #59625d;
-  background: #f0f2f1;
+.um-role-client {
+  background: #f0f2f0;
+  color: #59635c;
 }
 
-/* Information strip */
-.user-card__details {
+/* ==============================================================
+   USER INFORMATION STRIP
+================================================================ */
+
+.um-user-information {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  border-top: 1px solid #edf0ed;
-  border-bottom: 1px solid #edf0ed;
+  border-top: 1px solid var(--um-line-light);
+  border-bottom: 1px solid var(--um-line-light);
   background: #fbfcfb;
 }
 
-.detail-item {
+.um-information-item {
   min-width: 0;
-  padding: 12px 15px;
-  border-right: 1px solid #edf0ed;
+  padding: 11px 15px;
+  border-right: 1px solid var(--um-line-light);
 }
 
-.detail-item:last-child {
+.um-information-item:last-child {
   border-right: 0;
 }
 
-.detail-item__label {
+.um-information-item span {
   display: block;
   margin-bottom: 5px;
-  color: #909891;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .09em;
-}
-
-.detail-item__value {
-  display: block;
-  overflow-wrap: anywhere;
-  color: #49544c;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.detail-item__value i {
-  color: var(--green);
-  margin-right: 4px;
-  font-size: 8px;
-}
-
-/* Controls */
-.user-card__controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  padding: 15px 17px 17px;
-}
-
-.control-block {
-  min-width: 0;
-}
-
-.control-block label {
-  display: block;
-  margin-bottom: 6px;
-  color: #69746d;
+  color: #919a94;
   font-size: 8px;
   font-weight: 900;
   letter-spacing: .08em;
 }
 
-.control-row {
+.um-information-item strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #4b574f;
+  font-size: 10px;
+}
+
+.um-information-item strong i {
+  margin-right: 3px;
+  color: var(--um-green);
+  font-size: 8px;
+}
+
+/* ==============================================================
+   FORMS
+================================================================ */
+
+.um-form {
+  margin: 0;
+  padding: 14px 17px;
+}
+
+.um-form + .um-form {
+  border-top: 1px solid var(--um-line-light);
+}
+
+.um-form-heading {
+  margin-bottom: 9px;
+}
+
+.um-form-heading span {
+  display: block;
+  color: #69756d;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.um-form-heading p {
+  margin: 3px 0 0;
+  color: #89938c;
+  font-size: 9px;
+}
+
+.um-form-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 7px;
+  gap: 9px;
+  align-items: end;
 }
 
-.control-row select {
-  width: 100%;
+.um-field {
   min-width: 0;
-  height: 39px;
-  box-sizing: border-box;
-  padding: 0 9px;
-  border: 1px solid #d7ded8;
-  border-radius: 9px;
-  background: #fff;
-  color: #39443c;
+}
+
+.um-field label {
+  display: block;
+  margin-bottom: 5px;
+  color: #657168;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.um-select-wrap {
+  position: relative;
+}
+
+.um-select-wrap > i {
+  position: absolute;
+  left: 12px;
+  top: 13px;
+  z-index: 1;
+  color: #7c887f;
   font-size: 10px;
+  pointer-events: none;
 }
 
-.control-row select:focus {
-  outline: 0;
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(11, 93, 30, .07);
+.um-select-wrap select {
+  width: 100%;
+  height: 38px;
+  padding: 0 32px 0 33px;
+  border: 1px solid #d4ded6;
+  border-radius: 9px;
+  outline: none;
+  background: #fff;
+  color: #3e4942;
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  appearance: auto;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
 
-.control-button {
-  height: 39px;
-  padding: 0 12px;
+.um-select-wrap select:hover {
+  border-color: #b9cbbd;
+}
+
+.um-select-wrap select:focus {
+  border-color: var(--um-green);
+  box-shadow: 0 0 0 3px rgba(23, 107, 44, .08);
+}
+
+.um-form-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 14px;
   border: 0;
   border-radius: 9px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 10px;
-  font-weight: 850;
-  cursor: pointer;
+  background: var(--um-green);
+  color: #fff;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 900;
   white-space: nowrap;
+  cursor: pointer;
+  transition: background .15s ease, transform .15s ease;
 }
 
-.control-button:hover {
-  background: #e2f0e5;
+.um-form-button:hover {
+  background: var(--um-green-dark);
+  transform: translateY(-1px);
+}
+
+.um-form-staff {
+  background: #fbfdfb;
+}
+
+/* Non-staff informational container */
+.um-card-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 17px 15px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: var(--um-green-pale);
+  color: #7b877e;
+  font-size: 9px;
+}
+
+.um-card-note i {
+  color: var(--um-green);
 }
 
 /* ==============================================================
    EMPTY STATE
 ================================================================ */
 
-.empty-section {
+.um-empty {
+  min-height: 255px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 250px;
   padding: 30px;
-  box-sizing: border-box;
-  border: 1px dashed #d7dfd9;
+  border: 1px dashed #d3ddd5;
   border-radius: 16px;
   background: #fff;
   text-align: center;
 }
 
-.empty-section__icon {
+.um-empty-icon {
   width: 48px;
   height: 48px;
   display: grid;
   place-items: center;
   border-radius: 14px;
-  background: var(--green-soft);
-  color: var(--green);
+  background: var(--um-green-light);
+  color: var(--um-green);
+  font-size: 16px;
 }
 
-.empty-section h3 {
-  margin: 12px 0 5px;
-  font-size: 15px;
+.um-empty h3 {
+  margin: 11px 0 4px;
+  color: var(--um-ink);
+  font-size: 14px;
 }
 
-.empty-section p {
+.um-empty p {
   margin: 0;
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--um-muted);
+  font-size: 10px;
 }
 
 /* ==============================================================
@@ -853,108 +1043,104 @@ const roleCount = role => list.filter(user => user.role === role).length;
 ================================================================ */
 
 @media (max-width: 900px) {
-  .management-section {
-    grid-template-columns: 205px minmax(0, 1fr);
+  .um-workspace {
+    grid-template-columns: 210px minmax(0, 1fr);
   }
 
-  .user-card__controls {
+  .um-form-row {
     grid-template-columns: 1fr;
+  }
+
+  .um-form-button {
+    width: 100%;
   }
 }
 
-@media (max-width: 720px) {
-  .summary-section {
+@media (max-width: 740px) {
+  .um-summary {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .management-section {
+  .um-workspace {
     grid-template-columns: 1fr;
   }
 
-  .section-bar {
+  .um-section-bar {
     position: static;
   }
 
-  .section-buttons {
+  .um-section-buttons {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .section-button {
-    min-height: 58px;
   }
 }
 
 @media (max-width: 520px) {
-  .users-page {
+  .um {
     padding: 20px 13px 55px;
   }
 
-  .page-header {
+  .um-header {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .header-action {
+  .um-primary-button {
     width: 100%;
-    box-sizing: border-box;
   }
 
-  .summary-section {
+  .um-section-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .um-summary {
     gap: 8px;
   }
 
-  .summary-card {
-    min-height: 65px;
+  .um-summary-card {
+    min-height: 66px;
     padding: 10px;
   }
 
-  .summary-card__icon {
+  .um-summary-icon {
     width: 34px;
     height: 34px;
     flex-basis: 34px;
   }
 
-  .summary-card strong {
+  .um-summary-card strong {
     font-size: 19px;
   }
 
-  .section-buttons {
-    grid-template-columns: 1fr;
-  }
-
-  .user-card__identity {
+  .um-user-card-header {
     align-items: flex-start;
     padding: 14px;
   }
 
-  .role-badge {
+  .um-role {
     margin-left: auto;
   }
 
-  .user-card__details {
+  .um-user-information {
     grid-template-columns: 1fr;
   }
 
-  .detail-item {
+  .um-information-item {
     border-right: 0;
-    border-bottom: 1px solid #edf0ed;
+    border-bottom: 1px solid var(--um-line-light);
   }
 
-  .detail-item:last-child {
+  .um-information-item:last-child {
     border-bottom: 0;
   }
 
-  .user-card__controls {
-    padding: 14px;
+  .um-form {
+    padding: 13px 14px;
   }
 
-  .control-row {
-    grid-template-columns: 1fr;
-  }
-
-  .control-button {
-    width: 100%;
+  .um-card-note {
+    margin-left: 14px;
+    margin-right: 14px;
   }
 }
 </style>
