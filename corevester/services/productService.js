@@ -10,7 +10,6 @@ async function getProductsByCategory() {
     .lean();
 
   const map = new Map();
-
   for (const product of products) {
     const category = product.category || "other";
     if (!map.has(category)) map.set(category, []);

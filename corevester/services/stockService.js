@@ -14,7 +14,6 @@ function n(value, label, required = false) {
   }
 
   const x = Number(value);
-
   if (!Number.isFinite(x) || x < 0) {
     throw new Error(
       `${label} must be zero or greater.`
@@ -102,7 +101,6 @@ exports.createProductFromStock = async (
 
   const name = t(body.name);
   const category = t(body.category).toLowerCase();
-
   const units = whole(
     body.units,
     "Product units",
@@ -199,32 +197,22 @@ exports.createProductFromStock = async (
         const buyPrice =
           Number(stock.buyPrice || 0);
 
-        [
-          product
-        ] = await Product.create(
+        [product] = await Product.create(
           [
             {
               stock: stock._id,
-
               name,
-
               category,
-
               image: t(body.image),
-
               units,
-
               buyPrice,
-
               unitSellPrice: n(
                 body.unitSellPrice,
                 "Selling price",
                 true
               ),
-
               description:
                 t(body.description),
-
               substation:
                 substation._id
             }
@@ -235,8 +223,11 @@ exports.createProductFromStock = async (
         );
 
         /*
-         * Deduct only the units allocated
-         * to this product.
+         * THIS IS THE EXISTING BUSINESS RULE.
+         *
+         * Creating a Product allocates units from Stock.
+         * Those units become Product.units and are what the
+         * marketplace displays through /products.
          */
         stock.units -= units;
 
