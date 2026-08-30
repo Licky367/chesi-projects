@@ -1,1 +1,244 @@
-<section class="shop-page"><div class="form-card"><a href="/stock" class="secondary-btn">← Stock</a><h1 class="page-title">Create Product from Stock</h1><p>Warehouse stock: <strong><%=stock.name%></strong> — available: <strong><%=stock.units%></strong> units.</p><% if(error){ %><div class="error"><%=error%></div><% } %><% if(saved==='1'){ %><div class="notice">Product created and only allocated units were deducted from stock.</div><% } %><form action="/stock/<%=stock._id%>" method="POST"><div class="form-grid"><div class="field"><label>Product name</label><input name="name" value="<%=old.name||''%>" required></div><div class="field"><label>Category</label><input name="category" value="<%=old.category||stock.category%>" required></div><div class="field"><label>Units to allocate</label><input type="number" min="1" max="<%=stock.units%>" name="units" value="<%=old.units||''%>" required></div><div class="field"><label>Buy price</label><input type="number" min="0" step="0.01" name="buyPrice" value="<%=old.buyPrice??stock.buyPrice??0%>"></div><div class="field"><label>Selling price</label><input type="number" min="0" step="0.01" name="unitSellPrice" value="<%=old.unitSellPrice??''%>" required></div><div class="field"><label>Substation</label><select name="substation"><option value="">No substation</option><% substations.forEach(s=>{ %><option value="<%=s._id%>"><%=s.name%></option><% }) %></select></div><div class="field full"><label>Image URL</label><input name="image" value="<%=old.image||''%>"></div><div class="field full"><label>Description</label><textarea name="description"><%=old.description||''%></textarea></div></div><button class="primary-btn">Create Product</button></form></div></section>
+<section class="shop-page">
+
+  <div class="form-card">
+
+    <a
+      href="/stock"
+      class="secondary-btn"
+    >
+      ← Stock
+    </a>
+
+    <h1 class="page-title">
+      Create Product
+    </h1>
+
+    <p>
+      Warehouse stock:
+      <strong>
+        <%= stock.name %>
+      </strong>
+
+      — available:
+
+      <strong>
+        <%= stock.units %>
+      </strong>
+
+      units.
+    </p>
+
+    <% if (error) { %>
+      <div class="error">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <% if (saved === "1") { %>
+      <div class="notice">
+        Product created and only allocated units were deducted from stock.
+      </div>
+    <% } %>
+
+    <form
+      action="/stock/<%= stock._id %>"
+      method="POST"
+    >
+
+      <div class="form-grid">
+
+        <!-- PRODUCT NAME -->
+        <div class="field">
+
+          <label for="name">
+            Product name
+          </label>
+
+          <input
+            id="name"
+            name="name"
+            value="<%= old.name || '' %>"
+            required
+          >
+
+        </div>
+
+
+        <!-- CATEGORY -->
+        <div class="field">
+
+          <label for="category">
+            Category
+          </label>
+
+          <input
+            id="category"
+            name="category"
+            value="<%= old.category || stock.category %>"
+            required
+          >
+
+        </div>
+
+
+        <!-- UNITS -->
+        <div class="field">
+
+          <label for="units">
+            Units to allocate
+          </label>
+
+          <input
+            id="units"
+            type="number"
+            min="1"
+            max="<%= stock.units %>"
+            name="units"
+            value="<%= old.units || '' %>"
+            required
+          >
+
+        </div>
+
+
+        <!-- BUY PRICE -->
+        <div class="field">
+
+          <label for="buyPrice">
+            Buy price
+          </label>
+
+          <input
+            id="buyPrice"
+            name="buyPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            value="<%= stock.buyPrice || 0 %>"
+            readonly
+          >
+
+          <small style="color: var(--muted);">
+            Buy price is determined by the stock record and cannot be changed here.
+          </small>
+
+        </div>
+
+
+        <!-- SELLING PRICE -->
+        <div class="field">
+
+          <label for="unitSellPrice">
+            Selling price
+          </label>
+
+          <input
+            id="unitSellPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            name="unitSellPrice"
+            value="<%= old.unitSellPrice || '' %>"
+            required
+          >
+
+        </div>
+
+
+        <!-- SUBSTATION -->
+        <div class="field">
+
+          <label for="substation">
+            Substation
+          </label>
+
+          <select
+            id="substation"
+            name="substation"
+            required
+          >
+
+            <option
+              value=""
+              disabled
+              <%= !old.substation ? "selected" : "" %>
+            >
+              Select substation
+            </option>
+
+            <% substations.forEach((s) => { %>
+
+              <option
+                value="<%= s._id %>"
+                <%= String(old.substation || "") === String(s._id) ? "selected" : "" %>
+              >
+                <%= s.name %>
+              </option>
+
+            <% }) %>
+
+          </select>
+
+          <small style="color: var(--muted);">
+            A substation must be selected before creating the product.
+          </small>
+
+        </div>
+
+
+        <!-- IMAGE -->
+        <div class="field full">
+
+          <label for="image">
+            Image URL
+          </label>
+
+          <input
+            id="image"
+            name="image"
+            value="<%= old.image || '' %>"
+          >
+
+        </div>
+
+
+        <!-- DESCRIPTION -->
+        <div class="field full">
+
+          <label for="description">
+            Description
+          </label>
+
+          <textarea
+            id="description"
+            name="description"
+          ><%= old.description || '' %></textarea>
+
+        </div>
+
+      </div>
+
+
+      <div class="form-actions">
+
+        <button
+          type="submit"
+          class="primary-btn"
+        >
+          Create Product
+        </button>
+
+        <a
+          href="/stock"
+          class="secondary-btn"
+        >
+          Cancel
+        </a>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</section>
