@@ -300,6 +300,25 @@ const mpesaRoutes =
     );
 
 
+// ----------------------------------------------------------
+// MPESA
+// ----------------------------------------------------------
+//
+// File:
+//     ./corevester/routes/contact.js
+//
+// Mount:
+//     /contact
+//
+// ----------------------------------------------------------
+
+const contactRoutes =
+    safeLoad(
+        "contactRoutes",
+        "./corevester/routes/contact"
+    );
+
+
 // ==========================================================
 // SOCKET
 // ==========================================================
@@ -801,7 +820,7 @@ if (mpesaRoutes) {
 
 
 // ==========================================================
-// COREVERSTER MAIN ROUTES
+// 8. COREVERSTER MAIN ROUTES
 // ==========================================================
 //
 // These routes remain mounted at / exactly as before.
@@ -827,6 +846,27 @@ if (corevesterRoutes) {
     );
 }
 
+// ==========================================================
+// 9. CONTACT
+// ==========================================================
+
+if (contactRoutes) {
+
+    app.use(
+        "/contact",
+        mpesaRoutes
+    );
+
+    console.log(
+        "✅ Mounted /contact"
+    );
+
+} else {
+
+    console.error(
+        "❌ /contact NOT MOUNTED"
+    );
+}
 
 // ==========================================================
 // ROOT → PRODUCTS
