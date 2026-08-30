@@ -301,7 +301,7 @@ const mpesaRoutes =
 
 
 // ----------------------------------------------------------
-// MPESA
+// CONTACTS
 // ----------------------------------------------------------
 //
 // File:
@@ -318,6 +318,23 @@ const contactRoutes =
         "./corevester/routes/contact"
     );
 
+// ----------------------------------------------------------
+// PAYMENT SUMMARY 
+// ----------------------------------------------------------
+//
+// File:
+//     ./corevester/routes/payment-summary.js
+//
+// Mount:
+//     /payment-summary
+//
+// ----------------------------------------------------------
+
+const payRoutes =
+    safeLoad(
+        "payRoutes",
+        "./corevester/routes/payment-summary"
+    );
 
 // ==========================================================
 // SOCKET
@@ -865,6 +882,28 @@ if (contactRoutes) {
 
     console.error(
         "❌ /contact NOT MOUNTED"
+    );
+}
+
+// ==========================================================
+// 10. PAYMENT SUMMARY
+// ==========================================================
+
+if (payRoutes) {
+
+    app.use(
+        "/packages",
+        payRoutes
+    );
+
+    console.log(
+        "✅ Mounted /pay"
+    );
+
+} else {
+
+    console.error(
+        "❌ /pay NOT MOUNTED"
     );
 }
 
