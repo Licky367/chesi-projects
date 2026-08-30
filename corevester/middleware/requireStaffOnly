@@ -1,0 +1,38 @@
+// ==========================================================
+// corevester/middleware/requireStaffOnly.js
+// ==========================================================
+//
+// PURPOSE
+// ----------------------------------------------------------
+// Protect routes/pages that are accessible only to staff.
+//
+// ALLOWED:
+//     role === "staff"
+//
+// 
+//
+// ==========================================================
+
+module.exports = function requireStaffOnly(req, res, next) {
+
+    // User must be logged in
+    if (!req.user) {
+        return res.redirect("/auth/login");
+    }
+
+    // Only admins are allowed
+    if (req.user.role !== "staff") {
+
+        return res.status(403).render(
+            "error/403",
+            {
+                title: "Access Denied",
+                user: req.user,
+                error: "You do not have permission to access this page."
+            }
+        );
+    }
+
+    // Staff allowed
+    next();
+};
