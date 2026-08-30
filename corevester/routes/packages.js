@@ -1,20 +1,60 @@
-// =========================================================
-// routes/packages.js
-// =========================================================
-const express = require("express");
+const express =
+  require("express");
 
-const router = express.Router();
+const router =
+  express.Router();
 
-const controller = require("../controllers/packages");
-const requireLogin = require("../middleware/requireLogin");
+const controller =
+  require("../controllers/packages");
 
-router.get("/", requireLogin, controller.list);
+const paymentController =
+  require("../controllers/packagePaymentController");
 
-router.get("/:id", requireLogin, controller.details);
+const requireLogin =
+  require("../middleware/requireLogin");
 
-// Start an M-Pesa payment for an existing package.
-// This is primarily used for packages originally created
-// with "Pay on delivery".
-router.post("/:id/pay", requireLogin, controller.pay);
+router.get(
+  "/",
+  requireLogin,
+  controller.list
+);
 
-module.exports = router;
+// ---------------------------------------------------------
+// IMPORTANT:
+// These specific routes MUST come before /:id.
+// ---------------------------------------------------------
+
+router.get(
+  "/:id/payment-summary",
+  requireLogin,
+  controller.paymentSummary
+);
+
+router.post(
+  "/:id/payment-summary/verify",
+  requireLogin,
+  paymentController.verify
+);
+
+router.get(
+  "/:id/payment-summary/status",
+  requireLogin,
+  paymentController.status
+);
+
+// Existing STK route retained.
+router.post(
+  "/:id/pay",
+  requireLogin,
+  controller.pay
+);
+
+// Generic package route MUST remain last.
+router.get(
+  "/:id",
+  requireLogin,
+  controller.details
+);
+
+module.exports =
+  router;
