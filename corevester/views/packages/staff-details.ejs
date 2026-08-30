@@ -1,68 +1,82 @@
-<style>
-  .pd-page{max-width:980px;margin:0 auto;padding:24px 18px 70px;color:#1d2a21}.pd-back{display:inline-block;margin-bottom:14px;color:#176b2c;text-decoration:none;font-size:11px;font-weight:800}.pd-card{padding:18px;border:1px solid #dce6de;border-radius:17px;background:#fff}.pd-top{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.pd-top h1{margin:0;font-size:30px}.pd-muted{color:#718078;font-size:11px}.pd-status{display:inline-block;padding:6px 9px;border-radius:20px;font-size:9px;font-weight:900;text-transform:uppercase}.pending{background:#fff5dd;color:#9a6a00}.confirmed{background:#e8f1ff;color:#245a9c}.delivered{background:#eaf8ee;color:#176b2c}.pd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}.pd-cell{padding:11px;border:1px solid #edf2ee;border-radius:10px;background:#f7faf7}.pd-cell small{display:block;color:#879188;font-size:8px;font-weight:900;text-transform:uppercase;margin-bottom:5px}.pd-cell strong{font-size:12px}.pd-items{display:flex;flex-direction:column;gap:8px}.pd-item{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:11px;align-items:center;padding:10px;border:1px solid #edf2ee;border-radius:11px}.pd-thumb{width:52px;height:52px;display:grid;place-items:center;background:#f5faf6;border-radius:9px;overflow:hidden}.pd-thumb img{width:100%;height:100%;object-fit:cover}.pd-item h3{margin:0 0 3px;font-size:12px}.pd-item p{margin:0;color:#718078;font-size:10px}.pd-total{display:flex;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid #dce6de;font-weight:800}.pd-actions{margin-top:18px;padding:14px;border:1px solid #cfe1d3;border-radius:13px;background:#f5faf6}.pd-actions h3{margin:0 0 7px;font-size:13px}.pd-form{display:flex;gap:9px;align-items:end}.pd-form label{display:block;flex:1;font-size:9px;font-weight:800;color:#657168}.pd-form input{display:block;width:100%;height:40px;margin-top:5px;box-sizing:border-box;border:1px solid #d1ddd4;border-radius:9px;padding:0 10px}.pd-btn{height:40px;padding:0 14px;border:0;border-radius:9px;background:#176b2c;color:#fff;font-weight:900;cursor:pointer}.pd-note{font-size:10px;color:#68756c;margin-top:8px}.pd-alert{padding:11px 13px;border-radius:10px;margin-bottom:12px;font-size:11px}.pd-error{background:#fff0f0;color:#9b2424}.pd-success{background:#eaf8ee;color:#176b2c}@media(max-width:650px){.pd-top{flex-direction:column}.pd-grid{grid-template-columns:1fr}.pd-form{flex-direction:column;align-items:stretch}.pd-btn{width:100%}}
-</style>
-<section class="pd-page">
-  <a class="pd-back" href="/packages/staff"><i class="fas fa-arrow-left"></i> Package management</a>
-  <% if (error) { %><div class="pd-alert pd-error"><%= error %></div><% } %>
-  <% if (success) { %><div class="pd-alert pd-success"><%= success %></div><% } %>
+<div style="width:100%;max-width:500px;margin:0 auto;padding:10px;box-sizing:border-box;background:#f6fbf6;font-family:system-ui,sans-serif;display:flex;flex-direction:column;gap:12px;">
+
+  <a href="/packages/staff" style="display:inline-flex;align-items:center;gap:6px;padding:8px 10px;background:#fff;border:1.5px solid #cfe1d3;border-radius:8px;text-decoration:none;font-size:11px;font-weight:800;color:#0a4d1e;">← Package management</a>
+
+  <% if (typeof error!== 'undefined' && error) { %><div style="padding:10px 12px;border-radius:10px;background:#fff0f0;color:#9b2424;font-size:11px;"><%= error %></div><% } %>
+  <% if (typeof success!== 'undefined' && success) { %><div style="padding:10px 12px;border-radius:10px;background:#eaf8ee;color:#176b2c;font-size:11px;"><%= success %></div><% } %>
 
   <% if (packageDoc) { %>
-    <article class="pd-card">
-      <div class="pd-top">
-        <div><h1>Package <%= String(packageDoc._id).slice(-8) %></h1><p class="pd-muted">Created <%= new Date(packageDoc.createdAt).toLocaleString() %></p></div>
-        <span class="pd-status <%= packageDoc.status %>"><%= packageDoc.status %></span>
+  <!-- 1. HEADER -->
+  <div style="background:#e8f2e6;border:1.5px solid #cfe1d3;border-radius:14px;padding:14px 16px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+      <div>
+        <div style="font-size:16px;font-weight:900;color:#0a2e14;">Package <%= String(packageDoc._id).slice(-6) %></div>
+        <div style="font-size:10px;color:#777;margin-top:3px;"><%= new Date(packageDoc.createdAt).toLocaleString() %></div>
       </div>
+      <span style="padding:5px 10px;border-radius:20px;font-size:9px;font-weight:900;text-transform:uppercase;<%= packageDoc.status==='pending'?'background:#fff5dd;color:#9a6a00;':packageDoc.status==='confirmed'?'background:#e8f1ff;color:#245a9c;':'background:#eaf8ee;color:#176b2c;' %>"><%= packageDoc.status %></span>
+    </div>
+  </div>
 
-      <div class="pd-grid">
-        <div class="pd-cell"><small>Client</small><strong><%= packageDoc.client?.name || packageDoc.clientId %></strong></div>
-        <div class="pd-cell"><small>Client email</small><strong><%= packageDoc.client?.email || '—' %></strong></div>
-        <div class="pd-cell"><small>Confirmed by</small><strong><%= packageDoc.confirmedByStaffName || 'Not yet assigned' %></strong></div>
-        <div class="pd-cell"><small>Delivered by</small><strong><%= packageDoc.deliveredByStaffName || 'Not yet delivered' %></strong></div>
-        <div class="pd-cell"><small>Assigned substation</small><strong><%= packageDoc.confirmedSubstationId?.name || 'Not assigned' %></strong></div>
-        <div class="pd-cell"><small>Delivered substation</small><strong><%= packageDoc.deliveredSubstationId?.name || 'Not yet delivered' %></strong></div>
-        <div class="pd-cell"><small>Amount paid</small><strong>KSh <%= Number(packageDoc.totalPaid || 0).toLocaleString() %></strong></div>
-        <div class="pd-cell"><small>Arrears</small><strong>KSh <%= Number(packageDoc.arrearsAmount || 0).toLocaleString() %></strong></div>
-      </div>
+  <!-- 2. OVERVIEW - INFO GRID NOW 2x2 NOT 3 COLS -->
+  <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:12px;">
+    <div style="font-size:10px;font-weight:900;letter-spacing:0.8px;color:#2e5a36;padding:0 4px 8px 4px;">OVERVIEW</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">CLIENT</small><strong style="font-size:11px;display:block;margin-top:3px;word-break:break-word;"><%= packageDoc.client?.name || packageDoc.clientId %></strong></div>
+      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">EMAIL</small><strong style="font-size:10px;display:block;margin-top:3px;word-break:break-all;"><%= packageDoc.client?.email || '—' %></strong></div>
+      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">CONFIRMED BY</small><strong style="font-size:11px;display:block;margin-top:3px;"><%= packageDoc.confirmedByStaffName || 'Not yet' %></strong></div>
+      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">DELIVERED BY</small><strong style="font-size:11px;display:block;margin-top:3px;"><%= packageDoc.deliveredByStaffName || 'Not yet' %></strong></div>
+      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">SUBSTATION</small><strong style="font-size:11px;display:block;margin-top:3px;"><%= packageDoc.confirmedSubstationId?.name || 'Not assigned' %></strong></div>
+      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">DELIVERED AT</small><strong style="font-size:11px;display:block;margin-top:3px;"><%= packageDoc.deliveredSubstationId?.name || 'Not yet' %></strong></div>
+      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">PAID</small><strong style="font-size:11px;display:block;margin-top:3px;">KSh <%= Number(packageDoc.totalPaid||0).toLocaleString() %></strong></div>
+      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">ARREARS</small><strong style="font-size:11px;display:block;margin-top:3px;">KSh <%= Number(packageDoc.arrearsAmount||0).toLocaleString() %></strong></div>
+    </div>
+  </div>
 
-      <div class="pd-items">
+  <!-- 3. ITEMS - BOTTOM FULL WIDTH -->
+  <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:10px;">
+    <div style="background:#fff;border-radius:12px;padding:12px;">
+      <div style="font-size:11px;font-weight:900;color:#0a4d1e;margin-bottom:10px;">ITEMS</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
         <% packageDoc.items.forEach(item => { %>
-          <div class="pd-item">
-            <div class="pd-thumb"><% if (item.image) { %><img src="<%= item.image %>" alt="<%= item.name %>"><% } else { %><i class="fas fa-box" style="color:#176b2c"></i><% } %></div>
-            <div><h3><%= item.name %></h3><p>Qty <strong><%= item.qty %></strong> · KSh <%= Number(item.price || 0).toLocaleString() %> each</p></div>
-            <strong>KSh <%= Number(item.price * item.qty).toLocaleString() %></strong>
+          <div style="display:flex;gap:10px;align-items:center;padding:10px;border:1px solid #edf2ee;border-radius:10px;">
+            <div style="width:48px;height:48px;background:#f5faf6;border-radius:8px;display:grid;place-items:center;overflow:hidden;flex-shrink:0;"><% if(item.image){ %><img src="<%= item.image %>" style="width:100%;height:100%;object-fit:cover;"><% } else { %>📦<% } %></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:800;"><%= item.name %></div>
+              <div style="font-size:10px;color:#777;">Qty <%= item.qty %> · KSh <%= Number(item.price||0).toLocaleString() %> each</div>
+            </div>
+            <strong style="font-size:11px;white-space:nowrap;">KSh <%= Number(item.price*item.qty).toLocaleString() %></strong>
           </div>
         <% }) %>
       </div>
-      <div class="pd-total"><span>Total</span><span>KSh <%= Number(packageDoc.totalAmount || 0).toLocaleString() %></span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1.5px solid #dce6de;font-weight:900;font-size:12px;"><span>Total</span><span>KSh <%= Number(packageDoc.totalAmount||0).toLocaleString() %></span></div>
 
-      <% if (role === 'staff' && packageDoc.status === 'pending') { %>
-        <div class="pd-actions">
-          <h3>Claim this package</h3>
-          <p class="pd-note">Confirming assigns the package to you. Only you can then mark it delivered.</p>
-          <form method="POST" action="/packages/staff/<%= packageDoc._id %>/confirm" style="margin-top:10px"><button class="pd-btn" type="submit"><i class="fas fa-circle-check"></i> Confirm package</button></form>
+      <% if (role==='staff' && packageDoc.status==='pending') { %>
+        <div style="margin-top:14px;padding:12px;border:1.5px solid #cfe1d3;border-radius:12px;background:#f5faf6;">
+          <div style="font-size:12px;font-weight:800;">Claim this package</div>
+          <div style="font-size:10px;color:#666;margin-top:3px;">Confirming assigns the package to you.</div>
+          <form method="POST" action="/packages/staff/<%= packageDoc._id %>/confirm" style="margin-top:10px;"><button type="submit" style="width:100%;height:44px;border:none;border-radius:10px;background:#0a4d1e;color:#fff;font-weight:800;cursor:pointer;">✅ Confirm package</button></form>
         </div>
       <% } %>
 
-      <% if (role === 'staff' && packageDoc.status === 'confirmed' && String(packageDoc.confirmedByStaffId) === String(user?._id || '')) { %>
-        <div class="pd-actions">
-          <h3>Ready for delivery</h3>
-          <p class="pd-note">You confirmed this package, so you are the only staff member who can mark it delivered.</p>
-          <form method="POST" action="/packages/staff/<%= packageDoc._id %>/deliver" style="margin-top:10px"><button class="pd-btn" type="submit"><i class="fas fa-truck"></i> Mark as delivered</button></form>
+      <% if (role==='staff' && packageDoc.status==='confirmed' && String(packageDoc.confirmedByStaffId)===String(user?._id||'')) { %>
+        <div style="margin-top:14px;padding:12px;border:1.5px solid #cfe1d3;border-radius:12px;background:#f5faf6;">
+          <div style="font-size:12px;font-weight:800;">Ready for delivery</div>
+          <form method="POST" action="/packages/staff/<%= packageDoc._id %>/deliver" style="margin-top:10px;"><button type="submit" style="width:100%;height:44px;border:none;border-radius:10px;background:#0a4d1e;color:#fff;font-weight:800;cursor:pointer;">🚚 Mark as delivered</button></form>
         </div>
       <% } %>
 
-      <% if (packageDoc.status === 'delivered' && (role === 'admin' || String(packageDoc.deliveredByStaffId) === String(user?._id || ''))) { %>
-        <div class="pd-actions">
-          <h3>Record amount actually paid</h3>
-          <p class="pd-note">Use this when M-Pesa failed and the client paid cash, or when the payment was partial. The arrears are calculated automatically.</p>
-          <form class="pd-form" method="POST" action="/packages/staff/<%= packageDoc._id %>/payment">
-            <label>Amount paid (KSh)<input name="amountPaid" type="number" min="0" max="<%= Number(packageDoc.totalAmount || 0) %>" step="0.01" value="<%= Number(packageDoc.totalPaid || 0) %>" required></label>
-            <button class="pd-btn" type="submit">Save payment</button>
+      <% if (packageDoc.status==='delivered' && (role==='admin' || String(packageDoc.deliveredByStaffId)===String(user?._id||''))) { %>
+        <div style="margin-top:14px;padding:12px;border:1.5px solid #cfe1d3;border-radius:12px;background:#f5faf6;">
+          <div style="font-size:12px;font-weight:800;">Record amount actually paid</div>
+          <form method="POST" action="/packages/staff/<%= packageDoc._id %>/payment" style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+            <label style="font-size:9px;font-weight:800;color:#666;">AMOUNT PAID (KSh)<input name="amountPaid" type="number" min="0" max="<%= Number(packageDoc.totalAmount||0) %>" step="0.01" value="<%= Number(packageDoc.totalPaid||0) %>" required style="width:100%;height:42px;margin-top:5px;box-sizing:border-box;border:1.5px solid #d1ddd4;border-radius:10px;padding:0 10px;"></label>
+            <button type="submit" style="width:100%;height:42px;border:none;border-radius:10px;background:#0a4d1e;color:#fff;font-weight:800;cursor:pointer;">Save payment</button>
           </form>
         </div>
       <% } %>
-    </article>
+    </div>
+  </div>
   <% } else { %>
-    <div class="pd-card"><p>Package not found.</p></div>
+    <div style="background:#fff;border-radius:12px;padding:20px;text-align:center;">Package not found.</div>
   <% } %>
-</section>
+</div>
