@@ -1,60 +1,21 @@
-const express =
-  require("express");
+const express = require('express');
+const router = express.Router();
 
-const router =
-  express.Router();
+const controller = require('../controllers/packages');
+const requireLogin = require('../middleware/requireLogin');
+const requireStaffOrAdmin = require('../middleware/requireStaffOrAdmin');
+const requireStaff = require('../middleware/requireStaff');
 
-const controller =
-  require("../controllers/packages");
+// IMPORTANT: staff routes must be declared before /:id.
+router.get('/staff', requireStaffOrAdmin, controller.staffList);
+router.get('/staff/:id', requireStaffOrAdmin, controller.staffDetails);
+router.post('/staff/:id/confirm', requireStaff, controller.confirm);
+router.post('/staff/:id/deliver', requireStaff, controller.deliver);
+router.post('/staff/:id/payment', requireStaffOrAdmin, controller.recordPayment);
 
-const paymentController =
-  require("../controllers/packagePaymentController");
+// Client package history remains user-scoped.
+router.get('/', requireLogin, controller.list);
+router.get('/:id', requireLogin, controller.details);
+router.post('/:id/pay', requireLogin, controller.pay);
 
-const requireLogin =
-  require("../middleware/requireLogin");
-
-router.get(
-  "/",
-  requireLogin,
-  controller.list
-);
-
-// ---------------------------------------------------------
-// IMPORTANT:
-// These specific routes MUST come before /:id.
-// ---------------------------------------------------------
-
-router.get(
-  "/:id/payment-summary",
-  requireLogin,
-  controller.paymentSummary
-);
-
-router.post(
-  "/:id/payment-summary/verify",
-  requireLogin,
-  paymentController.verify
-);
-
-router.get(
-  "/:id/payment-summary/status",
-  requireLogin,
-  paymentController.status
-);
-
-// Existing STK route retained.
-router.post(
-  "/:id/pay",
-  requireLogin,
-  controller.pay
-);
-
-// Generic package route MUST remain last.
-router.get(
-  "/:id",
-  requireLogin,
-  controller.details
-);
-
-module.exports =
-  router;
+module.exports = router;
