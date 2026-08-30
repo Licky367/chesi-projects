@@ -18,6 +18,7 @@ exports.list = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+
     res.status(500).render("cart/carts", {
       title: "Your Cart | CoreVester",
       cart: null,
@@ -30,10 +31,18 @@ exports.list = async (req, res) => {
 exports.details = async (req, res) => {
   try {
     const cart = await cartService.getCart(req);
-    if (!cart || !cart.items.length) return res.redirect("/carts");
 
-    const item = cart.items.find(i => String(i.productId) === String(req.params.id));
-    if (!item) return res.status(404).redirect("/carts");
+    if (!cart || !cart.items.length) {
+      return res.redirect("/carts");
+    }
+
+    const item = cart.items.find(
+      i => String(i.productId) === String(req.params.id)
+    );
+
+    if (!item) {
+      return res.status(404).redirect("/carts");
+    }
 
     res.render("cart/cart-details", {
       title: `${item.name} | Cart | CoreVester`,
@@ -54,12 +63,15 @@ exports.remove = async (req, res) => {
     res.redirect("/carts");
   } catch (err) {
     console.error(err);
-    res.redirect(`/carts/${req.params.id}?error=${encodeURIComponent(err.message)}`);
+
+    res.redirect(
+      `/carts/${req.params.id}?error=${encodeURIComponent(err.message)}`
+    );
   }
 };
 
 exports.checkout = async (req, res) => {
-  const method = req.body.paymentMethod;
+  const method = String(req.body.paymentMethod || "").trim();
 
   try {
     if (method === "pay_on_delivery") {
@@ -81,17 +93,28 @@ exports.checkout = async (req, res) => {
       return res.redirect(`/carts/payment/${result.paymentId}`);
     }
 
-    return res.redirect("/carts?error=Choose a checkout method.");
+    return res.redirect(
+      "/carts?error=Choose a checkout method."
+    );
   } catch (err) {
-    console.error(err);
-    return res.redirect(`/carts?error=${encodeURIComponent(err.message)}`);
+    console.error("Checkout error:", err);
+
+    return res.redirect(
+      `/carts?error=${encodeURIComponent(err.message)}`
+    );
   }
 };
 
 exports.paymentPage = async (req, res) => {
   try {
-    const payment = await paymentService.getPaymentForUser(req, req.params.id);
-    if (!payment) return res.status(404).redirect("/carts");
+    const payment = await paymentService.getPaymentForUser(
+      req,
+      req.params.id
+    );
+
+    if (!payment) {
+      return res.status(404).redirect("/carts");
+    }
 
     res.render("cart/payment-status", {
       title: "M-Pesa Payment | CoreVester",
@@ -105,18 +128,32 @@ exports.paymentPage = async (req, res) => {
 
 exports.paymentStatus = async (req, res) => {
   try {
-    const payment = await paymentService.getPaymentForUser(req, req.params.id);
-    if (!payment) return res.status(404).json({ ok: false, message: "Payment not found." });
+    const payment = await paymentService.getPaymentForUser(
+      req,
+      req.params.id
+    );
+
+    if (!payment) {
+      return res.status(404).json({
+        ok: false,
+        message: "Payment not found."
+      });
+    }
 
     res.json({
       ok: true,
       status: payment.status,
       receipt: payment.mpesaReceiptNumber || "",
-      description: payment.resultDescription || ""
+      description: payment.resultDescription || "",
+      packageId: payment.packageId || null
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ ok: false, message: "Unable to check payment status." });
+
+    res.status(500).json({
+      ok: false,
+      message: "Unable to check payment status."
+    });
   }
 };
 
@@ -124,9 +161,13 @@ exports.mpesaCallback = async (req, res) => {
   try {
     await paymentService.handleCallback(req.body);
   } catch (err) {
+    // Never make Daraja retry endlessly because of an internal
+    // application error. Log it and acknowledge the callback.
     console.error("M-Pesa callback:", err);
   }
 
-  // Daraja expects a successful HTTP response.
-  res.json({ ResultCode: 0, ResultDesc: "Accepted" });
+  res.json({
+    ResultCode: 0,
+    ResultDesc: "Accepted"
+  });
 };
