@@ -817,7 +817,7 @@ if (corevesterRoutes) {
     );
 
     console.log(
-        "✅ Mounted CoreVester /"
+        "✅ Mounted CoreVester /about"
     );
 
 } else {
