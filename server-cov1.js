@@ -808,24 +808,22 @@ if (mpesaRoutes) {
 // ==========================================================
 // COREVERSTER MAIN ROUTES
 // ==========================================================
-//
-// IMPORTANT:
-//
-// The previous "/" mount has deliberately been removed.
-//
-// /products is the entry page.
-//
-// corevesterRoutes is loaded above but is NOT mounted at "/"
-// so that "/" does not become the CoreVester home page.
-//
-// ==========================================================
-
 if (corevesterRoutes) {
 
-    console.log(
-        "ℹ️ CoreVester main routes loaded but not mounted at /"
+    app.use(
+        "/",
+        corevesterRoutes
     );
 
+    console.log(
+        "✅ Mounted /"
+    );
+
+} else {
+
+    console.error(
+        "❌ / NOT MOUNTED"
+    );
 }
 
 
