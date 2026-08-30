@@ -1,4 +1,5 @@
 const User = require("../models/user");
+
 const Invitation = require("../models/invitation");
 
 function cleanString(value) {
