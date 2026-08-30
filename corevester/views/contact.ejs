@@ -4,6 +4,7 @@
      CONTACT PAGE
      ========================================================== -->
 
+
 <style>
 
     /* ======================================================
@@ -26,20 +27,25 @@
     .contact-intro {
         text-align: center;
         max-width: 720px;
-        margin: 0 auto 30px;
+        margin: 0 auto 32px;
     }
 
     .contact-intro h1 {
         margin: 0 0 10px;
+
         color: #17231c;
+
         font-size: clamp(30px, 6vw, 44px);
         line-height: 1.1;
         font-weight: 800;
+        letter-spacing: -.5px;
     }
 
     .contact-intro p {
         margin: 0;
+
         color: #68746d;
+
         font-size: 15px;
         line-height: 1.7;
     }
@@ -51,101 +57,111 @@
 
     .company-card {
         background: #ffffff;
+
         border: 1px solid #e1e8e2;
         border-radius: 20px;
+
         padding: 28px;
-        box-shadow: 0 8px 28px rgba(20, 45, 29, .06);
+
+        box-shadow:
+            0 8px 28px rgba(20, 45, 29, .06);
+
         margin-bottom: 22px;
     }
 
 
-    .company-brand {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        padding-bottom: 22px;
-        border-bottom: 1px solid #edf1ee;
-    }
-
-
-    .company-logo {
-        width: 82px;
-        height: 82px;
-        object-fit: contain;
-        flex: 0 0 82px;
-    }
-
-
-    .company-name {
-        min-width: 0;
-    }
-
     .company-name h2 {
-        margin: 0 0 5px;
+        margin: 0 0 7px;
+
         color: #17231c;
-        font-size: clamp(21px, 4vw, 28px);
+
+        font-size: clamp(22px, 4vw, 29px);
         line-height: 1.2;
+        font-weight: 800;
     }
+
 
     .company-name p {
         margin: 0;
+
         color: #4c6655;
-        font-size: 13px;
+
+        font-size: 14px;
         line-height: 1.5;
+        font-weight: 600;
     }
 
-
-    /* ======================================================
-       ABOUT COMPANY
-       ====================================================== */
 
     .company-description {
+        margin-top: 22px;
         padding-top: 22px;
+
+        border-top: 1px solid #edf1ee;
     }
+
 
     .company-description p {
         margin: 0;
+
         color: #58645d;
+
         font-size: 15px;
         line-height: 1.8;
     }
 
 
     /* ======================================================
-       CONTACT DETAILS GRID
+       CONTACT DETAILS
        ====================================================== */
 
     .contact-details {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
         gap: 18px;
+
+        margin-bottom: 22px;
     }
 
 
     .contact-card {
         display: flex;
+
         align-items: flex-start;
+
         gap: 15px;
+
         background: #ffffff;
+
         border: 1px solid #e1e8e2;
         border-radius: 18px;
+
         padding: 21px;
-        box-shadow: 0 6px 22px rgba(20, 45, 29, .045);
+
+        box-shadow:
+            0 6px 22px rgba(20, 45, 29, .045);
     }
 
 
     .contact-icon {
         width: 45px;
         height: 45px;
-        flex: 0 0 45px;
+
+        min-width: 45px;
 
         display: flex;
+
         align-items: center;
         justify-content: center;
 
         border-radius: 13px;
+
         background: #edf7ef;
+
         color: #176234;
+
         font-size: 18px;
     }
 
@@ -154,27 +170,39 @@
         min-width: 0;
     }
 
+
     .contact-content h3 {
         margin: 0 0 5px;
+
         color: #25332a;
+
         font-size: 14px;
         font-weight: 750;
     }
 
+
     .contact-content p {
         margin: 0;
+
         color: #68736c;
+
         font-size: 14px;
-        line-height: 1.55;
+        line-height: 1.6;
     }
+
 
     .contact-content a {
         color: #176234;
-        text-decoration: none;
+
         font-size: 14px;
-        line-height: 1.55;
+
+        line-height: 1.6;
+
+        text-decoration: none;
+
         word-break: break-word;
     }
+
 
     .contact-content a:hover {
         text-decoration: underline;
@@ -182,44 +210,63 @@
 
 
     /* ======================================================
-       SERVICES
+       BUSINESS INFORMATION
        ====================================================== */
 
     .company-services {
-        margin-top: 22px;
         background: #f6faf7;
+
         border: 1px solid #e0ebe2;
         border-radius: 18px;
+
         padding: 23px;
     }
 
+
     .company-services h2 {
-        margin: 0 0 14px;
+        margin: 0 0 15px;
+
         color: #1c2c22;
+
         font-size: 20px;
+        font-weight: 800;
     }
+
 
     .services-list {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px 20px;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 11px 20px;
+
         margin: 0;
         padding: 0;
+
         list-style: none;
     }
 
+
     .services-list li {
         display: flex;
+
         align-items: flex-start;
+
         gap: 9px;
+
         color: #5f6d64;
+
         font-size: 14px;
-        line-height: 1.5;
+
+        line-height: 1.55;
     }
 
+
     .services-list i {
-        color: #3a8a50;
         margin-top: 3px;
+
+        color: #3a8a50;
     }
 
 
@@ -233,24 +280,18 @@
             padding: 22px 14px 45px;
         }
 
+
         .company-card {
             padding: 21px;
+
             border-radius: 17px;
         }
 
-        .company-brand {
-            align-items: center;
-        }
-
-        .company-logo {
-            width: 68px;
-            height: 68px;
-            flex-basis: 68px;
-        }
 
         .contact-details {
             grid-template-columns: 1fr;
         }
+
 
         .services-list {
             grid-template-columns: 1fr;
@@ -261,18 +302,15 @@
 
     @media (max-width: 430px) {
 
-        .company-brand {
-            gap: 13px;
+        .contact-card {
+            padding: 18px;
         }
 
-        .company-logo {
-            width: 60px;
-            height: 60px;
-            flex-basis: 60px;
-        }
 
-        .company-name h2 {
-            font-size: 20px;
+        .contact-icon {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
         }
 
     }
@@ -284,17 +322,18 @@
 
 
     <!-- ==================================================
-         INTRO
+         PAGE INTRO
          ================================================== -->
 
     <section class="contact-intro">
 
-        <h1>Contact Us</h1>
+        <h1>
+            Contact Us
+        </h1>
 
         <p>
-            Get in touch with CoreVester Investments Limited.
-            We are here to assist you with our products,
-            services and business enquiries.
+            Get in touch with CoreVester Investments Limited
+            for information about our products and services.
         </p>
 
     </section>
@@ -306,26 +345,15 @@
 
     <section class="company-card">
 
+        <div class="company-name">
 
-        <div class="company-brand">
+            <h2>
+                CoreVester Investments Limited
+            </h2>
 
-            <img
-                src="/images/corevester.png"
-                alt="CoreVester Investments Limited"
-                class="company-logo"
-            >
-
-            <div class="company-name">
-
-                <h2>
-                    CoreVester Investments Limited
-                </h2>
-
-                <p>
-                    Medical Equipment, Surgical and Hospital Supplies
-                </p>
-
-            </div>
+            <p>
+                Medical Equipment, Surgical and Hospital Supplies
+            </p>
 
         </div>
 
@@ -335,9 +363,9 @@
             <p>
                 CoreVester Investments Limited is a Kenyan company
                 dealing in medical equipment, surgical supplies and
-                hospital supplies. We provide products intended to
-                support healthcare facilities, professionals and
-                other customers with their medical supply needs.
+                hospital supplies. We are committed to providing
+                healthcare-related products to institutions,
+                professionals and other customers.
             </p>
 
         </div>
@@ -346,23 +374,29 @@
 
 
     <!-- ==================================================
-         CONTACT DETAILS
+         CONTACT INFORMATION
          ================================================== -->
 
     <section class="contact-details">
 
 
-        <!-- LOCATION -->
+        <!-- ==================================================
+             LOCATION
+             ================================================== -->
 
         <article class="contact-card">
 
             <div class="contact-icon">
+
                 <i class="fas fa-location-dot"></i>
+
             </div>
 
             <div class="contact-content">
 
-                <h3>Our Location</h3>
+                <h3>
+                    Location
+                </h3>
 
                 <p>
                     Kitengela, Kenya
@@ -373,85 +407,82 @@
         </article>
 
 
-        <!-- PHONE -->
+        <!-- ==================================================
+             PHONE
+             ================================================== -->
 
         <article class="contact-card">
 
             <div class="contact-icon">
+
                 <i class="fas fa-phone"></i>
+
             </div>
 
             <div class="contact-content">
 
-                <h3>Phone</h3>
+                <h3>
+                    Phone
+                </h3>
 
                 <p>
-                    Contact us by phone for enquiries
-                    and assistance.
+                    Contact CoreVester Investments Limited
+                    by phone for enquiries and assistance.
                 </p>
-
-                <!--
-                    Add the verified company number here.
-
-                    Example:
-
-                    <a href="tel:+254XXXXXXXXX">
-                        +254 XXX XXX XXX
-                    </a>
-                -->
 
             </div>
 
         </article>
 
 
-        <!-- EMAIL -->
+        <!-- ==================================================
+             EMAIL
+             ================================================== -->
 
         <article class="contact-card">
 
             <div class="contact-icon">
+
                 <i class="fas fa-envelope"></i>
+
             </div>
 
             <div class="contact-content">
 
-                <h3>Email</h3>
+                <h3>
+                    Email
+                </h3>
 
                 <p>
-                    Send us an email for business
-                    and product enquiries.
+                    Contact us by email for business,
+                    product and service enquiries.
                 </p>
-
-                <!--
-                    Add the verified company email here.
-
-                    Example:
-
-                    <a href="mailto:info@example.com">
-                        info@example.com
-                    </a>
-                -->
 
             </div>
 
         </article>
 
 
-        <!-- BUSINESS -->
+        <!-- ==================================================
+             COMPANY
+             ================================================== -->
 
         <article class="contact-card">
 
             <div class="contact-icon">
+
                 <i class="fas fa-building"></i>
+
             </div>
 
             <div class="contact-content">
 
-                <h3>Business</h3>
+                <h3>
+                    Company
+                </h3>
 
                 <p>
-                    Medical equipment, surgical and
-                    hospital supplies.
+                    CoreVester Investments Limited
                 </p>
 
             </div>
@@ -462,35 +493,59 @@
 
 
     <!-- ==================================================
-         WHAT WE PROVIDE
+         OUR BUSINESS
          ================================================== -->
 
     <section class="company-services">
 
         <h2>
-            What We Do
+            Our Business
         </h2>
+
 
         <ul class="services-list">
 
             <li>
+
                 <i class="fas fa-circle-check"></i>
-                <span>Medical equipment</span>
+
+                <span>
+                    Medical equipment
+                </span>
+
             </li>
 
-            <li>
-                <i class="fas fa-circle-check"></i>
-                <span>Surgical supplies</span>
-            </li>
 
             <li>
+
                 <i class="fas fa-circle-check"></i>
-                <span>Hospital supplies</span>
+
+                <span>
+                    Surgical supplies
+                </span>
+
             </li>
 
+
             <li>
+
                 <i class="fas fa-circle-check"></i>
-                <span>Healthcare product enquiries</span>
+
+                <span>
+                    Hospital supplies
+                </span>
+
+            </li>
+
+
+            <li>
+
+                <i class="fas fa-circle-check"></i>
+
+                <span>
+                    Healthcare product enquiries
+                </span>
+
             </li>
 
         </ul>
