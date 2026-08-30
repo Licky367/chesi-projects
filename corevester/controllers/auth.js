@@ -95,14 +95,11 @@ exports.login = async (req, res, next) => {
             });
         }
 
-        // Regenerate the session after successful authentication
-        // to prevent session fixation.
         await regenerateSession(req);
 
         req.session.user =
             authService.toSessionUser(user);
 
-        // Explicitly persist the authenticated session.
         await saveSession(req);
 
         return res.redirect(returnTo);
@@ -123,8 +120,7 @@ exports.showRegister = (req, res) => {
 exports.register = async (req, res, next) => {
     try {
         const name =
-            String(req.body?.name || "")
-                .trim();
+            String(req.body?.name || "").trim();
 
         const email =
             String(req.body?.email || "")
@@ -221,3 +217,169 @@ exports.logout = (req, res, next) => {
         return res.redirect("/");
     });
 };
+
+// ==========================================================
+// ADMIN USER MANAGEMENT
+// ==========================================================
+
+function requireAdmin(req, res, next) {
+    if (!req.user) {
+        return res.redirect(
+            "/auth/login?returnTo=" +
+            encodeURIComponent("/auth/users")
+        );
+    }
+
+    if (req.user.role !== "admin") {
+        return res.status(403).render(
+            "error/403",
+            {
+                title: "Access Denied",
+                user: req.user,
+                error: "You do not have permission to access user management."
+            }
+        );
+    }
+
+    next();
+}
+
+exports.showUsers = [
+    requireAdmin,
+    async (req, res, next) => {
+        try {
+            const users =
+                await authService.getAllUsers();
+
+            const invitations =
+                await authService.getInvitations();
+
+            const substations =
+                await authService.getActiveSubstations();
+
+            const allowedTabs = [
+                "all",
+                "admin",
+                "staff",
+                "client",
+                "invitations"
+            ];
+
+            const tab =
+                allowedTabs.includes(req.query.tab)
+                    ? req.query.tab
+                    : "all";
+
+            return res.render(
+                "admin/users",
+                {
+                    title: "User Management - COREVESTER",
+                    user: req.user,
+                    users,
+                    invitations,
+                    substations,
+                    tab,
+                    error: null,
+                    success: null
+                }
+            );
+
+        } catch (err) {
+            return next(err);
+        }
+    }
+];
+
+exports.inviteUser = [
+    requireAdmin,
+    async (req, res, next) => {
+        try {
+            await authService.createInvitation({
+                email: req.body?.email,
+                role: req.body?.role,
+                invitedBy: req.user._id
+            });
+
+            return res.redirect(
+                "/auth/users?tab=invitations&success=" +
+                encodeURIComponent(
+                    "Invitation role saved successfully."
+                )
+            );
+        } catch (err) {
+            return next(err);
+        }
+    }
+];
+
+exports.changeRole = [
+    requireAdmin,
+    async (req, res, next) => {
+        try {
+            const updated =
+                await authService.updateUserRole({
+                    userId: req.params.id,
+                    role: req.body?.role,
+                    actingAdminId: req.user._id
+                });
+
+            if (
+                String(updated._id) ===
+                String(req.user._id)
+            ) {
+                req.session.user =
+                    authService.toSessionUser(updated);
+
+                await saveSession(req);
+            }
+
+            return res.redirect(
+                "/auth/users?tab=" +
+                encodeURIComponent(
+                    updated.role
+                ) +
+                "&success=" +
+                encodeURIComponent(
+                    "User role updated successfully."
+                )
+            );
+
+        } catch (err) {
+            return next(err);
+        }
+    }
+];
+
+exports.assignSubstation = [
+    requireAdmin,
+    async (req, res, next) => {
+        try {
+            const updated =
+                await authService.assignSubstation({
+                    userId: req.params.id,
+                    substationId:
+                        req.body?.assignedSubstation
+                });
+
+            if (
+                String(updated._id) ===
+                String(req.user._id)
+            ) {
+                req.session.user =
+                    authService.toSessionUser(updated);
+
+                await saveSession(req);
+            }
+
+            return res.redirect(
+                "/auth/users?tab=staff&success=" +
+                encodeURIComponent(
+                    "Substation assignment updated successfully."
+                )
+            );
+
+        } catch (err) {
+            return next(err);
+        }
+    }
+];
