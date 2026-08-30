@@ -202,6 +202,7 @@ const userSchema =
                 type: String,
                 enum: [
                     "admin",
+                    "staff",
                     "client"
                 ],
                 default: "client",
