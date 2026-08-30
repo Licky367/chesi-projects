@@ -1,185 +1,169 @@
+const User = require("../models/user");
+
 // ==========================================================
-// corevester/services/auth.js
-// COREVESTER AUTH SERVICE
+// CLEAN STRING
 // ==========================================================
 
-const User =
-    require("../models/user");
+function cleanString(value) {
+    return String(value ?? "").trim();
+}
 
 // ==========================================================
 // NORMALIZE EMAIL
 // ==========================================================
 
 function normalizeEmail(email) {
-
-    return String(
-        email || ""
-    )
-    .trim()
-    .toLowerCase();
+    return cleanString(email).toLowerCase();
 }
 
 // ==========================================================
-// LOGIN
+// SAFE SESSION USER
 // ==========================================================
 
-exports.login =
-    async ({
-        email,
-        password
-    }) => {
+exports.toSessionUser = function(user) {
+    if (!user) {
+        return null;
+    }
 
-        const normalizedEmail =
-            normalizeEmail(email);
-
-        if (
-            !normalizedEmail ||
-            !password
-        ) {
-            return null;
-        }
-
-        const user =
-            await User.findOne(
-                {
-                    email:
-                        normalizedEmail
-                }
-            );
-
-        if (!user) {
-            return null;
-        }
-
-        const valid =
-            await user.comparePassword(
-                password
-            );
-
-        if (!valid) {
-            return null;
-        }
-
-        return user;
+    return {
+        _id: String(user._id),
+        name: user.name,
+        email: user.email,
+        role: user.role
     };
+};
 
 // ==========================================================
-// REGISTER
+// REGISTER USER
+// ==========================================================
+//
+// IMPORTANT:
+// Password hashing is handled ONLY by models/user.js.
+//
+// The plain password is passed to User and user.save()
+// triggers the model's pre("save") scrypt hashing hook.
+//
 // ==========================================================
 
-exports.register =
-    async ({
-        name,
-        email,
-        password
-    }) => {
+exports.register = async function(data) {
+    data = data || {};
 
-        const normalizedEmail =
-            normalizeEmail(email);
+    const name =
+        cleanString(data.name);
 
-        if (!normalizedEmail) {
+    const email =
+        normalizeEmail(data.email);
 
-            const error =
-                new Error(
-                    "Email is required."
-                );
+    const password =
+        String(data.password ?? "");
 
-            error.status = 400;
+    if (!name) {
+        throw new Error("Name is required.");
+    }
 
-            throw error;
-        }
+    if (!email) {
+        throw new Error("Email is required.");
+    }
 
-        const existing =
-            await User.findOne(
-                {
-                    email:
-                        normalizedEmail
-                }
-            )
-            .select("_id");
+    if (!password) {
+        throw new Error("Password is required.");
+    }
 
-        if (existing) {
-
-            const error =
-                new Error(
-                    "An account with that email already exists."
-                );
-
-            error.status = 400;
-
-            throw error;
-        }
-
-        const user =
-            new User(
-                {
-                    name:
-                        String(
-                            name || ""
-                        ).trim(),
-
-                    email:
-                        normalizedEmail,
-
-                    password
-                }
-            );
-
-        await user.save();
-
-        return user;
-    };
-
-// ==========================================================
-// SESSION USER
-// ==========================================================
-
-exports.toSessionUser =
-    user => ({
-
-        id:
-            String(
-                user._id
-            ),
-
-        _id:
-            String(
-                user._id
-            ),
-
-        name:
-            user.name ||
-            user.fullName ||
-            user.username ||
-            "",
-
-        email:
-            user.email ||
-            "",
-
-        role:
-            user.role ||
-            null
-    });
-
-// ==========================================================
-// REQUIRE LOGIN
-// ==========================================================
-
-exports.requireLogin =
-    (req, res, next) => {
-
-        if (req.user) {
-            return next();
-        }
-
-        const returnTo =
-            encodeURIComponent(
-                req.originalUrl ||
-                "/"
-            );
-
-        return res.redirect(
-            `/auth/login?returnTo=${returnTo}`
+    if (password.length < 6) {
+        throw new Error(
+            "Password must be at least 6 characters."
         );
-    };
+    }
+
+    const existingUser =
+        await User.findOne({
+            email
+        });
+
+    if (existingUser) {
+        throw new Error(
+            "An account with this email already exists."
+        );
+    }
+
+    const user =
+        new User({
+            name,
+            email,
+            password,
+            role: "client"
+        });
+
+    await user.save();
+
+    return user;
+};
+
+// ==========================================================
+// LOGIN USER
+// ==========================================================
+//
+// IMPORTANT:
+// User.password uses select:false.
+//
+// Therefore the password MUST be explicitly selected before
+// comparePassword() is called.
+//
+// Password verification remains compatible with the existing
+// user model's crypto.scrypt salt:hash format.
+//
+// ==========================================================
+
+exports.login = async function(data) {
+    data = data || {};
+
+    const email =
+        normalizeEmail(data.email);
+
+    const password =
+        String(data.password ?? "");
+
+    if (!email || !password) {
+        throw new Error(
+            "Email and password are required."
+        );
+    }
+
+    const user =
+        await User
+            .findOne({
+                email
+            })
+            .select("+password");
+
+    if (!user) {
+        throw new Error(
+            "Invalid email or password."
+        );
+    }
+
+    const isPasswordCorrect =
+        await user.comparePassword(
+            password
+        );
+
+    if (!isPasswordCorrect) {
+        throw new Error(
+            "Invalid email or password."
+        );
+    }
+
+    return user;
+};
+
+// ==========================================================
+// GET USER BY ID
+// ==========================================================
+
+exports.getUserById = async function(userId) {
+    if (!userId) {
+        return null;
+    }
+
+    return User.findById(userId);
+};
