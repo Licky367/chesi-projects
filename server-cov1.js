@@ -1,5 +1,5 @@
 // ==========================================================
-// server-corevester.js - COREVESTER
+// server-cov1.js - COREVESTER
 // ==========================================================
 const express = require("express");
 const http = require("http");
@@ -103,6 +103,7 @@ const seedUser =
 // ==========================================================
 // SAFE ROUTE LOADER
 // ==========================================================
+
 function safeLoad(name, pathToRequire) {
 
     try {
@@ -133,6 +134,7 @@ function safeLoad(name, pathToRequire) {
     }
 }
 
+
 // ==========================================================
 // ROUTES
 // ==========================================================
@@ -161,6 +163,7 @@ const authRoutes =
         "./corevester/routes/auth"
     );
 
+
 // ----------------------------------------------------------
 // COREVERSTER MAIN ROUTES
 // ----------------------------------------------------------
@@ -168,8 +171,9 @@ const authRoutes =
 // File:
 //     ./corevester/routes/index.js
 //
-// Mount:
-//     /
+// NOTE:
+//     This route is NOT mounted at "/" as the application
+//     entry page. The entry page is /products.
 //
 // ----------------------------------------------------------
 
@@ -178,6 +182,7 @@ const corevesterRoutes =
         "corevesterRoutes",
         "./corevester/routes/index"
     );
+
 
 // ----------------------------------------------------------
 // PRODUCTS
@@ -189,6 +194,8 @@ const corevesterRoutes =
 // Mount:
 //     /products
 //
+// This is the COREVESTER ENTRY PAGE.
+//
 // ----------------------------------------------------------
 
 const productsRoutes =
@@ -196,6 +203,7 @@ const productsRoutes =
         "productsRoutes",
         "./corevester/routes/products"
     );
+
 
 // ----------------------------------------------------------
 // CARTS
@@ -215,6 +223,7 @@ const cartsRoutes =
         "./corevester/routes/carts"
     );
 
+
 // ----------------------------------------------------------
 // STOCK
 // ----------------------------------------------------------
@@ -233,6 +242,7 @@ const stockRoutes =
         "./corevester/routes/stock"
     );
 
+
 // ----------------------------------------------------------
 // SUBSTATIONS
 // ----------------------------------------------------------
@@ -241,7 +251,7 @@ const stockRoutes =
 //     ./corevester/routes/substations.js
 //
 // Mount:
-//     /
+//     /substations
 //
 // ----------------------------------------------------------
 
@@ -250,6 +260,8 @@ const substationsRoutes =
         "substationsRoutes",
         "./corevester/routes/substations"
     );
+
+
 // ----------------------------------------------------------
 // PACKAGES
 // ----------------------------------------------------------
@@ -267,6 +279,7 @@ const packageRoutes =
         "packageRoutes",
         "./corevester/routes/packages"
     );
+
 
 // ----------------------------------------------------------
 // MPESA
@@ -290,6 +303,7 @@ const mpesaRoutes =
 // ==========================================================
 // SOCKET
 // ==========================================================
+
 const socketHandler =
     require("./socket/socket");
 
@@ -315,6 +329,7 @@ if (
     app.enable("trust proxy");
 }
 
+
 // ==========================================================
 // SECURITY
 // ==========================================================
@@ -338,6 +353,7 @@ app.use(
 
         standardHeaders: true,
         legacyHeaders: false,
+
         message: {
             message: "Too many requests"
         }
@@ -369,6 +385,7 @@ const allowedOrigin =
             ? false
             : "*"
     );
+
 
 const io =
     new Server(server, {
@@ -402,6 +419,7 @@ app.use(
     })
 );
 
+
 app.use(
     methodOverride("_method")
 );
@@ -413,12 +431,9 @@ app.use(
 //
 // Persistent session storage.
 //
-// The original session expired after 24 hours.
-// This version keeps the authenticated session persistent
-// for a very long period and refreshes the cookie while the
-// user continues using the application.
-//
-// Logout must explicitly destroy the session.
+// The session is stored in MongoDB and remains available
+// across browser restarts until the session expires or the
+// user explicitly logs out.
 //
 // ==========================================================
 
@@ -430,10 +445,12 @@ const SESSION_MAX_AGE =
     60 *
     1000;
 
+
 const SESSION_TTL =
     Math.floor(
         SESSION_MAX_AGE / 1000
     );
+
 
 const sessionStore =
     isProduction &&
@@ -451,6 +468,7 @@ const sessionStore =
         })
         : undefined;
 
+
 app.use(
     session({
         secret:
@@ -460,25 +478,31 @@ app.use(
         store:
             sessionStore,
 
-        resave: false,
+        resave:
+            false,
 
-        saveUninitialized: false,
+        saveUninitialized:
+            false,
 
-        rolling: true,
+        rolling:
+            true,
 
         cookie: {
-            httpOnly: true,
+            httpOnly:
+                true,
 
             secure:
                 isProduction,
 
-            sameSite: "lax",
+            sameSite:
+                "lax",
 
             maxAge:
                 SESSION_MAX_AGE
         }
     })
 );
+
 
 // ==========================================================
 // REQUEST / USER CONTEXT
@@ -501,6 +525,7 @@ app.use((req, res, next) => {
 
     next();
 });
+
 
 // ==========================================================
 // HEALTH CHECK
@@ -530,6 +555,7 @@ app.use(
     )
 );
 
+
 app.use(
     "/uploads",
     express.static(
@@ -555,6 +581,7 @@ app.set(
     "view engine",
     "ejs"
 );
+
 
 const viewsPath =
     path.join(
@@ -603,6 +630,7 @@ console.log(
     "✅ Layout: layout"
 );
 
+
 // ==========================================================
 // ROUTE MOUNTING
 // ==========================================================
@@ -628,6 +656,7 @@ if (authRoutes) {
     );
 
 } else {
+
     console.error(
         "❌ /auth NOT MOUNTED - route failed to load"
     );
@@ -635,7 +664,11 @@ if (authRoutes) {
 
 
 // ==========================================================
-// 2. PRODUCTS
+// 2. PRODUCTS — ENTRY PAGE
+// ==========================================================
+//
+// /products is now the application entry page.
+//
 // ==========================================================
 
 if (productsRoutes) {
@@ -646,10 +679,11 @@ if (productsRoutes) {
     );
 
     console.log(
-        "✅ Mounted /products"
+        "✅ Mounted /products — ENTRY PAGE"
     );
 
 } else {
+
     console.error(
         "❌ /products NOT MOUNTED"
     );
@@ -672,6 +706,7 @@ if (cartsRoutes) {
     );
 
 } else {
+
     console.error(
         "❌ /carts NOT MOUNTED"
     );
@@ -683,6 +718,7 @@ if (cartsRoutes) {
 // ==========================================================
 
 if (stockRoutes) {
+
     app.use(
         "/stock",
         stockRoutes
@@ -693,6 +729,7 @@ if (stockRoutes) {
     );
 
 } else {
+
     console.error(
         "❌ /stock NOT MOUNTED"
     );
@@ -700,7 +737,7 @@ if (stockRoutes) {
 
 
 // ==========================================================
-// SUBSTATIONS
+// 5. SUBSTATIONS
 // ==========================================================
 
 if (substationsRoutes) {
@@ -715,6 +752,7 @@ if (substationsRoutes) {
     );
 
 } else {
+
     console.error(
         "❌ /substations NOT MOUNTED"
     );
@@ -722,7 +760,7 @@ if (substationsRoutes) {
 
 
 // ==========================================================
-// 5. PACKAGES
+// 6. PACKAGES
 // ==========================================================
 
 if (packageRoutes) {
@@ -737,6 +775,7 @@ if (packageRoutes) {
     );
 
 } else {
+
     console.error(
         "❌ /packages NOT MOUNTED"
     );
@@ -744,7 +783,7 @@ if (packageRoutes) {
 
 
 // ==========================================================
-// 6. MPESA
+// 7. MPESA
 // ==========================================================
 
 if (mpesaRoutes) {
@@ -759,6 +798,7 @@ if (mpesaRoutes) {
     );
 
 } else {
+
     console.error(
         "❌ /mpesa NOT MOUNTED"
     );
@@ -766,37 +806,48 @@ if (mpesaRoutes) {
 
 
 // ==========================================================
-// 7. COREVERSTER MAIN ROUTES
+// COREVERSTER MAIN ROUTES
 // ==========================================================
 //
-// File:
+// IMPORTANT:
 //
-//     ./corevester/routes/index.js
+// The previous "/" mount has deliberately been removed.
 //
-// Mount:
+// /products is the entry page.
 //
-//     /
+// corevesterRoutes is loaded above but is NOT mounted at "/"
+// so that "/" does not become the CoreVester home page.
 //
-// This is intentionally mounted LAST among the application
-// routes so that the specific shop routes above get priority.
 // ==========================================================
 
 if (corevesterRoutes) {
 
-    app.use(
-        "/",
-        corevesterRoutes
-    );
     console.log(
-        "✅ Mounted CoreVester /"
+        "ℹ️ CoreVester main routes loaded but not mounted at /"
     );
 
-} else {
-
-    console.error(
-        "❌ CoreVester / NOT MOUNTED"
-    );
 }
+
+
+// ==========================================================
+// ROOT REDIRECT
+// ==========================================================
+//
+// Visiting "/" sends the user to the actual entry page:
+//
+//     /products
+//
+// ==========================================================
+
+app.get(
+    "/",
+    (req, res) => {
+
+        return res.redirect(
+            "/products"
+        );
+    }
+);
 
 
 // ==========================================================
@@ -810,6 +861,7 @@ app.use(
             req.accepts("json") &&
             !req.accepts("html")
         ) {
+
             return res
                 .status(404)
                 .json({
@@ -828,7 +880,9 @@ app.use(
                         "404 - Page Not Found",
 
                     user:
-                        req.user || null,
+                        req.user ||
+                        null,
+
                     error:
                         `Cannot ${req.method} ${req.originalUrl}`
                 }
@@ -853,6 +907,7 @@ app.use(
             err.stack
         );
 
+
         let statusCode =
             Number(
                 err.statusCode ||
@@ -867,7 +922,8 @@ app.use(
             err.code === "LIMIT_FILE_SIZE"
         ) {
 
-            statusCode = 400;
+            statusCode =
+                400;
 
             err.message =
                 "The uploaded image is too large. Maximum size is 5MB.";
@@ -878,7 +934,9 @@ app.use(
             statusCode < 400 ||
             statusCode > 599
         ) {
-            statusCode = 500;
+
+            statusCode =
+                500;
         }
 
 
@@ -891,11 +949,16 @@ app.use(
             return res
                 .status(statusCode)
                 .json({
-                    success: false,
+
+                    success:
+                        false,
+
                     message:
                         isProduction &&
                         statusCode === 500
+
                             ? "Internal Server Error"
+
                             : (
                                 err.message ||
                                 "Something went wrong"
@@ -905,14 +968,30 @@ app.use(
 
 
         const errorViews = {
-            400: "error/400",
-            401: "error/401",
-            403: "error/403",
-            404: "error/404",
-            409: "error/409",
-            422: "error/422",
-            429: "error/429",
-            500: "error/500"
+
+            400:
+                "error/400",
+
+            401:
+                "error/401",
+
+            403:
+                "error/403",
+
+            404:
+                "error/404",
+
+            409:
+                "error/409",
+
+            422:
+                "error/422",
+
+            429:
+                "error/429",
+
+            500:
+                "error/500"
         };
 
 
@@ -936,7 +1015,8 @@ app.use(
                     statusCode,
 
                     user:
-                        req.user || null
+                        req.user ||
+                        null
                 }
             );
     }
@@ -972,6 +1052,7 @@ const startServer =
 server.on(
     "error",
     (e) => {
+
         console.error(
             "❌ Server error:",
             e.message,
