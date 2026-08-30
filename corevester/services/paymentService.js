@@ -1,20 +1,6 @@
 // =========================================================
 // services/paymentService.js
 // MPESA DARAJA STK PUSH
-//
-// Required environment variables:
-//
-// MPESA_CONSUMER_KEY
-// MPESA_CONSUMER_SECRET
-// MPESA_SHORTCODE
-// MPESA_PASSKEY
-// MPESA_CALLBACK_URL
-// MPESA_ENV=production | sandbox
-//
-// IMPORTANT:
-// Daraja expects the timestamp used to create the STK password
-// to be in Kenya time. Render/Linux servers commonly run UTC,
-// so this implementation explicitly uses Africa/Nairobi.
 // =========================================================
 
 const mongoose = require("mongoose");
@@ -32,7 +18,8 @@ const {
   getSessionId
 } = require("./shopContext");
 
-const packageService = require("./packageService");
+const packageService =
+  require("./packageService");
 
 function baseUrl() {
   return process.env.MPESA_ENV === "production"
@@ -41,19 +28,20 @@ function baseUrl() {
 }
 
 function timestamp() {
-  const parts = new Intl.DateTimeFormat(
-    "en-GB",
-    {
-      timeZone: "Africa/Nairobi",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23"
-    }
-  ).formatToParts(new Date());
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-GB",
+      {
+        timeZone: "Africa/Nairobi",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23"
+      }
+    ).formatToParts(new Date());
 
   const values = {};
 
@@ -74,15 +62,20 @@ function timestamp() {
 }
 
 function normalizePhone(phone) {
-  let value = String(phone || "")
-    .replace(/\D/g, "");
+  let value =
+    String(phone || "")
+      .replace(/\D/g, "");
 
   if (value.startsWith("0")) {
-    value = "254" + value.slice(1);
+    value =
+      "254" +
+      value.slice(1);
   }
 
   if (value.startsWith("7")) {
-    value = "254" + value;
+    value =
+      "254" +
+      value;
   }
 
   if (!/^2547\d{8}$/.test(value)) {
@@ -104,24 +97,31 @@ async function getAccessToken() {
     );
   }
 
-  const credentials = Buffer
-    .from(
-      `${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`
-    )
-    .toString("base64");
+  const credentials =
+    Buffer
+      .from(
+        `${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`
+      )
+      .toString("base64");
 
-  const response = await fetch(
-    `${baseUrl()}/oauth/v1/generate?grant_type=client_credentials`,
-    {
-      headers: {
-        Authorization: `Basic ${credentials}`
+  const response =
+    await fetch(
+      `${baseUrl()}/oauth/v1/generate?grant_type=client_credentials`,
+      {
+        headers: {
+          Authorization:
+            `Basic ${credentials}`
+        }
       }
-    }
-  );
+    );
 
-  const data = await response.json();
+  const data =
+    await response.json();
 
-  if (!response.ok || !data.access_token) {
+  if (
+    !response.ok ||
+    !data.access_token
+  ) {
     throw new Error(
       data.errorMessage ||
       "Unable to obtain M-Pesa access token."
@@ -148,44 +148,74 @@ function buildStkPayload({
 
   const ts = timestamp();
 
-  const password = Buffer
-    .from(
-      `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${ts}`
-    )
-    .toString("base64");
+  const password =
+    Buffer
+      .from(
+        `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${ts}`
+      )
+      .toString("base64");
 
   return {
-    BusinessShortCode: process.env.MPESA_SHORTCODE,
-    Password: password,
-    Timestamp: ts,
-    TransactionType: "CustomerPayBillOnline",
-    Amount: amount,
-    PartyA: phone,
-    PartyB: process.env.MPESA_SHORTCODE,
-    PhoneNumber: phone,
-    CallBackURL: process.env.MPESA_CALLBACK_URL,
+    BusinessShortCode:
+      process.env.MPESA_SHORTCODE,
+
+    Password:
+      password,
+
+    Timestamp:
+      ts,
+
+    TransactionType:
+      "CustomerPayBillOnline",
+
+    Amount:
+      amount,
+
+    PartyA:
+      phone,
+
+    PartyB:
+      process.env.MPESA_SHORTCODE,
+
+    PhoneNumber:
+      phone,
+
+    CallBackURL:
+      process.env.MPESA_CALLBACK_URL,
+
     AccountReference:
       `COREVESTER-${String(clientId).slice(-8)}`,
-    TransactionDesc: "CoreVester purchase"
+
+    TransactionDesc:
+      "CoreVester purchase"
   };
 }
 
 async function sendStkPush(payload) {
-  const token = await getAccessToken();
+  const token =
+    await getAccessToken();
 
-  const response = await fetch(
-    `${baseUrl()}/mpesa/stkpush/v1/processrequest`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    }
-  );
+  const response =
+    await fetch(
+      `${baseUrl()}/mpesa/stkpush/v1/processrequest`,
+      {
+        method: "POST",
 
-  const data = await response.json();
+        headers: {
+          Authorization:
+            `Bearer ${token}`,
+
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify(payload)
+      }
+    );
+
+  const data =
+    await response.json();
 
   if (
     !response.ok ||
@@ -204,30 +234,48 @@ async function sendStkPush(payload) {
 // ---------------------------------------------------------
 // CART CHECKOUT -> M-PESA
 // ---------------------------------------------------------
-async function initiateStkPush(req, phoneNumber) {
-  const clientId = getUserId(req);
-  const sessionId = getSessionId(req);
+
+async function initiateStkPush(
+  req,
+  phoneNumber
+) {
+  const clientId =
+    getUserId(req);
+
+  const sessionId =
+    getSessionId(req);
 
   if (!clientId) {
-    throw new Error("Login is required.");
+    throw new Error(
+      "Login is required."
+    );
   }
 
   if (!sessionId) {
-    throw new Error("Cart session is missing.");
+    throw new Error(
+      "Cart session is missing."
+    );
   }
 
-  const cart = await Cart.findOne({
-    sessionId,
-    user: clientId
-  }).lean();
+  const cart =
+    await Cart.findOne({
+      sessionId,
+      user: clientId
+    }).lean();
 
-  if (!cart || !cart.items.length) {
-    throw new Error("Your cart is empty.");
+  if (
+    !cart ||
+    !cart.items.length
+  ) {
+    throw new Error(
+      "Your cart is empty."
+    );
   }
 
-  const amount = Math.ceil(
-    calculateTotal(cart)
-  );
+  const amount =
+    Math.ceil(
+      calculateTotal(cart)
+    );
 
   if (amount < 1) {
     throw new Error(
@@ -235,46 +283,75 @@ async function initiateStkPush(req, phoneNumber) {
     );
   }
 
-  const phone = normalizePhone(phoneNumber);
+  const phone =
+    normalizePhone(
+      phoneNumber
+    );
 
-  const payload = buildStkPayload({
-    phone,
-    amount,
-    clientId
-  });
+  const payload =
+    buildStkPayload({
+      phone,
+      amount,
+      clientId
+    });
 
-  const data = await sendStkPush(payload);
+  const data =
+    await sendStkPush(payload);
 
-  const payment = await Payment.create({
-    clientId,
-    sessionId,
+  const payment =
+    await Payment.create({
+      clientId,
+      sessionId,
 
-    cartItems: cart.items.map(item => ({
-      productId: item.product,
-      name: item.name,
-      price: item.price,
-      image: item.image || "",
-      qty: item.qty
-    })),
+      cartItems:
+        cart.items.map(
+          item => ({
+            productId:
+              item.product,
 
-    packageId: null,
+            name:
+              item.name,
 
-    amount,
-    phoneNumber: phone,
+            price:
+              item.price,
 
-    merchantRequestId:
-      data.MerchantRequestID || "",
+            image:
+              item.image || "",
 
-    checkoutRequestId:
-      data.CheckoutRequestID,
+            qty:
+              item.qty
+          })
+        ),
 
-    status: "pending"
-  });
+      packageId:
+        null,
+
+      amount,
+
+      paidAmount:
+        0,
+
+      phoneNumber:
+        phone,
+
+      merchantRequestId:
+        data.MerchantRequestID ||
+        "",
+
+      checkoutRequestId:
+        data.CheckoutRequestID,
+
+      status:
+        "pending"
+    });
 
   return {
-    paymentId: payment._id,
+    paymentId:
+      payment._id,
+
     checkoutRequestId:
       payment.checkoutRequestId,
+
     customerMessage:
       data.CustomerMessage ||
       "Check your phone and enter your M-Pesa PIN."
@@ -282,34 +359,51 @@ async function initiateStkPush(req, phoneNumber) {
 }
 
 // ---------------------------------------------------------
-// EXISTING PACKAGE -> M-PESA
+// EXISTING PACKAGE -> M-PESA STK
+// Kept for compatibility with the existing application.
+// The new payment-summary page uses transaction-code
+// verification instead.
 // ---------------------------------------------------------
+
 async function initiatePackageStkPush(
   req,
   packageId,
   phoneNumber
 ) {
-  const clientId = getUserId(req);
+  const clientId =
+    getUserId(req);
 
   if (!clientId) {
-    throw new Error("Login is required.");
-  }
-
-  if (!mongoose.isValidObjectId(packageId)) {
-    throw new Error("Invalid package.");
-  }
-
-  const packageDoc = await Package.findOne({
-    _id: packageId,
-    clientId
-  }).lean();
-
-  if (!packageDoc) {
-    throw new Error("Package not found.");
+    throw new Error(
+      "Login is required."
+    );
   }
 
   if (
-    packageDoc.paymentStatus === "confirmed"
+    !mongoose.isValidObjectId(
+      packageId
+    )
+  ) {
+    throw new Error(
+      "Invalid package."
+    );
+  }
+
+  const packageDoc =
+    await Package.findOne({
+      _id: packageId,
+      clientId
+    }).lean();
+
+  if (!packageDoc) {
+    throw new Error(
+      "Package not found."
+    );
+  }
+
+  if (
+    packageDoc.paymentStatus ===
+    "paid"
   ) {
     throw new Error(
       "This package has already been paid."
@@ -317,82 +411,128 @@ async function initiatePackageStkPush(
   }
 
   if (
-    packageDoc.paymentMethod !== "pay_on_delivery"
+    packageDoc.paymentMethod !==
+    "pay_on_delivery"
   ) {
     throw new Error(
       "This package is not awaiting payment."
     );
   }
 
-  const amount = Math.ceil(
-    Number(packageDoc.totalAmount || 0)
-  );
+  const arrears =
+    Math.max(
+      0,
+      Number(
+        packageDoc.totalAmount || 0
+      ) -
+      Number(
+        packageDoc.paidAmount || 0
+      )
+    );
+
+  const amount =
+    Math.ceil(arrears);
 
   if (amount < 1) {
     throw new Error(
-      "Package total must be at least KSh 1."
+      "Package has no outstanding balance."
     );
   }
 
-  const phone = normalizePhone(phoneNumber);
+  const phone =
+    normalizePhone(
+      phoneNumber
+    );
 
-  // Prevent accidental duplicate STK pushes while one is
-  // already awaiting a callback.
   const existingPending =
     await Payment.findOne({
       clientId,
-      packageId: packageDoc._id,
-      status: "pending"
-    }).sort({ createdAt: -1 });
+      packageId:
+        packageDoc._id,
+      status:
+        "pending"
+    }).sort({
+      createdAt: -1
+    });
 
   if (existingPending) {
     return {
-      paymentId: existingPending._id,
+      paymentId:
+        existingPending._id,
+
       checkoutRequestId:
         existingPending.checkoutRequestId,
+
       customerMessage:
         "An M-Pesa payment is already awaiting confirmation."
     };
   }
 
-  const payload = buildStkPayload({
-    phone,
-    amount,
-    clientId
-  });
+  const payload =
+    buildStkPayload({
+      phone,
+      amount,
+      clientId
+    });
 
-  const data = await sendStkPush(payload);
+  const data =
+    await sendStkPush(payload);
 
-  const payment = await Payment.create({
-    clientId,
-    sessionId: "",
+  const payment =
+    await Payment.create({
+      clientId,
 
-    cartItems: (packageDoc.items || []).map(item => ({
-      productId: item.product,
-      name: item.name,
-      price: item.price,
-      image: item.image || "",
-      qty: item.qty
-    })),
+      sessionId:
+        "",
 
-    packageId: packageDoc._id,
+      cartItems:
+        (packageDoc.items || [])
+          .map(item => ({
+            productId:
+              item.productId,
 
-    amount,
-    phoneNumber: phone,
+            name:
+              item.name,
 
-    merchantRequestId:
-      data.MerchantRequestID || "",
+            price:
+              item.price,
 
-    checkoutRequestId:
-      data.CheckoutRequestID,
+            image:
+              item.image || "",
 
-    status: "pending"
-  });
+            qty:
+              item.qty
+          })),
+
+      packageId:
+        packageDoc._id,
+
+      amount,
+
+      paidAmount:
+        0,
+
+      phoneNumber:
+        phone,
+
+      merchantRequestId:
+        data.MerchantRequestID ||
+        "",
+
+      checkoutRequestId:
+        data.CheckoutRequestID,
+
+      status:
+        "pending"
+    });
 
   return {
-    paymentId: payment._id,
+    paymentId:
+      payment._id,
+
     checkoutRequestId:
       payment.checkoutRequestId,
+
     customerMessage:
       data.CustomerMessage ||
       "Check your phone and enter your M-Pesa PIN."
@@ -400,9 +540,12 @@ async function initiatePackageStkPush(
 }
 
 // ---------------------------------------------------------
-// DARAJA CALLBACK
+// DARAJA STK CALLBACK
 // ---------------------------------------------------------
-async function handleCallback(body) {
+
+async function handleCallback(
+  body
+) {
   const callback =
     body?.Body?.stkCallback;
 
@@ -422,76 +565,107 @@ async function handleCallback(body) {
       checkoutRequestId
     });
 
-  if (!payment || payment.status !== "pending") {
+  if (
+    !payment ||
+    payment.status !==
+      "pending"
+  ) {
     return;
   }
 
   if (
-    Number(callback.ResultCode) === 0
+    Number(callback.ResultCode) ===
+    0
   ) {
     const metadata =
-      callback.CallbackMetadata?.Item || [];
+      callback
+        .CallbackMetadata
+        ?.Item || [];
 
     const receipt =
       metadata.find(
-        x => x.Name === "MpesaReceiptNumber"
+        x =>
+          x.Name ===
+          "MpesaReceiptNumber"
       )?.Value || "";
 
-    payment.status = "confirmed";
+    const amount =
+      Number(
+        metadata.find(
+          x =>
+            x.Name ===
+            "Amount"
+        )?.Value ||
+        payment.amount ||
+        0
+      );
+
+    payment.status =
+      "confirmed";
+
+    payment.paidAmount =
+      amount;
+
     payment.mpesaReceiptNumber =
       String(receipt);
 
     payment.resultCode =
-      String(callback.ResultCode);
+      String(
+        callback.ResultCode
+      );
 
     payment.resultDescription =
-      callback.ResultDesc || "";
+      callback.ResultDesc ||
+      "";
 
     await payment.save();
 
-    // Two possible successful payment flows:
-    //
-    // 1. Cart checkout with M-Pesa:
-    //    create the package after confirmation.
-    //
-    // 2. Existing Pay-on-delivery package:
-    //    mark that package as paid instead of creating
-    //    a second package.
     if (payment.packageId) {
-      await packageService.confirmPackagePayment(
-        payment._id
-      );
+      await packageService
+        .confirmPackagePayment(
+          payment._id
+        );
     } else {
-      await packageService.createPackageFromPayment(
-        payment._id
-      );
+      await packageService
+        .createPackageFromPayment(
+          payment._id
+        );
     }
 
     return;
   }
 
-  payment.status = "failed";
+  payment.status =
+    "failed";
+
+  payment.paidAmount =
+    0;
 
   payment.resultCode =
-    String(callback.ResultCode);
+    String(
+      callback.ResultCode
+    );
 
   payment.resultDescription =
-    callback.ResultDesc || "";
+    callback.ResultDesc ||
+    "";
 
   await payment.save();
 
-  // Only cart-originated payments reserved stock in
-  // Product.units. Existing packages already represent
-  // the reserved stock, so do not release it here.
   if (!payment.packageId) {
-    await packageService.releasePaymentReservation(
-      payment
-    );
+    await packageService
+      .releasePaymentReservation(
+        payment
+      );
   }
 }
 
-async function getPaymentForUser(req, id) {
-  const clientId = getUserId(req);
+async function getPaymentForUser(
+  req,
+  id
+) {
+  const clientId =
+    getUserId(req);
 
   if (!clientId) {
     return null;

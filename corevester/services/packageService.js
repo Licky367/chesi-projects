@@ -1,7 +1,3 @@
-// =========================================================
-// services/packageService.js
-// PACKAGE CREATION / PACKAGE HISTORY
-// =========================================================
 const mongoose = require("mongoose");
 
 const Cart = require("../models/carts");
@@ -13,6 +9,70 @@ const {
   getUserId,
   getSessionId
 } = require("./shopContext");
+
+// ---------------------------------------------------------
+// PAYMENT STATUS HELPERS
+// ---------------------------------------------------------
+
+function getPaymentStatus(totalAmount, totalPaid) {
+  const total = Math.max(
+    0,
+    Number(totalAmount || 0)
+  );
+
+  const paid = Math.max(
+    0,
+    Number(totalPaid || 0)
+  );
+
+  if (paid <= 0) {
+    return "unpaid";
+  }
+
+  if (paid >= total) {
+    return "paid";
+  }
+
+  return "partialPaid";
+}
+
+async function getConfirmedPaymentTotal(packageId, dbSession = null) {
+  const match = {
+    packageId,
+    status: "confirmed"
+  };
+
+  const aggregate = Payment.aggregate([
+    {
+      $match: match
+    },
+    {
+      $group: {
+        _id: null,
+        totalPaid: {
+          $sum: {
+            $ifNull: ["$paidAmount", 0]
+          }
+        }
+      }
+    }
+  ]);
+
+  if (dbSession) {
+    aggregate.session(dbSession);
+  }
+
+  const result = await aggregate;
+
+  return Math.max(
+    0,
+    Number(result[0]?.totalPaid || 0)
+  );
+}
+
+// ---------------------------------------------------------
+// CREATE PACKAGE FROM CART
+// ---------------------------------------------------------
 
 async function createPackageFromCart(
   req,
@@ -66,29 +126,39 @@ async function createPackageFromCart(
 
         [created] =
           await Package.create(
-            [{
-              clientId,
-              items,
-              totalAmount,
+            [
+              {
+                clientId,
+                items,
+                totalAmount,
 
-              paymentMethod:
-                paymentData.paymentMethod ||
-                "pay_on_delivery",
+                paymentMethod:
+                  paymentData.paymentMethod ||
+                  "pay_on_delivery",
 
-              paymentStatus:
-                paymentData.paymentStatus ||
-                "not_required",
+                // Every new package starts unpaid unless
+                // an already-confirmed payment created it.
+                paymentStatus:
+                  paymentData.paymentStatus === "paid"
+                    ? "paid"
+                    : "unpaid",
 
-              mpesaReceiptNumber:
-                paymentData.mpesaReceiptNumber ||
-                "",
+                paidAmount:
+                  paymentData.paymentStatus === "paid"
+                    ? Number(paymentData.paidAmount || 0)
+                    : 0,
 
-              phoneNumber:
-                paymentData.phoneNumber ||
-                "",
+                mpesaReceiptNumber:
+                  paymentData.mpesaReceiptNumber ||
+                  "",
 
-              status: "pending"
-            }],
+                phoneNumber:
+                  paymentData.phoneNumber ||
+                  "",
+
+                status: "pending"
+              }
+            ],
             {
               session: dbSession
             }
@@ -97,8 +167,12 @@ async function createPackageFromCart(
         // Product.units was already reduced when the
         // cart item was added. Do not reduce it again.
         await Cart.deleteOne(
-          { _id: cart._id },
-          { session: dbSession }
+          {
+            _id: cart._id
+          },
+          {
+            session: dbSession
+          }
         );
       }
     );
@@ -108,6 +182,10 @@ async function createPackageFromCart(
     await dbSession.endSession();
   }
 }
+
+// ---------------------------------------------------------
+// PACKAGE LIST
+// ---------------------------------------------------------
 
 async function getUserPackages(req) {
   const clientId = getUserId(req);
@@ -121,6 +199,10 @@ async function getUserPackages(req) {
     .sort({ createdAt: -1 })
     .lean();
 }
+
+// ---------------------------------------------------------
+// SINGLE PACKAGE
+// ---------------------------------------------------------
 
 async function getUserPackage(req, id) {
   const clientId = getUserId(req);
@@ -138,6 +220,7 @@ async function getUserPackage(req, id) {
 // ---------------------------------------------------------
 // CONFIRMED CART M-PESA PAYMENT -> PACKAGE
 // ---------------------------------------------------------
+
 async function createPackageFromPayment(
   paymentId
 ) {
@@ -181,28 +264,40 @@ async function createPackageFromPayment(
             image: item.image || ""
           }));
 
+        const paidAmount =
+          Number(payment.paidAmount || 0);
+
         [packageDoc] =
           await Package.create(
-            [{
-              clientId: payment.clientId,
-              items,
-              totalAmount: payment.amount,
-              paymentMethod: "mpesa",
-              paymentStatus: "confirmed",
-              mpesaReceiptNumber:
-                payment.mpesaReceiptNumber,
-              phoneNumber:
-                payment.phoneNumber,
-              status: "pending"
-            }],
+            [
+              {
+                clientId: payment.clientId,
+                items,
+                totalAmount: payment.amount,
+                paymentMethod: "mpesa",
+
+                paymentStatus:
+                  paidAmount >=
+                  Number(payment.amount || 0)
+                    ? "paid"
+                    : "partialPaid",
+
+                paidAmount,
+
+                mpesaReceiptNumber:
+                  payment.mpesaReceiptNumber,
+
+                phoneNumber:
+                  payment.phoneNumber,
+
+                status: "pending"
+              }
+            ],
             {
               session: dbSession
             }
           );
 
-        // The cart still exists here because an M-Pesa cart
-        // checkout only creates the package after Daraja
-        // confirms payment.
         const cart =
           await Cart.findOne({
             sessionId: payment.sessionId,
@@ -210,9 +305,6 @@ async function createPackageFromPayment(
           }).session(dbSession);
 
         if (cart) {
-          // The cart quantity was reserved at add-to-cart
-          // time. Remove the paid cart items without
-          // returning stock to Product.units.
           for (const paidItem of payment.cartItems) {
             const current =
               cart.items.find(
@@ -244,8 +336,12 @@ async function createPackageFromPayment(
             });
           } else {
             await Cart.deleteOne(
-              { _id: cart._id },
-              { session: dbSession }
+              {
+                _id: cart._id
+              },
+              {
+                session: dbSession
+              }
             );
           }
         }
@@ -259,8 +355,9 @@ async function createPackageFromPayment(
 }
 
 // ---------------------------------------------------------
-// CONFIRMED PAYMENT FOR EXISTING PAY-ON-DELIVERY PACKAGE
+// CONFIRMED PAYMENT FOR EXISTING PACKAGE
 // ---------------------------------------------------------
+
 async function confirmPackagePayment(
   paymentId
 ) {
@@ -285,44 +382,67 @@ async function confirmPackagePayment(
           return;
         }
 
-        const packageQuery =
+        const packageDocQuery =
           await Package.findOne({
             _id: payment.packageId,
             clientId: payment.clientId
           }).session(dbSession);
 
-        if (!packageQuery) {
+        if (!packageDocQuery) {
           throw new Error(
             "The package linked to this M-Pesa payment no longer exists."
           );
         }
 
-        // Idempotent callback handling.
-        if (
-          packageQuery.paymentStatus ===
-          "confirmed"
-        ) {
-          packageDoc = packageQuery;
-          return;
-        }
+        // Sum ALL confirmed payments for this package.
+        const totalPaid =
+          await getConfirmedPaymentTotal(
+            packageDocQuery._id,
+            dbSession
+          );
 
-        packageQuery.paymentMethod =
+        const totalAmount =
+          Math.max(
+            0,
+            Number(
+              packageDocQuery.totalAmount || 0
+            )
+          );
+
+        const cappedPaid =
+          Math.min(
+            totalPaid,
+            totalAmount
+          );
+
+        packageDocQuery.paymentMethod =
           "mpesa";
 
-        packageQuery.paymentStatus =
-          "confirmed";
+        packageDocQuery.paidAmount =
+          cappedPaid;
 
-        packageQuery.mpesaReceiptNumber =
-          payment.mpesaReceiptNumber || "";
+        packageDocQuery.paymentStatus =
+          getPaymentStatus(
+            totalAmount,
+            cappedPaid
+          );
 
-        packageQuery.phoneNumber =
-          payment.phoneNumber || "";
+        packageDocQuery.mpesaReceiptNumber =
+          payment.mpesaReceiptNumber ||
+          packageDocQuery.mpesaReceiptNumber ||
+          "";
 
-        await packageQuery.save({
+        packageDocQuery.phoneNumber =
+          payment.phoneNumber ||
+          packageDocQuery.phoneNumber ||
+          "";
+
+        await packageDocQuery.save({
           session: dbSession
         });
 
-        packageDoc = packageQuery;
+        packageDoc =
+          packageDocQuery;
       }
     );
 
@@ -335,6 +455,7 @@ async function confirmPackagePayment(
 // ---------------------------------------------------------
 // FAILED CART PAYMENT -> RELEASE RESERVATION
 // ---------------------------------------------------------
+
 async function releasePaymentReservation(
   payment
 ) {
@@ -349,7 +470,8 @@ async function releasePaymentReservation(
             item.productId,
             {
               $inc: {
-                units: Number(item.qty || 0)
+                units:
+                  Number(item.qty || 0)
               }
             },
             {
@@ -368,7 +490,10 @@ async function releasePaymentReservation(
           return;
         }
 
-        for (const failedItem of payment.cartItems || []) {
+        for (
+          const failedItem
+          of payment.cartItems || []
+        ) {
           const current =
             cart.items.find(
               item =>
@@ -381,7 +506,9 @@ async function releasePaymentReservation(
           }
 
           current.qty -=
-            Number(failedItem.qty || 0);
+            Number(
+              failedItem.qty || 0
+            );
 
           if (current.qty <= 0) {
             cart.items =
@@ -399,8 +526,12 @@ async function releasePaymentReservation(
           });
         } else {
           await Cart.deleteOne(
-            { _id: cart._id },
-            { session: dbSession }
+            {
+              _id: cart._id
+            },
+            {
+              session: dbSession
+            }
           );
         }
       }
@@ -411,6 +542,8 @@ async function releasePaymentReservation(
 }
 
 module.exports = {
+  getPaymentStatus,
+  getConfirmedPaymentTotal,
   createPackageFromCart,
   getUserPackages,
   getUserPackage,
