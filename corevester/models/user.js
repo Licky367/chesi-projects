@@ -8,7 +8,6 @@ function hashPassword(password) {
     return new Promise((resolve, reject) => {
         const salt = crypto.randomBytes(SALT_LENGTH);
 
-
         crypto.scrypt(
             String(password),
             salt,

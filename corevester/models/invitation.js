@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-
 const invitationSchema = new mongoose.Schema(
     {
         email: {
