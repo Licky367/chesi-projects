@@ -31,6 +31,7 @@ process.on("unhandledRejection", (reason) => {
         "❌ UNHANDLED REJECTION:",
         reason?.message || reason
     );
+
     console.error(
         reason?.stack || reason
     );
@@ -58,6 +59,7 @@ try {
     );
 }
 
+
 // ==========================================================
 // ENVIRONMENT
 // ==========================================================
@@ -80,6 +82,7 @@ if (isProduction) {
         );
 
     if (missing.length) {
+
         console.error(
             `❌ Missing env: ${missing.join(", ")}`
         );
@@ -171,9 +174,8 @@ const authRoutes =
 // File:
 //     ./corevester/routes/index.js
 //
-// NOTE:
-//     This route is NOT mounted at "/" as the application
-//     entry page. The entry page is /products.
+// Mount:
+//     /
 //
 // ----------------------------------------------------------
 
@@ -193,8 +195,6 @@ const corevesterRoutes =
 //
 // Mount:
 //     /products
-//
-// This is the COREVESTER ENTRY PAGE.
 //
 // ----------------------------------------------------------
 
@@ -326,6 +326,7 @@ if (
     isProduction ||
     process.env.TRUST_PROXY === "1"
 ) {
+
     app.enable("trust proxy");
 }
 
@@ -431,9 +432,9 @@ app.use(
 //
 // Persistent session storage.
 //
-// The session is stored in MongoDB and remains available
-// across browser restarts until the session expires or the
-// user explicitly logs out.
+// Users remain logged in when they close and reopen the
+// browser, until the session expires or they explicitly
+// log out.
 //
 // ==========================================================
 
@@ -570,12 +571,6 @@ app.use(
 // ==========================================================
 // VIEW ENGINE
 // ==========================================================
-//
-// View directory:
-//
-//     ./corevester/views
-//
-// ==========================================================
 
 app.set(
     "view engine",
@@ -664,10 +659,10 @@ if (authRoutes) {
 
 
 // ==========================================================
-// 2. PRODUCTS — ENTRY PAGE
+// 2. PRODUCTS
 // ==========================================================
 //
-// /products is now the application entry page.
+// /products is the actual COREVESTER home page.
 //
 // ==========================================================
 
@@ -679,7 +674,7 @@ if (productsRoutes) {
     );
 
     console.log(
-        "✅ Mounted /products — ENTRY PAGE"
+        "✅ Mounted /products"
     );
 
 } else {
@@ -808,6 +803,12 @@ if (mpesaRoutes) {
 // ==========================================================
 // COREVERSTER MAIN ROUTES
 // ==========================================================
+//
+// These routes remain mounted at / exactly as before.
+// They are NOT being changed to become the Home page.
+//
+// ==========================================================
+
 if (corevesterRoutes) {
 
     app.use(
@@ -816,24 +817,32 @@ if (corevesterRoutes) {
     );
 
     console.log(
-        "✅ Mounted /"
+        "✅ Mounted CoreVester /"
     );
 
 } else {
 
     console.error(
-        "❌ / NOT MOUNTED"
+        "❌ CoreVester / NOT MOUNTED"
     );
 }
 
 
 // ==========================================================
-// ROOT REDIRECT
+// ROOT → PRODUCTS
 // ==========================================================
 //
-// Visiting "/" sends the user to the actual entry page:
+// / is only a redirect.
+//
+// The actual Home page is:
 //
 //     /products
+//
+// Therefore:
+//
+//     https://your-domain.com/
+//             ↓
+//     https://your-domain.com/products
 //
 // ==========================================================
 
