@@ -29,7 +29,6 @@ exports.newStockForm = (req, res) => {
 exports.createStock = async (req, res) => {
   try {
     await service.createStock(req.body);
-
     res.redirect("/stock?saved=1");
   } catch (e) {
     res.status(400).render("stock/product-entry", {
@@ -61,7 +60,6 @@ exports.entry = async (req, res) => {
     });
   } catch (e) {
     console.error(e);
-
     res.redirect(
       `/stock?error=${encodeURIComponent(e.message)}`
     );

@@ -114,7 +114,7 @@ exports.confirm = async (req, res) => {
 exports.deliver = async (req, res) => {
   try {
     await packageService.deliverPackage(req, req.params.id);
-    return res.redirect(`/packages/staff/${req.params.id}?success=${encodeURIComponent('Package marked as delivered and stock updated.')}`);
+    return res.redirect(`/packages/staff/${req.params.id}?success=${encodeURIComponent('Package marked as delivered and the substation delivery ledger was updated.')}`);
   } catch (err) {
     console.error(err);
     return res.redirect(`/packages/staff/${req.params.id}?error=${encodeURIComponent(err.message)}`);
