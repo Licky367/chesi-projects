@@ -1,13 +1,91 @@
 <% const list = Array.isArray(users) ? users : []; const t = ['all','admin','staff','client'].includes(tab) ? tab : 'all'; const shown = t === 'all' ? list : list.filter(u => u.role === t); const count = r => list.filter(u => u.role === r).length; %>
 <section class="um">
-  <header class="um-hero"><div><span>ADMINISTRATION</span><h1>User Management</h1><p>Manage accounts, roles and staff assignments.</p></div><a class="primary" href="/auth/users/invitation"><i class="fas fa-user-plus"></i> Invite User</a></header>
+  <header class="um-hero">
+    <div>
+      <span class="eyebrow">ADMINISTRATION</span>
+      <h1>User Management</h1>
+      <p>Manage accounts, roles and staff assignments.</p>
+    </div>
+    <a class="primary" href="/auth/users/invitation"><i class="fas fa-user-plus"></i><span>Invite User</span></a>
+  </header>
+
   <% if (req.query?.error) { %><div class="alert error"><i class="fas fa-circle-exclamation"></i><%= req.query.error %></div><% } %>
   <% if (req.query?.success) { %><div class="alert success"><i class="fas fa-circle-check"></i><%= req.query.success %></div><% } %>
-  <div class="stats"><div><b><%= list.length %></b><small>Total Users</small></div><div><b><%= count('admin') %></b><small>Admins</small></div><div><b><%= count('staff') %></b><small>Staff</small></div><div><b><%= count('client') %></b><small>Clients</small></div></div>
-  <nav class="tabs"><a class="<%= t==='all'?'active':'' %>" href="/auth/users?tab=all">All <b><%= list.length %></b></a><a class="<%= t==='admin'?'active':'' %>" href="/auth/users?tab=admin">Admins <b><%= count('admin') %></b></a><a class="<%= t==='staff'?'active':'' %>" href="/auth/users?tab=staff">Staff <b><%= count('staff') %></b></a><a class="<%= t==='client'?'active':'' %>" href="/auth/users?tab=client">Clients <b><%= count('client') %></b></a></nav>
-  <div class="heading"><div><small>ACCOUNTS</small><h2><%= t==='all'?'All users':t.charAt(0).toUpperCase()+t.slice(1)+' users' %></h2></div><span><%= shown.length %> account<%= shown.length===1?'':'s' %></span></div>
-  <% if (!shown.length) { %><div class="empty"><i class="fas fa-user-slash"></i><h3>No users here yet</h3><p>There are no accounts in this category.</p></div><% } else { %><div class="grid"><% shown.forEach(account => { %><article class="card"><div class="top"><div class="avatar"><i class="fas fa-user"></i></div><div class="identity"><h3><%= account.name %></h3><p><%= account.email %></p></div><em class="role <%= account.role %>"><%= account.role %></em></div><hr><form action="/auth/users/<%= account._id %>/role" method="POST"><label>ACCOUNT ROLE</label><div class="row"><select name="role"><option value="admin" <%= account.role==='admin'?'selected':'' %>>Admin</option><option value="staff" <%= account.role==='staff'?'selected':'' %>>Staff</option><option value="client" <%= account.role==='client'?'selected':'' %>>Client</option></select><button>Save</button></div></form><% if(account.role==='staff'){ %><form action="/auth/users/<%= account._id %>/substation" method="POST"><label>ASSIGNED SUBSTATION</label><div class="row"><select name="assignedSubstation"><option value="">Unassigned</option><% substations.forEach(s=>{ %><option value="<%= s._id %>" <%= account.assignedSubstation&&String(account.assignedSubstation._id)===String(s._id)?'selected':'' %>><%= s.name %></option><% }) %></select><button>Assign</button></div></form><% } else { %><div class="note"><i class="fas fa-location-dot"></i> Substation assignment is available for staff.</div><% } %></article><% }) %></div><% } %>
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div><b><%= list.length %></b><small>Total Users</small></div></div>
+    <div class="stat-card"><div class="stat-icon admin-icon"><i class="fas fa-shield-halved"></i></div><div><b><%= count('admin') %></b><small>Admins</small></div></div>
+    <div class="stat-card"><div class="stat-icon staff-icon"><i class="fas fa-user-gear"></i></div><div><b><%= count('staff') %></b><small>Staff</small></div></div>
+    <div class="stat-card"><div class="stat-icon client-icon"><i class="fas fa-user"></i></div><div><b><%= count('client') %></b><small>Clients</small></div></div>
+  </div>
+
+  <div class="content-shell">
+    <aside class="tab-bar">
+      <div class="tab-title"><span>VIEW USERS</span><strong>Filter by role</strong></div>
+      <nav class="tabs" aria-label="User filters">
+        <a class="<%= t==='all'?'active':'' %>" href="/auth/users?tab=all"><i class="fas fa-users"></i><span>All Users</span><b><%= list.length %></b></a>
+        <a class="<%= t==='admin'?'active':'' %>" href="/auth/users?tab=admin"><i class="fas fa-shield-halved"></i><span>Admins</span><b><%= count('admin') %></b></a>
+        <a class="<%= t==='staff'?'active':'' %>" href="/auth/users?tab=staff"><i class="fas fa-user-gear"></i><span>Staff</span><b><%= count('staff') %></b></a>
+        <a class="<%= t==='client'?'active':'' %>" href="/auth/users?tab=client"><i class="fas fa-user"></i><span>Clients</span><b><%= count('client') %></b></a>
+      </nav>
+    </aside>
+
+    <main class="users-area">
+      <div class="heading">
+        <div><span class="eyebrow">ACCOUNTS</span><h2><%= t==='all'?'All users':t.charAt(0).toUpperCase()+t.slice(1)+' users' %></h2></div>
+        <span class="result-count"><%= shown.length %> account<%= shown.length===1?'':'s' %></span>
+      </div>
+
+      <% if (!shown.length) { %>
+        <div class="empty"><i class="fas fa-user-slash"></i><h3>No users here yet</h3><p>There are no accounts in this category.</p></div>
+      <% } else { %>
+        <ul class="user-list">
+          <% shown.forEach(account => { %>
+            <li class="user-card">
+              <div class="user-head">
+                <div class="avatar"><i class="fas fa-user"></i></div>
+                <div class="identity"><h3><%= account.name %></h3><p><%= account.email %></p></div>
+                <em class="role <%= account.role %>"><%= account.role %></em>
+              </div>
+
+              <div class="card-divider"></div>
+
+              <form action="/auth/users/<%= account._id %>/role" method="POST" class="control-form">
+                <label>ACCOUNT ROLE</label>
+                <div class="control-row">
+                  <select name="role">
+                    <option value="admin" <%= account.role==='admin'?'selected':'' %>>Admin</option>
+                    <option value="staff" <%= account.role==='staff'?'selected':'' %>>Staff</option>
+                    <option value="client" <%= account.role==='client'?'selected':'' %>>Client</option>
+                  </select>
+                  <button type="submit"><i class="fas fa-check"></i> Save</button>
+                </div>
+              </form>
+
+              <% if(account.role==='staff'){ %>
+                <form action="/auth/users/<%= account._id %>/substation" method="POST" class="control-form">
+                  <label>ASSIGNED SUBSTATION</label>
+                  <div class="control-row">
+                    <select name="assignedSubstation">
+                      <option value="">Unassigned</option>
+                      <% substations.forEach(s=>{ %>
+                        <option value="<%= s._id %>" <%= account.assignedSubstation&&String(account.assignedSubstation._id)===String(s._id)?'selected':'' %>><%= s.name %></option>
+                      <% }) %>
+                    </select>
+                    <button type="submit"><i class="fas fa-location-dot"></i> Assign</button>
+                  </div>
+                </form>
+              <% } else { %>
+                <div class="note"><i class="fas fa-location-dot"></i><span>Substation assignment is available for staff.</span></div>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </main>
+  </div>
 </section>
+
 <style>
-.um{max-width:1180px;margin:auto;padding:28px 18px 70px}.um-hero{display:flex;justify-content:space-between;align-items:end;gap:20px;padding-bottom:25px}.um-hero span,.heading small{color:#0b5d1e;font-size:11px;font-weight:900;letter-spacing:.12em}.um-hero h1{margin:7px 0;color:#18251c;font-size:clamp(30px,5vw,44px)}.um-hero p{margin:0;color:#69736c}.primary{background:#0b5d1e;color:white;text-decoration:none;padding:13px 17px;border-radius:12px;font-weight:800}.alert{padding:13px 15px;border-radius:11px;margin-bottom:16px}.error{background:#fff1f2;color:#991b1b}.success{background:#f0fdf4;color:#166534}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}.stats>div{background:white;border:1px solid #e3e8e4;border-radius:14px;padding:15px}.stats b{display:block;font-size:23px;color:#17231a}.stats small{color:#7a837d}.tabs{display:flex;gap:4px;border-bottom:1px solid #e1e6e2;margin-bottom:27px;overflow:auto}.tabs a{padding:12px 15px;border-bottom:3px solid transparent;text-decoration:none;color:#68736b;font-weight:800;white-space:nowrap}.tabs a.active{color:#0b5d1e;border-color:#0b5d1e}.tabs b{font-size:10px;background:#f0f3f0;padding:3px 6px;border-radius:20px}.heading{display:flex;justify-content:space-between;align-items:end;margin-bottom:13px}.heading h2{margin:4px 0;color:#263129}.heading>span{color:#7b857e;font-size:12px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.card{background:white;border:1px solid #e1e7e2;border-radius:17px;padding:18px}.top{display:flex;align-items:center;gap:12px}.avatar{width:45px;height:45px;border-radius:13px;display:grid;place-items:center;background:#edf6ef;color:#0b5d1e}.identity{min-width:0;flex:1}.identity h3{margin:0 0 3px;color:#263129;font-size:16px}.identity p{margin:0;color:#737d76;font-size:12px;overflow-wrap:anywhere}.role{font-style:normal;font-size:9px;font-weight:900;padding:5px 8px;border-radius:20px;text-transform:uppercase}.role.admin{background:#f0eafd;color:#6433a5}.role.staff{background:#e6f3fa;color:#12617d}.role.client{background:#f0f2f1;color:#59625d}.card hr{border:0;border-top:1px solid #edf0ed;margin:17px 0}.card form{margin-top:13px}.card label{display:block;font-size:10px;font-weight:900;color:#69736c;margin-bottom:6px;letter-spacing:.06em}.row{display:grid;grid-template-columns:1fr auto;gap:8px}.row select{min-width:0;width:100%;padding:10px;border:1px solid #d7ded8;border-radius:10px;background:white}.row button{border:0;border-radius:10px;background:#edf6ef;color:#0b5d1e;font-weight:850;padding:0 14px;cursor:pointer}.note{margin-top:13px;background:#f7f9f7;color:#7a837d;border-radius:10px;padding:10px;font-size:11px}.empty{padding:55px;text-align:center;border:1px dashed #d9dfda;border-radius:16px}.empty i{font-size:25px;color:#0b5d1e}.empty h3{margin:10px 0 4px}.empty p{margin:0;color:#7b857e;font-size:12px}@media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}@media(max-width:560px){.um{padding:20px 13px 50px}.um-hero{align-items:stretch;flex-direction:column}.primary{text-align:center}.card{padding:15px}.top{align-items:flex-start}.role{margin-left:auto}}
+.um{max-width:1220px;margin:auto;padding:28px 18px 70px;color:#243128}.um-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;padding-bottom:25px}.eyebrow{display:block;color:#0b5d1e;font-size:10px;font-weight:900;letter-spacing:.14em}.um-hero h1{margin:7px 0;color:#17231b;font-size:clamp(30px,5vw,44px);line-height:1.05}.um-hero p{margin:0;color:#718078}.primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#0b5d1e;color:#fff;text-decoration:none;padding:13px 17px;border-radius:12px;font-weight:850;box-shadow:0 6px 18px rgba(11,93,30,.14)}.alert{display:flex;align-items:center;gap:9px;padding:13px 15px;border-radius:12px;margin-bottom:16px}.error{background:#fff1f2;color:#991b1b}.success{background:#f0fdf4;color:#166534}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.stat-card{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e1e8e3;border-radius:16px;padding:15px;box-shadow:0 4px 15px rgba(20,40,25,.035)}.stat-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:#edf6ef;color:#0b5d1e}.admin-icon{background:#f1ebfb;color:#6433a5}.staff-icon{background:#e8f4f8;color:#12617d}.client-icon{background:#f0f2f1;color:#59625d}.stat-card b{display:block;font-size:23px;line-height:1.1}.stat-card small{display:block;color:#7a857e;margin-top:3px;font-size:11px}.content-shell{display:grid;grid-template-columns:210px minmax(0,1fr);gap:20px;align-items:start}.tab-bar{position:sticky;top:15px;background:#fff;border:1px solid #e1e8e3;border-radius:17px;padding:12px;box-shadow:0 5px 18px rgba(20,40,25,.035)}.tab-title{padding:8px 9px 12px;border-bottom:1px solid #edf0ed;margin-bottom:7px}.tab-title span{display:block;color:#8a948d;font-size:9px;font-weight:900;letter-spacing:.12em}.tab-title strong{display:block;margin-top:3px;font-size:12px;color:#3c4840}.tabs{display:flex;flex-direction:column;gap:4px}.tabs a{display:flex;align-items:center;gap:10px;text-decoration:none;color:#69756d;padding:11px 10px;border-radius:11px;font-size:12px;font-weight:800;transition:.15s ease}.tabs a i{width:18px;text-align:center}.tabs a b{margin-left:auto;min-width:22px;text-align:center;padding:3px 5px;border-radius:20px;background:#f0f3f0;font-size:9px}.tabs a:hover{background:#f6f9f6;color:#0b5d1e}.tabs a.active{background:#edf6ef;color:#0b5d1e;box-shadow:inset 3px 0 0 #0b5d1e}.tabs a.active b{background:#fff}.heading{display:flex;justify-content:space-between;align-items:flex-end;margin:1px 0 13px}.heading h2{margin:4px 0 0;font-size:21px}.result-count{color:#7b857e;font-size:11px}.user-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}.user-card{background:#fff;border:1px solid #e1e8e3;border-radius:17px;padding:17px;box-shadow:0 5px 18px rgba(20,40,25,.035)}.user-head{display:flex;align-items:center;gap:12px}.avatar{width:44px;height:44px;flex:0 0 44px;border-radius:13px;display:grid;place-items:center;background:#edf6ef;color:#0b5d1e}.identity{min-width:0;flex:1}.identity h3{margin:0 0 3px;font-size:15px;color:#29352d}.identity p{margin:0;color:#737e77;font-size:11px;overflow-wrap:anywhere}.role{font-style:normal;font-size:9px;font-weight:900;padding:5px 8px;border-radius:20px;text-transform:uppercase}.role.admin{background:#f0eafd;color:#6433a5}.role.staff{background:#e6f3fa;color:#12617d}.role.client{background:#f0f2f1;color:#59625d}.card-divider{height:1px;background:#edf0ed;margin:16px 0}.control-form{margin-top:13px}.control-form label{display:block;font-size:9px;font-weight:900;letter-spacing:.08em;color:#69746c;margin-bottom:6px}.control-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.control-row select{min-width:0;width:100%;height:40px;padding:0 10px;border:1px solid #d7ded8;border-radius:10px;background:#fff;color:#364139}.control-row button{height:40px;border:0;border-radius:10px;background:#edf6ef;color:#0b5d1e;font-weight:850;padding:0 13px;cursor:pointer;white-space:nowrap}.note{display:flex;align-items:center;gap:8px;margin-top:13px;background:#f7f9f7;color:#7a837d;border-radius:10px;padding:10px;font-size:10px}.note i{color:#0b5d1e}.empty{padding:55px 25px;text-align:center;border:1px dashed #d9dfda;border-radius:16px;background:#fff}.empty i{font-size:25px;color:#0b5d1e}.empty h3{margin:10px 0 4px}.empty p{margin:0;color:#7b857e;font-size:11px}@media(max-width:850px){.stats{grid-template-columns:repeat(2,1fr)}.content-shell{grid-template-columns:1fr}.tab-bar{position:static}.tabs{display:grid;grid-template-columns:repeat(4,1fr)}.tabs a{justify-content:center;flex-direction:column;gap:5px;text-align:center}.tabs a b{margin:0}.tabs a.active{box-shadow:inset 0 3px 0 #0b5d1e}}@media(max-width:560px){.um{padding:20px 13px 55px}.um-hero{align-items:stretch;flex-direction:column}.primary{width:100%;box-sizing:border-box}.stats{gap:8px}.stat-card{padding:12px;gap:9px}.stat-icon{width:35px;height:35px;flex-basis:35px}.stat-card b{font-size:19px}.tabs{grid-template-columns:repeat(2,1fr)}.user-card{padding:14px}.user-head{align-items:flex-start}.role{margin-left:auto}.control-row{grid-template-columns:1fr}.control-row button{width:100%}}
 </style>
