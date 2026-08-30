@@ -854,7 +854,7 @@ if (contactRoutes) {
 
     app.use(
         "/contact",
-        mpesaRoutes
+        contactRoutes
     );
 
     console.log(
