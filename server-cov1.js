@@ -1,9 +1,6 @@
-
-
 // ==========================================================
 // server-corevester.js - COREVESTER
 // ==========================================================
-
 const express = require("express");
 const http = require("http");
 const path = require("path");
@@ -17,7 +14,6 @@ const morgan = require("morgan");
 const methodOverride = require("method-override");
 
 require("dotenv").config();
-
 
 // ==========================================================
 // CRASH LOGGING
@@ -35,7 +31,6 @@ process.on("unhandledRejection", (reason) => {
         "❌ UNHANDLED REJECTION:",
         reason?.message || reason
     );
-
     console.error(
         reason?.stack || reason
     );
@@ -63,7 +58,6 @@ try {
     );
 }
 
-
 // ==========================================================
 // ENVIRONMENT
 // ==========================================================
@@ -86,7 +80,6 @@ if (isProduction) {
         );
 
     if (missing.length) {
-
         console.error(
             `❌ Missing env: ${missing.join(", ")}`
         );
@@ -110,7 +103,6 @@ const seedUser =
 // ==========================================================
 // SAFE ROUTE LOADER
 // ==========================================================
-
 function safeLoad(name, pathToRequire) {
 
     try {
@@ -141,7 +133,6 @@ function safeLoad(name, pathToRequire) {
     }
 }
 
-
 // ==========================================================
 // ROUTES
 // ==========================================================
@@ -151,7 +142,6 @@ function safeLoad(name, pathToRequire) {
 //     ./corevester/routes/
 //
 // ==========================================================
-
 
 // ----------------------------------------------------------
 // AUTH
@@ -171,7 +161,6 @@ const authRoutes =
         "./corevester/routes/auth"
     );
 
-
 // ----------------------------------------------------------
 // COREVERSTER MAIN ROUTES
 // ----------------------------------------------------------
@@ -189,7 +178,6 @@ const corevesterRoutes =
         "corevesterRoutes",
         "./corevester/routes/index"
     );
-
 
 // ----------------------------------------------------------
 // PRODUCTS
@@ -209,7 +197,6 @@ const productsRoutes =
         "./corevester/routes/products"
     );
 
-
 // ----------------------------------------------------------
 // CARTS
 // ----------------------------------------------------------
@@ -227,7 +214,6 @@ const cartsRoutes =
         "cartsRoutes",
         "./corevester/routes/carts"
     );
-
 
 // ----------------------------------------------------------
 // STOCK
@@ -247,9 +233,8 @@ const stockRoutes =
         "./corevester/routes/stock"
     );
 
-
 // ----------------------------------------------------------
-// SUBSTATIONS 
+// SUBSTATIONS
 // ----------------------------------------------------------
 //
 // File:
@@ -265,9 +250,6 @@ const substationsRoutes =
         "substationsRoutes",
         "./corevester/routes/substations"
     );
-
-
-
 // ----------------------------------------------------------
 // PACKAGES
 // ----------------------------------------------------------
@@ -285,7 +267,6 @@ const packageRoutes =
         "packageRoutes",
         "./corevester/routes/packages"
     );
-
 
 // ----------------------------------------------------------
 // MPESA
@@ -309,7 +290,6 @@ const mpesaRoutes =
 // ==========================================================
 // SOCKET
 // ==========================================================
-
 const socketHandler =
     require("./socket/socket");
 
@@ -335,7 +315,6 @@ if (
     app.enable("trust proxy");
 }
 
-
 // ==========================================================
 // SECURITY
 // ==========================================================
@@ -359,7 +338,6 @@ app.use(
 
         standardHeaders: true,
         legacyHeaders: false,
-
         message: {
             message: "Too many requests"
         }
@@ -391,7 +369,6 @@ const allowedOrigin =
             ? false
             : "*"
     );
-
 
 const io =
     new Server(server, {
@@ -425,7 +402,6 @@ app.use(
     })
 );
 
-
 app.use(
     methodOverride("_method")
 );
@@ -434,6 +410,30 @@ app.use(
 // ==========================================================
 // SESSION
 // ==========================================================
+//
+// Persistent session storage.
+//
+// The original session expired after 24 hours.
+// This version keeps the authenticated session persistent
+// for a very long period and refreshes the cookie while the
+// user continues using the application.
+//
+// Logout must explicitly destroy the session.
+//
+// ==========================================================
+
+const SESSION_MAX_AGE =
+    10 *
+    365 *
+    24 *
+    60 *
+    60 *
+    1000;
+
+const SESSION_TTL =
+    Math.floor(
+        SESSION_MAX_AGE / 1000
+    );
 
 const sessionStore =
     isProduction &&
@@ -444,13 +444,12 @@ const sessionStore =
                 process.env.MONGO_URI,
 
             ttl:
-                24 * 60 * 60,
+                SESSION_TTL,
 
             touchAfter:
                 60 * 60
         })
         : undefined;
-
 
 app.use(
     session({
@@ -465,6 +464,8 @@ app.use(
 
         saveUninitialized: false,
 
+        rolling: true,
+
         cookie: {
             httpOnly: true,
 
@@ -474,11 +475,10 @@ app.use(
             sameSite: "lax",
 
             maxAge:
-                86400000
+                SESSION_MAX_AGE
         }
     })
 );
-
 
 // ==========================================================
 // REQUEST / USER CONTEXT
@@ -501,7 +501,6 @@ app.use((req, res, next) => {
 
     next();
 });
-
 
 // ==========================================================
 // HEALTH CHECK
@@ -531,7 +530,6 @@ app.use(
     )
 );
 
-
 app.use(
     "/uploads",
     express.static(
@@ -557,7 +555,6 @@ app.set(
     "view engine",
     "ejs"
 );
-
 
 const viewsPath =
     path.join(
@@ -601,10 +598,10 @@ console.log(
     viewsPath
 );
 
+
 console.log(
     "✅ Layout: layout"
 );
-
 
 // ==========================================================
 // ROUTE MOUNTING
@@ -631,7 +628,6 @@ if (authRoutes) {
     );
 
 } else {
-
     console.error(
         "❌ /auth NOT MOUNTED - route failed to load"
     );
@@ -654,7 +650,6 @@ if (productsRoutes) {
     );
 
 } else {
-
     console.error(
         "❌ /products NOT MOUNTED"
     );
@@ -677,7 +672,6 @@ if (cartsRoutes) {
     );
 
 } else {
-
     console.error(
         "❌ /carts NOT MOUNTED"
     );
@@ -689,7 +683,6 @@ if (cartsRoutes) {
 // ==========================================================
 
 if (stockRoutes) {
-
     app.use(
         "/stock",
         stockRoutes
@@ -700,7 +693,6 @@ if (stockRoutes) {
     );
 
 } else {
-
     console.error(
         "❌ /stock NOT MOUNTED"
     );
@@ -708,7 +700,7 @@ if (stockRoutes) {
 
 
 // ==========================================================
-// SUBSTATIONS 
+// SUBSTATIONS
 // ==========================================================
 
 if (substationsRoutes) {
@@ -723,7 +715,6 @@ if (substationsRoutes) {
     );
 
 } else {
-
     console.error(
         "❌ /substations NOT MOUNTED"
     );
@@ -746,7 +737,6 @@ if (packageRoutes) {
     );
 
 } else {
-
     console.error(
         "❌ /packages NOT MOUNTED"
     );
@@ -769,7 +759,6 @@ if (mpesaRoutes) {
     );
 
 } else {
-
     console.error(
         "❌ /mpesa NOT MOUNTED"
     );
@@ -798,7 +787,6 @@ if (corevesterRoutes) {
         "/",
         corevesterRoutes
     );
-
     console.log(
         "✅ Mounted CoreVester /"
     );
@@ -822,7 +810,6 @@ app.use(
             req.accepts("json") &&
             !req.accepts("html")
         ) {
-
             return res
                 .status(404)
                 .json({
@@ -842,7 +829,6 @@ app.use(
 
                     user:
                         req.user || null,
-
                     error:
                         `Cannot ${req.method} ${req.originalUrl}`
                 }
@@ -866,7 +852,6 @@ app.use(
         console.error(
             err.stack
         );
-
 
         let statusCode =
             Number(
@@ -893,7 +878,6 @@ app.use(
             statusCode < 400 ||
             statusCode > 599
         ) {
-
             statusCode = 500;
         }
 
@@ -908,7 +892,6 @@ app.use(
                 .status(statusCode)
                 .json({
                     success: false,
-
                     message:
                         isProduction &&
                         statusCode === 500
@@ -922,7 +905,6 @@ app.use(
 
 
         const errorViews = {
-
             400: "error/400",
             401: "error/401",
             403: "error/403",
@@ -990,7 +972,6 @@ const startServer =
 server.on(
     "error",
     (e) => {
-
         console.error(
             "❌ Server error:",
             e.message,
