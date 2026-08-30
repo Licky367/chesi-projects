@@ -1,0 +1,530 @@
+<!-- ==========================================================
+     views/contact.ejs
+     COREVESTER CONTACT PAGE
+     ========================================================== --><style>
+
+    .contact-page {
+        width: 100%;
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 30px 18px 60px;
+        box-sizing: border-box;
+    }
+
+
+    /* ======================================================
+       HEADER
+       ====================================================== */
+
+    .contact-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .contact-header h1 {
+        margin: 0 0 10px;
+        font-size: clamp(28px, 5vw, 42px);
+        font-weight: 800;
+        color: #1d2b22;
+        letter-spacing: -.6px;
+    }
+
+    .contact-header p {
+        max-width: 650px;
+        margin: 0 auto;
+        color: #6b756f;
+        font-size: 15px;
+        line-height: 1.7;
+    }
+
+
+    /* ======================================================
+       LAYOUT
+       ====================================================== */
+
+    .contact-layout {
+        display: grid;
+        grid-template-columns: .82fr 1.18fr;
+        gap: 22px;
+        align-items: start;
+    }
+
+
+    /* ======================================================
+       CONTACT INFORMATION
+       ====================================================== */
+
+    .contact-info {
+        background: #fff;
+        border: 1px solid #e7ebe8;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(24, 42, 31, .055);
+    }
+
+    .contact-info h2 {
+        margin: 0 0 8px;
+        color: #1d2b22;
+        font-size: 22px;
+    }
+
+    .contact-info > p {
+        margin: 0 0 22px;
+        color: #707a74;
+        font-size: 14px;
+        line-height: 1.65;
+    }
+
+
+    .contact-detail {
+        display: flex;
+        align-items: flex-start;
+        gap: 13px;
+        padding: 15px 0;
+        border-top: 1px solid #edf0ee;
+    }
+
+    .contact-detail:first-of-type {
+        border-top: 0;
+    }
+
+    .contact-detail-icon {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 11px;
+        background: #f0f6f2;
+        color: #34754d;
+        font-size: 15px;
+    }
+
+    .contact-detail strong {
+        display: block;
+        margin-bottom: 3px;
+        color: #29362f;
+        font-size: 13px;
+        font-weight: 750;
+    }
+
+    .contact-detail span,
+    .contact-detail a {
+        color: #68736c;
+        font-size: 14px;
+        line-height: 1.5;
+        text-decoration: none;
+    }
+
+    .contact-detail a:hover {
+        color: #34754d;
+    }
+
+
+    /* ======================================================
+       FORM
+       ====================================================== */
+
+    .contact-form-card {
+        background: #fff;
+        border: 1px solid #e7ebe8;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(24, 42, 31, .055);
+    }
+
+    .contact-form-card h2 {
+        margin: 0 0 7px;
+        color: #1d2b22;
+        font-size: 22px;
+    }
+
+    .contact-form-card > p {
+        margin: 0 0 22px;
+        color: #707a74;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+
+    .contact-form {
+        display: grid;
+        gap: 16px;
+    }
+
+
+    .contact-field {
+        display: grid;
+        gap: 7px;
+    }
+
+    .contact-field label {
+        color: #354239;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .contact-field input,
+    .contact-field textarea {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #dce3de;
+        border-radius: 11px;
+        background: #fafcfb;
+        padding: 12px 13px;
+        color: #26322b;
+        font: inherit;
+        font-size: 14px;
+        outline: none;
+        transition:
+            border-color .18s ease,
+            box-shadow .18s ease,
+            background .18s ease;
+    }
+
+    .contact-field input {
+        height: 46px;
+    }
+
+    .contact-field textarea {
+        min-height: 145px;
+        resize: vertical;
+        line-height: 1.55;
+    }
+
+    .contact-field input:focus,
+    .contact-field textarea:focus {
+        background: #fff;
+        border-color: #77a889;
+        box-shadow: 0 0 0 3px rgba(52, 117, 77, .09);
+    }
+
+
+    /* ======================================================
+       SUBMIT
+       ====================================================== */
+
+    .contact-submit {
+        height: 47px;
+        border: 0;
+        border-radius: 11px;
+        background: #34754d;
+        color: #fff;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 750;
+        cursor: pointer;
+        transition:
+            background .18s ease,
+            transform .18s ease;
+    }
+
+    .contact-submit:hover {
+        background: #2b6542;
+    }
+
+    .contact-submit:active {
+        transform: translateY(1px);
+    }
+
+
+    /* ======================================================
+       STATUS
+       ====================================================== */
+
+    .contact-message {
+        margin-bottom: 20px;
+        padding: 13px 15px;
+        border-radius: 11px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .contact-message.success {
+        background: #eef8f1;
+        border: 1px solid #d1e9d7;
+        color: #28633d;
+    }
+
+    .contact-message.error {
+        background: #fff2f1;
+        border: 1px solid #f0d0cd;
+        color: #9a3831;
+    }
+
+
+    /* ======================================================
+       MOBILE
+       ====================================================== */
+
+    @media (max-width: 760px) {
+
+        .contact-page {
+            padding: 22px 14px 45px;
+        }
+
+        .contact-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-info,
+        .contact-form-card {
+            padding: 21px;
+            border-radius: 17px;
+        }
+
+        .contact-header {
+            margin-bottom: 25px;
+        }
+
+    }
+
+</style><main class="contact-page"><!-- ==================================================
+     PAGE HEADER
+     ================================================== -->
+
+<header class="contact-header">
+
+    <h1>Contact Us</h1>
+
+    <p>
+        Have a question, need assistance, or want to learn
+        more about CoreVester? We would love to hear from you.
+    </p>
+
+</header>
+
+
+<!-- ==================================================
+     STATUS MESSAGE
+     ================================================== -->
+
+<% if (typeof success !== "undefined" && success) { %>
+
+    <div class="contact-message success">
+        <i class="fas fa-circle-check"></i>
+        <%= success %>
+    </div>
+
+<% } %>
+
+
+<% if (typeof error !== "undefined" && error) { %>
+
+    <div class="contact-message error">
+        <i class="fas fa-circle-exclamation"></i>
+        <%= error %>
+    </div>
+
+<% } %>
+
+
+<!-- ==================================================
+     CONTENT
+     ================================================== -->
+
+<section class="contact-layout">
+
+
+    <!-- ==================================================
+         CONTACT DETAILS
+         ================================================== -->
+
+    <section class="contact-info">
+
+        <h2>Get in touch</h2>
+
+        <p>
+            Reach out to the CoreVester team with your
+            questions, enquiries, feedback or support requests.
+        </p>
+
+
+        <div class="contact-detail">
+
+            <div class="contact-detail-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+
+            <div>
+
+                <strong>Email</strong>
+
+                <a href="mailto:info@corevester.com">
+                    info@corevester.com
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <div class="contact-detail">
+
+            <div class="contact-detail-icon">
+                <i class="fas fa-phone"></i>
+            </div>
+
+            <div>
+
+                <strong>Phone</strong>
+
+                <a href="tel:+254700000000">
+                    +254 700 000 000
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <div class="contact-detail">
+
+            <div class="contact-detail-icon">
+                <i class="fas fa-location-dot"></i>
+            </div>
+
+            <div>
+
+                <strong>Location</strong>
+
+                <span>
+                    Kenya
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="contact-detail">
+
+            <div class="contact-detail-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+
+            <div>
+
+                <strong>Availability</strong>
+
+                <span>
+                    Monday – Friday
+                </span>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         MESSAGE FORM
+         ================================================== -->
+
+    <section class="contact-form-card">
+
+        <h2>Send us a message</h2>
+
+        <p>
+            Fill in the form below and we'll get back to you.
+        </p>
+
+
+        <form
+            action="/contact"
+            method="POST"
+            class="contact-form"
+        >
+
+
+            <div class="contact-field">
+
+                <label for="contact-name">
+                    Name
+                </label>
+
+                <input
+                    type="text"
+                    id="contact-name"
+                    name="name"
+                    placeholder="Your name"
+                    value="<%= typeof formData !== 'undefined' && formData.name ? formData.name : '' %>"
+                    maxlength="100"
+                    required
+                >
+
+            </div>
+
+
+            <div class="contact-field">
+
+                <label for="contact-email">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="contact-email"
+                    name="email"
+                    placeholder="Your email address"
+                    value="<%= typeof formData !== 'undefined' && formData.email ? formData.email : '' %>"
+                    maxlength="150"
+                    required
+                >
+
+            </div>
+
+
+            <div class="contact-field">
+
+                <label for="contact-subject">
+                    Subject
+                </label>
+
+                <input
+                    type="text"
+                    id="contact-subject"
+                    name="subject"
+                    placeholder="What would you like to talk about?"
+                    value="<%= typeof formData !== 'undefined' && formData.subject ? formData.subject : '' %>"
+                    maxlength="150"
+                    required
+                >
+
+            </div>
+
+
+            <div class="contact-field">
+
+                <label for="contact-message">
+                    Message
+                </label>
+
+                <textarea
+                    id="contact-message"
+                    name="message"
+                    placeholder="Write your message..."
+                    maxlength="3000"
+                    required
+                ><%= typeof formData !== 'undefined' && formData.message ? formData.message : '' %></textarea>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="contact-submit"
+            >
+                <i class="fas fa-paper-plane"></i>
+                Send Message
+            </button>
+
+        </form>
+
+    </section>
+
+</section>
+
+</main>
