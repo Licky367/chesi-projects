@@ -1,202 +1,332 @@
 <!-- ==========================================================
      views/contact.ejs
      COREVESTER INVESTMENTS LIMITED
-     CONTACT PAGE
+     COMPANY CONTACT PAGE
      ========================================================== -->
 
 
 <style>
 
     /* ======================================================
-       CONTACT PAGE
+       PAGE
        ====================================================== */
 
     .contact-page {
         width: 100%;
-        max-width: 1050px;
+        max-width: 1100px;
         margin: 0 auto;
-        padding: 28px 18px 55px;
+        padding: 28px 18px 60px;
         box-sizing: border-box;
     }
 
 
     /* ======================================================
-       PAGE INTRO
+       HERO
        ====================================================== */
 
-    .contact-intro {
-        text-align: center;
-        max-width: 720px;
-        margin: 0 auto 32px;
+    .contact-hero {
+        position: relative;
+
+        overflow: hidden;
+
+        background:
+            linear-gradient(
+                135deg,
+                #f4faf5 0%,
+                #ffffff 55%,
+                #fff8ed 100%
+            );
+
+        border: 1px solid #e0e9e2;
+        border-radius: 24px;
+
+        padding: 38px 30px;
+
+        margin-bottom: 22px;
+
+        box-shadow:
+            0 10px 30px rgba(20, 50, 30, .06);
     }
 
-    .contact-intro h1 {
-        margin: 0 0 10px;
 
-        color: #17231c;
+    .contact-hero::after {
+        content: "";
 
-        font-size: clamp(30px, 6vw, 44px);
-        line-height: 1.1;
+        position: absolute;
+
+        width: 180px;
+        height: 180px;
+
+        right: -70px;
+        top: -70px;
+
+        border-radius: 50%;
+
+        background: rgba(64, 151, 78, .08);
+    }
+
+
+    .contact-hero-content {
+        position: relative;
+        z-index: 1;
+
+        max-width: 760px;
+    }
+
+
+    .contact-eyebrow {
+        display: inline-flex;
+
+        align-items: center;
+        gap: 7px;
+
+        margin-bottom: 13px;
+
+        color: #34794a;
+
+        font-size: 12px;
         font-weight: 800;
-        letter-spacing: -.5px;
+
+        text-transform: uppercase;
+        letter-spacing: .8px;
     }
 
-    .contact-intro p {
+
+    .contact-eyebrow i {
+        font-size: 11px;
+    }
+
+
+    .contact-hero h1 {
+        margin: 0 0 12px;
+
+        color: #15221a;
+
+        font-size: clamp(30px, 6vw, 48px);
+        line-height: 1.08;
+
+        font-weight: 850;
+
+        letter-spacing: -.8px;
+    }
+
+
+    .contact-hero p {
+        max-width: 680px;
+
         margin: 0;
 
-        color: #68746d;
+        color: #5f6c64;
 
         font-size: 15px;
-        line-height: 1.7;
+        line-height: 1.75;
     }
 
 
     /* ======================================================
-       COMPANY CARD
+       COMPANY INTRO
        ====================================================== */
 
     .company-card {
         background: #ffffff;
 
-        border: 1px solid #e1e8e2;
+        border: 1px solid #e3e9e5;
         border-radius: 20px;
 
-        padding: 28px;
-
-        box-shadow:
-            0 8px 28px rgba(20, 45, 29, .06);
+        padding: 27px 28px;
 
         margin-bottom: 22px;
+
+        box-shadow:
+            0 7px 24px rgba(20, 50, 30, .045);
     }
 
 
-    .company-name h2 {
-        margin: 0 0 7px;
+    .company-card-header {
+        display: flex;
 
-        color: #17231c;
+        align-items: center;
+        gap: 14px;
 
-        font-size: clamp(22px, 4vw, 29px);
+        margin-bottom: 17px;
+    }
+
+
+    .company-mark {
+        width: 48px;
+        height: 48px;
+
+        flex: 0 0 48px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 14px;
+
+        background: #edf7ef;
+
+        color: #24713e;
+
+        font-size: 20px;
+    }
+
+
+    .company-card h2 {
+        margin: 0 0 4px;
+
+        color: #1b2921;
+
+        font-size: 22px;
         line-height: 1.2;
         font-weight: 800;
     }
 
 
-    .company-name p {
+    .company-tagline {
         margin: 0;
 
-        color: #4c6655;
+        color: #477052;
 
-        font-size: 14px;
-        line-height: 1.5;
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 650;
     }
 
 
     .company-description {
-        margin-top: 22px;
-        padding-top: 22px;
-
-        border-top: 1px solid #edf1ee;
-    }
-
-
-    .company-description p {
         margin: 0;
 
-        color: #58645d;
+        padding-top: 18px;
 
-        font-size: 15px;
+        border-top: 1px solid #edf1ee;
+
+        color: #5e6962;
+
+        font-size: 14px;
         line-height: 1.8;
     }
 
 
     /* ======================================================
-       CONTACT DETAILS
+       CONTACT SECTION
        ====================================================== */
 
-    .contact-details {
+    .contact-section-title {
+        margin: 0 0 14px 2px;
+
+        color: #1b2921;
+
+        font-size: 20px;
+        font-weight: 800;
+    }
+
+
+    .contact-grid {
         display: grid;
 
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
 
-        gap: 18px;
+        gap: 16px;
 
         margin-bottom: 22px;
     }
 
 
+    /* ======================================================
+       CONTACT CARD
+       ====================================================== */
+
     .contact-card {
-        display: flex;
-
-        align-items: flex-start;
-
-        gap: 15px;
-
         background: #ffffff;
 
-        border: 1px solid #e1e8e2;
+        border: 1px solid #e3e9e5;
         border-radius: 18px;
 
         padding: 21px;
 
         box-shadow:
-            0 6px 22px rgba(20, 45, 29, .045);
+            0 6px 20px rgba(20, 50, 30, .04);
+
+        transition:
+            transform .18s ease,
+            box-shadow .18s ease,
+            border-color .18s ease;
+    }
+
+
+    .contact-card:hover {
+        transform: translateY(-2px);
+
+        border-color: #cbdccd;
+
+        box-shadow:
+            0 10px 25px rgba(20, 50, 30, .07);
+    }
+
+
+    .contact-card-top {
+        display: flex;
+
+        align-items: flex-start;
+
+        gap: 14px;
     }
 
 
     .contact-icon {
-        width: 45px;
-        height: 45px;
+        width: 46px;
+        height: 46px;
 
-        min-width: 45px;
+        flex: 0 0 46px;
 
         display: flex;
-
         align-items: center;
         justify-content: center;
 
         border-radius: 13px;
 
-        background: #edf7ef;
+        background: #f0f7f1;
 
-        color: #176234;
+        color: #24713e;
 
         font-size: 18px;
     }
 
 
-    .contact-content {
-        min-width: 0;
-    }
+    .contact-card h3 {
+        margin: 2px 0 4px;
 
-
-    .contact-content h3 {
-        margin: 0 0 5px;
-
-        color: #25332a;
+        color: #253229;
 
         font-size: 14px;
-        font-weight: 750;
+        font-weight: 800;
     }
 
 
-    .contact-content p {
+    .contact-value {
         margin: 0;
 
-        color: #68736c;
+        color: #69746d;
 
-        font-size: 14px;
-        line-height: 1.6;
+        font-size: 13px;
+        line-height: 1.5;
     }
 
 
-    .contact-content a {
-        color: #176234;
+    /* ======================================================
+       PHONE / EMAIL LINK
+       ====================================================== */
 
-        font-size: 14px;
+    .contact-main-link {
+        display: inline-block;
 
-        line-height: 1.6;
+        margin-top: 7px;
+
+        color: #196437;
+
+        font-size: 16px;
+        font-weight: 800;
 
         text-decoration: none;
 
@@ -204,42 +334,158 @@
     }
 
 
-    .contact-content a:hover {
+    .contact-main-link:hover {
         text-decoration: underline;
     }
 
 
     /* ======================================================
-       BUSINESS INFORMATION
+       PHONE ACTIONS
        ====================================================== */
 
-    .company-services {
-        background: #f6faf7;
+    .contact-actions {
+        display: flex;
 
-        border: 1px solid #e0ebe2;
-        border-radius: 18px;
+        flex-wrap: wrap;
 
-        padding: 23px;
+        gap: 8px;
+
+        margin-top: 15px;
     }
 
 
-    .company-services h2 {
-        margin: 0 0 15px;
+    .contact-action {
+        display: inline-flex;
 
-        color: #1c2c22;
+        align-items: center;
+        justify-content: center;
+
+        gap: 7px;
+
+        min-height: 35px;
+
+        padding: 7px 12px;
+
+        box-sizing: border-box;
+
+        border-radius: 9px;
+
+        background: #f4f7f5;
+
+        border: 1px solid #e1e8e3;
+
+        color: #31513c;
+
+        font-size: 12px;
+        font-weight: 750;
+
+        text-decoration: none;
+
+        transition:
+            background .18s ease,
+            border-color .18s ease,
+            transform .18s ease;
+    }
+
+
+    .contact-action:hover {
+        background: #edf5ef;
+
+        border-color: #cbdccd;
+
+        transform: translateY(-1px);
+    }
+
+
+    .contact-action i {
+        font-size: 12px;
+    }
+
+
+    /* ======================================================
+       EMAIL CARD
+       ====================================================== */
+
+    .email-card .contact-icon {
+        background: #fff5e8;
+        color: #bd721e;
+    }
+
+
+    .email-card .contact-main-link {
+        color: #a86216;
+    }
+
+
+    /* ======================================================
+       LOCATION CARD
+       ====================================================== */
+
+    .location-card .contact-icon {
+        background: #f1f5fa;
+        color: #3e658d;
+    }
+
+
+    /* ======================================================
+       BUSINESS CARD
+       ====================================================== */
+
+    .business-card .contact-icon {
+        background: #f7f2fa;
+        color: #76518e;
+    }
+
+
+    /* ======================================================
+       BUSINESS AREAS
+       ====================================================== */
+
+    .business-section {
+        background:
+            linear-gradient(
+                135deg,
+                #f5faf6,
+                #ffffff
+            );
+
+        border: 1px solid #e0e9e2;
+        border-radius: 20px;
+
+        padding: 25px 27px;
+
+        box-shadow:
+            0 7px 23px rgba(20, 50, 30, .04);
+    }
+
+
+    .business-section h2 {
+        margin: 0 0 7px;
+
+        color: #1b2921;
 
         font-size: 20px;
         font-weight: 800;
     }
 
 
-    .services-list {
+    .business-section > p {
+        margin: 0 0 19px;
+
+        color: #69746d;
+
+        font-size: 14px;
+        line-height: 1.65;
+    }
+
+
+    .business-list {
         display: grid;
 
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
 
-        gap: 11px 20px;
+        gap: 10px;
 
         margin: 0;
         padding: 0;
@@ -248,25 +494,36 @@
     }
 
 
-    .services-list li {
+    .business-list li {
         display: flex;
 
-        align-items: flex-start;
+        align-items: center;
 
         gap: 9px;
 
-        color: #5f6d64;
+        min-height: 40px;
 
-        font-size: 14px;
+        padding: 9px 12px;
 
-        line-height: 1.55;
+        box-sizing: border-box;
+
+        background: #ffffff;
+
+        border: 1px solid #e5ebe6;
+
+        border-radius: 10px;
+
+        color: #4e5e54;
+
+        font-size: 13px;
+        font-weight: 600;
     }
 
 
-    .services-list i {
-        margin-top: 3px;
+    .business-list i {
+        color: #3c8b50;
 
-        color: #3a8a50;
+        font-size: 12px;
     }
 
 
@@ -274,43 +531,66 @@
        MOBILE
        ====================================================== */
 
-    @media (max-width: 700px) {
+    @media (max-width: 720px) {
 
         .contact-page {
-            padding: 22px 14px 45px;
+            padding: 20px 14px 45px;
+        }
+
+
+        .contact-hero {
+            padding: 28px 21px;
+
+            border-radius: 20px;
         }
 
 
         .company-card {
-            padding: 21px;
+            padding: 22px 20px;
 
-            border-radius: 17px;
+            border-radius: 18px;
         }
 
 
-        .contact-details {
+        .contact-grid {
             grid-template-columns: 1fr;
         }
 
 
-        .services-list {
+        .business-section {
+            padding: 22px 20px;
+
+            border-radius: 18px;
+        }
+
+
+        .business-list {
             grid-template-columns: 1fr;
         }
 
     }
 
 
-    @media (max-width: 430px) {
+    @media (max-width: 420px) {
 
-        .contact-card {
-            padding: 18px;
+        .contact-hero h1 {
+            font-size: 31px;
         }
 
 
-        .contact-icon {
-            width: 42px;
-            height: 42px;
-            min-width: 42px;
+        .contact-actions {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+        }
+
+
+        .contact-action {
+            padding-left: 6px;
+            padding-right: 6px;
+
+            font-size: 11px;
         }
 
     }
@@ -322,53 +602,76 @@
 
 
     <!-- ==================================================
-         PAGE INTRO
+         HERO
          ================================================== -->
 
-    <section class="contact-intro">
+    <section class="contact-hero">
 
-        <h1>
-            Contact Us
-        </h1>
+        <div class="contact-hero-content">
 
-        <p>
-            Get in touch with CoreVester Investments Limited
-            for information about our products and services.
-        </p>
+            <div class="contact-eyebrow">
+
+                <i class="fas fa-circle-info"></i>
+
+                CoreVester Investments Limited
+
+            </div>
+
+
+            <h1>
+                Get in touch with us
+            </h1>
+
+
+            <p>
+                Whether you are looking for medical equipment,
+                surgical supplies or hospital supplies, contact
+                CoreVester Investments Limited and we will be
+                happy to assist you.
+            </p>
+
+        </div>
 
     </section>
 
 
     <!-- ==================================================
-         COMPANY INFORMATION
+         COMPANY
          ================================================== -->
 
     <section class="company-card">
 
-        <div class="company-name">
+        <div class="company-card-header">
 
-            <h2>
-                CoreVester Investments Limited
-            </h2>
+            <div class="company-mark">
 
-            <p>
-                Medical Equipment, Surgical and Hospital Supplies
-            </p>
+                <i class="fas fa-building"></i>
 
-        </div>
+            </div>
 
 
-        <div class="company-description">
+            <div>
 
-            <p>
-                CoreVester Investments Limited is a Kenyan company
-                dealing in medical equipment, surgical supplies and
-                hospital supplies. We are committed to providing
-                healthcare-related products to institutions,
-                professionals and other customers.
-            </p>
+                <h2>
+                    CoreVester Investments Limited
+                </h2>
+
+                <p class="company-tagline">
+                    Medical Equipment, Surgical and Hospital Supplies
+                </p>
+
+            </div>
 
         </div>
+
+
+        <p class="company-description">
+            CoreVester Investments Limited provides medical
+            equipment, surgical supplies and hospital supplies.
+            We are committed to serving healthcare institutions,
+            professionals and customers with quality healthcare
+            products and dependable service.
+        </p>
 
     </section>
 
@@ -377,34 +680,12 @@
          CONTACT INFORMATION
          ================================================== -->
 
-    <section class="contact-details">
+    <h2 class="contact-section-title">
+        Contact Information
+    </h2>
 
 
-        <!-- ==================================================
-             LOCATION
-             ================================================== -->
-
-        <article class="contact-card">
-
-            <div class="contact-icon">
-
-                <i class="fas fa-location-dot"></i>
-
-            </div>
-
-            <div class="contact-content">
-
-                <h3>
-                    Location
-                </h3>
-
-                <p>
-                    Kitengela, Kenya
-                </p>
-
-            </div>
-
-        </article>
+    <section class="contact-grid">
 
 
         <!-- ==================================================
@@ -413,22 +694,66 @@
 
         <article class="contact-card">
 
-            <div class="contact-icon">
+            <div class="contact-card-top">
 
-                <i class="fas fa-phone"></i>
+                <div class="contact-icon">
+
+                    <i class="fas fa-phone"></i>
+
+                </div>
+
+
+                <div>
+
+                    <h3>
+                        Phone
+                    </h3>
+
+                    <p class="contact-value">
+                        Calls, SMS and WhatsApp
+                    </p>
+
+                    <a
+                        href="tel:+254799715327"
+                        class="contact-main-link"
+                    >
+                        0799 715 327
+                    </a>
+
+                </div>
 
             </div>
 
-            <div class="contact-content">
 
-                <h3>
-                    Phone
-                </h3>
+            <div class="contact-actions">
 
-                <p>
-                    Contact CoreVester Investments Limited
-                    by phone for enquiries and assistance.
-                </p>
+                <a
+                    href="tel:+254799715327"
+                    class="contact-action"
+                >
+                    <i class="fas fa-phone"></i>
+                    Call
+                </a>
+
+
+                <a
+                    href="sms:+254799715327"
+                    class="contact-action"
+                >
+                    <i class="fas fa-comment-sms"></i>
+                    SMS
+                </a>
+
+
+                <a
+                    href="https://wa.me/254799715327"
+                    class="contact-action"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <i class="fab fa-whatsapp"></i>
+                    WhatsApp
+                </a>
 
             </div>
 
@@ -439,24 +764,84 @@
              EMAIL
              ================================================== -->
 
-        <article class="contact-card">
+        <article class="contact-card email-card">
 
-            <div class="contact-icon">
+            <div class="contact-card-top">
 
-                <i class="fas fa-envelope"></i>
+                <div class="contact-icon">
+
+                    <i class="fas fa-envelope"></i>
+
+                </div>
+
+
+                <div>
+
+                    <h3>
+                        Email
+                    </h3>
+
+                    <p class="contact-value">
+                        Email us for enquiries
+                    </p>
+
+                    <a
+                        href="mailto:andrew123@gmail.com"
+                        class="contact-main-link"
+                    >
+                        andrew123@gmail.com
+                    </a>
+
+                </div>
 
             </div>
 
-            <div class="contact-content">
 
-                <h3>
-                    Email
-                </h3>
+            <div class="contact-actions">
 
-                <p>
-                    Contact us by email for business,
-                    product and service enquiries.
-                </p>
+                <a
+                    href="mailto:andrew123@gmail.com"
+                    class="contact-action"
+                >
+                    <i class="fas fa-paper-plane"></i>
+                    Send Email
+                </a>
+
+            </div>
+
+        </article>
+
+
+        <!-- ==================================================
+             LOCATION
+             ================================================== -->
+
+        <article class="contact-card location-card">
+
+            <div class="contact-card-top">
+
+                <div class="contact-icon">
+
+                    <i class="fas fa-location-dot"></i>
+
+                </div>
+
+
+                <div>
+
+                    <h3>
+                        Location
+                    </h3>
+
+                    <p class="contact-value">
+                        Our company location
+                    </p>
+
+                    <p class="contact-main-link">
+                        Kitengela, Kenya
+                    </p>
+
+                </div>
 
             </div>
 
@@ -467,23 +852,32 @@
              COMPANY
              ================================================== -->
 
-        <article class="contact-card">
+        <article class="contact-card business-card">
 
-            <div class="contact-icon">
+            <div class="contact-card-top">
 
-                <i class="fas fa-building"></i>
+                <div class="contact-icon">
 
-            </div>
+                    <i class="fas fa-briefcase"></i>
 
-            <div class="contact-content">
+                </div>
 
-                <h3>
-                    Company
-                </h3>
 
-                <p>
-                    CoreVester Investments Limited
-                </p>
+                <div>
+
+                    <h3>
+                        Business
+                    </h3>
+
+                    <p class="contact-value">
+                        CoreVester Investments Limited
+                    </p>
+
+                    <p class="contact-main-link">
+                        Healthcare Supplies
+                    </p>
+
+                </div>
 
             </div>
 
@@ -493,25 +887,29 @@
 
 
     <!-- ==================================================
-         OUR BUSINESS
+         BUSINESS AREAS
          ================================================== -->
 
-    <section class="company-services">
+    <section class="business-section">
 
         <h2>
-            Our Business
+            What We Provide
         </h2>
 
 
-        <ul class="services-list">
+        <p>
+            Our business focuses on supplying products for
+            healthcare and medical environments.
+        </p>
+
+
+        <ul class="business-list">
 
             <li>
 
                 <i class="fas fa-circle-check"></i>
 
-                <span>
-                    Medical equipment
-                </span>
+                Medical Equipment
 
             </li>
 
@@ -520,9 +918,7 @@
 
                 <i class="fas fa-circle-check"></i>
 
-                <span>
-                    Surgical supplies
-                </span>
+                Surgical Supplies
 
             </li>
 
@@ -531,9 +927,7 @@
 
                 <i class="fas fa-circle-check"></i>
 
-                <span>
-                    Hospital supplies
-                </span>
+                Hospital Supplies
 
             </li>
 
@@ -542,9 +936,7 @@
 
                 <i class="fas fa-circle-check"></i>
 
-                <span>
-                    Healthcare product enquiries
-                </span>
+                Healthcare Products
 
             </li>
 
