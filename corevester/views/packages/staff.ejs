@@ -1,0 +1,59 @@
+<% const safePackages = Array.isArray(packages) ? packages : []; const tabCounts = counts || {all:safePackages.length,pending:0,confirmed:0,delivered:0}; %>
+<style>
+  .pm-page{max-width:1180px;margin:0 auto;padding:24px 18px 70px;color:#1d2a21}
+  .pm-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;margin-bottom:18px}
+  .pm-head h1{margin:6px 0;font-size:clamp(30px,5vw,44px);line-height:1;letter-spacing:-.035em}
+  .pm-head p{margin:0;color:#667269;font-size:13px}
+  .pm-alert{padding:11px 13px;border-radius:10px;margin-bottom:12px;font-size:12px}
+  .pm-error{background:#fff0f0;color:#9b2424}.pm-success{background:#eaf8ee;color:#176b2c}
+  .pm-tabs{display:flex;flex-direction:column;gap:6px;margin-bottom:17px;padding:9px;border:1px solid #cfe1d3;border-radius:14px;background:#f5faf6}
+  .pm-tab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid transparent;border-radius:10px;text-decoration:none;color:#56645a;font-size:11px;font-weight:800}
+  .pm-tab:hover,.pm-tab.active{background:#fff;border-color:#dce6de;color:#176b2c}
+  .pm-count{padding:4px 7px;border-radius:20px;background:#eaf6ed;color:#176b2c;font-size:9px}
+  .pm-list{display:flex;flex-direction:column;gap:10px}
+  .pm-card{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:13px;align-items:center;padding:14px;border:1px solid #dce6de;border-radius:14px;background:#fff;text-decoration:none;color:inherit}
+  .pm-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:12px;background:#eaf6ed;color:#176b2c;font-size:18px}
+  .pm-card h3{margin:0 0 4px;font-size:14px}.pm-meta{color:#718078;font-size:10px;line-height:1.6}
+  .pm-status{display:inline-block;padding:5px 8px;border-radius:20px;font-size:9px;font-weight:900;text-transform:uppercase}.pending{background:#fff5dd;color:#9a6a00}.confirmed{background:#e8f1ff;color:#245a9c}.delivered{background:#eaf8ee;color:#176b2c}
+  .pm-empty{padding:35px;text-align:center;border:1px dashed #cfdad1;border-radius:13px;color:#718078;background:#fff}
+  @media(max-width:650px){.pm-head{align-items:stretch;flex-direction:column}.pm-card{grid-template-columns:42px minmax(0,1fr)}.pm-icon{width:42px;height:42px}.pm-card>.pm-status{grid-column:2;justify-self:start}.pm-card>i{display:none}}
+</style>
+<section class="pm-page">
+  <header class="pm-head">
+    <div><div style="font-size:10px;font-weight:900;letter-spacing:.13em;color:#176b2c">PACKAGE MANAGEMENT</div><h1>Packages</h1><p><%= role === 'admin' ? 'All client packages across every staff member.' : 'Pending packages are available to claim. Confirmed and delivered packages are yours.' %></p></div>
+  </header>
+
+  <% if (error) { %><div class="pm-alert pm-error"><%= error %></div><% } %>
+  <% if (success) { %><div class="pm-alert pm-success"><%= success %></div><% } %>
+
+  <nav class="pm-tabs" aria-label="Package status">
+    <% ['all','pending','confirmed','delivered'].forEach(tab => { %>
+      <a class="pm-tab <%= status === tab ? 'active' : '' %>" href="/packages/staff?status=<%= tab %>">
+        <span><i class="fas fa-<%= tab === 'all' ? 'boxes-stacked' : tab === 'pending' ? 'clock' : tab === 'confirmed' ? 'circle-check' : 'truck-fast' %>"></i> <%= tab.charAt(0).toUpperCase() + tab.slice(1) %></span>
+        <span class="pm-count"><%= tabCounts[tab] || 0 %></span>
+      </a>
+    <% }) %>
+  </nav>
+
+  <div class="pm-list">
+    <% if (!safePackages.length) { %>
+      <div class="pm-empty"><i class="fas fa-box-open" style="font-size:24px"></i><div style="margin-top:10px">No packages in this section.</div></div>
+    <% } %>
+    <% safePackages.forEach(pkg => { %>
+      <a class="pm-card" href="/packages/staff/<%= pkg._id %>">
+        <div class="pm-icon"><i class="fas fa-box"></i></div>
+        <div>
+          <h3>Package <%= String(pkg._id).slice(-8) %></h3>
+          <div class="pm-meta">
+            Client: <strong><%= pkg.client?.name || 'Unknown client' %></strong>
+            · <%= pkg.items.reduce((sum, item) => sum + Number(item.qty || 0), 0) %> item(s)
+            · KSh <%= Number(pkg.totalAmount || 0).toLocaleString() %>
+            <% if (pkg.confirmedByStaffName) { %> · Staff: <%= pkg.confirmedByStaffName %><% } %>
+            <% if (pkg.deliveredSubstationId?.name) { %> · Substation: <%= pkg.deliveredSubstationId.name %><% } else if (pkg.confirmedSubstationId?.name) { %> · Substation: <%= pkg.confirmedSubstationId.name %><% } %>
+          </div>
+        </div>
+        <span class="pm-status <%= pkg.status %>"><%= pkg.status %></span>
+      </a>
+    <% }) %>
+  </div>
+</section>

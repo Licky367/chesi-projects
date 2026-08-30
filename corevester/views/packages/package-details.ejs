@@ -1,218 +1,41 @@
 <section class="shop-page">
-  <div style="margin-bottom:15px">
-    <a href="/packages" class="secondary-btn">
-      <i class="fas fa-arrow-left"></i>
-      Packages
-    </a>
-  </div>
-
+  <div style="margin-bottom:15px"><a href="/packages" class="secondary-btn"><i class="fas fa-arrow-left"></i> Packages</a></div>
   <% if (packageDoc) { %>
-
-    <% if (error) { %>
-      <div class="error" style="margin-bottom:15px">
-        <%= error %>
-      </div>
-    <% } %>
-
+    <% if (error) { %><div class="error" style="margin-bottom:15px"><%= error %></div><% } %>
     <div class="summary">
-
       <div class="package-top">
-        <div>
-          <h1 style="margin:0">
-            Package <%= String(packageDoc._id).slice(-8) %>
-          </h1>
-
-          <p style="margin:6px 0;color:var(--muted)">
-            <%= new Date(packageDoc.createdAt).toLocaleString() %>
-          </p>
-        </div>
-
-        <span class="status <%= packageDoc.status %>">
-          <%= packageDoc.status %>
-        </span>
+        <div><h1 style="margin:0">Package <%= String(packageDoc._id).slice(-8) %></h1><p style="margin:6px 0;color:var(--muted)"><%= new Date(packageDoc.createdAt).toLocaleString() %></p></div>
+        <span class="status <%= packageDoc.status %>"><%= packageDoc.status %></span>
       </div>
-
       <div class="cart-list">
-
         <% packageDoc.items.forEach(item => { %>
-
           <div class="list-card">
-
-            <div class="list-thumb">
-              <% if (item.image) { %>
-                <img
-                  src="<%= item.image %>"
-                  alt="<%= item.name %>"
-                >
-              <% } %>
-            </div>
-
-            <div class="list-main">
-
-              <h3>
-                <%= item.name %>
-              </h3>
-
-              <div class="list-meta">
-                Quantity:
-                <strong><%= item.qty %></strong>
-              </div>
-
-              <div class="list-meta">
-                KSh
-                <%= Number(item.price).toLocaleString() %>
-                each
-              </div>
-
-            </div>
-
-            <strong class="list-price">
-              KSh
-              <%= Number(
-                item.price * item.qty
-              ).toLocaleString() %>
-            </strong>
-
+            <div class="list-thumb"><% if (item.image) { %><img src="<%= item.image %>" alt="<%= item.name %>"><% } %></div>
+            <div class="list-main"><h3><%= item.name %></h3><div class="list-meta">Quantity: <strong><%= item.qty %></strong></div><div class="list-meta">KSh <%= Number(item.price).toLocaleString() %> each</div></div>
+            <strong class="list-price">KSh <%= Number(item.price * item.qty).toLocaleString() %></strong>
           </div>
-
         <% }) %>
-
       </div>
-
-      <div
-        style="
-          margin-top:18px;
-          border-top:1px solid var(--border);
-          padding-top:15px
-        "
-      >
-
-        <div class="total-line">
-          <span>Total</span>
-
-          <span style="color:var(--green)">
-            KSh
-            <%= Number(
-              packageDoc.totalAmount
-            ).toLocaleString() %>
-          </span>
+      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:15px">
+        <div class="total-line"><span>Total</span><span style="color:var(--green)">KSh <%= Number(packageDoc.totalAmount).toLocaleString() %></span></div>
+        <div style="margin-top:10px;color:var(--muted);font-size:13px">
+          Payment: <strong><%= packageDoc.paymentMethod === 'mpesa' ? 'M-Pesa' : 'Pay upon delivery' %></strong>
+          <% if (packageDoc.paymentStatus === 'paid' || packageDoc.paymentStatus === 'confirmed') { %> · <strong>Paid</strong><% } %>
+          <% if (packageDoc.mpesaReceiptNumber) { %> · Receipt: <strong><%= packageDoc.mpesaReceiptNumber %></strong><% } %>
         </div>
 
-        <div
-          style="
-            margin-top:10px;
-            color:var(--muted);
-            font-size:13px
-          "
-        >
-          Payment:
-          <strong>
-            <%= packageDoc.paymentMethod === "mpesa"
-              ? "M-Pesa"
-              : "Pay upon delivery" %>
-          </strong>
-
-          <% if (packageDoc.paymentStatus === "confirmed") { %>
-            ·
-            <strong>
-              Paid
-            </strong>
-          <% } %>
-
-          <% if (packageDoc.mpesaReceiptNumber) { %>
-            · Receipt:
-            <strong>
-              <%= packageDoc.mpesaReceiptNumber %>
-            </strong>
-          <% } %>
-        </div>
-
-        <% if (
-          packageDoc.paymentMethod === "pay_on_delivery" &&
-          packageDoc.paymentStatus !== "confirmed"
-        ) { %>
-
-          <div
-            class="form-card"
-            style="margin-top:18px"
-          >
-            <h3 style="margin-top:0">
-              Pay this package with M-Pesa
-            </h3>
-
-            <p
-              style="
-                color:var(--muted);
-                line-height:1.5;
-                margin-top:6px
-              "
-            >
-              You selected pay on delivery when placing
-              this order. You can pay now using M-Pesa
-              instead.
-            </p>
-
-            <form
-              action="/packages/<%= packageDoc._id %>/pay"
-              method="POST"
-              style="margin-top:14px"
-            >
-
-              <label
-                for="package-phone"
-                style="
-                  display:block;
-                  margin-bottom:6px;
-                  font-weight:600
-                "
-              >
-                M-Pesa phone number
-              </label>
-
-              <input
-                id="package-phone"
-                name="phoneNumber"
-                type="tel"
-                inputmode="numeric"
-                autocomplete="tel"
-                placeholder="0712345678"
-                required
-                style="
-                  width:100%;
-                  box-sizing:border-box;
-                  padding:12px;
-                  border:1px solid var(--border);
-                  border-radius:8px;
-                  margin-bottom:12px
-                "
-              >
-
-              <button
-                type="submit"
-                class="primary-btn"
-              >
-                <i class="fas fa-mobile-screen-button"></i>
-                Pay KSh
-                <%= Number(
-                  packageDoc.totalAmount
-                ).toLocaleString() %>
-                with M-Pesa
-              </button>
-
+        <% if (packageDoc.status !== 'delivered' && packageDoc.paymentMethod === 'pay_on_delivery' && packageDoc.paymentStatus !== 'paid' && packageDoc.paymentStatus !== 'confirmed') { %>
+          <div class="form-card" style="margin-top:18px">
+            <h3 style="margin-top:0">Pay this package with M-Pesa</h3>
+            <p style="color:var(--muted);line-height:1.5;margin-top:6px">You selected pay on delivery when placing this order. You can pay now using M-Pesa instead.</p>
+            <form action="/packages/<%= packageDoc._id %>/pay" method="POST" style="margin-top:14px">
+              <label for="package-phone" style="display:block;margin-bottom:6px;font-weight:600">M-Pesa phone number</label>
+              <input id="package-phone" name="phoneNumber" type="tel" inputmode="numeric" autocomplete="tel" placeholder="0712345678" required style="width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px">
+              <button type="submit" class="primary-btn"><i class="fas fa-mobile-screen-button"></i> Pay KSh <%= Number(packageDoc.totalAmount).toLocaleString() %> with M-Pesa</button>
             </form>
           </div>
-
         <% } %>
-
       </div>
-
     </div>
-
-  <% } else { %>
-
-    <div class="error">
-      <%= error || "Package not found." %>
-    </div>
-
-  <% } %>
+  <% } else { %><div class="error"><%= error || 'Package not found.' %></div><% } %>
 </section>
