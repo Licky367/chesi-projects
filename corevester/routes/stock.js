@@ -1,1 +1,39 @@
-const router=require('express').Router(),c=require('../controllers/stock');router.get('/',c.list);router.get('/new',c.newStockForm);router.post('/',c.createStock);router.get('/:id',c.entry);router.post('/:id',c.createProduct);module.exports=router;
+const router = require("express").Router();
+
+const c =
+    require("../controllers/stock");
+
+const requireAdmin =
+    require("../middleware/requireAdmin");
+
+router.get(
+    "/",
+    requireAdmin,
+    c.list
+);
+
+router.get(
+    "/new",
+    requireAdmin,
+    c.newStockForm
+);
+
+router.post(
+    "/",
+    requireAdmin,
+    c.createStock
+);
+
+router.get(
+    "/:id",
+    requireAdmin,
+    c.entry
+);
+
+router.post(
+    "/:id",
+    requireAdmin,
+    c.createProduct
+);
+
+module.exports = router;
