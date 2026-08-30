@@ -812,7 +812,7 @@ if (mpesaRoutes) {
 if (corevesterRoutes) {
 
     app.use(
-        "/",
+        "/about",
         corevesterRoutes
     );
 
