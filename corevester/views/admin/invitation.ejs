@@ -1,710 +1,881 @@
-<style>
-/* ============================================================
-   INVITATION UI
-   Same large rounded-container language as users.ejs.
-============================================================ */
+<%
+/*
+============================================================
+COREVESTER ADMIN — USER INVITATION
+FILE:
+    corevester/views/admin/invitation.ejs
 
-.iv-page,
-.iv-page * {
+UI direction:
+    Same visual language as the supplied User Management
+    screenshot: compact green header, section sidebar,
+    rounded cream/green containers and mobile-first layout.
+
+Expected controller data:
+    invitations
+    req
+============================================================
+*/
+
+const pendingInvitations = Array.isArray(invitations)
+  ? invitations
+  : [];
+
+const invitationDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
+};
+%>
+
+<style>
+/* ==========================================================
+   INVITATION PAGE
+   ========================================================== */
+
+.cv-invite-page,
+.cv-invite-page * {
   box-sizing: border-box;
 }
 
-.iv-page {
-  --green: #176b2c;
-  --green-dark: #0d5422;
-  --green-soft: #eaf6ed;
-  --green-pale: #f5faf6;
-  --green-border: #cfe1d3;
-  --ink: #1d2a21;
-  --text: #56645a;
-  --muted: #879188;
-  --border: #dce6de;
-  --border-soft: #edf2ee;
-  --white: #fff;
+.cv-invite-page {
+  --green: #176b3a;
+  --green-dark: #0f5b2f;
+  --green-soft: #e8f5ec;
+  --green-pale: #f4faf5;
+  --green-border: #cfe2d4;
+
+  --ink: #1f3025;
+  --text: #53645a;
+  --muted: #87938b;
+  --border: #dbe7de;
+  --border-soft: #eaf0eb;
 
   width: 100%;
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 24px 18px 70px;
+  min-height: calc(100vh - 120px);
+  padding: 16px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(232,245,236,.75), transparent 32%),
+    #f8fbf8;
   color: var(--ink);
   font-family: inherit;
 }
 
-.iv-page h1,
-.iv-page h2,
-.iv-page h3,
-.iv-page p {
-  margin-top: 0;
+.cv-invite-shell {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  border: 1px solid var(--green-border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(25,76,42,.07);
 }
 
-.iv-eyebrow {
-  display: block;
-  color: var(--green);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .13em;
+.cv-invite-topbar {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--green-border);
+  background: #fff;
 }
 
-/* -------------------- header -------------------- */
-
-.iv-header {
-  margin-bottom: 20px;
-}
-
-.iv-back {
+.cv-invite-brand {
   display: inline-flex;
   align-items: center;
+  gap: 9px;
+  color: var(--green);
+  text-decoration: none;
+}
+
+.cv-invite-brand-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--green-border);
+  border-radius: 10px;
+  background: var(--green-soft);
+}
+
+.cv-invite-brand strong {
+  display: block;
+  font-size: 13px;
+  letter-spacing: .04em;
+}
+
+.cv-invite-brand small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.cv-invite-top-actions {
+  display: flex;
   gap: 7px;
-  margin-bottom: 22px;
+}
+
+.cv-invite-top-button {
+  height: 38px;
+  min-width: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid #9dbca5;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--green);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.cv-invite-body {
+  display: grid;
+  grid-template-columns: 205px minmax(0,1fr);
+}
+
+.cv-invite-sidebar {
+  padding: 18px 12px;
+  border-right: 1px solid var(--border);
+  background: #f7fbf7;
+}
+
+.cv-invite-sidebar-title {
+  margin: 0 9px 9px;
+  color: #64736a;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.cv-invite-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cv-invite-nav a {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 27px minmax(0,1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
   color: var(--text);
   text-decoration: none;
   font-size: 10px;
   font-weight: 800;
 }
 
-.iv-back:hover {
+.cv-invite-nav a:hover {
+  border-color: var(--green-border);
+  background: #fff;
+}
+
+.cv-invite-nav a.active {
+  border-color: #166936;
+  background: var(--green);
+  color: #fff;
+}
+
+.cv-invite-nav i {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--green-soft);
   color: var(--green);
 }
 
-.iv-header h1 {
-  margin: 7px 0 5px;
-  font-size: clamp(30px, 5vw, 43px);
-  line-height: 1;
-  letter-spacing: -.035em;
+.cv-invite-nav a.active i {
+  background: rgba(255,255,255,.14);
+  color: #fff;
 }
 
-.iv-header p {
+.cv-invite-content {
+  min-width: 0;
+  padding: 18px;
+}
+
+.cv-invite-hero {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 90px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f2faf3, #fbfdfb);
+}
+
+.cv-invite-hero-icon {
+  width: 61px;
+  height: 61px;
+  flex: 0 0 61px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--green-border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--green);
+  font-size: 23px;
+}
+
+.cv-invite-eyebrow {
+  display: block;
+  color: var(--green);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.cv-invite-hero h1 {
+  margin: 5px 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.cv-invite-hero p {
   margin: 0;
   color: var(--text);
-  font-size: 12px;
-}
-
-/* -------------------- alerts -------------------- */
-
-.iv-alert {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 12px;
-  padding: 11px 13px;
-  border-radius: 10px;
   font-size: 10px;
 }
 
-.iv-success {
-  background: #eaf8ee;
+.cv-invite-feedback {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  font-size: 9px;
+}
+
+.cv-invite-feedback.success {
+  background: #eaf7ed;
   color: var(--green);
 }
 
-.iv-error {
+.cv-invite-feedback.error {
   background: #fff0f0;
-  color: #a22525;
+  color: #a32828;
 }
 
-/* ============================================================
-   MAIN LARGE FORM CONTAINER
-============================================================ */
+.cv-invite-grid {
+  display: grid;
+  grid-template-columns: minmax(0,1.15fr) minmax(250px,.85fr);
+  gap: 13px;
+  margin-top: 13px;
+}
 
-.iv-form-container,
-.iv-process-container,
-.iv-pending-container {
+.cv-invite-card {
+  padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--white);
-  box-shadow: 0 6px 22px rgba(22,60,32,.045);
+  border-radius: 12px;
+  background: #fbfdfb;
 }
 
-.iv-form-container {
-  padding: 20px;
-}
-
-.iv-container-heading {
+.cv-invite-card-header {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding-bottom: 16px;
-  margin-bottom: 17px;
+  gap: 10px;
+  margin-bottom: 13px;
+  padding-bottom: 11px;
   border-bottom: 1px solid var(--border-soft);
 }
 
-.iv-heading-icon {
-  width: 43px;
-  height: 43px;
-  flex: 0 0 43px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 13px;
-}
-
-.iv-container-heading h2 {
-  margin: 5px 0 3px;
-  font-size: 18px;
-}
-
-.iv-container-heading p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 9px;
-}
-
-/* ============================================================
-   FORM
-============================================================ */
-
-.iv-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.iv-field label {
-  display: block;
-  margin-bottom: 5px;
-  color: #657168;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .09em;
-}
-
-.iv-input,
-.iv-select {
-  width: 100%;
-  height: 43px;
-  padding: 0 12px;
-  border: 1px solid #d1ddd4;
-  border-radius: 10px;
-  outline: none;
-  background: #fff;
-  color: #3f4b43;
-  font-size: 10px;
-}
-
-.iv-input:focus,
-.iv-select:focus {
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(23,107,44,.08);
-}
-
-/* role cards */
-.iv-role-list {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  margin: 1px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.iv-role-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-height: 51px;
-  padding: 8px 10px;
-  border: 1px solid var(--border-soft);
-  border-radius: 11px;
-  background: #fbfdfb;
-}
-
-.iv-role-icon {
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 11px;
-}
-
-.iv-role-item strong {
-  display: block;
-  font-size: 9px;
-}
-
-.iv-role-item p {
-  margin: 3px 0 0;
-  color: var(--muted);
-  font-size: 8px;
-}
-
-.iv-form-note {
-  display: flex;
-  gap: 7px;
-  padding: 9px 10px;
-  border-radius: 9px;
-  background: var(--green-pale);
-  color: #748078;
-  font-size: 8px;
-  line-height: 1.45;
-}
-
-.iv-form-note i {
-  color: var(--green);
-}
-
-.iv-submit {
-  width: 100%;
-  height: 44px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--green);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.iv-submit:hover {
-  background: var(--green-dark);
-}
-
-/* ============================================================
-   PROCESS CONTAINER
-============================================================ */
-
-.iv-process-container {
-  margin-top: 15px;
-  padding: 19px;
-}
-
-.iv-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.iv-step {
-  display: grid;
-  grid-template-columns: 31px minmax(0,1fr);
-  align-items: center;
-  gap: 9px;
-  min-height: 57px;
-  padding: 8px;
-  border: 1px solid var(--border-soft);
-  border-radius: 10px;
-  background: #fbfdfb;
-}
-
-.iv-step-number {
-  width: 31px;
-  height: 31px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 8px;
-  font-weight: 900;
-}
-
-.iv-step strong {
-  display: block;
-  font-size: 9px;
-}
-
-.iv-step p {
-  margin: 3px 0 0;
-  color: var(--muted);
-  font-size: 8px;
-}
-
-.iv-info {
-  margin-top: 11px;
-  padding: 9px 10px;
-  border-radius: 9px;
-  background: var(--green-pale);
-  color: #748078;
-  font-size: 8px;
-}
-
-/* ============================================================
-   PENDING INVITATIONS
-============================================================ */
-
-.iv-pending-container {
-  margin-top: 15px;
-  padding: 19px;
-}
-
-.iv-pending-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.iv-pending-heading h2 {
-  margin: 5px 0 3px;
-  font-size: 19px;
-}
-
-.iv-pending-heading p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 9px;
-}
-
-.iv-count {
-  min-width: 24px;
-  padding: 5px 7px;
-  border-radius: 20px;
-  background: var(--green-soft);
-  color: var(--green);
-  text-align: center;
-  font-size: 8px;
-  font-weight: 900;
-}
-
-.iv-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.iv-card {
-  display: grid;
-  grid-template-columns: 36px minmax(0,1fr) auto;
-  align-items: center;
-  gap: 9px;
-  min-height: 57px;
-  padding: 9px 10px;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: #fcfdfc;
-}
-
-.iv-card-icon {
-  width: 36px;
-  height: 36px;
+.cv-invite-card-icon {
+  width: 39px;
+  height: 39px;
   display: grid;
   place-items: center;
   border-radius: 10px;
   background: var(--green-soft);
   color: var(--green);
-  font-size: 10px;
 }
 
-.iv-card-email {
+.cv-invite-card-header strong {
   display: block;
-  overflow-wrap: anywhere;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 12px;
 }
 
-.iv-card-date {
+.cv-invite-card-header span {
   display: block;
   margin-top: 3px;
   color: var(--muted);
   font-size: 8px;
 }
 
-.iv-role-pill {
-  padding: 5px 8px;
-  border-radius: 20px;
+.cv-invite-form {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.cv-invite-field label {
+  display: block;
+  margin-bottom: 5px;
+  color: #64736a;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .07em;
+}
+
+.cv-invite-input,
+.cv-invite-select {
+  width: 100%;
+  height: 39px;
+  padding: 0 10px;
+  border: 1px solid #cadbd0;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: var(--text);
+  font-size: 9px;
+}
+
+.cv-invite-input:focus,
+.cv-invite-select:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(23,107,58,.08);
+}
+
+.cv-invite-submit {
+  width: 100%;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--green);
+  color: #fff;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.cv-invite-submit:hover {
+  background: var(--green-dark);
+}
+
+.cv-role-list,
+.cv-step-list,
+.cv-pending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cv-role-item,
+.cv-step-item {
+  display: grid;
+  grid-template-columns: 32px minmax(0,1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 49px;
+  padding: 7px 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.cv-role-icon,
+.cv-step-number {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
   background: var(--green-soft);
   color: var(--green);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.cv-role-item strong,
+.cv-step-item strong {
+  display: block;
+  font-size: 9px;
+}
+
+.cv-role-item p,
+.cv-step-item p {
+  margin: 3px 0 0;
+  color: var(--muted);
   font-size: 8px;
-  font-style: normal;
+}
+
+.cv-info {
+  margin-top: 9px;
+  padding: 8px 9px;
+  border-radius: 8px;
+  background: var(--green-pale);
+  color: #748078;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.cv-pending {
+  margin-top: 13px;
+}
+
+.cv-pending-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.cv-pending-heading h2 {
+  margin: 4px 0 2px;
+  font-size: 16px;
+}
+
+.cv-pending-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.cv-pending-count {
+  min-width: 23px;
+  padding: 4px 6px;
+  border-radius: 15px;
+  background: var(--green-soft);
+  color: var(--green);
+  text-align: center;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.cv-pending-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 53px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.cv-pending-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.cv-pending-email {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.cv-pending-date {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.cv-pending-role {
+  padding: 4px 7px;
+  border-radius: 12px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 7px;
   font-weight: 900;
   text-transform: uppercase;
 }
 
-/* -------------------- empty -------------------- */
-
-.iv-empty {
-  padding: 32px 15px;
-  border: 1px dashed #cfdbd1;
-  border-radius: 11px;
+.cv-no-pending {
+  padding: 25px 12px;
+  border: 1px dashed #cbdace;
+  border-radius: 9px;
   text-align: center;
 }
 
-.iv-empty-icon {
-  width: 43px;
-  height: 43px;
-  margin: 0 auto;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: var(--green-soft);
+.cv-no-pending i {
   color: var(--green);
+  font-size: 18px;
 }
 
-.iv-empty h3 {
-  margin: 9px 0 3px;
-  font-size: 13px;
+.cv-no-pending h3 {
+  margin: 7px 0 3px;
+  font-size: 11px;
 }
 
-.iv-empty p {
+.cv-no-pending p {
   margin: 0;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 8px;
 }
 
-/* -------------------- mobile -------------------- */
+@media (max-width: 820px) {
+  .cv-invite-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
-@media (max-width: 560px) {
-  .iv-page {
-    padding: 18px 11px 55px;
+@media (max-width: 760px) {
+  .cv-invite-page {
+    padding: 7px;
+    background: #fff;
   }
 
-  .iv-form-container,
-  .iv-process-container,
-  .iv-pending-container {
-    padding: 15px;
+  .cv-invite-shell {
+    border-radius: 9px;
   }
 
-  .iv-card {
-    grid-template-columns: 35px minmax(0,1fr);
+  .cv-invite-topbar {
+    min-height: 60px;
+    padding: 8px 9px;
   }
 
-  .iv-role-pill {
+  .cv-invite-brand-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .cv-invite-brand strong {
+    font-size: 11px;
+  }
+
+  .cv-invite-brand small {
+    font-size: 6px;
+  }
+
+  .cv-invite-top-button {
+    width: 37px;
+    min-width: 37px;
+    height: 34px;
+    padding: 0;
+  }
+
+  .cv-invite-top-button .label {
+    display: none;
+  }
+
+  .cv-invite-body {
+    display: block;
+  }
+
+  .cv-invite-sidebar {
+    padding: 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cv-invite-sidebar-title {
+    margin-left: 3px;
+  }
+
+  .cv-invite-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cv-invite-content {
+    padding: 10px;
+  }
+
+  .cv-invite-hero {
+    min-height: 80px;
+    padding: 11px;
+  }
+
+  .cv-invite-hero-icon {
+    width: 50px;
+    height: 50px;
+    flex-basis: 50px;
+    font-size: 19px;
+  }
+
+  .cv-invite-hero h1 {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 450px) {
+  .cv-pending-item {
+    grid-template-columns: 34px minmax(0,1fr);
+  }
+
+  .cv-pending-role {
     grid-column: 2;
     justify-self: start;
-    margin-top: -3px;
   }
 }
 </style>
 
-<section class="iv-page">
+<section class="cv-invite-page">
+  <div class="cv-invite-shell">
 
-  <header class="iv-header">
+    <header class="cv-invite-topbar">
+      <a class="cv-invite-brand" href="/auth/users">
+        <span class="cv-invite-brand-icon">
+          <i class="fas fa-leaf"></i>
+        </span>
+        <span>
+          <strong>COREVESTER</strong>
+          <small>INVESTMENTS LIMITED</small>
+        </span>
+      </a>
 
-    <a class="iv-back" href="/auth/users">
-      <i class="fas fa-arrow-left"></i>
-      Back to users
-    </a>
-
-    <span class="iv-eyebrow">ACCESS CONTROL</span>
-    <h1>Invite a User</h1>
-    <p>Reserve a role for an email address before the person creates their account.</p>
-
-  </header>
-
-  <% if (req.query?.success) { %>
-    <div class="iv-alert iv-success">
-      <i class="fas fa-circle-check"></i>
-      <%= req.query.success %>
-    </div>
-  <% } %>
-
-  <% if (req.query?.error) { %>
-    <div class="iv-alert iv-error">
-      <i class="fas fa-circle-exclamation"></i>
-      <%= req.query.error %>
-    </div>
-  <% } %>
-
-  <!-- ========================================================
-       INVITATION FORM CONTAINER
-  ========================================================= -->
-  <section class="iv-form-container">
-
-    <header class="iv-container-heading">
-      <div class="iv-heading-icon">
-        <i class="fas fa-envelope"></i>
-      </div>
-
-      <div>
-        <span class="iv-eyebrow">SECTION 01</span>
-        <h2>Create Invitation</h2>
-        <p>Enter the email address and choose the role.</p>
+      <div class="cv-invite-top-actions">
+        <a class="cv-invite-top-button" href="/auth/users">
+          <i class="fas fa-users"></i>
+          <span class="label">Users</span>
+        </a>
       </div>
     </header>
 
-    <form class="iv-form" action="/auth/users/invite" method="POST">
+    <div class="cv-invite-body">
 
-      <div class="iv-field">
-        <label for="invite-email">EMAIL ADDRESS</label>
-        <input
-          class="iv-input"
-          id="invite-email"
-          name="email"
-          type="email"
-          placeholder="name@example.com"
-          autocomplete="email"
-          required>
-      </div>
+      <aside class="cv-invite-sidebar">
+        <p class="cv-invite-sidebar-title">SECTIONS</p>
 
-      <div class="iv-field">
-        <label for="invite-role">ROLE TO GRANT</label>
+        <nav class="cv-invite-nav" aria-label="Admin sections">
+          <a href="/auth/users">
+            <i class="fas fa-users"></i>
+            <span>All Users</span>
+          </a>
 
-        <select class="iv-select" id="invite-role" name="role" required>
-          <option value="staff">Staff</option>
-          <option value="client">Client</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>
+          <a href="/auth/users?tab=admin">
+            <i class="fas fa-shield-halved"></i>
+            <span>Administrators</span>
+          </a>
 
-      <ul class="iv-role-list">
+          <a href="/auth/users?tab=staff">
+            <i class="fas fa-user-gear"></i>
+            <span>Staff</span>
+          </a>
 
-        <li class="iv-role-item">
-          <span class="iv-role-icon"><i class="fas fa-user-gear"></i></span>
-          <div>
-            <strong>Staff</strong>
-            <p>Can be assigned a substation.</p>
+          <a href="/auth/users?tab=client">
+            <i class="fas fa-user"></i>
+            <span>Clients</span>
+          </a>
+
+          <a class="active" href="/auth/users/invitation">
+            <i class="fas fa-user-plus"></i>
+            <span>Invite User</span>
+          </a>
+        </nav>
+      </aside>
+
+      <main class="cv-invite-content">
+
+        <section class="cv-invite-hero">
+          <div class="cv-invite-hero-icon">
+            <i class="fas fa-user-plus"></i>
           </div>
-        </li>
 
-        <li class="iv-role-item">
-          <span class="iv-role-icon"><i class="fas fa-user"></i></span>
           <div>
-            <strong>Client</strong>
-            <p>Standard client access.</p>
+            <span class="cv-invite-eyebrow">USER MANAGEMENT</span>
+            <h1>Invite User</h1>
+            <p>Create an invitation and reserve the account role.</p>
           </div>
-        </li>
+        </section>
 
-        <li class="iv-role-item">
-          <span class="iv-role-icon"><i class="fas fa-shield-halved"></i></span>
-          <div>
-            <strong>Admin</strong>
-            <p>Administrative access.</p>
+        <% if (req.query?.success) { %>
+          <div class="cv-invite-feedback success">
+            <i class="fas fa-circle-check"></i>
+            <%= req.query.success %>
           </div>
-        </li>
+        <% } %>
 
-      </ul>
+        <% if (req.query?.error) { %>
+          <div class="cv-invite-feedback error">
+            <i class="fas fa-circle-exclamation"></i>
+            <%= req.query.error %>
+          </div>
+        <% } %>
 
-      <div class="iv-form-note">
-        <i class="fas fa-circle-info"></i>
-        <span>The selected role will be reserved for the invited email.</span>
-      </div>
+        <div class="cv-invite-grid">
 
-      <button class="iv-submit" type="submit">
-        <i class="fas fa-paper-plane"></i>
-        Save Invitation
-      </button>
+          <section class="cv-invite-card">
 
-    </form>
+            <header class="cv-invite-card-header">
+              <span class="cv-invite-card-icon">
+                <i class="fas fa-envelope"></i>
+              </span>
+              <div>
+                <strong>Create Invitation</strong>
+                <span>Enter an email address and choose its role.</span>
+              </div>
+            </header>
 
-  </section>
+            <form
+              class="cv-invite-form"
+              action="/auth/users/invite"
+              method="POST">
 
-  <!-- ========================================================
-       HOW IT WORKS CONTAINER
-  ========================================================= -->
-  <section class="iv-process-container">
+              <div class="cv-invite-field">
+                <label for="invite-email">EMAIL ADDRESS</label>
+                <input
+                  class="cv-invite-input"
+                  id="invite-email"
+                  name="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  autocomplete="email"
+                  required>
+              </div>
 
-    <header class="iv-container-heading">
-      <div class="iv-heading-icon">
-        <i class="fas fa-list-check"></i>
-      </div>
+              <div class="cv-invite-field">
+                <label for="invite-role">ROLE TO GRANT</label>
+                <select
+                  class="cv-invite-select"
+                  id="invite-role"
+                  name="role"
+                  required>
+                  <option value="staff">Staff</option>
+                  <option value="client">Client</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
 
-      <div>
-        <span class="iv-eyebrow">SECTION 02</span>
-        <h2>How It Works</h2>
-        <p>The invitation process.</p>
-      </div>
-    </header>
+              <button class="cv-invite-submit" type="submit">
+                <i class="fas fa-paper-plane"></i>
+                Save Invitation
+              </button>
 
-    <ol class="iv-steps">
+            </form>
 
-      <li class="iv-step">
-        <span class="iv-step-number">01</span>
-        <div>
-          <strong>Save the invitation</strong>
-          <p>Store the email with its intended role.</p>
-        </div>
-      </li>
+          </section>
 
-      <li class="iv-step">
-        <span class="iv-step-number">02</span>
-        <div>
-          <strong>User registers</strong>
-          <p>The person signs up using the invited email.</p>
-        </div>
-      </li>
+          <section class="cv-invite-card">
 
-      <li class="iv-step">
-        <span class="iv-step-number">03</span>
-        <div>
-          <strong>Role is applied</strong>
-          <p>The saved invitation determines the account role.</p>
-        </div>
-      </li>
+            <header class="cv-invite-card-header">
+              <span class="cv-invite-card-icon">
+                <i class="fas fa-shield-halved"></i>
+              </span>
+              <div>
+                <strong>Available Roles</strong>
+                <span>Access granted after registration.</span>
+              </div>
+            </header>
 
-    </ol>
+            <ul class="cv-role-list">
+              <li class="cv-role-item">
+                <span class="cv-role-icon">
+                  <i class="fas fa-user-gear"></i>
+                </span>
+                <div>
+                  <strong>Staff</strong>
+                  <p>Can be assigned a substation.</p>
+                </div>
+              </li>
 
-    <div class="iv-info">
-      <i class="fas fa-circle-info"></i>
-      A signup without an invitation becomes <strong>client</strong>.
-    </div>
+              <li class="cv-role-item">
+                <span class="cv-role-icon">
+                  <i class="fas fa-user"></i>
+                </span>
+                <div>
+                  <strong>Client</strong>
+                  <p>Standard client access.</p>
+                </div>
+              </li>
 
-  </section>
+              <li class="cv-role-item">
+                <span class="cv-role-icon">
+                  <i class="fas fa-shield-halved"></i>
+                </span>
+                <div>
+                  <strong>Admin</strong>
+                  <p>Administrative access.</p>
+                </div>
+              </li>
+            </ul>
 
-  <!-- ========================================================
-       PENDING INVITATIONS CONTAINER
-  ========================================================= -->
-  <section class="iv-pending-container">
-
-    <header class="iv-pending-heading">
-
-      <div>
-        <span class="iv-eyebrow">SECTION 03</span>
-        <h2>Pending Invitations</h2>
-        <p>Saved invitations waiting to be used.</p>
-      </div>
-
-      <span class="iv-count"><%= Array.isArray(invitations) ? invitations.length : 0 %></span>
-
-    </header>
-
-    <% if (!Array.isArray(invitations) || !invitations.length) { %>
-
-      <div class="iv-empty">
-        <div class="iv-empty-icon">
-          <i class="fas fa-inbox"></i>
-        </div>
-        <h3>No pending invitations</h3>
-        <p>Saved invitations will appear here.</p>
-      </div>
-
-    <% } else { %>
-
-      <ul class="iv-list">
-
-        <% invitations.forEach(invitation => { %>
-
-          <li class="iv-card">
-
-            <span class="iv-card-icon">
-              <i class="fas fa-envelope"></i>
-            </span>
-
-            <div>
-              <strong class="iv-card-email">
-                <%= invitation.email %>
-              </strong>
-
-              <small class="iv-card-date">
-                Added
-                <%= invitation.createdAt
-                  ? new Date(invitation.createdAt).toLocaleDateString()
-                  : "" %>
-              </small>
+            <div class="cv-info">
+              <i class="fas fa-circle-info"></i>
+              The selected role is reserved for the invited email.
             </div>
 
-            <em class="iv-role-pill">
-              <%= invitation.role %>
-            </em>
+          </section>
 
-          </li>
+        </div>
 
-        <% }) %>
+        <section class="cv-invite-card cv-pending">
 
-      </ul>
+          <header class="cv-pending-heading">
+            <div>
+              <span class="cv-invite-eyebrow">INVITATIONS</span>
+              <h2>Pending Invitations</h2>
+              <p>Saved invitations waiting to be used.</p>
+            </div>
 
-    <% } %>
+            <span class="cv-pending-count">
+              <%= pendingInvitations.length %>
+            </span>
+          </header>
 
-  </section>
+          <% if (!pendingInvitations.length) { %>
 
+            <div class="cv-no-pending">
+              <i class="fas fa-inbox"></i>
+              <h3>No pending invitations</h3>
+              <p>Saved invitations will appear here.</p>
+            </div>
+
+          <% } else { %>
+
+            <ul class="cv-pending-list">
+
+              <% pendingInvitations.forEach(invitation => { %>
+
+                <li class="cv-pending-item">
+
+                  <span class="cv-pending-icon">
+                    <i class="fas fa-envelope"></i>
+                  </span>
+
+                  <div>
+                    <strong class="cv-pending-email">
+                      <%= invitation.email %>
+                    </strong>
+
+                    <small class="cv-pending-date">
+                      Added
+                      <%= invitationDate(invitation.createdAt) %>
+                    </small>
+                  </div>
+
+                  <em class="cv-pending-role">
+                    <%= invitation.role %>
+                  </em>
+
+                </li>
+
+              <% }) %>
+
+            </ul>
+
+          <% } %>
+
+        </section>
+
+      </main>
+    </div>
+  </div>
 </section>

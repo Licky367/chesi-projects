@@ -1,1062 +1,1260 @@
 <%
-// ============================================================
-// USER MANAGEMENT
-// UI: large rounded containers / green theme
-// Existing data expected:
-//   users, substations
-// Existing query feedback:
-//   req.query.error, req.query.success
-// ============================================================
+/*
+============================================================
+COREVESTER ADMIN — USER MANAGEMENT
+FILE:
+    corevester/views/admin/users.ejs
+
+UI direction:
+    Reworked to closely follow the supplied mobile screenshot:
+      - compact CoreVester-style green header
+      - left section navigation on desktop
+      - stacked section navigation on small screens
+      - large rounded content containers
+      - faint green/cream surfaces
+      - user cards with Actions menus
+      - existing routes and controller variables preserved
+
+Expected controller data:
+    users
+    substations
+    tab
+    req
+============================================================
+*/
+
 const userList = Array.isArray(users) ? users : [];
-const currentTab = ["all", "admin", "staff", "client"].includes(tab) ? tab : "all";
+
+const currentTab =
+  ["all", "admin", "staff", "client"].includes(String(tab))
+    ? String(tab)
+    : "all";
+
+const normalizedRole = (user) =>
+  String(user?.role || "").trim().toLowerCase();
+
+const adminUsers = userList.filter(u => normalizedRole(u) === "admin");
+const staffUsers = userList.filter(u => normalizedRole(u) === "staff");
+const clientUsers = userList.filter(u => normalizedRole(u) === "client");
 
 const filteredUsers =
   currentTab === "all"
     ? userList
-    : userList.filter(user => String(user.role || "").toLowerCase() === currentTab);
+    : userList.filter(u => normalizedRole(u) === currentTab);
 
-const adminCount  = userList.filter(u => u.role === "admin").length;
-const staffCount  = userList.filter(u => u.role === "staff").length;
-const clientCount = userList.filter(u => u.role === "client").length;
+const safeSubstations = Array.isArray(substations) ? substations : [];
+
+const sectionTitle =
+  currentTab === "all"
+    ? "All Users"
+    : `${currentTab.charAt(0).toUpperCase()}${currentTab.slice(1)}s`;
+
+const roleLabel = (role) => {
+  const value = String(role || "").toLowerCase();
+  return value === "admin"
+    ? "Administrator"
+    : value === "staff"
+      ? "Staff"
+      : "Client";
+};
+
+const joinedDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
+};
 %>
 
 <style>
-/* ============================================================
-   USER MANAGEMENT UI
-   ------------------------------------------------------------
-   Large containers inspired by the supplied hand-drawn layout.
-   No dashboard tiles scattered across the page.
-============================================================ */
+/* ==========================================================
+   COREVESTER ADMIN USER MANAGEMENT
+   ========================================================== */
 
-.um-page,
-.um-page * {
+.cv-admin,
+.cv-admin * {
   box-sizing: border-box;
 }
 
-.um-page {
-  --green: #176b2c;
-  --green-dark: #0d5422;
-  --green-soft: #eaf6ed;
-  --green-pale: #f5faf6;
-  --green-border: #cfe1d3;
+.cv-admin {
+  --cv-green: #176b3a;
+  --cv-green-dark: #0f5b2f;
+  --cv-green-soft: #e8f5ec;
+  --cv-green-pale: #f4faf5;
+  --cv-green-border: #cfe2d4;
 
-  --ink: #1d2a21;
-  --text: #56645a;
-  --muted: #879188;
+  --cv-cream: #fbfdf9;
+  --cv-white: #ffffff;
+  --cv-ink: #1f3025;
+  --cv-text: #53645a;
+  --cv-muted: #87938b;
 
-  --border: #dce6de;
-  --border-soft: #edf2ee;
-  --white: #ffffff;
-  --page: #f7faf7;
+  --cv-border: #dbe7de;
+  --cv-border-soft: #eaf0eb;
 
   width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 24px 18px 70px;
-  color: var(--ink);
+  min-height: calc(100vh - 120px);
+  padding: 16px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(232,245,236,.75), transparent 32%),
+    #f8fbf8;
+  color: var(--cv-ink);
   font-family: inherit;
 }
 
-/* -------------------- common -------------------- */
-
-.um-page button,
-.um-page input,
-.um-page select {
-  font: inherit;
+.cv-admin-shell {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  border: 1px solid var(--cv-green-border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--cv-white);
+  box-shadow: 0 8px 28px rgba(25, 76, 42, .07);
 }
 
-.um-eyebrow {
-  display: block;
-  margin: 0;
-  color: var(--green);
-  font-size: 10px;
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: .13em;
-}
+/* ==========================================================
+   TOP BAR
+   ========================================================== */
 
-.um-page h1,
-.um-page h2,
-.um-page h3,
-.um-page p {
-  margin-top: 0;
-}
-
-/* -------------------- page header -------------------- */
-
-.um-header {
+.cv-admin-topbar {
+  min-height: 74px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 22px;
+  gap: 14px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--cv-green-border);
+  background: #fff;
 }
 
-.um-header h1 {
-  margin: 8px 0 5px;
-  font-size: clamp(30px, 5vw, 44px);
-  line-height: 1;
-  letter-spacing: -.035em;
-  font-weight: 800;
-}
-
-.um-header-description {
-  margin: 0;
-  color: var(--text);
-  font-size: 13px;
-}
-
-.um-invite-button {
+.cv-brand {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 43px;
-  padding: 0 17px;
-  border: 1px solid var(--green);
-  border-radius: 10px;
-  background: var(--green);
-  color: #fff;
-  text-decoration: none;
-  font-size: 11px;
-  font-weight: 800;
-  white-space: nowrap;
-  box-shadow: 0 5px 13px rgba(23,107,44,.13);
-}
-
-.um-invite-button:hover {
-  background: var(--green-dark);
-}
-
-/* -------------------- feedback -------------------- */
-
-.um-alert {
-  display: flex;
-  align-items: center;
   gap: 9px;
-  margin-bottom: 13px;
-  padding: 11px 13px;
-  border-radius: 10px;
-  font-size: 11px;
-}
-
-.um-alert-success {
-  background: #eaf8ee;
-  color: #176b2c;
-}
-
-.um-alert-error {
-  background: #fff0f0;
-  color: #a22525;
-}
-
-/* ============================================================
-   THE LARGE SUMMARY CONTAINER
-============================================================ */
-
-.um-summary-container {
-  margin-bottom: 17px;
-  padding: 15px;
-  border: 1px solid var(--border);
-  border-radius: 17px;
-  background: var(--white);
-  box-shadow: 0 5px 18px rgba(22,60,32,.035);
-}
-
-.um-summary-title {
-  margin: 0 0 11px;
-  color: #637067;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: .11em;
-}
-
-.um-summary-list {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 9px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.um-summary-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 62px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-soft);
-  border-radius: 11px;
-  background: var(--green-pale);
-}
-
-.um-summary-icon {
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 13px;
-}
-
-.um-summary-number {
-  display: block;
-  color: var(--ink);
-  font-size: 19px;
-  line-height: 1;
-  font-weight: 800;
-}
-
-.um-summary-label {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 9px;
-}
-
-/* ============================================================
-   MAIN CONTAINER
-============================================================ */
-
-.um-main-container {
-  padding: 15px;
-  border: 1px solid var(--border);
-  border-radius: 19px;
-  background: var(--white);
-  box-shadow: 0 6px 22px rgba(22,60,32,.045);
-}
-
-.um-main-heading {
-  padding: 7px 8px 14px;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.um-main-heading h2 {
-  margin: 6px 0 4px;
-  font-size: 20px;
-  line-height: 1.1;
-}
-
-.um-main-heading p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 10px;
-}
-
-/* ============================================================
-   VERTICAL SECTION BAR
-============================================================ */
-
-.um-section-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 14px 0 17px;
-  padding: 9px;
-  border: 1px solid var(--green-border);
-  border-radius: 13px;
-  background: var(--green-pale);
-}
-
-.um-section-bar-title {
-  padding: 3px 4px 7px;
-  color: #68756c;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .1em;
-}
-
-.um-section-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.um-section-button {
-  display: grid;
-  grid-template-columns: 34px minmax(0,1fr) auto;
-  align-items: center;
-  gap: 9px;
-  min-height: 52px;
-  padding: 7px 9px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--text);
+  min-width: 0;
+  color: var(--cv-green);
   text-decoration: none;
 }
 
-.um-section-button:hover {
-  background: #fff;
-  border-color: var(--border);
-}
-
-.um-section-button.active {
-  border-color: #c7ddcc;
-  background: #fff;
-  color: var(--green-dark);
-  box-shadow: 0 3px 10px rgba(23,107,44,.05);
-}
-
-.um-section-icon {
-  width: 34px;
-  height: 34px;
+.cv-brand-mark {
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  border-radius: 9px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 12px;
-}
-
-.um-section-copy strong {
-  display: block;
-  font-size: 10px;
-  line-height: 1.2;
-}
-
-.um-section-copy small {
-  display: block;
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 8px;
-}
-
-.um-section-count {
-  min-width: 23px;
-  padding: 4px 6px;
-  border-radius: 20px;
-  background: var(--green-soft);
-  color: var(--green);
-  text-align: center;
-  font-size: 8px;
-  font-weight: 900;
-}
-
-/* ============================================================
-   ACCOUNTS CONTAINER
-============================================================ */
-
-.um-accounts-container {
-  margin-top: 3px;
-  padding: 13px;
-  border: 1px solid var(--border);
-  border-radius: 15px;
-  background: #fbfdfb;
-}
-
-.um-accounts-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 11px;
-  padding: 2px 4px 10px;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.um-accounts-heading h2 {
-  margin: 5px 0 3px;
+  border: 1px solid var(--cv-green-border);
+  border-radius: 10px;
+  background: var(--cv-green-soft);
+  color: var(--cv-green);
   font-size: 17px;
 }
 
-.um-accounts-heading p {
-  margin: 0;
-  color: var(--muted);
+.cv-brand-copy {
+  min-width: 0;
+}
+
+.cv-brand-copy strong {
+  display: block;
+  color: var(--cv-green);
+  font-size: 13px;
+  line-height: 1.05;
+  letter-spacing: .04em;
+}
+
+.cv-brand-copy small {
+  display: block;
+  margin-top: 3px;
+  color: var(--cv-muted);
+  font-size: 7px;
+  line-height: 1.1;
+}
+
+.cv-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cv-top-button {
+  min-width: 42px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid #9dbca5;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--cv-green);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.cv-top-button:hover {
+  background: var(--cv-green-pale);
+}
+
+.cv-top-button .count {
   font-size: 9px;
 }
 
-.um-account-count {
-  padding: 5px 8px;
-  border-radius: 20px;
-  background: var(--green-soft);
-  color: var(--green);
+/* ==========================================================
+   BODY LAYOUT
+   ========================================================== */
+
+.cv-admin-body {
+  display: grid;
+  grid-template-columns: 205px minmax(0, 1fr);
+  gap: 0;
+  background: #fbfdfb;
+}
+
+.cv-sidebar {
+  padding: 18px 12px;
+  border-right: 1px solid var(--cv-border);
+  background: #f7fbf7;
+}
+
+.cv-sidebar-title {
+  margin: 0 9px 9px;
+  color: #64736a;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.cv-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cv-sidebar-link {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 27px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--cv-text);
+  text-decoration: none;
+}
+
+.cv-sidebar-link:hover {
+  border-color: var(--cv-green-border);
+  background: #fff;
+}
+
+.cv-sidebar-link.active {
+  border-color: #166936;
+  background: var(--cv-green);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(23,107,58,.12);
+}
+
+.cv-sidebar-icon {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--cv-green-soft);
+  color: var(--cv-green);
+  font-size: 11px;
+}
+
+.cv-sidebar-link.active .cv-sidebar-icon {
+  background: rgba(255,255,255,.14);
+  color: #fff;
+}
+
+.cv-sidebar-copy strong {
+  display: block;
+  font-size: 10px;
+  line-height: 1.1;
+}
+
+.cv-sidebar-count {
+  min-width: 20px;
+  padding: 3px 5px;
+  border-radius: 15px;
+  background: var(--cv-green-soft);
+  color: var(--cv-green);
+  text-align: center;
   font-size: 8px;
   font-weight: 900;
 }
 
-/* ============================================================
-   USER LIST + LARGE USER CONTAINERS
-============================================================ */
+.cv-sidebar-link.active .cv-sidebar-count {
+  background: rgba(255,255,255,.16);
+  color: #fff;
+}
 
-.um-user-list {
+.cv-sidebar-divider {
+  height: 1px;
+  margin: 16px 4px;
+  background: var(--cv-border);
+}
+
+.cv-overview {
+  padding: 0 9px;
+}
+
+.cv-overview-title {
+  margin: 0 0 8px;
+  color: #64736a;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.cv-overview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--cv-border-soft);
+  color: var(--cv-text);
+  font-size: 9px;
+}
+
+.cv-overview-row:last-child {
+  border-bottom: 0;
+}
+
+.cv-overview-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cv-overview-row i {
+  width: 15px;
+  color: var(--cv-green);
+  text-align: center;
+}
+
+.cv-overview-row strong {
+  color: var(--cv-ink);
+  font-size: 10px;
+}
+
+.cv-invite-sidebar {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #83ae8d;
+  border-radius: 8px;
+  background: #eff8f0;
+  color: var(--cv-green);
+  text-decoration: none;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.cv-invite-sidebar:hover {
+  background: #e4f2e6;
+}
+
+/* ==========================================================
+   MAIN CONTENT
+   ========================================================== */
+
+.cv-content {
+  min-width: 0;
+  padding: 18px;
+}
+
+.cv-content-heading {
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 16px;
+  border: 1px solid var(--cv-border);
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f2faf3, #fbfdfb);
+}
+
+.cv-heading-icon {
+  width: 61px;
+  height: 61px;
+  flex: 0 0 61px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--cv-green-border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--cv-green);
+  font-size: 24px;
+}
+
+.cv-eyebrow {
+  display: block;
+  color: var(--cv-green);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.cv-content-heading h1 {
+  margin: 5px 0 5px;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+
+.cv-content-heading p {
+  margin: 0;
+  color: var(--cv-text);
+  font-size: 10px;
+}
+
+.cv-feedback {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  font-size: 9px;
+}
+
+.cv-feedback.success {
+  background: #eaf7ed;
+  color: var(--cv-green);
+}
+
+.cv-feedback.error {
+  background: #fff0f0;
+  color: #a32828;
+}
+
+/* ==========================================================
+   ACCOUNTS CONTAINER
+   ========================================================== */
+
+.cv-accounts {
+  margin-top: 13px;
+  padding: 12px;
+  border: 1px solid var(--cv-border);
+  border-radius: 12px;
+  background: #fbfdfb;
+}
+
+.cv-accounts-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 2px 3px 10px;
+  border-bottom: 1px solid var(--cv-border-soft);
+}
+
+.cv-accounts-heading h2 {
+  margin: 4px 0 3px;
+  font-size: 16px;
+}
+
+.cv-accounts-heading p {
+  margin: 0;
+  color: var(--cv-muted);
+  font-size: 9px;
+}
+
+.cv-filter {
+  min-width: 112px;
+  height: 35px;
+  padding: 0 9px;
+  border: 1px solid #cadbd0;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--cv-text);
+  font-size: 9px;
+}
+
+/* ==========================================================
+   USER CARDS
+   ========================================================== */
+
+.cv-user-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.um-user-card {
+.cv-user-card {
+  border: 1px solid var(--cv-border);
+  border-radius: 10px;
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 14px;
   background: #fff;
 }
 
-/* Identity row */
-.um-user-top {
+.cv-user-main {
+  min-height: 96px;
   display: grid;
-  grid-template-columns: 43px minmax(0,1fr) auto;
+  grid-template-columns: 58px minmax(0,1fr) auto;
   align-items: center;
-  gap: 11px;
-  min-height: 70px;
-  padding: 12px 14px;
-  background: linear-gradient(90deg, #f1f9f3, #fff);
+  gap: 10px;
+  padding: 12px;
 }
 
-.um-avatar {
-  width: 43px;
-  height: 43px;
+.cv-avatar {
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
-  border: 1px solid #cfe1d3;
-  border-radius: 12px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 14px;
+  border: 1px solid #cfe5d5;
+  border-radius: 50%;
+  background: #e3f5e8;
+  color: #2b9b58;
+  font-size: 22px;
 }
 
-.um-user-name {
-  margin: 0 0 4px;
-  overflow-wrap: anywhere;
+.cv-user-name {
+  margin: 0 0 5px;
+  color: var(--cv-ink);
   font-size: 14px;
   font-weight: 800;
 }
 
-.um-user-email {
-  margin: 0;
-  overflow-wrap: anywhere;
-  color: var(--muted);
+.cv-user-email {
+  margin: 0 0 6px;
+  color: var(--cv-text);
   font-size: 9px;
+  overflow-wrap: anywhere;
 }
 
-.um-role {
-  padding: 5px 8px;
-  border-radius: 20px;
+.cv-user-email i {
+  margin-right: 4px;
+  color: var(--cv-green);
+}
+
+.cv-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px;
+  border-radius: 12px;
+  background: var(--cv-green-soft);
+  color: var(--cv-green);
   font-size: 8px;
-  font-style: normal;
   font-weight: 900;
-  text-transform: uppercase;
 }
 
-.um-role-admin {
-  background: #f0eafa;
-  color: #653aa0;
+.cv-role-pill.admin {
+  background: #e9f5ed;
+  color: #176b3a;
 }
 
-.um-role-staff {
-  background: #e7f3f7;
-  color: #16627a;
+.cv-role-pill.staff {
+  background: #edf4fb;
+  color: #256a9b;
 }
 
-.um-role-client {
-  background: #eef1ef;
-  color: #5c665f;
+.cv-role-pill.client {
+  background: #f5f0df;
+  color: #78601b;
 }
 
-/* Info row */
-.um-user-info {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  border-top: 1px solid var(--border-soft);
-  border-bottom: 1px solid var(--border-soft);
-  background: #fcfdfc;
+.cv-actions {
+  position: relative;
 }
 
-.um-info-cell {
-  min-width: 0;
-  padding: 10px 13px;
-  border-right: 1px solid var(--border-soft);
-}
-
-.um-info-cell:last-child {
-  border-right: 0;
-}
-
-.um-info-cell span {
-  display: block;
-  margin-bottom: 4px;
-  color: #919a94;
-  font-size: 7px;
-  font-weight: 900;
-  letter-spacing: .09em;
-}
-
-.um-info-cell strong {
-  display: block;
-  overflow-wrap: anywhere;
-  color: #4b574f;
+.cv-actions summary {
+  min-width: 82px;
+  height: 35px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid #a7c3ad;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--cv-green);
+  cursor: pointer;
+  list-style: none;
   font-size: 9px;
+  font-weight: 900;
 }
 
-/* ============================================================
-   BEAUTIFUL FORM CONTAINERS
-============================================================ */
-
-.um-card-form {
-  padding: 12px 14px;
+.cv-actions summary::-webkit-details-marker {
+  display: none;
 }
 
-.um-card-form + .um-card-form {
-  border-top: 1px solid var(--border-soft);
+.cv-actions[open] summary,
+.cv-actions summary:hover {
+  background: var(--cv-green-pale);
+}
+
+.cv-actions-menu {
+  position: absolute;
+  z-index: 20;
+  top: 42px;
+  right: 0;
+  width: 250px;
+  padding: 10px;
+  border: 1px solid var(--cv-border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(27, 62, 38, .13);
+}
+
+.cv-action-form + .cv-action-form {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--cv-border-soft);
+}
+
+.cv-action-title {
+  margin: 0 0 6px;
+  color: #65746b;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .07em;
+}
+
+.cv-action-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 6px;
+}
+
+.cv-action-control {
+  width: 100%;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #cadbd0;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--cv-text);
+  font-size: 8px;
+}
+
+.cv-action-submit {
+  height: 34px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--cv-green);
+  color: #fff;
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.cv-action-submit:hover {
+  background: var(--cv-green-dark);
+}
+
+.cv-user-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  border-top: 1px solid var(--cv-border-soft);
   background: #fbfdfb;
 }
 
-.um-form-title {
-  margin-bottom: 8px;
+.cv-meta-item {
+  min-width: 0;
+  padding: 8px 11px;
+  border-right: 1px solid var(--cv-border-soft);
 }
 
-.um-form-title strong {
+.cv-meta-item:last-child {
+  border-right: 0;
+}
+
+.cv-meta-item span {
   display: block;
-  color: #4d5a51;
-  font-size: 8px;
-  letter-spacing: .09em;
-}
-
-.um-form-title span {
-  display: block;
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 8px;
-}
-
-.um-form-row {
-  display: grid;
-  grid-template-columns: minmax(0,1fr) auto;
-  align-items: end;
-  gap: 9px;
-}
-
-.um-field label {
-  display: block;
-  margin-bottom: 5px;
-  color: #657168;
-  font-size: 8px;
-  font-weight: 800;
-}
-
-.um-control {
-  width: 100%;
-  height: 38px;
-  padding: 0 11px;
-  border: 1px solid #d1ddd4;
-  border-radius: 9px;
-  outline: none;
-  background: #fff;
-  color: #3f4b43;
-  font-size: 9px;
-}
-
-.um-control:focus {
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(23,107,44,.08);
-}
-
-.um-save-button {
-  height: 38px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 9px;
-  background: var(--green);
-  color: #fff;
-  font-size: 9px;
+  margin-bottom: 3px;
+  color: #89948d;
+  font-size: 7px;
   font-weight: 900;
-  cursor: pointer;
+  letter-spacing: .07em;
 }
 
-.um-save-button:hover {
-  background: var(--green-dark);
+.cv-meta-item strong {
+  display: block;
+  color: #536158;
+  font-size: 9px;
+  overflow-wrap: anywhere;
 }
 
-.um-note {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0 14px 13px;
-  padding: 8px 9px;
+.cv-empty {
+  padding: 35px 15px;
+  border: 1px dashed #cbdace;
   border-radius: 9px;
-  background: var(--green-pale);
-  color: #7b877e;
-  font-size: 8px;
-}
-
-.um-note i {
-  color: var(--green);
-}
-
-/* -------------------- empty -------------------- */
-
-.um-empty {
-  padding: 32px 18px;
-  border: 1px dashed #cfdbd1;
-  border-radius: 12px;
   background: #fff;
   text-align: center;
 }
 
-.um-empty-icon {
-  width: 43px;
-  height: 43px;
+.cv-empty-icon {
+  width: 44px;
+  height: 44px;
   margin: 0 auto;
   display: grid;
   place-items: center;
-  border-radius: 12px;
-  background: var(--green-soft);
-  color: var(--green);
+  border-radius: 50%;
+  background: var(--cv-green-soft);
+  color: var(--cv-green);
 }
 
-.um-empty h3 {
+.cv-empty h3 {
   margin: 9px 0 3px;
   font-size: 13px;
 }
 
-.um-empty p {
+.cv-empty p {
   margin: 0;
-  color: var(--muted);
+  color: var(--cv-muted);
   font-size: 9px;
 }
 
-/* ============================================================
+/* ==========================================================
    MOBILE
-============================================================ */
+   ========================================================== */
 
-@media (max-width: 700px) {
-  .um-page {
-    padding: 18px 11px 55px;
+@media (max-width: 760px) {
+  .cv-admin {
+    padding: 7px;
+    background: #fff;
   }
 
-  .um-header {
+  .cv-admin-shell {
+    border-radius: 9px;
+  }
+
+  .cv-admin-topbar {
+    min-height: 60px;
+    padding: 8px 9px;
+  }
+
+  .cv-brand-mark {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
+
+  .cv-brand-copy strong {
+    font-size: 11px;
+  }
+
+  .cv-brand-copy small {
+    font-size: 6px;
+  }
+
+  .cv-top-button {
+    min-width: 37px;
+    height: 34px;
+    padding: 0 8px;
+  }
+
+  .cv-top-button span.label {
+    display: none;
+  }
+
+  .cv-admin-body {
+    display: block;
+  }
+
+  .cv-sidebar {
+    padding: 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--cv-border);
+  }
+
+  .cv-sidebar-title,
+  .cv-overview-title {
+    margin-left: 3px;
+  }
+
+  .cv-sidebar-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+
+  .cv-sidebar-link {
+    min-height: 42px;
+  }
+
+  .cv-sidebar-divider,
+  .cv-overview,
+  .cv-invite-sidebar {
+    display: none;
+  }
+
+  .cv-content {
+    padding: 10px;
+  }
+
+  .cv-content-heading {
+    min-height: 80px;
+    padding: 11px;
+  }
+
+  .cv-heading-icon {
+    width: 50px;
+    height: 50px;
+    flex-basis: 50px;
+    font-size: 19px;
+  }
+
+  .cv-content-heading h1 {
+    font-size: 17px;
+  }
+
+  .cv-content-heading p {
+    font-size: 9px;
+  }
+
+  .cv-user-main {
+    grid-template-columns: 48px minmax(0,1fr) auto;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .cv-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+
+  .cv-user-name {
+    font-size: 12px;
+  }
+
+  .cv-user-email {
+    font-size: 8px;
+  }
+
+  .cv-actions summary {
+    min-width: 38px;
+    width: 38px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  .cv-actions summary i {
+    font-size: 12px;
+  }
+
+  .cv-actions-menu {
+    right: -2px;
+    width: min(250px, calc(100vw - 38px));
+  }
+}
+
+@media (max-width: 450px) {
+  .cv-sidebar-nav {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cv-sidebar-copy strong {
+    font-size: 9px;
+  }
+
+  .cv-accounts-heading {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .um-invite-button {
+  .cv-filter {
     width: 100%;
   }
 
-  .um-summary-list {
-    grid-template-columns: repeat(2, 1fr);
+  .cv-user-main {
+    grid-template-columns: 43px minmax(0,1fr) 38px;
   }
 
-  .um-main-container {
-    padding: 11px;
+  .cv-avatar {
+    width: 43px;
+    height: 43px;
   }
 
-  .um-section-bar {
-    margin-top: 11px;
+  .cv-user-name {
+    font-size: 11px;
   }
 
-  .um-section-buttons {
-    gap: 4px;
-  }
-
-  .um-user-top {
-    grid-template-columns: 39px minmax(0,1fr);
-  }
-
-  .um-avatar {
-    width: 39px;
-    height: 39px;
-  }
-
-  .um-role {
-    grid-column: 2;
-    justify-self: start;
-    margin-top: -4px;
-  }
-
-  .um-user-info {
-    grid-template-columns: 1fr;
-  }
-
-  .um-info-cell {
-    border-right: 0;
-    border-bottom: 1px solid var(--border-soft);
-  }
-
-  .um-info-cell:last-child {
-    border-bottom: 0;
-  }
-
-  .um-form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .um-save-button {
-    width: 100%;
-  }
-}
-
-@media (max-width: 420px) {
-  .um-summary-list {
-    grid-template-columns: 1fr;
-  }
-
-  .um-section-button {
-    min-height: 49px;
+  .cv-user-email {
+    font-size: 7px;
   }
 }
 </style>
 
-<section class="um-page">
+<section class="cv-admin">
+  <div class="cv-admin-shell">
 
-  <!-- PAGE HEADER -->
-  <header class="um-header">
-    <div>
-      <span class="um-eyebrow">USER MANAGEMENT</span>
-      <h1>Manage Users</h1>
-      <p class="um-header-description">
-        Organize accounts, roles and staff assignments.
-      </p>
-    </div>
-
-    <a class="um-invite-button" href="/auth/users/invitation">
-      <i class="fas fa-user-plus"></i>
-      Invite User
-    </a>
-  </header>
-
-  <% if (req.query?.success) { %>
-    <div class="um-alert um-alert-success">
-      <i class="fas fa-circle-check"></i>
-      <%= req.query.success %>
-    </div>
-  <% } %>
-
-  <% if (req.query?.error) { %>
-    <div class="um-alert um-alert-error">
-      <i class="fas fa-circle-exclamation"></i>
-      <%= req.query.error %>
-    </div>
-  <% } %>
-
-  <!-- LARGE SUMMARY CONTAINER -->
-  <section class="um-summary-container">
-
-    <p class="um-summary-title">ACCOUNT SUMMARY</p>
-
-    <ul class="um-summary-list">
-      <li class="um-summary-item">
-        <span class="um-summary-icon"><i class="fas fa-users"></i></span>
-        <span>
-          <strong class="um-summary-number"><%= userList.length %></strong>
-          <span class="um-summary-label">Total Users</span>
+    <!-- ======================================================
+         HEADER
+    ======================================================= -->
+    <header class="cv-admin-topbar">
+      <a class="cv-brand" href="/auth/users">
+        <span class="cv-brand-mark">
+          <i class="fas fa-leaf"></i>
         </span>
-      </li>
 
-      <li class="um-summary-item">
-        <span class="um-summary-icon"><i class="fas fa-shield-halved"></i></span>
-        <span>
-          <strong class="um-summary-number"><%= adminCount %></strong>
-          <span class="um-summary-label">Administrators</span>
+        <span class="cv-brand-copy">
+          <strong>COREVESTER</strong>
+          <small>INVESTMENTS LIMITED</small>
         </span>
-      </li>
+      </a>
 
-      <li class="um-summary-item">
-        <span class="um-summary-icon"><i class="fas fa-user-gear"></i></span>
-        <span>
-          <strong class="um-summary-number"><%= staffCount %></strong>
-          <span class="um-summary-label">Staff</span>
-        </span>
-      </li>
+      <div class="cv-top-actions">
+        <a class="cv-top-button" href="/carts" aria-label="Cart">
+          <i class="fas fa-cart-shopping"></i>
+          <span class="count">0</span>
+        </a>
 
-      <li class="um-summary-item">
-        <span class="um-summary-icon"><i class="fas fa-user"></i></span>
-        <span>
-          <strong class="um-summary-number"><%= clientCount %></strong>
-          <span class="um-summary-label">Clients</span>
-        </span>
-      </li>
-    </ul>
-
-  </section>
-
-  <!-- MAIN LARGE CONTAINER -->
-  <section class="um-main-container">
-
-    <header class="um-main-heading">
-      <span class="um-eyebrow">SECTIONS</span>
-      <h2>User Accounts</h2>
-      <p>Choose a group to display.</p>
+        <a class="cv-top-button" href="/auth/users/invitation" aria-label="Invite user">
+          <i class="fas fa-user-plus"></i>
+          <span class="label">Invite</span>
+        </a>
+      </div>
     </header>
 
-    <!-- VERTICAL BAR / BUTTONS -->
-    <nav class="um-section-bar" aria-label="User sections">
+    <div class="cv-admin-body">
 
-      <span class="um-section-bar-title">ACCOUNT GROUPS</span>
+      <!-- ====================================================
+           SIDEBAR
+      ===================================================== -->
+      <aside class="cv-sidebar">
 
-      <div class="um-section-buttons">
+        <p class="cv-sidebar-title">SECTIONS</p>
 
-        <a
-          class="um-section-button <%= currentTab === 'all' ? 'active' : '' %>"
-          href="/auth/users?tab=all">
+        <nav class="cv-sidebar-nav" aria-label="User management sections">
 
-          <span class="um-section-icon"><i class="fas fa-users"></i></span>
+          <a
+            class="cv-sidebar-link <%= currentTab === 'all' ? 'active' : '' %>"
+            href="/auth/users?tab=all">
+            <span class="cv-sidebar-icon">
+              <i class="fas fa-users"></i>
+            </span>
+            <span class="cv-sidebar-copy">
+              <strong>All Users</strong>
+            </span>
+            <b class="cv-sidebar-count"><%= userList.length %></b>
+          </a>
 
-          <span class="um-section-copy">
-            <strong>All Users</strong>
-            <small>Every account</small>
-          </span>
+          <a
+            class="cv-sidebar-link <%= currentTab === 'admin' ? 'active' : '' %>"
+            href="/auth/users?tab=admin">
+            <span class="cv-sidebar-icon">
+              <i class="fas fa-shield-halved"></i>
+            </span>
+            <span class="cv-sidebar-copy">
+              <strong>Administrators</strong>
+            </span>
+            <b class="cv-sidebar-count"><%= adminUsers.length %></b>
+          </a>
 
-          <b class="um-section-count"><%= userList.length %></b>
-        </a>
+          <a
+            class="cv-sidebar-link <%= currentTab === 'staff' ? 'active' : '' %>"
+            href="/auth/users?tab=staff">
+            <span class="cv-sidebar-icon">
+              <i class="fas fa-user-gear"></i>
+            </span>
+            <span class="cv-sidebar-copy">
+              <strong>Staff</strong>
+            </span>
+            <b class="cv-sidebar-count"><%= staffUsers.length %></b>
+          </a>
 
-        <a
-          class="um-section-button <%= currentTab === 'admin' ? 'active' : '' %>"
-          href="/auth/users?tab=admin">
+          <a
+            class="cv-sidebar-link <%= currentTab === 'client' ? 'active' : '' %>"
+            href="/auth/users?tab=client">
+            <span class="cv-sidebar-icon">
+              <i class="fas fa-user"></i>
+            </span>
+            <span class="cv-sidebar-copy">
+              <strong>Clients</strong>
+            </span>
+            <b class="cv-sidebar-count"><%= clientUsers.length %></b>
+          </a>
 
-          <span class="um-section-icon"><i class="fas fa-shield-halved"></i></span>
+        </nav>
 
-          <span class="um-section-copy">
-            <strong>Administrators</strong>
-            <small>Admin accounts</small>
-          </span>
+        <div class="cv-sidebar-divider"></div>
 
-          <b class="um-section-count"><%= adminCount %></b>
-        </a>
+        <section class="cv-overview">
+          <p class="cv-overview-title">OVERVIEW</p>
 
-        <a
-          class="um-section-button <%= currentTab === 'staff' ? 'active' : '' %>"
-          href="/auth/users?tab=staff">
-
-          <span class="um-section-icon"><i class="fas fa-user-gear"></i></span>
-
-          <span class="um-section-copy">
-            <strong>Staff</strong>
-            <small>Staff accounts</small>
-          </span>
-
-          <b class="um-section-count"><%= staffCount %></b>
-        </a>
-
-        <a
-          class="um-section-button <%= currentTab === 'client' ? 'active' : '' %>"
-          href="/auth/users?tab=client">
-
-          <span class="um-section-icon"><i class="fas fa-user"></i></span>
-
-          <span class="um-section-copy">
-            <strong>Clients</strong>
-            <small>Client accounts</small>
-          </span>
-
-          <b class="um-section-count"><%= clientCount %></b>
-        </a>
-
-      </div>
-    </nav>
-
-    <!-- ACCOUNTS CONTAINER -->
-    <section class="um-accounts-container">
-
-      <header class="um-accounts-heading">
-        <div>
-          <span class="um-eyebrow">ACCOUNTS</span>
-          <h2>
-            <%= currentTab === "all"
-              ? "All Users"
-              : currentTab.charAt(0).toUpperCase() + currentTab.slice(1) + " Users" %>
-          </h2>
-          <p>Accounts currently shown in this section.</p>
-        </div>
-
-        <span class="um-account-count">
-          <%= filteredUsers.length %>
-        </span>
-      </header>
-
-      <% if (!filteredUsers.length) { %>
-
-        <div class="um-empty">
-          <div class="um-empty-icon">
-            <i class="fas fa-user-slash"></i>
+          <div class="cv-overview-row">
+            <span>
+              <i class="fas fa-users"></i>
+              Total Users
+            </span>
+            <strong><%= userList.length %></strong>
           </div>
-          <h3>No users in this section</h3>
-          <p>There are no accounts to display here.</p>
-        </div>
 
-      <% } else { %>
+          <div class="cv-overview-row">
+            <span>
+              <i class="fas fa-shield-halved"></i>
+              Administrators
+            </span>
+            <strong><%= adminUsers.length %></strong>
+          </div>
 
-        <ul class="um-user-list">
+          <div class="cv-overview-row">
+            <span>
+              <i class="fas fa-user-gear"></i>
+              Staff
+            </span>
+            <strong><%= staffUsers.length %></strong>
+          </div>
 
-          <% filteredUsers.forEach(account => { %>
+          <div class="cv-overview-row">
+            <span>
+              <i class="fas fa-user"></i>
+              Clients
+            </span>
+            <strong><%= clientUsers.length %></strong>
+          </div>
 
-            <li class="um-user-card">
+          <a class="cv-invite-sidebar" href="/auth/users/invitation">
+            <i class="fas fa-user-plus"></i>
+            Invite User
+          </a>
+        </section>
 
-              <!-- USER CONTAINER HEADER -->
-              <div class="um-user-top">
+      </aside>
 
-                <div class="um-avatar">
-                  <i class="fas fa-user"></i>
-                </div>
+      <!-- ====================================================
+           MAIN
+      ===================================================== -->
+      <main class="cv-content">
 
-                <div>
-                  <h3 class="um-user-name"><%= account.name %></h3>
-                  <p class="um-user-email">
-                    <i class="fas fa-envelope"></i>
-                    <%= account.email %>
-                  </p>
-                </div>
+        <section class="cv-content-heading">
+          <div class="cv-heading-icon">
+            <i class="fas fa-users"></i>
+          </div>
 
-                <em class="um-role um-role-<%= account.role %>">
-                  <%= account.role %>
-                </em>
+          <div>
+            <span class="cv-eyebrow">USER MANAGEMENT</span>
+            <h1>User Management</h1>
+            <p>Organize accounts, roles and staff assignments.</p>
+          </div>
+        </section>
 
+        <% if (req.query?.success) { %>
+          <div class="cv-feedback success">
+            <i class="fas fa-circle-check"></i>
+            <%= req.query.success %>
+          </div>
+        <% } %>
+
+        <% if (req.query?.error) { %>
+          <div class="cv-feedback error">
+            <i class="fas fa-circle-exclamation"></i>
+            <%= req.query.error %>
+          </div>
+        <% } %>
+
+        <section class="cv-accounts">
+
+          <header class="cv-accounts-heading">
+            <div>
+              <span class="cv-eyebrow">ACCOUNTS</span>
+              <h2><%= sectionTitle %></h2>
+              <p>Accounts currently shown in this section.</p>
+            </div>
+
+            <select
+              class="cv-filter"
+              aria-label="Filter users"
+              onchange="if(this.value) window.location.href=this.value;">
+              <option value="/auth/users?tab=all" <%= currentTab === "all" ? "selected" : "" %>>
+                All Users
+              </option>
+              <option value="/auth/users?tab=admin" <%= currentTab === "admin" ? "selected" : "" %>>
+                Administrators
+              </option>
+              <option value="/auth/users?tab=staff" <%= currentTab === "staff" ? "selected" : "" %>>
+                Staff
+              </option>
+              <option value="/auth/users?tab=client" <%= currentTab === "client" ? "selected" : "" %>>
+                Clients
+              </option>
+            </select>
+          </header>
+
+          <% if (!filteredUsers.length) { %>
+
+            <div class="cv-empty">
+              <div class="cv-empty-icon">
+                <i class="fas fa-user-slash"></i>
               </div>
+              <h3>No users in this section</h3>
+              <p>There are no accounts to display here.</p>
+            </div>
 
-              <!-- USER INFORMATION -->
-              <div class="um-user-info">
+          <% } else { %>
 
-                <div class="um-info-cell">
-                  <span>ACCOUNT</span>
-                  <strong>
-                    <i class="fas fa-circle-check"></i>
-                    Active
-                  </strong>
-                </div>
+            <ul class="cv-user-list">
 
-                <div class="um-info-cell">
-                  <span>ROLE</span>
-                  <strong><%= account.role %></strong>
-                </div>
+              <% filteredUsers.forEach(account => {
+                const role = normalizedRole(account);
+                const assignedSubstationName =
+                  account.assignedSubstation?.name || "Not assigned";
+              %>
 
-                <div class="um-info-cell">
-                  <span>SUBSTATION</span>
-                  <strong>
-                    <%= account.assignedSubstation?.name || "Not assigned" %>
-                  </strong>
-                </div>
+                <li class="cv-user-card">
 
-              </div>
+                  <div class="cv-user-main">
 
-              <!-- ROLE FORM -->
-              <form
-                class="um-card-form"
-                action="/auth/users/<%= account._id %>/role"
-                method="POST">
-
-                <div class="um-form-title">
-                  <strong>ACCOUNT ROLE</strong>
-                  <span>Change the access level for this account.</span>
-                </div>
-
-                <div class="um-form-row">
-
-                  <div class="um-field">
-                    <label for="role-<%= account._id %>">ROLE</label>
-
-                    <select
-                      class="um-control"
-                      id="role-<%= account._id %>"
-                      name="role">
-
-                      <option value="admin" <%= account.role === "admin" ? "selected" : "" %>>
-                        Admin
-                      </option>
-
-                      <option value="staff" <%= account.role === "staff" ? "selected" : "" %>>
-                        Staff
-                      </option>
-
-                      <option value="client" <%= account.role === "client" ? "selected" : "" %>>
-                        Client
-                      </option>
-
-                    </select>
-                  </div>
-
-                  <button class="um-save-button" type="submit">
-                    <i class="fas fa-check"></i>
-                    Save Role
-                  </button>
-
-                </div>
-
-              </form>
-
-              <% if (account.role === "staff") { %>
-
-                <!-- STAFF FORM -->
-                <form
-                  class="um-card-form"
-                  action="/auth/users/<%= account._id %>/substation"
-                  method="POST">
-
-                  <div class="um-form-title">
-                    <strong>STAFF ASSIGNMENT</strong>
-                    <span>Choose the substation assigned to this staff account.</span>
-                  </div>
-
-                  <div class="um-form-row">
-
-                    <div class="um-field">
-                      <label for="substation-<%= account._id %>">
-                        SUBSTATION
-                      </label>
-
-                      <select
-                        class="um-control"
-                        id="substation-<%= account._id %>"
-                        name="assignedSubstation">
-
-                        <option value="">Unassigned</option>
-
-                        <% (Array.isArray(substations) ? substations : []).forEach(s => { %>
-
-                          <option
-                            value="<%= s._id %>"
-                            <%= account.assignedSubstation &&
-                                String(account.assignedSubstation._id) === String(s._id)
-                                ? "selected"
-                                : "" %>>
-
-                            <%= s.name %>
-
-                          </option>
-
-                        <% }) %>
-
-                      </select>
-
+                    <div class="cv-avatar" aria-hidden="true">
+                      <i class="fas fa-user"></i>
                     </div>
 
-                    <button class="um-save-button" type="submit">
-                      <i class="fas fa-location-dot"></i>
-                      Assign Staff
-                    </button>
+                    <div>
+                      <h3 class="cv-user-name">
+                        <%= account.name || "Unnamed User" %>
+                      </h3>
+
+                      <p class="cv-user-email">
+                        <i class="fas fa-envelope"></i>
+                        <%= account.email || "No email" %>
+                      </p>
+
+                      <span class="cv-role-pill <%= role %>">
+                        <i class="fas <%= role === 'admin'
+                          ? 'fa-shield-halved'
+                          : role === 'staff'
+                            ? 'fa-user-gear'
+                            : 'fa-user' %>"></i>
+                        <%= roleLabel(role) %>
+                      </span>
+                    </div>
+
+                    <details class="cv-actions">
+                      <summary>
+                        <i class="fas fa-ellipsis-vertical"></i>
+                        <span>Actions</span>
+                      </summary>
+
+                      <div class="cv-actions-menu">
+
+                        <form
+                          class="cv-action-form"
+                          action="/auth/users/<%= account._id %>/role"
+                          method="POST">
+
+                          <p class="cv-action-title">CHANGE ROLE</p>
+
+                          <div class="cv-action-row">
+                            <select
+                              class="cv-action-control"
+                              name="role"
+                              aria-label="Role">
+                              <option value="admin" <%= role === "admin" ? "selected" : "" %>>
+                                Administrator
+                              </option>
+                              <option value="staff" <%= role === "staff" ? "selected" : "" %>>
+                                Staff
+                              </option>
+                              <option value="client" <%= role === "client" ? "selected" : "" %>>
+                                Client
+                              </option>
+                            </select>
+
+                            <button class="cv-action-submit" type="submit">
+                              Save
+                            </button>
+                          </div>
+                        </form>
+
+                        <% if (role === "staff") { %>
+
+                          <form
+                            class="cv-action-form"
+                            action="/auth/users/<%= account._id %>/substation"
+                            method="POST">
+
+                            <p class="cv-action-title">STAFF ASSIGNMENT</p>
+
+                            <div class="cv-action-row">
+                              <select
+                                class="cv-action-control"
+                                name="assignedSubstation"
+                                aria-label="Assigned substation">
+
+                                <option value="">Unassigned</option>
+
+                                <% safeSubstations.forEach(s => { %>
+                                  <option
+                                    value="<%= s._id %>"
+                                    <%= account.assignedSubstation &&
+                                        String(account.assignedSubstation._id) === String(s._id)
+                                        ? "selected"
+                                        : "" %>>
+                                    <%= s.name %>
+                                  </option>
+                                <% }) %>
+
+                              </select>
+
+                              <button class="cv-action-submit" type="submit">
+                                Assign
+                              </button>
+                            </div>
+                          </form>
+
+                        <% } %>
+
+                      </div>
+                    </details>
 
                   </div>
 
-                </form>
+                  <div class="cv-user-meta">
 
-              <% } else { %>
+                    <div class="cv-meta-item">
+                      <span>ACCOUNT</span>
+                      <strong>
+                        <i class="fas fa-circle-check"></i>
+                        Active
+                      </strong>
+                    </div>
 
-                <div class="um-note">
-                  <i class="fas fa-location-dot"></i>
-                  Substation assignment is available for staff accounts.
-                </div>
+                    <div class="cv-meta-item">
+                      <span>JOINED</span>
+                      <strong>
+                        <%= joinedDate(account.createdAt || account.joinedAt) || "Not available" %>
+                      </strong>
+                    </div>
 
-              <% } %>
+                    <div class="cv-meta-item">
+                      <span>SUBSTATION</span>
+                      <strong><%= assignedSubstationName %></strong>
+                    </div>
 
-            </li>
+                  </div>
 
-          <% }) %>
+                </li>
 
-        </ul>
+              <% }) %>
 
-      <% } %>
+            </ul>
 
-    </section>
+          <% } %>
 
-  </section>
+        </section>
 
+      </main>
+    </div>
+  </div>
 </section>
