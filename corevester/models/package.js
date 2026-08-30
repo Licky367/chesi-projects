@@ -2,20 +2,54 @@ const mongoose = require("mongoose");
 
 const packageItemSchema = new mongoose.Schema(
   {
-    productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
-    name: { type: String, required: true },
-    price: { type: Number, required: true },
-    qty: { type: Number, required: true, min: 1 },
-    image: { type: String, default: "" }
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    category: {
+      type: String,
+      default: ""
+    },
+    price: {
+      type: Number,
+      required: true
+    },
+    qty: {
+      type: Number,
+      required: true,
+      min: 1
+    },
+    image: {
+      type: String,
+      default: ""
+    }
   },
   { _id: false }
 );
 
 const packageSchema = new mongoose.Schema(
   {
-    clientId: { type: String, required: true, index: true },
-    items: { type: [packageItemSchema], default: [] },
-    totalAmount: { type: Number, required: true, min: 0 },
+    clientId: {
+      type: String,
+      required: true,
+      index: true
+    },
+
+    items: {
+      type: [packageItemSchema],
+      default: []
+    },
+
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0
+    },
 
     paymentStatus: {
       type: String,
@@ -23,14 +57,28 @@ const packageSchema = new mongoose.Schema(
       default: "unpaid",
       index: true
     },
-    paidAmount: { type: Number, default: 0, min: 0 },
+
+    paidAmount: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+
     paymentMethod: {
       type: String,
       enum: ["mpesa", "pay_on_delivery"],
       default: "pay_on_delivery"
     },
-    mpesaReceiptNumber: { type: String, default: "" },
-    phoneNumber: { type: String, default: "" },
+
+    mpesaReceiptNumber: {
+      type: String,
+      default: ""
+    },
+
+    phoneNumber: {
+      type: String,
+      default: ""
+    },
 
     status: {
       type: String,
@@ -39,12 +87,26 @@ const packageSchema = new mongoose.Schema(
       index: true
     },
 
-    // Staff workflow. These fields make the package ownership explicit:
-    // the staff member who confirms a package is the only staff member who
-    // can subsequently deliver it.
-    confirmedByStaffId: { type: String, default: null, index: true },
-    confirmedByStaffName: { type: String, default: "" },
-    confirmedAt: { type: Date, default: null },
+    // --------------------------------------------------------
+    // STAFF PACKAGE WORKFLOW
+    // --------------------------------------------------------
+
+    confirmedByStaffId: {
+      type: String,
+      default: null,
+      index: true
+    },
+
+    confirmedByStaffName: {
+      type: String,
+      default: ""
+    },
+
+    confirmedAt: {
+      type: Date,
+      default: null
+    },
+
     confirmedSubstationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Substation",
@@ -52,9 +114,22 @@ const packageSchema = new mongoose.Schema(
       index: true
     },
 
-    deliveredByStaffId: { type: String, default: null, index: true },
-    deliveredByStaffName: { type: String, default: "" },
-    deliveredAt: { type: Date, default: null },
+    deliveredByStaffId: {
+      type: String,
+      default: null,
+      index: true
+    },
+
+    deliveredByStaffName: {
+      type: String,
+      default: ""
+    },
+
+    deliveredAt: {
+      type: Date,
+      default: null
+    },
+
     deliveredSubstationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Substation",
@@ -62,10 +137,14 @@ const packageSchema = new mongoose.Schema(
       index: true
     },
 
-    // True means the delivery transaction has already recorded its
-    // per-substation reduction ledger entry. Product.units is NOT changed
-    // by the delivery transaction.
-    substationReductionRecorded: { type: Boolean, default: false, index: true }
+    // Delivery records the physical fulfilment against the
+    // staff member's assigned substation. It does NOT reduce
+    // Product.units a second time.
+    substationReductionRecorded: {
+      type: Boolean,
+      default: false,
+      index: true
+    }
   },
   {
     timestamps: true,
@@ -74,15 +153,58 @@ const packageSchema = new mongoose.Schema(
   }
 );
 
+// ------------------------------------------------------------
+// LEGACY PAYMENT COMPATIBILITY
+// ------------------------------------------------------------
+//
+// Older packages may still contain:
+//
+//     paymentStatus: "not_required"
+//
+// That value is no longer part of the application's payment
+// state machine. Normalize it BEFORE Mongoose enum validation
+// so an old package can still be opened/updated safely.
+//
+packageSchema.pre("validate", function(next) {
+  if (this.paymentStatus === "not_required") {
+    const total = Math.max(
+      0,
+      Number(this.totalAmount || 0)
+    );
+
+    const paid = Math.max(
+      0,
+      Number(this.paidAmount || 0)
+    );
+
+    if (paid <= 0) {
+      this.paymentStatus = "unpaid";
+    } else if (paid >= total) {
+      this.paymentStatus = "paid";
+    } else {
+      this.paymentStatus = "partialPaid";
+    }
+  }
+
+  next();
+});
+
 packageSchema.virtual("totalPaid").get(function () {
-  return Math.max(0, Number(this.paidAmount || 0));
+  return Math.max(
+    0,
+    Number(this.paidAmount || 0)
+  );
 });
 
 packageSchema.virtual("arrearsAmount").get(function () {
   return Math.max(
     0,
-    Number(this.totalAmount || 0) - Number(this.paidAmount || 0)
+    Number(this.totalAmount || 0) -
+    Number(this.paidAmount || 0)
   );
 });
 
-module.exports = mongoose.model("Package", packageSchema);
+module.exports = mongoose.model(
+  "Package",
+  packageSchema
+);
