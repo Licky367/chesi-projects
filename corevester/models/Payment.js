@@ -1,94 +1,106 @@
 const mongoose = require("mongoose");
 
-const paymentSchema = new mongoose.Schema({
-  clientId: {
-    type: String,
-    required: true,
-    index: true
-  },
+const paymentSchema = new mongoose.Schema(
+  {
+    clientId: {
+      type: String,
+      required: true,
+      index: true
+    },
 
-  sessionId: {
-    type: String,
-    default: "",
-    index: true
-  },
+    sessionId: {
+      type: String,
+      default: "",
+      index: true
+    },
 
-  cartItems: {
-    type: [{
-      productId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product"
-      },
-      name: String,
-      price: Number,
-      image: String,
-      qty: Number
-    }],
-    default: []
-  },
+    cartItems: {
+      type: [
+        {
+          productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product"
+          },
 
-  // Existing package being paid, if applicable.
-  packageId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Package",
-    default: null,
-    index: true
-  },
+          name: String,
+          price: Number,
+          image: String,
+          qty: Number
+        }
+      ],
+      default: []
+    },
 
-  // Amount requested by this payment.
-  amount: {
-    type: Number,
-    required: true,
-    min: 1
-  },
+    packageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Package",
+      default: null,
+      index: true
+    },
 
-  // Amount actually credited to the package.
-  paidAmount: {
-    type: Number,
-    default: 0,
-    min: 0
-  },
+    // Amount expected for this payment request.
+    amount: {
+      type: Number,
+      required: true,
+      min: 1
+    },
 
-  phoneNumber: {
-    type: String,
-    required: true
-  },
+    // Amount actually verified from M-Pesa.
+    paidAmount: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
 
-  merchantRequestId: {
-    type: String,
-    default: ""
-  },
+    phoneNumber: {
+      type: String,
+      required: true
+    },
 
-  checkoutRequestId: {
-    type: String,
-    unique: true,
-    sparse: true,
-    index: true
-  },
+    merchantRequestId: {
+      type: String,
+      default: ""
+    },
 
-  mpesaReceiptNumber: {
-    type: String,
-    default: ""
-  },
+    checkoutRequestId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true
+    },
 
-  status: {
-    type: String,
-    enum: ["pending", "confirmed", "failed", "cancelled"],
-    default: "pending",
-    index: true
-  },
+    mpesaReceiptNumber: {
+      type: String,
+      default: "",
+      index: true
+    },
 
-  resultCode: {
-    type: String,
-    default: ""
-  },
+    status: {
+      type: String,
+      enum: [
+        "pending",
+        "confirmed",
+        "failed",
+        "cancelled"
+      ],
+      default: "pending",
+      index: true
+    },
 
-  resultDescription: {
-    type: String,
-    default: ""
+    resultCode: {
+      type: String,
+      default: ""
+    },
+
+    resultDescription: {
+      type: String,
+      default: ""
+    }
+  },
+  {
+    timestamps: true
   }
-}, {
-  timestamps: true
-});
+);
 
-module.exports = mongoose.model("Payment", paymentSchema);
+module.exports =
+  mongoose.model("Payment", paymentSchema);

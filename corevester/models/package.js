@@ -1,85 +1,112 @@
 const mongoose = require("mongoose");
 
-const packageItemSchema = new mongoose.Schema({
-  productId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Product",
-    required: true
-  },
-  name: { type: String, required: true },
-  price: { type: Number, required: true },
-  qty: { type: Number, required: true, min: 1 },
-  image: { type: String, default: "" }
-}, { _id: false });
+const packageItemSchema = new mongoose.Schema(
+  {
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true
+    },
 
-const packageSchema = new mongoose.Schema({
-  clientId: {
-    type: String,
-    required: true,
-    index: true
-  },
+    name: {
+      type: String,
+      required: true
+    },
 
-  items: {
-    type: [packageItemSchema],
-    default: []
-  },
+    price: {
+      type: Number,
+      required: true
+    },
 
-  totalAmount: {
-    type: Number,
-    required: true,
-    min: 0
-  },
+    qty: {
+      type: Number,
+      required: true,
+      min: 1
+    },
 
-  // unpaid | partialPaid | paid
-  paymentStatus: {
-    type: String,
-    enum: ["unpaid", "partialPaid", "paid"],
-    default: "unpaid",
-    index: true
+    image: {
+      type: String,
+      default: ""
+    }
   },
-
-  // Aggregate amount paid so far.
-  // This is maintained from confirmed Payment.paidAmount records.
-  paidAmount: {
-    type: Number,
-    default: 0,
-    min: 0
-  },
-
-  paymentMethod: {
-    type: String,
-    enum: ["mpesa", "pay_on_delivery"],
-    default: "pay_on_delivery"
-  },
-
-  mpesaReceiptNumber: {
-    type: String,
-    default: ""
-  },
-
-  phoneNumber: {
-    type: String,
-    default: ""
-  },
-
-  status: {
-    type: String,
-    enum: ["pending", "confirmed", "delivered"],
-    default: "pending"
+  {
+    _id: false
   }
-}, {
-  timestamps: true,
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
-});
+);
 
-// Computed total paid.
+const packageSchema = new mongoose.Schema(
+  {
+    clientId: {
+      type: String,
+      required: true,
+      index: true
+    },
+
+    items: {
+      type: [packageItemSchema],
+      default: []
+    },
+
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+
+    paymentStatus: {
+      type: String,
+      enum: ["unpaid", "partialPaid", "paid"],
+      default: "unpaid",
+      index: true
+    },
+
+    // Aggregate of confirmed Payment.paidAmount records.
+    paidAmount: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+
+    paymentMethod: {
+      type: String,
+      enum: ["mpesa", "pay_on_delivery"],
+      default: "pay_on_delivery"
+    },
+
+    mpesaReceiptNumber: {
+      type: String,
+      default: ""
+    },
+
+    phoneNumber: {
+      type: String,
+      default: ""
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "confirmed", "delivered"],
+      default: "pending"
+    }
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true
+    },
+    toObject: {
+      virtuals: true
+    }
+  }
+);
+
 packageSchema.virtual("totalPaid").get(function () {
-  return Math.max(0, Number(this.paidAmount || 0));
+  return Math.max(
+    0,
+    Number(this.paidAmount || 0)
+  );
 });
 
-// Computed arrears:
-// total amount - total paid.
 packageSchema.virtual("arrearsAmount").get(function () {
   return Math.max(
     0,
@@ -88,4 +115,5 @@ packageSchema.virtual("arrearsAmount").get(function () {
   );
 });
 
-module.exports = mongoose.model("Package", packageSchema);
+module.exports =
+  mongoose.model("Package", packageSchema);
