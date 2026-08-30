@@ -18,6 +18,11 @@ router.get(
     ...authController.showUsers
 );
 
+router.get(
+    "/users/invitation",
+    ...authController.showInvitation
+);
+
 router.post(
     "/users/invite",
     ...authController.inviteUser
