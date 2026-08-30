@@ -1,78 +1,780 @@
 <% const pending = Array.isArray(invitations) ? invitations : []; %>
-<section class="iv">
-  <header class="iv-hero">
-    <div>
-      <a class="back" href="/auth/users"><i class="fas fa-arrow-left"></i><span>Back to users</span></a>
-      <span class="eyebrow">ACCESS CONTROL</span>
-      <h1>Invite a user</h1>
-      <p>Reserve a role for an email address before the person creates their account.</p>
-    </div>
+
+<section class="invitation-page">
+
+  <!-- =========================================================
+       PAGE HEADER
+  ========================================================== -->
+  <header class="invitation-header">
+    <a class="back-link" href="/auth/users">
+      <i class="fas fa-arrow-left"></i>
+      <span>Back to users</span>
+    </a>
+
+    <span class="section-label">ACCESS CONTROL</span>
+    <h1>Invite a User</h1>
+    <p>Create an invitation and decide the account role before registration.</p>
   </header>
 
-  <% if(req.query?.error){ %><div class="alert error"><i class="fas fa-circle-exclamation"></i><%= req.query.error %></div><% } %>
-  <% if(req.query?.success){ %><div class="alert success"><i class="fas fa-circle-check"></i><%= req.query.success %></div><% } %>
+  <!-- =========================================================
+       FLASH MESSAGES
+  ========================================================== -->
+  <% if (req.query?.error) { %>
+    <div class="message message--error">
+      <i class="fas fa-circle-exclamation"></i>
+      <span><%= req.query.error %></span>
+    </div>
+  <% } %>
 
-  <div class="invite-shell">
-    <main class="panel">
-      <div class="panel-title">
-        <div class="icon"><i class="fas fa-envelope"></i></div>
-        <div><span class="eyebrow">NEW INVITATION</span><h2>Create invitation</h2><p>The email controls the role granted at signup.</p></div>
-      </div>
+  <% if (req.query?.success) { %>
+    <div class="message message--success">
+      <i class="fas fa-circle-check"></i>
+      <span><%= req.query.success %></span>
+    </div>
+  <% } %>
 
-      <form action="/auth/users/invite" method="POST">
-        <label>Email address</label>
-        <div class="input"><i class="fas fa-at"></i><input type="email" name="email" placeholder="name@example.com" required></div>
+  <!-- =========================================================
+       INVITATION SECTIONS
+       1. Form
+       2. Role guide
+       3. Process
+  ========================================================== -->
+  <section class="invitation-sections">
 
-        <label>Role to grant</label>
-        <select name="role" required>
-          <option value="staff">Staff</option>
-          <option value="client">Client</option>
-          <option value="admin">Admin</option>
-        </select>
+    <!-- ================= INVITATION FORM ===================== -->
+    <article class="invitation-card invitation-card--form">
+      <header class="card-header">
+        <div class="card-header__icon">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div>
+          <span class="section-label">SECTION 01</span>
+          <h2>Invitation Details</h2>
+          <p>Enter the email and role for the new account.</p>
+        </div>
+      </header>
 
-        <div class="guide">
-          <div><span class="guide-icon staff"><i class="fas fa-user-gear"></i></span><span><b>Staff</b><small>Can be assigned a substation after registration.</small></span></div>
-          <div><span class="guide-icon client"><i class="fas fa-user"></i></span><span><b>Client</b><small>Standard client access.</small></span></div>
-          <div><span class="guide-icon admin"><i class="fas fa-shield-halved"></i></span><span><b>Admin</b><small>Administrative access.</small></span></div>
+      <form action="/auth/users/invite" method="POST" class="invitation-form">
+
+        <div class="field">
+          <label for="invite-email">EMAIL ADDRESS</label>
+          <div class="field-input">
+            <i class="fas fa-at"></i>
+            <input
+              id="invite-email"
+              type="email"
+              name="email"
+              placeholder="name@example.com"
+              required
+            >
+          </div>
         </div>
 
-        <button class="submit" type="submit"><i class="fas fa-paper-plane"></i> Save Invitation</button>
+        <div class="field">
+          <label for="invite-role">ROLE TO GRANT</label>
+
+          <select id="invite-role" name="role" required>
+            <option value="staff">Staff</option>
+            <option value="client">Client</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="form-note">
+          <i class="fas fa-circle-info"></i>
+          <span>The selected role will be applied when the invited email registers.</span>
+        </div>
+
+        <button class="submit-button" type="submit">
+          <i class="fas fa-paper-plane"></i>
+          <span>Save Invitation</span>
+        </button>
+
       </form>
-    </main>
+    </article>
 
-    <aside class="info">
-      <div class="info-head"><div class="icon"><i class="fas fa-shield-halved"></i></div><div><span class="eyebrow">PROCESS</span><h2>How it works</h2></div></div>
-      <ol>
-        <li><b>1</b><span>Save the email and intended role.</span></li>
-        <li><b>2</b><span>The person signs up using that email.</span></li>
-        <li><b>3</b><span>The server automatically grants the saved role.</span></li>
+    <!-- ================= ROLE SECTION ======================== -->
+    <article class="invitation-card">
+      <header class="card-header">
+        <div class="card-header__icon">
+          <i class="fas fa-user-tag"></i>
+        </div>
+        <div>
+          <span class="section-label">SECTION 02</span>
+          <h2>Available Roles</h2>
+          <p>Choose the access level that fits the account.</p>
+        </div>
+      </header>
+
+      <div class="role-list">
+
+        <div class="role-item">
+          <span class="role-item__icon role-item__icon--admin">
+            <i class="fas fa-shield-halved"></i>
+          </span>
+          <div>
+            <strong>Admin</strong>
+            <p>Administrative access.</p>
+          </div>
+          <span class="role-tag role-tag--admin">ADMIN</span>
+        </div>
+
+        <div class="role-item">
+          <span class="role-item__icon role-item__icon--staff">
+            <i class="fas fa-user-gear"></i>
+          </span>
+          <div>
+            <strong>Staff</strong>
+            <p>Can be assigned a substation.</p>
+          </div>
+          <span class="role-tag role-tag--staff">STAFF</span>
+        </div>
+
+        <div class="role-item">
+          <span class="role-item__icon role-item__icon--client">
+            <i class="fas fa-user"></i>
+          </span>
+          <div>
+            <strong>Client</strong>
+            <p>Standard client access.</p>
+          </div>
+          <span class="role-tag role-tag--client">CLIENT</span>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ================= PROCESS SECTION ===================== -->
+    <article class="invitation-card">
+      <header class="card-header">
+        <div class="card-header__icon">
+          <i class="fas fa-list-check"></i>
+        </div>
+        <div>
+          <span class="section-label">SECTION 03</span>
+          <h2>How It Works</h2>
+          <p>The invitation flow in three simple steps.</p>
+        </div>
+      </header>
+
+      <ol class="process-list">
+        <li>
+          <span class="process-number">01</span>
+          <div>
+            <strong>Save the invitation</strong>
+            <p>Store the email with its intended role.</p>
+          </div>
+        </li>
+
+        <li>
+          <span class="process-number">02</span>
+          <div>
+            <strong>User registers</strong>
+            <p>The person signs up using the invited email.</p>
+          </div>
+        </li>
+
+        <li>
+          <span class="process-number">03</span>
+          <div>
+            <strong>Role is applied</strong>
+            <p>The saved invitation determines the account role.</p>
+          </div>
+        </li>
       </ol>
-      <p class="tip"><i class="fas fa-circle-info"></i><span>A signup without an invitation always becomes <strong>client</strong>.</span></p>
-    </aside>
-  </div>
 
-  <section class="pending">
-    <div class="pending-head">
-      <div><span class="eyebrow">WAITING LIST</span><h2>Pending invitations</h2><p>Invitations waiting to be used.</p></div>
-      <b><%= pending.length %></b>
-    </div>
+      <div class="process-note">
+        <i class="fas fa-circle-info"></i>
+        <span>A signup without an invitation becomes <strong>client</strong>.</span>
+      </div>
+    </article>
 
-    <% if(!pending.length){ %>
-      <div class="empty"><i class="fas fa-inbox"></i><h3>No pending invitations</h3><p>Saved invitations appear here until used.</p></div>
-    <% } else { %>
-      <ul class="pending-list">
-        <% pending.forEach(i=>{ %>
-          <li class="pending-card">
-            <div class="mail-icon"><i class="fas fa-envelope"></i></div>
-            <div class="pending-details"><strong><%= i.email %></strong><small>Added <%= i.createdAt?new Date(i.createdAt).toLocaleDateString():'' %></small></div>
-            <em class="role <%= i.role %>"><%= i.role %></em>
-          </li>
-        <% }) %>
-      </ul>
-    <% } %>
   </section>
+
+  <!-- =========================================================
+       PENDING INVITATIONS SECTION
+  ========================================================== -->
+  <section class="pending-section">
+
+    <header class="pending-header">
+      <div>
+        <span class="section-label">SECTION 04</span>
+        <h2>Pending Invitations</h2>
+        <p>Invitations that have been saved and are waiting to be used.</p>
+      </div>
+
+      <span class="pending-count"><%= pending.length %></span>
+    </header>
+
+    <% if (!pending.length) { %>
+
+      <div class="pending-empty">
+        <div class="pending-empty__icon">
+          <i class="fas fa-inbox"></i>
+        </div>
+        <h3>No pending invitations</h3>
+        <p>New invitations will appear here after they are saved.</p>
+      </div>
+
+    <% } else { %>
+
+      <ul class="pending-list">
+
+        <% pending.forEach(invitation => { %>
+
+          <li class="pending-card">
+
+            <span class="pending-card__icon">
+              <i class="fas fa-envelope"></i>
+            </span>
+
+            <div class="pending-card__details">
+              <strong><%= invitation.email %></strong>
+              <small>
+                Added
+                <%= invitation.createdAt
+                  ? new Date(invitation.createdAt).toLocaleDateString()
+                  : "" %>
+              </small>
+            </div>
+
+            <span class="role-tag role-tag--<%= invitation.role %>">
+              <%= invitation.role %>
+            </span>
+
+          </li>
+
+        <% }) %>
+
+      </ul>
+
+    <% } %>
+
+  </section>
+
 </section>
 
 <style>
-.iv{max-width:1120px;margin:auto;padding:25px 18px 70px;color:#243128}.iv-hero{padding-bottom:5px}.back{display:inline-flex;align-items:center;gap:7px;color:#68736b;text-decoration:none;font-size:12px;font-weight:800;margin-bottom:25px}.back:hover{color:#0b5d1e}.eyebrow{display:block;color:#0b5d1e;font-size:10px;font-weight:900;letter-spacing:.14em}.iv h1{margin:7px 0;color:#17231b;font-size:clamp(31px,5vw,43px);line-height:1.05}.iv-hero p{margin:0;color:#69756d}.alert{display:flex;align-items:center;gap:9px;padding:13px;border-radius:12px;margin:18px 0}.error{background:#fff1f2;color:#991b1b}.success{background:#f0fdf4;color:#166534}.invite-shell{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(270px,.65fr);gap:16px;margin-top:25px}.panel,.info,.pending{background:#fff;border:1px solid #e1e8e3;border-radius:18px;box-shadow:0 5px 18px rgba(20,40,25,.035)}.panel{padding:22px}.panel-title{display:flex;gap:12px;align-items:center;padding-bottom:18px;margin-bottom:20px;border-bottom:1px solid #edf0ed}.icon{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:13px;background:#edf6ef;color:#0b5d1e}.panel-title h2,.info h2,.pending-head h2{margin:4px 0 0;color:#29352d}.panel-title p{margin:4px 0 0;color:#7a857e;font-size:11px}.panel label{display:block;margin:0 0 6px;color:#59635b;font-size:10px;font-weight:900}.input{position:relative;margin-bottom:16px}.input i{position:absolute;left:13px;top:14px;color:#7d877f}.input input,.panel select{width:100%;height:44px;box-sizing:border-box;border:1px solid #d7ded8;border-radius:10px;background:#fff;padding:0 12px;color:#344038}.input input{padding-left:37px}.input input:focus,.panel select:focus{outline:0;border-color:#0b5d1e;box-shadow:0 0 0 3px rgba(11,93,30,.08)}.guide{display:grid;gap:7px;margin:17px 0}.guide>div{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #edf0ed;border-radius:11px;background:#fafcf9}.guide-icon{width:30px;height:30px;flex:0 0 30px;border-radius:9px;display:grid;place-items:center;font-size:11px}.guide-icon.staff{background:#e8f4f8;color:#12617d}.guide-icon.client{background:#f0f2f1;color:#59625d}.guide-icon.admin{background:#f1ebfb;color:#6433a5}.guide b{display:block;color:#354038;font-size:11px}.guide small{display:block;color:#7b857e;font-size:10px;margin-top:2px}.submit{width:100%;height:45px;border:0;border-radius:11px;background:#0b5d1e;color:#fff;font-weight:850;cursor:pointer}.info{align-self:start;padding:21px}.info-head{display:flex;align-items:center;gap:11px}.info ol{list-style:none;padding:0;margin:22px 0;display:grid;gap:16px}.info li{display:flex;gap:10px;align-items:flex-start}.info li>b{width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;border-radius:50%;background:#edf6ef;color:#0b5d1e;font-size:10px}.info li span{color:#68736c;font-size:11px;line-height:1.5}.tip{display:flex;gap:8px;margin:0;padding:11px;border-radius:10px;background:#f7f9f7;color:#68736c;font-size:10px;line-height:1.5}.tip i{color:#0b5d1e;margin-top:2px}.pending{margin-top:18px;padding:21px}.pending-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}.pending-head p{margin:4px 0 0;color:#7b857e;font-size:11px}.pending-head>b{min-width:25px;text-align:center;padding:5px 8px;border-radius:20px;background:#edf6ef;color:#0b5d1e;font-size:10px}.pending-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}.pending-card{display:flex;align-items:center;gap:11px;border:1px solid #e5e9e6;border-radius:12px;padding:11px 12px}.mail-icon{width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:#f5f8f5;color:#0b5d1e;display:grid;place-items:center;font-size:12px}.pending-details{min-width:0;flex:1}.pending-details strong{display:block;font-size:12px;color:#39433c;overflow-wrap:anywhere}.pending-details small{display:block;margin-top:3px;color:#8a938d;font-size:9px}.role{font-style:normal;font-size:9px;font-weight:900;padding:5px 8px;border-radius:20px;text-transform:uppercase}.role.admin{background:#f0eafd;color:#6433a5}.role.staff{background:#e6f3fa;color:#12617d}.role.client{background:#f0f2f1;color:#59625d}.empty{text-align:center;padding:35px;color:#7b857e;border:1px dashed #d9dfda;border-radius:13px}.empty i{font-size:23px;color:#0b5d1e}.empty h3{margin:9px 0 4px;color:#3f4942;font-size:14px}.empty p{margin:0;font-size:10px}@media(max-width:760px){.invite-shell{grid-template-columns:1fr}}@media(max-width:500px){.iv{padding:19px 13px 55px}.panel,.info,.pending{padding:17px}.pending-card{align-items:flex-start}.role{margin-left:auto}}
+/* ==============================================================
+   INVITATION PAGE
+================================================================ */
+
+.invitation-page {
+  --green: #0b5d1e;
+  --green-soft: #edf6ef;
+  --ink: #1d2921;
+  --text: #435048;
+  --muted: #77827a;
+  --line: #e1e8e3;
+  --surface: #ffffff;
+
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 25px 20px 70px;
+  color: var(--ink);
+}
+
+/* ==============================================================
+   HEADER
+================================================================ */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 25px;
+  color: #68736c;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.back-link:hover {
+  color: var(--green);
+}
+
+.invitation-header h1 {
+  margin: 7px 0 6px;
+  font-size: clamp(31px, 5vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -.025em;
+}
+
+.invitation-header > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ==============================================================
+   MESSAGES
+================================================================ */
+
+.message {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  font-size: 12px;
+}
+
+.message--error {
+  color: #991b1b;
+  background: #fff1f2;
+}
+
+.message--success {
+  color: #166534;
+  background: #f0fdf4;
+}
+
+/* ==============================================================
+   INVITATION SECTION GRID
+================================================================ */
+
+.invitation-sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(270px, .75fr);
+  gap: 15px;
+  margin-top: 25px;
+}
+
+/* ==============================================================
+   CARDS
+================================================================ */
+
+.invitation-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--surface);
+  box-shadow: 0 6px 20px rgba(24, 43, 29, .04);
+}
+
+.invitation-card--form {
+  grid-row: span 2;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 17px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #edf0ed;
+}
+
+.card-header__icon {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.card-header h2 {
+  margin: 4px 0 3px;
+  color: #29352d;
+  font-size: 18px;
+}
+
+.card-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* ==============================================================
+   FORM
+================================================================ */
+
+.invitation-form {
+  display: grid;
+  gap: 16px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  color: #59635b;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.field-input {
+  position: relative;
+}
+
+.field-input > i {
+  position: absolute;
+  left: 13px;
+  top: 14px;
+  color: #7d877f;
+  font-size: 11px;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  height: 44px;
+  box-sizing: border-box;
+  border: 1px solid #d7ded8;
+  border-radius: 10px;
+  background: #fff;
+  color: #354038;
+  font-size: 11px;
+}
+
+.field input {
+  padding: 0 12px 0 36px;
+}
+
+.field select {
+  padding: 0 10px;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 0;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(11, 93, 30, .07);
+}
+
+.form-note,
+.process-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f7f9f7;
+  color: #748078;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.form-note i,
+.process-note i {
+  color: var(--green);
+  margin-top: 1px;
+}
+
+.submit-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--green);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.submit-button:hover {
+  filter: brightness(.96);
+}
+
+/* ==============================================================
+   ROLE LIST
+================================================================ */
+
+.role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-item {
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  border: 1px solid #edf0ed;
+  border-radius: 11px;
+  background: #fbfcfb;
+}
+
+.role-item__icon {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.role-item__icon--admin {
+  background: #f0eafd;
+  color: #6433a5;
+}
+
+.role-item__icon--staff {
+  background: #e6f3fa;
+  color: #12617d;
+}
+
+.role-item__icon--client {
+  background: #f0f2f1;
+  color: #59625d;
+}
+
+.role-item strong {
+  display: block;
+  color: #39443c;
+  font-size: 11px;
+}
+
+.role-item p {
+  margin: 3px 0 0;
+  color: #7c867f;
+  font-size: 9px;
+}
+
+.role-tag {
+  padding: 5px 8px;
+  border-radius: 20px;
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.role-tag--admin {
+  background: #f0eafd;
+  color: #6433a5;
+}
+
+.role-tag--staff {
+  background: #e6f3fa;
+  color: #12617d;
+}
+
+.role-tag--client {
+  background: #f0f2f1;
+  color: #59625d;
+}
+
+/* ==============================================================
+   PROCESS LIST
+================================================================ */
+
+.process-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 0 15px;
+  padding: 0;
+}
+
+.process-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.process-number {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.process-list strong {
+  display: block;
+  color: #39443c;
+  font-size: 10px;
+}
+
+.process-list p {
+  margin: 3px 0 0;
+  color: #7c867f;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+/* ==============================================================
+   PENDING SECTION
+================================================================ */
+
+.pending-section {
+  margin-top: 17px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--surface);
+  box-shadow: 0 6px 20px rgba(24, 43, 29, .04);
+}
+
+.pending-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 13px;
+}
+
+.pending-header h2 {
+  margin: 4px 0;
+  color: #29352d;
+  font-size: 20px;
+}
+
+.pending-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.pending-count {
+  min-width: 25px;
+  padding: 5px 8px;
+  box-sizing: border-box;
+  border-radius: 20px;
+  background: var(--green-soft);
+  color: var(--green);
+  text-align: center;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.pending-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.pending-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid #e5e9e6;
+  border-radius: 11px;
+}
+
+.pending-card__icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 11px;
+}
+
+.pending-card__details {
+  min-width: 0;
+  flex: 1;
+}
+
+.pending-card__details strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #39443c;
+  font-size: 11px;
+}
+
+.pending-card__details small {
+  display: block;
+  margin-top: 3px;
+  color: #8a938d;
+  font-size: 8px;
+}
+
+.pending-empty {
+  padding: 35px 20px;
+  border: 1px dashed #d8dfda;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.pending-empty__icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.pending-empty h3 {
+  margin: 10px 0 4px;
+  color: #3d4841;
+  font-size: 14px;
+}
+
+.pending-empty p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+/* ==============================================================
+   RESPONSIVE
+================================================================ */
+
+@media (max-width: 780px) {
+  .invitation-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .invitation-card--form {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 500px) {
+  .invitation-page {
+    padding: 20px 13px 55px;
+  }
+
+  .invitation-card,
+  .pending-section {
+    padding: 16px;
+  }
+
+  .role-item {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .role-item .role-tag {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .pending-card {
+    align-items: flex-start;
+  }
+
+  .pending-card .role-tag {
+    margin-left: auto;
+  }
+}
 </style>
