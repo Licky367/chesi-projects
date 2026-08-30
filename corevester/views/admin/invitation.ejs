@@ -1,881 +1,105 @@
 <%
-/*
-============================================================
-COREVESTER ADMIN — USER INVITATION
-FILE:
-    corevester/views/admin/invitation.ejs
-
-UI direction:
-    Same visual language as the supplied User Management
-    screenshot: compact green header, section sidebar,
-    rounded cream/green containers and mobile-first layout.
-
-Expected controller data:
-    invitations
-    req
-============================================================
-*/
-
-const pendingInvitations = Array.isArray(invitations)
-  ? invitations
-  : [];
-
+const pendingInvitations = Array.isArray(invitations) ? invitations : [];
 const invitationDate = (value) => {
   if (!value) return "";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? ""
-    : date.toLocaleDateString(undefined, {
-        day: "numeric",
-        month: "short",
-        year: "numeric"
-      });
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
 };
 %>
 
-<style>
-/* ==========================================================
-   INVITATION PAGE
-   ========================================================== */
-
-.cv-invite-page,
-.cv-invite-page * {
-  box-sizing: border-box;
-}
-
-.cv-invite-page {
-  --green: #176b3a;
-  --green-dark: #0f5b2f;
-  --green-soft: #e8f5ec;
-  --green-pale: #f4faf5;
-  --green-border: #cfe2d4;
-
-  --ink: #1f3025;
-  --text: #53645a;
-  --muted: #87938b;
-  --border: #dbe7de;
-  --border-soft: #eaf0eb;
-
-  width: 100%;
-  min-height: calc(100vh - 120px);
-  padding: 16px;
-  background:
-    radial-gradient(circle at 10% 0%, rgba(232,245,236,.75), transparent 32%),
-    #f8fbf8;
-  color: var(--ink);
-  font-family: inherit;
-}
-
-.cv-invite-shell {
-  width: min(1180px, 100%);
-  margin: 0 auto;
-  border: 1px solid var(--green-border);
-  border-radius: 14px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 8px 28px rgba(25,76,42,.07);
-}
-
-.cv-invite-topbar {
-  min-height: 74px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--green-border);
-  background: #fff;
-}
-
-.cv-invite-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  color: var(--green);
-  text-decoration: none;
-}
-
-.cv-invite-brand-icon {
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--green-border);
-  border-radius: 10px;
-  background: var(--green-soft);
-}
-
-.cv-invite-brand strong {
-  display: block;
-  font-size: 13px;
-  letter-spacing: .04em;
-}
-
-.cv-invite-brand small {
-  display: block;
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 7px;
-}
-
-.cv-invite-top-actions {
-  display: flex;
-  gap: 7px;
-}
-
-.cv-invite-top-button {
-  height: 38px;
-  min-width: 42px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 10px;
-  border: 1px solid #9dbca5;
-  border-radius: 8px;
-  background: #fff;
-  color: var(--green);
-  text-decoration: none;
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.cv-invite-body {
-  display: grid;
-  grid-template-columns: 205px minmax(0,1fr);
-}
-
-.cv-invite-sidebar {
-  padding: 18px 12px;
-  border-right: 1px solid var(--border);
-  background: #f7fbf7;
-}
-
-.cv-invite-sidebar-title {
-  margin: 0 9px 9px;
-  color: #64736a;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: .08em;
-}
-
-.cv-invite-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.cv-invite-nav a {
-  min-height: 44px;
-  display: grid;
-  grid-template-columns: 27px minmax(0,1fr);
-  align-items: center;
-  gap: 7px;
-  padding: 6px 8px;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  color: var(--text);
-  text-decoration: none;
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.cv-invite-nav a:hover {
-  border-color: var(--green-border);
-  background: #fff;
-}
-
-.cv-invite-nav a.active {
-  border-color: #166936;
-  background: var(--green);
-  color: #fff;
-}
-
-.cv-invite-nav i {
-  width: 27px;
-  height: 27px;
-  display: grid;
-  place-items: center;
-  border-radius: 7px;
-  background: var(--green-soft);
-  color: var(--green);
-}
-
-.cv-invite-nav a.active i {
-  background: rgba(255,255,255,.14);
-  color: #fff;
-}
-
-.cv-invite-content {
-  min-width: 0;
-  padding: 18px;
-}
-
-.cv-invite-hero {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  min-height: 90px;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: linear-gradient(90deg, #f2faf3, #fbfdfb);
-}
-
-.cv-invite-hero-icon {
-  width: 61px;
-  height: 61px;
-  flex: 0 0 61px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--green-border);
-  border-radius: 50%;
-  background: #fff;
-  color: var(--green);
-  font-size: 23px;
-}
-
-.cv-invite-eyebrow {
-  display: block;
-  color: var(--green);
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: .08em;
-}
-
-.cv-invite-hero h1 {
-  margin: 5px 0;
-  font-size: 20px;
-  line-height: 1;
-}
-
-.cv-invite-hero p {
-  margin: 0;
-  color: var(--text);
-  font-size: 10px;
-}
-
-.cv-invite-feedback {
-  margin-top: 10px;
-  padding: 9px 11px;
-  border-radius: 8px;
-  font-size: 9px;
-}
-
-.cv-invite-feedback.success {
-  background: #eaf7ed;
-  color: var(--green);
-}
-
-.cv-invite-feedback.error {
-  background: #fff0f0;
-  color: #a32828;
-}
-
-.cv-invite-grid {
-  display: grid;
-  grid-template-columns: minmax(0,1.15fr) minmax(250px,.85fr);
-  gap: 13px;
-  margin-top: 13px;
-}
-
-.cv-invite-card {
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: #fbfdfb;
-}
-
-.cv-invite-card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 13px;
-  padding-bottom: 11px;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.cv-invite-card-icon {
-  width: 39px;
-  height: 39px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  background: var(--green-soft);
-  color: var(--green);
-}
-
-.cv-invite-card-header strong {
-  display: block;
-  font-size: 12px;
-}
-
-.cv-invite-card-header span {
-  display: block;
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 8px;
-}
-
-.cv-invite-form {
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-}
-
-.cv-invite-field label {
-  display: block;
-  margin-bottom: 5px;
-  color: #64736a;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .07em;
-}
-
-.cv-invite-input,
-.cv-invite-select {
-  width: 100%;
-  height: 39px;
-  padding: 0 10px;
-  border: 1px solid #cadbd0;
-  border-radius: 8px;
-  outline: none;
-  background: #fff;
-  color: var(--text);
-  font-size: 9px;
-}
-
-.cv-invite-input:focus,
-.cv-invite-select:focus {
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(23,107,58,.08);
-}
-
-.cv-invite-submit {
-  width: 100%;
-  height: 40px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--green);
-  color: #fff;
-  cursor: pointer;
-  font-size: 9px;
-  font-weight: 900;
-}
-
-.cv-invite-submit:hover {
-  background: var(--green-dark);
-}
-
-.cv-role-list,
-.cv-step-list,
-.cv-pending-list {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.cv-role-item,
-.cv-step-item {
-  display: grid;
-  grid-template-columns: 32px minmax(0,1fr);
-  align-items: center;
-  gap: 8px;
-  min-height: 49px;
-  padding: 7px 8px;
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  background: #fff;
-}
-
-.cv-role-icon,
-.cv-step-number {
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 9px;
-  font-weight: 900;
-}
-
-.cv-role-item strong,
-.cv-step-item strong {
-  display: block;
-  font-size: 9px;
-}
-
-.cv-role-item p,
-.cv-step-item p {
-  margin: 3px 0 0;
-  color: var(--muted);
-  font-size: 8px;
-}
-
-.cv-info {
-  margin-top: 9px;
-  padding: 8px 9px;
-  border-radius: 8px;
-  background: var(--green-pale);
-  color: #748078;
-  font-size: 8px;
-  line-height: 1.45;
-}
-
-.cv-pending {
-  margin-top: 13px;
-}
-
-.cv-pending-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 9px;
-}
-
-.cv-pending-heading h2 {
-  margin: 4px 0 2px;
-  font-size: 16px;
-}
-
-.cv-pending-heading p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 8px;
-}
-
-.cv-pending-count {
-  min-width: 23px;
-  padding: 4px 6px;
-  border-radius: 15px;
-  background: var(--green-soft);
-  color: var(--green);
-  text-align: center;
-  font-size: 8px;
-  font-weight: 900;
-}
-
-.cv-pending-item {
-  display: grid;
-  grid-template-columns: 34px minmax(0,1fr) auto;
-  align-items: center;
-  gap: 8px;
-  min-height: 53px;
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: #fff;
-}
-
-.cv-pending-icon {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  background: var(--green-soft);
-  color: var(--green);
-}
-
-.cv-pending-email {
-  display: block;
-  overflow-wrap: anywhere;
-  font-size: 9px;
-  font-weight: 800;
-}
-
-.cv-pending-date {
-  display: block;
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 7px;
-}
-
-.cv-pending-role {
-  padding: 4px 7px;
-  border-radius: 12px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 7px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.cv-no-pending {
-  padding: 25px 12px;
-  border: 1px dashed #cbdace;
-  border-radius: 9px;
-  text-align: center;
-}
-
-.cv-no-pending i {
-  color: var(--green);
-  font-size: 18px;
-}
-
-.cv-no-pending h3 {
-  margin: 7px 0 3px;
-  font-size: 11px;
-}
-
-.cv-no-pending p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 8px;
-}
-
-@media (max-width: 820px) {
-  .cv-invite-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .cv-invite-page {
-    padding: 7px;
-    background: #fff;
-  }
-
-  .cv-invite-shell {
-    border-radius: 9px;
-  }
-
-  .cv-invite-topbar {
-    min-height: 60px;
-    padding: 8px 9px;
-  }
-
-  .cv-invite-brand-icon {
-    width: 34px;
-    height: 34px;
-  }
-
-  .cv-invite-brand strong {
-    font-size: 11px;
-  }
-
-  .cv-invite-brand small {
-    font-size: 6px;
-  }
-
-  .cv-invite-top-button {
-    width: 37px;
-    min-width: 37px;
-    height: 34px;
-    padding: 0;
-  }
-
-  .cv-invite-top-button .label {
-    display: none;
-  }
-
-  .cv-invite-body {
-    display: block;
-  }
-
-  .cv-invite-sidebar {
-    padding: 10px;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .cv-invite-sidebar-title {
-    margin-left: 3px;
-  }
-
-  .cv-invite-nav {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .cv-invite-content {
-    padding: 10px;
-  }
-
-  .cv-invite-hero {
-    min-height: 80px;
-    padding: 11px;
-  }
-
-  .cv-invite-hero-icon {
-    width: 50px;
-    height: 50px;
-    flex-basis: 50px;
-    font-size: 19px;
-  }
-
-  .cv-invite-hero h1 {
-    font-size: 17px;
-  }
-}
-
-@media (max-width: 450px) {
-  .cv-pending-item {
-    grid-template-columns: 34px minmax(0,1fr);
-  }
-
-  .cv-pending-role {
-    grid-column: 2;
-    justify-self: start;
-  }
-}
-</style>
-
-<section class="cv-invite-page">
-  <div class="cv-invite-shell">
-
-    <header class="cv-invite-topbar">
-      <a class="cv-invite-brand" href="/auth/users">
-        <span class="cv-invite-brand-icon">
-          <i class="fas fa-leaf"></i>
-        </span>
-        <span>
-          <strong>COREVESTER</strong>
-          <small>INVESTMENTS LIMITED</small>
-        </span>
-      </a>
-
-      <div class="cv-invite-top-actions">
-        <a class="cv-invite-top-button" href="/auth/users">
-          <i class="fas fa-users"></i>
-          <span class="label">Users</span>
-        </a>
-      </div>
-    </header>
-
-    <div class="cv-invite-body">
-
-      <aside class="cv-invite-sidebar">
-        <p class="cv-invite-sidebar-title">SECTIONS</p>
-
-        <nav class="cv-invite-nav" aria-label="Admin sections">
-          <a href="/auth/users">
-            <i class="fas fa-users"></i>
-            <span>All Users</span>
-          </a>
-
-          <a href="/auth/users?tab=admin">
-            <i class="fas fa-shield-halved"></i>
-            <span>Administrators</span>
-          </a>
-
-          <a href="/auth/users?tab=staff">
-            <i class="fas fa-user-gear"></i>
-            <span>Staff</span>
-          </a>
-
-          <a href="/auth/users?tab=client">
-            <i class="fas fa-user"></i>
-            <span>Clients</span>
-          </a>
-
-          <a class="active" href="/auth/users/invitation">
-            <i class="fas fa-user-plus"></i>
-            <span>Invite User</span>
-          </a>
-        </nav>
-      </aside>
-
-      <main class="cv-invite-content">
-
-        <section class="cv-invite-hero">
-          <div class="cv-invite-hero-icon">
-            <i class="fas fa-user-plus"></i>
-          </div>
-
-          <div>
-            <span class="cv-invite-eyebrow">USER MANAGEMENT</span>
-            <h1>Invite User</h1>
-            <p>Create an invitation and reserve the account role.</p>
-          </div>
-        </section>
-
-        <% if (req.query?.success) { %>
-          <div class="cv-invite-feedback success">
-            <i class="fas fa-circle-check"></i>
-            <%= req.query.success %>
-          </div>
-        <% } %>
-
-        <% if (req.query?.error) { %>
-          <div class="cv-invite-feedback error">
-            <i class="fas fa-circle-exclamation"></i>
-            <%= req.query.error %>
-          </div>
-        <% } %>
-
-        <div class="cv-invite-grid">
-
-          <section class="cv-invite-card">
-
-            <header class="cv-invite-card-header">
-              <span class="cv-invite-card-icon">
-                <i class="fas fa-envelope"></i>
-              </span>
-              <div>
-                <strong>Create Invitation</strong>
-                <span>Enter an email address and choose its role.</span>
-              </div>
-            </header>
-
-            <form
-              class="cv-invite-form"
-              action="/auth/users/invite"
-              method="POST">
-
-              <div class="cv-invite-field">
-                <label for="invite-email">EMAIL ADDRESS</label>
-                <input
-                  class="cv-invite-input"
-                  id="invite-email"
-                  name="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  autocomplete="email"
-                  required>
-              </div>
-
-              <div class="cv-invite-field">
-                <label for="invite-role">ROLE TO GRANT</label>
-                <select
-                  class="cv-invite-select"
-                  id="invite-role"
-                  name="role"
-                  required>
-                  <option value="staff">Staff</option>
-                  <option value="client">Client</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-
-              <button class="cv-invite-submit" type="submit">
-                <i class="fas fa-paper-plane"></i>
-                Save Invitation
-              </button>
-
-            </form>
-
-          </section>
-
-          <section class="cv-invite-card">
-
-            <header class="cv-invite-card-header">
-              <span class="cv-invite-card-icon">
-                <i class="fas fa-shield-halved"></i>
-              </span>
-              <div>
-                <strong>Available Roles</strong>
-                <span>Access granted after registration.</span>
-              </div>
-            </header>
-
-            <ul class="cv-role-list">
-              <li class="cv-role-item">
-                <span class="cv-role-icon">
-                  <i class="fas fa-user-gear"></i>
-                </span>
-                <div>
-                  <strong>Staff</strong>
-                  <p>Can be assigned a substation.</p>
-                </div>
-              </li>
-
-              <li class="cv-role-item">
-                <span class="cv-role-icon">
-                  <i class="fas fa-user"></i>
-                </span>
-                <div>
-                  <strong>Client</strong>
-                  <p>Standard client access.</p>
-                </div>
-              </li>
-
-              <li class="cv-role-item">
-                <span class="cv-role-icon">
-                  <i class="fas fa-shield-halved"></i>
-                </span>
-                <div>
-                  <strong>Admin</strong>
-                  <p>Administrative access.</p>
-                </div>
-              </li>
-            </ul>
-
-            <div class="cv-info">
-              <i class="fas fa-circle-info"></i>
-              The selected role is reserved for the invited email.
-            </div>
-
-          </section>
-
-        </div>
-
-        <section class="cv-invite-card cv-pending">
-
-          <header class="cv-pending-heading">
-            <div>
-              <span class="cv-invite-eyebrow">INVITATIONS</span>
-              <h2>Pending Invitations</h2>
-              <p>Saved invitations waiting to be used.</p>
-            </div>
-
-            <span class="cv-pending-count">
-              <%= pendingInvitations.length %>
-            </span>
-          </header>
-
-          <% if (!pendingInvitations.length) { %>
-
-            <div class="cv-no-pending">
-              <i class="fas fa-inbox"></i>
-              <h3>No pending invitations</h3>
-              <p>Saved invitations will appear here.</p>
-            </div>
-
-          <% } else { %>
-
-            <ul class="cv-pending-list">
-
-              <% pendingInvitations.forEach(invitation => { %>
-
-                <li class="cv-pending-item">
-
-                  <span class="cv-pending-icon">
-                    <i class="fas fa-envelope"></i>
-                  </span>
-
-                  <div>
-                    <strong class="cv-pending-email">
-                      <%= invitation.email %>
-                    </strong>
-
-                    <small class="cv-pending-date">
-                      Added
-                      <%= invitationDate(invitation.createdAt) %>
-                    </small>
-                  </div>
-
-                  <em class="cv-pending-role">
-                    <%= invitation.role %>
-                  </em>
-
-                </li>
-
-              <% }) %>
-
-            </ul>
-
-          <% } %>
-
-        </section>
-
-      </main>
+<div style="width:100%;max-width:500px;margin:0 auto;padding:10px;box-sizing:border-box;background:#f6fbf6;font-family:system-ui,sans-serif;display:flex;flex-direction:column;gap:12px;">
+
+  <!-- 1. USER MANAGEMENT HEADER - TOP -->
+  <div style="background:#e8f2e6;border:1.5px solid #cfe1d3;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+    <div style="width:48px;height:48px;background:#fff;border-radius:50%;display:grid;place-items:center;font-size:22px;">✉️</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:900;color:#0a4d1e;">USER MANAGEMENT</div>
+      <div style="font-size:11px;color:#5a7d5a;margin-top:2px;">Invite User - Create invitation and reserve role.</div>
+    </div>
+    <a href="/auth/users" style="padding:8px 12px;background:#fff;border:1.5px solid #cfe1d3;border-radius:8px;text-decoration:none;font-size:11px;font-weight:800;color:#0a4d1e;">Users</a>
+  </div>
+
+  <% if (typeof req !== 'undefined' && req.query?.success) { %>
+    <div style="padding:10px 12px;border-radius:10px;background:#eaf7ed;color:#176b3a;font-size:11px;">✅ <%= req.query.success %></div>
+  <% } %>
+  <% if (typeof req !== 'undefined' && req.query?.error) { %>
+    <div style="padding:10px 12px;border-radius:10px;background:#fff0f0;color:#a32828;font-size:11px;">⚠️ <%= req.query.error %></div>
+  <% } %>
+
+  <!-- 2. OVERVIEW - TAP TO FILTER BACK TO USERS -->
+  <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:12px;">
+    <div style="font-size:10px;font-weight:900;letter-spacing:0.8px;color:#2e5a36;padding:0 4px 8px 4px;">QUICK NAV</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <a href="/auth/users?tab=all" style="padding:10px;border-radius:10px;background:#fff;border:1.5px solid #dbe9dc;text-decoration:none;color:#1a3d1a;font-size:11px;font-weight:700;text-align:center;">👥 All Users</a>
+      <a href="/auth/users/invitation" style="padding:10px;border-radius:10px;background:#0a4d1e;color:#fff;border:1.5px solid #0a4d1e;text-decoration:none;font-size:11px;font-weight:800;text-align:center;">✉️ Invite User</a>
     </div>
   </div>
-</section>
+
+  <!-- 3. CREATE INVITATION - FULL WIDTH -->
+  <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:10px;">
+    <div style="background:#fff;border-radius:12px;padding:14px;">
+      <div style="font-size:12px;font-weight:900;color:#0a4d1e;">✉️ CREATE INVITATION</div>
+      <div style="font-size:10px;color:#777;margin-top:2px;">Enter email and choose its role.</div>
+      
+      <form action="/auth/users/invite" method="POST" style="margin-top:14px;display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="display:block;font-size:9px;font-weight:900;letter-spacing:0.6px;color:#4a5a4e;margin-bottom:5px;">EMAIL ADDRESS</label>
+          <input name="email" type="email" required placeholder="name@example.com" style="width:100%;height:42px;padding:0 12px;border:1.5px solid #cadbd0;border-radius:10px;outline:none;font-size:12px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:9px;font-weight:900;letter-spacing:0.6px;color:#4a5a4e;margin-bottom:5px;">ROLE TO GRANT</label>
+          <select name="role" required style="width:100%;height:42px;padding:0 12px;border:1.5px solid #cadbd0;border-radius:10px;outline:none;font-size:12px;background:#fff;box-sizing:border-box;">
+            <option value="staff">Staff</option>
+            <option value="client">Client</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <button type="submit" style="width:100%;height:44px;border:none;border-radius:10px;background:#0a4d1e;color:#fff;font-size:12px;font-weight:800;cursor:pointer;">+ Save Invitation</button>
+      </form>
+
+      <div style="margin-top:14px;padding:10px;background:#f4faf5;border-radius:10px;border:1px solid #e0ece1;">
+        <div style="font-size:10px;font-weight:800;color:#2e5a36;">Available Roles</div>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;font-size:10px;color:#555;">
+          <div>⚙️ <b>Staff</b> - Can be assigned a substation.</div>
+          <div>👤 <b>Client</b> - Standard client access.</div>
+          <div>🛡️ <b>Admin</b> - Administrative access.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. PENDING INVITATIONS - BOTTOM -->
+  <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:10px;">
+    <div style="background:#fff;border-radius:12px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid #eef2ee;">
+        <div>
+          <div style="font-size:12px;font-weight:900;color:#0a4d1e;">PENDING INVITATIONS</div>
+          <div style="font-size:10px;color:#777;margin-top:1px;">Saved invitations waiting to be used.</div>
+        </div>
+        <span style="min-width:24px;height:24px;display:grid;place-items:center;border-radius:20px;background:#e8f2e6;color:#0a4d1e;font-size:11px;font-weight:800;"><%= pendingInvitations.length %></span>
+      </div>
+
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+        <% if(!pendingInvitations.length){ %>
+          <div style="padding:24px;text-align:center;border:1.5px dashed #cfe1d3;border-radius:10px;background:#f9fcf9;">
+            <div style="font-size:22px;">📭</div>
+            <div style="font-size:11px;font-weight:800;margin-top:6px;">No pending invitations</div>
+            <div style="font-size:10px;color:#777;margin-top:2px;">Saved invitations will appear here.</div>
+          </div>
+        <% } else { %>
+          <% pendingInvitations.forEach(inv=>{ %>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #e0ece1;border-radius:10px;background:#fbfdfb;">
+              <div style="width:36px;height:36px;background:#e8f2e6;border-radius:8px;display:grid;place-items:center;font-size:16px;flex-shrink:0;">✉️</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:11px;font-weight:800;word-break:break-all;"><%= inv.email %></div>
+                <div style="font-size:9px;color:#777;margin-top:2px;">Added <%= invitationDate(inv.createdAt) %></div>
+              </div>
+              <span style="padding:4px 8px;border-radius:20px;background:#e8f2e6;color:#0a4d1e;font-size:9px;font-weight:800;text-transform:uppercase;"><%= inv.role %></span>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+</div>
