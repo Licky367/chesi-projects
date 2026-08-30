@@ -323,7 +323,7 @@ const contactRoutes =
 // ----------------------------------------------------------
 //
 // File:
-//     ./corevester/routes/payment-summary.js
+//     ./corevester/routes/packagePayment.js
 //
 // Mount:
 //     /payment-summary
@@ -333,7 +333,7 @@ const contactRoutes =
 const payRoutes =
     safeLoad(
         "payRoutes",
-        "./corevester/routes/payment-summary"
+        "./corevester/routes/packagePayment"
     );
 
 // ==========================================================
