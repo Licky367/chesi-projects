@@ -25,8 +25,12 @@
           <% if (stock.image) { %>
             <img
               src="<%= stock.image %>"
-              alt="<%= stock.subcategory || stock.name %>"
+              alt="<%= stock.name || stock.subcategory || 'Stock item' %>"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
             >
+            <div class="placeholder" style="display:none">
+              <i class="fas fa-box"></i>
+            </div>
           <% } else { %>
             <div class="placeholder">
               <i class="fas fa-box"></i>
@@ -66,16 +70,13 @@
             </strong>
           </div>
         </div>
-
       </div>
 
       <div class="allocation-panel">
         <div class="allocation-heading">
           <div>
             <h2>Dispatch to substations</h2>
-            <p>
-              Enter the units each substation receives.
-            </p>
+            <p>Enter the units each substation receives.</p>
           </div>
 
           <div class="allocation-total-box">
@@ -90,6 +91,7 @@
           class="allocation-form"
           id="allocationForm"
         >
+          <input type="hidden" name="units" id="totalUnits" value="0">
 
           <div class="field">
             <label for="unitSellPrice">Selling price per unit</label>
@@ -111,7 +113,9 @@
                 <%
                   const substationId = String(s._id);
                   const value =
-                    old && old.allocations && typeof old.allocations === "object"
+                    old &&
+                    old.allocations &&
+                    typeof old.allocations === "object"
                       ? (old.allocations[substationId] ?? "")
                       : "";
                 %>
@@ -131,6 +135,7 @@
                     <label for="allocation-<%= substationId %>">
                       Units
                     </label>
+
                     <input
                       id="allocation-<%= substationId %>"
                       class="allocation-input"
@@ -141,6 +146,7 @@
                       inputmode="numeric"
                       name="allocations[<%= substationId %>]"
                       value="<%= value %>"
+                      autocomplete="off"
                     >
                   </div>
                 </div>
@@ -215,43 +221,69 @@
   "use strict";
 
   const form = document.getElementById("allocationForm");
-  const inputs = Array.from(document.querySelectorAll(".allocation-input"));
+  const inputs = Array.from(
+    document.querySelectorAll(".allocation-input")
+  );
+
+  const hiddenTotal = document.getElementById("totalUnits");
   const total = document.getElementById("allocationTotal");
   const summaryTotal = document.getElementById("summaryTotal");
   const remaining = document.getElementById("summaryRemaining");
   const warning = document.getElementById("allocationWarning");
   const button = document.getElementById("allocateButton");
   const sellPrice = document.getElementById("unitSellPrice");
-  const warehouse = Number(<%= stock ? Number(stock.units || 0) : 0 %>);
 
-  if (!form || !inputs.length) return;
+  const warehouse =
+    Number(<%= stock ? Number(stock.units || 0) : 0 %>);
+
+  if (!form) return;
 
   function valueOf(input) {
-    const value = Number(input.value || 0);
-    if (!Number.isFinite(value) || value < 0) return 0;
+    const raw = String(input.value ?? "").trim();
+
+    if (raw === "") return 0;
+
+    const value = Number(raw);
+
+    if (!Number.isFinite(value) || value < 0) {
+      return 0;
+    }
+
     return Math.floor(value);
   }
 
   function calculate() {
     const sum = inputs.reduce(
-      (runningTotal, input) => runningTotal + valueOf(input),
+      (runningTotal, input) =>
+        runningTotal + valueOf(input),
       0
     );
 
+    /*
+     * This hidden field is deliberately updated on every
+     * calculation AND immediately before POST.
+     */
+    hiddenTotal.value = String(sum);
+
     total.textContent = sum.toLocaleString();
     summaryTotal.textContent = sum.toLocaleString();
-    remaining.textContent = Math.max(warehouse - sum, 0).toLocaleString();
+
+    remaining.textContent =
+      Math.max(warehouse - sum, 0).toLocaleString();
 
     let message = "";
 
     if (sum <= 0) {
-      message = "Allocate at least one unit to at least one substation.";
+      message =
+        "Allocate at least one unit to at least one substation.";
     } else if (sum > warehouse) {
-      message = "The total allocation cannot exceed the warehouse balance.";
+      message =
+        "The total allocation cannot exceed the warehouse balance.";
     }
 
     warning.textContent = message;
-    warning.style.display = message ? "block" : "none";
+    warning.style.display =
+      message ? "block" : "none";
 
     if (button) {
       button.disabled = Boolean(message);
@@ -268,14 +300,26 @@
   form.addEventListener("submit", function (event) {
     const sum = calculate();
 
-    if (sum <= 0 || sum > warehouse || !sellPrice || !sellPrice.value) {
+    /*
+     * Recalculate one final time. This guarantees that the
+     * submitted `units` matches allocations[...] values.
+     */
+    hiddenTotal.value = String(sum);
+
+    if (
+      sum <= 0 ||
+      sum > warehouse ||
+      !sellPrice ||
+      String(sellPrice.value).trim() === ""
+    ) {
       event.preventDefault();
       return;
     }
 
     if (button) {
       button.disabled = true;
-      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Allocating...';
+      button.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> Allocating...';
     }
   });
 

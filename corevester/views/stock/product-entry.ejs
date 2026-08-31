@@ -1,90 +1,231 @@
 <section class="shop-page">
   <div class="form-card stock-management-form">
-    <a href="/stock" class="secondary-btn"><i class="fas fa-arrow-left"></i> Stock</a>
+    <a href="/stock" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i> Stock
+    </a>
+
     <h1 class="page-title"><%= title %></h1>
+
     <p class="page-subtitle">
-      Create a subcategory once, or select an existing subcategory to add warehouse units and update its details.
+      Create a subcategory once, or select an existing subcategory to add
+      warehouse units and update its details.
     </p>
 
-    <% if (error) { %><div class="error"><%= error %></div><% } %>
-    <% if (saved === "1") { %><div class="notice">Stock subcategory saved successfully.</div><% } %>
+    <% if (error) { %>
+      <div class="error"><%= error %></div>
+    <% } %>
 
-    <form action="/stock" method="POST" id="stockForm">
-      <input type="hidden" name="stockId" id="stockId" value="<%= selectedStockId || old.stockId || '' %>">
+    <% if (saved === "1") { %>
+      <div class="notice">
+        Stock subcategory saved successfully.
+      </div>
+    <% } %>
+
+    <form
+      action="/stock"
+      method="POST"
+      id="stockForm"
+      autocomplete="off"
+    >
+      <input
+        type="hidden"
+        name="stockId"
+        id="stockId"
+        value="<%= selectedStockId || old.stockId || '' %>"
+      >
 
       <div class="field full">
-        <label for="existingStockId">Existing stock subcategory</label>
-        <select id="existingStockId">
-          <option value="">+ Create new subcategory</option>
+        <label for="existingStockId">
+          Existing stock subcategory
+        </label>
+
+        <select
+          id="existingStockId"
+          autocomplete="off"
+        >
+          <option value="">
+            + Create new subcategory
+          </option>
+
           <% (stockCatalog || []).forEach((stock) => { %>
             <option
               value="<%= stock._id %>"
-              data-category="<%= stock.category %>"
-              data-subcategory="<%= stock.subcategory %>"
+              data-category="<%= stock.category || '' %>"
+              data-subcategory="<%= stock.subcategory || '' %>"
               data-units="<%= stock.units || 0 %>"
               data-buy-price="<%= stock.buyPrice || 0 %>"
               data-image="<%= stock.image || '' %>"
               data-description="<%= stock.description || '' %>"
-              <%= String(selectedStockId || old.stockId || '') === String(stock._id) ? 'selected' : '' %>
+              <%= String(selectedStockId || old.stockId || '') === String(stock._id)
+                ? "selected"
+                : "" %>
             >
-              <%= stock.category %> — <%= stock.subcategory %> (<%= stock.units || 0 %> units)
+              <%= stock.category %> —
+              <%= stock.subcategory %>
+              (<%= stock.units || 0 %> units)
             </option>
           <% }) %>
         </select>
-        <small class="form-help">Existing subcategories are loaded directly from the Stock collection.</small>
+
+        <small class="form-help">
+          Existing subcategories are loaded directly from Stock.
+        </small>
       </div>
 
       <div class="form-grid">
+
         <div class="field">
           <label for="category">Category</label>
-          <select id="category" name="category" required>
-            <option value="">Select category</option>
+
+          <select
+            id="category"
+            name="category"
+            required
+          >
+            <option value="">
+              Select category
+            </option>
+
             <% (categories || []).forEach((category) => { %>
-              <option value="<%= category %>" <%= String(old.category || '') === String(category) ? 'selected' : '' %>>
+              <option
+                value="<%= category %>"
+                <%= String(old.category || "") === String(category)
+                  ? "selected"
+                  : "" %>
+              >
                 <%= category %>
               </option>
             <% }) %>
           </select>
-          <small class="form-help">Categories are fixed by the Stock model.</small>
+
+          <small class="form-help">
+            Select a category defined by the Stock model.
+          </small>
         </div>
 
         <div class="field">
-          <label for="subcategory">Subcategory</label>
-          <input id="subcategory" name="subcategory" value="<%= old.subcategory || '' %>" required>
-          <small class="form-help">This is the product name too. It is entered only here and inherited by Products.</small>
+          <label for="subcategory">
+            Subcategory
+          </label>
+
+          <input
+            id="subcategory"
+            name="subcategory"
+            value="<%= old.subcategory || '' %>"
+            required
+            autocomplete="off"
+          >
+
+          <small class="form-help">
+            This becomes the product name and is entered only here.
+          </small>
         </div>
 
         <div class="field">
-          <label for="units" id="unitsLabel">Initial warehouse units</label>
-          <input id="units" name="units" type="number" min="0" step="1" value="<%= old.additionalUnits ?? old.units ?? '' %>">
-          <small class="form-help" id="unitsHelp">Units for a new subcategory.</small>
+          <label for="units" id="unitsLabel">
+            Initial warehouse units
+          </label>
+
+          <input
+            id="units"
+            name="units"
+            type="number"
+            min="0"
+            step="1"
+            value="<%= old.additionalUnits ?? old.units ?? '' %>"
+            inputmode="numeric"
+            autocomplete="off"
+          >
+
+          <small class="form-help" id="unitsHelp">
+            Units for a new subcategory.
+          </small>
         </div>
 
         <div class="field">
-          <label for="buyPrice">Buy price per unit</label>
-          <input id="buyPrice" name="buyPrice" type="number" min="0" step="0.01" value="<%= old.buyPrice ?? 0 %>" required>
+          <label for="buyPrice">
+            Buy price per unit
+          </label>
+
+          <input
+            id="buyPrice"
+            name="buyPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            value="<%= old.buyPrice ?? 0 %>"
+            required
+            autocomplete="off"
+          >
         </div>
 
         <div class="field full">
-          <label for="image">Image URL <span class="optional">(optional when updating)</span></label>
-          <input id="image" name="image" value="<%= old.image || '' %>">
-          <small class="form-help">Leave blank while updating to keep the current image.</small>
+          <label for="image">
+            Image URL
+            <span class="optional">
+              (optional when updating)
+            </span>
+          </label>
+
+          <input
+            id="image"
+            name="image"
+            type="url"
+            value="<%= old.image || '' %>"
+            placeholder="https://example.com/image.jpg"
+            autocomplete="off"
+            spellcheck="false"
+          >
+
+          <small class="form-help">
+            Leave blank while updating to keep the existing image.
+            A newly entered URL is saved as the image for this subcategory.
+          </small>
         </div>
 
         <div class="field full">
-          <label for="description">Description</label>
-          <textarea id="description" name="description"><%= old.description || '' %></textarea>
+          <label for="description">
+            Description
+          </label>
+
+          <textarea
+            id="description"
+            name="description"
+            autocomplete="off"
+          ><%= old.description || '' %></textarea>
         </div>
+
       </div>
 
-      <div class="stock-edit-summary" id="stockEditSummary" hidden>
-        <div><strong>Current warehouse units:</strong> <span id="currentUnits">0</span></div>
-        <div><strong>After this update:</strong> <span id="projectedUnits">0</span></div>
+      <div
+        class="stock-edit-summary"
+        id="stockEditSummary"
+        hidden
+      >
+        <div>
+          <strong>Current warehouse units:</strong>
+          <span id="currentUnits">0</span>
+        </div>
+
+        <div>
+          <strong>After this update:</strong>
+          <span id="projectedUnits">0</span>
+        </div>
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="primary-btn" id="submitButton"><i class="fas fa-plus"></i> Create Stock Subcategory</button>
-        <a href="/stock" class="secondary-btn">Cancel</a>
+        <button
+          type="submit"
+          class="primary-btn"
+          id="submitButton"
+        >
+          <i class="fas fa-plus"></i>
+          Create Stock Subcategory
+        </button>
+
+        <a href="/stock" class="secondary-btn">
+          Cancel
+        </a>
       </div>
     </form>
   </div>
@@ -92,20 +233,51 @@
 
 <script>
 (function () {
-  const selector = document.getElementById("existingStockId");
-  const stockId = document.getElementById("stockId");
-  const category = document.getElementById("category");
-  const subcategory = document.getElementById("subcategory");
-  const units = document.getElementById("units");
-  const buyPrice = document.getElementById("buyPrice");
-  const image = document.getElementById("image");
-  const description = document.getElementById("description");
-  const submitButton = document.getElementById("submitButton");
-  const unitsLabel = document.getElementById("unitsLabel");
-  const unitsHelp = document.getElementById("unitsHelp");
-  const summary = document.getElementById("stockEditSummary");
-  const currentUnits = document.getElementById("currentUnits");
-  const projectedUnits = document.getElementById("projectedUnits");
+  "use strict";
+
+  const selector =
+    document.getElementById("existingStockId");
+
+  const stockId =
+    document.getElementById("stockId");
+
+  const category =
+    document.getElementById("category");
+
+  const subcategory =
+    document.getElementById("subcategory");
+
+  const units =
+    document.getElementById("units");
+
+  const buyPrice =
+    document.getElementById("buyPrice");
+
+  const image =
+    document.getElementById("image");
+
+  const description =
+    document.getElementById("description");
+
+  const submitButton =
+    document.getElementById("submitButton");
+
+  const unitsLabel =
+    document.getElementById("unitsLabel");
+
+  const unitsHelp =
+    document.getElementById("unitsHelp");
+
+  const summary =
+    document.getElementById("stockEditSummary");
+
+  const currentUnits =
+    document.getElementById("currentUnits");
+
+  const projectedUnits =
+    document.getElementById("projectedUnits");
+
+  if (!selector) return;
 
   function selectedOption() {
     return selector.options[selector.selectedIndex];
@@ -116,10 +288,19 @@
       summary.hidden = true;
       return;
     }
-    const current = Number(selectedOption()?.dataset.units || 0);
-    const additional = Math.max(0, Number(units.value || 0));
-    currentUnits.textContent = current.toLocaleString();
-    projectedUnits.textContent = (current + additional).toLocaleString();
+
+    const current =
+      Number(selectedOption()?.dataset.units || 0);
+
+    const additional =
+      Math.max(0, Number(units.value || 0));
+
+    currentUnits.textContent =
+      current.toLocaleString();
+
+    projectedUnits.textContent =
+      (current + additional).toLocaleString();
+
     summary.hidden = false;
   }
 
@@ -129,34 +310,76 @@
 
     if (!id) {
       stockId.value = "";
+
       units.name = "units";
       units.value = "<%= old.units ?? '' %>";
       units.required = true;
-      unitsLabel.textContent = "Initial warehouse units";
-      unitsHelp.textContent = "Units for a new subcategory.";
-      submitButton.innerHTML = '<i class="fas fa-plus"></i> Create Stock Subcategory';
+
+      unitsLabel.textContent =
+        "Initial warehouse units";
+
+      unitsHelp.textContent =
+        "Units for a new subcategory.";
+
+      submitButton.innerHTML =
+        '<i class="fas fa-plus"></i> Create Stock Subcategory';
+
       summary.hidden = true;
+
       return;
     }
 
     stockId.value = id;
-    category.value = option.dataset.category || "";
-    subcategory.value = option.dataset.subcategory || "";
-    buyPrice.value = option.dataset.buyPrice || "0";
-    image.value = option.dataset.image || "";
-    description.value = option.dataset.description || "";
+
+    category.value =
+      option.dataset.category || "";
+
+    subcategory.value =
+      option.dataset.subcategory || "";
+
+    buyPrice.value =
+      option.dataset.buyPrice || "0";
+
+    /*
+     * The selected stock image is loaded ONLY when the user
+     * selects an existing stock record. After this point,
+     * typing/pasting a new URL is never overwritten by an
+     * input event.
+     */
+    image.value =
+      option.dataset.image || "";
+
+    description.value =
+      option.dataset.description || "";
 
     units.name = "additionalUnits";
     units.value = "0";
     units.required = false;
-    unitsLabel.textContent = "Additional warehouse units";
-    unitsHelp.textContent = "These units are added to the existing warehouse balance.";
-    submitButton.innerHTML = '<i class="fas fa-save"></i> Update Stock Subcategory';
+
+    unitsLabel.textContent =
+      "Additional warehouse units";
+
+    unitsHelp.textContent =
+      "These units are added to the existing warehouse balance.";
+
+    submitButton.innerHTML =
+      '<i class="fas fa-save"></i> Update Stock Subcategory';
+
     updateSummary();
   }
 
-  selector.addEventListener("change", setMode);
-  units.addEventListener("input", updateSummary);
-  if (selector.value) setMode();
+  selector.addEventListener(
+    "change",
+    setMode
+  );
+
+  units.addEventListener(
+    "input",
+    updateSummary
+  );
+
+  if (selector.value) {
+    setMode();
+  }
 })();
 </script>

@@ -4,7 +4,7 @@
       <h1 class="page-title">Stock Management</h1>
       <p class="page-subtitle">
         Browse warehouse stock by category and subcategory.
-        Each row uses the same compact horizontal product-card layout as Products.
+        Stock uses the same compact product-card layout as Products.
       </p>
     </div>
 
@@ -34,19 +34,17 @@
 
         <div class="category-head">
           <h2><%= group.label || group.category || "Other" %></h2>
-          <span>Six cards maximum · swipe left/right</span>
+          <span>Swipe left/right</span>
         </div>
 
-        <% (group.rows || []).forEach((row, rowIndex) => { %>
+        <% (group.rows || []).forEach((row) => { %>
           <div class="subcategory-row-block">
 
             <div class="subcategory-head">
               <h3>
-                <% if (row.products && row.products.length) { %>
-                  <%= row.products[0].subcategory || row.products[0].name || "Other" %>
-                <% } else { %>
-                  Other
-                <% } %>
+                <%= row.products && row.products.length
+                  ? (row.products[0].subcategory || "Other")
+                  : "Other" %>
               </h3>
 
               <% if (row.products && row.products.length > 1) { %>
@@ -56,22 +54,25 @@
 
             <div
               class="product-row category-product-row"
-              aria-label="<%= group.label || group.category || 'Stock' %> stock row"
+              aria-label="<%= group.label || group.category || 'Stock' %> stock"
             >
-
               <% (row.products || []).forEach((stock) => { %>
+
                 <a
                   href="/stock/<%= stock._id %>"
                   class="product-card stock-card"
                 >
-
                   <div class="product-image">
                     <% if (stock.image) { %>
                       <img
                         src="<%= stock.image %>"
                         alt="<%= stock.subcategory || stock.name || 'Stock item' %>"
                         loading="lazy"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
                       >
+                      <div class="placeholder" style="display:none">
+                        <i class="fas fa-box"></i>
+                      </div>
                     <% } else { %>
                       <div class="placeholder">
                         <i class="fas fa-box"></i>
@@ -94,25 +95,26 @@
                     </div>
 
                     <div class="stock-text">
-                      <strong><%= Number(stock.units || 0).toLocaleString() %></strong>
+                      <strong>
+                        <%= Number(stock.units || 0).toLocaleString() %>
+                      </strong>
                       warehouse units
                     </div>
 
-                    <div class="stock-text <%= Number(stock.units || 0) <= 0 ? 'out' : '' %>">
+                    <div
+                      class="stock-text <%= Number(stock.units || 0) <= 0 ? 'out' : '' %>"
+                    >
                       <%= Number(stock.units || 0) > 0
                         ? `${Number(stock.units).toLocaleString()} available`
                         : "Out of stock" %>
                     </div>
                   </div>
-
                 </a>
+
               <% }) %>
-
             </div>
-
           </div>
         <% }) %>
-
       </section>
     <% }) %>
 
