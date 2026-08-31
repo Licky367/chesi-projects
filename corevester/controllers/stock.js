@@ -6,22 +6,29 @@ function renderStockForm(res, data, status = 200) {
     error: data.error || null,
     old: data.old || {},
     stockCatalog: data.stockCatalog || [],
-    selectedStockId: data.selectedStockId || ""
+    selectedStockId: data.selectedStockId || "",
+    saved: data.saved || ""
   });
 }
 
+/**
+ * GET /stock
+ * Display all stock categories.
+ */
 exports.list = async (req, res) => {
   try {
-    res.render("stock/stock", {
+    const stocks = await service.listStock();
+
+    return res.render("stock/stock", {
       title: "Stock",
-      stocks: await service.listStock(),
+      stocks,
       error: req.query.error || null,
       saved: req.query.saved || ""
     });
   } catch (e) {
-    console.error(e);
+    console.error("Error listing stock:", e);
 
-    res.status(500).render("stock/stock", {
+    return res.status(500).render("stock/stock", {
       title: "Stock",
       stocks: [],
       error: e.message,
@@ -30,6 +37,13 @@ exports.list = async (req, res) => {
   }
 };
 
+/**
+ * GET /stock/new
+ * Display the stock creation/edit form.
+ *
+ * If ?stockId=... is supplied, the existing stock
+ * category is loaded into the form for editing.
+ */
 exports.newStockForm = async (req, res) => {
   try {
     const stockCatalog = await service.getStockCatalog();
@@ -61,31 +75,40 @@ exports.newStockForm = async (req, res) => {
       title: selectedStockId
         ? "Edit Stock Category"
         : "Add / Update Stock",
+
       stockCatalog,
       selectedStockId,
-      old
+      old,
+
+      // Prevents "saved is not defined" in EJS
+      saved: req.query.saved || ""
     });
   } catch (e) {
-    console.error(e);
+    console.error("Error loading stock form:", e);
 
     return renderStockForm(
       res,
       {
         title: "Add / Update Stock",
-        error: e.message
+        error: e.message,
+        saved: ""
       },
       500
     );
   }
 };
 
+/**
+ * POST /stock
+ * Create a new stock category or update an existing one.
+ */
 exports.createStock = async (req, res) => {
   try {
     await service.createOrUpdateStock(req.body);
 
     return res.redirect("/stock?saved=1");
   } catch (e) {
-    console.error(e);
+    console.error("Error creating/updating stock:", e);
 
     const stockCatalog = await service
       .getStockCatalog()
@@ -97,16 +120,28 @@ exports.createStock = async (req, res) => {
         title: req.body.stockId
           ? "Edit Stock Category"
           : "Add / Update Stock",
+
         error: e.message,
+
         old: req.body,
+
         stockCatalog,
-        selectedStockId: req.body.stockId || ""
+
+        selectedStockId: req.body.stockId || "",
+
+        // Do not show success message after an error
+        saved: ""
       },
       400
     );
   }
 };
 
+/**
+ * GET /stock/:id
+ * Display a specific stock category and the
+ * product allocation form.
+ */
 exports.entry = async (req, res) => {
   try {
     const [stock, substations] = await Promise.all([
@@ -129,7 +164,7 @@ exports.entry = async (req, res) => {
       saved: req.query.saved || ""
     });
   } catch (e) {
-    console.error(e);
+    console.error("Error loading stock entry:", e);
 
     return res.redirect(
       `/stock?error=${encodeURIComponent(e.message)}`
@@ -137,6 +172,10 @@ exports.entry = async (req, res) => {
   }
 };
 
+/**
+ * POST /stock/:id/product
+ * Create a product from an existing stock category.
+ */
 exports.createProduct = async (req, res) => {
   try {
     await service.createProductFromStock(
@@ -148,7 +187,7 @@ exports.createProduct = async (req, res) => {
       `/stock/${req.params.id}?saved=1`
     );
   } catch (e) {
-    console.error(e);
+    console.error("Error creating product from stock:", e);
 
     const [stock, substations] = await Promise.all([
       service.getStock(req.params.id),
@@ -156,7 +195,9 @@ exports.createProduct = async (req, res) => {
     ]);
 
     if (!stock) {
-      return res.redirect("/stock");
+      return res.redirect(
+        "/stock?error=Stock+not+found"
+      );
     }
 
     return res.status(400).render(
