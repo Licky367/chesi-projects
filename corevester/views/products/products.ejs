@@ -29,21 +29,10 @@
 
       <% group.rows.forEach((row, rowIndex) => { %>
         <div class="subcategory-row-block">
-          <% if (row.hasSubcategory) { %>
-            <div class="subcategory-head">
-              <h3><%= row.label %></h3>
-              <% if (rowIndex === 0) { %>
-                <span>Subcategory</span>
-              <% } %>
-            </div>
-          <% else if (row.products.length) { %>
-            <div class="subcategory-head">
-              <h3>Other</h3>
-              <% if (rowIndex === 0) { %>
-                <span>Products without a subcategory</span>
-              <% } %>
-            </div>
-          <% } %>
+          <div class="subcategory-head">
+            <h3><%= row.hasSubcategory ? row.label : "Other" %></h3>
+            <span><%= row.hasSubcategory ? "Subcategory" : "Products without a subcategory" %></span>
+          </div>
 
           <div class="product-row category-product-row">
             <% row.products.forEach((product) => { %>
