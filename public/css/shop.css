@@ -115,6 +115,13 @@ button,input,textarea,select{font:inherit}
 
 .page-shell{width:100%}
 .shop-page{max-width:1160px;margin:0 auto;padding:25px 18px 45px}
+.page-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:16px;
+  flex-wrap:wrap;
+}
 .page-title{margin:0;color:var(--text);font-size:30px;line-height:1.1}
 .page-subtitle{margin:8px 0 0;color:var(--muted);font-size:15px}
 
@@ -130,22 +137,38 @@ button,input,textarea,select{font:inherit}
 .category-section{margin-top:27px}
 .category-head{
   display:flex;justify-content:space-between;align-items:end;
+  gap:12px;
   margin-bottom:10px;
 }
 .category-head h2{margin:0;font-size:20px}
 .category-head span{color:var(--muted);font-size:12px}
+
+/*
+ * Product/stock cards use a real grid rather than a horizontal scroller.
+ * Desktop: exactly six columns maximum. Card 7 starts the next row.
+ */
 .product-row{
-  display:flex;gap:14px;overflow-x:auto;
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:14px;
+  overflow:visible;
   padding:5px 2px 14px;
-  scroll-snap-type:x proximity;
-  scrollbar-width:thin;
 }
 .product-row::-webkit-scrollbar{height:7px}
 .product-row::-webkit-scrollbar-thumb{background:#bdd2bf;border-radius:20px}
 
+.category-product-grid,
+.stock-grid{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:14px;
+  overflow:visible;
+  padding:5px 2px 14px;
+}
+
 .product-card{
-  flex:0 0 205px;
-  scroll-snap-align:start;
+  width:100%;
+  min-width:0;
   background:#fff;border:1px solid var(--border);
   border-radius:17px;overflow:hidden;
   box-shadow:var(--shadow);
@@ -189,7 +212,9 @@ button,input,textarea,select{font:inherit}
 .detail-description{color:#68736b;line-height:1.65;margin:17px 0}
 .qty-row{display:flex;gap:10px;align-items:center;margin:20px 0}
 .qty-row input{width:100px;padding:12px;border:1px solid #cfdacf;border-radius:10px}
+
 .primary-btn{
+  display:inline-block;
   border:0;border-radius:11px;padding:13px 18px;
   background:var(--green);color:#fff;font-weight:800;cursor:pointer;
 }
@@ -225,6 +250,7 @@ button,input,textarea,select{font:inherit}
 .payment-choice input{margin-top:4px}
 .phone-field{display:none;margin-top:9px}
 .phone-field.show{display:block}
+
 .form-card{
   max-width:720px;margin:0 auto;background:#fff;
   border:1px solid var(--border);border-radius:18px;
@@ -241,6 +267,8 @@ button,input,textarea,select{font:inherit}
 .field textarea{min-height:110px;resize:vertical}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--green)}
 .form-actions{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+.form-help{color:var(--muted);font-size:11px;line-height:1.4}
+.optional{color:var(--muted);font-weight:400}
 
 .stock-category{margin-top:25px}
 .stock-card .product-image{height:145px}
@@ -248,6 +276,65 @@ button,input,textarea,select{font:inherit}
 .data-cell{background:var(--green-pale);border-radius:9px;padding:8px}
 .data-cell small{display:block;color:var(--muted);font-size:10px}
 .data-cell strong{display:block;color:var(--green);font-size:13px;margin-top:2px}
+.stock-card-wrap{min-width:0;display:flex;flex-direction:column;gap:8px}
+.stock-card-wrap .product-card{flex:1}
+.stock-edit-btn{text-align:center;padding:8px 10px;font-size:12px}
+
+.stock-profile-box{
+  display:grid;
+  grid-template-columns:120px 1fr;
+  gap:18px;
+  align-items:center;
+  margin:18px 0;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--green-pale);
+}
+.stock-profile-image{
+  width:120px;
+  height:120px;
+  border-radius:12px;
+  overflow:hidden;
+  background:#edf5ed;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#86a48c;
+  font-size:42px;
+}
+.stock-profile-image img{width:100%;height:100%;object-fit:cover}
+.stock-profile-box h2{margin:0 0 7px;font-size:22px}
+.stock-profile-box p{margin:4px 0;color:var(--muted);font-size:13px}
+.stock-profile-label{
+  color:var(--green);font-size:11px;font-weight:900;
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.stock-edit-summary{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:16px;
+  padding:12px 14px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:var(--green-pale);
+  color:var(--muted);
+  font-size:13px;
+}
+.stock-edit-summary strong{color:var(--green)}
+
+.allocation-note{
+  margin-top:16px;
+  padding:12px 14px;
+  border-radius:10px;
+  background:var(--green-pale);
+  color:var(--muted);
+  border:1px solid var(--border);
+  font-size:13px;
+  line-height:1.5;
+}
+
 .add-card{
   border:2px dashed #c9d8ca;background:#fbfffb;
   display:flex;align-items:center;justify-content:center;
@@ -265,7 +352,6 @@ button,input,textarea,select{font:inherit}
 .status.confirmed{background:#dff3e3;color:var(--green)}
 .status.delivered{background:#dbeafe;color:#1d4ed8}
 .status.failed{background:#ffebee;color:var(--danger)}
-
 .package-card{display:block}
 .package-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
 .package-items{margin-top:10px;color:var(--muted);font-size:13px}
@@ -275,6 +361,14 @@ button,input,textarea,select{font:inherit}
 }
 .empty i{font-size:38px;color:#9bb49e;margin-bottom:10px}
 
+@media(max-width:1100px){
+  .category-product-grid,
+  .stock-grid,
+  .product-row{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+
 @media(max-width:760px){
   .shop-page{padding:20px 14px 38px}
   .page-title{font-size:26px}
@@ -282,6 +376,26 @@ button,input,textarea,select{font:inherit}
   .detail-image{min-height:310px}
   .form-grid{grid-template-columns:1fr}
   .field.full{grid-column:auto}
-  .product-card{flex-basis:185px}
+
+  .category-product-grid,
+  .stock-grid,
+  .product-row{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+
   .product-image{height:160px}
+  .stock-card .product-image{height:145px}
+
+  .stock-profile-box{grid-template-columns:1fr}
+  .stock-profile-image{width:100%;height:180px}
+  .stock-edit-summary{grid-template-columns:1fr}
+}
+
+@media(max-width:430px){
+  .category-product-grid,
+  .stock-grid,
+  .product-row{
+    grid-template-columns:1fr;
+  }
 }
