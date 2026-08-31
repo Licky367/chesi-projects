@@ -1,82 +1,61 @@
 <div style="width:100%;max-width:500px;margin:0 auto;padding:10px;box-sizing:border-box;background:#f6fbf6;font-family:system-ui,sans-serif;display:flex;flex-direction:column;gap:12px;">
-
   <a href="/packages/staff" style="display:inline-flex;align-items:center;gap:6px;padding:8px 10px;background:#fff;border:1.5px solid #cfe1d3;border-radius:8px;text-decoration:none;font-size:11px;font-weight:800;color:#0a4d1e;">← Package management</a>
-
-  <% if (typeof error!== 'undefined' && error) { %><div style="padding:10px 12px;border-radius:10px;background:#fff0f0;color:#9b2424;font-size:11px;"><%= error %></div><% } %>
-  <% if (typeof success!== 'undefined' && success) { %><div style="padding:10px 12px;border-radius:10px;background:#eaf8ee;color:#176b2c;font-size:11px;"><%= success %></div><% } %>
+  <% if (typeof error !== 'undefined' && error) { %><div style="padding:10px 12px;border-radius:10px;background:#fff0f0;color:#9b2424;font-size:11px;"><%= error %></div><% } %>
+  <% if (typeof success !== 'undefined' && success) { %><div style="padding:10px 12px;border-radius:10px;background:#eaf8ee;color:#176b2c;font-size:11px;"><%= success %></div><% } %>
 
   <% if (packageDoc) { %>
-  <!-- 1. HEADER -->
-  <div style="background:#e8f2e6;border:1.5px solid #cfe1d3;border-radius:14px;padding:14px 16px;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-      <div>
-        <div style="font-size:16px;font-weight:900;color:#0a2e14;">Package <%= String(packageDoc._id).slice(-6) %></div>
-        <div style="font-size:10px;color:#777;margin-top:3px;"><%= new Date(packageDoc.createdAt).toLocaleString() %></div>
+    <div style="background:#e8f2e6;border:1.5px solid #cfe1d3;border-radius:14px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div><div style="font-size:16px;font-weight:900;color:#0a2e14;">Package <%= String(packageDoc._id).slice(-6) %></div><div style="font-size:10px;color:#777;margin-top:3px;"><%= new Date(packageDoc.createdAt).toLocaleString() %></div></div>
+        <span style="padding:5px 10px;border-radius:20px;font-size:9px;font-weight:900;text-transform:uppercase;"><%= packageDoc.status %></span>
       </div>
-      <span style="padding:5px 10px;border-radius:20px;font-size:9px;font-weight:900;text-transform:uppercase;<%= packageDoc.status==='pending'?'background:#fff5dd;color:#9a6a00;':packageDoc.status==='confirmed'?'background:#e8f1ff;color:#245a9c;':'background:#eaf8ee;color:#176b2c;' %>"><%= packageDoc.status %></span>
     </div>
-  </div>
 
-  <!-- 2. OVERVIEW - INFO GRID NOW 2x2 NOT 3 COLS -->
-  <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:12px;">
-    <div style="font-size:10px;font-weight:900;letter-spacing:0.8px;color:#2e5a36;padding:0 4px 8px 4px;">OVERVIEW</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">CLIENT</small><strong style="font-size:11px;display:block;margin-top:3px;word-break:break-word;"><%= packageDoc.client?.name || packageDoc.clientId %></strong></div>
-      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">EMAIL</small><strong style="font-size:10px;display:block;margin-top:3px;word-break:break-all;"><%= packageDoc.client?.email || '—' %></strong></div>
-      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">CONFIRMED BY</small><strong style="font-size:11px;display:block;margin-top:3px;"><%= packageDoc.confirmedByStaffName || 'Not yet' %></strong></div>
-      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">DELIVERED BY</small><strong style="font-size:11px;display:block;margin-top:3px;"><%= packageDoc.deliveredByStaffName || 'Not yet' %></strong></div>
-      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">SUBSTATION</small><strong style="font-size:11px;display:block;margin-top:3px;"><%= packageDoc.confirmedSubstationId?.name || 'Not assigned' %></strong></div>
-      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">DELIVERED AT</small><strong style="font-size:11px;display:block;margin-top:3px;"><%= packageDoc.deliveredSubstationId?.name || 'Not yet' %></strong></div>
-      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">PAID</small><strong style="font-size:11px;display:block;margin-top:3px;">KSh <%= Number(packageDoc.totalPaid||0).toLocaleString() %></strong></div>
-      <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small style="display:block;font-size:8px;font-weight:900;color:#777;">ARREARS</small><strong style="font-size:11px;display:block;margin-top:3px;">KSh <%= Number(packageDoc.arrearsAmount||0).toLocaleString() %></strong></div>
+    <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:12px;">
+      <div style="font-size:10px;font-weight:900;color:#2e5a36;padding:0 4px 8px;">OVERVIEW</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small>CLIENT</small><strong style="display:block;margin-top:3px;"><%= packageDoc.client?.name || packageDoc.clientId %></strong></div>
+        <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small>EMAIL</small><strong style="display:block;margin-top:3px;word-break:break-all;"><%= packageDoc.client?.email || '—' %></strong></div>
+        <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small>CONFIRMED BY</small><strong style="display:block;margin-top:3px;"><%= packageDoc.confirmedByStaffName || 'Not yet' %></strong></div>
+        <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small>SUBSTATION</small><strong style="display:block;margin-top:3px;"><%= packageDoc.confirmedSubstationId?.name || 'Not assigned' %></strong></div>
+        <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small>PAID</small><strong style="display:block;margin-top:3px;">KSh <%= Number(packageDoc.totalPaid||0).toLocaleString() %></strong></div>
+        <div style="background:#fff;border:1.5px solid #e0ece1;border-radius:10px;padding:10px;"><small>ARREARS</small><strong style="display:block;margin-top:3px;">KSh <%= Number(packageDoc.arrearsAmount||0).toLocaleString() %></strong></div>
+      </div>
     </div>
-  </div>
 
-  <!-- 3. ITEMS - BOTTOM FULL WIDTH -->
-  <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:10px;">
-    <div style="background:#fff;border-radius:12px;padding:12px;">
-      <div style="font-size:11px;font-weight:900;color:#0a4d1e;margin-bottom:10px;">ITEMS</div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
+    <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:10px;">
+      <div style="background:#fff;border-radius:12px;padding:12px;">
+        <div style="font-size:11px;font-weight:900;color:#0a4d1e;margin-bottom:10px;">ITEMS</div>
         <% packageDoc.items.forEach(item => { %>
-          <div style="display:flex;gap:10px;align-items:center;padding:10px;border:1px solid #edf2ee;border-radius:10px;">
+          <div style="display:flex;gap:10px;align-items:center;padding:10px;border:1px solid #edf2ee;border-radius:10px;margin-bottom:8px;">
             <div style="width:48px;height:48px;background:#f5faf6;border-radius:8px;display:grid;place-items:center;overflow:hidden;flex-shrink:0;"><% if(item.image){ %><img src="<%= item.image %>" style="width:100%;height:100%;object-fit:cover;"><% } else { %>📦<% } %></div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:12px;font-weight:800;"><%= item.name %></div>
-              <div style="font-size:10px;color:#777;">Qty <%= item.qty %> · KSh <%= Number(item.price||0).toLocaleString() %> each</div>
-            </div>
+            <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;"><%= item.name %></div><div style="font-size:10px;color:#777;">Qty <%= item.qty %> · KSh <%= Number(item.price||0).toLocaleString() %> each</div></div>
             <strong style="font-size:11px;white-space:nowrap;">KSh <%= Number(item.price*item.qty).toLocaleString() %></strong>
           </div>
         <% }) %>
+
+        <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1.5px solid #dce6de;font-weight:900;font-size:12px;"><span>Total</span><span>KSh <%= Number(packageDoc.totalAmount||0).toLocaleString() %></span></div>
+
+        <% if (role === 'staff' && packageDoc.status === 'pending') { %>
+          <div style="margin-top:14px;padding:12px;border:1.5px solid #cfe1d3;border-radius:12px;background:#f5faf6;">
+            <div style="font-size:12px;font-weight:800;">Confirm package</div>
+            <% if (canConfirm) { %>
+              <div style="font-size:10px;color:#666;margin-top:3px;">All package quantities are available at your assigned substation.</div>
+              <form method="POST" action="/packages/staff/<%= packageDoc._id %>/confirm" style="margin-top:10px;"><button type="submit" style="width:100%;height:44px;border:none;border-radius:10px;background:#0a4d1e;color:#fff;font-weight:800;cursor:pointer;">✅ Confirm package</button></form>
+            <% } else { %>
+              <div style="margin-top:6px;font-size:10px;color:#9b2424;line-height:1.5;"><%= confirmationError || 'This package cannot be confirmed because one or more products exceed the assigned substation balance.' %></div>
+            <% } %>
+          </div>
+        <% } %>
+
+        <% if (role === 'staff' && packageDoc.status === 'confirmed' && String(packageDoc.confirmedByStaffId) === String(user?._id || '')) { %>
+          <div style="margin-top:14px;padding:12px;border:1.5px solid #cfe1d3;border-radius:12px;background:#f5faf6;"><div style="font-size:12px;font-weight:800;">Ready for delivery</div><form method="POST" action="/packages/staff/<%= packageDoc._id %>/deliver" style="margin-top:10px;"><button type="submit" style="width:100%;height:44px;border:none;border-radius:10px;background:#0a4d1e;color:#fff;font-weight:800;cursor:pointer;">🚚 Mark as delivered</button></form></div>
+        <% } %>
+
+        <% if (packageDoc.status === 'delivered' && (role === 'admin' || String(packageDoc.deliveredByStaffId) === String(user?._id || ''))) { %>
+          <div style="margin-top:14px;padding:12px;border:1.5px solid #cfe1d3;border-radius:12px;background:#f5faf6;"><div style="font-size:12px;font-weight:800;">Record amount actually paid</div><form method="POST" action="/packages/staff/<%= packageDoc._id %>/payment" style="margin-top:10px;display:flex;flex-direction:column;gap:8px;"><label style="font-size:9px;font-weight:800;color:#666;">AMOUNT PAID (KSh)<input name="amountPaid" type="number" min="0" max="<%= Number(packageDoc.totalAmount||0) %>" step="0.01" value="<%= Number(packageDoc.totalPaid||0) %>" required style="width:100%;height:42px;margin-top:5px;box-sizing:border-box;border:1.5px solid #d1ddd4;border-radius:10px;padding:0 10px;"></label><button type="submit" style="width:100%;height:42px;border:none;border-radius:10px;background:#0a4d1e;color:#fff;font-weight:800;cursor:pointer;">Save payment</button></form></div>
+        <% } %>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1.5px solid #dce6de;font-weight:900;font-size:12px;"><span>Total</span><span>KSh <%= Number(packageDoc.totalAmount||0).toLocaleString() %></span></div>
-
-      <% if (role==='staff' && packageDoc.status==='pending') { %>
-        <div style="margin-top:14px;padding:12px;border:1.5px solid #cfe1d3;border-radius:12px;background:#f5faf6;">
-          <div style="font-size:12px;font-weight:800;">Claim this package</div>
-          <div style="font-size:10px;color:#666;margin-top:3px;">Confirming assigns the package to you.</div>
-          <form method="POST" action="/packages/staff/<%= packageDoc._id %>/confirm" style="margin-top:10px;"><button type="submit" style="width:100%;height:44px;border:none;border-radius:10px;background:#0a4d1e;color:#fff;font-weight:800;cursor:pointer;">✅ Confirm package</button></form>
-        </div>
-      <% } %>
-
-      <% if (role==='staff' && packageDoc.status==='confirmed' && String(packageDoc.confirmedByStaffId)===String(user?._id||'')) { %>
-        <div style="margin-top:14px;padding:12px;border:1.5px solid #cfe1d3;border-radius:12px;background:#f5faf6;">
-          <div style="font-size:12px;font-weight:800;">Ready for delivery</div>
-          <form method="POST" action="/packages/staff/<%= packageDoc._id %>/deliver" style="margin-top:10px;"><button type="submit" style="width:100%;height:44px;border:none;border-radius:10px;background:#0a4d1e;color:#fff;font-weight:800;cursor:pointer;">🚚 Mark as delivered</button></form>
-        </div>
-      <% } %>
-
-      <% if (packageDoc.status==='delivered' && (role==='admin' || String(packageDoc.deliveredByStaffId)===String(user?._id||''))) { %>
-        <div style="margin-top:14px;padding:12px;border:1.5px solid #cfe1d3;border-radius:12px;background:#f5faf6;">
-          <div style="font-size:12px;font-weight:800;">Record amount actually paid</div>
-          <form method="POST" action="/packages/staff/<%= packageDoc._id %>/payment" style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
-            <label style="font-size:9px;font-weight:800;color:#666;">AMOUNT PAID (KSh)<input name="amountPaid" type="number" min="0" max="<%= Number(packageDoc.totalAmount||0) %>" step="0.01" value="<%= Number(packageDoc.totalPaid||0) %>" required style="width:100%;height:42px;margin-top:5px;box-sizing:border-box;border:1.5px solid #d1ddd4;border-radius:10px;padding:0 10px;"></label>
-            <button type="submit" style="width:100%;height:42px;border:none;border-radius:10px;background:#0a4d1e;color:#fff;font-weight:800;cursor:pointer;">Save payment</button>
-          </form>
-        </div>
-      <% } %>
     </div>
-  </div>
-  <% } else { %>
-    <div style="background:#fff;border-radius:12px;padding:20px;text-align:center;">Package not found.</div>
-  <% } %>
+  <% } else { %><div style="background:#fff;border-radius:12px;padding:20px;text-align:center;">Package not found.</div><% } %>
 </div>
