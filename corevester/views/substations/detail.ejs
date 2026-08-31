@@ -1,63 +1,79 @@
-<div style="width:100%;max-width:500px;margin:0 auto;padding:10px;box-sizing:border-box;background:#f6fbf6;font-family:system-ui,sans-serif;display:flex;flex-direction:column;gap:12px;">
-
-  <a href="/substations" style="display:inline-flex;align-items:center;gap:6px;padding:8px 10px;background:#fff;border:1.5px solid #cfe1d3;border-radius:8px;text-decoration:none;font-size:11px;font-weight:800;color:#0a4d1e;">← Substations</a>
-
-  <!-- 1. SUBSTATION HEADER -->
-  <div style="background:#e8f2e6;border:1.5px solid #cfe1d3;border-radius:14px;padding:16px;">
-    <div style="display:flex;gap:12px;align-items:center;">
-      <div style="width:52px;height:52px;background:#fff;border-radius:50%;display:grid;place-items:center;font-size:22px;flex-shrink:0;">⚡</div>
-      <div style="min-width:0;">
-        <div style="font-size:15px;font-weight:900;color:#0a2e14;word-break:break-word;"><%= substation.name %></div>
-        <% if(substation.location){ %><div style="font-size:11px;color:#5a7d5a;margin-top:3px;">📍 <%= substation.location %></div><% } %>
-      </div>
-    </div>
-    <% if(substation.description){ %><div style="margin-top:12px;padding:10px;background:#fff;border-radius:10px;border:1px solid #e0ece1;font-size:11px;color:#555;line-height:1.5;"><%= substation.description %></div><% } %>
+<section class="shop-page">
+  <div style="margin-bottom:15px">
+    <a href="/substations" class="secondary-btn">← Substations</a>
   </div>
 
-  <!-- 2. OVERVIEW -->
-  <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:12px;">
-    <div style="font-size:10px;font-weight:900;letter-spacing:0.8px;color:#2e5a36;padding:0 4px 8px 4px;">OVERVIEW</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div style="background:#fff;border:1.5px solid #dbe9dc;border-radius:10px;padding:11px;text-align:center;">
-        <div style="font-size:10px;color:#777;">Products</div>
-        <b style="font-size:18px;color:#0a4d1e;display:block;margin-top:2px;"><%= substation.products ? substation.products.length : 0 %></b>
-      </div>
-      <div style="background:#fff;border:1.5px solid #dbe9dc;border-radius:10px;padding:11px;text-align:center;">
-        <div style="font-size:10px;color:#777;">Location</div>
-        <b style="font-size:11px;color:#0a4d1e;display:block;margin-top:4px;word-break:break-word;"><%= substation.location || '—' %></b>
+  <div class="substation-detail-card">
+    <div class="substation-detail-header">
+      <div class="substation-icon">⚡</div>
+      <div>
+        <h1><%= substation.name %></h1>
+        <% if (substation.location) { %>
+          <p>📍 <%= substation.location %></p>
+        <% } %>
       </div>
     </div>
-  </div>
 
-  <!-- 3. PRODUCTS - BOTTOM FULL WIDTH -->
-  <div style="background:#eef6ec;border:1.5px solid #cfe1d3;border-radius:14px;padding:10px;">
-    <div style="background:#fff;border-radius:12px;padding:10px;">
-      <div style="font-size:11px;font-weight:900;color:#0a4d1e;padding-bottom:10px;border-bottom:1px solid #eef2ee;">PRODUCTS IN THIS SUBSTATION</div>
+    <% if (substation.description) { %>
+      <div class="substation-description">
+        <%= substation.description %>
+      </div>
+    <% } %>
 
-      <% if(!substation.products || substation.products.length===0){ %>
-        <div style="padding:30px 10px;text-align:center;border:1.5px dashed #cfe1d3;border-radius:10px;background:#f9fcf9;margin-top:10px;">
-          <div style="font-size:28px;">📦</div>
-          <div style="font-size:11px;font-weight:800;margin-top:8px;">No products assigned yet</div>
-          <div style="font-size:10px;color:#777;margin-top:3px;">Products will appear here</div>
+    <div class="substation-overview">
+      <div>
+        <small>Products</small>
+        <strong><%= substation.products ? substation.products.length : 0 %></strong>
+      </div>
+      <div>
+        <small>Location</small>
+        <strong><%= substation.location || "—" %></strong>
+      </div>
+    </div>
+
+    <div class="substation-products-panel">
+      <h2>Products in this substation</h2>
+
+      <% if (!substation.products || !substation.products.length) { %>
+        <div class="empty">
+          <i class="fas fa-box-open"></i>
+          <div>No products have been allocated here yet.</div>
         </div>
       <% } else { %>
-        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
-          <% substation.products.forEach(product=>{ %>
-            <a href="/substations/product/<%= product._id %>" style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:#fbfdfb;border:1.5px solid #dce9dc;border-radius:10px;text-decoration:none;color:inherit;">
-              <div style="width:52px;height:52px;background:#f3f4f6;border-radius:9px;overflow:hidden;display:grid;place-items:center;flex-shrink:0;">
-                <% if(product.image){ %><img src="<%= product.image %>" alt="<%= product.name %>" style="width:100%;height:100%;object-fit:cover;"><% } else { %><span style="font-size:18px;">📦</span><% } %>
+        <div class="substation-product-list">
+          <% substation.products.forEach((product) => { %>
+            <a
+              href="/substations/product/<%= product._id %>"
+              class="substation-product-item"
+            >
+              <div class="list-thumb">
+                <% if (product.image) { %>
+                  <img
+                    src="<%= product.image %>"
+                    alt="<%= product.name %>"
+                  >
+                <% } else { %>
+                  <span>📦</span>
+                <% } %>
               </div>
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:12px;font-weight:800;color:#0a2e14;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= product.name %></div>
-                <div style="font-size:10px;color:#777;margin-top:2px;"><%= product.category %></div>
-                <div style="font-size:10px;color:#0a4d1e;font-weight:700;margin-top:2px;"><%= product.units %> units</div>
+
+              <div class="list-main">
+                <h3><%= product.name %></h3>
+                <div class="list-meta">
+                  <%= product.category %>
+                  ·
+                  <%= product.subcategory || "Other" %>
+                </div>
+                <div class="list-price">
+                  <%= product.substationUnits %> units here
+                </div>
               </div>
-              <div style="font-size:16px;color:#0a4d1e;">›</div>
+
+              <span>›</span>
             </a>
           <% }) %>
         </div>
       <% } %>
     </div>
   </div>
-
-</div>
+</section>

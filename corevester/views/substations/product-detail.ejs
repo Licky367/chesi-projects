@@ -1,1 +1,69 @@
-<section class="shop-page"><div class="form-card"><a href="<%=product.substation?'/substations/'+product.substation._id:'/substations'%>" class="secondary-btn">← Back</a><h1 class="page-title"><%=product.name%></h1><p><strong>Category:</strong> <%=product.category%></p><p><strong>Units:</strong> <%=product.units%></p><p><strong>Buy price:</strong> <%=product.buyPrice%></p><p><strong>Selling price:</strong> <%=product.unitSellPrice%></p><p><strong>Source stock:</strong> <%=product.stock?product.stock.name:'Deleted stock'%></p><p><strong>Description:</strong> <%=product.description||'None'%></p></div></section>
+<section class="shop-page">
+  <div style="margin-bottom:15px">
+    <a href="/substations" class="secondary-btn">← Substations</a>
+  </div>
+
+  <div class="detail-card">
+    <div class="detail-grid">
+      <div class="detail-image">
+        <% if (product.image) { %>
+          <img src="<%= product.image %>" alt="<%= product.name %>">
+        <% } else { %>
+          <div class="placeholder">
+            <i class="fas fa-box"></i>
+          </div>
+        <% } %>
+      </div>
+
+      <div class="detail-content">
+        <span class="detail-category">
+          <%= product.category %>
+        </span>
+
+        <h1><%= product.name %></h1>
+
+        <div class="detail-subcategory">
+          <i class="fas fa-layer-group"></i>
+          <%= product.subcategory || "Other" %>
+        </div>
+
+        <div class="detail-price">
+          KSh <%= Number(product.unitSellPrice || 0).toLocaleString() %>
+        </div>
+
+        <div class="detail-description">
+          <%= product.description || "No description." %>
+        </div>
+
+        <div class="stock-balance-box">
+          <span>Total marketplace units</span>
+          <strong><%= product.units %></strong>
+        </div>
+
+        <h3 class="inventory-heading">
+          Substation balances
+        </h3>
+
+        <% if (!product.substationStocks.length) { %>
+          <div class="empty">
+            No substation allocation exists for this product.
+          </div>
+        <% } else { %>
+          <div class="substation-inventory-list">
+            <% product.substationStocks.forEach((item) => { %>
+              <div class="substation-inventory-item">
+                <div>
+                  <strong><%= item.name %></strong>
+                  <% if (item.location) { %>
+                    <small><%= item.location %></small>
+                  <% } %>
+                </div>
+                <strong><%= item.units %> units</strong>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
