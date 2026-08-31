@@ -32,18 +32,22 @@
 
           <h1><%= product.name %></h1>
 
-          <% if (product.subcategory) { %>
-            <div class="detail-subcategory">
-              <i class="fas fa-layer-group"></i>
-              <%= product.subcategory %>
-            </div>
-          <% } %>
+          <div class="detail-subcategory">
+            <i class="fas fa-layer-group"></i>
+            <%= product.subcategory || "Other" %>
+          </div>
 
           <div class="detail-price">
             KSh
             <%= Number(
               product.unitSellPrice || 0
             ).toLocaleString() %>
+          </div>
+
+          <div class="stock-days-badge">
+            <i class="fas fa-calendar-days"></i>
+            <strong><%= product.days || 0 %></strong>
+            day delivery
           </div>
 
           <div class="detail-description">
@@ -101,7 +105,10 @@
             </div>
           <% } %>
 
-          <% if (typeof query !== "undefined" && query === "1") { %>
+          <% if (
+            typeof query !== "undefined" &&
+            query === "1"
+          ) { %>
             <div class="notice">
               Product added to your cart.
             </div>
@@ -111,21 +118,3 @@
     </div>
   <% } %>
 </section>
-
-<script>
-  const params =
-    new URLSearchParams(window.location.search);
-
-  if (params.get("added") === "1") {
-    const box =
-      document.createElement("div");
-
-    box.className = "notice";
-    box.textContent =
-      "Product added to your cart.";
-
-    document
-      .querySelector(".detail-content")
-      ?.prepend(box);
-  }
-</script>

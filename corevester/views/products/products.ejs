@@ -3,7 +3,8 @@
     <h1 class="page-title">Products</h1>
 
     <p class="page-subtitle">
-      Browse our available marketplace items.
+      Browse available products by category and subcategory.
+      Each row contains a maximum of six compact cards and scrolls horizontally.
     </p>
   </div>
 
@@ -24,13 +25,24 @@
         <h2><%= group.label %></h2>
       </div>
 
-      <% group.rows.forEach((row, rowIndex) => { %>
+      <% group.rows.forEach((row) => { %>
         <div class="subcategory-row-block">
           <div class="subcategory-head">
-            <h3><%= row.hasSubcategory ? row.label : "Other" %></h3>
+            <h3>
+              <%= row.hasSubcategory
+                ? row.label
+                : "Other" %>
+            </h3>
+
+            <% if (row.products.length > 6) { %>
+              <span>Swipe left/right</span>
+            <% } %>
           </div>
 
-          <div class="product-row category-product-row">
+          <div
+            class="product-row category-product-row"
+            aria-label="<%= row.label %> products"
+          >
             <% row.products.forEach((product) => { %>
               <a
                 class="product-card"
@@ -55,6 +67,10 @@
                     <%= product.name %>
                   </div>
 
+                  <div class="stock-meta-line">
+                    <%= product.subcategory || "Other" %>
+                  </div>
+
                   <div class="product-price">
                     KSh
                     <%= Number(
@@ -62,7 +78,14 @@
                     ).toLocaleString() %>
                   </div>
 
-                  <div class="stock-text <%= product.units <= 0 ? 'out' : '' %>">
+                  <div class="stock-text">
+                    <strong><%= product.days || 0 %></strong>
+                    day delivery
+                  </div>
+
+                  <div
+                    class="stock-text <%= product.units <= 0 ? 'out' : '' %>"
+                  >
                     <%= product.units > 0
                       ? `${product.units} available`
                       : "Out of stock" %>
