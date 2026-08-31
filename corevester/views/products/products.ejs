@@ -1,7 +1,12 @@
 <section class="shop-page">
   <div>
     <h1 class="page-title">Products</h1>
-    <p class="page-subtitle">Browse products by category and choose what you need.</p>
+
+    <p class="page-subtitle">
+      Browse products by category and subcategory.
+      Each row contains a maximum of six cards and can be scrolled
+      horizontally.
+    </p>
   </div>
 
   <% if (typeof error !== "undefined" && error) { %>
@@ -15,34 +20,74 @@
     </div>
   <% } %>
 
-  <% categories.forEach(group => { %>
+  <% categories.forEach((group) => { %>
     <section class="category-section">
       <div class="category-head">
         <h2><%= group.label %></h2>
-        <span>Swipe left/right →</span>
+        <span>Six cards maximum per row · swipe left/right</span>
       </div>
 
-      <div class="product-row" aria-label="<%= group.label %> products">
-        <% group.products.forEach(product => { %>
-          <a class="product-card" href="/products/<%= product._id %>">
-            <div class="product-image">
-              <% if (product.image) { %>
-                <img src="<%= product.image %>" alt="<%= product.name %>" loading="lazy">
-              <% } else { %>
-                <div class="placeholder"><i class="fas fa-box"></i></div>
+      <% group.rows.forEach((row, rowIndex) => { %>
+        <div class="subcategory-row-block">
+          <% if (row.hasSubcategory) { %>
+            <div class="subcategory-head">
+              <h3><%= row.label %></h3>
+              <% if (rowIndex === 0) { %>
+                <span>Subcategory</span>
               <% } %>
             </div>
-
-            <div class="product-info">
-              <div class="product-name"><%= product.name %></div>
-              <div class="product-price">KSh <%= Number(product.unitSellPrice || 0).toLocaleString() %></div>
-              <div class="stock-text <%= product.units <= 0 ? 'out' : '' %>">
-                <%= product.units > 0 ? `${product.units} available` : "Out of stock" %>
-              </div>
+          <% else if (row.products.length) { %>
+            <div class="subcategory-head">
+              <h3>Other</h3>
+              <% if (rowIndex === 0) { %>
+                <span>Products without a subcategory</span>
+              <% } %>
             </div>
-          </a>
-        <% }) %>
-      </div>
+          <% } %>
+
+          <div class="product-row category-product-row">
+            <% row.products.forEach((product) => { %>
+              <a
+                class="product-card"
+                href="/products/<%= product._id %>"
+              >
+                <div class="product-image">
+                  <% if (product.image) { %>
+                    <img
+                      src="<%= product.image %>"
+                      alt="<%= product.name %>"
+                      loading="lazy"
+                    >
+                  <% } else { %>
+                    <div class="placeholder">
+                      <i class="fas fa-box"></i>
+                    </div>
+                  <% } %>
+                </div>
+
+                <div class="product-info">
+                  <div class="product-name">
+                    <%= product.name %>
+                  </div>
+
+                  <div class="product-price">
+                    KSh
+                    <%= Number(
+                      product.unitSellPrice || 0
+                    ).toLocaleString() %>
+                  </div>
+
+                  <div class="stock-text <%= product.units <= 0 ? 'out' : '' %>">
+                    <%= product.units > 0
+                      ? `${product.units} available`
+                      : "Out of stock" %>
+                  </div>
+                </div>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% }) %>
     </section>
   <% }) %>
 </section>

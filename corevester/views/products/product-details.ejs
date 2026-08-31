@@ -1,6 +1,8 @@
 <section class="shop-page">
   <div style="margin-bottom:15px">
-    <a href="/products" class="secondary-btn"><i class="fas fa-arrow-left"></i> Products</a>
+    <a href="/products" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i> Products
+    </a>
   </div>
 
   <% if (typeof error !== "undefined" && error) { %>
@@ -8,55 +10,101 @@
   <% } %>
 
   <% if (product) { %>
-    <% if (typeof query !== "undefined" && query === "1") { %><% } %>
-
     <div class="detail-card">
       <div class="detail-grid">
         <div class="detail-image">
           <% if (product.image) { %>
-            <img src="<%= product.image %>" alt="<%= product.name %>">
+            <img
+              src="<%= product.image %>"
+              alt="<%= product.name %>"
+            >
           <% } else { %>
-            <div class="placeholder"><i class="fas fa-box"></i></div>
+            <div class="placeholder">
+              <i class="fas fa-box"></i>
+            </div>
           <% } %>
         </div>
 
         <div class="detail-content">
-          <span class="detail-category"><%= product.category %></span>
+          <span class="detail-category">
+            <%= product.category %>
+          </span>
+
           <h1><%= product.name %></h1>
-          <div class="detail-price">KSh <%= Number(product.unitSellPrice || 0).toLocaleString() %></div>
+
+          <% if (product.subcategory) { %>
+            <div class="detail-subcategory">
+              <i class="fas fa-layer-group"></i>
+              <%= product.subcategory %>
+            </div>
+          <% } %>
+
+          <div class="detail-price">
+            KSh
+            <%= Number(
+              product.unitSellPrice || 0
+            ).toLocaleString() %>
+          </div>
 
           <div class="detail-description">
-            <%= product.description || "No description has been provided for this product." %>
+            <%= product.description ||
+              "No description has been provided for this product." %>
           </div>
 
           <% if (product.units > 0) { %>
-            <div class="stock-text"><strong><%= product.units %></strong> units available</div>
+            <div class="stock-text">
+              <strong><%= product.units %></strong>
+              units available
+            </div>
 
             <% if (typeof user !== "undefined" && user) { %>
-              <form action="/products/<%= product._id %>/cart" method="POST">
+              <form
+                action="/products/<%= product._id %>/cart"
+                method="POST"
+              >
                 <div class="qty-row">
-                  <label for="qty"><strong>Quantity</strong></label>
-                  <input id="qty" name="qty" type="number" min="1" max="<%= product.units %>" value="1" required>
+                  <label for="qty">
+                    <strong>Quantity</strong>
+                  </label>
+
+                  <input
+                    id="qty"
+                    name="qty"
+                    type="number"
+                    min="1"
+                    max="<%= product.units %>"
+                    value="1"
+                    required
+                  >
                 </div>
-                <button class="primary-btn" type="submit">
-                  <i class="fas fa-cart-plus"></i> Add to Cart
+
+                <button
+                  class="primary-btn"
+                  type="submit"
+                >
+                  <i class="fas fa-cart-plus"></i>
+                  Add to Cart
                 </button>
               </form>
             <% } else { %>
-              <a class="primary-btn" href="/auth/login?next=/products/<%= product._id %>">
-                <i class="fas fa-sign-in-alt"></i> Log in to buy
+              <a
+                class="primary-btn"
+                href="/auth/login?next=/products/<%= product._id %>"
+              >
+                <i class="fas fa-sign-in-alt"></i>
+                Log in to buy
               </a>
             <% } %>
           <% } else { %>
-            <div class="error">This product is currently out of stock.</div>
+            <div class="error">
+              This product is currently out of stock.
+            </div>
           <% } %>
 
           <% if (typeof query !== "undefined" && query === "1") { %>
-            <div class="notice">Product added to your cart.</div>
-          <% } %>
-
-          <% if (typeof error !== "undefined" && error) { %>
-            <div class="error"><%= error %></div>
+            <div class="notice">
+              Product added to your cart.
+            </div>
           <% } %>
         </div>
       </div>
@@ -65,12 +113,19 @@
 </section>
 
 <script>
-  // The controller uses ?added=1. Keep the success message lightweight.
-  const params = new URLSearchParams(window.location.search);
+  const params =
+    new URLSearchParams(window.location.search);
+
   if (params.get("added") === "1") {
-    const box = document.createElement("div");
+    const box =
+      document.createElement("div");
+
     box.className = "notice";
-    box.textContent = "Product added to your cart.";
-    document.querySelector(".detail-content")?.prepend(box);
+    box.textContent =
+      "Product added to your cart.";
+
+    document
+      .querySelector(".detail-content")
+      ?.prepend(box);
   }
 </script>
