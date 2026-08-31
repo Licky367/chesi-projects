@@ -1,22 +1,33 @@
-const mongoose = require("mongoose");
 const Product = require("../models/products");
 
-function titleCase(value) {
-  return String(value || "other")
+const label = (value) =>
+  String(value || "other")
     .replace(/[-_]+/g, " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+function chunk(items, size = 6) {
+  const rows = [];
+
+  for (let i = 0; i < items.length; i += size) {
+    rows.push({
+      products: items.slice(i, i + size)
+    });
+  }
+
+  return rows;
 }
 
 /*
- * Category -> subcategory rows -> products.
+ * Products are grouped:
  *
- * Each named subcategory gets its own row(s), with six products per row.
- * Each row is horizontally scrollable by CSS.
+ * Category
+ *   Subcategory
+ *     Row 1: max 6 horizontally scrollable
+ *     Row 2: next 6
+ *     ...
  *
- * Products whose subcategory is blank/null/undefined are NOT given a
- * separate "Uncategorized" row. They are appended to the final row of
- * that category, filling available positions first and then creating
- * additional rows of six as needed.
+ * Products without a subcategory are placed in the final "Other" rows
+ * of their category.
  */
 async function getProductsByCategory() {
   const products = await Product.find({ isActive: true })
@@ -31,89 +42,90 @@ async function getProductsByCategory() {
   const categoryMap = new Map();
 
   for (const product of products) {
-    const category = product.category || "other";
+    const category =
+      product.category || "other";
 
     if (!categoryMap.has(category)) {
       categoryMap.set(category, {
         category,
-        label: titleCase(category),
-        named: new Map(),
-        noSubcategory: []
+        label: label(category),
+        subcategoryMap: new Map(),
+        uncategorized: []
       });
     }
 
     const group = categoryMap.get(category);
-    const subcategory = String(product.subcategory || "").trim();
 
-    if (subcategory) {
-      if (!group.named.has(subcategory)) {
-        group.named.set(subcategory, []);
-      }
+    const subcategory =
+      String(product.subcategory || "").trim();
 
-      group.named.get(subcategory).push(product);
-    } else {
-      group.noSubcategory.push(product);
+    if (!subcategory) {
+      group.uncategorized.push(product);
+      continue;
     }
+
+    if (!group.subcategoryMap.has(subcategory)) {
+      group.subcategoryMap.set(
+        subcategory,
+        {
+          subcategory,
+          label: label(subcategory),
+          products: []
+        }
+      );
+    }
+
+    group.subcategoryMap
+      .get(subcategory)
+      .products
+      .push(product);
   }
 
-  return Array.from(categoryMap.values()).map((categoryGroup) => {
-    const rows = [];
+  return Array.from(categoryMap.values()).map(
+    (group) => {
+      const rows = [];
 
-    for (const [subcategory, items] of categoryGroup.named.entries()) {
-      for (let i = 0; i < items.length; i += 6) {
+      for (const subcategory of group.subcategoryMap.values()) {
+        for (const row of chunk(subcategory.products, 6)) {
+          rows.push({
+            hasSubcategory: true,
+            subcategory:
+              subcategory.subcategory,
+            label:
+              subcategory.label,
+            products:
+              row.products
+          });
+        }
+      }
+
+      /*
+       * Null/undefined/blank subcategories belong at the end
+       * of their category, exactly as requested.
+       */
+      for (const row of chunk(group.uncategorized, 6)) {
         rows.push({
-          subcategory,
-          label: subcategory,
-          products: items.slice(i, i + 6),
-          hasSubcategory: true
+          hasSubcategory: false,
+          subcategory: "",
+          label: "Other",
+          products: row.products
         });
       }
+
+      return {
+        category: group.category,
+        label: group.label,
+        rows
+      };
     }
-
-    /*
-     * Blank subcategory products belong to the last row of the category.
-     * Fill an existing final row if it has fewer than six cards.
-     * Otherwise start another row.
-     */
-    for (const product of categoryGroup.noSubcategory) {
-      let lastRow = rows[rows.length - 1];
-
-      if (
-        !lastRow ||
-        lastRow.products.length >= 6
-      ) {
-        lastRow = {
-          subcategory: "",
-          label: "",
-          products: [],
-          hasSubcategory: false
-        };
-
-        rows.push(lastRow);
-      }
-
-      lastRow.products.push(product);
-    }
-
-    return {
-      category: categoryGroup.category,
-      label: categoryGroup.label,
-      rows
-    };
-  });
+  );
 }
 
 async function getProduct(id) {
-  if (!mongoose.isValidObjectId(id)) {
-    return null;
-  }
-
   return Product.findOne({
     _id: id,
     isActive: true
-  })
-    .populate("substation", "name")
-    .lean();
+  }).lean();
 }
 
 module.exports = {

@@ -4,248 +4,369 @@ const Stock = require("../models/stock");
 const Product = require("../models/products");
 const Substation = require("../models/substations");
 
-const t = (value) => String(value ?? "").trim();
+const text = (value) => String(value ?? "").trim();
 
-function n(value, label, required = false) {
+const cleanCategory = (value) =>
+  text(value).toLowerCase();
+
+const cleanSubcategory = (value) =>
+  text(value).toLowerCase();
+
+function number(value, label, required = false) {
   if (value === "" || value == null) {
     if (!required) return 0;
     throw new Error(`${label} is required.`);
   }
 
-  const x = Number(value);
+  const result = Number(value);
 
-  if (!Number.isFinite(x) || x < 0) {
+  if (!Number.isFinite(result) || result < 0) {
     throw new Error(`${label} must be zero or greater.`);
   }
 
-  return x;
+  return result;
 }
 
-function whole(value, label, required = false) {
-  const x = n(value, label, required);
+function wholeNumber(value, label, required = false) {
+  const result = number(value, label, required);
 
-  if (!Number.isInteger(x)) {
+  if (!Number.isInteger(result)) {
     throw new Error(`${label} must be a whole number.`);
   }
 
-  return x;
+  return result;
 }
 
-function normalizeCategory(value) {
-  return t(value).toLowerCase();
+function displayLabel(value) {
+  return text(value)
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function normalizeSubcategory(value) {
-  return t(value);
-}
-
-exports.listStock = () => {
-  return Stock.find({ isActive: true })
-    .sort({
-      category: 1,
-      subcategory: 1,
-      name: 1
-    })
+/*
+ * /stock is organized exactly like /products:
+ *
+ * Category
+ *   Subcategory
+ *     [up to six cards] -> horizontal scroll -> [7th onward]
+ */
+exports.listStock = async () => {
+  const stocks = await Stock.find({ isActive: true })
+    .sort({ category: 1, subcategory: 1, name: 1, createdAt: 1 })
     .lean();
+
+  const categoryMap = new Map();
+
+  for (const stock of stocks) {
+    const category = stock.category || "other";
+    const subcategory = stock.subcategory || "uncategorized";
+
+    if (!categoryMap.has(category)) {
+      categoryMap.set(category, {
+        category,
+        label: displayLabel(category),
+        subcategories: new Map()
+      });
+    }
+
+    const group = categoryMap.get(category);
+
+    if (!group.subcategories.has(subcategory)) {
+      group.subcategories.set(subcategory, {
+        subcategory,
+        label: displayLabel(subcategory),
+        stocks: []
+      });
+    }
+
+    group.subcategories.get(subcategory).stocks.push(stock);
+  }
+
+  return Array.from(categoryMap.values()).map((category) => {
+    const subcategories = Array.from(category.subcategories.values());
+
+    return {
+      category: category.category,
+      label: category.label,
+      subcategories: subcategories.map((group) => {
+        const rows = [];
+
+        for (let i = 0; i < group.stocks.length; i += 6) {
+          rows.push({
+            products: group.stocks.slice(i, i + 6)
+          });
+        }
+
+        return {
+          subcategory: group.subcategory,
+          label: group.label,
+          rows
+        };
+      })
+    };
+  });
 };
 
 exports.getStock = (id) => {
-  if (!mongoose.isValidObjectId(id)) {
-    return null;
-  }
+  if (!mongoose.isValidObjectId(id)) return null;
 
-  return Stock.findById(id).lean();
+  return Stock.findOne({
+    _id: id,
+    isActive: true
+  }).lean();
 };
 
-exports.getStockCatalog = () => {
-  return Stock.find({ isActive: true })
-    .select("name category subcategory image units buyPrice description")
-    .sort({
-      category: 1,
-      subcategory: 1,
-      name: 1
-    })
+/*
+ * Existing Stock records are the subcategory catalogue.
+ */
+exports.getStockCategories = () =>
+  Stock.find({ isActive: true })
+    .select(
+      "name category subcategory days image units buyPrice description"
+    )
+    .sort({ category: 1, subcategory: 1, name: 1 })
     .lean();
-};
 
-exports.getSubstations = () => {
-  return Substation.find({ isActive: true })
+exports.getSubstations = () =>
+  Substation.find({ isActive: true })
+    .select("name location description")
     .sort({ name: 1 })
     .lean();
-};
 
-/*
- * Stock entry:
- *
- * - No stockId => create a new Stock record.
- * - stockId  => update the existing Stock record.
- *
- * Existing stock may have its name, category, subcategory, buy price,
- * image and description changed at any time.
- *
- * For an existing stock record, additionalUnits are ADDED to Stock.units.
- * A blank image keeps the existing image.
- *
- * Product metadata inherited from this Stock record is synchronized
- * for active Products linked to the stock.
- */
-exports.createOrUpdateStock = async (body) => {
-  const stockId = t(body.stockId);
-  const name = t(body.name);
-  const category = normalizeCategory(body.category);
-  const subcategory = normalizeSubcategory(body.subcategory);
-  const buyPrice = n(body.buyPrice, "Buy price");
-  const description = t(body.description);
-  const imageInput = t(body.image);
+exports.createStock = async (body) => {
+  const name = text(body.name);
+  const category = cleanCategory(body.category);
+  const subcategory = cleanSubcategory(body.subcategory);
+  const units = wholeNumber(body.units, "Warehouse units", true);
+  const buyPrice = number(body.buyPrice, "Buy price");
+  const days = wholeNumber(body.days, "Delivery days", true);
 
-  if (!name || !category) {
-    throw new Error("Stock name and category are required.");
+  if (!name || !category || !subcategory) {
+    throw new Error(
+      "Stock name, category and subcategory are required."
+    );
   }
 
-  const session = await mongoose.startSession();
+  const existing = await Stock.findOne({
+    category,
+    subcategory,
+    isActive: true
+  });
 
-  try {
-    let stock;
-
-    await session.withTransaction(async () => {
-      if (stockId) {
-        if (!mongoose.isValidObjectId(stockId)) {
-          throw new Error("Invalid stock.");
-        }
-
-        stock = await Stock.findById(stockId).session(session);
-
-        if (!stock) {
-          throw new Error("Stock not found.");
-        }
-
-        const additionalUnits = whole(
-          body.additionalUnits,
-          "Additional warehouse units"
-        );
-
-        stock.name = name;
-        stock.category = category;
-        stock.subcategory = subcategory;
-        stock.buyPrice = buyPrice;
-        stock.description = description;
-
-        if (imageInput) {
-          stock.image = imageInput;
-        }
-
-        stock.units += additionalUnits;
-
-        await stock.save({ session });
-
-        await Product.updateMany(
-          {
-            stock: stock._id,
-            isActive: true
-          },
-          {
-            $set: {
-              name: stock.name,
-              category: stock.category,
-              subcategory: stock.subcategory,
-              buyPrice: stock.buyPrice,
-              description: stock.description,
-              ...(imageInput ? { image: stock.image } : {})
-            }
-          },
-          { session }
-        );
-
-        return;
-      }
-
-      const units = whole(body.units, "Stock units", true);
-
-      const existing = await Stock.findOne({
-        isActive: true,
-        category,
-        name
-      }).session(session);
-
-      if (existing) {
-        throw new Error(
-          "An active Stock record with this name and category already exists. Select it from the existing category list instead."
-        );
-      }
-
-      [stock] = await Stock.create(
-        [
-          {
-            name,
-            category,
-            subcategory,
-            image: imageInput,
-            units,
-            buyPrice,
-            description
-          }
-        ],
-        { session }
-      );
-    });
-
-    return stock;
-  } finally {
-    await session.endSession();
+  if (existing) {
+    throw new Error(
+      `The subcategory "${subcategory}" already exists under "${category}". Select it from the existing subcategory list to update it.`
+    );
   }
+
+  return Stock.create({
+    name,
+    category,
+    subcategory,
+    days,
+    image: text(body.image),
+    units,
+    buyPrice,
+    description: text(body.description)
+  });
+};
+
+exports.updateStockEntry = async (stockId, body) => {
+  if (!mongoose.isValidObjectId(stockId)) {
+    throw new Error("Invalid stock subcategory.");
+  }
+
+  const name = text(body.name);
+  const category = cleanCategory(body.category);
+  const subcategory = cleanSubcategory(body.subcategory);
+  const additionalUnits = wholeNumber(
+    body.additionalUnits,
+    "Additional units"
+  );
+  const buyPrice = number(body.buyPrice, "Buy price");
+  const days = wholeNumber(
+    body.days,
+    "Delivery days",
+    true
+  );
+
+  if (!name || !category || !subcategory) {
+    throw new Error(
+      "Stock name, category and subcategory are required."
+    );
+  }
+
+  const stock = await Stock.findOne({
+    _id: stockId,
+    isActive: true
+  });
+
+  if (!stock) {
+    throw new Error("Stock subcategory not found.");
+  }
+
+  const duplicate = await Stock.findOne({
+    _id: { $ne: stock._id },
+    category,
+    subcategory,
+    isActive: true
+  });
+
+  if (duplicate) {
+    throw new Error(
+      `The subcategory "${subcategory}" already belongs to another stock record under "${category}".`
+    );
+  }
+
+  stock.name = name;
+  stock.category = category;
+  stock.subcategory = subcategory;
+  stock.days = days;
+  stock.buyPrice = buyPrice;
+  stock.description = text(body.description);
+
+  const image = text(body.image);
+
+  if (image) {
+    stock.image = image;
+  }
+
+  stock.units += additionalUnits;
+
+  await stock.save();
+
+  /*
+   * Product metadata is inherited from its Stock subcategory.
+   * Never alter Product.units here.
+   */
+  await Product.updateMany(
+    {
+      stock: stock._id,
+      isActive: true
+    },
+    {
+      $set: {
+        name: stock.name,
+        category: stock.category,
+        subcategory: stock.subcategory,
+        days: Number(stock.days || 0),
+        image: stock.image || "",
+        buyPrice: Number(stock.buyPrice || 0),
+        description: stock.description || ""
+      }
+    }
+  );
+
+  /*
+   * Keep existing substation inventory labels synchronized too.
+   */
+  await Substation.updateMany(
+    { "productInventory.productId": { $in: await Product.find({ stock: stock._id }).distinct("_id") } },
+    {
+      $set: {
+        "productInventory.$[item].productName": stock.name,
+        "productInventory.$[item].category": stock.category,
+        "productInventory.$[item].subcategory": stock.subcategory,
+        "productInventory.$[item].days": Number(stock.days || 0),
+        "productInventory.$[item].updatedAt": new Date()
+      }
+    },
+    {
+      arrayFilters: [{ "item.productId": { $in: await Product.find({ stock: stock._id }).distinct("_id") } }]
+    }
+  );
+
+  return stock;
 };
 
 /*
- * Backwards-compatible name used by older callers.
- */
-exports.createStock = (body) => {
-  return exports.createOrUpdateStock(body);
-};
-
-/*
- * Allocate warehouse Stock into a Product.
+ * Allocate warehouse stock into ONE marketplace Product while distributing
+ * the allocated quantity across ANY number of active substations.
  *
- * Product metadata is inherited from Stock:
- *   name
- *   category
- *   subcategory
- *   image
- *   buyPrice
- *   description
+ * Request format:
  *
- * The administrator enters only:
- *   units
- *   selling price
- *   substation
+ *   units = total quantity to allocate
+ *   unitSellPrice = marketplace selling price
+ *   allocations[SUBSTATION_ID] = quantity for that substation
  *
- * If the same Stock record already has a Product at the selected
- * substation, Product.units is increased rather than creating a duplicate.
+ * The sum of all allocation quantities becomes Product.units.
+ * Stock.units is reduced by exactly that same total.
  *
- * Stock.units is reduced by exactly the allocated quantity.
+ * Product.units is NOT divided among Product documents. There is one Product
+ * per Stock/subcategory, and each Substation stores its own physical balance.
  */
 exports.createProductFromStock = async (stockId, body) => {
   if (!mongoose.isValidObjectId(stockId)) {
     throw new Error("Invalid stock.");
   }
 
-  const units = whole(body.units, "Product units", true);
-  const substationId = t(body.substation);
-  const unitSellPrice = n(
+  const requestedTotal = wholeNumber(
+    body.units,
+    "Total product units",
+    true
+  );
+
+  const unitSellPrice = number(
     body.unitSellPrice,
     "Selling price",
     true
   );
 
-  if (units <= 0) {
-    throw new Error("Product units must be greater than zero.");
+  if (requestedTotal <= 0) {
+    throw new Error("Total product units must be greater than zero.");
   }
 
-  if (!substationId) {
-    throw new Error("Substation selection is required.");
+  let allocationInput = body.allocations || {};
+
+  if (typeof allocationInput !== "object" || Array.isArray(allocationInput)) {
+    allocationInput = {};
   }
 
-  if (!mongoose.isValidObjectId(substationId)) {
-    throw new Error("Invalid substation.");
+  const allocations = Object.entries(allocationInput)
+    .map(([substationId, value]) => ({
+      substationId: text(substationId),
+      units: wholeNumber(
+        value,
+        `Units for substation ${substationId}`
+      )
+    }))
+    .filter((entry) => entry.units > 0);
+
+  if (!allocations.length) {
+    throw new Error(
+      "Allocate at least one unit to at least one substation."
+    );
+  }
+
+  const allocationTotal = allocations.reduce(
+    (sum, entry) => sum + entry.units,
+    0
+  );
+
+  if (allocationTotal !== requestedTotal) {
+    throw new Error(
+      `Allocation total (${allocationTotal}) must equal Total product units (${requestedTotal}).`
+    );
+  }
+
+  const substationIds = allocations.map(
+    (entry) => entry.substationId
+  );
+
+  if (
+    substationIds.some(
+      (id) => !mongoose.isValidObjectId(id)
+    )
+  ) {
+    throw new Error("One or more selected substations are invalid.");
+  }
+
+  if (
+    new Set(substationIds).size !== substationIds.length
+  ) {
+    throw new Error(
+      "Each substation can appear only once in the allocation."
+    );
   }
 
   const session = await mongoose.startSession();
@@ -254,48 +375,61 @@ exports.createProductFromStock = async (stockId, body) => {
     let product;
 
     await session.withTransaction(async () => {
-      const stock = await Stock.findById(stockId).session(session);
+      const stock = await Stock.findOne({
+        _id: stockId,
+        isActive: true
+      }).session(session);
 
-      if (!stock || !stock.isActive) {
-        throw new Error("Stock not found.");
+      if (!stock) {
+        throw new Error("Stock subcategory not found.");
       }
 
-      if (units > stock.units) {
+      if (requestedTotal > stock.units) {
         throw new Error(
-          `Only ${stock.units} units are available in stock.`
+          `Only ${stock.units} units are available in this stock subcategory.`
         );
       }
 
-      const substation = await Substation.findOne({
-        _id: substationId,
+      const substations = await Substation.find({
+        _id: { $in: substationIds },
         isActive: true
       }).session(session);
 
-      if (!substation) {
-        throw new Error("Selected substation was not found.");
+      const substationMap = new Map(
+        substations.map((s) => [
+          String(s._id),
+          s
+        ])
+      );
+
+      for (const allocation of allocations) {
+        if (!substationMap.has(allocation.substationId)) {
+          throw new Error(
+            "One or more selected substations were not found or are inactive."
+          );
+        }
       }
 
-      product = await Product.findOne({
+      let existingProduct = await Product.findOne({
         stock: stock._id,
-        substation: substation._id,
         isActive: true
       }).session(session);
 
-      if (product) {
-        product.units += units;
-        product.unitSellPrice = unitSellPrice;
+      if (existingProduct) {
+        existingProduct.units += requestedTotal;
+        existingProduct.unitSellPrice = unitSellPrice;
 
-        /*
-         * Re-inherit all catalogue metadata from Stock.
-         */
-        product.name = stock.name;
-        product.category = stock.category;
-        product.subcategory = stock.subcategory || "";
-        product.image = stock.image || "";
-        product.buyPrice = Number(stock.buyPrice || 0);
-        product.description = stock.description || "";
+        existingProduct.name = stock.name;
+        existingProduct.category = stock.category;
+        existingProduct.subcategory = stock.subcategory;
+        existingProduct.days = Number(stock.days || 0);
+        existingProduct.image = stock.image || "";
+        existingProduct.buyPrice = Number(stock.buyPrice || 0);
+        existingProduct.description = stock.description || "";
 
-        await product.save({ session });
+        await existingProduct.save({ session });
+
+        product = existingProduct;
       } else {
         [product] = await Product.create(
           [
@@ -303,22 +437,73 @@ exports.createProductFromStock = async (stockId, body) => {
               stock: stock._id,
               name: stock.name,
               category: stock.category,
-              subcategory: stock.subcategory || "",
+              subcategory: stock.subcategory,
+              days: Number(stock.days || 0),
               image: stock.image || "",
-              units,
+              units: requestedTotal,
               buyPrice: Number(stock.buyPrice || 0),
               unitSellPrice,
-              description: stock.description || "",
-              substation: substation._id
+              description: stock.description || ""
             }
           ],
           { session }
         );
       }
 
-      stock.units -= units;
-
+      /*
+       * Stock is the warehouse source. Consume the total allocated quantity
+       * exactly once.
+       */
+      stock.units -= requestedTotal;
       await stock.save({ session });
+
+      /*
+       * Update each substation's physical inventory independently.
+       */
+      for (const allocation of allocations) {
+        const substation =
+          substationMap.get(allocation.substationId);
+
+        const existingInventory =
+          substation.productInventory.find(
+            (entry) =>
+              String(entry.productId) ===
+              String(product._id)
+          );
+
+        if (existingInventory) {
+          existingInventory.units =
+            Number(existingInventory.units || 0) +
+            allocation.units;
+
+          existingInventory.productName =
+            product.name;
+
+          existingInventory.category =
+            product.category;
+
+          existingInventory.subcategory =
+            product.subcategory;
+
+          existingInventory.days =
+            Number(product.days || 0);
+
+          existingInventory.updatedAt =
+            new Date();
+        } else {
+          substation.productInventory.push({
+            productId: product._id,
+            productName: product.name,
+            category: product.category,
+            subcategory: product.subcategory,
+            days: Number(product.days || 0),
+            units: allocation.units,
+            updatedAt: new Date()
+          });
+        }
+
+        await substation.save({ session });
+      }
     });
 
     return product;
