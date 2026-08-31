@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
   {
+    // Product identity is now the source Stock/subcategory record.
+    // It is no longer tied to one substation.
     stock: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Stock",
@@ -26,9 +28,18 @@ const productSchema = new mongoose.Schema(
 
     subcategory: {
       type: String,
+      required: true,
       trim: true,
-      default: "",
+      lowercase: true,
       index: true
+    },
+
+    // Inherited from the Stock subcategory.
+    days: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
     },
 
     image: {
@@ -37,6 +48,7 @@ const productSchema = new mongoose.Schema(
       default: ""
     },
 
+    // This is the total marketplace quantity across all substations.
     units: {
       type: Number,
       required: true,
@@ -61,6 +73,11 @@ const productSchema = new mongoose.Schema(
       default: ""
     },
 
+    /*
+     * Legacy field retained so old documents can still be read.
+     * New products are NOT substation-scoped. Their quantities are
+     * held in Substation.productInventory instead.
+     */
     substation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Substation",
@@ -73,9 +90,9 @@ const productSchema = new mongoose.Schema(
       default: true
     }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
+
+productSchema.index({ stock: 1, isActive: 1 });
 
 module.exports = mongoose.model("Product", productSchema);
