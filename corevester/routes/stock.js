@@ -1,39 +1,40 @@
 const router = require("express").Router();
 
-const c =
-    require("../controllers/stock");
+const controller = require("../controllers/stock");
+const requireAdmin = require("../middleware/requireAdmin");
 
-const requireAdmin =
-    require("../middleware/requireAdmin");
-
+// Stock management is admin-only.
 router.get(
     "/",
     requireAdmin,
-    c.list
+    controller.list
 );
 
+// Create a new category OR select an existing category to update.
 router.get(
     "/new",
     requireAdmin,
-    c.newStockForm
+    controller.newStockForm
 );
 
+// The POST handler decides whether this is a new Stock category or an update.
 router.post(
     "/",
     requireAdmin,
-    c.createStock
+    controller.createOrUpdateStock
 );
 
+// Allocate warehouse Stock into a marketplace Product.
 router.get(
     "/:id",
     requireAdmin,
-    c.entry
+    controller.entry
 );
 
 router.post(
     "/:id",
     requireAdmin,
-    c.createProduct
+    controller.createProduct
 );
 
 module.exports = router;
