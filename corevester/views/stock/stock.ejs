@@ -2,48 +2,119 @@
   <div class="page-head">
     <div>
       <h1 class="page-title">Stock Management</h1>
-      <p class="page-subtitle">Warehouse stock grouped by category and subcategory.</p>
+      <p class="page-subtitle">
+        Browse warehouse stock by category and subcategory.
+        Each row uses the same compact horizontal product-card layout as Products.
+      </p>
     </div>
-    <a href="/stock/new" class="primary-btn"><i class="fas fa-plus"></i> Add / Update Stock</a>
+
+    <a href="/stock/new" class="primary-btn">
+      <i class="fas fa-plus"></i>
+      Add / Update Stock
+    </a>
   </div>
 
-  <% if (error) { %><div class="error"><%= error %></div><% } %>
-  <% if (saved === "1") { %><div class="notice">Stock saved successfully.</div><% } %>
+  <% if (typeof error !== "undefined" && error) { %>
+    <div class="error"><%= error %></div>
+  <% } %>
+
+  <% if (typeof saved !== "undefined" && saved === "1") { %>
+    <div class="notice">Stock saved successfully.</div>
+  <% } %>
 
   <% if (!stocks || !stocks.length) { %>
-    <div class="empty" style="margin-top:25px"><i class="fas fa-warehouse"></i><div>No stock records exist yet.</div></div>
+    <div class="empty" style="margin-top:25px">
+      <i class="fas fa-warehouse"></i>
+      <div>No stock records exist yet.</div>
+    </div>
   <% } else { %>
+
     <% stocks.forEach((group) => { %>
       <section class="category-section">
+
         <div class="category-head">
-          <h2><%= group.label %></h2>
+          <h2><%= group.label || group.category || "Other" %></h2>
           <span>Six cards maximum · swipe left/right</span>
         </div>
 
-        <% (group.rows || []).forEach((row) => { %>
-          <div class="product-row stock-row">
-            <% row.products.forEach((stock) => { %>
-              <div class="stock-card-wrap">
-                <a href="/stock/<%= stock._id %>" class="product-card stock-card">
+        <% (group.rows || []).forEach((row, rowIndex) => { %>
+          <div class="subcategory-row-block">
+
+            <div class="subcategory-head">
+              <h3>
+                <% if (row.products && row.products.length) { %>
+                  <%= row.products[0].subcategory || row.products[0].name || "Other" %>
+                <% } else { %>
+                  Other
+                <% } %>
+              </h3>
+
+              <% if (row.products && row.products.length > 1) { %>
+                <span>Swipe left/right</span>
+              <% } %>
+            </div>
+
+            <div
+              class="product-row category-product-row"
+              aria-label="<%= group.label || group.category || 'Stock' %> stock row"
+            >
+
+              <% (row.products || []).forEach((stock) => { %>
+                <a
+                  href="/stock/<%= stock._id %>"
+                  class="product-card stock-card"
+                >
+
                   <div class="product-image">
-                    <% if (stock.image) { %><img src="<%= stock.image %>" alt="<%= stock.subcategory %>" loading="lazy"><% } else { %><div class="placeholder"><i class="fas fa-box"></i></div><% } %>
+                    <% if (stock.image) { %>
+                      <img
+                        src="<%= stock.image %>"
+                        alt="<%= stock.subcategory || stock.name || 'Stock item' %>"
+                        loading="lazy"
+                      >
+                    <% } else { %>
+                      <div class="placeholder">
+                        <i class="fas fa-box"></i>
+                      </div>
+                    <% } %>
                   </div>
+
                   <div class="product-info">
-                    <div class="product-name"><%= stock.subcategory %></div>
-                    <div class="stock-text"><%= stock.category %></div>
-                    <div class="stock-subcategory"><%= stock.subcategory %></div>
-                    <div class="stock-data">
-                      <div class="data-cell"><small>Warehouse units</small><strong><%= Number(stock.units || 0).toLocaleString() %></strong></div>
-                      <div class="data-cell"><small>Buy / unit</small><strong>KSh <%= Number(stock.buyPrice || 0).toLocaleString() %></strong></div>
+                    <div class="product-name">
+                      <%= stock.subcategory || stock.name || "Unnamed stock" %>
+                    </div>
+
+                    <div class="stock-meta-line">
+                      <%= stock.category || "Other" %>
+                    </div>
+
+                    <div class="product-price">
+                      KSh
+                      <%= Number(stock.buyPrice || 0).toLocaleString() %>
+                    </div>
+
+                    <div class="stock-text">
+                      <strong><%= Number(stock.units || 0).toLocaleString() %></strong>
+                      warehouse units
+                    </div>
+
+                    <div class="stock-text <%= Number(stock.units || 0) <= 0 ? 'out' : '' %>">
+                      <%= Number(stock.units || 0) > 0
+                        ? `${Number(stock.units).toLocaleString()} available`
+                        : "Out of stock" %>
                     </div>
                   </div>
+
                 </a>
-                <a href="/stock/new?stockId=<%= stock._id %>" class="secondary-btn stock-edit-btn"><i class="fas fa-pen"></i> Edit</a>
-              </div>
-            <% }) %>
+              <% }) %>
+
+            </div>
+
           </div>
         <% }) %>
+
       </section>
     <% }) %>
+
   <% } %>
 </section>
