@@ -29,56 +29,147 @@
 
 <% } %>
 
-  <!-- ======================================================
-       CATEGORY GROUPS
-       
-       IMPORTANT:
-       Products are grouped ONLY by category.
-
-       Subcategory DOES NOT create separate rows.
-
-       Every category is split into groups of six products.
-  ======================================================= --><% categories.forEach((group) => { %>
+<% (categories || []).forEach((group) => { %>
 
 <section class="category-section">
 
-  <!-- CATEGORY HEADER -->
+  <!-- ==================================================
+       CATEGORY
+  =================================================== -->
 
   <div class="category-head">
 
     <h2>
-      <%= group.label || group.category %>
+      <%= group.label || group.category || "Other" %>
     </h2>
 
   </div>
 
 
-  <!-- ==================================================
-       PRODUCTS FOR THIS CATEGORY
+  <%
+    /*
+     * ==================================================
+     * IMPORTANT
+     *
+     * The backend may currently give us:
+     *
+     * category
+     *   -> row
+     *        -> products
+     *
+     * where each row was previously created for a
+     * subcategory.
+     *
+     * We deliberately flatten those rows here.
+     *
+     * SUBCATEGORY IS NOT USED TO CREATE ROWS.
+     *
+     * All products belonging to this category are placed
+     * into one continuous product collection.
+     * ==================================================
+     */
 
-       The controller may already provide rows.
+    const categoryProducts = [];
 
-       If rows are provided, use them.
+    (group.rows || []).forEach((row) => {
 
-       Each row contains a maximum of six products.
+      (row.products || []).forEach((product) => {
 
-       Subcategories are deliberately ignored when
-       determining the row.
-  =================================================== -->
+        categoryProducts.push(product);
 
-  <% if (group.rows && group.rows.length) { %>
+      });
 
-    <% group.rows.forEach((row) => { %>
+    });
+
+
+    /*
+     * ==================================================
+     * FALLBACK
+     *
+     * If the controller supplies group.products directly,
+     * use those instead.
+     * ==================================================
+     */
+
+    if (
+      categoryProducts.length === 0 &&
+      Array.isArray(group.products)
+    ) {
+
+      group.products.forEach((product) => {
+
+        categoryProducts.push(product);
+
+      });
+
+    }
+  %>
+
+
+  <% if (categoryProducts.length) { %>
+
+
+    <%
+      /*
+       * ==================================================
+       * SIX PRODUCTS PER ROW
+       *
+       * Subcategory DOES NOT matter here.
+       *
+       * Example:
+       *
+       * Category: Diagnostic Equipment
+       *
+       * Product A - subcategory X
+       * Product B - subcategory X
+       * Product C - subcategory Y
+       * Product D - subcategory Z
+       * Product E - subcategory Y
+       * Product F - subcategory X
+       * Product G - subcategory Z
+       *
+       * First row:
+       * A B C D E F
+       *
+       * Second row:
+       * G
+       *
+       * Exactly what was requested.
+       * ==================================================
+       */
+
+      for (
+        let rowStart = 0;
+        rowStart < categoryProducts.length;
+        rowStart += 6
+      ) {
+
+        const rowProducts =
+          categoryProducts.slice(
+            rowStart,
+            rowStart + 6
+          );
+    %>
+
 
       <div class="subcategory-row-block">
+
+        <!--
+          We retain the existing class names so the existing
+          shopt.css continues to control the appearance.
+          
+          This is still visually the same product-row layout.
+          The heading is now the CATEGORY, not a subcategory.
+        -->
 
         <div class="subcategory-head">
 
           <h3>
-            <%= group.label || group.category %>
+            <%= group.label || group.category || "Other" %>
           </h3>
 
-          <% if (row.products && row.products.length >= 6) { %>
+
+          <% if (categoryProducts.length > 6) { %>
 
             <span>
               Swipe left/right
@@ -89,21 +180,35 @@
         </div>
 
 
+        <!-- ==================================================
+             PRODUCT ROW
+             
+             Maximum six cards in this row.
+             
+             CSS controls horizontal scrolling.
+        =================================================== -->
+
         <div
           class="product-row category-product-row"
-          aria-label="<%= group.label || group.category %> products"
+          aria-label="<%= group.label || group.category || 'Products' %> products"
         >
 
-          <% row.products.forEach((product) => { %>
+
+          <% rowProducts.forEach((product) => { %>
+
 
             <a
               class="product-card"
               href="/products/<%= product._id %>"
             >
 
-              <!-- PRODUCT IMAGE -->
+
+              <!-- ==================================================
+                   PRODUCT IMAGE
+              =================================================== -->
 
               <div class="product-image">
+
 
                 <% if (product.image) { %>
 
@@ -111,9 +216,22 @@
                     src="<%= product.image %>"
                     alt="<%= product.name %>"
                     loading="lazy"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
                   >
 
+
+                  <div
+                    class="placeholder"
+                    style="display:none"
+                  >
+
+                    <i class="fas fa-box"></i>
+
+                  </div>
+
+
                 <% } else { %>
+
 
                   <div class="placeholder">
 
@@ -121,37 +239,40 @@
 
                   </div>
 
+
                 <% } %>
+
 
               </div>
 
 
-              <!-- PRODUCT INFORMATION -->
+              <!-- ==================================================
+                   PRODUCT INFORMATION
+              =================================================== -->
 
               <div class="product-info">
+
 
                 <!-- PRODUCT NAME -->
 
                 <div class="product-name">
+
                   <%= product.name %>
+
                 </div>
 
 
-                <!-- SUBCATEGORY -->
+                <!-- SUBCATEGORY
+                     
+                     Display only.
+                     It DOES NOT determine row grouping.
+                -->
 
-                <% if (product.subcategory) { %>
+                <div class="stock-meta-line">
 
-                  <div class="stock-meta-line">
-                    <%= product.subcategory %>
-                  </div>
+                  <%= product.subcategory || "Other" %>
 
-                <% } else { %>
-
-                  <div class="stock-meta-line">
-                    Other
-                  </div>
-
-                <% } %>
+                </div>
 
 
                 <!-- SELLING PRICE -->
@@ -159,6 +280,7 @@
                 <div class="product-price">
 
                   KSh
+
                   <%= Number(
                     product.unitSellPrice || 0
                   ).toLocaleString() %>
@@ -171,7 +293,11 @@
                 <div class="stock-text">
 
                   <strong>
-                    <%= product.days || 0 %>
+
+                    <%= Number(
+                      product.days || 0
+                    ) %>
+
                   </strong>
 
                   day delivery
@@ -201,171 +327,29 @@
 
                 </div>
 
+
               </div>
+
 
             </a>
 
-          <% }) %>
-
-        </div>
-
-      </div>
-
-    <% }) %>
-
-
-  <% } else if (group.products && group.products.length) { %>
-
-    <!-- ==================================================
-         FALLBACK
-
-         If the controller returns group.products instead
-         of group.rows, split the products into six-card
-         rows here.
-
-         This keeps the view safe regardless of whether
-         the controller has already chunked the products.
-    =================================================== -->
-
-    <%
-      const categoryProducts = group.products || [];
-
-      for (
-        let start = 0;
-        start < categoryProducts.length;
-        start += 6
-      ) {
-
-        const rowProducts =
-          categoryProducts.slice(
-            start,
-            start + 6
-          );
-    %>
-
-      <div class="subcategory-row-block">
-
-        <div class="subcategory-head">
-
-          <h3>
-            <%= group.label || group.category %>
-          </h3>
-
-          <% if (categoryProducts.length > 6) { %>
-
-            <span>
-              Swipe left/right
-            </span>
-
-          <% } %>
-
-        </div>
-
-
-        <div
-          class="product-row category-product-row"
-          aria-label="<%= group.label || group.category %> products"
-        >
-
-          <% rowProducts.forEach((product) => { %>
-
-            <a
-              class="product-card"
-              href="/products/<%= product._id %>"
-            >
-
-              <div class="product-image">
-
-                <% if (product.image) { %>
-
-                  <img
-                    src="<%= product.image %>"
-                    alt="<%= product.name %>"
-                    loading="lazy"
-                  >
-
-                <% } else { %>
-
-                  <div class="placeholder">
-
-                    <i class="fas fa-box"></i>
-
-                  </div>
-
-                <% } %>
-
-              </div>
-
-
-              <div class="product-info">
-
-                <div class="product-name">
-                  <%= product.name %>
-                </div>
-
-
-                <div class="stock-meta-line">
-                  <%= product.subcategory || "Other" %>
-                </div>
-
-
-                <div class="product-price">
-
-                  KSh
-                  <%= Number(
-                    product.unitSellPrice || 0
-                  ).toLocaleString() %>
-
-                </div>
-
-
-                <div class="stock-text">
-
-                  <strong>
-                    <%= product.days || 0 %>
-                  </strong>
-
-                  day delivery
-
-                </div>
-
-
-                <div
-                  class="stock-text <%= Number(product.units || 0) <= 0 ? 'out' : '' %>"
-                >
-
-                  <% if (Number(product.units || 0) > 0) { %>
-
-                    <%= Number(
-                      product.units
-                    ).toLocaleString() %>
-
-                    available
-
-                  <% } else { %>
-
-                    Out of stock
-
-                  <% } %>
-
-                </div>
-
-              </div>
-
-            </a>
 
           <% }) %>
 
+
         </div>
 
+
       </div>
+
 
     <%
       }
     %>
 
 
-  <% else { %>
+  <% } else { %>
+
 
     <div
       class="empty"
@@ -380,7 +364,9 @@
 
     </div>
 
+
   <% } %>
+
 
 </section>
 
