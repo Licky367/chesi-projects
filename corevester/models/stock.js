@@ -1,7 +1,15 @@
 const mongoose = require("mongoose");
 
+const STOCK_CATEGORIES = [
+  "Diagnostic Equipment",
+  "Hospital Furniture",
+  "Laboratory Equipment",
+  "Surgical Equipment"
+];
+
 const stockSchema = new mongoose.Schema(
   {
+    // Product name is the subcategory name. It is never keyed separately.
     name: {
       type: String,
       required: true,
@@ -13,21 +21,19 @@ const stockSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      lowercase: true,
+      enum: STOCK_CATEGORIES,
       index: true
     },
 
-    // A category may contain many subcategories.
-    // A Stock document represents one warehouse subcategory record.
     subcategory: {
       type: String,
       required: true,
       trim: true,
-      lowercase: true,
       index: true
     },
 
-    // Delivery/lead days belong to the subcategory, not the category.
+    // Retained for compatibility with existing Product documents.
+    // It is no longer exposed on the stock-entry/allocation UI.
     days: {
       type: Number,
       required: true,
@@ -59,18 +65,41 @@ const stockSchema = new mongoose.Schema(
       default: ""
     },
 
+    // Current warehouse purchase-value total for this subcategory.
+    cashOutflow: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+
+    // Sum of cashOutflow for every active subcategory in this category.
+    categoryOveral: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+
+    // Sum of cashOutflow for all active categories/subcategories.
+    overal: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+
+    totalsUpdatedAt: {
+      type: Date,
+      default: Date.now
+    },
+
     isActive: {
       type: Boolean,
       default: true
     }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
-// Do not make this unique: older databases may contain legacy duplicates.
-// The service enforces the active category + subcategory combination.
 stockSchema.index({ category: 1, subcategory: 1 });
+stockSchema.statics.CATEGORIES = STOCK_CATEGORIES;
 
 module.exports = mongoose.model("Stock", stockSchema);
