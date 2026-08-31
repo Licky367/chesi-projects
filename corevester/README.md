@@ -1,131 +1,159 @@
-# CoreVester Shop Module
+# CoreVester Stock / Product Category Update
 
-This package implements the shop flow requested in `shopProjects.txt`.
+This package contains **complete replacement files** for the Stock and Marketplace Product changes requested for `corevester/*`.
 
-## Route contract
+The files are intentionally full files, not partial snippets. Replace the files at the exact paths shown below.
 
-### Marketplace
-- `GET /products` -> `views/products/products.ejs`
-- `GET /products/:id` -> `views/products/product-details.ejs`
-- `POST /products/:id/cart` -> add quantity to cart
+## Files included
 
-### Cart
-- `GET /carts` -> `views/cart/carts.ejs`
-- `GET /carts/:id` -> `views/cart/cart-details.ejs`
-- `POST /carts/:id/remove` -> remove an item and release its reserved Product.units
-- `POST /carts/checkout` -> pay on delivery or start M-Pesa
-- `GET /carts/payment/:id` -> M-Pesa waiting page
-- `GET /carts/payment/:id/status` -> browser polling endpoint
+```text
+corevester/
+├── controllers/stock.js
+├── models/products.js
+├── models/stock.js
+├── routes/stock.js
+├── services/productService.js
+├── services/stockService.js
+└── views/
+    ├── products/products.ejs
+    └── stock/
+        ├── product-entry.ejs
+        ├── stock-entry.ejs
+        └── stock.ejs
 
-### Packages
-- `GET /packages` -> `views/packages/packages.ejs`
-- `GET /packages/:id` -> `views/packages/package-details.ejs`
-
-### Stock management
-- `GET /stock` -> `views/stock/stock.ejs`
-- `GET /stock/new` -> `views/stock/product-entry.ejs`
-- `POST /stock` -> create Product + Stock
-- `GET /stock/:id` -> `views/stock/stock-entry.ejs`
-- `POST /stock/:id` -> update Product + Stock
-
-### M-Pesa
-- `POST /mpesa/callback` -> Daraja callback
-
-## App integration
-
-The application should already have:
-1. Express
-2. Mongoose connected to MongoDB
-3. `express-session` (or another session layer exposing `req.sessionID`)
-4. Authentication middleware that sets `req.user` for logged-in users
-5. `express-ejs-layouts` if the supplied `layout.ejs` is used as a layout
-
-Example route mounting:
-
-```js
-app.use(require("./middleware/cartContext"));
-
-app.use("/products", require("./routes/products"));
-app.use("/carts", require("./routes/carts"));
-app.use("/packages", require("./routes/packages"));
-app.use("/stock", require("./routes/stock"));
-app.use("/mpesa", require("./routes/mpesa"));
+public/css/
+├── shop.css
+└── shopt.css
 ```
 
-If the project uses `express-ejs-layouts`:
+`shopt.css` is a complete compatibility copy of `shop.css` because the current CoreVester layout references `/css/shopt.css`, while the repository also contains `/css/shop.css`. Keeping both complete prevents a CSS filename mismatch from breaking the UI.
 
-```js
-const expressLayouts = require("express-ejs-layouts");
-app.use(expressLayouts);
-app.set("layout", "layout");
+## 1. Stock grid
+
+`/stock` now uses a real CSS grid:
+
+```text
+1  2  3  4  5  6
+7  8  9 10 11 12
 ```
 
-Static CSS:
+Desktop maximum is six cards per row. Smaller screens use responsive columns instead of horizontal scrolling.
 
-```js
-app.use(express.static(path.join(__dirname, "public")));
+## 2. Products grid
+
+Each category on `/products` also uses the same six-column maximum. Product number seven automatically starts the next row.
+
+## 3. Stock category workflow
+
+`/stock/new` now supports two modes:
+
+### Existing category
+
+Select an existing category from the Stock collection.
+
+The form loads its current:
+
+- name
+- category
+- buy price
+- image
+- description
+- current warehouse units
+
+For an existing category, the quantity field is **Additional warehouse units**. Those units are added to the existing `Stock.units`.
+
+The image is optional when updating. Leaving it blank preserves the current image.
+
+All other stock metadata can be edited at any time.
+
+### New category
+
+Choose `+ New category`, enter the category information and initial warehouse units, then save.
+
+The service prevents a second active Stock document from being created with the same category.
+
+## 4. Product allocation from `/stock/:id`
+
+Product creation no longer asks the user to re-enter:
+
+- name
+- category
+- buy price
+- image URL
+- description
+
+Those values are inherited from the Stock record.
+
+The administrator only supplies:
+
+- units to allocate
+- selling price
+- substation
+
+## 5. Existing Product behavior
+
+A Product is identified by its Stock source and destination substation.
+
+If that Product already exists:
+
+```text
+Product.units += allocated units
 ```
 
-The application must parse normal form submissions before these routes:
+No duplicate Product is created.
 
-```js
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+If it does not exist, a new Product is created with the Stock profile information.
+
+In both cases:
+
+```text
+Stock.units -= allocated units
 ```
 
-## Authentication
+This preserves the original CoreVester business rule: Stock is the warehouse source and Product.units is the marketplace quantity.
 
-`middleware/requireLogin.js` deliberately does not create a new authentication system. It expects the existing project authentication layer to populate `req.user`.
+## 6. Product profile synchronization
 
-## Product quantity rule
+When an existing Stock category is edited, all active Products that reference that Stock record are synchronized for:
 
-The requested business rule is implemented literally:
+- name
+- category
+- image
+- buy price
+- description
 
-**Add to cart**
-- Product.units decreases immediately.
-- CartItem.qty increases/gets created.
-- The Product decrement and Cart update happen in one MongoDB transaction.
+Selling price remains a Product-level value because it can differ by marketplace Product/substation allocation.
 
-**Remove from cart**
-- Cart item is removed.
-- Its reserved quantity is returned to Product.units.
+## 7. Important inventory rule
 
-**Pay upon delivery**
-- Cart items become a Package.
-- Cart is deleted.
-- Product.units is NOT reduced again because it was already reserved when the item entered the cart.
+This update does **not** move inventory out of `models/products.js`.
 
-**Pay now**
-- Cart quantities are reserved when added to cart.
-- Daraja STK Push is initiated.
-- Only a confirmed callback creates the Package and clears the Cart.
-- A failed M-Pesa callback releases the reserved Product.units.
+The flow remains:
 
-## MongoDB transaction requirement
-
-The service uses MongoDB transactions for stock/cart consistency. MongoDB transactions require a replica set or sharded cluster. MongoDB Atlas supports this.
-
-## M-Pesa environment variables
-
-```env
-MPESA_ENV=sandbox
-MPESA_CONSUMER_KEY=your_consumer_key
-MPESA_CONSUMER_SECRET=your_consumer_secret
-MPESA_SHORTCODE=your_shortcode
-MPESA_PASSKEY=your_passkey
-MPESA_CALLBACK_URL=https://YOUR-DOMAIN.example/mpesa/callback
+```text
+Stock
+  │
+  │ allocate X units
+  ▼
+Product.units += X
+  │
+  └── Stock.units -= X
 ```
 
-For production, use:
+Later customer/cart logic may reserve Product.units according to the existing shop workflow.
 
-```env
-MPESA_ENV=production
-```
+Do not deduct Product.units a second time merely because a package is delivered.
 
-The callback URL must be publicly reachable over HTTPS.
+## 8. Replacement instructions
 
-## Important integration note
+Copy the files in this package over the files at the same paths in your project.
 
-The supplied original layout linked `/cart`, while the requested route contract is `/carts`. This implementation uses `/carts` consistently.
+No database migration is required for these Stock/Product changes.
 
-The supplied Product model calls its image field `image`. This implementation keeps that field and uses an ordinary URL input; no multipart image upload is used.
+The existing MongoDB transaction requirement remains the same as the original stock allocation implementation.
+
+## 9. Validation performed
+
+The JavaScript replacement files were checked with `node --check`.
+
+The EJS files are complete templates rather than fragments, and the CSS files are complete stylesheets rather than append-only snippets.
