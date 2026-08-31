@@ -12,21 +12,23 @@
     <div class="error"><%= error %></div>
   <% } %>
 
-  <% if (!categories.length) { %>
+  <% if (!categories || !categories.length) { %>
     <div class="empty" style="margin-top:25px">
       <i class="fas fa-box-open"></i>
       <div>No products are available right now.</div>
     </div>
   <% } %>
 
-  <% categories.forEach((group) => { %>
+  <% (categories || []).forEach((group) => { %>
     <section class="category-section">
+
       <div class="category-head">
-        <h2><%= group.label %></h2>
+        <h2><%= group.label || group.category || "Other" %></h2>
       </div>
 
-      <% group.rows.forEach((row) => { %>
+      <% (group.rows || []).forEach((row) => { %>
         <div class="subcategory-row-block">
+
           <div class="subcategory-head">
             <h3>
               <%= row.hasSubcategory
@@ -34,16 +36,17 @@
                 : "Other" %>
             </h3>
 
-            <% if (row.products.length > 6) { %>
+            <% if (row.products && row.products.length > 1) { %>
               <span>Swipe left/right</span>
             <% } %>
           </div>
 
           <div
             class="product-row category-product-row"
-            aria-label="<%= row.label %> products"
+            aria-label="<%= row.label || 'Products' %> products"
           >
-            <% row.products.forEach((product) => { %>
+            <% (row.products || []).forEach((product) => { %>
+
               <a
                 class="product-card"
                 href="/products/<%= product._id %>"
@@ -54,7 +57,14 @@
                       src="<%= product.image %>"
                       alt="<%= product.name %>"
                       loading="lazy"
+                      onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
                     >
+                    <div
+                      class="placeholder"
+                      style="display:none"
+                    >
+                      <i class="fas fa-box"></i>
+                    </div>
                   <% } else { %>
                     <div class="placeholder">
                       <i class="fas fa-box"></i>
@@ -79,7 +89,9 @@
                   </div>
 
                   <div class="stock-text">
-                    <strong><%= product.days || 0 %></strong>
+                    <strong>
+                      <%= product.days || 0 %>
+                    </strong>
                     day delivery
                   </div>
 
@@ -87,15 +99,17 @@
                     class="stock-text <%= product.units <= 0 ? 'out' : '' %>"
                   >
                     <%= product.units > 0
-                      ? `${product.units} available`
+                      ? `${Number(product.units).toLocaleString()} available`
                       : "Out of stock" %>
                   </div>
                 </div>
               </a>
+
             <% }) %>
           </div>
         </div>
       <% }) %>
+
     </section>
   <% }) %>
 </section>

@@ -1,7 +1,8 @@
 <section class="shop-page">
   <div style="margin-bottom:15px">
     <a href="/products" class="secondary-btn">
-      <i class="fas fa-arrow-left"></i> Products
+      <i class="fas fa-arrow-left"></i>
+      Products
     </a>
   </div>
 
@@ -12,12 +13,17 @@
   <% if (product) { %>
     <div class="detail-card">
       <div class="detail-grid">
+
         <div class="detail-image">
           <% if (product.image) { %>
             <img
               src="<%= product.image %>"
               alt="<%= product.name %>"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
             >
+            <div class="placeholder" style="display:none">
+              <i class="fas fa-box"></i>
+            </div>
           <% } else { %>
             <div class="placeholder">
               <i class="fas fa-box"></i>
@@ -56,6 +62,7 @@
           </div>
 
           <% if (product.units > 0) { %>
+
             <div class="stock-text">
               <strong><%= product.units %></strong>
               units available
@@ -91,6 +98,7 @@
                 </button>
               </form>
             <% } else { %>
+
               <a
                 class="primary-btn"
                 href="/auth/login?next=/products/<%= product._id %>"
@@ -98,11 +106,15 @@
                 <i class="fas fa-sign-in-alt"></i>
                 Log in to buy
               </a>
+
             <% } %>
+
           <% } else { %>
+
             <div class="error">
               This product is currently out of stock.
             </div>
+
           <% } %>
 
           <% if (
@@ -113,6 +125,7 @@
               Product added to your cart.
             </div>
           <% } %>
+
         </div>
       </div>
     </div>
