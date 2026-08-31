@@ -1,137 +1,69 @@
 <section class="shop-page">
-
   <div class="form-card">
-
-    <a
-      href="/stock"
-      class="secondary-btn"
-    >
-      ← Stock
+    <a href="/stock" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i> Stock
     </a>
 
-    <h1 class="page-title">
-      Create Product
-    </h1>
+    <h1 class="page-title">Allocate Product</h1>
 
-    <p>
-      Warehouse stock:
-      <strong>
-        <%= stock.name %>
-      </strong>
-
-      — available:
-
-      <strong>
-        <%= stock.units %>
-      </strong>
-
-      units.
+    <p class="page-subtitle">
+      Product details are inherited from this Stock category. Enter only the
+      units to allocate, selling price and destination substation.
     </p>
 
     <% if (error) { %>
-      <div class="error">
-        <%= error %>
-      </div>
+      <div class="error"><%= error %></div>
     <% } %>
 
     <% if (saved === "1") { %>
       <div class="notice">
-        Product created and only allocated units were deducted from stock.
+        Product allocation saved. Stock was reduced by the allocated units.
       </div>
     <% } %>
 
-    <form
-      action="/stock/<%= stock._id %>"
-      method="POST"
-    >
+    <div class="stock-profile-box">
+      <div class="stock-profile-image">
+        <% if (stock.image) { %>
+          <img src="<%= stock.image %>" alt="<%= stock.name %>">
+        <% } else { %>
+          <i class="fas fa-box"></i>
+        <% } %>
+      </div>
 
+      <div>
+        <div class="stock-profile-label">Stock category</div>
+        <h2><%= stock.name %></h2>
+        <p><strong>Category:</strong> <%= stock.category %></p>
+        <p><strong>Buy price:</strong> KSh <%= Number(stock.buyPrice || 0).toLocaleString() %></p>
+        <p><strong>Warehouse balance:</strong> <%= stock.units %> units</p>
+
+        <% if (stock.description) { %>
+          <p><strong>Description:</strong> <%= stock.description %></p>
+        <% } %>
+      </div>
+    </div>
+
+    <form action="/stock/<%= stock._id %>" method="POST">
       <div class="form-grid">
-
-        <!-- PRODUCT NAME -->
         <div class="field">
-
-          <label for="name">
-            Product name
-          </label>
-
-          <input
-            id="name"
-            name="name"
-            value="<%= old.name || '' %>"
-            required
-          >
-
-        </div>
-
-
-        <!-- CATEGORY -->
-        <div class="field">
-
-          <label for="category">
-            Category
-          </label>
-
-          <input
-            id="category"
-            name="category"
-            value="<%= old.category || stock.category %>"
-            required
-          >
-
-        </div>
-
-
-        <!-- UNITS -->
-        <div class="field">
-
-          <label for="units">
-            Units to allocate
-          </label>
-
+          <label for="units">Units to allocate</label>
           <input
             id="units"
             type="number"
             min="1"
             max="<%= stock.units %>"
+            step="1"
             name="units"
             value="<%= old.units || '' %>"
             required
           >
-
-        </div>
-
-
-        <!-- BUY PRICE -->
-        <div class="field">
-
-          <label for="buyPrice">
-            Buy price
-          </label>
-
-          <input
-            id="buyPrice"
-            name="buyPrice"
-            type="number"
-            min="0"
-            step="0.01"
-            value="<%= stock.buyPrice || 0 %>"
-            readonly
-          >
-
-          <small style="color: var(--muted);">
-            Buy price is determined by the stock record and cannot be changed here.
+          <small class="form-help">
+            Maximum: <%= stock.units %> units currently available in the warehouse.
           </small>
-
         </div>
 
-
-        <!-- SELLING PRICE -->
         <div class="field">
-
-          <label for="unitSellPrice">
-            Selling price
-          </label>
-
+          <label for="unitSellPrice">Selling price</label>
           <input
             id="unitSellPrice"
             type="number"
@@ -141,104 +73,44 @@
             value="<%= old.unitSellPrice || '' %>"
             required
           >
-
         </div>
 
-
-        <!-- SUBSTATION -->
-        <div class="field">
-
-          <label for="substation">
-            Substation
-          </label>
-
-          <select
-            id="substation"
-            name="substation"
-            required
-          >
-
-            <option
-              value=""
-              disabled
-              <%= !old.substation ? "selected" : "" %>
-            >
+        <div class="field full">
+          <label for="substation">Substation</label>
+          <select id="substation" name="substation" required>
+            <option value="" disabled <%= !old.substation ? "selected" : "" %>>
               Select substation
             </option>
 
             <% substations.forEach((s) => { %>
-
               <option
                 value="<%= s._id %>"
                 <%= String(old.substation || "") === String(s._id) ? "selected" : "" %>
               >
                 <%= s.name %>
               </option>
-
             <% }) %>
-
           </select>
-
-          <small style="color: var(--muted);">
-            A substation must be selected before creating the product.
-          </small>
-
         </div>
-
-
-        <!-- IMAGE -->
-        <div class="field full">
-
-          <label for="image">
-            Image URL
-          </label>
-
-          <input
-            id="image"
-            name="image"
-            value="<%= old.image || '' %>"
-          >
-
-        </div>
-
-
-        <!-- DESCRIPTION -->
-        <div class="field full">
-
-          <label for="description">
-            Description
-          </label>
-
-          <textarea
-            id="description"
-            name="description"
-          ><%= old.description || '' %></textarea>
-
-        </div>
-
       </div>
 
+      <div class="allocation-note">
+        If this Stock category already has a Product at the selected substation,
+        the allocated units are added to that existing Product.units. A duplicate
+        Product is not created.
+      </div>
 
       <div class="form-actions">
-
-        <button
-          type="submit"
-          class="primary-btn"
-        >
-          Create Product
+        <button type="submit" class="primary-btn">
+          <i class="fas fa-boxes-stacked"></i> Allocate Product
         </button>
 
-        <a
-          href="/stock"
-          class="secondary-btn"
-        >
-          Cancel
+        <a href="/stock/new?stockId=<%= stock._id %>" class="secondary-btn">
+          <i class="fas fa-pen"></i> Edit Stock Category
         </a>
 
+        <a href="/stock" class="secondary-btn">Cancel</a>
       </div>
-
     </form>
-
   </div>
-
 </section>

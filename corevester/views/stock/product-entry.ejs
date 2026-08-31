@@ -1,1 +1,216 @@
-<section class="shop-page"><div class="form-card"><a href="/stock" class="secondary-btn">← Stock</a><h1 class="page-title">Add Stock</h1><p class="page-subtitle">Create warehouse inventory only.</p><% if(error){ %><div class="error"><%=error%></div><% } %><form action="/stock" method="POST"><div class="form-grid"><div class="field"><label>Stock name</label><input name="name" value="<%=old.name||''%>" required></div><div class="field"><label>Category</label><input name="category" value="<%=old.category||''%>" required></div><div class="field"><label>Warehouse units</label><input type="number" min="0" step="1" name="units" value="<%=old.units??0%>" required></div><div class="field"><label>Buy price</label><input type="number" min="0" step="0.01" name="buyPrice" value="<%=old.buyPrice??0%>"></div><div class="field full"><label>Image URL</label><input name="image" value="<%=old.image||''%>"></div><div class="field full"><label>Description</label><textarea name="description"><%=old.description||''%></textarea></div></div><button class="primary-btn">Create Stock</button></form></div></section>
+<section class="shop-page">
+  <div class="form-card stock-management-form">
+    <a href="/stock" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i> Stock
+    </a>
+
+    <h1 class="page-title"><%= title %></h1>
+    <p class="page-subtitle">
+      Select an existing stock category to add units and update its details,
+      or choose a new category to create a new warehouse record.
+    </p>
+
+    <% if (error) { %>
+      <div class="error"><%= error %></div>
+    <% } %>
+
+    <% if (saved === "1") { %>
+      <div class="notice">Stock category saved successfully.</div>
+    <% } %>
+
+    <form action="/stock" method="POST" id="stockForm">
+      <input type="hidden" name="stockId" id="stockId" value="<%= selectedStockId || old.stockId || '' %>">
+
+      <div class="field full stock-mode-field">
+        <label for="existingStockId">Existing stock category</label>
+        <select id="existingStockId">
+          <option value="">+ New category</option>
+          <% stockCatalog.forEach((stock) => { %>
+            <option
+              value="<%= stock._id %>"
+              data-name="<%= stock.name %>"
+              data-category="<%= stock.category %>"
+              data-units="<%= stock.units %>"
+              data-buy-price="<%= stock.buyPrice || 0 %>"
+              data-image="<%= stock.image || '' %>"
+              data-description="<%= stock.description || '' %>"
+              <%= String(selectedStockId || old.stockId || '') === String(stock._id) ? 'selected' : '' %>
+            >
+              <%= stock.category %> — <%= stock.name %> (<%= stock.units %> units)
+            </option>
+          <% }) %>
+        </select>
+        <small class="form-help">
+          Existing categories come directly from the Stock collection.
+        </small>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="name">Stock / product name</label>
+          <input
+            id="name"
+            name="name"
+            value="<%= old.name || '' %>"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label for="category">Category</label>
+          <input
+            id="category"
+            name="category"
+            value="<%= old.category || '' %>"
+            required
+          >
+          <small class="form-help">
+            Select a category above or type a new one here.
+          </small>
+        </div>
+
+        <div class="field">
+          <label for="additionalUnits" id="unitsLabel">Additional warehouse units</label>
+          <input
+            id="additionalUnits"
+            name="additionalUnits"
+            type="number"
+            min="0"
+            step="1"
+            value="<%= old.additionalUnits ?? '' %>"
+          >
+          <small class="form-help" id="unitsHelp">
+            For an existing category, these units are added to the current warehouse balance.
+          </small>
+        </div>
+
+        <div class="field">
+          <label for="buyPrice">Buy price</label>
+          <input
+            id="buyPrice"
+            name="buyPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            value="<%= old.buyPrice ?? 0 %>"
+          >
+        </div>
+
+        <div class="field full">
+          <label for="image">Image URL <span class="optional">(optional when updating)</span></label>
+          <input
+            id="image"
+            name="image"
+            value="<%= old.image || '' %>"
+          >
+          <small class="form-help">
+            Leave blank when updating to keep the current image.
+          </small>
+        </div>
+
+        <div class="field full">
+          <label for="description">Description</label>
+          <textarea id="description" name="description"><%= old.description || '' %></textarea>
+        </div>
+      </div>
+
+      <div class="stock-edit-summary" id="stockEditSummary" hidden>
+        <div><strong>Current warehouse units:</strong> <span id="currentUnits">0</span></div>
+        <div><strong>After this update:</strong> <span id="projectedUnits">0</span></div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="primary-btn" id="submitButton">
+          <i class="fas fa-plus"></i> Create Stock Category
+        </button>
+
+        <a href="/stock" class="secondary-btn">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+(function () {
+  const selector = document.getElementById("existingStockId");
+  const stockId = document.getElementById("stockId");
+  const name = document.getElementById("name");
+  const category = document.getElementById("category");
+  const additionalUnits = document.getElementById("additionalUnits");
+  const buyPrice = document.getElementById("buyPrice");
+  const image = document.getElementById("image");
+  const description = document.getElementById("description");
+  const submitButton = document.getElementById("submitButton");
+  const unitsLabel = document.getElementById("unitsLabel");
+  const unitsHelp = document.getElementById("unitsHelp");
+  const summary = document.getElementById("stockEditSummary");
+  const currentUnits = document.getElementById("currentUnits");
+  const projectedUnits = document.getElementById("projectedUnits");
+
+  function updateProjectedUnits() {
+    if (!stockId.value) {
+      summary.hidden = true;
+      return;
+    }
+
+    const selected = selector.options[selector.selectedIndex];
+    const current = Number(selected?.dataset.units || 0);
+    const additional = Number(additionalUnits.value || 0);
+
+    currentUnits.textContent = String(current);
+    projectedUnits.textContent = String(current + additional);
+    summary.hidden = false;
+  }
+
+  function loadSelectedStock() {
+    const selected = selector.options[selector.selectedIndex];
+    const id = selector.value;
+
+    if (!id) {
+      stockId.value = "";
+      unitsLabel.textContent = "Initial warehouse units";
+      unitsHelp.textContent = "Units for a brand-new category.";
+      additionalUnits.name = "units";
+      additionalUnits.value = "";
+      additionalUnits.required = true;
+      submitButton.innerHTML = '<i class="fas fa-plus"></i> Create Stock Category';
+      summary.hidden = true;
+      return;
+    }
+
+    stockId.value = id;
+    name.value = selected.dataset.name || "";
+    category.value = selected.dataset.category || "";
+    buyPrice.value = selected.dataset.buyPrice || "0";
+    image.value = selected.dataset.image || "";
+    description.value = selected.dataset.description || "";
+
+    unitsLabel.textContent = "Additional warehouse units";
+    unitsHelp.textContent = "These units will be added to the current warehouse balance.";
+    additionalUnits.name = "additionalUnits";
+    additionalUnits.value = "0";
+    additionalUnits.required = false;
+
+    submitButton.innerHTML = '<i class="fas fa-save"></i> Update Stock Category';
+
+    updateProjectedUnits();
+  }
+
+  selector.addEventListener("change", loadSelectedStock);
+  additionalUnits.addEventListener("input", updateProjectedUnits);
+
+  // Preserve server-rendered old values on validation errors. If a stockId
+  // was supplied, show the existing-category mode immediately.
+  if (selector.value) {
+    loadSelectedStock();
+
+    if ("<%= old.additionalUnits ?? '' %>" !== "") {
+      additionalUnits.value = "<%= old.additionalUnits ?? '' %>";
+      updateProjectedUnits();
+    }
+  } else {
+    additionalUnits.name = "units";
+    additionalUnits.required = true;
+  }
+})();
+</script>

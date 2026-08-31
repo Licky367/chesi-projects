@@ -1,1 +1,86 @@
-<section class="shop-page"><div class="page-head"><div><h1 class="page-title">Stock</h1><p class="page-subtitle">Warehouse inventory. Open stock to allocate units into products.</p></div><a href="/stock/new" class="primary-btn">Add Stock</a></div><% if(error){ %><div class="error"><%=error%></div><% } %><% if(saved==='1'){ %><div class="notice">Stock saved successfully.</div><% } %><div class="product-row"><% stocks.forEach(stock=>{ %><a class="product-card stock-card" href="/stock/<%=stock._id%>"><div class="product-image"><% if(stock.image){ %><img src="<%=stock.image%>" alt="<%=stock.name%>"><% }else{ %><div class="placeholder">Stock</div><% } %></div><div class="product-info"><div class="product-name"><%=stock.name%></div><div class="stock-text"><%=stock.category%></div><div class="stock-data"><small>Warehouse balance</small><strong><%=stock.units%> units</strong></div></div></a><% }) %></div></section>
+<section class="shop-page">
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Stock Management</h1>
+      <p class="page-subtitle">
+        Manage warehouse categories, quantities, buying prices, images and descriptions.
+      </p>
+    </div>
+
+    <a href="/stock/new" class="primary-btn">
+      <i class="fas fa-plus"></i> Add / Update Stock
+    </a>
+  </div>
+
+  <% if (error) { %>
+    <div class="error"><%= error %></div>
+  <% } %>
+
+  <% if (saved === "1") { %>
+    <div class="notice">Stock category saved successfully.</div>
+  <% } %>
+
+  <% if (!stocks.length) { %>
+    <div class="empty" style="margin-top:25px">
+      <i class="fas fa-warehouse"></i>
+      <div>No stock records exist yet.</div>
+    </div>
+  <% } else { %>
+    <section class="category-section">
+      <div class="category-head">
+        <h2>All Stock</h2>
+        <span>Maximum six cards per row</span>
+      </div>
+
+      <div class="stock-grid">
+        <% stocks.forEach((stock) => { %>
+          <div class="stock-card-wrap">
+            <a href="/stock/<%= stock._id %>" class="product-card stock-card">
+              <div class="product-image">
+                <% if (stock.image) { %>
+                  <img
+                    src="<%= stock.image %>"
+                    alt="<%= stock.name %>"
+                    loading="lazy"
+                  >
+                <% } else { %>
+                  <div class="placeholder">
+                    <i class="fas fa-box"></i>
+                  </div>
+                <% } %>
+              </div>
+
+              <div class="product-info">
+                <div class="product-name"><%= stock.name %></div>
+                <div class="stock-text">
+                  <%= stock.category || "uncategorized" %>
+                </div>
+
+                <div class="stock-data">
+                  <div class="data-cell">
+                    <small>Warehouse units</small>
+                    <strong><%= stock.units %></strong>
+                  </div>
+
+                  <div class="data-cell">
+                    <small>Buy / unit</small>
+                    <strong>
+                      KSh <%= Number(stock.buyPrice || 0).toLocaleString() %>
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            </a>
+
+            <a
+              href="/stock/new?stockId=<%= stock._id %>"
+              class="secondary-btn stock-edit-btn"
+            >
+              <i class="fas fa-pen"></i> Edit category
+            </a>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+</section>
