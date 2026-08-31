@@ -1,48 +1,94 @@
 <section class="shop-page">
   <div class="page-head">
     <div>
-      <h1 class="page-title">Stock</h1>
-      <p class="page-subtitle">Warehouse inventory.
-      Open stock to allocate units into products.</p>
+      <h1 class="page-title">Stock Management</h1>
+      <p class="page-subtitle">
+        Manage warehouse categories, subcategories, quantities, buying prices,
+        images and descriptions.
+      </p>
     </div>
-    <a href="/stock/new" class="primary-btn">Add Stock</a>
+
+    <a href="/stock/new" class="primary-btn">
+      <i class="fas fa-plus"></i> Add / Update Stock
+    </a>
   </div>
 
-  <% if(error){ %>
-    <div class="error"><%=error%></div>
+  <% if (error) { %>
+    <div class="error"><%= error %></div>
   <% } %>
 
-  <% if(saved==='1'){ %>
-    <div class="notice">Stock saved successfully.</div>
+  <% if (saved === "1") { %>
+    <div class="notice">Stock category saved successfully.</div>
   <% } %>
 
-  <div class="product-row" aria-label="Stock categories">
-    <% stocks.forEach(stock=>{ %>
-      <a class="product-card stock-card" href="/stock/<%=stock._id%>">
-        <div class="product-image">
-          <% if(stock.image){ %>
-            <img src="<%=stock.image%>" alt="<%=stock.name%>" loading="lazy">
-          <% }else{ %>
-            <div class="placeholder">Stock</div>
-          <% } %>
-        </div>
+  <% if (!stocks.length) { %>
+    <div class="empty" style="margin-top:25px">
+      <i class="fas fa-warehouse"></i>
+      <div>No stock records exist yet.</div>
+    </div>
+  <% } else { %>
+    <section class="category-section">
+      <div class="category-head">
+        <h2>All Stock</h2>
+        <span>Six cards maximum per row · swipe left/right</span>
+      </div>
 
-        <div class="product-info">
-          <div class="product-name"><%=stock.name%></div>
-          <div class="stock-text"><%=stock.category%></div>
+      <div class="product-row stock-row">
+        <% stocks.forEach((stock) => { %>
+          <div class="stock-card-wrap">
+            <a href="/stock/<%= stock._id %>" class="product-card stock-card">
+              <div class="product-image">
+                <% if (stock.image) { %>
+                  <img
+                    src="<%= stock.image %>"
+                    alt="<%= stock.name %>"
+                    loading="lazy"
+                  >
+                <% } else { %>
+                  <div class="placeholder">
+                    <i class="fas fa-box"></i>
+                  </div>
+                <% } %>
+              </div>
 
-          <div class="stock-data">
-            <div class="data-cell">
-              <small>Warehouse</small>
-              <strong><%=stock.units%></strong>
-            </div>
-            <div class="data-cell">
-              <small>Units</small>
-              <strong>units</strong>
-            </div>
+              <div class="product-info">
+                <div class="product-name"><%= stock.name %></div>
+
+                <div class="stock-text">
+                  <%= stock.category || "uncategorized" %>
+                </div>
+
+                <% if (stock.subcategory) { %>
+                  <div class="stock-subcategory">
+                    <%= stock.subcategory %>
+                  </div>
+                <% } %>
+
+                <div class="stock-data">
+                  <div class="data-cell">
+                    <small>Warehouse units</small>
+                    <strong><%= stock.units %></strong>
+                  </div>
+
+                  <div class="data-cell">
+                    <small>Buy / unit</small>
+                    <strong>
+                      KSh <%= Number(stock.buyPrice || 0).toLocaleString() %>
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            </a>
+
+            <a
+              href="/stock/new?stockId=<%= stock._id %>"
+              class="secondary-btn stock-edit-btn"
+            >
+              <i class="fas fa-pen"></i> Edit
+            </a>
           </div>
-        </div>
-      </a>
-    <% }) %>
-  </div>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
 </section>
