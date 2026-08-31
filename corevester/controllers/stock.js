@@ -1,153 +1,110 @@
 const service = require("../services/stockService");
 
-function renderStockForm(res, data, status = 200) {
-  return res.status(status).render("stock/product-entry", {
-    title: data.title || "Add / Update Stock",
-    error: data.error || null,
-    old: data.old || {},
-    stockCatalog: data.stockCatalog || [],
-    selectedStockId: data.selectedStockId || "",
-    saved: data.saved || ""
-  });
-}
-
-/**
- * GET /stock
- * Display all stock categories.
- */
 exports.list = async (req, res) => {
   try {
-    const stocks = await service.listStock();
-
-    return res.render("stock/stock", {
-      title: "Stock",
-      stocks,
+    res.render("stock/stock", {
+      title: "Stock Management",
+      stocks: await service.listStock(),
       error: req.query.error || null,
       saved: req.query.saved || ""
     });
-  } catch (e) {
-    console.error("Error listing stock:", e);
+  } catch (error) {
+    console.error(error);
 
-    return res.status(500).render("stock/stock", {
-      title: "Stock",
+    res.status(500).render("stock/stock", {
+      title: "Stock Management",
       stocks: [],
-      error: e.message,
+      error: error.message,
       saved: ""
     });
   }
 };
 
-/**
- * GET /stock/new
- * Display the stock creation/edit form.
- *
- * If ?stockId=... is supplied, the existing stock
- * category is loaded into the form for editing.
- */
 exports.newStockForm = async (req, res) => {
   try {
-    const stockCatalog = await service.getStockCatalog();
-    const selectedStockId = req.query.stockId || "";
+    const stockCatalog =
+      await service.getStockCategories();
 
-    let old = {};
+    const selectedStock =
+      req.query.stockId
+        ? await service.getStock(req.query.stockId)
+        : null;
 
-    if (selectedStockId) {
-      const selected = stockCatalog.find(
-        (stock) =>
-          String(stock._id) === String(selectedStockId)
-      );
+    res.render("stock/product-entry", {
+      title: selectedStock
+        ? "Update Stock Subcategory"
+        : "Add Stock Subcategory",
+      error: req.query.error || null,
+      saved: req.query.saved || "",
+      old: selectedStock || {},
+      stockCatalog,
+      selectedStockId:
+        selectedStock?._id?.toString() || ""
+    });
+  } catch (error) {
+    console.error(error);
 
-      if (selected) {
-        old = {
-          stockId: selected._id,
-          name: selected.name,
-          category: selected.category,
-          subcategory: selected.subcategory || "",
-          buyPrice: selected.buyPrice || 0,
-          image: selected.image || "",
-          description: selected.description || "",
-          additionalUnits: ""
-        };
+    res.status(500).render(
+      "stock/product-entry",
+      {
+        title: "Add Stock Subcategory",
+        error: error.message,
+        saved: "",
+        old: {},
+        stockCatalog: [],
+        selectedStockId: ""
       }
+    );
+  }
+};
+
+exports.createOrUpdateStock = async (req, res) => {
+  try {
+    const stockId =
+      String(req.body.stockId || "").trim();
+
+    if (stockId) {
+      await service.updateStockEntry(
+        stockId,
+        req.body
+      );
+    } else {
+      await service.createStock(req.body);
     }
 
-    return renderStockForm(res, {
-      title: selectedStockId
-        ? "Edit Stock Category"
-        : "Add / Update Stock",
-
-      stockCatalog,
-      selectedStockId,
-      old,
-
-      // Prevents "saved is not defined" in EJS
-      saved: req.query.saved || ""
-    });
-  } catch (e) {
-    console.error("Error loading stock form:", e);
-
-    return renderStockForm(
-      res,
-      {
-        title: "Add / Update Stock",
-        error: e.message,
-        saved: ""
-      },
-      500
-    );
-  }
-};
-
-/**
- * POST /stock
- * Create a new stock category or update an existing one.
- */
-exports.createStock = async (req, res) => {
-  try {
-    await service.createOrUpdateStock(req.body);
-
     return res.redirect("/stock?saved=1");
-  } catch (e) {
-    console.error("Error creating/updating stock:", e);
+  } catch (error) {
+    console.error(error);
 
-    const stockCatalog = await service
-      .getStockCatalog()
-      .catch(() => []);
+    const stockCatalog =
+      await service
+        .getStockCategories()
+        .catch(() => []);
 
-    return renderStockForm(
-      res,
+    return res.status(400).render(
+      "stock/product-entry",
       {
         title: req.body.stockId
-          ? "Edit Stock Category"
-          : "Add / Update Stock",
-
-        error: e.message,
-
+          ? "Update Stock Subcategory"
+          : "Add Stock Subcategory",
+        error: error.message,
+        saved: "",
         old: req.body,
-
         stockCatalog,
-
-        selectedStockId: req.body.stockId || "",
-
-        // Do not show success message after an error
-        saved: ""
-      },
-      400
+        selectedStockId:
+          req.body.stockId || ""
+      }
     );
   }
 };
 
-/**
- * GET /stock/:id
- * Display a specific stock category and the
- * product allocation form.
- */
 exports.entry = async (req, res) => {
   try {
-    const [stock, substations] = await Promise.all([
-      service.getStock(req.params.id),
-      service.getSubstations()
-    ]);
+    const [stock, substations] =
+      await Promise.all([
+        service.getStock(req.params.id),
+        service.getSubstations()
+      ]);
 
     if (!stock) {
       return res.redirect(
@@ -155,7 +112,7 @@ exports.entry = async (req, res) => {
       );
     }
 
-    return res.render("stock/stock-entry", {
+    res.render("stock/stock-entry", {
       title: "Allocate Product",
       stock,
       substations,
@@ -163,19 +120,17 @@ exports.entry = async (req, res) => {
       old: {},
       saved: req.query.saved || ""
     });
-  } catch (e) {
-    console.error("Error loading stock entry:", e);
+  } catch (error) {
+    console.error(error);
 
-    return res.redirect(
-      `/stock?error=${encodeURIComponent(e.message)}`
+    res.redirect(
+      `/stock?error=${encodeURIComponent(
+        error.message
+      )}`
     );
   }
 };
 
-/**
- * POST /stock/:id/product
- * Create a product from an existing stock category.
- */
 exports.createProduct = async (req, res) => {
   try {
     await service.createProductFromStock(
@@ -186,18 +141,17 @@ exports.createProduct = async (req, res) => {
     return res.redirect(
       `/stock/${req.params.id}?saved=1`
     );
-  } catch (e) {
-    console.error("Error creating product from stock:", e);
+  } catch (error) {
+    console.error(error);
 
-    const [stock, substations] = await Promise.all([
-      service.getStock(req.params.id),
-      service.getSubstations()
-    ]);
+    const [stock, substations] =
+      await Promise.all([
+        service.getStock(req.params.id),
+        service.getSubstations()
+      ]);
 
     if (!stock) {
-      return res.redirect(
-        "/stock?error=Stock+not+found"
-      );
+      return res.redirect("/stock");
     }
 
     return res.status(400).render(
@@ -206,7 +160,7 @@ exports.createProduct = async (req, res) => {
         title: "Allocate Product",
         stock,
         substations,
-        error: e.message,
+        error: error.message,
         old: req.body,
         saved: ""
       }
