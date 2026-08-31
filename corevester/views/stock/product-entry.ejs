@@ -7,8 +7,8 @@
     <h1 class="page-title"><%= title %></h1>
 
     <p class="page-subtitle">
-      Select an existing Stock category to add units and update its details,
-      or choose a new category to create a new warehouse record.
+      Select an existing stock subcategory to add units and update its
+      details, or create a new subcategory under a category.
     </p>
 
     <% if (error) { %>
@@ -17,7 +17,7 @@
 
     <% if (saved === "1") { %>
       <div class="notice">
-        Stock category saved successfully.
+        Stock subcategory saved successfully.
       </div>
     <% } %>
 
@@ -30,29 +30,28 @@
       >
 
       <div class="field full stock-mode-field">
-        <label for="existingStockId">Existing Stock category</label>
+        <label for="existingStockId">
+          Existing stock subcategory
+        </label>
 
         <select id="existingStockId">
-          <option value="">+ New category</option>
+          <option value="">+ New subcategory</option>
 
           <% stockCatalog.forEach((stock) => { %>
             <option
               value="<%= stock._id %>"
               data-name="<%= stock.name %>"
               data-category="<%= stock.category %>"
-              data-subcategory="<%= stock.subcategory || '' %>"
+              data-subcategory="<%= stock.subcategory %>"
+              data-days="<%= stock.days || 0 %>"
               data-units="<%= stock.units %>"
               data-buy-price="<%= stock.buyPrice || 0 %>"
               data-image="<%= stock.image || '' %>"
               data-description="<%= stock.description || '' %>"
-              <%= String(selectedStockId || old.stockId || '') === String(stock._id)
-                ? "selected"
-                : "" %>
+              <%= String(selectedStockId || old.stockId || '') === String(stock._id) ? "selected" : "" %>
             >
               <%= stock.category %>
-              <% if (stock.subcategory) { %>
-                / <%= stock.subcategory %>
-              <% } %>
+              — <%= stock.subcategory %>
               — <%= stock.name %>
               (<%= stock.units %> units)
             </option>
@@ -60,7 +59,7 @@
         </select>
 
         <small class="form-help">
-          Existing categories come directly from the Stock collection.
+          Existing subcategories come directly from the Stock collection.
         </small>
       </div>
 
@@ -83,50 +82,61 @@
             value="<%= old.category || '' %>"
             required
           >
+          <small class="form-help">
+            A category can contain multiple subcategories.
+          </small>
         </div>
 
         <div class="field">
-          <label for="subcategory">
-            Subcategory
-            <span class="optional">(optional)</span>
-          </label>
-
+          <label for="subcategory">Subcategory</label>
           <input
             id="subcategory"
             name="subcategory"
             value="<%= old.subcategory || '' %>"
-            placeholder="e.g. Daily, Surgical, Pediatric"
+            required
           >
-
           <small class="form-help">
-            Products in the same category are displayed in rows grouped by
-            this subcategory.
+            Required. Select an existing subcategory above or type a new one.
+          </small>
+        </div>
+
+        <div class="field">
+          <label for="days">Delivery days</label>
+          <input
+            id="days"
+            name="days"
+            type="number"
+            min="0"
+            step="1"
+            value="<%= old.days ?? 0 %>"
+            required
+          >
+          <small class="form-help">
+            These days belong to the subcategory and are inherited by products.
           </small>
         </div>
 
         <div class="field">
           <label for="additionalUnits" id="unitsLabel">
-            Additional warehouse units
+            Initial warehouse units
           </label>
 
           <input
             id="additionalUnits"
-            name="additionalUnits"
+            name="units"
             type="number"
             min="0"
             step="1"
-            value="<%= old.additionalUnits ?? '' %>"
+            value="<%= old.additionalUnits ?? old.units ?? '' %>"
           >
 
           <small class="form-help" id="unitsHelp">
-            For an existing category, these units are added to the current
-            warehouse balance.
+            Units for a brand-new subcategory.
           </small>
         </div>
 
         <div class="field">
           <label for="buyPrice">Buy price</label>
-
           <input
             id="buyPrice"
             name="buyPrice"
@@ -137,7 +147,7 @@
           >
         </div>
 
-        <div class="field">
+        <div class="field full">
           <label for="image">
             Image URL
             <span class="optional">(optional when updating)</span>
@@ -182,7 +192,7 @@
           id="submitButton"
         >
           <i class="fas fa-plus"></i>
-          Create Stock Category
+          Create Stock Subcategory
         </button>
 
         <a href="/stock" class="secondary-btn">
@@ -195,24 +205,53 @@
 
 <script>
 (function () {
-  const selector = document.getElementById("existingStockId");
-  const stockId = document.getElementById("stockId");
+  const selector =
+    document.getElementById("existingStockId");
 
-  const name = document.getElementById("name");
-  const category = document.getElementById("category");
-  const subcategory = document.getElementById("subcategory");
-  const additionalUnits = document.getElementById("additionalUnits");
-  const buyPrice = document.getElementById("buyPrice");
-  const image = document.getElementById("image");
-  const description = document.getElementById("description");
+  const stockId =
+    document.getElementById("stockId");
 
-  const submitButton = document.getElementById("submitButton");
-  const unitsLabel = document.getElementById("unitsLabel");
-  const unitsHelp = document.getElementById("unitsHelp");
+  const name =
+    document.getElementById("name");
 
-  const summary = document.getElementById("stockEditSummary");
-  const currentUnits = document.getElementById("currentUnits");
-  const projectedUnits = document.getElementById("projectedUnits");
+  const category =
+    document.getElementById("category");
+
+  const subcategory =
+    document.getElementById("subcategory");
+
+  const days =
+    document.getElementById("days");
+
+  const units =
+    document.getElementById("additionalUnits");
+
+  const buyPrice =
+    document.getElementById("buyPrice");
+
+  const image =
+    document.getElementById("image");
+
+  const description =
+    document.getElementById("description");
+
+  const submitButton =
+    document.getElementById("submitButton");
+
+  const unitsLabel =
+    document.getElementById("unitsLabel");
+
+  const unitsHelp =
+    document.getElementById("unitsHelp");
+
+  const summary =
+    document.getElementById("stockEditSummary");
+
+  const currentUnits =
+    document.getElementById("currentUnits");
+
+  const projectedUnits =
+    document.getElementById("projectedUnits");
 
   function updateProjectedUnits() {
     if (!stockId.value) {
@@ -227,9 +266,11 @@
       Number(selected?.dataset.units || 0);
 
     const additional =
-      Number(additionalUnits.value || 0);
+      Number(units.value || 0);
 
-    currentUnits.textContent = String(current);
+    currentUnits.textContent =
+      String(current);
+
     projectedUnits.textContent =
       String(current + additional);
 
@@ -249,14 +290,14 @@
         "Initial warehouse units";
 
       unitsHelp.textContent =
-        "Units for a brand-new category.";
+        "Units for a brand-new subcategory.";
 
-      additionalUnits.name = "units";
-      additionalUnits.value = "";
-      additionalUnits.required = true;
+      units.name = "units";
+      units.value = "";
+      units.required = true;
 
       submitButton.innerHTML =
-        '<i class="fas fa-plus"></i> Create Stock Category';
+        '<i class="fas fa-plus"></i> Create Stock Subcategory';
 
       summary.hidden = true;
       return;
@@ -273,6 +314,9 @@
     subcategory.value =
       selected.dataset.subcategory || "";
 
+    days.value =
+      selected.dataset.days || "0";
+
     buyPrice.value =
       selected.dataset.buyPrice || "0";
 
@@ -286,19 +330,14 @@
       "Additional warehouse units";
 
     unitsHelp.textContent =
-      "These units will be added to the current warehouse balance.";
+      "These units are added to the current warehouse balance.";
 
-    additionalUnits.name =
-      "additionalUnits";
-
-    additionalUnits.value =
-      "0";
-
-    additionalUnits.required =
-      false;
+    units.name = "additionalUnits";
+    units.value = "0";
+    units.required = false;
 
     submitButton.innerHTML =
-      '<i class="fas fa-save"></i> Update Stock Category';
+      '<i class="fas fa-save"></i> Update Stock Subcategory';
 
     updateProjectedUnits();
   }
@@ -308,7 +347,7 @@
     loadSelectedStock
   );
 
-  additionalUnits.addEventListener(
+  units.addEventListener(
     "input",
     updateProjectedUnits
   );
@@ -316,15 +355,17 @@
   if (selector.value) {
     loadSelectedStock();
 
-    if ("<%= old.additionalUnits ?? '' %>" !== "") {
-      additionalUnits.value =
+    if (
+      "<%= old.additionalUnits ?? '' %>" !== ""
+    ) {
+      units.value =
         "<%= old.additionalUnits ?? '' %>";
 
       updateProjectedUnits();
     }
   } else {
-    additionalUnits.name = "units";
-    additionalUnits.required = true;
+    units.name = "units";
+    units.required = true;
   }
 })();
 </script>

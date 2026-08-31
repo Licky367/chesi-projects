@@ -11,7 +11,8 @@
 
   <% if (saved === "1") { %>
     <div class="notice">
-      Product allocation saved. Stock was reduced by the allocated units.
+      Product allocation saved. Warehouse stock was reduced by the
+      total quantity allocated across all substations.
     </div>
   <% } %>
 
@@ -37,16 +38,19 @@
 
         <h1><%= stock.name %></h1>
 
-        <% if (stock.subcategory) { %>
-          <div class="detail-subcategory">
-            <i class="fas fa-layer-group"></i>
-            <%= stock.subcategory %>
-          </div>
-        <% } %>
+        <div class="detail-subcategory">
+          <i class="fas fa-layer-group"></i>
+          <%= stock.subcategory %>
+        </div>
 
         <div class="detail-price">
           KSh <%= Number(stock.buyPrice || 0).toLocaleString() %>
           <small>buy / unit</small>
+        </div>
+
+        <div class="stock-days-badge">
+          <i class="fas fa-calendar-days"></i>
+          <strong><%= stock.days %></strong> delivery days
         </div>
 
         <% if (stock.description) { %>
@@ -59,95 +63,195 @@
           <span>Warehouse balance</span>
           <strong><%= stock.units %> units</strong>
         </div>
-
-        <form
-          action="/stock/<%= stock._id %>"
-          method="POST"
-          class="allocation-form"
-        >
-          <div class="form-grid">
-            <div class="field">
-              <label for="units">Units to allocate</label>
-              <input
-                id="units"
-                type="number"
-                min="1"
-                max="<%= stock.units %>"
-                step="1"
-                name="units"
-                value="<%= old.units || '' %>"
-                required
-              >
-              <small class="form-help">
-                Maximum: <%= stock.units %> units currently available.
-              </small>
-            </div>
-
-            <div class="field">
-              <label for="unitSellPrice">Selling price</label>
-              <input
-                id="unitSellPrice"
-                type="number"
-                min="0"
-                step="0.01"
-                name="unitSellPrice"
-                value="<%= old.unitSellPrice || '' %>"
-                required
-              >
-            </div>
-
-            <div class="field full">
-              <label for="substation">Substation</label>
-              <select id="substation" name="substation" required>
-                <option
-                  value=""
-                  disabled
-                  <%= !old.substation ? "selected" : "" %>
-                >
-                  Select substation
-                </option>
-
-                <% substations.forEach((s) => { %>
-                  <option
-                    value="<%= s._id %>"
-                    <%= String(old.substation || "") === String(s._id)
-                      ? "selected"
-                      : "" %>
-                  >
-                    <%= s.name %>
-                  </option>
-                <% }) %>
-              </select>
-            </div>
-          </div>
-
-          <div class="allocation-note">
-            The product inherits its name, category, subcategory, image,
-            buy price and description from this Stock record. If a Product
-            already exists for this Stock category at the selected substation,
-            the allocated units are added to its existing Product.units.
-            Stock.units is reduced by the allocated quantity.
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="primary-btn">
-              <i class="fas fa-boxes-stacked"></i>
-              Allocate Product
-            </button>
-
-            <a
-              href="/stock/new?stockId=<%= stock._id %>"
-              class="secondary-btn"
-            >
-              <i class="fas fa-pen"></i> Edit Stock Category
-            </a>
-
-            <a href="/stock" class="secondary-btn">
-              Cancel
-            </a>
-          </div>
-        </form>
       </div>
+    </div>
+
+    <div class="allocation-panel">
+      <div class="allocation-heading">
+        <div>
+          <h2>Dispatch to substations</h2>
+          <p>
+            Enter the number of units each substation receives.
+            The total automatically becomes the Product.units value.
+          </p>
+        </div>
+        <div class="allocation-total-box">
+          <small>Total allocated</small>
+          <strong id="allocationTotal">0</strong>
+        </div>
+      </div>
+
+      <form
+        action="/stock/<%= stock._id %>"
+        method="POST"
+        class="allocation-form"
+        id="allocationForm"
+      >
+        <div class="field">
+          <label for="unitSellPrice">Selling price per unit</label>
+          <input
+            id="unitSellPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            name="unitSellPrice"
+            value="<%= old.unitSellPrice || '' %>"
+            required
+          >
+        </div>
+
+        <input
+          type="hidden"
+          name="units"
+          id="totalUnitsInput"
+          value="0"
+        >
+
+        <div class="substation-allocation-list">
+          <% substations.forEach((s) => { %>
+            <div class="substation-allocation-row">
+              <div class="substation-name">
+                <i class="fas fa-store"></i>
+                <div>
+                  <strong><%= s.name %></strong>
+                  <% if (s.location) { %>
+                    <small><%= s.location %></small>
+                  <% } %>
+                </div>
+              </div>
+
+              <div class="substation-unit-input">
+                <label for="allocation-<%= s._id %>">
+                  Units
+                </label>
+                <input
+                  id="allocation-<%= s._id %>"
+                  class="allocation-input"
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputmode="numeric"
+                  name="allocations[<%= s._id %>]"
+                  value="<%= old.allocations && old.allocations[s._id] ? old.allocations[s._id] : 0 %>"
+                >
+              </div>
+            </div>
+          <% }) %>
+        </div>
+
+        <div class="allocation-summary">
+          <div>
+            <span>Warehouse available</span>
+            <strong><%= stock.units %></strong>
+          </div>
+          <div>
+            <span>Being dispatched</span>
+            <strong id="summaryTotal">0</strong>
+          </div>
+          <div>
+            <span>Remaining warehouse</span>
+            <strong id="summaryRemaining"><%= stock.units %></strong>
+          </div>
+        </div>
+
+        <div class="allocation-note">
+          <strong>Important:</strong>
+          Product.units is the total across all substations.
+          The substation balances are stored independently in the
+          Substation collection. Product.units will not be reduced again
+          when a package is delivered.
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="submit"
+            class="primary-btn"
+            id="allocateButton"
+          >
+            <i class="fas fa-boxes-stacked"></i>
+            Allocate Product
+          </button>
+
+          <a
+            href="/stock/new?stockId=<%= stock._id %>"
+            class="secondary-btn"
+          >
+            <i class="fas fa-pen"></i>
+            Edit Stock Subcategory
+          </a>
+
+          <a href="/stock" class="secondary-btn">
+            Cancel
+          </a>
+        </div>
+      </form>
     </div>
   </div>
 </section>
+
+<script>
+(function () {
+  const stockUnits = Number("<%= stock.units %>");
+  const inputs = Array.from(
+    document.querySelectorAll(".allocation-input")
+  );
+  const total = document.getElementById("allocationTotal");
+  const totalInput = document.getElementById("totalUnitsInput");
+  const summaryTotal = document.getElementById("summaryTotal");
+  const summaryRemaining = document.getElementById("summaryRemaining");
+  const button = document.getElementById("allocateButton");
+  const form = document.getElementById("allocationForm");
+
+  function updateTotal() {
+    const value = inputs.reduce((sum, input) => {
+      const number = Number(input.value || 0);
+      return sum + (
+        Number.isFinite(number) && number > 0
+          ? Math.floor(number)
+          : 0
+      );
+    }, 0);
+
+    total.textContent = String(value);
+    summaryTotal.textContent = String(value);
+    totalInput.value = String(value);
+
+    const remaining = stockUnits - value;
+    summaryRemaining.textContent = String(
+      Math.max(0, remaining)
+    );
+
+    const valid =
+      value > 0 &&
+      value <= stockUnits;
+
+    button.disabled = !valid;
+    button.classList.toggle("disabled", !valid);
+  }
+
+  inputs.forEach((input) => {
+    input.addEventListener("input", updateTotal);
+  });
+
+  form.addEventListener("submit", function (event) {
+    const value = Number(totalInput.value || 0);
+
+    if (value <= 0) {
+      event.preventDefault();
+      alert(
+        "Allocate at least one unit to a substation."
+      );
+      return;
+    }
+
+    if (value > stockUnits) {
+      event.preventDefault();
+      alert(
+        "The total allocation cannot exceed warehouse stock."
+      );
+    }
+  });
+
+  updateTotal();
+})();
+</script>
