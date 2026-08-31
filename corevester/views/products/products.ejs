@@ -3,9 +3,7 @@
     <h1 class="page-title">Products</h1>
 
     <p class="page-subtitle">
-      Browse products by category and subcategory.
-      Each row contains a maximum of six cards and can be scrolled
-      horizontally.
+      Browse our available marketplace items.
     </p>
   </div>
 
@@ -24,14 +22,12 @@
     <section class="category-section">
       <div class="category-head">
         <h2><%= group.label %></h2>
-        <span>Six cards maximum per row · swipe left/right</span>
       </div>
 
       <% group.rows.forEach((row, rowIndex) => { %>
         <div class="subcategory-row-block">
           <div class="subcategory-head">
             <h3><%= row.hasSubcategory ? row.label : "Other" %></h3>
-            <span><%= row.hasSubcategory ? "Subcategory" : "Products without a subcategory" %></span>
           </div>
 
           <div class="product-row category-product-row">
