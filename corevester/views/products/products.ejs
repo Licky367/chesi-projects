@@ -1,7 +1,9 @@
 <section class="shop-page">
   <div>
     <h1 class="page-title">Products</h1>
-    <p class="page-subtitle">Browse products by category and choose what you need.</p>
+    <p class="page-subtitle">
+      Browse products by category and choose what you need.
+    </p>
   </div>
 
   <% if (typeof error !== "undefined" && error) { %>
@@ -15,29 +17,46 @@
     </div>
   <% } %>
 
-  <% categories.forEach(group => { %>
+  <% categories.forEach((group) => { %>
     <section class="category-section">
       <div class="category-head">
         <h2><%= group.label %></h2>
-        <span>Swipe left/right →</span>
+        <span>Maximum six per row</span>
       </div>
 
-      <div class="product-row">
-        <% group.products.forEach(product => { %>
-          <a class="product-card" href="/products/<%= product._id %>">
+      <div class="category-product-grid">
+        <% group.products.forEach((product) => { %>
+          <a
+            class="product-card"
+            href="/products/<%= product._id %>"
+          >
             <div class="product-image">
               <% if (product.image) { %>
-                <img src="<%= product.image %>" alt="<%= product.name %>" loading="lazy">
+                <img
+                  src="<%= product.image %>"
+                  alt="<%= product.name %>"
+                  loading="lazy"
+                >
               <% } else { %>
-                <div class="placeholder"><i class="fas fa-box"></i></div>
+                <div class="placeholder">
+                  <i class="fas fa-box"></i>
+                </div>
               <% } %>
             </div>
 
             <div class="product-info">
-              <div class="product-name"><%= product.name %></div>
-              <div class="product-price">KSh <%= Number(product.unitSellPrice || 0).toLocaleString() %></div>
+              <div class="product-name">
+                <%= product.name %>
+              </div>
+
+              <div class="product-price">
+                KSh <%= Number(product.unitSellPrice || 0).toLocaleString() %>
+              </div>
+
               <div class="stock-text <%= product.units <= 0 ? 'out' : '' %>">
-                <%= product.units > 0 ? `${product.units} available` : "Out of stock" %>
+                <%= product.units > 0
+                  ? `${product.units} available`
+                  : "Out of stock" %>
               </div>
             </div>
           </a>
