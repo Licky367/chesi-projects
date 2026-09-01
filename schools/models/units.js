@@ -1,5 +1,11 @@
 const mongoose = require("mongoose");
 
+const SEMESTERS = [
+  "September-December",
+  "January-April",
+  "May-August"
+];
+
 const assessmentSchema = new mongoose.Schema(
   {
     name: {
@@ -42,11 +48,20 @@ const unitSchema = new mongoose.Schema(
       trim: true
     },
 
-
     semesterOffered: {
       type: String,
       required: true,
-      trim: true
+      enum: SEMESTERS
+    },
+
+    /*
+     * Academic years/sessions in which this unit is offered.
+     * This allows the unit catalogue to retain its offering history.
+     */
+    academicYearsOffered: {
+      type: [String],
+      default: []
+    },
 
     objectives: {
       type: [String],
@@ -94,4 +109,10 @@ const unitSchema = new mongoose.Schema(
   }
 );
 
+unitSchema.index({
+  department: 1,
+  semesterOffered: 1
+});
+
 module.exports = mongoose.model("Unit", unitSchema);
+module.exports.SEMESTERS = SEMESTERS;

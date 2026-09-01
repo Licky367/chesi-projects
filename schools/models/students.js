@@ -1,32 +1,20 @@
 const mongoose = require("mongoose");
 
+const STUDENT_STATUSES = [
+  "on-session",
+  "off-session",
+  "differed",
+  "suspended",
+  "expelled"
+];
+
 const emergencyContactSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      trim: true
-    },
-
-    relationship: {
-      type: String,
-      trim: true
-    },
-
-    telephone: {
-      type: String,
-      trim: true
-    },
-
-    email: {
-      type: String,
-      trim: true,
-      lowercase: true
-    },
-
-    remarks: {
-      type: String,
-      trim: true
-    }
+    name: { type: String, trim: true },
+    relationship: { type: String, trim: true },
+    telephone: { type: String, trim: true },
+    email: { type: String, trim: true, lowercase: true },
+    remarks: { type: String, trim: true }
   },
   { _id: false }
 );
@@ -52,19 +40,25 @@ const studentSchema = new mongoose.Schema(
       required: true
     },
 
-    academicStstus: {
+    status: {
       type: String,
+      enum: STUDENT_STATUSES,
       required: true,
-      trim: true
+      default: "on-session",
+      index: true
+    },
+
+    yearOfStudy: {
+      type: Number,
+      min: 1
+    },
 
     nationalID: {
       type: String,
       trim: true
     },
 
-    dateOfBirth: {
-      type: Date
-    },
+    dateOfBirth: Date,
 
     gender: {
       type: String,
@@ -101,9 +95,7 @@ const studentSchema = new mongoose.Schema(
       trim: true
     },
 
-    kcseYear: {
-      type: Number
-    },
+    kcseYear: Number,
 
     telephone: {
       type: [String],
@@ -144,4 +136,7 @@ const studentSchema = new mongoose.Schema(
   }
 );
 
+studentSchema.index({ programme: 1, status: 1 });
+
 module.exports = mongoose.model("Student", studentSchema);
+module.exports.STUDENT_STATUSES = STUDENT_STATUSES;

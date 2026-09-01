@@ -2,21 +2,9 @@ const mongoose = require("mongoose");
 
 const contactSchema = new mongoose.Schema(
   {
-    telephone: {
-      type: String,
-      trim: true
-    },
-
-    email: {
-      type: String,
-      trim: true,
-      lowercase: true
-    },
-
-    location: {
-      type: String,
-      trim: true
-    }
+    telephone: { type: String, trim: true },
+    email: { type: String, trim: true, lowercase: true },
+    location: { type: String, trim: true }
   },
   { _id: false }
 );
@@ -96,14 +84,9 @@ const departmentSchema = new mongoose.Schema(
       default: []
     },
 
-    researchArears: {
+    researchAreas: {
       type: [String],
       default: []
-    },
-
-    session: {
-      type: String,
-      trim: true
     },
 
     school: {
@@ -117,4 +100,7 @@ const departmentSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("SchoolDepartment", departmentSchema);
+module.exports = mongoose.model(
+  "SchoolDepartment",
+  departmentSchema
+);
