@@ -60,7 +60,7 @@ const programmeSchema = new mongoose.Schema(
       default: []
     },
 
-    departments: [
+    department: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "SchoolDepartment"
