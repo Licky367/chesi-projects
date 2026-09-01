@@ -60,11 +60,6 @@ const programmeSchema = new mongoose.Schema(
       default: []
     },
 
-    session: {
-      type: String,
-      trim: true
-    },
-
     departments: [
       {
         type: mongoose.Schema.Types.ObjectId,
