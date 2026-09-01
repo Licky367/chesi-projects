@@ -43,7 +43,7 @@ const unitSchema = new mongoose.Schema(
     },
 
 
-    sessionOffered: {
+    semesterOffered: {
       type: String,
       required: true,
       trim: true
