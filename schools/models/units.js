@@ -42,6 +42,12 @@ const unitSchema = new mongoose.Schema(
       trim: true
     },
 
+
+    sessionOffered: {
+      type: String,
+      required: true,
+      trim: true
+
     objectives: {
       type: [String],
       default: []
