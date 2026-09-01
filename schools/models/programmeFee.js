@@ -126,7 +126,7 @@ const programmeFeeSchema = new mongoose.Schema(
 
     /*
     |--------------------------------------------------------------------------
-    | ACADEMIC SESSION
+    | academicYear
     |--------------------------------------------------------------------------
     | Example:
     | 2025/2026
@@ -134,7 +134,7 @@ const programmeFeeSchema = new mongoose.Schema(
     |--------------------------------------------------------------------------
     */
 
-    academicSession: {
+    academicYear: {
       type: String,
       required: true,
       trim: true
