@@ -1,18 +1,18 @@
 const mongoose = require("mongoose");
 
-
 /*
 |--------------------------------------------------------------------------
 | FEE CHARGE SCHEMA
 |--------------------------------------------------------------------------
-| Stores the amount charged for a particular fee item during a specific
-| year of study and semester.
+| Represents one fee item for a particular year and semester.
 |
 | Example:
 |
-| Year 1
-| Semester 1
-| Amount: 8000
+| {
+|   year: 1,
+|   semester: 1,
+|   amount: 8000
+| }
 |
 |--------------------------------------------------------------------------
 */
@@ -47,14 +47,13 @@ const feeChargeSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 | FEE ITEM SCHEMA
 |--------------------------------------------------------------------------
-| Represents one type of fee.
+| Represents a particular type of fee.
 |
 | Examples:
 |
+| Tuition Fees
 | Activity Fees
 | Admission Fees
-| Attachment Fees
-| Tuition Fees
 | ICT Fees
 | Library Fees
 | Medical Fees
@@ -87,17 +86,23 @@ const feeItemSchema = new mongoose.Schema(
 |--------------------------------------------------------------------------
 | PROGRAMME FEE SCHEMA
 |--------------------------------------------------------------------------
-| One document represents the fee structure of ONE programme.
+| One document represents the complete fee structure of ONE programme
+| for ONE academic session.
 |
-| The academic session is obtained through the referenced Programme.
+| Example:
 |
-| Programme
-|    |
-|    └── academicSession
+| Programme:
+| BSc Electrical & Electronics Engineering
 |
-| ProgrammeFee
-|    |
-|    └── programme → Programme
+| Academic Session:
+| 2026/2027
+|
+| feeItems:
+|   Tuition Fees
+|   Activity Fees
+|   ICT Fees
+|   Library Fees
+|   ...
 |
 |--------------------------------------------------------------------------
 */
@@ -108,9 +113,7 @@ const programmeFeeSchema = new mongoose.Schema(
     |--------------------------------------------------------------------------
     | PROGRAMME
     |--------------------------------------------------------------------------
-    | References the programme in models/programmes.js.
-    |
-    | The Programme contains the academicSession field.
+    | Links this fee structure to the programme in programmes.js
     |--------------------------------------------------------------------------
     */
 
@@ -123,9 +126,26 @@ const programmeFeeSchema = new mongoose.Schema(
 
     /*
     |--------------------------------------------------------------------------
+    | ACADEMIC SESSION
+    |--------------------------------------------------------------------------
+    | Example:
+    | 2025/2026
+    | 2026/2027
+    |--------------------------------------------------------------------------
+    */
+
+    academicSession: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
     | FEE ITEMS
     |--------------------------------------------------------------------------
-    | Contains all charges applicable to this programme.
+    | Each fee item contains its charges for different years and semesters.
     |--------------------------------------------------------------------------
     */
 
@@ -142,16 +162,23 @@ const programmeFeeSchema = new mongoose.Schema(
 
 /*
 |--------------------------------------------------------------------------
-| UNIQUE PROGRAMME
+| PREVENT DUPLICATE FEE STRUCTURES
 |--------------------------------------------------------------------------
-| Each programme has one programme fee structure document.
+| A programme should have only ONE fee structure for a particular
+| academic session.
 |
+| Example:
+|
+| BSc EEE + 2026/2027
+|
+| cannot appear twice.
 |--------------------------------------------------------------------------
 */
 
 programmeFeeSchema.index(
   {
-    programme: 1
+    programme: 1,
+    academicSession: 1
   },
   {
     unique: true
@@ -163,12 +190,12 @@ programmeFeeSchema.index(
 |--------------------------------------------------------------------------
 | VALIDATION
 |--------------------------------------------------------------------------
-| Prevents the same fee item from having duplicate year/semester
-| combinations.
+| Prevents duplicate year/semester combinations within the same
+| fee item.
 |
-| Example of invalid data:
+| Example of INVALID data:
 |
-| Tuition Fees
+| Tuition Fees:
 |   Year 1 Semester 1
 |   Year 1 Semester 1
 |
@@ -185,8 +212,7 @@ programmeFeeSchema.pre("validate", function (next) {
       if (combinations.has(key)) {
         return next(
           new Error(
-            `Duplicate charge for ${feeItem.name}: ` +
-            `Year ${charge.year}, Semester ${charge.semester}.`
+            `Duplicate charge for ${feeItem.name}: Year ${charge.year}, Semester ${charge.semester}.`
           )
         );
       }
@@ -201,13 +227,11 @@ programmeFeeSchema.pre("validate", function (next) {
 
 /*
 |--------------------------------------------------------------------------
-| GET SEMESTER TOTAL
+| VIRTUAL: TOTAL FOR A PARTICULAR YEAR AND SEMESTER
 |--------------------------------------------------------------------------
-| Calculates the total amount required for a particular year and
-| semester.
+| This is intentionally NOT stored in MongoDB.
 |
-| The total is calculated rather than stored in MongoDB.
-|
+| The actual total can be calculated when needed from feeItems.
 |--------------------------------------------------------------------------
 */
 
@@ -234,10 +258,24 @@ programmeFeeSchema.methods.getSemesterTotal = function (
 
 /*
 |--------------------------------------------------------------------------
-| GET ALL SEMESTER TOTALS
+| METHOD: GET ALL SEMESTER TOTALS
 |--------------------------------------------------------------------------
-| Returns the total required for every year/semester contained in the
-| fee structure.
+| Returns totals grouped by year and semester.
+|
+| Example:
+|
+| [
+|   {
+|     year: 1,
+|     semester: 1,
+|     total: 29217
+|   },
+|   {
+|     year: 1,
+|     semester: 2,
+|     total: 22677
+|   }
+| ]
 |
 |--------------------------------------------------------------------------
 */
@@ -273,10 +311,9 @@ programmeFeeSchema.methods.getSemesterTotals = function () {
 
 /*
 |--------------------------------------------------------------------------
-| GET FEES FOR A PARTICULAR SEMESTER
+| METHOD: GET FEE ITEMS FOR A PARTICULAR SEMESTER
 |--------------------------------------------------------------------------
-| Returns all fee items applicable to the selected year and semester.
-|
+| Useful when displaying a student's required fees.
 |--------------------------------------------------------------------------
 */
 
