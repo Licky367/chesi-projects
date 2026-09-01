@@ -52,6 +52,11 @@ const studentSchema = new mongoose.Schema(
       required: true
     },
 
+    academicStstus: {
+      type: String,
+      required: true,
+      trim: true
+
     nationalID: {
       type: String,
       trim: true
