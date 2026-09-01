@@ -1,69 +1,157 @@
 <section class="shop-page">
   <div style="margin-bottom:15px">
-    <a href="/substations" class="secondary-btn">← Substations</a>
+    <a href="/substations" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i>
+      Substations
+    </a>
   </div>
 
-  <div class="detail-card">
-    <div class="detail-grid">
-      <div class="detail-image">
-        <% if (product.image) { %>
-          <img src="<%= product.image %>" alt="<%= product.name %>">
-        <% } else { %>
-          <div class="placeholder">
-            <i class="fas fa-box"></i>
+  <% if (typeof error !== "undefined" && error) { %>
+    <div class="error"><%= error %></div>
+  <% } %>
+
+  <% if (typeof success !== "undefined" && success) { %>
+    <div class="notice"><%= success %></div>
+  <% } %>
+
+  <% if (!product) { %>
+    <div class="empty">
+      <i class="fas fa-box-open"></i>
+      <div>Product not found.</div>
+    </div>
+  <% } else { %>
+
+    <!--
+      Product presentation deliberately uses the same product/detail
+      classes used by the Products pages: product image, category,
+      product name, subcategory and selling price.
+    -->
+    <div class="detail-card">
+      <div class="detail-grid">
+
+        <div class="detail-image">
+          <% if (product.image) { %>
+            <img
+              src="<%= product.image %>"
+              alt="<%= product.name %>"
+            >
+          <% } else { %>
+            <div class="placeholder">
+              <i class="fas fa-box"></i>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="detail-content">
+          <span class="detail-category">
+            <%= product.category || "Other" %>
+          </span>
+
+          <h1><%= product.name || product.subcategory || "Product" %></h1>
+
+          <div class="detail-subcategory">
+            <i class="fas fa-layer-group"></i>
+            <%= product.subcategory || "Other" %>
           </div>
-        <% } %>
-      </div>
 
-      <div class="detail-content">
-        <span class="detail-category">
-          <%= product.category %>
-        </span>
-
-        <h1><%= product.name %></h1>
-
-        <div class="detail-subcategory">
-          <i class="fas fa-layer-group"></i>
-          <%= product.subcategory || "Other" %>
-        </div>
-
-        <div class="detail-price">
-          KSh <%= Number(product.unitSellPrice || 0).toLocaleString() %>
-        </div>
-
-        <div class="detail-description">
-          <%= product.description || "No description." %>
-        </div>
-
-        <div class="stock-balance-box">
-          <span>Total marketplace units</span>
-          <strong><%= product.units %></strong>
-        </div>
-
-        <h3 class="inventory-heading">
-          Substation balances
-        </h3>
-
-        <% if (!product.substationStocks.length) { %>
-          <div class="empty">
-            No substation allocation exists for this product.
+          <div class="detail-price">
+            KSh <%= Number(product.unitSellPrice || 0).toLocaleString() %>
+            <small>sell / unit</small>
           </div>
-        <% } else { %>
-          <div class="substation-inventory-list">
-            <% product.substationStocks.forEach((item) => { %>
-              <div class="substation-inventory-item">
-                <div>
-                  <strong><%= item.name %></strong>
-                  <% if (item.location) { %>
-                    <small><%= item.location %></small>
+
+          <% if (product.description) { %>
+            <div class="detail-description">
+              <%= product.description %>
+            </div>
+          <% } %>
+
+          <div class="stock-balance-box">
+            <span>Total marketplace units</span>
+            <strong>
+              <%= Number(product.units || 0).toLocaleString() %>
+            </strong>
+          </div>
+
+          <h3 class="inventory-heading">
+            Substation balances
+          </h3>
+
+          <% if (!product.substationStocks || !product.substationStocks.length) { %>
+            <div class="empty">
+              No substation allocation exists for this product.
+            </div>
+          <% } else { %>
+
+            <div class="substation-inventory-list">
+              <% product.substationStocks.forEach((item) => { %>
+                <div class="substation-inventory-item" style="display:block">
+
+                  <div
+                    style="display:flex;justify-content:space-between;gap:12px;align-items:center"
+                  >
+                    <div>
+                      <strong style="color:inherit;font-size:13px">
+                        <%= item.name %>
+                      </strong>
+
+                      <% if (item.location) { %>
+                        <small><%= item.location %></small>
+                      <% } %>
+                    </div>
+
+                    <strong>
+                      <%= Number(item.units || 0).toLocaleString() %> units
+                    </strong>
+                  </div>
+
+                  <% if (role === "admin") { %>
+                    <form
+                      method="POST"
+                      action="/substations/product/<%= product._id %>"
+                      style="margin-top:10px;display:flex;gap:8px;align-items:end;flex-wrap:wrap"
+                    >
+                      <input
+                        type="hidden"
+                        name="substationId"
+                        value="<%= item._id %>"
+                      >
+
+                      <div
+                        class="field"
+                        style="margin:0;flex:1;min-width:150px"
+                      >
+                        <label for="units-<%= item._id %>">
+                          Update units
+                        </label>
+
+                        <input
+                          id="units-<%= item._id %>"
+                          name="units"
+                          type="number"
+                          min="0"
+                          step="1"
+                          value="<%= Number(item.units || 0) %>"
+                          required
+                        >
+                      </div>
+
+                      <button
+                        type="submit"
+                        class="primary-btn"
+                      >
+                        <i class="fas fa-save"></i>
+                        Save
+                      </button>
+                    </form>
                   <% } %>
+
                 </div>
-                <strong><%= item.units %> units</strong>
-              </div>
-            <% }) %>
-          </div>
-        <% } %>
+              <% }) %>
+            </div>
+          <% } %>
+
+        </div>
       </div>
     </div>
-  </div>
+  <% } %>
 </section>
