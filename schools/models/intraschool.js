@@ -1,3 +1,21 @@
+// ==========================================================
+// models/intraschool.js
+// PROGRAMME + SCHOOL CHANGE
+// ==========================================================
+//
+// Business rule:
+//
+// DIFFERENT SCHOOL + DIFFERENT PROGRAMME
+//     => intraschool-transfer
+//
+// A NEW registration number IS generated.
+// It uses the DESTINATION SCHOOL code, the destination
+// school's sequence for the admission year, and the year.
+//
+// Generation itself is handled ONLY by:
+//     services/studentAdmissionService.js
+// ==========================================================
+
 const mongoose = require("mongoose");
 
 const TRANSFER_STATUSES = [
@@ -8,20 +26,6 @@ const TRANSFER_STATUSES = [
   "cancelled"
 ];
 
-/*
- * INTRASCHOOL TRANSFER
- *
- * Per the application's business rule, this means:
- *   the student changes programme AND changes School.
- *
- * Example:
- *   School A / BSc Computer Science
- *        ->
- *   School B / BSc Economics
- *
- * Although terminology can vary between institutions, this model
- * follows the exact business meaning required by this application.
- */
 const intraschoolSchema = new mongoose.Schema(
   {
     student: {
@@ -29,6 +33,25 @@ const intraschoolSchema = new mongoose.Schema(
       ref: "Student",
       required: true,
       index: true
+    },
+
+    previousRegistrationNumber: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+    registrationNumber: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true
+    },
+
+    registrationSequence: {
+      type: Number,
+      required: true,
+      min: 1
     },
 
     fromProgramme: {
@@ -57,6 +80,13 @@ const intraschoolSchema = new mongoose.Schema(
       index: true
     },
 
+    admissionYear: {
+      type: Number,
+      required: true,
+      min: 1900,
+      index: true
+    },
+
     academicYear: {
       type: String,
       trim: true,
@@ -80,7 +110,6 @@ const intraschoolSchema = new mongoose.Schema(
     },
 
     approvedAt: Date,
-
     completedAt: Date,
 
     approvedBy: {
@@ -110,5 +139,15 @@ intraschoolSchema.index({
   createdAt: -1
 });
 
-module.exports = mongoose.model("IntraschoolTransfer", intraschoolSchema);
-module.exports.TRANSFER_STATUSES = TRANSFER_STATUSES;
+intraschoolSchema.index({
+  registrationNumber: 1,
+  admissionYear: 1
+});
+
+module.exports = mongoose.model(
+  "IntraschoolTransfer",
+  intraschoolSchema
+);
+
+module.exports.TRANSFER_STATUSES =
+  TRANSFER_STATUSES;

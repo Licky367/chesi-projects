@@ -49,19 +49,6 @@ const studentSchema = new mongoose.Schema(
       index: true
     },
 
-    /*
-     * The student's CURRENT admission source.
-     *
-     * Initial admissions:
-     *   kuccps
-     *   institutional-transfer
-     *
-     * A later programme change changes this to:
-     *   interschool-transfer
-     *   intraschool-transfer
-     *
-     * The transfer documents keep the complete historical trail.
-     */
     admissionSource: {
       type: String,
       enum: ADMISSION_SOURCES,
@@ -70,13 +57,20 @@ const studentSchema = new mongoose.Schema(
       index: true
     },
 
-    /*
-     * These flags describe whether the student has ever undergone
-     * either kind of programme transfer.
-     *
-     * They are intentionally independent. A student may have more
-     * than one transfer in his/her academic lifetime.
-     */
+    kuccpsPlacement: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "KuccpsPlacement",
+      default: null,
+      index: true
+    },
+
+    institutionalTransfer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "InstitutionalTransfer",
+      default: null,
+      index: true
+    },
+
     hasInterschoolTransfer: {
       type: Boolean,
       default: false,
@@ -189,6 +183,5 @@ studentSchema.index({ programme: 1, status: 1 });
 studentSchema.index({ admissionSource: 1, status: 1 });
 
 module.exports = mongoose.model("Student", studentSchema);
-
 module.exports.STUDENT_STATUSES = STUDENT_STATUSES;
 module.exports.ADMISSION_SOURCES = ADMISSION_SOURCES;

@@ -1,3 +1,14 @@
+// ==========================================================
+// models/institutionalTransfers.js
+// INSTITUTIONAL TRANSFER ADMISSION
+// ==========================================================
+//
+// THIS MODEL DOES NOT GENERATE REGISTRATION NUMBERS.
+//
+// Registration numbers are generated only by:
+//     services/studentAdmissionService.js
+// ==========================================================
+
 const mongoose = require("mongoose");
 
 const TRANSFER_STATUSES = [
@@ -15,29 +26,8 @@ const TRANSFER_TYPES = [
   "programme-transfer"
 ];
 
-const SEMESTERS = [
-  "September-December",
-  "January-April",
-  "May-August"
-];
-
-const academicYearPattern = /^\d{4}\/\d{2}$/;
-
-const documentSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true, trim: true },
-    file: { type: String, required: true, trim: true },
-    uploadedAt: { type: Date, default: Date.now }
-  },
-  { _id: false }
-);
-
 const institutionalTransferSchema = new mongoose.Schema(
   {
-    /*
-     * Nullable because the transfer application may exist before
-     * the receiving institution creates the Student record.
-     */
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Student",
@@ -56,23 +46,16 @@ const institutionalTransferSchema = new mongoose.Schema(
     transferType: {
       type: String,
       enum: TRANSFER_TYPES,
-      required: true,
       default: "institutional-transfer"
     },
 
     status: {
       type: String,
       enum: TRANSFER_STATUSES,
-      required: true,
       default: "pending",
       index: true
     },
 
-    /*
-     * Student identity as supplied by the previous institution.
-     * These values are retained as transfer history even after the
-     * student gets a new registration number here.
-     */
     studentName: {
       type: String,
       required: true,
@@ -82,8 +65,7 @@ const institutionalTransferSchema = new mongoose.Schema(
     previousInstitution: {
       type: String,
       required: true,
-      trim: true,
-      index: true
+      trim: true
     },
 
     previousInstitutionCode: {
@@ -111,11 +93,6 @@ const institutionalTransferSchema = new mongoose.Schema(
       min: 1
     },
 
-    /*
-     * Programme being entered at THIS institution.
-     * This is independent of Student.programme so the transfer
-     * application can exist before registration.
-     */
     programme: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Programme",
@@ -128,15 +105,20 @@ const institutionalTransferSchema = new mongoose.Schema(
       required: true,
       trim: true,
       match: [
-        academicYearPattern,
-        "Academic year must use the format YYYY/YY, e.g. 2025/26."
-      ]
+        /^\d{4}\/\d{2}$/,
+        "Academic year must use YYYY/YY."
+      ],
+      index: true
     },
 
     semester: {
       type: String,
       required: true,
-      enum: SEMESTERS
+      enum: [
+        "September-December",
+        "January-April",
+        "May-August"
+      ]
     },
 
     academicSession: {
@@ -163,18 +145,30 @@ const institutionalTransferSchema = new mongoose.Schema(
       default: 0
     },
 
-    reason: { type: String, trim: true },
+    reason: {
+      type: String,
+      trim: true
+    },
 
     applicationDate: {
       type: Date,
       default: Date.now
     },
 
-    transferDate: { type: Date },
+    transferDate: Date,
 
+    /*
+     * Assigned by studentAdmissionService.
+     */
     registrationNumber: {
       type: String,
       trim: true,
+      index: true
+    },
+
+    registrationSequence: {
+      type: Number,
+      min: 1,
       index: true
     },
 
@@ -183,20 +177,42 @@ const institutionalTransferSchema = new mongoose.Schema(
       ref: "Staff"
     },
 
-    approvalDate: { type: Date },
+    approvalDate: Date,
 
-    approvalRemarks: { type: String, trim: true },
-    rejectionReason: { type: String, trim: true },
-    cancellationReason: { type: String, trim: true },
+    approvalRemarks: {
+      type: String,
+      trim: true
+    },
+
+    rejectionReason: {
+      type: String,
+      trim: true
+    },
+
+    cancellationReason: {
+      type: String,
+      trim: true
+    },
 
     documents: {
-      type: [documentSchema],
+      type: [
+        {
+          name: { type: String, trim: true },
+          file: { type: String, trim: true },
+          uploadedAt: { type: Date, default: Date.now }
+        }
+      ],
       default: []
     },
 
-    remarks: { type: String, trim: true }
+    remarks: {
+      type: String,
+      trim: true
+    }
   },
-  { timestamps: true }
+  {
+    timestamps: true
+  }
 );
 
 institutionalTransferSchema.index({
@@ -209,31 +225,36 @@ institutionalTransferSchema.index({
   previousRegistrationNumber: 1
 });
 
-institutionalTransferSchema.index({
-  programme: 1,
-  academicSession: 1
-});
+institutionalTransferSchema.methods.markCompleted =
+async function(studentId, registrationNumber, registrationSequence) {
 
-institutionalTransferSchema.methods.markCompleted = function (
-  studentId,
-  registrationNumber
-) {
+  if (!studentId) {
+    throw new Error("Student ID is required.");
+  }
+
+  if (!registrationNumber) {
+    throw new Error(
+      "Registration number must be generated by studentAdmissionService."
+    );
+  }
+
   this.student = studentId;
   this.registrationNumber = registrationNumber;
+  this.registrationSequence = registrationSequence;
   this.status = "completed";
-  this.transferDate = this.transferDate || new Date();
+  this.transferDate =
+    this.transferDate || new Date();
 
   return this.save();
 };
-
-institutionalTransferSchema.set("toJSON", { virtuals: true });
-institutionalTransferSchema.set("toObject", { virtuals: true });
 
 module.exports = mongoose.model(
   "InstitutionalTransfer",
   institutionalTransferSchema
 );
 
-module.exports.TRANSFER_STATUSES = TRANSFER_STATUSES;
-module.exports.TRANSFER_TYPES = TRANSFER_TYPES;
-module.exports.SEMESTERS = SEMESTERS;
+module.exports.TRANSFER_STATUSES =
+  TRANSFER_STATUSES;
+
+module.exports.TRANSFER_TYPES =
+  TRANSFER_TYPES;
