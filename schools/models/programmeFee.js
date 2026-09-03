@@ -8,11 +8,7 @@ const SEMESTERS = [
 
 const feeChargeSchema = new mongoose.Schema(
   {
-    year: {
-      type: Number,
-      required: true,
-      min: 1
-    },
+    year: { type: Number, required: true, min: 1 },
 
     semester: {
       type: String,
@@ -20,27 +16,15 @@ const feeChargeSchema = new mongoose.Schema(
       enum: SEMESTERS
     },
 
-    amount: {
-      type: Number,
-      required: true,
-      min: 0
-    }
+    amount: { type: Number, required: true, min: 0 }
   },
   { _id: false }
 );
 
 const feeItemSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
-
-    charges: {
-      type: [feeChargeSchema],
-      default: []
-    }
+    name: { type: String, required: true, trim: true },
+    charges: { type: [feeChargeSchema], default: [] }
   },
   { _id: false }
 );
@@ -69,9 +53,7 @@ const programmeFeeSchema = new mongoose.Schema(
       default: []
     }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
 programmeFeeSchema.index(
@@ -102,24 +84,14 @@ programmeFeeSchema.pre("validate", function (next) {
   next();
 });
 
-programmeFeeSchema.methods.getSemesterTotal = function (
-  year,
-  semester
-) {
-  let total = 0;
+programmeFeeSchema.methods.getSemesterTotal = function (year, semester) {
+  return this.feeItems.reduce((total, feeItem) => {
+    const charge = feeItem.charges.find(
+      item => item.year === year && item.semester === semester
+    );
 
-  for (const feeItem of this.feeItems) {
-    for (const charge of feeItem.charges) {
-      if (
-        charge.year === year &&
-        charge.semester === semester
-      ) {
-        total += charge.amount;
-      }
-    }
-  }
-
-  return total;
+    return total + (charge ? charge.amount : 0);
+  }, 0);
 };
 
 programmeFeeSchema.methods.getSemesterTotals = function () {
@@ -147,28 +119,18 @@ programmeFeeSchema.methods.getSemesterTotals = function () {
   });
 };
 
-programmeFeeSchema.methods.getFeesForSemester = function (
-  year,
-  semester
-) {
-  const result = [];
+programmeFeeSchema.methods.getFeesForSemester = function (year, semester) {
+  return this.feeItems
+    .map(feeItem => {
+      const charge = feeItem.charges.find(
+        item => item.year === year && item.semester === semester
+      );
 
-  for (const feeItem of this.feeItems) {
-    const charge = feeItem.charges.find(
-      item =>
-        item.year === year &&
-        item.semester === semester
-    );
-
-    if (charge) {
-      result.push({
-        name: feeItem.name,
-        amount: charge.amount
-      });
-    }
-  }
-
-  return result;
+      return charge
+        ? { name: feeItem.name, amount: charge.amount }
+        : null;
+    })
+    .filter(Boolean);
 };
 
 module.exports = mongoose.model("ProgrammeFee", programmeFeeSchema);

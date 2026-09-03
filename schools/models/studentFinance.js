@@ -1,49 +1,28 @@
 const mongoose = require("mongoose");
 
+const SEMESTERS = [
+  "September-December",
+  "January-April",
+  "May-August"
+];
+
+const academicYearPattern = /^\d{4}\/\d{2}$/;
+
 const paymentSchema = new mongoose.Schema(
   {
-    amount: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-
-    paymentDate: {
-      type: Date,
-      default: Date.now
-    },
-
-    reference: {
-      type: String,
-      trim: true
-    },
-
-    method: {
-      type: String,
-      trim: true
-    },
-
-    remarks: {
-      type: String,
-      trim: true
-    }
+    amount: { type: Number, required: true, min: 0 },
+    paymentDate: { type: Date, default: Date.now },
+    reference: { type: String, trim: true },
+    method: { type: String, trim: true },
+    remarks: { type: String, trim: true }
   },
   { timestamps: true }
 );
 
 const feeItemSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
-
-    amountRequired: {
-      type: Number,
-      required: true,
-      min: 0
-    }
+    name: { type: String, required: true, trim: true },
+    amountRequired: { type: Number, required: true, min: 0 }
   },
   { _id: false }
 );
@@ -66,23 +45,24 @@ const studentFinanceSchema = new mongoose.Schema(
     academicYear: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
+      match: [
+        academicYearPattern,
+        "Academic year must use the format YYYY/YY, e.g. 2025/26."
+      ]
     },
 
     semester: {
       type: String,
       required: true,
-      enum: [
-        "September-December",
-        "January-April",
-        "May-August"
-      ]
+      enum: SEMESTERS
     },
 
     academicSession: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
+      index: true
     },
 
     yearOfStudy: {
@@ -91,10 +71,7 @@ const studentFinanceSchema = new mongoose.Schema(
       min: 1
     },
 
-    feeItems: {
-      type: [feeItemSchema],
-      default: []
-    },
+    feeItems: { type: [feeItemSchema], default: [] },
 
     amountRequired: {
       type: Number,
@@ -120,13 +97,9 @@ const studentFinanceSchema = new mongoose.Schema(
       default: []
     },
 
-    lastFeeUpdate: {
-      type: Date
-    }
+    lastFeeUpdate: { type: Date }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
 studentFinanceSchema.index(
@@ -140,9 +113,11 @@ studentFinanceSchema.pre("validate", function (next) {
     0
   );
 
-  if (this.isModified("payments")) {
-    this.amountPaid = paymentTotal;
-  }
+  /*
+   * Payment history is the source of truth for amountPaid.
+   * This prevents amountPaid from drifting away from payments.
+   */
+  this.amountPaid = paymentTotal;
 
   this.feeBalance = Math.max(
     0,
@@ -152,21 +127,7 @@ studentFinanceSchema.pre("validate", function (next) {
   next();
 });
 
-/*
- * Refreshes the student's current-session fee record.
- *
- * Fee is only required for an on-session student.
- * The amount is obtained from ProgrammeFee for:
- *   - student's programme
- *   - current academic year
- *   - student's year of study
- *   - current semester
- *
- * This method deliberately belongs to the finance model so controllers
- * and services have one consistent operation for synchronising fees.
- */
-studentFinanceSchema.statics.syncCurrentSessionFee =
-async function (studentId) {
+studentFinanceSchema.statics.syncCurrentSessionFee = async function (studentId) {
   const Student = mongoose.model("Student");
   const Registration = mongoose.model("Registration");
   const ProgrammeFee = mongoose.model("ProgrammeFee");
@@ -177,8 +138,8 @@ async function (studentId) {
     throw new Error("Student not found.");
   }
 
-  const registration = await Registration.findOne().sort({
-    updatedAt: -1
+  const registration = await Registration.findOne({
+    configKey: "CURRENT"
   });
 
   if (!registration) {
@@ -190,6 +151,10 @@ async function (studentId) {
   const academicSession =
     registration.getCurrentAcademicSession();
 
+  /*
+   * Students who are not on-session do not receive a current-session
+   * fee requirement from this synchronization operation.
+   */
   if (student.status !== "on-session") {
     return this.findOne({
       student: student._id,
@@ -210,8 +175,7 @@ async function (studentId) {
 
   if (!programmeFee) {
     throw new Error(
-      "No programme fee structure exists for the student's " +
-      "current academic year."
+      "No programme fee structure exists for the student's current academic year."
     );
   }
 
@@ -230,10 +194,13 @@ async function (studentId) {
     academicSession
   });
 
-  const amountPaid = existing ? existing.amountPaid : 0;
   const payments = existing ? existing.payments : [];
+  const amountPaid = payments.reduce(
+    (sum, payment) => sum + payment.amount,
+    0
+  );
 
-  const finance = await this.findOneAndUpdate(
+  return this.findOneAndUpdate(
     {
       student: student._id,
       academicSession
@@ -262,11 +229,10 @@ async function (studentId) {
       setDefaultsOnInsert: true
     }
   );
-
-  return finance;
 };
 
 module.exports = mongoose.model(
   "StudentFinance",
   studentFinanceSchema
 );
+module.exports.SEMESTERS = SEMESTERS;

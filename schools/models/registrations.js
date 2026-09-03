@@ -8,7 +8,7 @@ const SEMESTERS = [
 
 const academicYearPattern = /^\d{4}\/\d{2}$/;
 
-const registrationsSchema = new mongoose.Schema(
+const registrationSchema = new mongoose.Schema(
   {
     currentAcademicYear: {
       type: String,
@@ -24,32 +24,32 @@ const registrationsSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: SEMESTERS
+    },
+
+    /*
+     * Singleton key: this collection represents the institution's
+     * current academic registration configuration, not a history table.
+     */
+    configKey: {
+      type: String,
+      default: "CURRENT",
+      unique: true,
+      immutable: true
     }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
-/*
- * This is the single current academic-session configuration.
- * Keep one document in this collection.
- */
-registrationsSchema.index(
-  { currentAcademicYear: 1, currentSemester: 1 },
-  { unique: true }
-);
-
-registrationsSchema.virtual("currentAcademicSession").get(function () {
+registrationSchema.virtual("currentAcademicSession").get(function () {
   return `${this.currentAcademicYear}, ${this.currentSemester}`;
 });
 
-registrationsSchema.methods.getCurrentAcademicSession = function () {
+registrationSchema.methods.getCurrentAcademicSession = function () {
   return `${this.currentAcademicYear}, ${this.currentSemester}`;
 };
 
-registrationsSchema.set("toJSON", { virtuals: true });
-registrationsSchema.set("toObject", { virtuals: true });
+registrationSchema.set("toJSON", { virtuals: true });
+registrationSchema.set("toObject", { virtuals: true });
 
-module.exports = mongoose.model("Registration", registrationsSchema);
+module.exports = mongoose.model("Registration", registrationSchema);
 module.exports.SEMESTERS = SEMESTERS;

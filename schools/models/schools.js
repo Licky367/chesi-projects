@@ -11,47 +11,19 @@ const contactSchema = new mongoose.Schema(
 
 const schoolSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
-
-    code: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true
-    },
-
-    description: {
-      type: String,
-      trim: true
-    },
-
-    vision: {
-      type: String,
-      trim: true
-    },
-
-    mission: {
-      type: String,
-      trim: true
-    },
-
-    objectives: {
-      type: [String],
-      default: []
-    },
+    name: { type: String, required: true, trim: true },
+    code: { type: String, required: true, unique: true, trim: true },
+    description: { type: String, trim: true },
+    vision: { type: String, trim: true },
+    mission: { type: String, trim: true },
+    objectives: { type: [String], default: [] },
 
     dean: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Staff"
     },
 
-    contact: {
-      type: contactSchema
-    },
+    contact: { type: contactSchema },
 
     staff: [
       {
@@ -60,9 +32,8 @@ const schoolSchema = new mongoose.Schema(
       }
     ]
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
+schoolSchema.index({ name: 1 });
 module.exports = mongoose.model("School", schoolSchema);

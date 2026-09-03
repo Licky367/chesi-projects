@@ -2,16 +2,9 @@ const mongoose = require("mongoose");
 
 const programmeSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
+    name: { type: String, required: true, trim: true },
 
-    abbreviation: {
-      type: String,
-      trim: true
-    },
+    abbreviation: { type: String, trim: true },
 
     code: {
       type: String,
@@ -20,56 +13,25 @@ const programmeSchema = new mongoose.Schema(
       trim: true
     },
 
-    description: {
-      type: String,
-      trim: true
-    },
+    description: { type: String, trim: true },
+    award: { type: String, trim: true },
+    level: { type: String, trim: true },
+    duration: { type: String, trim: true },
 
-    award: {
-      type: String,
-      trim: true
-    },
+    studyModes: { type: [String], default: [] },
+    admissionRequirements: { type: [String], default: [] },
+    objectives: { type: [String], default: [] },
+    careerOpportunities: { type: [String], default: [] },
 
-    level: {
-      type: String,
-      trim: true
-    },
-
-    duration: {
-      type: String,
-      trim: true
-    },
-
-    studyModes: {
-      type: [String],
-      default: []
-    },
-
-    admissionRequirements: {
-      type: [String],
-      default: []
-    },
-
-    objectives: {
-      type: [String],
-      default: []
-    },
-
-    careerOpportunities: {
-      type: [String],
-      default: []
-    },
-
-    department: [
+    departments: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "SchoolDepartment"
       }
     ]
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
+programmeSchema.index({ name: 1 });
 module.exports = mongoose.model("Programme", programmeSchema);
