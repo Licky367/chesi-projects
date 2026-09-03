@@ -27,6 +27,8 @@ const GENDERS = [
 const ADMISSION_SOURCES = [
   "kuccps",
   "institutional-transfer",
+  "interschool-transfer",
+  "intraschool-transfer",
   "other"
 ];
 
