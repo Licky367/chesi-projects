@@ -7,7 +7,6 @@ function normalizeDirectionsOfUse(body) {
   const title = String(raw.title || "").trim();
 
   let items = raw.items || [];
-  // When only one row, express might give object not array
   if (!Array.isArray(items)) {
     items = Object.values(items);
   }
@@ -19,7 +18,6 @@ function normalizeDirectionsOfUse(body) {
     }))
     .filter((it) => it.subtitle && it.content);
 
-  // If nothing, don't save
   if (!title && filtered.length === 0) return undefined;
 
   return {
@@ -144,13 +142,8 @@ exports.entry = async (req, res) => {
 
 exports.createProduct = async (req, res) => {
   try {
-    const directionsOfUse = normalizeDirectionsOfUse(req.body);
-
-    // If user edited directionsOfUse on this page, update Stock first
-    if (directionsOfUse) {
-      await service.updateStockEntry(req.params.id, { directionsOfUse });
-    }
-
+    // DirectionsOfUse is now edited only via /stock/new — same Edit button
+    // This route is allocation only
     await service.createProductFromStock(req.params.id, req.body);
     return res.redirect(`/stock/${req.params.id}?saved=1`);
   } catch (error) {
