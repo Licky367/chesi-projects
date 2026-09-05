@@ -1,27 +1,25 @@
 <section class="shop-page">
-  <div class="form-card stock-management-form" style="max-width:960px;margin:0 auto;padding:28px;border-radius:18px">
-    <a href="/stock" class="secondary-btn" style="margin-bottom:14px;display:inline-flex">
-      <i class="fas fa-arrow-left"></i> Stock
-    </a>
+  <div class="form-card stock-management-form">
+    <a href="/stock" class="secondary-btn"><i class="fas fa-arrow-left"></i> Stock</a>
 
-    <h1 class="page-title" style="font-size:26px;margin-top:8px"><%= title %></h1>
-    <p class="page-subtitle" style="margin-bottom:20px">
-      Create a subcategory once, or select an existing subcategory to add warehouse units and update its details.
+    <h1 class="page-title"><%= title %></h1>
+    <p class="page-subtitle">
+      Add the stock details and, when needed, give customers clear instructions for using the product.
     </p>
 
     <% if (error) { %>
-      <div class="error" style="margin-bottom:16px"><%= error %></div>
+      <div class="error"><%= error %></div>
     <% } %>
     <% if (saved === "1") { %>
-      <div class="notice" style="margin-bottom:16px">Stock subcategory saved successfully.</div>
+      <div class="notice">Stock subcategory saved successfully.</div>
     <% } %>
 
-    <form action="/stock/new" method="POST" id="stockForm" autocomplete="off">
-      <input type="hidden" name="stockId" id="stockId" value="<%= selectedStockId || old.stockId || old._id || '' %>">
+    <form action="/stock" method="POST" id="stockForm">
+      <input type="hidden" name="stockId" id="stockId" value="<%= selectedStockId || old.stockId || '' %>">
 
       <div class="field full">
         <label for="existingStockId">Existing stock subcategory</label>
-        <select id="existingStockId" autocomplete="off" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid #e5e7eb;background:#fff">
+        <select id="existingStockId">
           <option value="">+ Create new subcategory</option>
           <% (stockCatalog || []).forEach((stock) => { %>
             <option
@@ -31,119 +29,152 @@
               data-units="<%= stock.units || 0 %>"
               data-buy-price="<%= stock.buyPrice || 0 %>"
               data-image="<%= stock.image || '' %>"
-              data-description="<%= (stock.description || '').replace(/"/g, '&quot;') %>"
-              data-directions-title="<%= stock.directionsOfUse && stock.directionsOfUse.title? stock.directionsOfUse.title.replace(/"/g, '&quot;') : '' %>"
-              data-directions="<%= stock.directionsOfUse && stock.directionsOfUse.items? encodeURIComponent(JSON.stringify(stock.directionsOfUse.items)) : '' %>"
-              <%= String(selectedStockId || old.stockId || old._id || '') === String(stock._id)? "selected" : "" %>
+              data-description="<%= stock.description || '' %>"
+              data-days="<%= stock.days || 0 %>"
+              data-directions="<%= encodeURIComponent(JSON.stringify(stock.directionsOfUse || { title: '', items: [] })) %>"
+              <%= String(selectedStockId || old.stockId || '') === String(stock._id) ? 'selected' : '' %>
             >
               <%= stock.category %> — <%= stock.subcategory %> (<%= stock.units || 0 %> units)
             </option>
           <% }) %>
         </select>
-        <small class="form-help">Existing subcategories are loaded directly from Stock.</small>
+        <small class="form-help">Select an existing subcategory to edit it and add warehouse units.</small>
       </div>
 
-      <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px">
+      <div class="form-grid">
         <div class="field">
           <label for="category">Category</label>
-          <select id="category" name="category" required style="width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb">
+          <select id="category" name="category" required>
             <option value="">Select category</option>
             <% (categories || []).forEach((category) => { %>
-              <option value="<%= category %>" <%= String(old.category || "") === String(category)? "selected" : "" %>><%= category %></option>
+              <option value="<%= category %>" <%= String(old.category || '') === String(category) ? 'selected' : '' %>>
+                <%= category %>
+              </option>
             <% }) %>
           </select>
+          <small class="form-help">Choose an existing category.</small>
         </div>
 
         <div class="field">
           <label for="subcategory">Subcategory</label>
-          <input id="subcategory" name="subcategory" value="<%= old.subcategory || '' %>" required autocomplete="off" placeholder="e.g. Digital Microscope" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb">
+          <input id="subcategory" name="subcategory" value="<%= old.subcategory || '' %>" required>
+          <small class="form-help">This becomes the product name.</small>
         </div>
 
         <div class="field">
           <label for="units" id="unitsLabel">Initial warehouse units</label>
-          <input id="units" name="units" type="number" min="0" step="1" value="<%= old.additionalUnits?? old.units?? '' %>" inputmode="numeric" autocomplete="off" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb">
+          <input id="units" name="units" type="number" min="0" step="1" value="<%= old.additionalUnits ?? old.units ?? '' %>">
           <small class="form-help" id="unitsHelp">Units for a new subcategory.</small>
         </div>
 
         <div class="field">
           <label for="buyPrice">Buy price per unit</label>
-          <input id="buyPrice" name="buyPrice" type="number" min="0" step="0.01" value="<%= old.buyPrice?? 0 %>" required autocomplete="off" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb">
+          <input id="buyPrice" name="buyPrice" type="number" min="0" step="0.01" value="<%= old.buyPrice ?? 0 %>" required>
+        </div>
+
+        <div class="field">
+          <label for="days">Delivery days</label>
+          <input id="days" name="days" type="number" min="0" step="1" value="<%= old.days ?? 0 %>" required>
+          <small class="form-help">Delivery time for this subcategory.</small>
         </div>
 
         <div class="field full">
-          <label for="image">Image URL <span class="optional" style="color:#9ca3af;font-weight:400">(optional when updating)</span></label>
-          <input id="image" name="image" type="url" value="<%= old.image || '' %>" placeholder="https://example.com/image.jpg" autocomplete="off" spellcheck="false" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb">
+          <label for="image">Image URL <span class="optional">(optional when updating)</span></label>
+          <input id="image" name="image" value="<%= old.image || '' %>">
         </div>
 
         <div class="field full">
           <label for="description">Description</label>
-          <textarea id="description" name="description" autocomplete="off" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;min-height:90px"><%= old.description || '' %></textarea>
+          <textarea id="description" name="description" placeholder="Briefly describe the product"><%= old.description || '' %></textarea>
         </div>
       </div>
 
-      <!-- DIRECTIONS OF USE -->
-      <div style="margin-top:28px;background:#f8f9ff;border:1px solid #e8e9ff;border-radius:18px;padding:20px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px">
+      <!-- =====================================================
+           DIRECTIONS OF USE
+      ====================================================== -->
+      <section class="directions-editor" aria-labelledby="directionsHeading">
+        <div class="directions-editor-head">
           <div>
-            <h3 style="margin:0;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px">
-              <span style="width:32px;height:32px;border-radius:10px;background:#6366f1;color:white;display:inline-flex;align-items:center;justify-content:center"><i class="fas fa-list-check"></i></span>
-              Directions of Use
-            </h3>
-            <p style="margin:6px 0 0;color:#6b7280;font-size:12.5px">One title, many subtitles. Each subtitle has its own content.</p>
+            <span class="directions-kicker"><i class="fas fa-circle-info"></i> Customer information</span>
+            <h2 id="directionsHeading">Directions of Use</h2>
+            <p>Add practical instructions that customers should see on the product page. This section is optional.</p>
           </div>
-          <button type="button" id="addDirBtn" class="primary-btn" style="border-radius:999px;padding:8px 14px;font-size:13px;white-space:nowrap">
-            <i class="fas fa-plus"></i> Add Subtitle
+          <button type="button" class="secondary-btn directions-add-btn" id="addDirectionBtn">
+            <i class="fas fa-plus"></i> Add instruction
           </button>
         </div>
 
-        <div class="field full" style="margin-bottom:14px">
-          <input type="text" id="dirTitle" name="directionsOfUse[title]" value="<%= old.directionsOfUse? old.directionsOfUse.title : '' %>" placeholder="Main title — e.g. How to use" style="width:100%;padding:13px 14px;border-radius:12px;border:1px solid #e5e7eb;background:white;font-weight:700;font-size:14px">
+        <div class="field full">
+          <label for="directionsTitle">Section title</label>
+          <input
+            id="directionsTitle"
+            name="directionsOfUse[title]"
+            value="<%= old.directionsOfUse?.title || '' %>"
+            placeholder="e.g. How to use this product"
+          >
         </div>
 
-        <div id="dirList" style="display:flex;flex-direction:column;gap:12px">
-          <%
-            let dirItems = old.directionsOfUse && old.directionsOfUse.items? old.directionsOfUse.items : [];
-            if (!dirItems.length) dirItems = [{ subtitle: '', content: '' }];
-            dirItems.forEach((it, i) => {
-          %>
-          <div class="dir-card" style="background:white;border:1px solid #e9e9ef;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;transition:.15s">
-            <div class="dir-index" style="min-width:34px;height:34px;border-radius:11px;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px"><%= i+1 %></div>
-            <div style="flex:1;display:grid;gap:10px">
-              <input type="text" name="directionsOfUse[items][<%= i %>][subtitle]" value="<%= it.subtitle || '' %>" placeholder="Subtitle e.g. Dosage" style="width:100%;padding:11px 12px;border-radius:10px;border:1px solid #e5e7eb;font-weight:600">
-              <textarea name="directionsOfUse[items][<%= i %>][content]" rows="2" placeholder="Content for this subtitle..." style="width:100%;padding:11px 12px;border-radius:10px;border:1px solid #e5e7eb;resize:vertical"><%= it.content || '' %></textarea>
+        <div id="directionsList" class="directions-list">
+          <% const existingDirections = old.directionsOfUse?.items || []; %>
+          <% existingDirections.forEach((item, index) => { %>
+            <div class="direction-item" data-index="<%= index %>">
+              <div class="direction-item-number"><%= index + 1 %></div>
+              <div class="direction-item-fields">
+                <div class="field">
+                  <label>Instruction heading</label>
+                  <input name="directionsOfUse[items][<%= index %>][subtitle]" value="<%= item.subtitle || '' %>" placeholder="e.g. Before use">
+                </div>
+                <div class="field full">
+                  <label>Instruction</label>
+                  <textarea name="directionsOfUse[items][<%= index %>][content]" placeholder="Explain what the customer should do"><%= item.content || '' %></textarea>
+                </div>
+              </div>
+              <button type="button" class="direction-remove" aria-label="Remove instruction" title="Remove instruction">
+                <i class="fas fa-trash"></i>
+              </button>
             </div>
-            <button type="button" class="removeDir" title="Remove" style="width:38px;height:38px;border-radius:10px;border:1px solid #ffe4e6;background:#fff1f2;color:#e11d48;cursor:pointer"><i class="fas fa-trash"></i></button>
-          </div>
           <% }) %>
         </div>
-      </div>
 
-      <div class="stock-edit-summary" id="stockEditSummary" hidden style="margin-top:20px;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:12px;padding:14px;display:flex;gap:20px">
+        <div id="directionsEmpty" class="directions-empty" <%= existingDirections.length ? 'hidden' : '' %>>
+          <i class="fas fa-list-check"></i>
+          <strong>No directions added yet</strong>
+          <span>Click “Add instruction” to create the first instruction.</span>
+        </div>
+
+        <input type="hidden" name="directionsOfUse[clear]" id="directionsClear" value="0">
+        <label class="directions-clear-option">
+          <input type="checkbox" id="clearDirections">
+          <span>Remove directions of use from this stock item</span>
+        </label>
+      </section>
+
+      <div class="stock-edit-summary" id="stockEditSummary" hidden>
         <div><strong>Current warehouse units:</strong> <span id="currentUnits">0</span></div>
         <div><strong>After this update:</strong> <span id="projectedUnits">0</span></div>
       </div>
 
-      <div class="form-actions" style="margin-top:24px;display:flex;gap:10px">
-        <button type="submit" class="primary-btn" id="submitButton" style="padding:12px 20px;border-radius:12px"><i class="fas fa-plus"></i> Create Stock Subcategory</button>
-        <a href="/stock" class="secondary-btn" style="padding:12px 20px;border-radius:12px">Cancel</a>
+      <div class="form-actions">
+        <button type="submit" class="primary-btn" id="submitButton">
+          <i class="fas fa-plus"></i> Create Stock Subcategory
+        </button>
+        <a href="/stock" class="secondary-btn">Cancel</a>
       </div>
     </form>
   </div>
 </section>
 
-<style>
-.dir-card:focus-within{border-color:#6366f1!important;box-shadow:0 0 0 4px rgba(99,102,241,.12)!important}
-</style>
-
 <script>
 (function () {
   "use strict";
+
   const selector = document.getElementById("existingStockId");
   const stockId = document.getElementById("stockId");
   const category = document.getElementById("category");
   const subcategory = document.getElementById("subcategory");
   const units = document.getElementById("units");
   const buyPrice = document.getElementById("buyPrice");
+  const days = document.getElementById("days");
   const image = document.getElementById("image");
   const description = document.getElementById("description");
   const submitButton = document.getElementById("submitButton");
@@ -152,16 +183,23 @@
   const summary = document.getElementById("stockEditSummary");
   const currentUnits = document.getElementById("currentUnits");
   const projectedUnits = document.getElementById("projectedUnits");
-  const dirTitle = document.getElementById("dirTitle");
-  const dirList = document.getElementById("dirList");
-  const addDirBtn = document.getElementById("addDirBtn");
 
-  if (!selector) return;
+  const directionsList = document.getElementById("directionsList");
+  const directionsEmpty = document.getElementById("directionsEmpty");
+  const addDirectionBtn = document.getElementById("addDirectionBtn");
+  const clearDirections = document.getElementById("clearDirections");
+  const directionsClear = document.getElementById("directionsClear");
+  const directionsTitle = document.getElementById("directionsTitle");
 
-  function selectedOption() { return selector.options[selector.selectedIndex]; }
+  function selectedOption() {
+    return selector.options[selector.selectedIndex];
+  }
 
   function updateSummary() {
-    if (!stockId.value) { summary.hidden = true; return; }
+    if (!stockId.value) {
+      summary.hidden = true;
+      return;
+    }
     const current = Number(selectedOption()?.dataset.units || 0);
     const additional = Math.max(0, Number(units.value || 0));
     currentUnits.textContent = current.toLocaleString();
@@ -169,41 +207,92 @@
     summary.hidden = false;
   }
 
-  function reindexDirs(){
-    dirList.querySelectorAll('.dir-card').forEach((card, idx)=>{
-      card.querySelector('.dir-index').textContent = idx+1;
-      card.querySelectorAll('input, textarea').forEach(el=>{
-        if(el.name.includes('[subtitle]')) el.name = `directionsOfUse[items][${idx}][subtitle]`;
-        if(el.name.includes('[content]')) el.name = `directionsOfUse[items][${idx}][content]`;
+  function renumberDirections() {
+    Array.from(directionsList.querySelectorAll(".direction-item")).forEach((item, index) => {
+      item.dataset.index = index;
+      item.querySelector(".direction-item-number").textContent = index + 1;
+      item.querySelectorAll("input, textarea").forEach((field) => {
+        const type = field.name.includes("subtitle") ? "subtitle" : "content";
+        field.name = `directionsOfUse[items][${index}][${type}]`;
       });
     });
+    directionsEmpty.hidden = directionsList.querySelectorAll(".direction-item").length > 0;
   }
 
-  function renderDirs(title, items){
-    dirTitle.value = title || "";
-    dirList.innerHTML = "";
-    const list = (items && items.length)? items : [{subtitle:"", content:""}];
-    list.forEach((it, idx)=>{
-      const div = document.createElement('div');
-      div.className = 'dir-card';
-      div.style.cssText = "background:white;border:1px solid #e9e9ef;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;";
-      div.innerHTML = `
-        <div class="dir-index" style="min-width:34px;height:34px;border-radius:11px;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">${idx+1}</div>
-        <div style="flex:1;display:grid;gap:10px">
-          <input type="text" name="directionsOfUse[items][${idx}][subtitle]" value="${(it.subtitle||'').replace(/"/g,'&quot;')}" placeholder="Subtitle e.g. Dosage" style="width:100%;padding:11px 12px;border-radius:10px;border:1px solid #e5e7eb;font-weight:600">
-          <textarea name="directionsOfUse[items][${idx}][content]" rows="2" placeholder="Content..." style="width:100%;padding:11px 12px;border-radius:10px;border:1px solid #e5e7eb;resize:vertical">${it.content||''}</textarea>
+  function addDirection(subtitle = "", content = "") {
+    const index = directionsList.querySelectorAll(".direction-item").length;
+    const item = document.createElement("div");
+    item.className = "direction-item";
+    item.dataset.index = index;
+    item.innerHTML = `
+      <div class="direction-item-number">${index + 1}</div>
+      <div class="direction-item-fields">
+        <div class="field">
+          <label>Instruction heading</label>
+          <input name="directionsOfUse[items][${index}][subtitle]" value="" placeholder="e.g. Before use">
         </div>
-        <button type="button" class="removeDir" style="width:38px;height:38px;border-radius:10px;border:1px solid #ffe4e6;background:#fff1f2;color:#e11d48;cursor:pointer"><i class="fas fa-trash"></i></button>`;
-      dirList.appendChild(div);
+        <div class="field full">
+          <label>Instruction</label>
+          <textarea name="directionsOfUse[items][${index}][content]" placeholder="Explain what the customer should do"></textarea>
+        </div>
+      </div>
+      <button type="button" class="direction-remove" aria-label="Remove instruction" title="Remove instruction">
+        <i class="fas fa-trash"></i>
+      </button>`;
+
+    item.querySelector('input').value = subtitle;
+    item.querySelector('textarea').value = content;
+    directionsList.appendChild(item);
+    directionsEmpty.hidden = true;
+    clearDirections.checked = false;
+    directionsClear.value = "0";
+  }
+
+  directionsList.addEventListener("click", (event) => {
+    const remove = event.target.closest(".direction-remove");
+    if (!remove) return;
+    remove.closest(".direction-item").remove();
+    renumberDirections();
+  });
+
+  addDirectionBtn.addEventListener("click", () => addDirection());
+
+  clearDirections.addEventListener("change", () => {
+    directionsClear.value = clearDirections.checked ? "1" : "0";
+    directionsList.style.opacity = clearDirections.checked ? "0.45" : "1";
+    directionsTitle.disabled = clearDirections.checked;
+    directionsList.querySelectorAll("input, textarea").forEach((field) => {
+      field.disabled = clearDirections.checked;
     });
+  });
+
+  function loadDirections(encoded) {
+    directionsList.innerHTML = "";
+    directionsTitle.value = "";
+    clearDirections.checked = false;
+    directionsClear.value = "0";
+
+    try {
+      const directions = encoded ? JSON.parse(decodeURIComponent(encoded)) : null;
+      directionsTitle.value = directions?.title || "";
+      (directions?.items || []).forEach((item) => {
+        addDirection(item.subtitle || "", item.content || "");
+      });
+      renumberDirections();
+    } catch (error) {
+      console.error("Unable to load directions of use:", error);
+      renumberDirections();
+    }
   }
 
   function setMode() {
     const option = selectedOption();
     const id = selector.value;
+
     if (!id) {
       stockId.value = "";
       units.name = "units";
+      units.value = "<%= old.units ?? '' %>";
       units.required = true;
       unitsLabel.textContent = "Initial warehouse units";
       unitsHelp.textContent = "Units for a new subcategory.";
@@ -211,21 +300,15 @@
       summary.hidden = true;
       return;
     }
+
     stockId.value = id;
     category.value = option.dataset.category || "";
     subcategory.value = option.dataset.subcategory || "";
     buyPrice.value = option.dataset.buyPrice || "0";
     image.value = option.dataset.image || "";
     description.value = option.dataset.description || "";
-
-    // Load directionsOfUse
-    try{
-      const title = option.dataset.directionsTitle || "";
-      const raw = option.dataset.directions? decodeURIComponent(option.dataset.directions) : "";
-      const items = raw? JSON.parse(raw) : [];
-      renderDirs(title, items);
-    }catch(e){}
-
+    days.value = option.dataset.days || "0";
+    loadDirections(option.dataset.directions || "");
     units.name = "additionalUnits";
     units.value = "0";
     units.required = false;
@@ -238,29 +321,8 @@
   selector.addEventListener("change", setMode);
   units.addEventListener("input", updateSummary);
 
-  addDirBtn.addEventListener("click", ()=>{
-    const idx = dirList.querySelectorAll('.dir-card').length;
-    const div = document.createElement('div');
-    div.className = 'dir-card';
-    div.style.cssText = "background:white;border:1px solid #e9e9ef;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;";
-    div.innerHTML = `
-      <div class="dir-index" style="min-width:34px;height:34px;border-radius:11px;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">${idx+1}</div>
-      <div style="flex:1;display:grid;gap:10px">
-        <input type="text" name="directionsOfUse[items][${idx}][subtitle]" placeholder="Subtitle e.g. Dosage" style="width:100%;padding:11px 12px;border-radius:10px;border:1px solid #e5e7eb;font-weight:600">
-        <textarea name="directionsOfUse[items][${idx}][content]" rows="2" placeholder="Content..." style="width:100%;padding:11px 12px;border-radius:10px;border:1px solid #e5e7eb;resize:vertical"></textarea>
-      </div>
-      <button type="button" class="removeDir" style="width:38px;height:38px;border-radius:10px;border:1px solid #ffe4e6;background:#fff1f2;color:#e11d48;cursor:pointer"><i class="fas fa-trash"></i></button>`;
-    dirList.appendChild(div);
-    div.querySelector('input').focus();
-  });
-
-  dirList.addEventListener("click", (e)=>{
-    if(e.target.closest('.removeDir')){
-      if(dirList.querySelectorAll('.dir-card').length > 1){
-        e.target.closest('.dir-card').remove();
-        reindexDirs();
-      }
-    }
+  document.getElementById("stockForm").addEventListener("submit", () => {
+    directionsClear.value = clearDirections.checked ? "1" : "0";
   });
 
   if (selector.value) setMode();
