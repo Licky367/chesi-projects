@@ -4,7 +4,7 @@
       <h1 class="page-title">Stock Management</h1>
       <p class="page-subtitle">
         Browse warehouse stock by category and subcategory.
-        Stock uses the same compact product-card layout as Products.
+        Each row uses the same compact horizontal product-card layout as Products.
       </p>
     </div>
 
@@ -13,110 +13,66 @@
       Add / Update Stock
     </a>
   </div>
-
-  <% if (typeof error!== "undefined" && error) { %>
+  <% if (typeof error !== "undefined" && error) { %>
     <div class="error"><%= error %></div>
   <% } %>
 
-  <% if (typeof saved!== "undefined" && saved === "1") { %>
+  <% if (typeof saved !== "undefined" && saved === "1") { %>
     <div class="notice">Stock saved successfully.</div>
   <% } %>
 
-  <% if (!stocks ||!stocks.length) { %>
+  <% if (!stocks || !stocks.length) { %>
     <div class="empty" style="margin-top:25px">
       <i class="fas fa-warehouse"></i>
       <div>No stock records exist yet.</div>
     </div>
   <% } else { %>
-
     <% stocks.forEach((group) => { %>
       <section class="category-section">
-
         <div class="category-head">
           <h2><%= group.label || group.category || "Other" %></h2>
-          <span>Swipe left/right</span>
+          <span>Six cards maximum · swipe left/right</span>
         </div>
 
-        <% (group.rows || []).forEach((row) => { %>
+        <% (group.rows || []).forEach((row, rowIndex) => { %>
           <div class="subcategory-row-block">
-
             <div class="subcategory-head">
               <h3>
-                <%= row.products && row.products.length
-                 ? (row.products[0].subcategory || "Other")
-                  : "Other" %>
+                <% if (row.products && row.products.length) { %>
+                  <%= row.products[0].subcategory || row.products[0].name || "Other" %>
+                <% } else { %>
+                  Other
+                <% } %>
               </h3>
-
               <% if (row.products && row.products.length > 1) { %>
                 <span>Swipe left/right</span>
               <% } %>
             </div>
-
-            <div
-              class="product-row category-product-row"
-              aria-label="<%= group.label || group.category || 'Stock' %> stock"
-            >
+            <div class="product-row category-product-row" aria-label="<%= group.label || group.category || 'Stock' %> stock row">
               <% (row.products || []).forEach((stock) => { %>
-
-                <a
-                  href="/stock/<%= stock._id %>"
-                  class="product-card stock-card"
-                >
+                <a href="/stock/<%= stock._id %>" class="product-card stock-card">
                   <div class="product-image">
                     <% if (stock.image) { %>
-                      <img
-                        src="<%= stock.image %>"
-                        alt="<%= stock.subcategory || stock.name || 'Stock item' %>"
-                        loading="lazy"
-                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-                      >
-                      <div class="placeholder" style="display:none">
-                        <i class="fas fa-box"></i>
-                      </div>
+                      <img src="<%= stock.image %>" alt="<%= stock.subcategory || stock.name || 'Stock item' %>" loading="lazy">
                     <% } else { %>
-                      <div class="placeholder">
-                        <i class="fas fa-box"></i>
-                      </div>
+                      <div class="placeholder"><i class="fas fa-box"></i></div>
                     <% } %>
                   </div>
-
                   <div class="product-info">
-                    <div class="product-name">
-                      <%= stock.subcategory || stock.name || "Unnamed stock" %>
-                    </div>
-
-                    <div class="stock-meta-line">
-                      <%= stock.category || "Other" %>
-                    </div>
-
-                    <div class="product-price">
-                      KSh
-                      <%= Number(stock.buyPrice || 0).toLocaleString() %>
-                    </div>
-
-                    <div class="stock-text">
-                      <strong>
-                        <%= Number(stock.units || 0).toLocaleString() %>
-                      </strong>
-                      warehouse units
-                    </div>
-
-                    <div
-                      class="stock-text <%= Number(stock.units || 0) <= 0? 'out' : '' %>"
-                    >
-                      <%= Number(stock.units || 0) > 0
-                       ? `${Number(stock.units).toLocaleString()} available`
-                        : "Out of stock" %>
+                    <div class="product-name"><%= stock.subcategory || stock.name || "Unnamed stock" %></div>
+                    <div class="stock-meta-line"><%= stock.category || "Other" %></div>
+                    <div class="product-price">KSh <%= Number(stock.buyPrice || 0).toLocaleString() %></div>
+                    <div class="stock-text"><strong><%= Number(stock.units || 0).toLocaleString() %></strong> warehouse units</div>
+                    <div class="stock-text <%= Number(stock.units || 0) <= 0 ? 'out' : '' %>">
+                      <%= Number(stock.units || 0) > 0 ? `${Number(stock.units).toLocaleString()} available` : "Out of stock" %>
                     </div>
                   </div>
                 </a>
-
               <% }) %>
             </div>
           </div>
         <% }) %>
       </section>
     <% }) %>
-
   <% } %>
 </section>
