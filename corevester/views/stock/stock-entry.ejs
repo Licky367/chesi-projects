@@ -6,11 +6,11 @@
     </a>
   </div>
 
-  <% if (typeof error !== "undefined" && error) { %>
+  <% if (typeof error!== "undefined" && error) { %>
     <div class="error"><%= error %></div>
   <% } %>
 
-  <% if (typeof saved !== "undefined" && saved === "1") { %>
+  <% if (typeof saved!== "undefined" && saved === "1") { %>
     <div class="notice">Product allocation saved successfully.</div>
   <% } %>
 
@@ -63,6 +63,19 @@
             </div>
           <% } %>
 
+          <% if (stock.directionsOfUse && stock.directionsOfUse.title) { %>
+            <div class="detail-description" style="margin-top:12px;border-left:3px solid #e5e7eb;padding-left:12px">
+              <strong><%= stock.directionsOfUse.title %></strong>
+              <% if (stock.directionsOfUse.items && stock.directionsOfUse.items.length) { %>
+                <ul style="margin:8px 0 0 16px">
+                  <% stock.directionsOfUse.items.forEach(it => { %>
+                    <li><strong><%= it.subtitle %>:</strong> <%= it.content %></li>
+                  <% }) %>
+                </ul>
+              <% } %>
+            </div>
+          <% } %>
+
           <div class="stock-balance-box">
             <span>Warehouse balance</span>
             <strong>
@@ -73,15 +86,11 @@
       </div>
 
       <div class="allocation-panel">
+        <!-- DIRECTIONS OF USE EDITOR -->
         <div class="allocation-heading">
           <div>
-            <h2>Dispatch to substations</h2>
-            <p>Enter the units each substation receives.</p>
-          </div>
-
-          <div class="allocation-total-box">
-            <small>Total allocated</small>
-            <strong id="allocationTotal">0</strong>
+            <h2>Directions of Use</h2>
+            <p>One title, multiple subtitles — each with its own content.</p>
           </div>
         </div>
 
@@ -94,6 +103,57 @@
           <input type="hidden" name="units" id="totalUnits" value="0">
 
           <div class="field">
+            <label for="directionsTitle">Directions Title</label>
+            <input
+              id="directionsTitle"
+              type="text"
+              name="directionsOfUse[title]"
+              placeholder="e.g. How to use"
+              value="<%= stock.directionsOfUse? stock.directionsOfUse.title : (old && old.directionsOfUse? old.directionsOfUse.title : '') %>"
+            >
+          </div>
+
+          <div id="directionsContainer">
+            <%
+              let items = [];
+              if (old && old.directionsOfUse && old.directionsOfUse.items) items = old.directionsOfUse.items;
+              else if (stock.directionsOfUse && stock.directionsOfUse.items) items = stock.directionsOfUse.items;
+              if (!items.length) items = [{ subtitle: "", content: "" }];
+              items.forEach((it, idx) => {
+            %>
+              <div class="substation-allocation-row directions-row" style="align-items:flex-end">
+                <div style="flex:1">
+                  <label>Subtitle</label>
+                  <input type="text" name="directionsOfUse[items][<%= idx %>][subtitle]" value="<%= it.subtitle || '' %>" placeholder="e.g. Dosage" required>
+                </div>
+                <div style="flex:2">
+                  <label>Content</label>
+                  <textarea name="directionsOfUse[items][<%= idx %>][content]" rows="2" placeholder="Content for this subtitle" required><%= it.content || '' %></textarea>
+                </div>
+                <button type="button" class="secondary-btn remove-direction-btn" style="margin-bottom:4px"><i class="fas fa-trash"></i></button>
+              </div>
+            <% }) %>
+          </div>
+
+          <button type="button" id="addDirectionBtn" class="secondary-btn" style="margin-top:10px">
+            <i class="fas fa-plus"></i> Add Subtitle
+          </button>
+
+          <hr style="margin:24px 0">
+
+          <div class="allocation-heading">
+            <div>
+              <h2>Dispatch to substations</h2>
+              <p>Enter the units each substation receives.</p>
+            </div>
+
+            <div class="allocation-total-box">
+              <small>Total allocated</small>
+              <strong id="allocationTotal">0</strong>
+            </div>
+          </div>
+
+          <div class="field">
             <label for="unitSellPrice">Selling price per unit</label>
             <input
               id="unitSellPrice"
@@ -101,7 +161,7 @@
               min="0"
               step="0.01"
               name="unitSellPrice"
-              value="<%= old && old.unitSellPrice != null ? old.unitSellPrice : '' %>"
+              value="<%= old && old.unitSellPrice!= null? old.unitSellPrice : '' %>"
               required
             >
           </div>
@@ -116,7 +176,7 @@
                     old &&
                     old.allocations &&
                     typeof old.allocations === "object"
-                      ? (old.allocations[substationId] ?? "")
+                     ? (old.allocations[substationId]?? "")
                       : "";
                 %>
 
@@ -191,7 +251,7 @@
               type="submit"
               class="primary-btn"
               id="allocateButton"
-              <%= !substations || !substations.length ? "disabled" : "" %>
+              <%=!substations ||!substations.length? "disabled" : "" %>
             >
               <i class="fas fa-boxes-stacked"></i>
               Allocate Product
@@ -221,10 +281,7 @@
   "use strict";
 
   const form = document.getElementById("allocationForm");
-  const inputs = Array.from(
-    document.querySelectorAll(".allocation-input")
-  );
-
+  const inputs = Array.from(document.querySelectorAll(".allocation-input"));
   const hiddenTotal = document.getElementById("totalUnits");
   const total = document.getElementById("allocationTotal");
   const summaryTotal = document.getElementById("summaryTotal");
@@ -233,64 +290,77 @@
   const button = document.getElementById("allocateButton");
   const sellPrice = document.getElementById("unitSellPrice");
 
-  const warehouse =
-    Number(<%= stock ? Number(stock.units || 0) : 0 %>);
+  const directionsContainer = document.getElementById("directionsContainer");
+  const addBtn = document.getElementById("addDirectionBtn");
+
+  const warehouse = Number(<%= stock? Number(stock.units || 0) : 0 %>);
 
   if (!form) return;
 
   function valueOf(input) {
-    const raw = String(input.value ?? "").trim();
-
+    const raw = String(input.value?? "").trim();
     if (raw === "") return 0;
-
     const value = Number(raw);
-
-    if (!Number.isFinite(value) || value < 0) {
-      return 0;
-    }
-
+    if (!Number.isFinite(value) || value < 0) return 0;
     return Math.floor(value);
   }
 
   function calculate() {
-    const sum = inputs.reduce(
-      (runningTotal, input) =>
-        runningTotal + valueOf(input),
-      0
-    );
-
-    /*
-     * This hidden field is deliberately updated on every
-     * calculation AND immediately before POST.
-     */
+    const sum = inputs.reduce((runningTotal, input) => runningTotal + valueOf(input), 0);
     hiddenTotal.value = String(sum);
-
-    total.textContent = sum.toLocaleString();
-    summaryTotal.textContent = sum.toLocaleString();
-
-    remaining.textContent =
-      Math.max(warehouse - sum, 0).toLocaleString();
-
+    if(total) total.textContent = sum.toLocaleString();
+    if(summaryTotal) summaryTotal.textContent = sum.toLocaleString();
+    if(remaining) remaining.textContent = Math.max(warehouse - sum, 0).toLocaleString();
     let message = "";
-
-    if (sum <= 0) {
-      message =
-        "Allocate at least one unit to at least one substation.";
-    } else if (sum > warehouse) {
-      message =
-        "The total allocation cannot exceed the warehouse balance.";
-    }
-
-    warning.textContent = message;
-    warning.style.display =
-      message ? "block" : "none";
-
-    if (button) {
-      button.disabled = Boolean(message);
-    }
-
+    if (sum <= 0) message = "Allocate at least one unit to at least one substation.";
+    else if (sum > warehouse) message = "The total allocation cannot exceed the warehouse balance.";
+    if(warning){ warning.textContent = message; warning.style.display = message? "block" : "none"; }
+    if (button) button.disabled = Boolean(message);
     return sum;
   }
+
+  function reindexDirections(){
+    const rows = directionsContainer.querySelectorAll(".directions-row");
+    rows.forEach((row, idx)=>{
+      row.querySelectorAll("input, textarea").forEach(el=>{
+        if(el.name.includes("[subtitle]")) el.name = `directionsOfUse[items][${idx}][subtitle]`;
+        if(el.name.includes("[content]")) el.name = `directionsOfUse[items][${idx}][content]`;
+      });
+    });
+  }
+
+  function addDirectionRow(data = {subtitle:"", content:""}){
+    const idx = directionsContainer.querySelectorAll(".directions-row").length;
+    const div = document.createElement("div");
+    div.className = "substation-allocation-row directions-row";
+    div.style.alignItems = "flex-end";
+    div.innerHTML = `
+      <div style="flex:1">
+        <label>Subtitle</label>
+        <input type="text" name="directionsOfUse[items][${idx}][subtitle]" value="${data.subtitle}" placeholder="e.g. Dosage" required>
+      </div>
+      <div style="flex:2">
+        <label>Content</label>
+        <textarea name="directionsOfUse[items][${idx}][content]" rows="2" placeholder="Content for this subtitle" required>${data.content}</textarea>
+      </div>
+      <button type="button" class="secondary-btn remove-direction-btn" style="margin-bottom:4px"><i class="fas fa-trash"></i></button>
+    `;
+    directionsContainer.appendChild(div);
+  }
+
+  if(addBtn){
+    addBtn.addEventListener("click", ()=> addDirectionRow());
+  }
+
+  directionsContainer.addEventListener("click", (e)=>{
+    if(e.target.closest(".remove-direction-btn")){
+      const rows = directionsContainer.querySelectorAll(".directions-row");
+      if(rows.length > 1){
+        e.target.closest(".directions-row").remove();
+        reindexDirections();
+      }
+    }
+  });
 
   inputs.forEach((input) => {
     input.addEventListener("input", calculate);
@@ -299,27 +369,14 @@
 
   form.addEventListener("submit", function (event) {
     const sum = calculate();
-
-    /*
-     * Recalculate one final time. This guarantees that the
-     * submitted `units` matches allocations[...] values.
-     */
     hiddenTotal.value = String(sum);
-
-    if (
-      sum <= 0 ||
-      sum > warehouse ||
-      !sellPrice ||
-      String(sellPrice.value).trim() === ""
-    ) {
+    if (sum <= 0 || sum > warehouse ||!sellPrice || String(sellPrice.value).trim() === "") {
       event.preventDefault();
       return;
     }
-
     if (button) {
       button.disabled = true;
-      button.innerHTML =
-        '<i class="fas fa-spinner fa-spin"></i> Allocating...';
+      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Allocating...';
     }
   });
 
