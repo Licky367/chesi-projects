@@ -20,266 +20,171 @@
 
     <div class="detail-card stock-allocation-card">
       <div class="detail-grid">
-
         <div class="detail-image stock-detail-image">
           <% if (stock.image) { %>
-            <img
-              src="<%= stock.image %>"
-              alt="<%= stock.name || stock.subcategory || 'Stock item' %>"
-              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-            >
-            <div class="placeholder" style="display:none">
-              <i class="fas fa-box"></i>
-            </div>
+            <img src="<%= stock.image %>" alt="<%= stock.name || stock.subcategory || 'Stock item' %>" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="placeholder" style="display:none"><i class="fas fa-box"></i></div>
           <% } else { %>
-            <div class="placeholder">
-              <i class="fas fa-box"></i>
-            </div>
+            <div class="placeholder"><i class="fas fa-box"></i></div>
           <% } %>
         </div>
 
         <div class="detail-content">
-          <span class="detail-category">
-            <%= stock.category || "Other" %>
-          </span>
-
-          <h1>
-            <%= stock.subcategory || stock.name || "Stock item" %>
-          </h1>
-
-          <div class="detail-subcategory">
-            <i class="fas fa-layer-group"></i>
-            <%= stock.subcategory || stock.name || "Other" %>
-          </div>
-
-          <div class="detail-price">
-            KSh <%= Number(stock.buyPrice || 0).toLocaleString() %>
-            <small>buy / unit</small>
-          </div>
-
+          <span class="detail-category"><%= stock.category || "Other" %></span>
+          <h1><%= stock.subcategory || stock.name || "Stock item" %></h1>
+          <div class="detail-subcategory"><i class="fas fa-layer-group"></i> <%= stock.subcategory || stock.name || "Other" %></div>
+          <div class="detail-price">KSh <%= Number(stock.buyPrice || 0).toLocaleString() %> <small>buy / unit</small></div>
           <% if (stock.description) { %>
-            <div class="detail-description">
-              <%= stock.description %>
-            </div>
+            <div class="detail-description"><%= stock.description %></div>
           <% } %>
-
-          <% if (stock.directionsOfUse && stock.directionsOfUse.title) { %>
-            <div class="detail-description" style="margin-top:12px;border-left:3px solid #e5e7eb;padding-left:12px">
-              <strong><%= stock.directionsOfUse.title %></strong>
-              <% if (stock.directionsOfUse.items && stock.directionsOfUse.items.length) { %>
-                <ul style="margin:8px 0 0 16px">
-                  <% stock.directionsOfUse.items.forEach(it => { %>
-                    <li><strong><%= it.subtitle %>:</strong> <%= it.content %></li>
-                  <% }) %>
-                </ul>
-              <% } %>
-            </div>
-          <% } %>
-
           <div class="stock-balance-box">
             <span>Warehouse balance</span>
-            <strong>
-              <%= Number(stock.units || 0).toLocaleString() %> units
-            </strong>
+            <strong><%= Number(stock.units || 0).toLocaleString() %> units</strong>
           </div>
         </div>
       </div>
 
-      <div class="allocation-panel">
-        <!-- DIRECTIONS OF USE EDITOR -->
-        <div class="allocation-heading">
+      <!-- DIRECTIONS OF USE - VIEW / EDIT ONLY -->
+      <div class="allocation-panel" id="directionsPanel" style="margin-bottom:22px;background:#f8f9ff;border:1px solid #e8e9ff;border-radius:16px;padding:20px">
+        <div class="allocation-heading" style="margin-bottom:14px">
           <div>
-            <h2>Directions of Use</h2>
-            <p>One title, multiple subtitles — each with its own content.</p>
+            <h2 style="display:flex;align-items:center;gap:8px"><i class="fas fa-list-check" style="color:#6366f1"></i> Directions of Use</h2>
+            <p style="margin:4px 0 0">Created in Stock entry. You can only edit here.</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button type="button" id="editDirBtn" class="secondary-btn" style="border-radius:999px"><i class="fas fa-pen"></i> Edit</button>
+            <a href="/stock/new?stockId=<%= stock._id %>" class="secondary-btn" style="border-radius:999px">Manage in Stock Form</a>
           </div>
         </div>
 
-        <form
-          action="/stock/<%= stock._id %>"
-          method="POST"
-          class="allocation-form"
-          id="allocationForm"
-        >
+        <!-- VIEW MODE -->
+        <div id="dirViewMode">
+          <% if (stock.directionsOfUse && (stock.directionsOfUse.title || (stock.directionsOfUse.items && stock.directionsOfUse.items.length))) { %>
+            <% if (stock.directionsOfUse.title) { %>
+              <div style="font-weight:700;font-size:15px;margin-bottom:10px"><%= stock.directionsOfUse.title %></div>
+            <% } %>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <% (stock.directionsOfUse.items || []).forEach((it, idx) => { %>
+                <div style="background:white;border:1px solid #eef0f3;border-radius:12px;padding:12px 14px;display:flex;gap:12px">
+                  <div style="min-width:28px;height:28px;border-radius:8px;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px"><%= idx+1 %></div>
+                  <div><div style="font-weight:700;font-size:13.5px"><%= it.subtitle %></div><div style="color:#4b5563;font-size:13px;margin-top:2px"><%= it.content %></div></div>
+                </div>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <div style="background:white;border:1px dashed #d1d5db;border-radius:12px;padding:18px;text-align:center;color:#6b7280">
+              <i class="fas fa-circle-info"></i> No directions of use set. Add them in the Stock form.
+            </div>
+          <% } %>
+        </div>
+
+        <!-- EDIT MODE (hidden by default) -->
+        <div id="dirEditMode" style="display:none">
+          <form id="dirEditForm" action="/stock/<%= stock._id %>" method="POST">
+            <!-- keep allocation fields empty so controller knows this is only directions update if you want -->
+            <input type="hidden" name="editDirectionsOnly" value="1">
+            <input type="hidden" name="units" value="0">
+            <input type="hidden" name="unitSellPrice" value="0">
+
+            <div class="field" style="margin-bottom:12px">
+              <label style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#6b7280">Main Title</label>
+              <input type="text" name="directionsOfUse[title]" id="dirEditTitle" value="<%= stock.directionsOfUse? stock.directionsOfUse.title : '' %>" placeholder="e.g. How to Use This Product" style="width:100%;padding:12px;border-radius:10px;border:1px solid #e5e7eb;font-weight:600">
+            </div>
+
+            <div id="dirEditList" style="display:flex;flex-direction:column;gap:10px">
+              <%
+                let editItems = (stock.directionsOfUse && stock.directionsOfUse.items)? stock.directionsOfUse.items : [{subtitle:'', content:''}];
+                if(!editItems.length) editItems = [{subtitle:'', content:''}];
+                editItems.forEach((it, idx)=>{
+              %>
+                <div class="dir-edit-row" style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:flex-start">
+                  <div style="min-width:30px;height:30px;border-radius:9px;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-weight:700" class="edit-index"><%= idx+1 %></div>
+                  <div style="flex:1;display:grid;gap:8px">
+                    <input type="text" name="directionsOfUse[items][<%= idx %>][subtitle]" value="<%= it.subtitle || '' %>" placeholder="Subtitle e.g. Dosage" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e5e7eb;font-weight:600">
+                    <textarea name="directionsOfUse[items][<%= idx %>][content]" rows="2" placeholder="Content..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #e5e7eb"><%= it.content || '' %></textarea>
+                  </div>
+                  <button type="button" class="remove-edit-row" style="width:36px;height:36px;border-radius:8px;border:1px solid #ffe4e6;background:#fff1f2;color:#e11d48"><i class="fas fa-trash"></i></button>
+                </div>
+              <% }) %>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button type="button" id="addEditRowBtn" class="secondary-btn" style="border-radius:999px"><i class="fas fa-plus"></i> Add Subtitle</button>
+              <div style="margin-left:auto;display:flex;gap:8px">
+                <button type="button" id="cancelEditBtn" class="secondary-btn" style="border-radius:999px">Cancel</button>
+                <button type="submit" class="primary-btn" style="border-radius:999px"><i class="fas fa-save"></i> Save Directions</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ALLOCATION - SEPARATE FORM -->
+      <div class="allocation-panel">
+        <div class="allocation-heading">
+          <div>
+            <h2>Dispatch to substations</h2>
+            <p>Enter the units each substation receives.</p>
+          </div>
+          <div class="allocation-total-box">
+            <small>Total allocated</small>
+            <strong id="allocationTotal">0</strong>
+          </div>
+        </div>
+
+        <form action="/stock/<%= stock._id %>" method="POST" class="allocation-form" id="allocationForm">
           <input type="hidden" name="units" id="totalUnits" value="0">
 
-          <div class="field">
-            <label for="directionsTitle">Directions Title</label>
-            <input
-              id="directionsTitle"
-              type="text"
-              name="directionsOfUse[title]"
-              placeholder="e.g. How to use"
-              value="<%= stock.directionsOfUse? stock.directionsOfUse.title : (old && old.directionsOfUse? old.directionsOfUse.title : '') %>"
-            >
-          </div>
-
-          <div id="directionsContainer">
-            <%
-              let items = [];
-              if (old && old.directionsOfUse && old.directionsOfUse.items) items = old.directionsOfUse.items;
-              else if (stock.directionsOfUse && stock.directionsOfUse.items) items = stock.directionsOfUse.items;
-              if (!items.length) items = [{ subtitle: "", content: "" }];
-              items.forEach((it, idx) => {
-            %>
-              <div class="substation-allocation-row directions-row" style="align-items:flex-end">
-                <div style="flex:1">
-                  <label>Subtitle</label>
-                  <input type="text" name="directionsOfUse[items][<%= idx %>][subtitle]" value="<%= it.subtitle || '' %>" placeholder="e.g. Dosage" required>
-                </div>
-                <div style="flex:2">
-                  <label>Content</label>
-                  <textarea name="directionsOfUse[items][<%= idx %>][content]" rows="2" placeholder="Content for this subtitle" required><%= it.content || '' %></textarea>
-                </div>
-                <button type="button" class="secondary-btn remove-direction-btn" style="margin-bottom:4px"><i class="fas fa-trash"></i></button>
-              </div>
+          <!-- Preserve directions on allocation submit so it doesn't get wiped -->
+          <% if (stock.directionsOfUse) { %>
+            <input type="hidden" name="directionsOfUse[title]" value="<%= stock.directionsOfUse.title || '' %>">
+            <% (stock.directionsOfUse.items || []).forEach((it, idx)=>{ %>
+              <input type="hidden" name="directionsOfUse[items][<%= idx %>][subtitle]" value="<%= it.subtitle %>">
+              <input type="hidden" name="directionsOfUse[items][<%= idx %>][content]" value="<%= it.content %>">
             <% }) %>
-          </div>
-
-          <button type="button" id="addDirectionBtn" class="secondary-btn" style="margin-top:10px">
-            <i class="fas fa-plus"></i> Add Subtitle
-          </button>
-
-          <hr style="margin:24px 0">
-
-          <div class="allocation-heading">
-            <div>
-              <h2>Dispatch to substations</h2>
-              <p>Enter the units each substation receives.</p>
-            </div>
-
-            <div class="allocation-total-box">
-              <small>Total allocated</small>
-              <strong id="allocationTotal">0</strong>
-            </div>
-          </div>
+          <% } %>
 
           <div class="field">
             <label for="unitSellPrice">Selling price per unit</label>
-            <input
-              id="unitSellPrice"
-              type="number"
-              min="0"
-              step="0.01"
-              name="unitSellPrice"
-              value="<%= old && old.unitSellPrice!= null? old.unitSellPrice : '' %>"
-              required
-            >
+            <input id="unitSellPrice" type="number" min="0" step="0.01" name="unitSellPrice" value="<%= old && old.unitSellPrice!= null? old.unitSellPrice : '' %>" required>
           </div>
 
           <div class="substation-allocation-list">
             <% if (substations && substations.length) { %>
-
               <% substations.forEach((s) => { %>
-                <%
-                  const substationId = String(s._id);
-                  const value =
-                    old &&
-                    old.allocations &&
-                    typeof old.allocations === "object"
-                     ? (old.allocations[substationId]?? "")
-                      : "";
-                %>
-
+                <% const substationId = String(s._id); const value = old && old.allocations && typeof old.allocations === "object"? (old.allocations[substationId]?? "") : ""; %>
                 <div class="substation-allocation-row">
-                  <div class="substation-name">
-                    <i class="fas fa-store"></i>
-                    <div>
-                      <strong><%= s.name %></strong>
-                      <% if (s.location) { %>
-                        <small><%= s.location %></small>
-                      <% } %>
-                    </div>
-                  </div>
-
-                  <div class="substation-unit-input">
-                    <label for="allocation-<%= substationId %>">
-                      Units
-                    </label>
-
-                    <input
-                      id="allocation-<%= substationId %>"
-                      class="allocation-input"
-                      type="number"
-                      min="0"
-                      max="<%= Number(stock.units || 0) %>"
-                      step="1"
-                      inputmode="numeric"
-                      name="allocations[<%= substationId %>]"
-                      value="<%= value %>"
-                      autocomplete="off"
-                    >
-                  </div>
+                  <div class="substation-name"><i class="fas fa-store"></i><div><strong><%= s.name %></strong><% if (s.location) { %><small><%= s.location %></small><% } %></div></div>
+                  <div class="substation-unit-input"><label for="allocation-<%= substationId %>">Units</label><input id="allocation-<%= substationId %>" class="allocation-input" type="number" min="0" max="<%= Number(stock.units || 0) %>" step="1" inputmode="numeric" name="allocations[<%= substationId %>]" value="<%= value %>" autocomplete="off"></div>
                 </div>
               <% }) %>
-
             <% } else { %>
-              <div class="error">
-                No active substations are available.
-              </div>
+              <div class="error">No active substations are available.</div>
             <% } %>
           </div>
 
           <div class="allocation-summary">
-            <div>
-              <span>Warehouse available</span>
-              <strong>
-                <%= Number(stock.units || 0).toLocaleString() %>
-              </strong>
-            </div>
-
-            <div>
-              <span>Being dispatched</span>
-              <strong id="summaryTotal">0</strong>
-            </div>
-
-            <div>
-              <span>Remaining warehouse</span>
-              <strong id="summaryRemaining">
-                <%= Number(stock.units || 0).toLocaleString() %>
-              </strong>
-            </div>
+            <div><span>Warehouse available</span><strong><%= Number(stock.units || 0).toLocaleString() %></strong></div>
+            <div><span>Being dispatched</span><strong id="summaryTotal">0</strong></div>
+            <div><span>Remaining warehouse</span><strong id="summaryRemaining"><%= Number(stock.units || 0).toLocaleString() %></strong></div>
           </div>
 
-          <div
-            id="allocationWarning"
-            class="error"
-            style="display:none;margin-top:12px"
-          ></div>
+          <div id="allocationWarning" class="error" style="display:none;margin-top:12px"></div>
 
           <div class="form-actions">
-            <button
-              type="submit"
-              class="primary-btn"
-              id="allocateButton"
-              <%=!substations ||!substations.length? "disabled" : "" %>
-            >
-              <i class="fas fa-boxes-stacked"></i>
-              Allocate Product
-            </button>
-
-            <a
-              href="/stock/new?stockId=<%= stock._id %>"
-              class="secondary-btn"
-            >
-              <i class="fas fa-pen"></i>
-              Edit Stock
-            </a>
-
-            <a href="/stock" class="secondary-btn">
-              Cancel
-            </a>
+            <button type="submit" class="primary-btn" id="allocateButton" <%=!substations ||!substations.length? "disabled" : "" %>><i class="fas fa-boxes-stacked"></i> Allocate Product</button>
+            <a href="/stock/new?stockId=<%= stock._id %>" class="secondary-btn"><i class="fas fa-pen"></i> Edit Stock</a>
+            <a href="/stock" class="secondary-btn">Cancel</a>
           </div>
         </form>
       </div>
     </div>
-
   <% } %>
 </section>
 
 <script>
 (function () {
   "use strict";
-
   const form = document.getElementById("allocationForm");
   const inputs = Array.from(document.querySelectorAll(".allocation-input"));
   const hiddenTotal = document.getElementById("totalUnits");
@@ -289,24 +194,53 @@
   const warning = document.getElementById("allocationWarning");
   const button = document.getElementById("allocateButton");
   const sellPrice = document.getElementById("unitSellPrice");
-
-  const directionsContainer = document.getElementById("directionsContainer");
-  const addBtn = document.getElementById("addDirectionBtn");
-
   const warehouse = Number(<%= stock? Number(stock.units || 0) : 0 %>);
 
-  if (!form) return;
+  // Directions edit toggle
+  const viewMode = document.getElementById("dirViewMode");
+  const editMode = document.getElementById("dirEditMode");
+  const editBtn = document.getElementById("editDirBtn");
+  const cancelBtn = document.getElementById("cancelEditBtn");
+  const editList = document.getElementById("dirEditList");
+  const addEditBtn = document.getElementById("addEditRowBtn");
 
-  function valueOf(input) {
-    const raw = String(input.value?? "").trim();
-    if (raw === "") return 0;
-    const value = Number(raw);
-    if (!Number.isFinite(value) || value < 0) return 0;
-    return Math.floor(value);
+  if(editBtn){
+    editBtn.addEventListener("click", ()=>{ viewMode.style.display="none"; editMode.style.display="block"; editBtn.style.display="none"; });
+  }
+  if(cancelBtn){
+    cancelBtn.addEventListener("click", ()=>{ editMode.style.display="none"; viewMode.style.display="block"; editBtn.style.display="inline-flex"; });
+  }
+  function reindexEdit(){
+    editList.querySelectorAll(".dir-edit-row").forEach((row, idx)=>{
+      row.querySelector(".edit-index").textContent = idx+1;
+      row.querySelectorAll("input, textarea").forEach(el=>{
+        if(el.name.includes("[subtitle]")) el.name = `directionsOfUse[items][${idx}][subtitle]`;
+        if(el.name.includes("[content]")) el.name = `directionsOfUse[items][${idx}][content]`;
+      });
+    });
+  }
+  if(addEditBtn){
+    addEditBtn.addEventListener("click", ()=>{
+      const idx = editList.querySelectorAll(".dir-edit-row").length;
+      const div = document.createElement("div");
+      div.className = "dir-edit-row";
+      div.style.cssText = "background:white;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:flex-start";
+      div.innerHTML = `<div style="min-width:30px;height:30px;border-radius:9px;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-weight:700" class="edit-index">${idx+1}</div><div style="flex:1;display:grid;gap:8px"><input type="text" name="directionsOfUse[items][${idx}][subtitle]" placeholder="Subtitle" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e5e7eb;font-weight:600"><textarea name="directionsOfUse[items][${idx}][content]" rows="2" placeholder="Content..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #e5e7eb"></textarea></div><button type="button" class="remove-edit-row" style="width:36px;height:36px;border-radius:8px;border:1px solid #ffe4e6;background:#fff1f2;color:#e11d48"><i class="fas fa-trash"></i></button>`;
+      editList.appendChild(div);
+    });
+  }
+  if(editList){
+    editList.addEventListener("click", (e)=>{
+      if(e.target.closest(".remove-edit-row")){
+        if(editList.querySelectorAll(".dir-edit-row").length>1){ e.target.closest(".dir-edit-row").remove(); reindexEdit(); }
+      }
+    });
   }
 
-  function calculate() {
-    const sum = inputs.reduce((runningTotal, input) => runningTotal + valueOf(input), 0);
+  if (!form) return;
+  function valueOf(input){ const raw=String(input.value??"").trim(); if(raw==="") return 0; const v=Number(raw); return (!Number.isFinite(v)||v<0)?0:Math.floor(v); }
+  function calculate(){
+    const sum = inputs.reduce((t,i)=>t+valueOf(i),0);
     hiddenTotal.value = String(sum);
     if(total) total.textContent = sum.toLocaleString();
     if(summaryTotal) summaryTotal.textContent = sum.toLocaleString();
@@ -318,68 +252,13 @@
     if (button) button.disabled = Boolean(message);
     return sum;
   }
-
-  function reindexDirections(){
-    const rows = directionsContainer.querySelectorAll(".directions-row");
-    rows.forEach((row, idx)=>{
-      row.querySelectorAll("input, textarea").forEach(el=>{
-        if(el.name.includes("[subtitle]")) el.name = `directionsOfUse[items][${idx}][subtitle]`;
-        if(el.name.includes("[content]")) el.name = `directionsOfUse[items][${idx}][content]`;
-      });
-    });
-  }
-
-  function addDirectionRow(data = {subtitle:"", content:""}){
-    const idx = directionsContainer.querySelectorAll(".directions-row").length;
-    const div = document.createElement("div");
-    div.className = "substation-allocation-row directions-row";
-    div.style.alignItems = "flex-end";
-    div.innerHTML = `
-      <div style="flex:1">
-        <label>Subtitle</label>
-        <input type="text" name="directionsOfUse[items][${idx}][subtitle]" value="${data.subtitle}" placeholder="e.g. Dosage" required>
-      </div>
-      <div style="flex:2">
-        <label>Content</label>
-        <textarea name="directionsOfUse[items][${idx}][content]" rows="2" placeholder="Content for this subtitle" required>${data.content}</textarea>
-      </div>
-      <button type="button" class="secondary-btn remove-direction-btn" style="margin-bottom:4px"><i class="fas fa-trash"></i></button>
-    `;
-    directionsContainer.appendChild(div);
-  }
-
-  if(addBtn){
-    addBtn.addEventListener("click", ()=> addDirectionRow());
-  }
-
-  directionsContainer.addEventListener("click", (e)=>{
-    if(e.target.closest(".remove-direction-btn")){
-      const rows = directionsContainer.querySelectorAll(".directions-row");
-      if(rows.length > 1){
-        e.target.closest(".directions-row").remove();
-        reindexDirections();
-      }
-    }
-  });
-
-  inputs.forEach((input) => {
-    input.addEventListener("input", calculate);
-    input.addEventListener("change", calculate);
-  });
-
+  inputs.forEach((input) => { input.addEventListener("input", calculate); input.addEventListener("change", calculate); });
   form.addEventListener("submit", function (event) {
     const sum = calculate();
     hiddenTotal.value = String(sum);
-    if (sum <= 0 || sum > warehouse ||!sellPrice || String(sellPrice.value).trim() === "") {
-      event.preventDefault();
-      return;
-    }
-    if (button) {
-      button.disabled = true;
-      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Allocating...';
-    }
+    if (sum <= 0 || sum > warehouse ||!sellPrice || String(sellPrice.value).trim() === "") { event.preventDefault(); return; }
+    if (button) { button.disabled = true; button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Allocating...'; }
   });
-
   calculate();
 })();
 </script>
