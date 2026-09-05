@@ -1,123 +1,56 @@
 const mongoose = require("mongoose");
 
-const STOCK_CATEGORIES = [
-  "Diagnostic Equipment",
-  "Hospital Furniture",
-  "Laboratory Equipment",
-  "Surgical Equipment"
-];
+const directionsOfUseItemSchema = new mongoose.Schema(
+  {
+    subtitle: { type: String, trim: true, default: "" },
+    content: { type: String, trim: true, default: "" }
+  },
+  { _id: false }
+);
+
+const directionsOfUseSchema = new mongoose.Schema(
+  {
+    title: { type: String, trim: true, default: "" },
+    items: { type: [directionsOfUseItemSchema], default: [] }
+  },
+  { _id: false }
+);
 
 const stockSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-      index: true
-    },
-
+    name: { type: String, required: true, trim: true, index: true },
     category: {
       type: String,
       required: true,
       trim: true,
-      enum: STOCK_CATEGORIES,
+      lowercase: true,
       index: true
     },
-
     subcategory: {
       type: String,
       required: true,
       trim: true,
+      lowercase: true,
       index: true
     },
+    days: { type: Number, required: true, min: 0, default: 0 },
+    image: { type: String, trim: true, default: "" },
+    units: { type: Number, required: true, min: 0, default: 0 },
+    buyPrice: { type: Number, min: 0, default: 0 },
+    description: { type: String, default: "" },
 
-    days: {
-      type: Number,
-      required: true,
-      min: 0,
-      default: 0
-    },
-
-    image: {
-      type: String,
-      trim: true,
-      default: ""
-    },
-
-    units: {
-      type: Number,
-      required: true,
-      min: 0,
-      default: 0
-    },
-
-    buyPrice: {
-      type: Number,
-      min: 0,
-      default: 0
-    },
-
-    description: {
-      type: String,
-      default: ""
-    },
-
-    // NEW FIELD
+    // Optional instructions shown to customers on the product details page.
     directionsOfUse: {
-      title: {
-        type: String,
-        trim: true,
-        default: ""
-      },
-      items: [
-        {
-          subtitle: {
-            type: String,
-            required: true,
-            trim: true
-          },
-          content: {
-            type: String,
-            required: true,
-            trim: true
-          },
-          _id: false
-        }
-      ]
+      type: directionsOfUseSchema,
+      default: undefined
     },
 
-    cashOutflow: {
-      type: Number,
-      min: 0,
-      default: 0
-    },
-
-    categoryOveral: {
-      type: Number,
-      min: 0,
-      default: 0
-    },
-
-    overal: {
-      type: Number,
-      min: 0,
-      default: 0
-    },
-
-    totalsUpdatedAt: {
-      type: Date,
-      default: Date.now
-    },
-
-    isActive: {
-      type: Boolean,
-      default: true
-    }
+    isActive: { type: Boolean, default: true }
   },
   { timestamps: true }
 );
 
+// Do not make this unique: legacy databases may contain duplicates.
 stockSchema.index({ category: 1, subcategory: 1 });
-stockSchema.statics.CATEGORIES = STOCK_CATEGORIES;
 
 module.exports = mongoose.model("Stock", stockSchema);
