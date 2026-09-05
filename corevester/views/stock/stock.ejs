@@ -1,158 +1,122 @@
 <section class="shop-page">
-  <div style="margin-bottom:18px">
-    <a href="/stock" class="secondary-btn">
-      <i class="fas fa-arrow-left"></i> Back to Stock
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Stock Management</h1>
+      <p class="page-subtitle">
+        Browse warehouse stock by category and subcategory.
+        Stock uses the same compact product-card layout as Products.
+      </p>
+    </div>
+
+    <a href="/stock/new" class="primary-btn">
+      <i class="fas fa-plus"></i>
+      Add / Update Stock
     </a>
   </div>
 
-  <div class="detail-card" style="max-width:900px;margin:0 auto;padding:28px">
-    <div class="page-head" style="margin-bottom:24px">
-      <div>
-        <h1 class="page-title" style="font-size:24px"><%= title %></h1>
-        <p class="page-subtitle">Add a new subcategory or update an existing one. Directions of use is saved with the stock.</p>
-      </div>
+  <% if (typeof error!== "undefined" && error) { %>
+    <div class="error"><%= error %></div>
+  <% } %>
+
+  <% if (typeof saved!== "undefined" && saved === "1") { %>
+    <div class="notice">Stock saved successfully.</div>
+  <% } %>
+
+  <% if (!stocks ||!stocks.length) { %>
+    <div class="empty" style="margin-top:25px">
+      <i class="fas fa-warehouse"></i>
+      <div>No stock records exist yet.</div>
     </div>
+  <% } else { %>
 
-    <% if (typeof error!== "undefined" && error) { %>
-      <div class="error" style="margin-bottom:18px"><%= error %></div>
-    <% } %>
-    <% if (typeof saved!== "undefined" && saved === "1") { %>
-      <div class="notice" style="margin-bottom:18px">Saved successfully.</div>
-    <% } %>
+    <% stocks.forEach((group) => { %>
+      <section class="category-section">
 
-    <form action="/stock/new" method="POST" id="stockForm">
-      <% if (old && (old._id || old.stockId || selectedStockId)) { %>
-        <input type="hidden" name="stockId" value="<%= old._id || old.stockId || selectedStockId %>">
-      <% } %>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div class="field">
-          <label>Category *</label>
-          <select name="category" required style="width:100%;padding:12px;border-radius:10px;border:1px solid #e5e7eb">
-            <option value="">Select category</option>
-            <% (categories || []).forEach(cat => { %>
-              <option value="<%= cat %>" <%= (old.category === cat || (old.category && old.category.toLowerCase() === cat.toLowerCase()))? 'selected' : '' %>><%= cat %></option>
-            <% }) %>
-          </select>
+        <div class="category-head">
+          <h2><%= group.label || group.category || "Other" %></h2>
+          <span>Swipe left/right</span>
         </div>
 
-        <div class="field">
-          <label>Subcategory Name *</label>
-          <input type="text" name="subcategory" value="<%= old.subcategory || old.name || '' %>" placeholder="e.g. Digital Microscope" required style="width:100%;padding:12px;border-radius:10px;border:1px solid #e5e7eb">
-        </div>
+        <% (group.rows || []).forEach((row) => { %>
+          <div class="subcategory-row-block">
 
-        <div class="field">
-          <label><%= old._id || selectedStockId? 'Additional Units' : 'Warehouse Units *' %></label>
-          <input type="number" min="0" step="1" name="<%= old._id || selectedStockId? 'additionalUnits' : 'units' %>" value="<%= old.units || old.additionalUnits || '' %>" placeholder="0" required style="width:100%;padding:12px;border-radius:10px;border:1px solid #e5e7eb">
-        </div>
+            <div class="subcategory-head">
+              <h3>
+                <%= row.products && row.products.length
+                 ? (row.products[0].subcategory || "Other")
+                  : "Other" %>
+              </h3>
 
-        <div class="field">
-          <label>Buy Price (per unit) *</label>
-          <input type="number" min="0" step="0.01" name="buyPrice" value="<%= old.buyPrice || '' %>" placeholder="KSh 0.00" required style="width:100%;padding:12px;border-radius:10px;border:1px solid #e5e7eb">
-        </div>
-      </div>
-
-      <div class="field" style="margin-top:16px">
-        <label>Image URL</label>
-        <input type="text" name="image" value="<%= old.image || '' %>" placeholder="https://..." style="width:100%;padding:12px;border-radius:10px;border:1px solid #e5e7eb">
-      </div>
-
-      <div class="field" style="margin-top:16px">
-        <label>Description</label>
-        <textarea name="description" rows="3" placeholder="Short description..." style="width:100%;padding:12px;border-radius:10px;border:1px solid #e5e7eb"><%= old.description || '' %></textarea>
-      </div>
-
-      <!-- DIRECTIONS OF USE - PREMIUM UI -->
-      <div style="margin-top:32px;background:#f9fafb;border:1px solid #eef0f3;border-radius:16px;padding:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div>
-            <h3 style="margin:0;font-size:16px;font-weight:700;display:flex;gap:8px;align-items:center">
-              <i class="fas fa-list-check" style="color:#6366f1"></i> Directions of Use
-            </h3>
-            <p style="margin:4px 0 0;color:#6b7280;font-size:13px">One title, unlimited subtitles. Each subtitle has its own content.</p>
-          </div>
-          <button type="button" id="addDirBtn" class="primary-btn" style="padding:8px 14px;border-radius:999px;font-size:13px">
-            <i class="fas fa-plus"></i> Add Step
-          </button>
-        </div>
-
-        <div class="field">
-          <label style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Main Title</label>
-          <input type="text" id="dirTitle" name="directionsOfUse[title]" value="<%= old.directionsOfUse? old.directionsOfUse.title : '' %>" placeholder="e.g. How to Use This Product" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid #e5e7eb;background:white;font-weight:600">
-        </div>
-
-        <div id="dirList" style="margin-top:16px;display:flex;flex-direction:column;gap:12px">
-          <%
-            let dirItems = old.directionsOfUse && old.directionsOfUse.items? old.directionsOfUse.items : [];
-            if (!dirItems.length) dirItems = [{ subtitle: '', content: '' }];
-            dirItems.forEach((it, i) => {
-          %>
-          <div class="dir-card" style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 2px rgba(0,0,0,.04)">
-            <div style="background:#eef2ff;color:#6366f1;width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0" class="dir-index"><%= i+1 %></div>
-            <div style="flex:1;display:grid;gap:10px">
-              <input type="text" name="directionsOfUse[items][<%= i %>][subtitle]" value="<%= it.subtitle || '' %>" placeholder="Subtitle — e.g. Dosage, Safety, Storage" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;font-weight:600">
-              <textarea name="directionsOfUse[items][<%= i %>][content]" rows="2" placeholder="Content for this subtitle..." style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;resize:vertical"><%= it.content || '' %></textarea>
+              <% if (row.products && row.products.length > 1) { %>
+                <span>Swipe left/right</span>
+              <% } %>
             </div>
-            <button type="button" class="removeDir" style="background:#fff1f2;color:#e11d48;border:1px solid #ffe4e6;width:36px;height:36px;border-radius:10px;cursor:pointer"><i class="fas fa-trash"></i></button>
+
+            <div
+              class="product-row category-product-row"
+              aria-label="<%= group.label || group.category || 'Stock' %> stock"
+            >
+              <% (row.products || []).forEach((stock) => { %>
+
+                <a
+                  href="/stock/<%= stock._id %>"
+                  class="product-card stock-card"
+                >
+                  <div class="product-image">
+                    <% if (stock.image) { %>
+                      <img
+                        src="<%= stock.image %>"
+                        alt="<%= stock.subcategory || stock.name || 'Stock item' %>"
+                        loading="lazy"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                      >
+                      <div class="placeholder" style="display:none">
+                        <i class="fas fa-box"></i>
+                      </div>
+                    <% } else { %>
+                      <div class="placeholder">
+                        <i class="fas fa-box"></i>
+                      </div>
+                    <% } %>
+                  </div>
+
+                  <div class="product-info">
+                    <div class="product-name">
+                      <%= stock.subcategory || stock.name || "Unnamed stock" %>
+                    </div>
+
+                    <div class="stock-meta-line">
+                      <%= stock.category || "Other" %>
+                    </div>
+
+                    <div class="product-price">
+                      KSh
+                      <%= Number(stock.buyPrice || 0).toLocaleString() %>
+                    </div>
+
+                    <div class="stock-text">
+                      <strong>
+                        <%= Number(stock.units || 0).toLocaleString() %>
+                      </strong>
+                      warehouse units
+                    </div>
+
+                    <div
+                      class="stock-text <%= Number(stock.units || 0) <= 0? 'out' : '' %>"
+                    >
+                      <%= Number(stock.units || 0) > 0
+                       ? `${Number(stock.units).toLocaleString()} available`
+                        : "Out of stock" %>
+                    </div>
+                  </div>
+                </a>
+
+              <% }) %>
+            </div>
           </div>
-          <% }) %>
-        </div>
-        <p style="color:#9ca3af;font-size:12px;margin-top:12px"><i class="fas fa-info-circle"></i> Empty subtitles are ignored on save.</p>
-      </div>
+        <% }) %>
+      </section>
+    <% }) %>
 
-      <div class="form-actions" style="margin-top:28px;display:flex;gap:10px">
-        <button type="submit" class="primary-btn" style="padding:13px 22px;border-radius:12px">
-          <i class="fas fa-save"></i> Save Stock
-        </button>
-        <a href="/stock" class="secondary-btn" style="padding:13px 22px;border-radius:12px">Cancel</a>
-      </div>
-    </form>
-  </div>
+  <% } %>
 </section>
-
-<style>
-.dir-card:focus-within{border-color:#6366f1!important;box-shadow:0 0 0 3px rgba(99,102,241,.12)!important}
-</style>
-
-<script>
-(function(){
-  const list = document.getElementById('dirList');
-  const addBtn = document.getElementById('addDirBtn');
-
-  function reindex(){
-    list.querySelectorAll('.dir-card').forEach((card, idx)=>{
-      card.querySelector('.dir-index').textContent = idx+1;
-      card.querySelectorAll('input, textarea').forEach(el=>{
-        if(el.name.includes('[subtitle]')) el.name = `directionsOfUse[items][${idx}][subtitle]`;
-        if(el.name.includes('[content]')) el.name = `directionsOfUse[items][${idx}][content]`;
-      });
-    });
-  }
-
-  addBtn.addEventListener('click', ()=>{
-    const idx = list.querySelectorAll('.dir-card').length;
-    const div = document.createElement('div');
-    div.className = 'dir-card';
-    div.style.cssText = "background:white;border:1px solid #e5e7eb;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 2px rgba(0,0,0,.04)";
-    div.innerHTML = `
-      <div style="background:#eef2ff;color:#6366f1;width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0" class="dir-index">${idx+1}</div>
-      <div style="flex:1;display:grid;gap:10px">
-        <input type="text" name="directionsOfUse[items][${idx}][subtitle]" placeholder="Subtitle — e.g. Dosage" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;font-weight:600">
-        <textarea name="directionsOfUse[items][${idx}][content]" rows="2" placeholder="Content..." style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;resize:vertical"></textarea>
-      </div>
-      <button type="button" class="removeDir" style="background:#fff1f2;color:#e11d48;border:1px solid #ffe4e6;width:36px;height:36px;border-radius:10px;cursor:pointer"><i class="fas fa-trash"></i></button>
-    `;
-    list.appendChild(div);
-    div.querySelector('input').focus();
-  });
-
-  list.addEventListener('click', (e)=>{
-    if(e.target.closest('.removeDir')){
-      if(list.querySelectorAll('.dir-card').length > 1){
-        e.target.closest('.dir-card').remove();
-        reindex();
-      }
-    }
-  });
-})();
-</script>
