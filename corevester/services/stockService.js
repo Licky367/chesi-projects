@@ -4,7 +4,7 @@ const Stock = require("../models/stock");
 const Product = require("../models/products");
 const Substation = require("../models/substations");
 
-const text = (value) => String(value ?? "").trim();
+const text = (value) => String(value?? "").trim();
 
 function canonicalCategory(value) {
   const raw = text(value);
@@ -18,6 +18,30 @@ function canonicalCategory(value) {
 
 function cleanSubcategory(value) {
   return text(value).replace(/\s+/g, " ");
+}
+
+function cleanDirectionsOfUse(input) {
+  if (!input || typeof input!== "object") return undefined;
+
+  const title = text(input.title);
+  let items = input.items || [];
+  if (!Array.isArray(items)) {
+    items = Object.values(items);
+  }
+
+  const cleanedItems = items
+   .map((it) => ({
+      subtitle: text(it.subtitle),
+      content: text(it.content),
+    }))
+   .filter((it) => it.subtitle && it.content);
+
+  if (!title && cleanedItems.length === 0) return undefined;
+
+  return {
+    title,
+    items: cleanedItems,
+  };
 }
 
 function number(value, label, required = false) {
@@ -42,8 +66,8 @@ function wholeNumber(value, label, required = false) {
 
 function displayLabel(value) {
   return text(value)
-    .replace(/[-_]+/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+   .replace(/[-_]+/g, " ")
+   .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function normalizeStockForView(stock) {
@@ -51,7 +75,7 @@ function normalizeStockForView(stock) {
   const category = canonicalCategory(stock.category) || stock.category;
   const subcategory = cleanSubcategory(stock.subcategory || stock.name);
   return {
-    ...stock,
+   ...stock,
     category,
     subcategory,
     name: subcategory
@@ -106,8 +130,8 @@ exports.getCategories = () => [...(Stock.CATEGORIES || [])];
 
 exports.listStock = async () => {
   const stocks = (await Stock.find({ isActive: true })
-    .sort({ category: 1, subcategory: 1, createdAt: 1 })
-    .lean()).map(normalizeStockForView);
+   .sort({ category: 1, subcategory: 1, createdAt: 1 })
+   .lean()).map(normalizeStockForView);
 
   const categoryMap = new Map();
 
@@ -128,30 +152,30 @@ exports.listStock = async () => {
     for (let i = 0; i < group.stocks.length; i += 6) {
       rows.push({ products: group.stocks.slice(i, i + 6) });
     }
-    return { ...group, rows };
+    return {...group, rows };
   });
 };
 
 exports.getStock = (id) => {
   if (!mongoose.isValidObjectId(id)) return null;
   return Stock.findOne({ _id: id, isActive: true })
-    .lean()
-    .then(normalizeStockForView);
+   .lean()
+   .then(normalizeStockForView);
 };
 
 exports.getStockCategories = () =>
   Stock.find({ isActive: true })
-    .select(
-      "name category subcategory days image units buyPrice description cashOutflow categoryOveral overal totalsUpdatedAt"
+   .select(
+      "name category subcategory days image units buyPrice description directionsOfUse cashOutflow categoryOveral overal totalsUpdatedAt"
     )
-    .sort({ category: 1, subcategory: 1 })
-    .lean();
+   .sort({ category: 1, subcategory: 1 })
+   .lean();
 
 exports.getSubstations = () =>
   Substation.find({ isActive: true })
-    .select("name location description productInventory")
-    .sort({ name: 1 })
-    .lean();
+   .select("name location description productInventory")
+   .sort({ name: 1 })
+   .lean();
 
 exports.recalculateStockTotals = recalculateStockTotals;
 
@@ -162,6 +186,7 @@ exports.createStock = async (body) => {
   const buyPrice = number(body.buyPrice, "Buy price", true);
   const image = text(body.image);
   const description = text(body.description);
+  const directionsOfUse = cleanDirectionsOfUse(body.directionsOfUse);
 
   if (!category) {
     throw new Error("Select a valid stock category.");
@@ -190,7 +215,8 @@ exports.createStock = async (body) => {
     image,
     units,
     buyPrice,
-    description
+    description,
+    directionsOfUse: directionsOfUse || { title: "", items: [] }
   });
 
   await recalculateStockTotals();
@@ -207,8 +233,9 @@ exports.updateStockEntry = async (stockId, body) => {
 
   const category = canonicalCategory(body.category || stock.category);
   const subcategory = cleanSubcategory(body.subcategory || stock.subcategory);
-  const additionalUnits = wholeNumber(body.additionalUnits ?? 0, "Additional units");
+  const additionalUnits = wholeNumber(body.additionalUnits?? 0, "Additional units");
   const buyPrice = number(body.buyPrice, "Buy price", true);
+  const directionsOfUse = cleanDirectionsOfUse(body.directionsOfUse);
 
   if (!category) throw new Error("Select a valid stock category.");
   if (!subcategory) throw new Error("Subcategory is required.");
@@ -232,6 +259,10 @@ exports.updateStockEntry = async (stockId, body) => {
   stock.buyPrice = buyPrice;
   stock.description = text(body.description);
 
+  if (directionsOfUse) {
+    stock.directionsOfUse = directionsOfUse;
+  }
+
   const image = text(body.image);
   if (image) stock.image = image;
 
@@ -249,6 +280,7 @@ exports.updateStockEntry = async (stockId, body) => {
         image: stock.image || "",
         buyPrice: Number(stock.buyPrice || 0),
         description: stock.description || ""
+        // directionsOfUse is read from Stock via virtual, no need to copy
       }
     }
   );
@@ -275,14 +307,14 @@ exports.updateStockEntry = async (stockId, body) => {
 };
 
 function normalizeAllocations(input) {
-  if (!input || typeof input !== "object" || Array.isArray(input)) return [];
+  if (!input || typeof input!== "object" || Array.isArray(input)) return [];
 
   return Object.entries(input)
-    .map(([substationId, rawValue]) => ({
+   .map(([substationId, rawValue]) => ({
       substationId: text(substationId),
       units: wholeNumber(rawValue, `Units for substation ${substationId}`)
     }))
-    .filter((entry) => entry.substationId && entry.units > 0);
+   .filter((entry) => entry.substationId && entry.units > 0);
 }
 
 exports.createProductFromStock = async (stockId, body) => {
@@ -301,10 +333,10 @@ exports.createProductFromStock = async (stockId, body) => {
   }
 
   const ids = allocations.map((item) => item.substationId);
-  if (ids.some((id) => !mongoose.isValidObjectId(id))) {
+  if (ids.some((id) =>!mongoose.isValidObjectId(id))) {
     throw new Error("One or more selected substations are invalid.");
   }
-  if (new Set(ids).size !== ids.length) {
+  if (new Set(ids).size!== ids.length) {
     throw new Error("Each substation can appear only once in the allocation.");
   }
 
@@ -362,7 +394,7 @@ exports.createProductFromStock = async (stockId, body) => {
         const created = await Product.create(
           [{
             stock: stock._id,
-            ...inherited,
+           ...inherited,
             units: allocationTotal,
             unitSellPrice
           }],
@@ -402,11 +434,10 @@ exports.createProductFromStock = async (stockId, body) => {
         await substation.save({ session });
       }
 
-      // Keep all three financial totals and their timestamp synchronized.
       const allStocks = await Stock.find({ isActive: true })
-        .select("_id category units buyPrice")
-        .session(session)
-        .lean();
+       .select("_id category units buyPrice")
+       .session(session)
+       .lean();
       const categoryTotals = new Map();
       let overall = 0;
       for (const item of allStocks) {
