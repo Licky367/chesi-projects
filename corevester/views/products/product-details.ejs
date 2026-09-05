@@ -98,7 +98,8 @@
               </article>
             <% }) %>
           </div>
-        <% else if (product.directionsOfUse.title) { %>
+        <% } %>
+        <% if (!(product.directionsOfUse.items && product.directionsOfUse.items.length) && product.directionsOfUse.title) { %>
           <p class="directions-display-note">Please follow the product guidance provided by the supplier.</p>
         <% } %>
       </section>
