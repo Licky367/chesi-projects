@@ -1,4 +1,5 @@
 const Product = require("../models/products");
+const Stock = require("../models/stock");
 
 const label = (value) =>
   String(value || "other")
@@ -7,44 +8,35 @@ const label = (value) =>
 
 function chunk(items, size = 6) {
   const rows = [];
-
   for (let i = 0; i < items.length; i += size) {
-    rows.push({
-      products: items.slice(i, i + size)
-    });
+    rows.push({ products: items.slice(i, i + size) });
   }
-
   return rows;
 }
 
-/*
- * Products are grouped:
- *
- * Category
- *   Subcategory
- *     Row 1: max 6 horizontally scrollable
- *     Row 2: next 6
- *     ...
- *
- * Products without a subcategory are placed in the final "Other" rows
- * of their category.
- */
+function normalizeDirections(directions) {
+  if (!directions) return undefined;
+  const items = Array.isArray(directions.items)
+    ? directions.items
+        .map((item) => ({
+          subtitle: String(item?.subtitle || "").trim(),
+          content: String(item?.content || "").trim()
+        }))
+        .filter((item) => item.subtitle && item.content)
+    : [];
+  const title = String(directions.title || "").trim();
+  if (!title && !items.length) return undefined;
+  return { title, items };
+}
+
 async function getProductsByCategory() {
   const products = await Product.find({ isActive: true })
-    .sort({
-      category: 1,
-      subcategory: 1,
-      name: 1,
-      createdAt: 1
-    })
+    .sort({ category: 1, subcategory: 1, name: 1, createdAt: 1 })
     .lean();
 
   const categoryMap = new Map();
-
   for (const product of products) {
-    const category =
-      product.category || "other";
-
+    const category = product.category || "other";
     if (!categoryMap.has(category)) {
       categoryMap.set(category, {
         category,
@@ -55,9 +47,7 @@ async function getProductsByCategory() {
     }
 
     const group = categoryMap.get(category);
-
-    const subcategory =
-      String(product.subcategory || "").trim();
+    const subcategory = String(product.subcategory || "").trim();
 
     if (!subcategory) {
       group.uncategorized.push(product);
@@ -65,67 +55,60 @@ async function getProductsByCategory() {
     }
 
     if (!group.subcategoryMap.has(subcategory)) {
-      group.subcategoryMap.set(
+      group.subcategoryMap.set(subcategory, {
         subcategory,
-        {
-          subcategory,
-          label: label(subcategory),
-          products: []
-        }
-      );
+        label: label(subcategory),
+        products: []
+      });
     }
-
-    group.subcategoryMap
-      .get(subcategory)
-      .products
-      .push(product);
+    group.subcategoryMap.get(subcategory).products.push(product);
   }
 
-  return Array.from(categoryMap.values()).map(
-    (group) => {
-      const rows = [];
-
-      for (const subcategory of group.subcategoryMap.values()) {
-        for (const row of chunk(subcategory.products, 6)) {
-          rows.push({
-            hasSubcategory: true,
-            subcategory:
-              subcategory.subcategory,
-            label:
-              subcategory.label,
-            products:
-              row.products
-          });
-        }
-      }
-
-      /*
-       * Null/undefined/blank subcategories belong at the end
-       * of their category, exactly as requested.
-       */
-      for (const row of chunk(group.uncategorized, 6)) {
+  return Array.from(categoryMap.values()).map((group) => {
+    const rows = [];
+    for (const subcategory of group.subcategoryMap.values()) {
+      for (const row of chunk(subcategory.products, 6)) {
         rows.push({
-          hasSubcategory: false,
-          subcategory: "",
-          label: "Other",
+          hasSubcategory: true,
+          subcategory: subcategory.subcategory,
+          label: subcategory.label,
           products: row.products
         });
       }
-
-      return {
-        category: group.category,
-        label: group.label,
-        rows
-      };
     }
-  );
+    for (const row of chunk(group.uncategorized, 6)) {
+      rows.push({
+        hasSubcategory: false,
+        subcategory: "",
+        label: "Other",
+        products: row.products
+      });
+    }
+
+    return { category: group.category, label: group.label, rows };
+  });
 }
 
 async function getProduct(id) {
-  return Product.findOne({
+  const product = await Product.findOne({
     _id: id,
     isActive: true
   }).lean();
+
+  if (!product) return null;
+
+  // Fallback for older Product documents created before directionsOfUse
+  // was stored directly on Product.
+  if (!normalizeDirections(product.directionsOfUse) && product.stock) {
+    const stock = await Stock.findById(product.stock)
+      .select("directionsOfUse")
+      .lean();
+    product.directionsOfUse = normalizeDirections(stock?.directionsOfUse);
+  } else {
+    product.directionsOfUse = normalizeDirections(product.directionsOfUse);
+  }
+
+  return product;
 }
 
 module.exports = {
