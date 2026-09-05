@@ -1,5 +1,33 @@
 const service = require("../services/stockService");
 
+function normalizeDirectionsOfUse(body) {
+  const raw = body.directionsOfUse;
+  if (!raw) return undefined;
+
+  const title = String(raw.title || "").trim();
+
+  let items = raw.items || [];
+  // When only one row, express might give object not array
+  if (!Array.isArray(items)) {
+    items = Object.values(items);
+  }
+
+  const filtered = items
+    .map((it) => ({
+      subtitle: String(it.subtitle || "").trim(),
+      content: String(it.content || "").trim(),
+    }))
+    .filter((it) => it.subtitle && it.content);
+
+  // If nothing, don't save
+  if (!title && filtered.length === 0) return undefined;
+
+  return {
+    title,
+    items: filtered,
+  };
+}
+
 function renderEntry(res, data, status = 200) {
   return res.status(status).render("stock/product-entry", {
     title: data.title || "Add / Update Stock Subcategory",
@@ -65,10 +93,17 @@ exports.newStockForm = async (req, res) => {
 exports.createOrUpdateStock = async (req, res) => {
   try {
     const stockId = String(req.body.stockId || "").trim();
+    const directionsOfUse = normalizeDirectionsOfUse(req.body);
+
+    const payload = {
+      ...req.body,
+      directionsOfUse,
+    };
+
     if (stockId) {
-      await service.updateStockEntry(stockId, req.body);
+      await service.updateStockEntry(stockId, payload);
     } else {
-      await service.createStock(req.body);
+      await service.createStock(payload);
     }
     return res.redirect("/stock?saved=1");
   } catch (error) {
@@ -109,6 +144,13 @@ exports.entry = async (req, res) => {
 
 exports.createProduct = async (req, res) => {
   try {
+    const directionsOfUse = normalizeDirectionsOfUse(req.body);
+
+    // If user edited directionsOfUse on this page, update Stock first
+    if (directionsOfUse) {
+      await service.updateStockEntry(req.params.id, { directionsOfUse });
+    }
+
     await service.createProductFromStock(req.params.id, req.body);
     return res.redirect(`/stock/${req.params.id}?saved=1`);
   } catch (error) {
