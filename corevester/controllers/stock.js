@@ -1,47 +1,5 @@
 const service = require("../services/stockService");
 
-function normalizeDirectionsOfUse(body) {
-  const raw = body.directionsOfUse;
-  if (!raw) return undefined;
-
-  const title = String(raw.title || "").trim();
-
-  let items = raw.items || [];
-  if (!Array.isArray(items)) {
-    items = Object.values(items);
-  }
-
-  const filtered = items
-    .map((it) => ({
-      subtitle: String(it.subtitle || "").trim(),
-      content: String(it.content || "").trim(),
-    }))
-    .filter((it) => it.subtitle && it.content);
-
-  if (!title && filtered.length === 0) return undefined;
-
-  return {
-    title,
-    items: filtered,
-  };
-}
-
-function renderEntry(res, data, status = 200) {
-  return res.status(status).render("stock/product-entry", {
-    title: data.title || "Add / Update Stock Subcategory",
-    error: data.error || null,
-    saved: data.saved || "",
-    old: data.old || {},
-    stockCatalog: data.stockCatalog || [],
-    categories: data.categories || service.getCategories(),
-    selectedStockId: data.selectedStockId || ""
-  });
-}
-
-async function loadCatalog() {
-  return service.getStockCategories().catch(() => []);
-}
-
 exports.list = async (req, res) => {
   try {
     res.render("stock/stock", {
@@ -63,57 +21,58 @@ exports.list = async (req, res) => {
 
 exports.newStockForm = async (req, res) => {
   try {
-    const stockCatalog = await loadCatalog();
+    const stockCatalog = await service.getStockCategories();
+    const categories = await service.getCategories();
     const selectedStock = req.query.stockId
       ? await service.getStock(req.query.stockId)
       : null;
 
-    return renderEntry(res, {
+    res.render("stock/product-entry", {
       title: selectedStock ? "Update Stock Subcategory" : "Add Stock Subcategory",
+      error: req.query.error || null,
+      saved: req.query.saved || "",
       old: selectedStock || {},
       stockCatalog,
-      categories: service.getCategories(),
-      selectedStockId: selectedStock?._id?.toString() || "",
-      error: req.query.error || null,
-      saved: req.query.saved || ""
+      categories,
+      selectedStockId: selectedStock?._id?.toString() || ""
     });
   } catch (error) {
     console.error(error);
-    return renderEntry(res, {
+    res.status(500).render("stock/product-entry", {
       title: "Add Stock Subcategory",
       error: error.message,
+      saved: "",
+      old: {},
       stockCatalog: [],
-      categories: service.getCategories()
-    }, 500);
+      categories: [],
+      selectedStockId: ""
+    });
   }
 };
 
 exports.createOrUpdateStock = async (req, res) => {
   try {
     const stockId = String(req.body.stockId || "").trim();
-    const directionsOfUse = normalizeDirectionsOfUse(req.body);
-
-    const payload = {
-      ...req.body,
-      directionsOfUse,
-    };
-
     if (stockId) {
-      await service.updateStockEntry(stockId, payload);
+      await service.updateStockEntry(stockId, req.body);
     } else {
-      await service.createStock(payload);
+      await service.createStock(req.body);
     }
     return res.redirect("/stock?saved=1");
   } catch (error) {
     console.error(error);
-    return renderEntry(res, {
+    const stockCatalog = await service.getStockCategories().catch(() => []);
+    const categories = await service.getCategories().catch(() => []);
+
+    return res.status(400).render("stock/product-entry", {
       title: req.body.stockId ? "Update Stock Subcategory" : "Add Stock Subcategory",
       error: error.message,
+      saved: "",
       old: req.body,
-      stockCatalog: await loadCatalog(),
-      categories: service.getCategories(),
+      stockCatalog,
+      categories,
       selectedStockId: req.body.stockId || ""
-    }, 400);
+    });
   }
 };
 
@@ -124,9 +83,11 @@ exports.entry = async (req, res) => {
       service.getSubstations()
     ]);
 
-    if (!stock) return res.redirect("/stock?error=Stock+not+found");
+    if (!stock) {
+      return res.redirect("/stock?error=Stock+not+found");
+    }
 
-    return res.render("stock/stock-entry", {
+    res.render("stock/stock-entry", {
       title: "Allocate Product",
       stock,
       substations,
@@ -136,19 +97,16 @@ exports.entry = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.redirect(`/stock?error=${encodeURIComponent(error.message)}`);
+    res.redirect(`/stock?error=${encodeURIComponent(error.message)}`);
   }
 };
 
 exports.createProduct = async (req, res) => {
   try {
-    // DirectionsOfUse is now edited only via /stock/new — same Edit button
-    // This route is allocation only
     await service.createProductFromStock(req.params.id, req.body);
     return res.redirect(`/stock/${req.params.id}?saved=1`);
   } catch (error) {
     console.error(error);
-
     const [stock, substations] = await Promise.all([
       service.getStock(req.params.id),
       service.getSubstations()
