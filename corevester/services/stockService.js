@@ -128,38 +128,19 @@ exports.listStock = async () => {
   const categoryMap = new Map();
   for (const stock of stocks) {
     const category = stock.category || "other";
-    const subcategory = stock.subcategory || "uncategorized";
-
     if (!categoryMap.has(category)) {
-      categoryMap.set(category, {
-        category,
-        label: displayLabel(category),
-        subcategories: new Map()
-      });
+      categoryMap.set(category, { category, label: displayLabel(category), stocks: [] });
     }
-
-    const group = categoryMap.get(category);
-    if (!group.subcategories.has(subcategory)) {
-      group.subcategories.set(subcategory, {
-        subcategory,
-        label: displayLabel(subcategory),
-        stocks: []
-      });
-    }
-    group.subcategories.get(subcategory).stocks.push(stock);
+    categoryMap.get(category).stocks.push(stock);
   }
 
-  return Array.from(categoryMap.values()).map((group) => ({
-    category: group.category,
-    label: group.label,
-    subcategories: Array.from(group.subcategories.values()).map((sub) => ({
-      subcategory: sub.subcategory,
-      label: sub.label,
-      rows: Array.from({ length: Math.ceil(sub.stocks.length / 6) }, (_, i) => ({
-        products: sub.stocks.slice(i * 6, i * 6 + 6)
-      }))
-    }))
-  }));
+  return Array.from(categoryMap.values()).map((group) => {
+    const rows = [];
+    for (let i = 0; i < group.stocks.length; i += 6) {
+      rows.push({ products: group.stocks.slice(i, i + 6) });
+    }
+    return { ...group, rows };
+  });
 };
 
 exports.getStock = async (id) => {
