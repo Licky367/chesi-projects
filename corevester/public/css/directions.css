@@ -1,0 +1,240 @@
+/* ==========================================================
+   CORE VESTER - DIRECTIONS OF USE
+   ========================================================== */
+
+.directions-editor,
+.directions-display {
+  margin-top: 24px;
+  border: 1px solid #dfe8df;
+  border-radius: 18px;
+  background: #fbfefb;
+  box-shadow: 0 7px 22px rgba(10, 77, 30, 0.07);
+  overflow: hidden;
+}
+
+.directions-editor {
+  padding: 20px;
+}
+
+.directions-editor-head,
+.directions-display-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.directions-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #0a4d1e;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.directions-editor h2,
+.directions-display h2 {
+  margin: 5px 0 5px;
+  color: #18221b;
+  font-size: 23px;
+}
+
+.directions-editor-head p,
+.directions-display-head p {
+  margin: 0;
+  color: #738078;
+  line-height: 1.55;
+  font-size: 13px;
+}
+
+.directions-add-btn {
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.directions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.direction-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 38px;
+  gap: 12px;
+  align-items: start;
+  padding: 15px;
+  border: 1px solid #dfe8df;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.direction-item-number,
+.directions-display-number {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 10px;
+  background: #e8f5e9;
+  color: #0a4d1e;
+  font-weight: 900;
+}
+
+.direction-item-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  min-width: 0;
+}
+
+.direction-item .field textarea {
+  min-height: 90px;
+}
+
+.direction-remove {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ffcdd2;
+  border-radius: 10px;
+  background: #ffebee;
+  color: #c62828;
+  cursor: pointer;
+}
+
+.direction-remove:hover {
+  background: #ffcdd2;
+}
+
+.directions-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 130px;
+  margin-top: 12px;
+  padding: 20px;
+  border: 1px dashed #bcd0be;
+  border-radius: 14px;
+  background: #f7fbf7;
+  color: #738078;
+  text-align: center;
+}
+
+.directions-empty i {
+  margin-bottom: 3px;
+  color: #0a4d1e;
+  font-size: 25px;
+}
+
+.directions-empty strong {
+  color: #334238;
+}
+
+.directions-empty span {
+  font-size: 12px;
+}
+
+.directions-clear-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: #b71c1c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.directions-clear-option input {
+  width: auto !important;
+}
+
+.directions-display {
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 24px;
+}
+
+.directions-display-head {
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.directions-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 14px;
+  background: #e8f5e9;
+  color: #0a4d1e;
+  font-size: 20px;
+}
+
+.directions-display-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.directions-display-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #dfe8df;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.directions-display-item h3 {
+  margin: 2px 0 7px;
+  color: #18221b;
+  font-size: 15px;
+}
+
+.directions-display-item p,
+.directions-display-note {
+  margin: 0;
+  color: #68736b;
+  line-height: 1.7;
+  font-size: 14px;
+  white-space: pre-line;
+}
+
+@media (max-width: 700px) {
+  .directions-editor-head {
+    flex-direction: column;
+  }
+
+  .directions-add-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .direction-item {
+    grid-template-columns: 32px minmax(0, 1fr) 36px;
+    gap: 9px;
+    padding: 12px;
+  }
+
+  .directions-display {
+    padding: 18px;
+  }
+
+  .directions-display-list {
+    grid-template-columns: 1fr;
+  }
+}
