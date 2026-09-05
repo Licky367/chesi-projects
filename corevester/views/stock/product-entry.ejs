@@ -115,7 +115,8 @@
         </div>
 
         <div id="directionsList" class="directions-list">
-          <% const existingDirections = old.directionsOfUse?.items || []; %>
+          <% const savedDirections = old.directionsOfUse?.items || []; %>
+          <% const existingDirections = savedDirections.length ? savedDirections : [{ subtitle: '', content: '' }]; %>
           <% existingDirections.forEach((item, index) => { %>
             <div class="direction-item" data-index="<%= index %>">
               <div class="direction-item-number"><%= index + 1 %></div>
@@ -136,10 +137,10 @@
           <% }) %>
         </div>
 
-        <div id="directionsEmpty" class="directions-empty" <%= existingDirections.length ? 'hidden' : '' %>>
+        <div id="directionsEmpty" class="directions-empty" hidden>
           <i class="fas fa-list-check"></i>
           <strong>No directions added yet</strong>
-          <span>Click “Add instruction” to create the first instruction.</span>
+          <span>Add another instruction when the product needs more than one step.</span>
         </div>
 
         <input type="hidden" name="directionsOfUse[clear]" id="directionsClear" value="0">
