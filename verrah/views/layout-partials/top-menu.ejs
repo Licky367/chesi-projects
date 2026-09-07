@@ -1,0 +1,227 @@
+<!-- =========================================================
+   TOP MENU
+========================================================= -->
+
+<div class="top-menu">
+
+
+<% if(isDairyWorker){ %>
+
+
+    <!-- =====================================================
+       DAIRY WORKER TOP NAVIGATION
+    ====================================================== -->
+
+    <div class="dairy-worker-nav">
+
+
+        <a href="<%= homeLink %>">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                🏠
+            </span>
+
+            <span class="nav-label">
+                Home
+            </span>
+
+        </a>
+
+
+        <a href="/milk">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                🥛
+            </span>
+
+            <span class="nav-label">
+                Production
+            </span>
+
+        </a>
+
+
+        <a href="/milk/sales">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                💰
+            </span>
+
+            <span class="nav-label">
+                Sales
+            </span>
+
+        </a>
+
+
+        <% if(user && user.role !== "admin"){ %>
+
+        <a href="/extra/<%= user._id %>">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                ✨
+            </span>
+
+            <span class="nav-label">
+                Extras
+            </span>
+
+        </a>
+
+        <% } %>
+
+
+    </div>
+
+
+<% }else if(isAdmin){ %>
+
+
+    <!-- =====================================================
+       ADMIN TOP NAVIGATION
+    ====================================================== -->
+
+    <button
+        type="button"
+
+        id="adminTopMenuButton"
+
+        class="menu-btn"
+
+        aria-label="Open admin navigation menu"
+
+        aria-expanded="false"
+
+        title="Menu"
+    >
+
+        ☰
+
+    </button>
+
+
+    <div class="dairy-worker-nav">
+
+
+        <a href="/milk">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                🥛
+            </span>
+
+            <span class="nav-label">
+                Production
+            </span>
+
+        </a>
+
+
+        <a href="/milk/sales">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                💰
+            </span>
+
+            <span class="nav-label">
+                Sales
+            </span>
+
+        </a>
+
+
+        <a href="/stats">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                📊
+            </span>
+
+            <span class="nav-label">
+                Stats
+            </span>
+
+        </a>
+
+
+    </div>
+
+
+<% }else{ %>
+
+
+    <!-- =====================================================
+       POULTRY WORKER MENU BUTTON
+    ====================================================== -->
+
+    <button
+        type="button"
+
+        class="menu-btn"
+
+        onclick="openSidebar()"
+
+        aria-label="Open menu"
+
+        title="Menu"
+    >
+
+        ☰
+
+    </button>
+
+
+    <!-- =====================================================
+       NON-ADMIN EXTRAS
+    ====================================================== -->
+
+    <% if(user && user.role !== "admin"){ %>
+
+    <div class="dairy-worker-nav">
+
+        <a href="/extra/<%= user._id %>">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                ✨
+            </span>
+
+            <span class="nav-label">
+                Extras
+            </span>
+
+        </a>
+
+    </div>
+
+    <% } %>
+
+
+<% } %>
+
+
+<%- include("profile") %>
+
+
+</div>
