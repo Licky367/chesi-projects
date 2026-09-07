@@ -39,4 +39,4 @@ const invitationSchema = new mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model("CorevesterInvitation", invitationSchema);
+module.exports = mongoose.model("VerrahInvitation", invitationSchema);
