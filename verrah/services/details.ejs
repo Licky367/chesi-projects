@@ -1,0 +1,54 @@
+<!-- =========================================================
+     VERAH COSMETICS — SERVICE DETAILS
+========================================================= -->
+
+<section class="verah-service-page">
+
+    <div class="verah-service-detail-card">
+
+        <span class="verah-service-page-label">
+            VERAH COSMETICS
+        </span>
+
+        <h1>
+            <%= service.name %>
+        </h1>
+
+        <p class="verah-service-detail-description">
+            <%= service.description %>
+        </p>
+
+
+        <div class="verah-service-detail-meta">
+
+            <div>
+                <span>Price</span>
+                <strong>
+                    KSh <%= Number(service.price).toLocaleString() %>
+                </strong>
+            </div>
+
+            <% if (service.duration) { %>
+
+                <div>
+                    <span>Duration</span>
+                    <strong>
+                        <%= service.duration %>
+                    </strong>
+                </div>
+
+            <% } %>
+
+        </div>
+
+
+        <a
+            href="/"
+            class="verah-secondary-button"
+        >
+            Back to Home
+        </a>
+
+    </div>
+
+</section>
