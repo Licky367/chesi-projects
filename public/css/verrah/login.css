@@ -1,0 +1,396 @@
+/* =========================================================
+   VERAH COSMETICS
+   LOGIN PAGE
+   BROWN THEME
+========================================================= */
+
+.auth-page {
+
+  min-height: 70vh;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+}
+
+
+/* =========================================================
+   LOGIN CARD
+========================================================= */
+
+.auth-card {
+
+  width: 100%;
+
+  max-width: 460px;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+
+  border: 1px solid #e6d8d0;
+
+  border-left: 5px solid #8b4513;
+
+  border-radius: 14px;
+
+  padding: 30px 24px;
+
+  box-shadow:
+    0 4px 12px
+    rgba(0, 0, 0, 0.08);
+
+}
+
+
+/* =========================================================
+   HEADING
+========================================================= */
+
+.auth-heading {
+
+  text-align: center;
+
+  margin-bottom: 25px;
+
+}
+
+
+.auth-heading .page-title {
+
+  margin: 0 0 8px;
+
+  color: #4f2818;
+
+}
+
+
+.auth-heading .page-subtitle {
+
+  margin: 0;
+
+  color: #6b5a52;
+
+  line-height: 1.5;
+
+}
+
+
+/* =========================================================
+   ICON
+========================================================= */
+
+.auth-icon {
+
+  width: 60px;
+
+  height: 60px;
+
+  margin: 0 auto 15px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #f5ebe5;
+
+  color: #8b4513;
+
+  font-size: 23px;
+
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.auth-form {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 18px;
+
+}
+
+
+/* =========================================================
+   FIELD
+========================================================= */
+
+.field {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+
+}
+
+
+.field label {
+
+  font-weight: 600;
+
+  color: #4f2818;
+
+}
+
+
+.field label i {
+
+  color: #8b4513;
+
+  margin-right: 5px;
+
+}
+
+
+.field input {
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 13px 14px;
+
+  border: 1px solid #d8c5ba;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  color: #3f3028;
+
+  font-size: 15px;
+
+}
+
+
+.field input::placeholder {
+
+  color: #9a8980;
+
+}
+
+
+.field input:focus {
+
+  outline: none;
+
+  border-color: #8b4513;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(139, 69, 19, 0.10);
+
+}
+
+
+/* =========================================================
+   PASSWORD
+========================================================= */
+
+.password-input {
+
+  position: relative;
+
+}
+
+
+.password-input input {
+
+  padding-right: 48px;
+
+}
+
+
+.password-toggle {
+
+  position: absolute;
+
+  right: 0;
+
+  top: 0;
+
+  height: 100%;
+
+  width: 48px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #8b4513;
+
+  cursor: pointer;
+
+}
+
+
+.password-toggle:hover {
+
+  color: #6f321e;
+
+}
+
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.error {
+
+  margin-bottom: 18px;
+
+  padding: 11px 13px;
+
+  border: 1px solid #d8aaa0;
+
+  border-radius: 8px;
+
+  background: #f9eeee;
+
+  color: #8a3022;
+
+  font-size: 14px;
+
+}
+
+
+/* =========================================================
+   FORM ACTIONS
+========================================================= */
+
+.form-actions {
+
+  display: flex;
+
+  width: 100%;
+
+}
+
+
+.auth-submit {
+
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 13px 16px;
+
+  border: 1px solid #8b4513;
+
+  border-radius: 9px;
+
+  background: #8b4513;
+
+  color: #ffffff;
+
+  font-size: 15px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+
+}
+
+
+.auth-submit:hover {
+
+  background: #6f321e;
+
+  border-color: #6f321e;
+
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.auth-footer {
+
+  margin-top: 25px;
+
+  padding-top: 20px;
+
+  border-top: 1px solid #eadfd9;
+
+  text-align: center;
+
+  display: flex;
+
+  justify-content: center;
+
+  gap: 6px;
+
+  flex-wrap: wrap;
+
+  color: #6b5a52;
+
+}
+
+
+.auth-footer a {
+
+  color: #8b4513;
+
+  font-weight: 700;
+
+  text-decoration: none;
+
+}
+
+
+.auth-footer a:hover {
+
+  color: #6f321e;
+
+  text-decoration: underline;
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+  .auth-page {
+
+    padding: 20px 15px;
+
+  }
+
+
+  .auth-card {
+
+    padding: 24px 18px;
+
+    border-radius: 14px;
+
+  }
+
+}
