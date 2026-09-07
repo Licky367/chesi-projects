@@ -1,4 +1,4 @@
-const servicesService = require("../services/servicesService");
+const servicesService = require("../services/indexService");
 
 /* =========================================================
    ADMIN CHECK
