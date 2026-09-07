@@ -1,7 +1,3 @@
-<!-- =========================================================
-     VERAH COSMETICS — SERVICE DETAILS
-========================================================= -->
-
 <section class="verah-service-page">
 
     <div class="verah-service-detail-card">
@@ -10,9 +6,25 @@
             VERAH COSMETICS
         </span>
 
+
+        <% if (service.image) { %>
+
+            <div class="verah-service-detail-image">
+
+                <img
+                    src="<%= service.image %>"
+                    alt="<%= service.name %>"
+                >
+
+            </div>
+
+        <% } %>
+
+
         <h1>
             <%= service.name %>
         </h1>
+
 
         <p class="verah-service-detail-description">
             <%= service.description %>
@@ -23,17 +35,51 @@
 
             <div>
                 <span>Price</span>
+
                 <strong>
                     KSh <%= Number(service.price).toLocaleString() %>
                 </strong>
             </div>
 
-            <% if (service.duration) { %>
+
+            <div>
+                <span>Duration</span>
+
+                <strong>
+                    <%= service.duration || "Not specified" %>
+                </strong>
+            </div>
+
+
+            <div>
+                <span>Status</span>
+
+                <strong>
+                    <%= service.active ? "Active" : "Inactive" %>
+                </strong>
+            </div>
+
+
+            <% if (service.createdAt) { %>
 
                 <div>
-                    <span>Duration</span>
+                    <span>Created</span>
+
                     <strong>
-                        <%= service.duration %>
+                        <%= new Date(service.createdAt).toLocaleString() %>
+                    </strong>
+                </div>
+
+            <% } %>
+
+
+            <% if (service.updatedAt) { %>
+
+                <div>
+                    <span>Updated</span>
+
+                    <strong>
+                        <%= new Date(service.updatedAt).toLocaleString() %>
                     </strong>
                 </div>
 
@@ -42,12 +88,163 @@
         </div>
 
 
-        <a
-            href="/"
-            class="verah-secondary-button"
-        >
-            Back to Home
-        </a>
+        <% if (user && user.role === "admin") { %>
+
+            <div class="verah-service-edit-section">
+
+                <div class="verah-service-page-header">
+
+                    <span class="verah-service-page-label">
+                        ADMIN
+                    </span>
+
+                    <h2>
+                        Edit Service
+                    </h2>
+
+                </div>
+
+
+                <form
+                    action="/services/<%= service._id %>?_method=PUT"
+                    method="POST"
+                    class="verah-service-form"
+                >
+
+                    <div class="verah-form-group">
+
+                        <label for="edit-name">
+                            Service Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="edit-name"
+                            name="name"
+                            value="<%= service.name %>"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="verah-form-group">
+
+                        <label for="edit-image">
+                            Image URL
+                        </label>
+
+                        <input
+                            type="url"
+                            id="edit-image"
+                            name="image"
+                            value="<%= service.image || "" %>"
+                        >
+
+                    </div>
+
+
+                    <div class="verah-form-group">
+
+                        <label for="edit-description">
+                            Description
+                        </label>
+
+                        <textarea
+                            id="edit-description"
+                            name="description"
+                            rows="5"
+                            required
+                        ><%= service.description %></textarea>
+
+                    </div>
+
+
+                    <div class="verah-form-row">
+
+                        <div class="verah-form-group">
+
+                            <label for="edit-price">
+                                Price
+                            </label>
+
+                            <input
+                                type="number"
+                                id="edit-price"
+                                name="price"
+                                min="0"
+                                step="0.01"
+                                value="<%= service.price %>"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="verah-form-group">
+
+                            <label for="edit-duration">
+                                Duration
+                            </label>
+
+                            <input
+                                type="text"
+                                id="edit-duration"
+                                name="duration"
+                                value="<%= service.duration || "" %>"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="verah-form-group verah-checkbox-group">
+
+                        <label>
+
+                            <input
+                                type="checkbox"
+                                name="active"
+                                value="true"
+                                <%= service.active ? "checked" : "" %>
+                            >
+
+                            Active service
+
+                        </label>
+
+                    </div>
+
+
+                    <div class="verah-form-actions">
+
+                        <button
+                            type="submit"
+                            class="verah-primary-button"
+                        >
+                            Save Changes
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        <% } %>
+
+
+        <div class="verah-service-form-actions-bottom">
+
+            <a
+                href="/"
+                class="verah-secondary-button"
+            >
+                Back to Home
+            </a>
+
+        </div>
 
     </div>
 
