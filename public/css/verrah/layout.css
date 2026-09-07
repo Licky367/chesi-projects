@@ -1,0 +1,1046 @@
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+html,
+body{
+    min-height:100%;
+    background:#f4f1ee;
+}
+
+
+/* =========================================================
+   THEME
+========================================================= */
+
+:root{
+
+    /* Brown theme */
+
+    --primary:#6f4e37;
+
+    --primary-dark:#4e3424;
+
+    --primary-light:#eee4dc;
+
+    --primary-soft:#f7f2ee;
+
+    --text:#332b27;
+
+    --muted:#766b65;
+
+    --border:#ded5cf;
+
+    --white:#ffffff;
+
+    --sidebar-width:275px;
+
+    --header-height:70px;
+
+    --footer-height:50px;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.header{
+
+    position:fixed;
+
+    top:0;
+    left:0;
+    right:0;
+
+    height:var(--header-height);
+
+    background:var(--primary);
+
+    display:flex;
+
+    align-items:center;
+
+    padding:0 12px;
+
+    color:#fff;
+
+    z-index:2000;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.18);
+}
+
+
+/* =========================================================
+   HEADER MENU BUTTON — LEFT
+========================================================= */
+
+.menu-btn{
+
+    width:44px;
+
+    height:44px;
+
+    flex-shrink:0;
+
+    border:0;
+
+    border-radius:8px;
+
+    background:transparent;
+
+    color:#fff;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    cursor:pointer;
+
+    font-size:28px;
+
+    font-weight:bold;
+
+    user-select:none;
+
+    transition:
+        background .2s ease,
+        transform .15s ease;
+}
+
+.menu-btn:hover{
+
+    background:rgba(255,255,255,.14);
+}
+
+.menu-btn:active{
+
+    transform:scale(.94);
+}
+
+
+/* =========================================================
+   HEADER TITLE — CENTER
+========================================================= */
+
+.header-title{
+
+    position:absolute;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    width:calc(100% - 140px);
+
+    text-align:center;
+
+    pointer-events:none;
+}
+
+.header-title-text{
+
+    display:block;
+
+    font-size:18px;
+
+    font-weight:700;
+
+    letter-spacing:.3px;
+
+    color:#fff;
+
+    line-height:21px;
+
+    text-align:center;
+
+    white-space:normal;
+}
+
+
+/* =========================================================
+   HEADER LOGO
+========================================================= */
+
+/*
+   The old logo positioning is removed from the header
+   because the menu now occupies the left side.
+
+   If you still use a logo somewhere else, these rules
+   can remain available.
+*/
+
+.header-logo-link{
+
+    display:flex;
+
+    align-items:center;
+
+    text-decoration:none;
+
+    flex-shrink:0;
+}
+
+.header-logo{
+
+    height:70px;
+
+    width:auto;
+
+    display:block;
+
+    object-fit:contain;
+}
+
+
+/* =========================================================
+   PROFILE — RIGHT
+========================================================= */
+
+.profile-box{
+
+    position:relative;
+
+    margin-left:auto;
+
+    flex-shrink:0;
+
+    height:var(--header-height);
+
+    display:flex;
+
+    align-items:center;
+}
+
+.profile-trigger{
+
+    height:48px;
+
+    min-width:58px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:1px;
+
+    cursor:pointer;
+
+    border-radius:8px;
+
+    transition:
+        background .2s ease;
+}
+
+.profile-trigger:hover{
+
+    background:rgba(255,255,255,.14);
+}
+
+.profile-icon{
+
+    font-size:19px;
+
+    line-height:19px;
+
+    display:block;
+}
+
+.profile-name{
+
+    font-size:10px;
+
+    line-height:12px;
+
+    color:#fff;
+
+    max-width:75px;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+}
+
+
+/* =========================================================
+   PROFILE DROPDOWN
+========================================================= */
+
+.dropdown-profile{
+
+    position:absolute;
+
+    top:58px;
+
+    right:0;
+
+    width:190px;
+
+    background:#fff;
+
+    border-radius:10px;
+
+    overflow:hidden;
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.20);
+
+    display:none;
+
+    z-index:2500;
+}
+
+.profile-box.active .dropdown-profile{
+
+    display:block;
+}
+
+.dropdown-profile a{
+
+    display:block;
+
+    padding:12px 15px;
+
+    text-decoration:none;
+
+    color:var(--text);
+
+    border-bottom:
+        1px solid #eee;
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.dropdown-profile a:last-child{
+
+    border-bottom:none;
+}
+
+.dropdown-profile a:hover{
+
+    background:var(--primary-soft);
+
+    color:var(--primary);
+}
+
+
+/* =========================================================
+   SIDEBAR
+   Same sidebar UI for EVERYONE
+========================================================= */
+
+.sidebar{
+
+    position:fixed;
+
+    top:var(--header-height);
+
+    left:calc(-1 * var(--sidebar-width));
+
+    bottom:var(--footer-height);
+
+    width:var(--sidebar-width);
+
+    background:var(--white);
+
+    z-index:2100;
+
+    overflow-x:hidden;
+
+    overflow-y:auto;
+
+    box-shadow:
+        5px 0 22px rgba(0,0,0,.16);
+
+    border-right:
+        1px solid var(--border);
+
+    transition:
+        left .28s ease;
+}
+
+.sidebar.active{
+
+    left:0;
+}
+
+
+/* =========================================================
+   SIDEBAR MENU
+========================================================= */
+
+.sidebar-menu{
+
+    list-style:none;
+
+    width:100%;
+
+    margin:0;
+
+    padding:0;
+}
+
+
+/* =========================================================
+   SIDEBAR ITEM
+========================================================= */
+
+.sidebar-item{
+
+    width:100%;
+
+    margin:0;
+
+    padding:0;
+}
+
+
+/* =========================================================
+   SIDEBAR MENU BUTTON
+========================================================= */
+
+.sidebar-menu-button{
+
+    width:100%;
+
+    height:58px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:0 15px;
+
+    border:0;
+
+    border-bottom:
+        1px solid var(--border);
+
+    background:
+        var(--primary-soft);
+
+    color:var(--primary);
+
+    cursor:pointer;
+
+    font:inherit;
+
+    text-align:left;
+
+    white-space:nowrap;
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.sidebar-menu-button:hover{
+
+    background:var(--primary-light);
+}
+
+
+/* =========================================================
+   SIDEBAR MENU ICON
+========================================================= */
+
+.sidebar-menu-icon{
+
+    width:34px;
+
+    min-width:34px;
+
+    height:34px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:25px;
+
+    line-height:1;
+
+    border-radius:8px;
+
+    color:var(--primary);
+
+    pointer-events:none;
+}
+
+
+/* =========================================================
+   SIDEBAR LINK
+========================================================= */
+
+.sidebar-link{
+
+    width:100%;
+
+    min-height:58px;
+
+    box-sizing:border-box;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:0 15px;
+
+    color:var(--text);
+
+    text-decoration:none;
+
+    white-space:nowrap;
+
+    border-bottom:
+        1px solid var(--border);
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.sidebar-link:hover{
+
+    background:var(--primary-soft);
+
+    color:var(--primary);
+}
+
+.sidebar-link.active{
+
+    background:var(--primary-light);
+
+    color:var(--primary);
+
+    font-weight:600;
+}
+
+.sidebar-link.active .sidebar-icon{
+
+    color:var(--primary);
+}
+
+
+/* =========================================================
+   SIDEBAR ICON
+========================================================= */
+
+.sidebar-icon{
+
+    width:34px;
+
+    min-width:34px;
+
+    height:34px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:21px;
+
+    line-height:1;
+
+    border-radius:8px;
+
+    color:var(--primary);
+
+    pointer-events:none;
+}
+
+
+/* =========================================================
+   SIDEBAR LABEL
+========================================================= */
+
+.sidebar-label{
+
+    display:block;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    color:inherit;
+}
+
+
+/* =========================================================
+   SIDEBAR SECTION BUTTON
+========================================================= */
+
+.sidebar-section-button{
+
+    width:100%;
+
+    min-height:58px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:0 15px;
+
+    border:0;
+
+    border-bottom:
+        1px solid var(--border);
+
+    background:transparent;
+
+    color:var(--text);
+
+    cursor:pointer;
+
+    font:inherit;
+
+    text-align:left;
+
+    white-space:nowrap;
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.sidebar-section-button:hover{
+
+    background:var(--primary-soft);
+
+    color:var(--primary);
+}
+
+.sidebar-section-button.expanded{
+
+    background:var(--primary-light);
+
+    color:var(--primary);
+}
+
+
+/* =========================================================
+   SIDEBAR SECTION ARROW
+========================================================= */
+
+.sidebar-section-arrow{
+
+    margin-left:auto;
+
+    font-size:14px;
+
+    line-height:1;
+
+    color:var(--primary);
+
+    opacity:.9;
+
+    transition:
+        transform .2s ease;
+}
+
+.sidebar-section-button.expanded
+.sidebar-section-arrow{
+
+    transform:rotate(90deg);
+}
+
+
+/* =========================================================
+   SIDEBAR SUBMENU
+========================================================= */
+
+.sidebar-submenu{
+
+    display:none;
+
+    width:100%;
+
+    margin:0;
+
+    padding:0;
+
+    list-style:none;
+
+    background:#f5efeb;
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+.sidebar-submenu.open{
+
+    display:block;
+}
+
+
+/* =========================================================
+   SIDEBAR SUBMENU LINKS
+========================================================= */
+
+.sidebar-submenu
+.sidebar-link{
+
+    min-height:52px;
+
+    padding-left:28px;
+
+    gap:12px;
+
+    border-bottom:
+        1px solid #e9e1db;
+}
+
+.sidebar-submenu
+.sidebar-link:hover{
+
+    background:var(--primary-light);
+}
+
+
+/* =========================================================
+   SIDEBAR SUBMENU ICON
+========================================================= */
+
+.sidebar-submenu
+.sidebar-icon{
+
+    width:30px;
+
+    min-width:30px;
+
+    height:30px;
+
+    font-size:18px;
+}
+
+
+/* =========================================================
+   SIDEBAR SUBMENU LABEL
+========================================================= */
+
+.sidebar-submenu
+.sidebar-label{
+
+    font-size:14px;
+
+    font-weight:600;
+}
+
+
+/* =========================================================
+   SIDEBAR FOOTER
+========================================================= */
+
+.sidebar-footer{
+
+    padding:25px 15px 30px;
+
+    color:#7a6d65;
+
+    font-size:12px;
+
+    line-height:1.5;
+
+    border-top:
+        1px solid var(--border);
+}
+
+
+/* =========================================================
+   SIDEBAR OVERLAY
+========================================================= */
+
+.overlay{
+
+    position:fixed;
+
+    top:var(--header-height);
+
+    left:0;
+
+    right:0;
+
+    bottom:var(--footer-height);
+
+    background:rgba(0,0,0,.35);
+
+    z-index:2050;
+
+    opacity:0;
+
+    visibility:hidden;
+
+    cursor:pointer;
+
+    transition:
+        opacity .2s ease,
+        visibility .2s ease;
+}
+
+.overlay.active{
+
+    opacity:1;
+
+    visibility:visible;
+}
+
+
+/* =========================================================
+   MAIN — NORMAL PAGES
+========================================================= */
+
+.main{
+
+    padding:
+        calc(var(--header-height) + 20px)
+        18px
+        calc(var(--footer-height) + 20px);
+
+    min-height:100vh;
+}
+
+
+/* =========================================================
+   MAIN — AUTH PAGES
+========================================================= */
+
+.auth-page .main{
+
+    padding:
+        var(--header-height)
+        18px
+        var(--footer-height);
+
+    min-height:100vh;
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer{
+
+    position:fixed;
+
+    bottom:0;
+
+    left:0;
+
+    right:0;
+
+    height:var(--footer-height);
+
+    background:var(--primary-dark);
+
+    color:#fff;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:13px;
+
+    z-index:1000;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:600px){
+
+    .header{
+
+        padding:0 8px;
+
+        height:var(--header-height);
+    }
+
+
+    /* -------------------------
+       MENU
+    ------------------------- */
+
+    .menu-btn{
+
+        width:42px;
+
+        min-width:42px;
+
+        height:42px;
+
+        font-size:27px;
+    }
+
+
+    /* -------------------------
+       CENTER TITLE
+    ------------------------- */
+
+    .header-title{
+
+        width:calc(100% - 125px);
+
+    }
+
+    .header-title-text{
+
+        font-size:15px;
+
+        line-height:18px;
+    }
+
+
+    /* -------------------------
+       PROFILE
+    ------------------------- */
+
+    .profile-trigger{
+
+        min-width:53px;
+    }
+
+    .profile-name{
+
+        max-width:60px;
+    }
+
+
+    /* -------------------------
+       SIDEBAR
+    ------------------------- */
+
+    .sidebar{
+
+        width:270px;
+
+        left:-285px;
+    }
+
+    .sidebar.active{
+
+        left:0;
+    }
+
+
+    /* -------------------------
+       MAIN
+    ------------------------- */
+
+    .main{
+
+        padding-left:12px;
+
+        padding-right:12px;
+    }
+
+    .auth-page .main{
+
+        padding-left:12px;
+
+        padding-right:12px;
+
+        padding-top:var(--header-height);
+
+        padding-bottom:var(--footer-height);
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL SCREENS
+========================================================= */
+
+@media(max-width:380px){
+
+    .header{
+
+        padding:0 6px;
+    }
+
+
+    .menu-btn{
+
+        width:40px;
+
+        min-width:40px;
+
+        height:40px;
+
+        font-size:25px;
+    }
+
+
+    .header-title{
+
+        width:calc(100% - 112px);
+
+    }
+
+    .header-title-text{
+
+        font-size:14px;
+
+        line-height:17px;
+    }
+
+
+    .profile-trigger{
+
+        min-width:48px;
+    }
+
+    .profile-name{
+
+        max-width:50px;
+    }
+
+
+    .sidebar{
+
+        width:250px;
+
+        left:-265px;
+    }
+
+}
