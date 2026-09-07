@@ -193,6 +193,6 @@ userSchema.methods.toJSON = function() {
 };
 
 module.exports = mongoose.model(
-    "CorevesterUser",
+    "VerrahUser",
     userSchema
 );
