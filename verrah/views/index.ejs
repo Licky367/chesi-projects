@@ -1,61 +1,134 @@
 <style>
 
 /* =========================================================
-   VERAH COSMETICS — WELCOME HERO
+   VERAH COSMETICS
+   HERO CARD
 ========================================================= */
 
-.vc-welcome {
-
-    min-height: calc(100vh - 120px);
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 50px 20px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #faf6f1 0%,
-            #f1e5da 50%,
-            #e6d2c1 100%
-        );
-
-}
-
-
-.vc-welcome-inner {
+.vc-hero-wrapper {
 
     width: 100%;
 
-    max-width: 1050px;
+    padding: 35px 20px 50px;
 
-    display: grid;
-
-    grid-template-columns: 1fr 1fr;
-
-    align-items: center;
-
-    gap: 60px;
+    background: #faf7f3;
 
 }
 
 
 /* =========================================================
-   LEFT SIDE
+   HERO CARD
 ========================================================= */
 
-.vc-welcome-content {
+.vc-hero-card {
 
-    padding: 20px;
+    position: relative;
+
+    width: 100%;
+
+    max-width: 1200px;
+
+    min-height: 570px;
+
+    margin: 0 auto;
+
+    overflow: hidden;
+
+    display: flex;
+
+    align-items: center;
+
+    border-radius: 30px;
+
+    background:
+        linear-gradient(
+            110deg,
+            #f8eee6 0%,
+            #f3e4d8 48%,
+            #dfc4ae 100%
+        );
+
+    box-shadow:
+        0 25px 60px
+        rgba(67, 45, 32, .15);
 
 }
 
 
-.vc-welcome-label {
+/* =========================================================
+   DECORATIVE BACKGROUND CIRCLE
+========================================================= */
+
+.vc-hero-card::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 520px;
+
+    height: 520px;
+
+    right: -150px;
+
+    top: -120px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 255, 255, .20);
+
+}
+
+
+/* =========================================================
+   SECOND DECORATIVE CIRCLE
+========================================================= */
+
+.vc-hero-card::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 230px;
+
+    height: 230px;
+
+    right: 300px;
+
+    bottom: -130px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(111, 78, 55, .08);
+
+}
+
+
+/* =========================================================
+   HERO CONTENT
+========================================================= */
+
+.vc-hero-content {
+
+    position: relative;
+
+    z-index: 3;
+
+    width: 55%;
+
+    padding: 70px 20px 70px 75px;
+
+}
+
+
+/* =========================================================
+   SMALL LABEL
+========================================================= */
+
+.vc-hero-label {
 
     display: inline-flex;
 
@@ -63,35 +136,43 @@
 
     gap: 10px;
 
-    margin-bottom: 20px;
+    margin-bottom: 22px;
 
     color: #6f4e37;
 
-    font-size: 13px;
+    font-size: 12px;
 
-    font-weight: 700;
+    font-weight: 800;
 
-    letter-spacing: 2px;
+    letter-spacing: 2.5px;
 
     text-transform: uppercase;
 
 }
 
 
-.vc-welcome-label::before {
+.vc-hero-label::before {
 
     content: "";
 
-    width: 32px;
+    width: 35px;
 
-    height: 1px;
+    height: 2px;
+
+    border-radius: 5px;
 
     background: #b58b5a;
 
 }
 
 
-.vc-welcome h1 {
+/* =========================================================
+   MAIN HEADING
+========================================================= */
+
+.vc-hero-card h1 {
+
+    max-width: 620px;
 
     margin: 0;
 
@@ -104,20 +185,24 @@
 
     font-size: clamp(
         48px,
-        7vw,
-        76px
+        6vw,
+        78px
     );
 
     font-weight: 500;
 
-    line-height: 1.02;
+    line-height: 1;
+
+    letter-spacing: -2px;
 
 }
 
 
-.vc-welcome h1 span {
+.vc-hero-card h1 span {
 
     display: block;
+
+    margin-top: 8px;
 
     color: #6f4e37;
 
@@ -126,15 +211,19 @@
 }
 
 
-.vc-welcome-text {
+/* =========================================================
+   DESCRIPTION
+========================================================= */
 
-    max-width: 520px;
+.vc-hero-description {
 
-    margin: 25px 0 0;
+    max-width: 510px;
+
+    margin: 28px 0 0;
 
     color: #756a63;
 
-    font-size: 17px;
+    font-size: 16px;
 
     line-height: 1.8;
 
@@ -142,12 +231,12 @@
 
 
 /* =========================================================
-   DECORATIVE BUTTON / INDICATOR
+   DECORATIVE LINE
 ========================================================= */
 
-.vc-welcome-line {
+.vc-hero-line {
 
-    width: 80px;
+    width: 75px;
 
     height: 3px;
 
@@ -161,165 +250,165 @@
 
 
 /* =========================================================
-   RIGHT SIDE — BEAUTY DISPLAY
+   HERO VISUAL AREA
 ========================================================= */
 
-.vc-welcome-visual {
+.vc-hero-visual {
 
-    position: relative;
+    position: absolute;
 
-    min-height: 470px;
+    z-index: 2;
 
-    display: flex;
+    width: 50%;
 
-    align-items: center;
+    height: 100%;
 
-    justify-content: center;
+    right: 0;
+
+    top: 0;
 
 }
 
 
-/* Main circle */
+/* =========================================================
+   LARGE BEAUTY CIRCLE
+========================================================= */
 
-.vc-beauty-circle {
+.vc-beauty-orb {
+
+    position: absolute;
 
     width: 390px;
 
     height: 390px;
+
+    top: 50%;
+
+    left: 50%;
+
+    transform:
+        translate(-50%, -50%);
 
     border-radius: 50%;
 
     background:
         radial-gradient(
             circle at 35% 30%,
-            #fffaf5,
-            #dfc7b4 70%,
-            #c6a78e
+            #fffaf6 0%,
+            #ead7c7 48%,
+            #c8a58b 100%
         );
 
     box-shadow:
-        0 30px 70px
-        rgba(67,45,32,.18);
+        inset -20px -20px 40px
+        rgba(111, 78, 55, .10),
 
-}
-
-
-/* Decorative circles */
-
-.vc-circle-small {
-
-    position: absolute;
-
-    border-radius: 50%;
-
-}
-
-
-.vc-circle-one {
-
-    width: 75px;
-
-    height: 75px;
-
-    top: 55px;
-
-    right: 45px;
-
-    background: #b58b5a;
-
-    opacity: .75;
-
-}
-
-
-.vc-circle-two {
-
-    width: 45px;
-
-    height: 45px;
-
-    bottom: 70px;
-
-    left: 35px;
-
-    background: #6f4e37;
-
-    opacity: .65;
+        20px 25px 45px
+        rgba(67, 45, 32, .16);
 
 }
 
 
 /* =========================================================
-   COSMETIC BOTTLE ILLUSTRATION
+   COSMETIC BOTTLE
 ========================================================= */
 
-.vc-cosmetic-bottle {
+.vc-bottle {
 
     position: absolute;
 
+    z-index: 4;
+
     width: 125px;
 
-    height: 230px;
+    height: 225px;
 
-    border-radius: 18px 18px 28px 28px;
+    left: 50%;
+
+    top: 50%;
+
+    transform:
+        translate(-50%, -45%);
+
+    border-radius:
+        18px 18px 25px 25px;
 
     background:
         linear-gradient(
             90deg,
-            #5a3b29,
-            #8a6248,
-            #5a3b29
+            #4d3021 0%,
+            #8a6248 45%,
+            #5b3928 100%
         );
 
     box-shadow:
-        15px 20px 35px
-        rgba(67,45,32,.22);
+        15px 25px 35px
+        rgba(67, 45, 32, .25);
 
 }
 
 
-.vc-cosmetic-bottle::before {
+/* =========================================================
+   BOTTLE CAP
+========================================================= */
+
+.vc-bottle::before {
 
     content: "";
 
     position: absolute;
 
-    width: 58px;
+    width: 62px;
 
-    height: 55px;
+    height: 65px;
 
-    top: -48px;
+    top: -58px;
 
     left: 50%;
 
-    transform: translateX(-50%);
+    transform:
+        translateX(-50%);
 
-    border-radius: 7px 7px 2px 2px;
+    border-radius:
+        8px 8px 2px 2px;
 
-    background: #432d20;
+    background:
+        linear-gradient(
+            90deg,
+            #3c271b,
+            #60422f,
+            #3c271b
+        );
 
 }
 
 
-.vc-cosmetic-bottle::after {
+/* =========================================================
+   BOTTLE LABEL
+========================================================= */
+
+.vc-bottle::after {
 
     content: "VERAH";
 
     position: absolute;
 
-    top: 95px;
+    width: 100%;
 
-    left: 50%;
+    top: 92px;
 
-    transform:
-        translateX(-50%)
-        rotate(-90deg);
+    left: 0;
+
+    text-align: center;
 
     color: #f6e8dc;
 
-    font-family: Georgia, serif;
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
 
-    font-size: 16px;
+    font-size: 17px;
 
     letter-spacing: 3px;
 
@@ -327,67 +416,132 @@
 
 
 /* =========================================================
-   DECORATIVE CARD
+   SMALL COSMETIC BOTTLE
 ========================================================= */
 
-.vc-beauty-card {
+.vc-small-bottle {
 
     position: absolute;
 
-    right: 5px;
+    z-index: 5;
 
-    bottom: 55px;
+    width: 75px;
 
-    width: 155px;
+    height: 125px;
+
+    left: 28%;
+
+    bottom: 105px;
+
+    border-radius:
+        12px 12px 17px 17px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #a87958,
+            #d4ad91,
+            #9c6d4e
+        );
+
+    box-shadow:
+        8px 15px 25px
+        rgba(67, 45, 32, .18);
+
+}
+
+
+.vc-small-bottle::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 38px;
+
+    height: 35px;
+
+    top: -31px;
+
+    left: 50%;
+
+    transform:
+        translateX(-50%);
+
+    border-radius: 5px 5px 1px 1px;
+
+    background: #654532;
+
+}
+
+
+/* =========================================================
+   FLOATING BEAUTY TAG
+========================================================= */
+
+.vc-beauty-tag {
+
+    position: absolute;
+
+    z-index: 6;
+
+    right: 15px;
+
+    bottom: 105px;
+
+    width: 170px;
 
     padding: 20px;
 
-    border: 1px solid
-        rgba(255,255,255,.7);
+    border:
+        1px solid
+        rgba(255, 255, 255, .65);
 
     border-radius: 18px;
 
     background:
-        rgba(255,255,255,.65);
+        rgba(255, 255, 255, .55);
 
-    backdrop-filter: blur(12px);
+    backdrop-filter:
+        blur(12px);
 
     box-shadow:
         0 15px 35px
-        rgba(67,45,32,.10);
+        rgba(67, 45, 32, .10);
 
 }
 
 
-.vc-beauty-card span {
+.vc-beauty-tag-icon {
 
-    display: block;
-
-    margin-bottom: 7px;
+    margin-bottom: 8px;
 
     color: #b58b5a;
 
-    font-size: 22px;
+    font-size: 24px;
 
 }
 
 
-.vc-beauty-card strong {
+.vc-beauty-tag strong {
 
     display: block;
 
     color: #432d20;
 
-    font-family: Georgia, serif;
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
 
-    font-size: 17px;
+    font-size: 18px;
 
     font-weight: 500;
 
 }
 
 
-.vc-beauty-card small {
+.vc-beauty-tag small {
 
     display: block;
 
@@ -397,145 +551,285 @@
 
     font-size: 11px;
 
+    line-height: 1.5;
+
 }
 
 
 /* =========================================================
-   RESPONSIVE
+   DECORATIVE SPARKLES
 ========================================================= */
 
-@media (max-width: 800px) {
+.vc-sparkle {
 
-    .vc-welcome {
+    position: absolute;
 
-        min-height: calc(100vh - 120px);
+    z-index: 5;
 
-        padding: 45px 15px;
+    color: #b58b5a;
+
+    font-size: 24px;
+
+}
+
+
+.vc-sparkle-one {
+
+    top: 85px;
+
+    right: 90px;
+
+}
+
+
+.vc-sparkle-two {
+
+    top: 180px;
+
+    left: 120px;
+
+    font-size: 15px;
+
+}
+
+
+.vc-sparkle-three {
+
+    bottom: 75px;
+
+    right: 270px;
+
+    font-size: 18px;
+
+}
+
+
+/* =========================================================
+   BOTTOM BRAND DETAIL
+========================================================= */
+
+.vc-hero-brand {
+
+    position: absolute;
+
+    z-index: 4;
+
+    right: 40px;
+
+    top: 35px;
+
+    color: rgba(67, 45, 32, .45);
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 13px;
+
+    letter-spacing: 4px;
+
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .vc-hero-card {
+
+        min-height: 620px;
 
     }
 
 
-    .vc-welcome-inner {
+    .vc-hero-content {
 
-        grid-template-columns: 1fr;
+        width: 58%;
 
-        gap: 25px;
+        padding-left: 45px;
+
+    }
+
+
+    .vc-hero-visual {
+
+        width: 48%;
+
+    }
+
+
+    .vc-beauty-orb {
+
+        width: 310px;
+
+        height: 310px;
+
+    }
+
+
+    .vc-bottle {
+
+        width: 100px;
+
+        height: 185px;
+
+    }
+
+
+    .vc-small-bottle {
+
+        width: 60px;
+
+        height: 105px;
+
+        left: 20%;
+
+    }
+
+
+    .vc-beauty-tag {
+
+        width: 145px;
+
+        right: 5px;
+
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .vc-hero-wrapper {
+
+        padding:
+            20px 12px 30px;
+
+    }
+
+
+    .vc-hero-card {
+
+        min-height: auto;
+
+        display: block;
+
+        border-radius: 24px;
+
+    }
+
+
+    .vc-hero-content {
+
+        width: 100%;
+
+        padding:
+            50px 25px 20px;
 
         text-align: center;
 
     }
 
 
-    .vc-welcome-content {
-
-        padding: 10px;
-
-    }
-
-
-    .vc-welcome-label {
+    .vc-hero-label {
 
         justify-content: center;
 
     }
 
 
-    .vc-welcome-text {
+    .vc-hero-card h1 {
+
+        font-size: 48px;
+
+        letter-spacing: -1.5px;
+
+    }
+
+
+    .vc-hero-description {
 
         margin-left: auto;
 
         margin-right: auto;
-
-    }
-
-
-    .vc-welcome-line {
-
-        margin-left: auto;
-
-        margin-right: auto;
-
-    }
-
-
-    .vc-welcome-visual {
-
-        min-height: 380px;
-
-    }
-
-
-    .vc-beauty-circle {
-
-        width: 300px;
-
-        height: 300px;
-
-    }
-
-
-    .vc-cosmetic-bottle {
-
-        width: 95px;
-
-        height: 175px;
-
-    }
-
-
-    .vc-cosmetic-bottle::after {
-
-        top: 70px;
-
-        font-size: 13px;
-
-    }
-
-
-    .vc-beauty-card {
-
-        right: 0;
-
-        bottom: 20px;
-
-    }
-
-}
-
-
-@media (max-width: 450px) {
-
-    .vc-welcome h1 {
-
-        font-size: 45px;
-
-    }
-
-
-    .vc-welcome-text {
 
         font-size: 15px;
 
     }
 
 
-    .vc-welcome-visual {
+    .vc-hero-line {
 
-        min-height: 330px;
+        margin-left: auto;
 
-    }
-
-
-    .vc-beauty-circle {
-
-        width: 260px;
-
-        height: 260px;
+        margin-right: auto;
 
     }
 
 
-    .vc-beauty-card {
+    .vc-hero-visual {
+
+        position: relative;
+
+        width: 100%;
+
+        height: 390px;
+
+    }
+
+
+    .vc-beauty-orb {
+
+        width: 280px;
+
+        height: 280px;
+
+    }
+
+
+    .vc-bottle {
+
+        width: 88px;
+
+        height: 160px;
+
+    }
+
+
+    .vc-bottle::after {
+
+        top: 65px;
+
+        font-size: 13px;
+
+    }
+
+
+    .vc-small-bottle {
+
+        width: 55px;
+
+        height: 95px;
+
+        left: 22%;
+
+        bottom: 75px;
+
+    }
+
+
+    .vc-beauty-tag {
+
+        right: 10px;
+
+        bottom: 55px;
 
         width: 135px;
 
@@ -543,22 +837,142 @@
 
     }
 
+
+    .vc-beauty-tag strong {
+
+        font-size: 15px;
+
+    }
+
+
+    .vc-sparkle-one {
+
+        top: 35px;
+
+        right: 35px;
+
+    }
+
+
+    .vc-sparkle-two {
+
+        top: 100px;
+
+        left: 45px;
+
+    }
+
+
+    .vc-sparkle-three {
+
+        bottom: 35px;
+
+        right: 190px;
+
+    }
+
+
+    .vc-hero-brand {
+
+        top: 18px;
+
+        right: 20px;
+
+        font-size: 10px;
+
+    }
+
+}
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 420px) {
+
+    .vc-hero-card h1 {
+
+        font-size: 41px;
+
+    }
+
+
+    .vc-hero-content {
+
+        padding-left: 18px;
+
+        padding-right: 18px;
+
+    }
+
+
+    .vc-hero-visual {
+
+        height: 350px;
+
+    }
+
+
+    .vc-beauty-orb {
+
+        width: 245px;
+
+        height: 245px;
+
+    }
+
+
+    .vc-bottle {
+
+        width: 78px;
+
+        height: 145px;
+
+    }
+
+
+    .vc-small-bottle {
+
+        left: 17%;
+
+    }
+
+
+    .vc-beauty-tag {
+
+        right: 4px;
+
+        width: 125px;
+
+    }
+
 }
 
 </style><!-- =========================================================
-     VERAH COSMETICS — WELCOME PAGE
-========================================================= --><section class="vc-welcome"><div class="vc-welcome-inner">
+     VERAH COSMETICS
+     WELCOME HERO
+========================================================= --><section class="vc-hero-wrapper"><div class="vc-hero-card">
 
 
     <!-- =================================================
-         WELCOME MESSAGE
+         BRAND DETAIL
     ================================================== -->
 
-    <div class="vc-welcome-content">
+    <div class="vc-hero-brand">
+        VERAH COSMETICS
+    </div>
 
-        <div class="vc-welcome-label">
 
-            Welcome to Verah
+    <!-- =================================================
+         HERO CONTENT
+    ================================================== -->
+
+    <div class="vc-hero-content">
+
+        <div class="vc-hero-label">
+
+            Welcome
 
         </div>
 
@@ -574,47 +988,51 @@
         </h1>
 
 
-        <p class="vc-welcome-text">
+        <p class="vc-hero-description">
 
-            Welcome to VERAH COSMETICS — a space created
-            for beauty, self-care and confidence.
+            Welcome to VERAH COSMETICS.
 
-            <br>
-
-            Take your time. Discover what makes you feel
-            beautiful.
+            A beautiful space dedicated to cosmetics,
+            self-care and the confidence that comes
+            from feeling good in your own skin.
 
         </p>
 
 
-        <div class="vc-welcome-line"></div>
+        <div class="vc-hero-line"></div>
 
     </div>
 
 
     <!-- =================================================
-         DECORATIVE BEAUTY VISUAL
+         HERO VISUAL
     ================================================== -->
 
-    <div class="vc-welcome-visual">
-
-        <div class="vc-beauty-circle"></div>
-
-        <div
-            class="vc-circle-small vc-circle-one"
-        ></div>
-
-        <div
-            class="vc-circle-small vc-circle-two"
-        ></div>
+    <div class="vc-hero-visual">
 
 
-        <div class="vc-cosmetic-bottle"></div>
+        <!-- Decorative orb -->
+
+        <div class="vc-beauty-orb"></div>
 
 
-        <div class="vc-beauty-card">
+        <!-- Main cosmetic bottle -->
 
-            <span>✦</span>
+        <div class="vc-bottle"></div>
+
+
+        <!-- Smaller cosmetic bottle -->
+
+        <div class="vc-small-bottle"></div>
+
+
+        <!-- Beauty message -->
+
+        <div class="vc-beauty-tag">
+
+            <div class="vc-beauty-tag-icon">
+                ✦
+            </div>
 
             <strong>
                 Feel beautiful.
@@ -625,6 +1043,22 @@
             </small>
 
         </div>
+
+
+        <!-- Decorative sparkles -->
+
+        <div class="vc-sparkle vc-sparkle-one">
+            ✦
+        </div>
+
+        <div class="vc-sparkle vc-sparkle-two">
+            ✧
+        </div>
+
+        <div class="vc-sparkle vc-sparkle-three">
+            ✦
+        </div>
+
 
     </div>
 
