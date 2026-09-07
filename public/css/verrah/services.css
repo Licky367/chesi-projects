@@ -3,149 +3,194 @@
 ========================================================== */
 
 .verah-services {
+
+    width: 100%;
+
     margin-top: 25px;
     padding: 25px 30px;
 
+    box-sizing: border-box;
+
     background: #ffffff;
 
-    border-radius: 14px;
+    border-radius: 16px;
+
     border-left: 5px solid #8b4513;
 
     box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.08);
-
-    box-sizing: border-box;
+        0 4px 14px rgba(0, 0, 0, 0.08);
 }
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
 
 .verah-services-header {
     margin-bottom: 20px;
 }
 
+.verah-services-eyebrow {
+
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #8b4513;
+
+    font-size: 0.68rem;
+
+    font-weight: 800;
+
+    letter-spacing: 0.16em;
+
+    text-transform: uppercase;
+}
+
 .verah-services-header h2 {
+
     margin: 0;
 
     color: #4f2818;
 
     font-size: 1.5rem;
+
     line-height: 1.2;
 }
 
 
 /* ==========================================================
-   HORIZONTAL SERVICE LIST
+   HORIZONTAL CARD CONTAINER
 ========================================================== */
 
 .verah-services-scroll {
+
     display: flex;
+
     align-items: flex-start;
 
-    gap: 14px;
+    gap: 18px;
 
     width: 100%;
 
     overflow-x: auto;
     overflow-y: hidden;
 
-    padding: 4px 3px 12px;
+    padding: 5px 3px 14px;
 
     box-sizing: border-box;
 
     -webkit-overflow-scrolling: touch;
+
     scrollbar-width: thin;
 }
 
 .verah-services-scroll::-webkit-scrollbar {
+
     height: 6px;
 }
 
 .verah-services-scroll::-webkit-scrollbar-thumb {
+
     background: #b98263;
+
     border-radius: 20px;
 }
 
 .verah-services-scroll::-webkit-scrollbar-track {
+
     background: #f3e9e3;
+
     border-radius: 20px;
 }
 
 
 /* ==========================================================
    SERVICE CARD
-   EXACT OUTER SIZE: 112px × 170px
+
+   Similar visual proportions to S1 / S2
 ========================================================== */
 
 .verah-service-card {
-    flex: 0 0 112px;
 
-    width: 112px;
-    height: 170px;
+    flex: 0 0 205px;
 
-    min-width: 112px;
-    max-width: 112px;
+    width: 205px;
+    height: 320px;
 
-    min-height: 170px;
-    max-height: 170px;
+    min-width: 205px;
+    max-width: 205px;
 
-    box-sizing: border-box;
+    min-height: 320px;
+    max-height: 320px;
 
     display: flex;
+
     flex-direction: column;
 
-    padding: 6px;
+    padding: 0;
+
+    box-sizing: border-box;
 
     overflow: hidden;
 
     background: #ffffff;
 
-    border: 1px solid #eadbd2;
-    border-radius: 11px;
+    border: 1px solid #e4e4e4;
+
+    border-radius: 20px;
 
     text-decoration: none;
 
     box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.06);
+        0 4px 12px rgba(0, 0, 0, 0.08);
 
     transition:
         transform 0.2s ease,
-        box-shadow 0.2s ease,
-        border-color 0.2s ease;
+        box-shadow 0.2s ease;
 }
 
 .verah-service-card:hover {
-    transform: translateY(-3px);
 
-    border-color: #b98263;
+    transform: translateY(-4px);
 
     box-shadow:
-        0 7px 18px rgba(0, 0, 0, 0.10);
+        0 9px 22px rgba(0, 0, 0, 0.13);
 }
 
 
 /* ==========================================================
-   CARD IMAGE
-   IMAGE IS COMPLETELY CONTAINED
+   CARD VISUAL / IMAGE
+
+   THIS IS THE TOP HALF OF THE CARD
 ========================================================== */
 
-.verah-service-image-wrap {
-    flex: 0 0 72px;
+.verah-service-card-visual {
+
+    position: relative;
+
+    flex: 0 0 190px;
 
     width: 100%;
-    height: 72px;
+    height: 190px;
 
-    min-width: 0;
-    min-height: 72px;
-    max-height: 72px;
-
-    box-sizing: border-box;
+    min-height: 190px;
+    max-height: 190px;
 
     overflow: hidden;
 
-    border-radius: 7px;
+    box-sizing: border-box;
 
-    background: #f5eee9;
+    background: #dddddd;
 }
 
-.verah-service-image {
+
+/* ==========================================================
+   ACTUAL SERVICE IMAGE
+========================================================== */
+
+.verah-service-card-image {
+
     display: block;
 
     width: 100%;
@@ -155,48 +200,61 @@
     max-height: 100%;
 
     object-fit: cover;
+
     object-position: center;
 }
 
-.verah-service-image-placeholder {
+
+/* ==========================================================
+   IMAGE PLACEHOLDER
+========================================================== */
+
+.verah-service-card-placeholder {
+
     width: 100%;
     height: 100%;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
     box-sizing: border-box;
 
-    background: #f3e9e3;
+    background: #dddddd;
 
-    color: #8b4513;
+    color: #171717;
 
-    font-size: 1.1rem;
-    font-weight: 800;
+    font-size: 3rem;
 
-    letter-spacing: 0.08em;
+    font-weight: 300;
+
+    letter-spacing: 0.04em;
 }
 
 
 /* ==========================================================
-   CARD CONTENT
+   CARD INFORMATION
 ========================================================== */
 
-.verah-service-card-content {
-    flex: 1 1 auto;
+.verah-service-card-info {
 
-    width: 100%;
+    flex: 1 1 auto;
 
     min-width: 0;
     min-height: 0;
 
     display: flex;
+
     flex-direction: column;
 
-    overflow: hidden;
+    justify-content: center;
+
+    padding: 15px;
 
     box-sizing: border-box;
+
+    background: #ffffff;
 }
 
 
@@ -204,73 +262,61 @@
    SERVICE NAME
 ========================================================== */
 
-.verah-service-name {
-    flex: 0 0 auto;
+.verah-service-card-info h3 {
 
-    margin: 7px 0 3px;
+    margin: 0 0 8px;
 
-    min-width: 0;
+    color: #2f2a27;
 
-    color: #4f2818;
+    font-size: 1rem;
 
-    font-size: 0.72rem;
-    line-height: 1.18;
+    line-height: 1.25;
 
-    font-weight: 700;
+    font-weight: 750;
+
+    overflow: hidden;
 
     display: -webkit-box;
 
     -webkit-box-orient: vertical;
+
     -webkit-line-clamp: 2;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
 
     overflow-wrap: anywhere;
 }
 
 
 /* ==========================================================
-   CARD PRICE / DURATION
+   PRICE + DURATION
 ========================================================== */
 
-.verah-service-card-bottom {
-    margin-top: auto;
+.verah-service-card-meta {
 
-    width: 100%;
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
 
     min-width: 0;
-
-    overflow: hidden;
 }
 
-.verah-service-price {
-    min-width: 0;
+.verah-service-card-meta strong {
 
     color: #8b4513;
 
-    font-size: 0.72rem;
-    line-height: 1.15;
+    font-size: 0.86rem;
 
-    font-weight: 800;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
-.verah-service-duration {
-    min-width: 0;
-
-    margin-top: 3px;
+.verah-service-card-meta span {
 
     color: #806e65;
 
-    font-size: 0.62rem;
-    line-height: 1.1;
+    font-size: 0.74rem;
+
+    line-height: 1.2;
 
     white-space: nowrap;
 
@@ -285,27 +331,40 @@
 ========================================================== */
 
 .verah-add-service-card {
-    background: #fbf5f1;
 
-    border-color: #d9c5ba;
+    background: #ffffff;
+
+    border: 1px solid #e4e4e4;
 }
 
-.verah-add-service-card .verah-service-card-content {
+.verah-add-service-card
+.verah-service-card-visual {
+
+    display: flex;
+
     align-items: center;
     justify-content: center;
 
-    text-align: center;
+    background:
+        linear-gradient(
+            135deg,
+            #eee2da,
+            #e4d2c6
+        );
 }
 
-.verah-service-add-icon {
-    width: 35px;
-    height: 35px;
 
-    flex: 0 0 35px;
+/* ==========================================================
+   ADD SERVICE ICON
+========================================================== */
 
-    margin: 0 auto 9px;
+.verah-add-service-icon {
+
+    width: 58px;
+    height: 58px;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
@@ -317,88 +376,54 @@
 
     color: #ffffff;
 
-    font-size: 1.35rem;
+    font-size: 2rem;
+
     line-height: 1;
+
+    box-shadow:
+        0 5px 12px rgba(0, 0, 0, 0.15);
 }
 
-.verah-add-service-card h3 {
-    margin: 0;
+.verah-add-service-card
+.verah-service-card-info span {
 
-    color: #4f2818;
+    color: #806e65;
 
     font-size: 0.75rem;
-    line-height: 1.2;
-
-    text-align: center;
-}
-
-.verah-add-service-card p {
-    margin: 5px 0 0;
-
-    color: #806e65;
-
-    font-size: 0.61rem;
-    line-height: 1.25;
-
-    text-align: center;
-}
-
-.verah-service-card-action {
-    margin-top: auto;
-
-    color: #8b4513;
-
-    font-size: 0.68rem;
-
-    font-weight: 700;
-
-    text-align: center;
-}
-
-.verah-services-empty {
-    padding: 20px 0;
-
-    color: #806e65;
 }
 
 
 /* ==========================================================
-   SERVICE PAGE
-   Used by:
-   /services/add
-   /services/:id
+   EMPTY
+========================================================== */
+
+.verah-services-empty {
+
+    padding: 30px 5px;
+
+    color: #806e65;
+
+    font-size: 0.9rem;
+}
+
+
+/* ==========================================================
+   ==========================================================
+   SERVICE DETAIL PAGE — /services/:id
+   ==========================================================
 ========================================================== */
 
 .verah-service-page {
+
     width: 100%;
-    max-width: 900px;
+
+    max-width: 850px;
 
     margin: 25px auto;
 
-    padding: 0 20px;
+    padding: 0 18px;
 
     box-sizing: border-box;
-}
-
-
-/* ==========================================================
-   SERVICE PAGE CARD
-========================================================== */
-
-.verah-service-form-card,
-.verah-service-detail-card {
-    width: 100%;
-
-    box-sizing: border-box;
-
-    background: #ffffff;
-
-    border-radius: 14px;
-
-    border-left: 5px solid #8b4513;
-
-    box-shadow:
-        0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 
@@ -407,93 +432,121 @@
 ========================================================== */
 
 .verah-service-detail-card {
-    padding: 28px;
-}
 
-
-/* ==========================================================
-   PAGE HEADER
-========================================================== */
-
-.verah-service-page-header {
-    margin-bottom: 25px;
-}
-
-.verah-service-page-label {
-    display: block;
-
-    margin-bottom: 8px;
-
-    color: #8b4513;
-
-    font-size: 0.75rem;
-
-    font-weight: 800;
-
-    letter-spacing: 0.12em;
-
-    text-transform: uppercase;
-}
-
-.verah-service-page h1 {
-    margin: 0 0 10px;
-
-    color: #4f2818;
-
-    font-size: clamp(1.7rem, 4vw, 2.3rem);
-
-    line-height: 1.15;
-}
-
-.verah-service-page-header p {
-    margin: 0;
-
-    color: #6b5a52;
-
-    line-height: 1.6;
-}
-
-
-/* ==========================================================
-   DETAIL IMAGE
-   IMPORTANT:
-   The image stays inside this box.
-========================================================== */
-
-.verah-service-detail-image-wrap {
     width: 100%;
-    height: 300px;
 
-    margin: 0 0 25px;
+    box-sizing: border-box;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    border-left: 5px solid #8b4513;
+
+    box-shadow:
+        0 5px 18px rgba(0, 0, 0, 0.09);
+}
+
+
+/* ==========================================================
+   DETAIL IMAGE CONTAINER
+
+   CRITICAL:
+   NOTHING IS ALLOWED TO ESCAPE THIS BOX.
+========================================================== */
+
+.verah-detail-image-box,
+.verah-service-detail-image-wrap {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 330px;
+
+    max-width: 100%;
 
     overflow: hidden;
 
     box-sizing: border-box;
 
-    border-radius: 12px;
-
-    background: #f3e9e3;
+    background: #eeeeee;
 }
 
+
+/* ==========================================================
+   DETAIL IMAGE
+
+   CRITICAL FIX FOR YOUR SCREENSHOT
+========================================================== */
+
+.verah-detail-image,
 .verah-service-detail-image {
+
     display: block;
 
-    width: 100%;
-    height: 100%;
+    width: 100% !important;
+    height: 100% !important;
 
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 100% !important;
+    max-height: 100% !important;
+
+    min-width: 0;
 
     object-fit: cover;
+
     object-position: center;
 }
 
 
 /* ==========================================================
-   DETAILS HEADER
+   IMAGE PLACEHOLDER
+========================================================== */
+
+.verah-detail-image-placeholder {
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    background: #dddddd;
+
+    color: #555;
+
+    font-size: 2rem;
+
+    font-weight: 700;
+
+    letter-spacing: 0.08em;
+}
+
+
+/* ==========================================================
+   DETAIL CONTENT
+
+   Everything below the image lives here.
+========================================================== */
+
+.verah-detail-content {
+
+    padding: 28px;
+
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   DETAIL HEADER
 ========================================================== */
 
 .verah-detail-header {
+
     display: flex;
 
     align-items: flex-start;
@@ -501,11 +554,42 @@
 
     gap: 18px;
 
-    margin-bottom: 20px;
+    margin-bottom: 22px;
 }
 
 .verah-detail-header > div {
+
     min-width: 0;
+}
+
+.verah-service-page-label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #8b4513;
+
+    font-size: 0.7rem;
+
+    font-weight: 800;
+
+    letter-spacing: 0.14em;
+
+    text-transform: uppercase;
+}
+
+.verah-service-page h1 {
+
+    margin: 0;
+
+    color: #4f2818;
+
+    font-size: clamp(1.7rem, 5vw, 2.3rem);
+
+    line-height: 1.15;
+
+    overflow-wrap: anywhere;
 }
 
 
@@ -514,12 +598,8 @@
 ========================================================== */
 
 .verah-service-status {
-    flex: 0 0 auto;
 
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
+    flex-shrink: 0;
 
     padding: 6px 11px;
 
@@ -530,17 +610,17 @@
     font-weight: 800;
 
     text-transform: uppercase;
-
-    letter-spacing: 0.05em;
 }
 
 .verah-status-active {
+
     color: #267a3b !important;
 
     background: #edf7ef;
 }
 
 .verah-status-inactive {
+
     color: #a33a2b !important;
 
     background: #fbeeed;
@@ -552,13 +632,16 @@
 ========================================================== */
 
 .verah-detail-description-section {
+
     padding: 20px 0;
 
     border-top: 1px solid #eadbd2;
+
     border-bottom: 1px solid #eadbd2;
 }
 
 .verah-detail-description-section h2 {
+
     margin: 0 0 9px;
 
     color: #4f2818;
@@ -567,6 +650,7 @@
 }
 
 .verah-service-detail-description {
+
     margin: 0;
 
     color: #5f514a;
@@ -580,10 +664,11 @@
 
 
 /* ==========================================================
-   DETAIL INFORMATION
+   DETAIL INFORMATION CARDS
 ========================================================== */
 
 .verah-detail-info-grid {
+
     display: grid;
 
     grid-template-columns:
@@ -595,6 +680,7 @@
 }
 
 .verah-detail-info-card {
+
     min-width: 0;
 
     padding: 15px;
@@ -609,6 +695,7 @@
 }
 
 .verah-detail-info-label {
+
     display: block;
 
     margin-bottom: 6px;
@@ -625,29 +712,26 @@
 }
 
 .verah-detail-info-card strong {
+
     display: block;
 
-    min-width: 0;
-
     color: #4f2818;
-
-    font-size: 0.92rem;
 
     overflow-wrap: anywhere;
 }
 
 .verah-detail-price {
-    color: #8b4513 !important;
 
-    font-size: 1.05rem !important;
+    color: #8b4513 !important;
 }
 
 
 /* ==========================================================
-   SERVICE RECORD INFORMATION
+   SERVICE RECORD
 ========================================================== */
 
 .verah-service-record {
+
     margin-top: 20px;
 
     padding: 20px;
@@ -662,6 +746,7 @@
 }
 
 .verah-service-record h2 {
+
     margin: 0 0 17px;
 
     color: #4f2818;
@@ -670,6 +755,7 @@
 }
 
 .verah-service-record-grid {
+
     display: grid;
 
     grid-template-columns:
@@ -679,30 +765,30 @@
 }
 
 .verah-service-record-grid div {
+
     min-width: 0;
 
     display: flex;
+
     flex-direction: column;
 
     gap: 5px;
 }
 
 .verah-service-record-grid span {
+
     color: #806e65;
 
     font-size: 0.72rem;
 }
 
 .verah-service-record-grid strong {
+
     color: #4f2818;
 
     font-size: 0.82rem;
 
     overflow-wrap: anywhere;
-}
-
-.verah-service-id {
-    max-width: 100%;
 }
 
 
@@ -711,7 +797,9 @@
 ========================================================== */
 
 .verah-service-url-row {
+
     display: flex;
+
     flex-direction: column;
 
     gap: 6px;
@@ -730,6 +818,7 @@
 }
 
 .verah-service-url-row span {
+
     color: #806e65;
 
     font-size: 0.72rem;
@@ -738,13 +827,51 @@
 }
 
 .verah-service-url-row a {
+
     max-width: 100%;
 
     color: #8b4513;
 
-    font-size: 0.78rem;
-
     overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================
+   ADMIN EDIT
+========================================================== */
+
+.verah-admin-edit-section {
+
+    margin-top: 28px;
+
+    padding-top: 25px;
+
+    border-top: 2px solid #eadbd2;
+}
+
+.verah-admin-edit-header {
+
+    margin-bottom: 20px;
+}
+
+.verah-admin-edit-header h2 {
+
+    margin: 0 0 6px;
+
+    color: #4f2818;
+
+    font-size: 1.2rem;
+}
+
+.verah-admin-edit-header p {
+
+    margin: 0;
+
+    color: #806e65;
+
+    font-size: 0.88rem;
+
+    line-height: 1.5;
 }
 
 
@@ -753,13 +880,16 @@
 ========================================================== */
 
 .verah-service-form {
+
     display: flex;
+
     flex-direction: column;
 
     gap: 18px;
 }
 
 .verah-form-row {
+
     display: grid;
 
     grid-template-columns:
@@ -769,15 +899,18 @@
 }
 
 .verah-form-group {
+
     min-width: 0;
 
     display: flex;
+
     flex-direction: column;
 
     gap: 7px;
 }
 
 .verah-form-group label {
+
     color: #4f2818;
 
     font-weight: 600;
@@ -785,6 +918,7 @@
 
 .verah-form-group input,
 .verah-form-group textarea {
+
     width: 100%;
 
     min-width: 0;
@@ -805,13 +939,15 @@
 }
 
 .verah-form-group textarea {
-    resize: vertical;
 
     min-height: 120px;
+
+    resize: vertical;
 }
 
 .verah-form-group input:focus,
 .verah-form-group textarea:focus {
+
     outline: none;
 
     border-color: #8b4513;
@@ -821,12 +957,14 @@
 }
 
 .verah-form-help {
+
     color: #806e65;
 
     font-size: 0.78rem;
 }
 
 .verah-checkbox-group label {
+
     display: flex;
 
     flex-direction: row;
@@ -834,47 +972,11 @@
     align-items: center;
 
     gap: 8px;
-
-    font-weight: 500;
 }
 
 .verah-checkbox-group input {
+
     width: auto;
-}
-
-
-/* ==========================================================
-   ADMIN EDIT SECTION
-========================================================== */
-
-.verah-admin-edit-section {
-    margin-top: 30px;
-
-    padding-top: 25px;
-
-    border-top: 2px solid #eadbd2;
-}
-
-.verah-admin-edit-header {
-    margin-bottom: 20px;
-}
-
-.verah-admin-edit-header h2 {
-    margin: 0 0 6px;
-
-    color: #4f2818;
-
-    font-size: 1.2rem;
-}
-
-.verah-admin-edit-header p {
-    margin: 0;
-
-    color: #806e65;
-
-    font-size: 0.88rem;
-
-    line-height: 1.5;
 }
 
 
@@ -883,20 +985,21 @@
 ========================================================== */
 
 .verah-form-actions {
-    display: flex;
 
-    flex-wrap: wrap;
+    display: flex;
 
     gap: 10px;
 
-    margin-top: 3px;
+    flex-wrap: wrap;
 }
 
 .verah-primary-button,
 .verah-secondary-button {
+
     display: inline-flex;
 
     align-items: center;
+
     justify-content: center;
 
     min-height: 42px;
@@ -914,14 +1017,10 @@
     text-decoration: none;
 
     cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        transform 0.2s ease;
 }
 
 .verah-primary-button {
+
     border: 1px solid #8b4513;
 
     background: #8b4513;
@@ -929,15 +1028,8 @@
     color: #ffffff;
 }
 
-.verah-primary-button:hover {
-    background: #713712;
-
-    border-color: #713712;
-
-    transform: translateY(-1px);
-}
-
 .verah-secondary-button {
+
     border: 1px solid #cdb6aa;
 
     background: #ffffff;
@@ -945,25 +1037,11 @@
     color: #6f321e;
 }
 
-.verah-secondary-button:hover {
-    background: #fbf5f1;
-
-    border-color: #b98263;
-}
-
-
-/* ==========================================================
-   DETAIL PAGE ACTIONS
-========================================================== */
-
 .verah-detail-actions {
+
     display: flex;
 
-    flex-wrap: wrap;
-
-    gap: 10px;
-
-    margin-top: 24px;
+    margin-top: 22px;
 }
 
 
@@ -974,47 +1052,103 @@
 @media (max-width: 700px) {
 
     .verah-services {
+
         padding: 20px;
     }
+
 
     .verah-services-scroll {
-        gap: 12px;
+
+        gap: 15px;
     }
+
+
+    .verah-service-card {
+
+        flex-basis: 190px;
+
+        width: 190px;
+        height: 295px;
+
+        min-width: 190px;
+        max-width: 190px;
+
+        min-height: 295px;
+        max-height: 295px;
+
+        border-radius: 18px;
+    }
+
+
+    .verah-service-card-visual {
+
+        flex-basis: 175px;
+
+        height: 175px;
+
+        min-height: 175px;
+        max-height: 175px;
+    }
+
+
+    .verah-service-card-info {
+
+        padding: 13px;
+    }
+
 
     .verah-service-page {
+
         margin-top: 18px;
 
-        padding: 0 12px;
+        padding: 0 10px;
     }
 
-    .verah-service-detail-card,
-    .verah-service-form-card {
+
+    .verah-service-detail-card {
+
+        border-radius: 16px;
+    }
+
+
+    .verah-detail-image-box,
+    .verah-service-detail-image-wrap {
+
+        height: 240px;
+    }
+
+
+    .verah-detail-content {
+
         padding: 20px;
     }
 
-    .verah-service-detail-image-wrap {
-        height: 250px;
-
-        margin-bottom: 20px;
-    }
 
     .verah-detail-header {
+
         flex-direction: column;
 
         align-items: flex-start;
     }
 
+
     .verah-detail-info-grid {
+
         grid-template-columns: 1fr;
     }
+
 
     .verah-service-record-grid {
+
         grid-template-columns: 1fr;
     }
 
+
     .verah-form-row {
+
         grid-template-columns: 1fr;
     }
+
 }
 
 
@@ -1025,39 +1159,75 @@
 @media (max-width: 480px) {
 
     .verah-services {
-        padding: 17px 14px;
+
+        padding: 17px 13px;
+
+        border-left-width: 4px;
     }
 
+
     .verah-services-header h2 {
+
         font-size: 1.3rem;
     }
 
-    .verah-service-page {
-        padding: 0 8px;
+
+    .verah-service-card {
+
+        flex-basis: 180px;
+
+        width: 180px;
+        height: 280px;
+
+        min-width: 180px;
+        max-width: 180px;
+
+        min-height: 280px;
+        max-height: 280px;
     }
 
-    .verah-service-detail-card,
-    .verah-service-form-card {
+
+    .verah-service-card-visual {
+
+        flex-basis: 165px;
+
+        height: 165px;
+
+        min-height: 165px;
+        max-height: 165px;
+    }
+
+
+    .verah-service-page {
+
+        padding: 0 7px;
+    }
+
+
+    .verah-detail-image-box,
+    .verah-service-detail-image-wrap {
+
+        height: 205px;
+    }
+
+
+    .verah-detail-content {
+
         padding: 17px;
     }
 
-    .verah-service-detail-image-wrap {
-        height: 210px;
-
-        border-radius: 10px;
-    }
-
-    .verah-service-record {
-        padding: 16px;
-    }
 
     .verah-form-actions,
     .verah-detail-actions {
+
         flex-direction: column;
     }
 
+
     .verah-primary-button,
     .verah-secondary-button {
+
         width: 100%;
     }
+
 }
