@@ -1,5 +1,4 @@
-const Services = require("../../models/services");
-
+const Services = require("../models/services");
 
 /* =========================================================
    GET ACTIVE SERVICES
@@ -45,8 +44,39 @@ exports.createService = function (data) {
 
         duration: data.duration,
 
+        image: data.image || "",
+
         active: data.active !== "false"
 
     });
+
+};
+
+
+/* =========================================================
+   UPDATE SERVICE
+========================================================= */
+
+exports.updateService = async function (id, data) {
+
+    const service = await Services.findById(id);
+
+    if (!service) {
+        return null;
+    }
+
+    service.name = data.name;
+
+    service.description = data.description;
+
+    service.price = data.price;
+
+    service.duration = data.duration;
+
+    service.image = data.image || "";
+
+    service.active = data.active !== "false";
+
+    return service.save();
 
 };
