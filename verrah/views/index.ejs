@@ -1,120 +1,57 @@
 <!-- =========================================================
-     VERAH COSMETICS — HERO
+     VERAH COSMETICS — HERO CARD
 ========================================================= -->
 
-<section class="hero-section">
+<section class="verah-hero">
 
-    <div class="hero-card">
+    <div class="verah-card">
 
-        <!-- Decorative background elements -->
-        <span class="hero-decoration hero-decoration-one"></span>
-        <span class="hero-decoration hero-decoration-two"></span>
-        <span class="hero-decoration hero-decoration-three"></span>
+        <!-- Decorative detail -->
+        <div class="verah-card-glow"></div>
 
-        <!-- =================================================
-             HERO CONTENT
-        ================================================== -->
+        <div class="verah-content">
 
-        <div class="hero-content">
-
-            <div class="hero-brand">
-                <span class="brand-line"></span>
+            <div class="verah-eyebrow">
+                <span></span>
                 VERAH COSMETICS
-                <span class="brand-line"></span>
             </div>
 
-            <h1 class="hero-title">
-                Beauty that
-                <span>feels like you.</span>
+            <h1 class="verah-title">
+                Welcome to
+                <em>Verah.</em>
             </h1>
 
-            <p class="hero-description">
-                Discover carefully selected beauty essentials
-                designed to help you care for your skin,
-                express your style, and feel confident every day.
+            <p class="verah-description">
+                A beauty space created around self-care,
+                confidence, elegance, and the little things
+                that make you feel beautifully yourself.
             </p>
 
-            <!-- CTA -->
-            <div class="hero-actions">
-
-                <a href="/products" class="hero-button">
-                    <span>Explore Beauty</span>
-                    <span class="button-arrow">→</span>
-                </a>
-
-                <a href="/about" class="hero-secondary">
-                    Discover Verah
-                </a>
-
+            <div class="verah-divider">
+                <span></span>
+                <i>V</i>
+                <span></span>
             </div>
 
-            <!-- Signature -->
-            <div class="hero-signature">
-
-                <span class="signature-line"></span>
-
-                <span>
-                    Beauty
-                </span>
-
-                <span class="signature-dot">·</span>
-
-                <span>
-                    Care
-                </span>
-
-                <span class="signature-dot">·</span>
-
-                <span>
-                    Confidence
-                </span>
-
-            </div>
+            <p class="verah-tagline">
+                Beauty <b>·</b> Care <b>·</b> Confidence
+            </p>
 
         </div>
 
+        <!-- Decorative right-side composition -->
+        <div class="verah-art">
 
-        <!-- =================================================
-             DECORATIVE BRAND MARK
-        ================================================== -->
+            <div class="verah-circle verah-circle-large"></div>
+            <div class="verah-circle verah-circle-small"></div>
 
-        <div class="hero-mark">
-
-            <div class="mark-circle">
-
-                <div class="mark-inner">
-                    V
-                </div>
-
+            <div class="verah-monogram">
+                V
             </div>
 
-            <div class="mark-text">
-                <span>V</span>
-                VERAH
-            </div>
-
-        </div>
-
-
-        <!-- =================================================
-             BOTTOM FEATURES
-        ================================================== -->
-
-        <div class="hero-features">
-
-            <div class="hero-feature">
-                <strong>01</strong>
-                <span>Everyday Beauty</span>
-            </div>
-
-            <div class="hero-feature">
-                <strong>02</strong>
-                <span>Carefully Selected</span>
-            </div>
-
-            <div class="hero-feature">
-                <strong>03</strong>
-                <span>Made for You</span>
+            <div class="verah-art-text">
+                <span>VERAH</span>
+                <small>COSMETICS</small>
             </div>
 
         </div>
@@ -127,10 +64,10 @@
 <style>
 
 /* =========================================================
-   HERO SECTION
+   SECTION
 ========================================================= */
 
-.hero-section {
+.verah-hero {
     width: 100%;
     min-height: calc(100vh - 120px);
 
@@ -138,122 +75,120 @@
     align-items: center;
     justify-content: center;
 
-    padding: 45px 25px;
+    padding: 40px 24px;
 
     background:
         radial-gradient(
-            circle at 10% 20%,
-            rgba(174, 108, 91, 0.12),
-            transparent 28%
+            circle at 15% 50%,
+            rgba(126, 48, 38, 0.07),
+            transparent 35%
         ),
-        radial-gradient(
-            circle at 90% 80%,
-            rgba(143, 75, 58, 0.10),
-            transparent 30%
-        ),
-        #f8f1ec;
+        #f6f0eb;
+
+    box-sizing: border-box;
 }
 
 
 /* =========================================================
-   HERO CARD
+   MAIN CARD
 ========================================================= */
 
-.hero-card {
+.verah-card {
     position: relative;
 
     width: 100%;
-    max-width: 1200px;
-    min-height: 650px;
+    max-width: 1150px;
+    min-height: 570px;
+
+    display: grid;
+    grid-template-columns: 55% 45%;
 
     overflow: hidden;
 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-
-    border-radius: 34px;
+    border-radius: 30px;
 
     background:
-        radial-gradient(
-            circle at 80% 20%,
-            rgba(160, 91, 73, 0.10),
-            transparent 25%
-        ),
         linear-gradient(
             135deg,
             #fffdfb 0%,
-            #f8eee8 100%
+            #fbf4ef 55%,
+            #f4e8e1 100%
         );
 
-    border: 1px solid #dfccc1;
+    border: 1px solid rgba(118, 70, 56, 0.16);
 
     box-shadow:
-        0 30px 80px rgba(73, 43, 31, 0.14);
+        0 25px 65px rgba(69, 40, 30, 0.14),
+        0 4px 12px rgba(69, 40, 30, 0.05);
 
-    isolation: isolate;
+    box-sizing: border-box;
 }
 
 
 /* =========================================================
-   LEFT ACCENT
+   REDDISH-BROWN LEFT BORDER
 ========================================================= */
 
-.hero-card::before {
+.verah-card::before {
     content: "";
 
     position: absolute;
 
     left: 0;
-    top: 45px;
-    bottom: 45px;
+    top: 28px;
+    bottom: 28px;
 
-    width: 6px;
+    width: 7px;
 
-    border-radius: 0 8px 8px 0;
+    z-index: 10;
+
+    border-radius:
+        0
+        6px
+        6px
+        0;
 
     background:
         linear-gradient(
             180deg,
-            #6d2923,
-            #a35442,
-            #7a3028
+            #682820 0%,
+            #914334 45%,
+            #783027 100%
         );
 
-    z-index: 5;
+    box-shadow:
+        2px 0 8px rgba(104, 40, 32, 0.16);
 }
 
 
 /* =========================================================
-   HERO CONTENT
+   CONTENT
 ========================================================= */
 
-.hero-content {
+.verah-content {
     position: relative;
-    z-index: 4;
-
-    width: min(700px, 75%);
-
-    padding: 90px 80px 120px;
+    z-index: 3;
 
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    justify-content: center;
+
+    padding: 75px 70px 75px 85px;
 }
 
 
 /* =========================================================
-   BRAND
+   EYEBROW
 ========================================================= */
 
-.hero-brand {
+.verah-eyebrow {
     display: flex;
     align-items: center;
-    gap: 13px;
+    gap: 12px;
 
-    margin-bottom: 30px;
+    margin-bottom: 27px;
 
-    color: #81372d;
+    color: #7d352b;
 
     font-size: 10px;
     font-weight: 800;
@@ -262,11 +197,13 @@
     text-transform: uppercase;
 }
 
-.brand-line {
-    width: 30px;
+.verah-eyebrow span {
+    display: block;
+
+    width: 34px;
     height: 1px;
 
-    background: #a05a4a;
+    background: #9a5547;
 }
 
 
@@ -274,39 +211,37 @@
    TITLE
 ========================================================= */
 
-.hero-title {
+.verah-title {
     margin: 0;
 
-    color: #33221d;
+    max-width: 580px;
+
+    color: #30221e;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size: clamp(
-        60px,
-        7vw,
-        94px
-    );
+    font-size: clamp(55px, 6.2vw, 82px);
 
     font-weight: 400;
 
-    line-height: 0.94;
+    line-height: 0.96;
 
-    letter-spacing: -5px;
+    letter-spacing: -4px;
 }
 
-.hero-title span {
+.verah-title em {
     display: block;
 
-    margin-left: 55px;
+    margin-top: 5px;
+    margin-left: 48px;
 
-    color: #84382e;
-
-    font-style: italic;
+    color: #81372d;
 
     font-weight: 400;
+    font-style: italic;
 }
 
 
@@ -314,212 +249,147 @@
    DESCRIPTION
 ========================================================= */
 
-.hero-description {
-    max-width: 520px;
+.verah-description {
+    max-width: 465px;
 
-    margin: 35px 0 0;
+    margin:
+        30px
+        0
+        0;
 
-    color: #75635c;
+    color: #725f58;
 
-    font-size: 16px;
+    font-size: 15px;
 
     line-height: 1.85;
 }
 
 
 /* =========================================================
-   ACTIONS
+   DIVIDER
 ========================================================= */
 
-.hero-actions {
-    display: flex;
-    align-items: center;
-    gap: 28px;
-
-    margin-top: 40px;
-}
-
-
-/* PRIMARY BUTTON */
-
-.hero-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 22px;
-
-    padding: 16px 21px 16px 25px;
-
-    color: #fff;
-
-    background: #81362c;
-
-    border-radius: 100px;
-
-    text-decoration: none;
-
-    font-size: 12px;
-    font-weight: 700;
-
-    letter-spacing: 1px;
-
-    box-shadow:
-        0 12px 25px rgba(129, 54, 44, 0.20);
-
-    transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease;
-}
-
-.hero-button:hover {
-    transform: translateY(-3px);
-
-    box-shadow:
-        0 17px 30px rgba(129, 54, 44, 0.28);
-}
-
-
-/* BUTTON ARROW */
-
-.button-arrow {
-    width: 30px;
-    height: 30px;
+.verah-divider {
+    width: 180px;
 
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 12px;
 
-    border-radius: 50%;
-
-    background: rgba(255,255,255,0.15);
-
-    font-size: 17px;
-
-    transition: transform 0.25s ease;
+    margin-top: 35px;
 }
 
-.hero-button:hover .button-arrow {
-    transform: translateX(3px);
+.verah-divider span {
+    flex: 1;
+
+    height: 1px;
+
+    background: #c7aaa0;
 }
 
+.verah-divider i {
+    color: #8b3d31;
 
-/* SECONDARY LINK */
+    font-family: Georgia, serif;
 
-.hero-secondary {
-    color: #704c43;
+    font-size: 18px;
 
-    text-decoration: none;
-
-    font-size: 11px;
-    font-weight: 700;
-
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-
-    border-bottom: 1px solid #b99a8d;
-
-    padding-bottom: 5px;
-
-    transition:
-        color 0.2s ease,
-        border-color 0.2s ease;
-}
-
-.hero-secondary:hover {
-    color: #84382e;
-
-    border-color: #84382e;
+    font-style: italic;
 }
 
 
 /* =========================================================
-   SIGNATURE
+   TAGLINE
 ========================================================= */
 
-.hero-signature {
-    display: flex;
-    align-items: center;
-    gap: 11px;
+.verah-tagline {
+    margin: 17px 0 0;
 
-    margin-top: 45px;
-
-    color: #927970;
+    color: #92776e;
 
     font-size: 9px;
     font-weight: 700;
 
-    letter-spacing: 2.5px;
+    letter-spacing: 3px;
+
     text-transform: uppercase;
 }
 
-.signature-line {
-    width: 45px;
-    height: 1px;
+.verah-tagline b {
+    margin: 0 5px;
 
-    background: #a45c4c;
-}
+    color: #a55a4b;
 
-.signature-dot {
-    color: #a45c4c;
+    font-weight: 400;
 }
 
 
 /* =========================================================
-   DECORATIVE BRAND MARK
+   RIGHT DECORATIVE AREA
 ========================================================= */
 
-.hero-mark {
-    position: absolute;
+.verah-art {
+    position: relative;
 
-    right: 12%;
-    top: 50%;
-
-    transform: translateY(-50%);
-
-    z-index: 1;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    opacity: 0.75;
-}
-
-
-/* BIG CIRCLE */
-
-.mark-circle {
-    width: 280px;
-    height: 280px;
+    min-height: 570px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 50%;
+    overflow: hidden;
 
-    border: 1px solid rgba(126, 54, 43, 0.22);
-
-    position: relative;
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(153, 79, 63, 0.10),
+            transparent 55%
+        );
 }
 
-.mark-circle::before {
-    content: "";
 
+/* =========================================================
+   LARGE CIRCLE
+========================================================= */
+
+.verah-circle-large {
     position: absolute;
 
-    inset: 18px;
+    width: 390px;
+    height: 390px;
 
     border-radius: 50%;
 
-    border: 1px solid rgba(126, 54, 43, 0.15);
+    border: 1px solid rgba(126, 53, 43, 0.16);
 }
 
 
-/* INNER MARK */
+/* =========================================================
+   SECOND CIRCLE
+========================================================= */
 
-.mark-inner {
-    width: 150px;
-    height: 150px;
+.verah-circle-small {
+    position: absolute;
+
+    width: 290px;
+    height: 290px;
+
+    border-radius: 50%;
+
+    border: 1px solid rgba(126, 53, 43, 0.11);
+}
+
+
+/* =========================================================
+   MONOGRAM
+========================================================= */
+
+.verah-monogram {
+    position: relative;
+    z-index: 2;
+
+    width: 175px;
+    height: 175px;
 
     display: flex;
     align-items: center;
@@ -529,163 +399,87 @@
 
     background:
         linear-gradient(
-            135deg,
-            #f5dfd5,
-            #ead0c4
+            145deg,
+            #f3ddd3,
+            #e7c9bd
         );
 
-    color: #84382e;
+    border: 1px solid rgba(126, 53, 43, 0.20);
+
+    color: #793127;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size: 82px;
+    font-size: 100px;
+
+    font-weight: 400;
 
     font-style: italic;
 
     box-shadow:
-        0 20px 40px rgba(111, 56, 44, 0.10);
+        0 22px 50px rgba(111, 54, 43, 0.15),
+        inset 0 0 35px rgba(255,255,255,0.35);
 }
 
 
-/* BRAND TEXT */
+/* =========================================================
+   ART TEXT
+========================================================= */
 
-.mark-text {
-    margin-top: 20px;
+.verah-art-text {
+    position: absolute;
 
-    color: #9a7468;
+    bottom: 78px;
 
-    font-size: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    color: #8a645b;
+
+    text-align: center;
+}
+
+.verah-art-text span {
+    font-size: 10px;
     font-weight: 800;
 
-    letter-spacing: 5px;
-
-    text-transform: uppercase;
+    letter-spacing: 6px;
 }
 
-.mark-text span {
-    font-family: Georgia, serif;
+.verah-art-text small {
+    margin-top: 7px;
 
-    font-size: 15px;
+    font-size: 7px;
 
-    font-style: italic;
-
-    margin-right: 4px;
+    letter-spacing: 3px;
 }
 
 
 /* =========================================================
-   DECORATIVE ELEMENTS
+   DECORATIVE GLOW
 ========================================================= */
 
-.hero-decoration {
+.verah-card-glow {
     position: absolute;
 
-    pointer-events: none;
+    width: 300px;
+    height: 300px;
 
-    z-index: 0;
-}
-
-
-/* Large circle */
-
-.hero-decoration-one {
-    width: 420px;
-    height: 420px;
-
-    right: -150px;
-    top: -150px;
+    left: -150px;
+    bottom: -170px;
 
     border-radius: 50%;
-
-    border: 1px solid rgba(129, 54, 44, 0.10);
-}
-
-
-/* Small circle */
-
-.hero-decoration-two {
-    width: 180px;
-    height: 180px;
-
-    right: 30%;
-    bottom: -100px;
-
-    border-radius: 50%;
-
-    border: 1px solid rgba(129, 54, 44, 0.10);
-}
-
-
-/* Fine vertical line */
-
-.hero-decoration-three {
-    width: 1px;
-    height: 220px;
-
-    right: 8%;
-    top: 12%;
 
     background:
-        linear-gradient(
-            transparent,
-            rgba(129,54,44,0.20),
-            transparent
-        );
-}
+        rgba(143, 72, 57, 0.07);
 
+    filter: blur(3px);
 
-/* =========================================================
-   FEATURES
-========================================================= */
-
-.hero-features {
-    position: absolute;
-
-    left: 80px;
-    right: 80px;
-    bottom: 30px;
-
-    z-index: 4;
-
-    display: flex;
-
-    border-top: 1px solid #dfccc1;
-
-    padding-top: 20px;
-}
-
-.hero-feature {
-    flex: 1;
-
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    color: #8b7168;
-
-    font-size: 9px;
-    font-weight: 700;
-
-    letter-spacing: 1.5px;
-
-    text-transform: uppercase;
-}
-
-.hero-feature:not(:last-child) {
-    border-right: 1px solid #dfccc1;
-}
-
-.hero-feature strong {
-    color: #9b5444;
-
-    font-family: Georgia, serif;
-
-    font-size: 12px;
-
-    font-weight: 400;
+    pointer-events: none;
 }
 
 
@@ -695,37 +489,44 @@
 
 @media (max-width: 900px) {
 
-    .hero-card {
-        min-height: 620px;
+    .verah-card {
+        grid-template-columns: 1fr;
+
+        min-height: auto;
     }
 
-    .hero-content {
-        width: 80%;
-
+    .verah-content {
         padding:
-            80px
+            65px
             55px
-            120px;
+            55px
+            70px;
     }
 
-    .hero-title {
-        font-size: clamp(
-            58px,
-            9vw,
-            78px
-        );
+    .verah-art {
+        min-height: 350px;
     }
 
-    .hero-mark {
-        right: 5%;
-        opacity: 0.45;
+    .verah-circle-large {
+        width: 300px;
+        height: 300px;
     }
 
-    .hero-features {
-        left: 55px;
-        right: 55px;
+    .verah-circle-small {
+        width: 220px;
+        height: 220px;
     }
 
+    .verah-monogram {
+        width: 135px;
+        height: 135px;
+
+        font-size: 75px;
+    }
+
+    .verah-art-text {
+        bottom: 30px;
+    }
 }
 
 
@@ -735,7 +536,7 @@
 
 @media (max-width: 600px) {
 
-    .hero-section {
+    .verah-hero {
         min-height: auto;
 
         padding:
@@ -744,148 +545,105 @@
             30px;
     }
 
-
-    .hero-card {
-        min-height: 680px;
-
-        border-radius: 25px;
+    .verah-card {
+        border-radius: 24px;
     }
 
+    .verah-card::before {
+        top: 20px;
+        bottom: 20px;
 
-    .hero-card::before {
-        top: 25px;
-        bottom: 25px;
-
-        width: 4px;
+        width: 5px;
     }
 
-
-    .hero-content {
-        width: 100%;
-
+    .verah-content {
         padding:
-            55px
+            48px
             28px
-            145px
+            35px
             38px;
     }
 
+    .verah-eyebrow {
+        gap: 8px;
 
-    .hero-brand {
-        gap: 9px;
-
-        margin-bottom: 25px;
+        margin-bottom: 23px;
 
         font-size: 8px;
 
-        letter-spacing: 3px;
+        letter-spacing: 2.8px;
     }
 
-
-    .brand-line {
-        width: 20px;
+    .verah-eyebrow span {
+        width: 23px;
     }
 
-
-    .hero-title {
-        font-size: 56px;
+    .verah-title {
+        font-size: 53px;
 
         letter-spacing: -3px;
-
-        line-height: 0.95;
     }
 
-
-    .hero-title span {
+    .verah-title em {
         margin-left: 25px;
     }
 
-
-    .hero-description {
-        margin-top: 28px;
+    .verah-description {
+        margin-top: 25px;
 
         font-size: 14px;
 
         line-height: 1.75;
     }
 
+    .verah-divider {
+        width: 145px;
 
-    .hero-actions {
-        width: 100%;
-
-        flex-direction: column;
-
-        align-items: flex-start;
-
-        gap: 20px;
-
-        margin-top: 32px;
+        margin-top: 28px;
     }
 
-
-    .hero-button {
-        padding:
-            14px
-            18px
-            14px
-            21px;
-    }
-
-
-    .hero-signature {
-        margin-top: 35px;
-
+    .verah-tagline {
         font-size: 7px;
 
-        letter-spacing: 1.5px;
+        letter-spacing: 2px;
     }
 
-
-    .hero-mark {
-        right: -70px;
-        top: 52%;
-
-        opacity: 0.25;
+    .verah-art {
+        min-height: 290px;
     }
 
-
-    .mark-circle {
-        width: 260px;
-        height: 260px;
+    .verah-circle-large {
+        width: 245px;
+        height: 245px;
     }
 
-
-    .hero-decoration-one {
-        width: 300px;
-        height: 300px;
-
-        right: -180px;
-        top: -100px;
+    .verah-circle-small {
+        width: 185px;
+        height: 185px;
     }
 
+    .verah-monogram {
+        width: 115px;
+        height: 115px;
 
-    .hero-features {
-        left: 38px;
-        right: 28px;
-        bottom: 25px;
-
-        flex-direction: column;
-
-        gap: 12px;
-
-        padding-top: 15px;
+        font-size: 65px;
     }
 
+    .verah-art-text {
+        bottom: 23px;
+    }
 
-    .hero-feature {
+    .verah-art-text span {
         font-size: 8px;
+
+        letter-spacing: 4px;
     }
 
+    .verah-art-text small {
+        font-size: 6px;
 
-    .hero-feature:not(:last-child) {
-        border-right: none;
+        letter-spacing: 2px;
     }
-
 }
 
 </style>
