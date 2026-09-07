@@ -1,14 +1,11 @@
 <!-- =========================================================
-  SIDEBAR
+   SIDEBAR
 ========================================================= -->
 
-<% if(isAdmin){ %>
-
-
 <aside
-    id="adminDashboardSidebar"
+    id="sidebar"
 
-    class="admin-dashboard-sidebar"
+    class="sidebar"
 
     aria-label="Project navigation"
 
@@ -16,17 +13,25 @@
 >
 
 
-    <ul class="admin-sidebar-menu">
+    <!-- =====================================================
+       SIDEBAR MENU
+    ====================================================== -->
+
+    <ul class="sidebar-menu">
 
 
-        <li class="admin-sidebar-item">
+        <!-- =================================================
+           MENU BUTTON
+        ================================================== -->
+
+        <li class="sidebar-item">
 
             <button
                 type="button"
 
-                id="adminSidebarMenuButton"
+                id="sidebarMenuButton"
 
-                class="admin-sidebar-menu-button"
+                class="sidebar-menu-button"
 
                 aria-label="Close navigation menu"
 
@@ -34,14 +39,14 @@
             >
 
                 <span
-                    class="admin-sidebar-menu-icon"
+                    class="sidebar-menu-icon"
 
                     aria-hidden="true"
                 >
                     ☰
                 </span>
 
-                <span class="admin-sidebar-label">
+                <span class="sidebar-label">
                     Menu
                 </span>
 
@@ -50,25 +55,29 @@
         </li>
 
 
-        <li class="admin-sidebar-item">
+        <!-- =================================================
+           DASHBOARD
+        ================================================== -->
+
+        <li class="sidebar-item">
 
             <a
                 href="<%= homeLink %>"
 
-                class="admin-sidebar-link active"
+                class="sidebar-link active"
 
                 title="Dashboard"
             >
 
                 <span
-                    class="admin-sidebar-icon"
+                    class="sidebar-icon"
 
                     aria-hidden="true"
                 >
                     ⌂
                 </span>
 
-                <span class="admin-sidebar-label">
+                <span class="sidebar-label">
                     Dashboard
                 </span>
 
@@ -77,14 +86,18 @@
         </li>
 
 
-        <li class="admin-sidebar-item">
+        <!-- =================================================
+           DAIRY ACTIVITIES
+        ================================================== -->
+
+        <li class="sidebar-item">
 
             <button
                 type="button"
 
                 id="dairyActivitiesButton"
 
-                class="admin-sidebar-section-button"
+                class="sidebar-section-button"
 
                 aria-expanded="false"
 
@@ -92,19 +105,19 @@
             >
 
                 <span
-                    class="admin-sidebar-icon"
+                    class="sidebar-icon"
 
                     aria-hidden="true"
                 >
                     🐄
                 </span>
 
-                <span class="admin-sidebar-label">
+                <span class="sidebar-label">
                     Dairy Activities
                 </span>
 
                 <span
-                    class="admin-sidebar-section-arrow"
+                    class="sidebar-section-arrow"
 
                     aria-hidden="true"
                 >
@@ -114,32 +127,38 @@
             </button>
 
 
+            <!-- =============================================
+               DAIRY ACTIVITIES SUBMENU
+            ============================================== -->
+
             <ul
                 id="dairyActivitiesSubmenu"
 
-                class="admin-sidebar-submenu"
+                class="sidebar-submenu"
             >
 
 
-                <li class="admin-sidebar-item">
+                <!-- Add Asset -->
+
+                <li class="sidebar-item">
 
                     <a
                         href="/add"
 
-                        class="admin-sidebar-link"
+                        class="sidebar-link"
 
                         title="Add an Asset"
                     >
 
                         <span
-                            class="admin-sidebar-icon"
+                            class="sidebar-icon"
 
                             aria-hidden="true"
                         >
                             ＋
                         </span>
 
-                        <span class="admin-sidebar-label">
+                        <span class="sidebar-label">
                             Add an Asset
                         </span>
 
@@ -148,25 +167,27 @@
                 </li>
 
 
-                <li class="admin-sidebar-item">
+                <!-- Record Milk Production -->
+
+                <li class="sidebar-item">
 
                     <a
                         href="/milk"
 
-                        class="admin-sidebar-link"
+                        class="sidebar-link"
 
                         title="Record Milk Production"
                     >
 
                         <span
-                            class="admin-sidebar-icon"
+                            class="sidebar-icon"
 
                             aria-hidden="true"
                         >
                             🥛
                         </span>
 
-                        <span class="admin-sidebar-label">
+                        <span class="sidebar-label">
                             Record Milk Production
                         </span>
 
@@ -175,25 +196,27 @@
                 </li>
 
 
-                <li class="admin-sidebar-item">
+                <!-- Record Milk Sales -->
+
+                <li class="sidebar-item">
 
                     <a
                         href="/milk/sales"
 
-                        class="admin-sidebar-link"
+                        class="sidebar-link"
 
                         title="Record Milk Sales"
                     >
 
                         <span
-                            class="admin-sidebar-icon"
+                            class="sidebar-icon"
 
                             aria-hidden="true"
                         >
                             💰
                         </span>
 
-                        <span class="admin-sidebar-label">
+                        <span class="sidebar-label">
                             Record Milk Sales
                         </span>
 
@@ -202,25 +225,27 @@
                 </li>
 
 
-                <li class="admin-sidebar-item">
+                <!-- Milk Statistics -->
+
+                <li class="sidebar-item">
 
                     <a
                         href="/stats"
 
-                        class="admin-sidebar-link"
+                        class="sidebar-link"
 
                         title="Milk Statistics"
                     >
 
                         <span
-                            class="admin-sidebar-icon"
+                            class="sidebar-icon"
 
                             aria-hidden="true"
                         >
                             📊
                         </span>
 
-                        <span class="admin-sidebar-label">
+                        <span class="sidebar-label">
                             Milk Statistics
                         </span>
 
@@ -234,25 +259,29 @@
         </li>
 
 
-        <li class="admin-sidebar-item">
+        <!-- =================================================
+           VIEW ASSETS
+        ================================================== -->
+
+        <li class="sidebar-item">
 
             <a
                 href="/networth"
 
-                class="admin-sidebar-link"
+                class="sidebar-link"
 
                 title="View Assets"
             >
 
                 <span
-                    class="admin-sidebar-icon"
+                    class="sidebar-icon"
 
                     aria-hidden="true"
                 >
                     👁
                 </span>
 
-                <span class="admin-sidebar-label">
+                <span class="sidebar-label">
                     View Assets
                 </span>
 
@@ -261,25 +290,29 @@
         </li>
 
 
-        <li class="admin-sidebar-item">
+        <!-- =================================================
+           FINANCIALS
+        ================================================== -->
+
+        <li class="sidebar-item">
 
             <a
                 href="/financials/summary"
 
-                class="admin-sidebar-link"
+                class="sidebar-link"
 
                 title="Financials"
             >
 
                 <span
-                    class="admin-sidebar-icon"
+                    class="sidebar-icon"
 
                     aria-hidden="true"
                 >
                     💱
                 </span>
 
-                <span class="admin-sidebar-label">
+                <span class="sidebar-label">
                     Financials
                 </span>
 
@@ -291,9 +324,13 @@
     </ul>
 
 
-    <div class="admin-sidebar-footer">
+    <!-- =====================================================
+       SIDEBAR FOOTER
+    ====================================================== -->
 
-        Verrah Cosmetics 
+    <div class="sidebar-footer">
+
+        Verrah Cosmetics
 
     </div>
 
@@ -301,13 +338,14 @@
 </aside>
 
 
-<div
-    id="adminSidebarOverlay"
+<!-- =========================================================
+   SIDEBAR OVERLAY
+========================================================= -->
 
-    class="admin-sidebar-overlay"
+<div
+    id="sidebarOverlay"
+
+    class="overlay"
 
     aria-hidden="true"
 ></div>
-
-
-<% } %>
