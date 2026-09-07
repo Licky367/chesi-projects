@@ -7,41 +7,45 @@
     <div class="verah-card">
 
         <!-- =================================================
-             HERO CONTENT
+             BRAND
         ================================================== -->
 
-        <div class="verah-content">
-
-            <!-- BRAND -->
-            <div class="verah-brand">
-                VERAH COSMETICS
-            </div>
+        <div class="verah-brand">
+            VERAH COSMETICS
+        </div>
 
 
-            <!-- TITLE -->
-            <h1 class="verah-title">
-                Welcome to
-                <span>Verah.</span>
-            </h1>
+        <!-- =================================================
+             TITLE
+        ================================================== -->
+
+        <h1 class="verah-title">
+            Welcome to
+            <span>Verah.</span>
+        </h1>
 
 
-            <!-- DESCRIPTION -->
-            <p class="verah-description">
-                Discover a beauty space where self-care meets
-                confidence, elegance, and everyday beauty.
-            </p>
+        <!-- =================================================
+             DESCRIPTION
+        ================================================== -->
+
+        <p class="verah-description">
+            Discover a beauty space where self-care meets
+            confidence, elegance, and everyday beauty.
+        </p>
 
 
-            <!-- SIGNATURE -->
-            <div class="verah-signature">
+        <!-- =================================================
+             SIGNATURE
+        ================================================== -->
 
-                <span class="signature-line"></span>
+        <div class="verah-signature">
 
-                <span>
-                    Beauty · Care · Confidence
-                </span>
+            <span class="verah-signature-line"></span>
 
-            </div>
+            <span>
+                Beauty · Care · Confidence
+            </span>
 
         </div>
 
@@ -53,103 +57,44 @@
 <style>
 
 /* =========================================================
-   VERAH HERO
+   VERAH HERO SECTION
 ========================================================= */
 
 .verah-hero {
 
     width: 100%;
 
-    min-height: calc(100vh - 120px);
+    padding: 30px 20px 40px;
 
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 30px 20px 50px;
-
-    background: #f5f1ee;
+    background: #f5f2ef;
 
 }
 
 
 /* =========================================================
    VERAH CARD
+
+   THIS IS THE ACTUAL CARD.
 ========================================================= */
 
 .verah-card {
-
-    position: relative;
 
     width: 100%;
 
     max-width: 1100px;
 
-    min-height: 500px;
+    margin: 0 auto;
 
-    display: flex;
-
-    align-items: center;
-
-    overflow: hidden;
-
-    padding: 60px 70px;
+    padding: 38px 42px;
 
     background: #ffffff;
 
-    border-radius: 20px;
+    border-radius: 16px;
 
-    border-left: 6px solid #7b3f2f;
+    border-left: 5px solid #70412f;
 
     box-shadow:
-        0 5px 18px rgba(70, 42, 32, 0.10);
-
-}
-
-
-/* =========================================================
-   SUBTLE BROWN EDGE
-========================================================= */
-
-.verah-card::after {
-
-    content: "";
-
-    position: absolute;
-
-    top: 0;
-
-    right: 0;
-
-    width: 42%;
-
-    height: 100%;
-
-    pointer-events: none;
-
-    background:
-        linear-gradient(
-            90deg,
-            rgba(123, 63, 47, 0),
-            rgba(123, 63, 47, 0.035)
-        );
-
-}
-
-
-/* =========================================================
-   CONTENT
-========================================================= */
-
-.verah-content {
-
-    position: relative;
-
-    z-index: 2;
-
-    width: 100%;
+        0 4px 12px rgba(74, 45, 34, 0.10);
 
 }
 
@@ -160,39 +105,17 @@
 
 .verah-brand {
 
-    display: flex;
+    margin-bottom: 12px;
 
-    align-items: center;
+    color: #70412f;
 
-    gap: 12px;
-
-    margin-bottom: 22px;
-
-    color: #7b3f2f;
-
-    font-size: 11px;
+    font-size: 12px;
 
     font-weight: 700;
 
     letter-spacing: 3px;
 
     text-transform: uppercase;
-
-}
-
-
-/* Small line before brand */
-
-.verah-brand::before {
-
-    content: "";
-
-    width: 32px;
-
-    height: 1px;
-
-    background: #9a6757;
-
 }
 
 
@@ -204,7 +127,7 @@
 
     margin: 0;
 
-    color: #342722;
+    color: #29211e;
 
     font-family:
         Georgia,
@@ -212,34 +135,28 @@
         serif;
 
     font-size: clamp(
-        48px,
+        42px,
         6vw,
-        76px
+        68px
     );
 
     font-weight: 400;
 
-    line-height: 1;
+    line-height: 1.05;
 
-    letter-spacing: -3px;
-
+    letter-spacing: -2px;
 }
 
 
 /* =========================================================
-   TITLE ACCENT
+   TITLE — VERAH
 ========================================================= */
 
 .verah-title span {
 
-    display: block;
-
-    margin-top: 6px;
-
-    color: #7b3f2f;
+    color: #70412f;
 
     font-style: italic;
-
 }
 
 
@@ -249,19 +166,18 @@
 
 .verah-description {
 
-    max-width: 600px;
+    max-width: 650px;
 
     margin:
-        28px
+        22px
         0
         0;
 
-    color: #665953;
+    color: #625650;
 
     font-size: 16px;
 
-    line-height: 1.75;
-
+    line-height: 1.65;
 }
 
 
@@ -275,11 +191,11 @@
 
     align-items: center;
 
-    gap: 13px;
+    gap: 12px;
 
-    margin-top: 32px;
+    margin-top: 25px;
 
-    color: #8b7167;
+    color: #866b60;
 
     font-size: 10px;
 
@@ -288,7 +204,6 @@
     letter-spacing: 2px;
 
     text-transform: uppercase;
-
 }
 
 
@@ -296,14 +211,13 @@
    SIGNATURE LINE
 ========================================================= */
 
-.signature-line {
+.verah-signature-line {
 
-    width: 45px;
+    width: 42px;
 
     height: 1px;
 
-    background: #986050;
-
+    background: #8b5542;
 }
 
 
@@ -311,39 +225,43 @@
    TABLET
 ========================================================= */
 
-@media (max-width: 800px) {
+@media (max-width: 700px) {
 
     .verah-hero {
 
-        min-height: auto;
-
         padding:
             25px
-            18px
-            40px;
+            15px
+            35px;
 
     }
 
 
     .verah-card {
 
-        min-height: 460px;
-
         padding:
-            55px
-            50px;
+            30px
+            30px;
+
+        border-radius: 15px;
 
     }
 
 
     .verah-title {
 
-        font-size:
-            clamp(
-                45px,
-                8vw,
-                65px
-            );
+        font-size: 48px;
+
+        letter-spacing: -1.5px;
+
+    }
+
+
+    .verah-description {
+
+        font-size: 15px;
+
+        line-height: 1.65;
 
     }
 
@@ -359,7 +277,7 @@
     .verah-hero {
 
         padding:
-            20px
+            22px
             12px
             30px;
 
@@ -368,65 +286,47 @@
 
     .verah-card {
 
-        min-height: 430px;
-
         padding:
-            45px
-            25px
-            45px
-            32px;
+            27px
+            22px
+            30px
+            25px;
 
-        border-radius: 16px;
+        border-radius: 14px;
 
         border-left-width: 5px;
 
-    }
-
-
-    .verah-card::after {
-
-        width: 55%;
+        box-shadow:
+            0 4px 12px rgba(74, 45, 34, 0.10);
 
     }
 
 
     .verah-brand {
 
-        margin-bottom: 20px;
+        margin-bottom: 10px;
 
-        font-size: 9px;
+        font-size: 10px;
 
         letter-spacing: 2.5px;
 
     }
 
 
-    .verah-brand::before {
-
-        width: 23px;
-
-    }
-
-
     .verah-title {
 
-        font-size: 50px;
+        font-size: 43px;
 
-        letter-spacing: -2px;
+        line-height: 1.05;
 
-    }
-
-
-    .verah-title span {
-
-        margin-top: 5px;
+        letter-spacing: -1.5px;
 
     }
 
 
     .verah-description {
 
-        margin-top: 24px;
+        margin-top: 20px;
 
         font-size: 14px;
 
@@ -437,7 +337,9 @@
 
     .verah-signature {
 
-        margin-top: 28px;
+        margin-top: 23px;
+
+        gap: 9px;
 
         font-size: 8px;
 
@@ -446,9 +348,9 @@
     }
 
 
-    .signature-line {
+    .verah-signature-line {
 
-        width: 35px;
+        width: 32px;
 
     }
 
