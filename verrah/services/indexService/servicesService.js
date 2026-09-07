@@ -1,4 +1,4 @@
-const Services = require("../models/services");
+const Services = require("../../models/services");
 
 /* =========================================================
    GET ACTIVE SERVICES
