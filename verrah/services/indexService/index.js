@@ -1,5 +1,5 @@
 module.exports = {
 
     ...require("./projectService"),
-    ...require("./services")
+    ...require("./servicesService")
 };
