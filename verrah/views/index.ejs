@@ -1,5 +1,5 @@
 <!-- =========================================================
-     VERAH COSMETICS — HOMEPAGE HERO
+     VERAH COSMETICS — HERO
 ========================================================= -->
 
 <section class="hero-section">
@@ -13,50 +13,35 @@
 
         <div class="hero-content">
 
-            <div class="hero-eyebrow">
-
-                <span class="hero-eyebrow-line"></span>
-
+            <div class="hero-brand">
                 VERAH COSMETICS
-
             </div>
 
 
             <h1 class="hero-title">
 
-                Beauty
-
-                <span>begins</span>
-
-                with you.
+                Welcome to
+                <span>Verah.</span>
 
             </h1>
 
 
             <p class="hero-description">
 
-                Welcome to VERAH COSMETICS — a beauty space
-                created for self-care, confidence, and the
-                little moments that make you feel beautifully
-                yourself.
+                Discover a beauty space where
+                self-care meets confidence,
+                elegance, and everyday beauty.
 
             </p>
 
 
-            <div class="hero-divider"></div>
+            <div class="hero-signature">
 
+                <span class="signature-line"></span>
 
-            <div class="hero-values">
-
-                <span>Beauty</span>
-
-                <span class="hero-dot"></span>
-
-                <span>Care</span>
-
-                <span class="hero-dot"></span>
-
-                <span>Confidence</span>
+                <span>
+                    Beauty · Care · Confidence
+                </span>
 
             </div>
 
@@ -73,12 +58,6 @@
                 src="/images/cosmetics-hero.jpg"
                 alt="VERAH COSMETICS"
             >
-
-            <div class="hero-image-label">
-
-                VERAH COSMETICS
-
-            </div>
 
         </div>
 
@@ -106,14 +85,9 @@
 
     justify-content: center;
 
-    padding: 40px 25px;
+    padding: 35px 25px;
 
-    background:
-        linear-gradient(
-            135deg,
-            #f8f3ef,
-            #f2e9e2
-        );
+    background: #f7f1ec;
 }
 
 
@@ -123,26 +97,62 @@
 
 .hero-card {
 
+    position: relative;
+
     width: 100%;
 
-    max-width: 1200px;
+    max-width: 1180px;
 
-    min-height: 600px;
+    min-height: 590px;
 
     display: grid;
 
-    grid-template-columns: 46% 54%;
+    grid-template-columns: 48% 52%;
 
     overflow: hidden;
 
-    border-radius: 30px;
+    border-radius: 32px;
 
-    background: #ffffff;
+    background: #fffaf6;
 
-    border: 1px solid #e2d7cf;
+    border: 1px solid #d8c5b8;
 
     box-shadow:
-        0 25px 70px rgba(78, 52, 36, 0.14);
+        0 22px 55px rgba(73, 43, 31, 0.13);
+
+}
+
+
+/* =========================================================
+   BROWN-RED ACCENT BORDER
+========================================================= */
+
+.hero-card::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: 25px;
+
+    bottom: 25px;
+
+    left: 0;
+
+    width: 7px;
+
+    z-index: 5;
+
+    border-radius:
+        0 8px 8px 0;
+
+    background:
+        linear-gradient(
+            180deg,
+            #7b3028,
+            #9a4938,
+            #6b2924
+        );
 }
 
 
@@ -152,56 +162,51 @@
 
 .hero-content {
 
+    position: relative;
+
+    z-index: 2;
+
     display: flex;
 
     flex-direction: column;
 
     justify-content: center;
 
-    padding: 70px 60px;
+    padding: 70px 65px 70px 75px;
 
     background:
+        radial-gradient(
+            circle at 15% 15%,
+            rgba(143, 75, 58, 0.08),
+            transparent 30%
+        ),
         linear-gradient(
             145deg,
-            #ffffff,
-            #faf6f2
+            #fffaf7,
+            #f5ebe4
         );
 }
 
 
 /* =========================================================
-   EYEBROW
+   BRAND
 ========================================================= */
 
-.hero-eyebrow {
+.hero-brand {
 
-    display: flex;
+    width: fit-content;
 
-    align-items: center;
+    margin-bottom: 25px;
 
-    gap: 12px;
-
-    margin-bottom: 28px;
-
-    color: #6f4e37;
+    color: #81352b;
 
     font-size: 11px;
 
-    font-weight: 700;
+    font-weight: 800;
 
-    letter-spacing: 3px;
+    letter-spacing: 4px;
 
     text-transform: uppercase;
-}
-
-
-.hero-eyebrow-line {
-
-    width: 35px;
-
-    height: 1px;
-
-    background: #a98265;
 }
 
 
@@ -215,26 +220,28 @@
 
     margin: 0;
 
-    color: #332823;
+    color: #34231e;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size: clamp(48px, 5vw, 76px);
+    font-size: clamp(50px, 5.5vw, 78px);
 
     font-weight: 400;
 
     line-height: 0.98;
 
-    letter-spacing: -2px;
+    letter-spacing: -3px;
 }
 
 
 .hero-title span {
 
-    color: #8b6348;
+    display: block;
+
+    color: #84362c;
 
     font-style: italic;
 }
@@ -246,11 +253,11 @@
 
 .hero-description {
 
-    max-width: 440px;
+    max-width: 420px;
 
     margin-top: 30px;
 
-    color: #756963;
+    color: #75635c;
 
     font-size: 16px;
 
@@ -259,26 +266,10 @@
 
 
 /* =========================================================
-   DIVIDER
+   SIGNATURE
 ========================================================= */
 
-.hero-divider {
-
-    width: 75px;
-
-    height: 1px;
-
-    margin-top: 38px;
-
-    background: #c7a88f;
-}
-
-
-/* =========================================================
-   VALUES
-========================================================= */
-
-.hero-values {
+.hero-signature {
 
     display: flex;
 
@@ -286,9 +277,9 @@
 
     gap: 15px;
 
-    margin-top: 28px;
+    margin-top: 38px;
 
-    color: #897970;
+    color: #8a7168;
 
     font-size: 10px;
 
@@ -300,15 +291,13 @@
 }
 
 
-.hero-dot {
+.signature-line {
 
-    width: 4px;
+    width: 48px;
 
-    height: 4px;
+    height: 1px;
 
-    border-radius: 50%;
-
-    background: #a77d5c;
+    background: #9b5a4a;
 }
 
 
@@ -318,13 +307,13 @@
 
 .hero-image {
 
-    min-height: 600px;
-
     position: relative;
+
+    min-height: 590px;
 
     overflow: hidden;
 
-    background: #e7dbd2;
+    background: #dfcec4;
 }
 
 
@@ -354,53 +343,41 @@
 
     inset: 0;
 
-    pointer-events: none;
-
     background:
         linear-gradient(
             90deg,
-            rgba(50, 35, 26, 0.12),
-            transparent 40%
+            rgba(62, 32, 25, 0.12),
+            transparent 35%
         );
+
+    pointer-events: none;
 }
 
 
 /* =========================================================
-   IMAGE LABEL
+   DECORATIVE CORNER
 ========================================================= */
 
-.hero-image-label {
+.hero-image::before {
+
+    content: "";
 
     position: absolute;
 
-    right: 25px;
+    width: 110px;
 
-    bottom: 25px;
+    height: 110px;
+
+    right: -55px;
+
+    top: -55px;
 
     z-index: 2;
 
-    padding: 11px 17px;
+    border-radius: 50%;
 
-    border: 1px solid rgba(255, 255, 255, 0.5);
-
-    border-radius: 30px;
-
-    color: #59463b;
-
-    background:
-        rgba(255, 255, 255, 0.78);
-
-    backdrop-filter: blur(10px);
-
-    -webkit-backdrop-filter: blur(10px);
-
-    font-size: 9px;
-
-    font-weight: 700;
-
-    letter-spacing: 2px;
-
-    text-transform: uppercase;
+    border: 1px solid
+        rgba(255, 255, 255, 0.45);
 }
 
 
@@ -419,16 +396,16 @@
 
     .hero-content {
 
-        min-height: 500px;
+        min-height: 470px;
 
-        padding: 60px 50px;
+        padding: 60px 55px 60px 65px;
 
     }
 
 
     .hero-image {
 
-        min-height: 500px;
+        min-height: 480px;
 
     }
 
@@ -445,34 +422,47 @@
 
         min-height: auto;
 
-        padding: 20px 14px 30px;
+        padding: 18px 12px 30px;
 
     }
 
 
     .hero-card {
 
-        border-radius: 22px;
+        min-height: auto;
+
+        border-radius: 24px;
+
+    }
+
+
+    .hero-card::before {
+
+        top: 18px;
+
+        bottom: 18px;
+
+        width: 5px;
 
     }
 
 
     .hero-content {
 
-        min-height: 450px;
+        min-height: 430px;
 
-        padding: 45px 28px;
+        padding: 45px 28px 45px 38px;
 
     }
 
 
-    .hero-eyebrow {
+    .hero-brand {
 
-        margin-bottom: 22px;
+        margin-bottom: 20px;
 
         font-size: 9px;
 
-        letter-spacing: 2px;
+        letter-spacing: 3px;
 
     }
 
@@ -481,14 +471,14 @@
 
         font-size: 50px;
 
-        letter-spacing: -1.5px;
+        letter-spacing: -2px;
 
     }
 
 
     .hero-description {
 
-        margin-top: 25px;
+        margin-top: 24px;
 
         font-size: 14px;
 
@@ -497,18 +487,9 @@
     }
 
 
-    .hero-divider {
+    .hero-signature {
 
         margin-top: 30px;
-
-    }
-
-
-    .hero-values {
-
-        gap: 10px;
-
-        margin-top: 24px;
 
         font-size: 8px;
 
@@ -519,16 +500,7 @@
 
     .hero-image {
 
-        min-height: 400px;
-
-    }
-
-
-    .hero-image-label {
-
-        right: 16px;
-
-        bottom: 16px;
+        min-height: 390px;
 
     }
 
