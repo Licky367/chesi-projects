@@ -1,4 +1,5 @@
-const Services = require("../models/services");
+const Services = require("../../models/services");
+
 
 /* =========================================================
    GET ACTIVE SERVICES
@@ -7,10 +8,15 @@ const Services = require("../models/services");
 exports.getActiveServices = function () {
 
     return Services
-        .find({ active: true })
-        .sort({ createdAt: 1 });
+        .find({
+            active: true
+        })
+        .sort({
+            createdAt: 1
+        });
 
 };
+
 
 /* =========================================================
    GET SERVICE BY ID
@@ -22,6 +28,7 @@ exports.getServiceById = function (id) {
 
 };
 
+
 /* =========================================================
    CREATE SERVICE
 ========================================================= */
@@ -29,11 +36,17 @@ exports.getServiceById = function (id) {
 exports.createService = function (data) {
 
     return Services.create({
+
         name: data.name,
+
         description: data.description,
+
         price: data.price,
+
         duration: data.duration,
+
         active: data.active !== "false"
+
     });
 
 };
