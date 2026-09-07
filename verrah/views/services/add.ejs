@@ -1,7 +1,3 @@
-<!-- =========================================================
-     VERAH COSMETICS — ADD SERVICE
-========================================================= -->
-
 <section class="verah-service-page">
 
     <div class="verah-service-form-card">
@@ -20,6 +16,7 @@
 
         </div>
 
+
         <form
             action="/services/add"
             method="POST"
@@ -37,6 +34,22 @@
                     id="name"
                     name="name"
                     required
+                >
+
+            </div>
+
+
+            <div class="verah-form-group">
+
+                <label for="image">
+                    Image URL
+                </label>
+
+                <input
+                    type="url"
+                    id="image"
+                    name="image"
+                    placeholder="https://example.com/image.jpg"
                 >
 
             </div>
@@ -116,7 +129,10 @@
 
             <div class="verah-form-actions">
 
-                <a href="/" class="verah-secondary-button">
+                <a
+                    href="/"
+                    class="verah-secondary-button"
+                >
                     Cancel
                 </a>
 
