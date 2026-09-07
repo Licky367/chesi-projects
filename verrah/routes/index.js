@@ -14,10 +14,20 @@ router.get("/", indexController.getHome);
    SERVICES
 ======================================================== */
 
-router.get("/services/add", indexController.getAddService);
-router.post("/services/add", indexController.createService);
+router.get(
+    "/services/add",
+    indexController.getAddService
+);
 
-router.get("/services/:id", indexController.getService);
+router.post(
+    "/services/add",
+    indexController.createService
+);
+
+router.get(
+    "/services/:id",
+    indexController.getService
+);
 
 /* =========================================================
    EXPORT
