@@ -2,22 +2,16 @@ const express = require("express");
 
 const router = express.Router();
 
+const indexController = require("../controllers/indexController");
+
 /* =========================================================
-HOME PAGE
+   HOME PAGE
 ========================================================= */
 
-router.get("/", (req, res) => {
-
-res.render("index", {
-
-    title: "VERAH COSMETICS"
-
-});
-
-});
+router.get("/", indexController.getHome);
 
 /* =========================================================
-EXPORT
+   EXPORT
 ========================================================= */
 
 module.exports = router;
