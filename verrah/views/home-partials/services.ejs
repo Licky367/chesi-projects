@@ -1,0 +1,88 @@
+<!-- =========================================================
+     VERAH COSMETICS — SERVICES
+========================================================= -->
+
+<section class="verah-services">
+
+    <div class="verah-services-header">
+        <h2>Our Services</h2>
+    </div>
+
+    <div class="verah-services-scroll">
+
+        <% if (user && user.role === "admin") { %>
+
+            <a
+                href="/services/add"
+                class="verah-service-card verah-add-service-card"
+            >
+                <div class="verah-service-card-content">
+
+                    <span class="verah-service-add-icon">
+                        +
+                    </span>
+
+                    <h3>Add Service</h3>
+
+                    <p>
+                        Create a new service for Verah Cosmetics.
+                    </p>
+
+                </div>
+            </a>
+
+        <% } %>
+
+
+        <% if (services && services.length > 0) { %>
+
+            <% services.forEach(function(service) { %>
+
+                <a
+                    href="/services/<%= service._id %>"
+                    class="verah-service-card"
+                >
+
+                    <div class="verah-service-card-content">
+
+                        <h3>
+                            <%= service.name %>
+                        </h3>
+
+                        <p>
+                            <%= service.description %>
+                        </p>
+
+                        <% if (service.price !== undefined && service.price !== null) { %>
+
+                            <div class="verah-service-price">
+                                KSh <%= Number(service.price).toLocaleString() %>
+                            </div>
+
+                        <% } %>
+
+                        <% if (service.duration) { %>
+
+                            <div class="verah-service-duration">
+                                <%= service.duration %>
+                            </div>
+
+                        <% } %>
+
+                    </div>
+
+                </a>
+
+            <% }); %>
+
+        <% } else { %>
+
+            <div class="verah-services-empty">
+                No services available yet.
+            </div>
+
+        <% } %>
+
+    </div>
+
+</section>
