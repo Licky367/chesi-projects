@@ -1,6 +1,7 @@
 module.exports = {
 
-    ...require("./services"),
+    ...require("./hero"),
 
-    ...require("./hero")
+    ...require("./services")
+
 };

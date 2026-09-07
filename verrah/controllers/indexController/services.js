@@ -1,4 +1,4 @@
-const servicesService = require("../services/indexService");
+const indexService = require("../../services/indexService");
 
 /* =========================================================
    ADMIN CHECK
@@ -18,6 +18,7 @@ function requireAdmin(req, res) {
 
 }
 
+
 /* =========================================================
    GET /services/add
 ========================================================= */
@@ -29,10 +30,13 @@ exports.getAddService = function (req, res) {
     }
 
     res.render("services/add", {
+
         title: "Add Service"
+
     });
 
 };
+
 
 /* =========================================================
    POST /services/add
@@ -46,7 +50,7 @@ exports.createService = async function (req, res) {
 
     try {
 
-        await servicesService.createService(req.body);
+        await indexService.createService(req.body);
 
         res.redirect("/");
 
@@ -54,11 +58,14 @@ exports.createService = async function (req, res) {
 
         console.error("CREATE SERVICE ERROR:", error);
 
-        res.status(500).send("Unable to create service");
+        res.status(500).send(
+            "Unable to create service"
+        );
 
     }
 
 };
+
 
 /* =========================================================
    GET /services/:id
@@ -69,26 +76,33 @@ exports.getService = async function (req, res) {
     try {
 
         const service =
-            await servicesService.getServiceById(
+            await indexService.getServiceById(
                 req.params.id
             );
 
         if (!service) {
 
-            return res.status(404).send("Service not found");
+            return res.status(404).send(
+                "Service not found"
+            );
 
         }
 
         res.render("services/details", {
+
             title: service.name,
+
             service: service
+
         });
 
     } catch (error) {
 
         console.error("GET SERVICE ERROR:", error);
 
-        res.status(500).send("Internal Server Error");
+        res.status(500).send(
+            "Internal Server Error"
+        );
 
     }
 
