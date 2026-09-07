@@ -6,9 +6,18 @@ const indexController = require("../controllers/indexController");
 
 /* ========================================================
    HOME PAGE
-========================================================= */
+======================================================== */
 
 router.get("/", indexController.getHome);
+
+/* ========================================================
+   SERVICES
+======================================================== */
+
+router.get("/services/add", indexController.getAddService);
+router.post("/services/add", indexController.createService);
+
+router.get("/services/:id", indexController.getService);
 
 /* =========================================================
    EXPORT
