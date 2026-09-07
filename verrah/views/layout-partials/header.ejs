@@ -1,44 +1,38 @@
 <!-- =========================================================
-   HEADER
-========================================================= -->
+     HEADER
+========================================================= --><header class="header"><!-- =====================================================
+     MENU BUTTON — LEFT
+====================================================== -->
 
-<div class="header">
-
-
-    <!-- =====================================================
-       LOGO
-    ====================================================== -->
-
-    <a
-        href="<%= homeLink %>"
-
-        class="header-logo-link"
-
-        aria-label="Home"
-    >
-
-        <img
-            src="/images/cfp-logo.png"
-
-            alt="CFP Logo"
-
-            class="header-logo"
-        >
-
-    </a>
+<button
+    type="button"
+    id="menuButton"
+    class="menu-btn"
+    aria-label="Open navigation menu"
+    aria-expanded="false"
+>
+    ☰
+</button>
 
 
-    <!-- =====================================================
-       HEADER TITLE
-    ====================================================== -->
+<!-- =====================================================
+     HEADER TITLE — CENTER
+====================================================== -->
 
-    <div class="header-title">
+<div class="header-title">
 
-        <span class="header-title-text">
-            <%= headerTitle %>
-        </span>
-
-    </div>
-
+    <span class="header-title-text">
+        <%= headerTitle %>
+    </span>
 
 </div>
+
+
+<!-- =====================================================
+     PROFILE — RIGHT
+     Profile UI is handled by profile.ejs
+====================================================== -->
+
+<%- include("profile") %>
+
+</header>
