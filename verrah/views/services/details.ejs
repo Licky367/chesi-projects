@@ -1,86 +1,29 @@
+<!-- =========================================================
+     VERAH COSMETICS — SERVICE DETAILS
+========================================================= -->
+
 <section class="verah-service-page">
 
     <div class="verah-service-detail-card">
 
-        <span class="verah-service-page-label">
-            VERAH COSMETICS
-        </span>
+        <!-- =================================================
+             SERVICE IMAGE
+        ================================================== -->
 
+        <div class="verah-detail-image-box">
 
-        <% if (service.image) { %>
-
-            <div class="verah-service-detail-image">
+            <% if (service.image) { %>
 
                 <img
                     src="<%= service.image %>"
                     alt="<%= service.name %>"
+                    class="verah-detail-image"
                 >
 
-            </div>
+            <% } else { %>
 
-        <% } %>
-
-
-        <h1>
-            <%= service.name %>
-        </h1>
-
-
-        <p class="verah-service-detail-description">
-            <%= service.description %>
-        </p>
-
-
-        <div class="verah-service-detail-meta">
-
-            <div>
-                <span>Price</span>
-
-                <strong>
-                    KSh <%= Number(service.price).toLocaleString() %>
-                </strong>
-            </div>
-
-
-            <div>
-                <span>Duration</span>
-
-                <strong>
-                    <%= service.duration || "Not specified" %>
-                </strong>
-            </div>
-
-
-            <div>
-                <span>Status</span>
-
-                <strong>
-                    <%= service.active ? "Active" : "Inactive" %>
-                </strong>
-            </div>
-
-
-            <% if (service.createdAt) { %>
-
-                <div>
-                    <span>Created</span>
-
-                    <strong>
-                        <%= new Date(service.createdAt).toLocaleString() %>
-                    </strong>
-                </div>
-
-            <% } %>
-
-
-            <% if (service.updatedAt) { %>
-
-                <div>
-                    <span>Updated</span>
-
-                    <strong>
-                        <%= new Date(service.updatedAt).toLocaleString() %>
-                    </strong>
+                <div class="verah-detail-image-placeholder">
+                    <span>VERAH COSMETICS</span>
                 </div>
 
             <% } %>
@@ -88,19 +31,217 @@
         </div>
 
 
+        <!-- =================================================
+             SERVICE HEADER
+        ================================================== -->
+
+        <div class="verah-detail-header">
+
+            <div>
+
+                <span class="verah-service-page-label">
+                    VERAH COSMETICS
+                </span>
+
+                <h1>
+                    <%= service.name %>
+                </h1>
+
+            </div>
+
+
+            <span
+                class="verah-service-status
+                <%= service.active
+                    ? 'verah-status-active'
+                    : 'verah-status-inactive'
+                %>"
+            >
+                <%= service.active ? "Active" : "Inactive" %>
+            </span>
+
+        </div>
+
+
+        <!-- =================================================
+             DESCRIPTION
+        ================================================== -->
+
+        <div class="verah-detail-description-section">
+
+            <h2>
+                About this service
+            </h2>
+
+            <p class="verah-service-detail-description">
+                <%= service.description %>
+            </p>
+
+        </div>
+
+
+        <!-- =================================================
+             QUICK INFORMATION
+        ================================================== -->
+
+        <div class="verah-detail-info-grid">
+
+            <div class="verah-detail-info-card">
+
+                <span class="verah-detail-info-label">
+                    PRICE
+                </span>
+
+                <strong class="verah-detail-price">
+                    KSh <%= Number(service.price).toLocaleString() %>
+                </strong>
+
+            </div>
+
+
+            <div class="verah-detail-info-card">
+
+                <span class="verah-detail-info-label">
+                    DURATION
+                </span>
+
+                <strong>
+                    <%= service.duration || "Not specified" %>
+                </strong>
+
+            </div>
+
+
+            <div class="verah-detail-info-card">
+
+                <span class="verah-detail-info-label">
+                    STATUS
+                </span>
+
+                <strong
+                    class="<%= service.active
+                        ? 'verah-status-active'
+                        : 'verah-status-inactive'
+                    %>"
+                >
+                    <%= service.active ? "Available" : "Unavailable" %>
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             SERVICE RECORD INFORMATION
+        ================================================== -->
+
+        <div class="verah-service-record">
+
+            <h2>
+                Service Information
+            </h2>
+
+
+            <div class="verah-service-record-grid">
+
+                <div>
+
+                    <span>
+                        Service ID
+                    </span>
+
+                    <strong class="verah-service-id">
+                        <%= service._id %>
+                    </strong>
+
+                </div>
+
+
+                <% if (service.createdAt) { %>
+
+                    <div>
+
+                        <span>
+                            Created
+                        </span>
+
+                        <strong>
+                            <%= new Date(
+                                service.createdAt
+                            ).toLocaleString() %>
+                        </strong>
+
+                    </div>
+
+                <% } %>
+
+
+                <% if (service.updatedAt) { %>
+
+                    <div>
+
+                        <span>
+                            Last Updated
+                        </span>
+
+                        <strong>
+                            <%= new Date(
+                                service.updatedAt
+                            ).toLocaleString() %>
+                        </strong>
+
+                    </div>
+
+                <% } %>
+
+            </div>
+
+
+            <% if (service.image) { %>
+
+                <div class="verah-service-url-row">
+
+                    <span>
+                        Image URL
+                    </span>
+
+                    <a
+                        href="<%= service.image %>"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <%= service.image %>
+                    </a>
+
+                </div>
+
+            <% } %>
+
+        </div>
+
+
+        <!-- =================================================
+             ADMIN EDIT
+        ================================================== -->
+
         <% if (user && user.role === "admin") { %>
 
-            <div class="verah-service-edit-section">
+            <div class="verah-admin-edit-section">
 
-                <div class="verah-service-page-header">
+                <div class="verah-admin-edit-header">
 
                     <span class="verah-service-page-label">
-                        ADMIN
+                        ADMINISTRATION
                     </span>
 
                     <h2>
                         Edit Service
                     </h2>
+
+                    <p>
+                        Update the information displayed to customers.
+                    </p>
 
                 </div>
 
@@ -138,8 +279,13 @@
                             type="url"
                             id="edit-image"
                             name="image"
-                            value="<%= service.image || "" %>"
+                            value="<%= service.image || '' %>"
+                            placeholder="https://example.com/image.jpg"
                         >
+
+                        <small class="verah-form-help">
+                            Use a publicly accessible image URL.
+                        </small>
 
                     </div>
 
@@ -191,7 +337,8 @@
                                 type="text"
                                 id="edit-duration"
                                 name="duration"
-                                value="<%= service.duration || "" %>"
+                                value="<%= service.duration || '' %>"
+                                placeholder="e.g. 45 minutes"
                             >
 
                         </div>
@@ -210,7 +357,7 @@
                                 <%= service.active ? "checked" : "" %>
                             >
 
-                            Active service
+                            Service is active and available
 
                         </label>
 
@@ -235,13 +382,17 @@
         <% } %>
 
 
-        <div class="verah-service-form-actions-bottom">
+        <!-- =================================================
+             BACK
+        ================================================== -->
+
+        <div class="verah-detail-actions">
 
             <a
                 href="/"
                 class="verah-secondary-button"
             >
-                Back to Home
+                ← Back to Services
             </a>
 
         </div>
