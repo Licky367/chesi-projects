@@ -1,0 +1,53 @@
+<link rel="stylesheet" href="/css/error.css">
+
+<div class="page-error">
+
+  <div class="error-card">
+
+    <div class="error-icon">
+      ⚠️
+    </div>
+
+    <div
+      class="error-code"
+      style="color:#f39c12;"
+    >
+      400
+    </div>
+
+    <h1 class="error-title">
+      Bad Request
+    </h1>
+
+    <p class="error-text">
+      <%= typeof error !== "undefined" && error
+        ? error
+        : "The request could not be processed because it contains invalid or incomplete information. Please review your input and try again." %>
+    </p>
+
+    <div class="button-group">
+
+      <button
+        type="button"
+        class="btn-action btn-back"
+        onclick="history.back()"
+      >
+        ← Go Back
+      </button>
+
+      <a
+        href="/"
+        class="btn-action btn-home"
+      >
+        🏠 Home
+      </a>
+
+    </div>
+
+    <div class="help-box">
+      Please verify the information you entered and try again. If the problem continues, contact your system administrator.
+    </div>
+
+  </div>
+
+</div>

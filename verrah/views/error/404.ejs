@@ -1,0 +1,53 @@
+<link rel="stylesheet" href="/css/error.css">
+
+<div class="page-error">
+
+  <div class="error-card">
+
+    <div class="error-icon">
+      🚫
+    </div>
+
+    <div
+      class="error-code"
+      style="color:#dc3545;"
+    >
+      404
+    </div>
+
+    <h1 class="error-title">
+      Page Not Found
+    </h1>
+
+    <p class="error-text">
+      <%= typeof error !== "undefined" && error
+        ? error
+        : "The page you are looking for may have been removed, renamed, or the address may be incorrect. Please check the URL and try again." %>
+    </p>
+
+    <div class="button-group">
+
+      <a
+        href="/"
+        class="btn-action btn-home"
+      >
+        🏠 Home
+      </a>
+
+      <button
+        type="button"
+        class="btn-action btn-back"
+        onclick="history.back()"
+      >
+        ← Go Back
+      </button>
+
+    </div>
+
+    <div class="help-box">
+      We couldn't find the page you requested. It may have been moved or deleted. If you typed the address manually, please check it for spelling mistakes. If the problem continues, contact your system administrator.
+    </div>
+
+  </div>
+
+</div>

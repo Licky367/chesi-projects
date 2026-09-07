@@ -1,0 +1,53 @@
+<link rel="stylesheet" href="/css/error.css">
+
+<div class="page-error">
+
+  <div class="error-card">
+
+    <div class="error-icon">
+      ⛔
+    </div>
+
+    <div
+      class="error-code"
+      style="color:#dc3545;"
+    >
+      403
+    </div>
+
+    <h1 class="error-title">
+      Access Forbidden
+    </h1>
+
+    <p class="error-text">
+      <%= typeof error !== "undefined" && error
+        ? error
+        : "You do not have permission to access this page or perform the requested action." %>
+    </p>
+
+    <div class="button-group">
+
+      <a
+        href="/"
+        class="btn-action btn-home"
+      >
+        🏠 Home
+      </a>
+
+      <button
+        type="button"
+        class="btn-action btn-back"
+        onclick="history.back()"
+      >
+        ← Go Back
+      </button>
+
+    </div>
+
+    <div class="help-box">
+      Your account does not have the required permissions to view this resource. If you believe you should have access, please contact your system administrator.
+    </div>
+
+  </div>
+
+</div>
