@@ -1,57 +1,46 @@
 <!-- =========================================================
-     VERAH COSMETICS — HERO CARD
+     VERAH COSMETICS — HERO
 ========================================================= -->
 
 <section class="verah-hero">
 
     <div class="verah-card">
 
-        <!-- Decorative detail -->
-        <div class="verah-card-glow"></div>
+        <!-- =================================================
+             HERO CONTENT
+        ================================================== -->
 
         <div class="verah-content">
 
-            <div class="verah-eyebrow">
-                <span></span>
+            <!-- BRAND -->
+            <div class="verah-brand">
                 VERAH COSMETICS
             </div>
 
+
+            <!-- TITLE -->
             <h1 class="verah-title">
                 Welcome to
-                <em>Verah.</em>
+                <span>Verah.</span>
             </h1>
 
+
+            <!-- DESCRIPTION -->
             <p class="verah-description">
-                A beauty space created around self-care,
-                confidence, elegance, and the little things
-                that make you feel beautifully yourself.
+                Discover a beauty space where self-care meets
+                confidence, elegance, and everyday beauty.
             </p>
 
-            <div class="verah-divider">
-                <span></span>
-                <i>V</i>
-                <span></span>
-            </div>
 
-            <p class="verah-tagline">
-                Beauty <b>·</b> Care <b>·</b> Confidence
-            </p>
+            <!-- SIGNATURE -->
+            <div class="verah-signature">
 
-        </div>
+                <span class="signature-line"></span>
 
-        <!-- Decorative right-side composition -->
-        <div class="verah-art">
+                <span>
+                    Beauty · Care · Confidence
+                </span>
 
-            <div class="verah-circle verah-circle-large"></div>
-            <div class="verah-circle verah-circle-small"></div>
-
-            <div class="verah-monogram">
-                V
-            </div>
-
-            <div class="verah-art-text">
-                <span>VERAH</span>
-                <small>COSMETICS</small>
             </div>
 
         </div>
@@ -64,100 +53,89 @@
 <style>
 
 /* =========================================================
-   SECTION
+   VERAH HERO
 ========================================================= */
 
 .verah-hero {
+
     width: 100%;
+
     min-height: calc(100vh - 120px);
 
     display: flex;
+
     align-items: center;
+
     justify-content: center;
 
-    padding: 40px 24px;
+    padding: 30px 20px 50px;
 
-    background:
-        radial-gradient(
-            circle at 15% 50%,
-            rgba(126, 48, 38, 0.07),
-            transparent 35%
-        ),
-        #f6f0eb;
+    background: #f5f1ee;
 
-    box-sizing: border-box;
 }
 
 
 /* =========================================================
-   MAIN CARD
+   VERAH CARD
 ========================================================= */
 
 .verah-card {
+
     position: relative;
 
     width: 100%;
-    max-width: 1150px;
-    min-height: 570px;
 
-    display: grid;
-    grid-template-columns: 55% 45%;
+    max-width: 1100px;
+
+    min-height: 500px;
+
+    display: flex;
+
+    align-items: center;
 
     overflow: hidden;
 
-    border-radius: 30px;
+    padding: 60px 70px;
 
-    background:
-        linear-gradient(
-            135deg,
-            #fffdfb 0%,
-            #fbf4ef 55%,
-            #f4e8e1 100%
-        );
+    background: #ffffff;
 
-    border: 1px solid rgba(118, 70, 56, 0.16);
+    border-radius: 20px;
+
+    border-left: 6px solid #7b3f2f;
 
     box-shadow:
-        0 25px 65px rgba(69, 40, 30, 0.14),
-        0 4px 12px rgba(69, 40, 30, 0.05);
+        0 5px 18px rgba(70, 42, 32, 0.10);
 
-    box-sizing: border-box;
 }
 
 
 /* =========================================================
-   REDDISH-BROWN LEFT BORDER
+   SUBTLE BROWN EDGE
 ========================================================= */
 
-.verah-card::before {
+.verah-card::after {
+
     content: "";
 
     position: absolute;
 
-    left: 0;
-    top: 28px;
-    bottom: 28px;
+    top: 0;
 
-    width: 7px;
+    right: 0;
 
-    z-index: 10;
+    width: 42%;
 
-    border-radius:
-        0
-        6px
-        6px
-        0;
+    height: 100%;
+
+    pointer-events: none;
 
     background:
         linear-gradient(
-            180deg,
-            #682820 0%,
-            #914334 45%,
-            #783027 100%
+            90deg,
+            rgba(123, 63, 47, 0),
+            rgba(123, 63, 47, 0.035)
         );
 
-    box-shadow:
-        2px 0 8px rgba(104, 40, 32, 0.16);
 }
 
 
@@ -166,44 +144,55 @@
 ========================================================= */
 
 .verah-content {
+
     position: relative;
-    z-index: 3;
 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    z-index: 2;
 
-    padding: 75px 70px 75px 85px;
+    width: 100%;
+
 }
 
 
 /* =========================================================
-   EYEBROW
+   BRAND
 ========================================================= */
 
-.verah-eyebrow {
+.verah-brand {
+
     display: flex;
+
     align-items: center;
+
     gap: 12px;
 
-    margin-bottom: 27px;
+    margin-bottom: 22px;
 
-    color: #7d352b;
+    color: #7b3f2f;
 
-    font-size: 10px;
-    font-weight: 800;
+    font-size: 11px;
 
-    letter-spacing: 4px;
+    font-weight: 700;
+
+    letter-spacing: 3px;
+
     text-transform: uppercase;
+
 }
 
-.verah-eyebrow span {
-    display: block;
 
-    width: 34px;
+/* Small line before brand */
+
+.verah-brand::before {
+
+    content: "";
+
+    width: 32px;
+
     height: 1px;
 
-    background: #9a5547;
+    background: #9a6757;
+
 }
 
 
@@ -212,36 +201,45 @@
 ========================================================= */
 
 .verah-title {
+
     margin: 0;
 
-    max-width: 580px;
-
-    color: #30221e;
+    color: #342722;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size: clamp(55px, 6.2vw, 82px);
+    font-size: clamp(
+        48px,
+        6vw,
+        76px
+    );
 
     font-weight: 400;
 
-    line-height: 0.96;
+    line-height: 1;
 
-    letter-spacing: -4px;
+    letter-spacing: -3px;
+
 }
 
-.verah-title em {
+
+/* =========================================================
+   TITLE ACCENT
+========================================================= */
+
+.verah-title span {
+
     display: block;
 
-    margin-top: 5px;
-    margin-left: 48px;
+    margin-top: 6px;
 
-    color: #81372d;
+    color: #7b3f2f;
 
-    font-weight: 400;
     font-style: italic;
+
 }
 
 
@@ -250,236 +248,62 @@
 ========================================================= */
 
 .verah-description {
-    max-width: 465px;
+
+    max-width: 600px;
 
     margin:
-        30px
+        28px
         0
         0;
 
-    color: #725f58;
+    color: #665953;
 
-    font-size: 15px;
+    font-size: 16px;
 
-    line-height: 1.85;
+    line-height: 1.75;
+
 }
 
 
 /* =========================================================
-   DIVIDER
+   SIGNATURE
 ========================================================= */
 
-.verah-divider {
-    width: 180px;
+.verah-signature {
 
     display: flex;
-    align-items: center;
-    gap: 12px;
 
-    margin-top: 35px;
+    align-items: center;
+
+    gap: 13px;
+
+    margin-top: 32px;
+
+    color: #8b7167;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    letter-spacing: 2px;
+
+    text-transform: uppercase;
+
 }
 
-.verah-divider span {
-    flex: 1;
+
+/* =========================================================
+   SIGNATURE LINE
+========================================================= */
+
+.signature-line {
+
+    width: 45px;
 
     height: 1px;
 
-    background: #c7aaa0;
-}
+    background: #986050;
 
-.verah-divider i {
-    color: #8b3d31;
-
-    font-family: Georgia, serif;
-
-    font-size: 18px;
-
-    font-style: italic;
-}
-
-
-/* =========================================================
-   TAGLINE
-========================================================= */
-
-.verah-tagline {
-    margin: 17px 0 0;
-
-    color: #92776e;
-
-    font-size: 9px;
-    font-weight: 700;
-
-    letter-spacing: 3px;
-
-    text-transform: uppercase;
-}
-
-.verah-tagline b {
-    margin: 0 5px;
-
-    color: #a55a4b;
-
-    font-weight: 400;
-}
-
-
-/* =========================================================
-   RIGHT DECORATIVE AREA
-========================================================= */
-
-.verah-art {
-    position: relative;
-
-    min-height: 570px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    overflow: hidden;
-
-    background:
-        radial-gradient(
-            circle at center,
-            rgba(153, 79, 63, 0.10),
-            transparent 55%
-        );
-}
-
-
-/* =========================================================
-   LARGE CIRCLE
-========================================================= */
-
-.verah-circle-large {
-    position: absolute;
-
-    width: 390px;
-    height: 390px;
-
-    border-radius: 50%;
-
-    border: 1px solid rgba(126, 53, 43, 0.16);
-}
-
-
-/* =========================================================
-   SECOND CIRCLE
-========================================================= */
-
-.verah-circle-small {
-    position: absolute;
-
-    width: 290px;
-    height: 290px;
-
-    border-radius: 50%;
-
-    border: 1px solid rgba(126, 53, 43, 0.11);
-}
-
-
-/* =========================================================
-   MONOGRAM
-========================================================= */
-
-.verah-monogram {
-    position: relative;
-    z-index: 2;
-
-    width: 175px;
-    height: 175px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background:
-        linear-gradient(
-            145deg,
-            #f3ddd3,
-            #e7c9bd
-        );
-
-    border: 1px solid rgba(126, 53, 43, 0.20);
-
-    color: #793127;
-
-    font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
-
-    font-size: 100px;
-
-    font-weight: 400;
-
-    font-style: italic;
-
-    box-shadow:
-        0 22px 50px rgba(111, 54, 43, 0.15),
-        inset 0 0 35px rgba(255,255,255,0.35);
-}
-
-
-/* =========================================================
-   ART TEXT
-========================================================= */
-
-.verah-art-text {
-    position: absolute;
-
-    bottom: 78px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    color: #8a645b;
-
-    text-align: center;
-}
-
-.verah-art-text span {
-    font-size: 10px;
-    font-weight: 800;
-
-    letter-spacing: 6px;
-}
-
-.verah-art-text small {
-    margin-top: 7px;
-
-    font-size: 7px;
-
-    letter-spacing: 3px;
-}
-
-
-/* =========================================================
-   DECORATIVE GLOW
-========================================================= */
-
-.verah-card-glow {
-    position: absolute;
-
-    width: 300px;
-    height: 300px;
-
-    left: -150px;
-    bottom: -170px;
-
-    border-radius: 50%;
-
-    background:
-        rgba(143, 72, 57, 0.07);
-
-    filter: blur(3px);
-
-    pointer-events: none;
 }
 
 
@@ -487,46 +311,42 @@
    TABLET
 ========================================================= */
 
-@media (max-width: 900px) {
+@media (max-width: 800px) {
 
-    .verah-card {
-        grid-template-columns: 1fr;
+    .verah-hero {
 
         min-height: auto;
-    }
 
-    .verah-content {
         padding:
-            65px
+            25px
+            18px
+            40px;
+
+    }
+
+
+    .verah-card {
+
+        min-height: 460px;
+
+        padding:
             55px
-            55px
-            70px;
+            50px;
+
     }
 
-    .verah-art {
-        min-height: 350px;
+
+    .verah-title {
+
+        font-size:
+            clamp(
+                45px,
+                8vw,
+                65px
+            );
+
     }
 
-    .verah-circle-large {
-        width: 300px;
-        height: 300px;
-    }
-
-    .verah-circle-small {
-        width: 220px;
-        height: 220px;
-    }
-
-    .verah-monogram {
-        width: 135px;
-        height: 135px;
-
-        font-size: 75px;
-    }
-
-    .verah-art-text {
-        bottom: 30px;
-    }
 }
 
 
@@ -534,116 +354,104 @@
    MOBILE
 ========================================================= */
 
-@media (max-width: 600px) {
+@media (max-width: 500px) {
 
     .verah-hero {
-        min-height: auto;
 
         padding:
-            18px
+            20px
             12px
             30px;
+
     }
+
 
     .verah-card {
-        border-radius: 24px;
-    }
 
-    .verah-card::before {
-        top: 20px;
-        bottom: 20px;
+        min-height: 430px;
 
-        width: 5px;
-    }
-
-    .verah-content {
         padding:
-            48px
-            28px
-            35px
-            38px;
+            45px
+            25px
+            45px
+            32px;
+
+        border-radius: 16px;
+
+        border-left-width: 5px;
+
     }
 
-    .verah-eyebrow {
-        gap: 8px;
 
-        margin-bottom: 23px;
+    .verah-card::after {
 
-        font-size: 8px;
+        width: 55%;
 
-        letter-spacing: 2.8px;
     }
 
-    .verah-eyebrow span {
+
+    .verah-brand {
+
+        margin-bottom: 20px;
+
+        font-size: 9px;
+
+        letter-spacing: 2.5px;
+
+    }
+
+
+    .verah-brand::before {
+
         width: 23px;
+
     }
+
 
     .verah-title {
-        font-size: 53px;
 
-        letter-spacing: -3px;
+        font-size: 50px;
+
+        letter-spacing: -2px;
+
     }
 
-    .verah-title em {
-        margin-left: 25px;
+
+    .verah-title span {
+
+        margin-top: 5px;
+
     }
+
 
     .verah-description {
-        margin-top: 25px;
+
+        margin-top: 24px;
 
         font-size: 14px;
 
-        line-height: 1.75;
+        line-height: 1.7;
+
     }
 
-    .verah-divider {
-        width: 145px;
+
+    .verah-signature {
 
         margin-top: 28px;
-    }
 
-    .verah-tagline {
-        font-size: 7px;
-
-        letter-spacing: 2px;
-    }
-
-    .verah-art {
-        min-height: 290px;
-    }
-
-    .verah-circle-large {
-        width: 245px;
-        height: 245px;
-    }
-
-    .verah-circle-small {
-        width: 185px;
-        height: 185px;
-    }
-
-    .verah-monogram {
-        width: 115px;
-        height: 115px;
-
-        font-size: 65px;
-    }
-
-    .verah-art-text {
-        bottom: 23px;
-    }
-
-    .verah-art-text span {
         font-size: 8px;
 
-        letter-spacing: 4px;
+        letter-spacing: 1.5px;
+
     }
 
-    .verah-art-text small {
-        font-size: 6px;
 
-        letter-spacing: 2px;
+    .signature-line {
+
+        width: 35px;
+
     }
+
 }
 
 </style>
