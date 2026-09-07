@@ -134,7 +134,7 @@ const connectDB =
     require("./db");
 
 const seedUser =
-    require("./corevester/utils/seeder");
+    require("./verrah/utils/seeder");
 
 
 // ==========================================================
@@ -229,7 +229,7 @@ const productsRoutes =
 const cartsRoutes =
     safeLoad(
         "cartsRoutes",
-        "./corevester/routes/carts"
+        "./verrah/routes/carts"
     );
 */
 
