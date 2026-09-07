@@ -9,13 +9,9 @@
 
     <div
         class="profile-trigger"
-
         onclick="toggleProfile(event)"
-
         role="button"
-
         tabindex="0"
-
         aria-label="Open profile menu"
     >
 
@@ -35,9 +31,7 @@
 
     <div class="dropdown-profile">
 
-
-        <% if(user){ %>
-
+        <% if (user) { %>
 
             <!-- =========================
                  LOGGED-IN USER
@@ -48,7 +42,7 @@
             </a>
 
 
-            <% if(isAdmin){ %>
+            <% if (user.role === "admin") { %>
 
                 <a href="/accounts">
                     👥 People
@@ -68,7 +62,6 @@
 
         <% } else { %>
 
-
             <!-- =========================
                  LOGGED-OUT USER
             ========================== -->
@@ -81,9 +74,7 @@
                 🔐 Login
             </a>
 
-
         <% } %>
-
 
     </div>
 
