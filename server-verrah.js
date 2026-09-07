@@ -42,7 +42,7 @@ process.on("unhandledRejection", (reason) => {
 });
 
 console.log("==========================================================");
-console.log("🚀 Starting COREVESTER server");
+console.log("🚀 Starting VERRAH server");
 console.log("==========================================================");
 
 
@@ -645,7 +645,7 @@ app.use(
 const viewsPath =
     path.join(
         __dirname,
-        "corevester",
+        "verrah",
         "views"
     );
 
