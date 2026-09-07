@@ -1,0 +1,188 @@
+<section class="shop-page auth-page">
+
+  <div class="auth-card">
+
+    <div class="auth-heading">
+
+      <div class="auth-icon">
+        <i class="fas fa-sign-in-alt"></i>
+      </div>
+
+      <h1 class="page-title">
+        Welcome Back
+      </h1>
+
+      <p class="page-subtitle">
+        Log in to continue to your Verah Cosmetics account.
+      </p>
+
+    </div>
+
+
+    <% if (typeof error !== "undefined" && error) { %>
+
+      <div class="error">
+        <%= error %>
+      </div>
+
+    <% } %>
+
+
+    <form
+      action="/auth/login"
+      method="POST"
+      class="auth-form"
+    >
+
+      <input
+        type="hidden"
+        name="returnTo"
+        value="<%= typeof returnTo !== 'undefined' ? returnTo : '/' %>"
+      >
+
+
+      <!-- =========================
+           EMAIL
+      ========================== -->
+
+      <div class="field">
+
+        <label for="email">
+
+          <i class="fas fa-envelope"></i>
+          Email Address
+
+        </label>
+
+        <input
+          id="email"
+          type="email"
+          name="email"
+          value="<%= typeof email !== 'undefined' ? email : '' %>"
+          placeholder="Enter your email address"
+          autocomplete="email"
+          required
+        >
+
+      </div>
+
+
+      <!-- =========================
+           PASSWORD
+      ========================== -->
+
+      <div class="field">
+
+        <label for="password">
+
+          <i class="fas fa-lock"></i>
+          Password
+
+        </label>
+
+
+        <div class="password-input">
+
+          <input
+            id="password"
+            type="password"
+            name="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+          >
+
+          <button
+            type="button"
+            class="password-toggle"
+            onclick="togglePassword()"
+            aria-label="Show password"
+          >
+
+            <i
+              id="passwordIcon"
+              class="fas fa-eye"
+            ></i>
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           SUBMIT
+      ========================== -->
+
+      <div class="form-actions">
+
+        <button
+          type="submit"
+          class="primary-btn auth-submit"
+        >
+
+          <i class="fas fa-sign-in-alt"></i>
+
+          Log In
+
+        </button>
+
+      </div>
+
+    </form>
+
+
+    <!-- =========================
+         REGISTER
+    ========================== -->
+
+    <div class="auth-footer">
+
+      <span>
+        Don't have an account?
+      </span>
+
+      <a href="/auth/register">
+        Create Account
+      </a>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<script>
+
+function togglePassword() {
+
+  const password =
+    document.getElementById("password");
+
+  const icon =
+    document.getElementById("passwordIcon");
+
+
+  if (password.type === "password") {
+
+    password.type = "text";
+
+    icon.classList.remove("fa-eye");
+
+    icon.classList.add("fa-eye-slash");
+
+  } else {
+
+    password.type = "password";
+
+    icon.classList.remove("fa-eye-slash");
+
+    icon.classList.add("fa-eye");
+
+  }
+
+}
+
+</script>
