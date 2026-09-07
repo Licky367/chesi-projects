@@ -1,4 +1,6 @@
-const indexService = require("../../services/indexService");
+const indexService =
+    require("../../services/indexService");
+
 
 /* =========================================================
    ADMIN CHECK
@@ -6,16 +8,17 @@ const indexService = require("../../services/indexService");
 
 function requireAdmin(req, res) {
 
-    if (!req.user || req.user.role !== "admin") {
+    if (
+        !req.user ||
+        req.user.role !== "admin"
+    ) {
 
         res.status(403).send("Forbidden");
 
         return false;
-
     }
 
     return true;
-
 }
 
 
@@ -50,13 +53,18 @@ exports.createService = async function (req, res) {
 
     try {
 
-        await indexService.createService(req.body);
+        await indexService.createService(
+            req.body
+        );
 
         res.redirect("/");
 
     } catch (error) {
 
-        console.error("CREATE SERVICE ERROR:", error);
+        console.error(
+            "CREATE SERVICE ERROR:",
+            error
+        );
 
         res.status(500).send(
             "Unable to create service"
@@ -98,10 +106,59 @@ exports.getService = async function (req, res) {
 
     } catch (error) {
 
-        console.error("GET SERVICE ERROR:", error);
+        console.error(
+            "GET SERVICE ERROR:",
+            error
+        );
 
         res.status(500).send(
             "Internal Server Error"
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   PUT /services/:id
+========================================================= */
+
+exports.updateService = async function (req, res) {
+
+    if (!requireAdmin(req, res)) {
+        return;
+    }
+
+    try {
+
+        const service =
+            await indexService.updateService(
+                req.params.id,
+                req.body
+            );
+
+        if (!service) {
+
+            return res.status(404).send(
+                "Service not found"
+            );
+
+        }
+
+        res.redirect(
+            `/services/${service._id}`
+        );
+
+    } catch (error) {
+
+        console.error(
+            "UPDATE SERVICE ERROR:",
+            error
+        );
+
+        res.status(500).send(
+            "Unable to update service"
         );
 
     }
