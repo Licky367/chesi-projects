@@ -6,6 +6,10 @@
 
     <div class="hero-card">
 
+        <!-- Decorative background elements -->
+        <span class="hero-decoration hero-decoration-one"></span>
+        <span class="hero-decoration hero-decoration-two"></span>
+        <span class="hero-decoration hero-decoration-three"></span>
 
         <!-- =================================================
              HERO CONTENT
@@ -14,33 +18,55 @@
         <div class="hero-content">
 
             <div class="hero-brand">
+                <span class="brand-line"></span>
                 VERAH COSMETICS
+                <span class="brand-line"></span>
             </div>
 
-
             <h1 class="hero-title">
-
-                Welcome to
-                <span>Verah.</span>
-
+                Beauty that
+                <span>feels like you.</span>
             </h1>
 
-
             <p class="hero-description">
-
-                Discover a beauty space where
-                self-care meets confidence,
-                elegance, and everyday beauty.
-
+                Discover carefully selected beauty essentials
+                designed to help you care for your skin,
+                express your style, and feel confident every day.
             </p>
 
+            <!-- CTA -->
+            <div class="hero-actions">
 
+                <a href="/products" class="hero-button">
+                    <span>Explore Beauty</span>
+                    <span class="button-arrow">→</span>
+                </a>
+
+                <a href="/about" class="hero-secondary">
+                    Discover Verah
+                </a>
+
+            </div>
+
+            <!-- Signature -->
             <div class="hero-signature">
 
                 <span class="signature-line"></span>
 
                 <span>
-                    Beauty · Care · Confidence
+                    Beauty
+                </span>
+
+                <span class="signature-dot">·</span>
+
+                <span>
+                    Care
+                </span>
+
+                <span class="signature-dot">·</span>
+
+                <span>
+                    Confidence
                 </span>
 
             </div>
@@ -49,18 +75,49 @@
 
 
         <!-- =================================================
-             HERO IMAGE
+             DECORATIVE BRAND MARK
         ================================================== -->
 
-        <div class="hero-image">
+        <div class="hero-mark">
 
-            <img
-                src="/images/cosmetics-hero.jpg"
-                alt="VERAH COSMETICS"
-            >
+            <div class="mark-circle">
+
+                <div class="mark-inner">
+                    V
+                </div>
+
+            </div>
+
+            <div class="mark-text">
+                <span>V</span>
+                VERAH
+            </div>
 
         </div>
 
+
+        <!-- =================================================
+             BOTTOM FEATURES
+        ================================================== -->
+
+        <div class="hero-features">
+
+            <div class="hero-feature">
+                <strong>01</strong>
+                <span>Everyday Beauty</span>
+            </div>
+
+            <div class="hero-feature">
+                <strong>02</strong>
+                <span>Carefully Selected</span>
+            </div>
+
+            <div class="hero-feature">
+                <strong>03</strong>
+                <span>Made for You</span>
+            </div>
+
+        </div>
 
     </div>
 
@@ -74,20 +131,27 @@
 ========================================================= */
 
 .hero-section {
-
     width: 100%;
-
     min-height: calc(100vh - 120px);
 
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
-    padding: 35px 25px;
+    padding: 45px 25px;
 
-    background: #f7f1ec;
+    background:
+        radial-gradient(
+            circle at 10% 20%,
+            rgba(174, 108, 91, 0.12),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 90% 80%,
+            rgba(143, 75, 58, 0.10),
+            transparent 30%
+        ),
+        #f8f1ec;
 }
 
 
@@ -96,63 +160,67 @@
 ========================================================= */
 
 .hero-card {
-
     position: relative;
 
     width: 100%;
-
-    max-width: 1180px;
-
-    min-height: 590px;
-
-    display: grid;
-
-    grid-template-columns: 48% 52%;
+    max-width: 1200px;
+    min-height: 650px;
 
     overflow: hidden;
 
-    border-radius: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 
-    background: #fffaf6;
+    border-radius: 34px;
 
-    border: 1px solid #d8c5b8;
+    background:
+        radial-gradient(
+            circle at 80% 20%,
+            rgba(160, 91, 73, 0.10),
+            transparent 25%
+        ),
+        linear-gradient(
+            135deg,
+            #fffdfb 0%,
+            #f8eee8 100%
+        );
+
+    border: 1px solid #dfccc1;
 
     box-shadow:
-        0 22px 55px rgba(73, 43, 31, 0.13);
+        0 30px 80px rgba(73, 43, 31, 0.14);
 
+    isolation: isolate;
 }
 
 
 /* =========================================================
-   BROWN-RED ACCENT BORDER
+   LEFT ACCENT
 ========================================================= */
 
 .hero-card::before {
-
     content: "";
 
     position: absolute;
 
-    top: 25px;
-
-    bottom: 25px;
-
     left: 0;
+    top: 45px;
+    bottom: 45px;
 
-    width: 7px;
+    width: 6px;
 
-    z-index: 5;
-
-    border-radius:
-        0 8px 8px 0;
+    border-radius: 0 8px 8px 0;
 
     background:
         linear-gradient(
             180deg,
-            #7b3028,
-            #9a4938,
-            #6b2924
+            #6d2923,
+            #a35442,
+            #7a3028
         );
+
+    z-index: 5;
 }
 
 
@@ -161,30 +229,16 @@
 ========================================================= */
 
 .hero-content {
-
     position: relative;
+    z-index: 4;
 
-    z-index: 2;
+    width: min(700px, 75%);
+
+    padding: 90px 80px 120px;
 
     display: flex;
-
     flex-direction: column;
-
-    justify-content: center;
-
-    padding: 70px 65px 70px 75px;
-
-    background:
-        radial-gradient(
-            circle at 15% 15%,
-            rgba(143, 75, 58, 0.08),
-            transparent 30%
-        ),
-        linear-gradient(
-            145deg,
-            #fffaf7,
-            #f5ebe4
-        );
+    align-items: flex-start;
 }
 
 
@@ -193,20 +247,26 @@
 ========================================================= */
 
 .hero-brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
 
-    width: fit-content;
+    margin-bottom: 30px;
 
-    margin-bottom: 25px;
+    color: #81372d;
 
-    color: #81352b;
-
-    font-size: 11px;
-
+    font-size: 10px;
     font-weight: 800;
 
     letter-spacing: 4px;
-
     text-transform: uppercase;
+}
+
+.brand-line {
+    width: 30px;
+    height: 1px;
+
+    background: #a05a4a;
 }
 
 
@@ -215,35 +275,38 @@
 ========================================================= */
 
 .hero-title {
-
-    max-width: 500px;
-
     margin: 0;
 
-    color: #34231e;
+    color: #33221d;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size: clamp(50px, 5.5vw, 78px);
+    font-size: clamp(
+        60px,
+        7vw,
+        94px
+    );
 
     font-weight: 400;
 
-    line-height: 0.98;
+    line-height: 0.94;
 
-    letter-spacing: -3px;
+    letter-spacing: -5px;
 }
 
-
 .hero-title span {
-
     display: block;
 
-    color: #84362c;
+    margin-left: 55px;
+
+    color: #84382e;
 
     font-style: italic;
+
+    font-weight: 400;
 }
 
 
@@ -252,16 +315,119 @@
 ========================================================= */
 
 .hero-description {
+    max-width: 520px;
 
-    max-width: 420px;
-
-    margin-top: 30px;
+    margin: 35px 0 0;
 
     color: #75635c;
 
     font-size: 16px;
 
-    line-height: 1.8;
+    line-height: 1.85;
+}
+
+
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+.hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+
+    margin-top: 40px;
+}
+
+
+/* PRIMARY BUTTON */
+
+.hero-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 22px;
+
+    padding: 16px 21px 16px 25px;
+
+    color: #fff;
+
+    background: #81362c;
+
+    border-radius: 100px;
+
+    text-decoration: none;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+
+    box-shadow:
+        0 12px 25px rgba(129, 54, 44, 0.20);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.hero-button:hover {
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 17px 30px rgba(129, 54, 44, 0.28);
+}
+
+
+/* BUTTON ARROW */
+
+.button-arrow {
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,0.15);
+
+    font-size: 17px;
+
+    transition: transform 0.25s ease;
+}
+
+.hero-button:hover .button-arrow {
+    transform: translateX(3px);
+}
+
+
+/* SECONDARY LINK */
+
+.hero-secondary {
+    color: #704c43;
+
+    text-decoration: none;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+
+    border-bottom: 1px solid #b99a8d;
+
+    padding-bottom: 5px;
+
+    transition:
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.hero-secondary:hover {
+    color: #84382e;
+
+    border-color: #84382e;
 }
 
 
@@ -270,114 +436,256 @@
 ========================================================= */
 
 .hero-signature {
-
     display: flex;
-
     align-items: center;
+    gap: 11px;
 
-    gap: 15px;
+    margin-top: 45px;
 
-    margin-top: 38px;
+    color: #927970;
 
-    color: #8a7168;
-
-    font-size: 10px;
-
+    font-size: 9px;
     font-weight: 700;
 
-    letter-spacing: 2px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+}
+
+.signature-line {
+    width: 45px;
+    height: 1px;
+
+    background: #a45c4c;
+}
+
+.signature-dot {
+    color: #a45c4c;
+}
+
+
+/* =========================================================
+   DECORATIVE BRAND MARK
+========================================================= */
+
+.hero-mark {
+    position: absolute;
+
+    right: 12%;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    z-index: 1;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    opacity: 0.75;
+}
+
+
+/* BIG CIRCLE */
+
+.mark-circle {
+    width: 280px;
+    height: 280px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    border: 1px solid rgba(126, 54, 43, 0.22);
+
+    position: relative;
+}
+
+.mark-circle::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 18px;
+
+    border-radius: 50%;
+
+    border: 1px solid rgba(126, 54, 43, 0.15);
+}
+
+
+/* INNER MARK */
+
+.mark-inner {
+    width: 150px;
+    height: 150px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f5dfd5,
+            #ead0c4
+        );
+
+    color: #84382e;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 82px;
+
+    font-style: italic;
+
+    box-shadow:
+        0 20px 40px rgba(111, 56, 44, 0.10);
+}
+
+
+/* BRAND TEXT */
+
+.mark-text {
+    margin-top: 20px;
+
+    color: #9a7468;
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: 5px;
 
     text-transform: uppercase;
 }
 
+.mark-text span {
+    font-family: Georgia, serif;
 
-.signature-line {
+    font-size: 15px;
 
-    width: 48px;
+    font-style: italic;
 
-    height: 1px;
-
-    background: #9b5a4a;
+    margin-right: 4px;
 }
 
 
 /* =========================================================
-   HERO IMAGE
+   DECORATIVE ELEMENTS
 ========================================================= */
 
-.hero-image {
-
-    position: relative;
-
-    min-height: 590px;
-
-    overflow: hidden;
-
-    background: #dfcec4;
-}
-
-
-.hero-image img {
-
-    width: 100%;
-
-    height: 100%;
-
-    display: block;
-
-    object-fit: cover;
-
-    object-position: center;
-}
-
-
-/* =========================================================
-   IMAGE OVERLAY
-========================================================= */
-
-.hero-image::after {
-
-    content: "";
-
+.hero-decoration {
     position: absolute;
-
-    inset: 0;
-
-    background:
-        linear-gradient(
-            90deg,
-            rgba(62, 32, 25, 0.12),
-            transparent 35%
-        );
 
     pointer-events: none;
+
+    z-index: 0;
 }
 
 
-/* =========================================================
-   DECORATIVE CORNER
-========================================================= */
+/* Large circle */
 
-.hero-image::before {
+.hero-decoration-one {
+    width: 420px;
+    height: 420px;
 
-    content: "";
-
-    position: absolute;
-
-    width: 110px;
-
-    height: 110px;
-
-    right: -55px;
-
-    top: -55px;
-
-    z-index: 2;
+    right: -150px;
+    top: -150px;
 
     border-radius: 50%;
 
-    border: 1px solid
-        rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(129, 54, 44, 0.10);
+}
+
+
+/* Small circle */
+
+.hero-decoration-two {
+    width: 180px;
+    height: 180px;
+
+    right: 30%;
+    bottom: -100px;
+
+    border-radius: 50%;
+
+    border: 1px solid rgba(129, 54, 44, 0.10);
+}
+
+
+/* Fine vertical line */
+
+.hero-decoration-three {
+    width: 1px;
+    height: 220px;
+
+    right: 8%;
+    top: 12%;
+
+    background:
+        linear-gradient(
+            transparent,
+            rgba(129,54,44,0.20),
+            transparent
+        );
+}
+
+
+/* =========================================================
+   FEATURES
+========================================================= */
+
+.hero-features {
+    position: absolute;
+
+    left: 80px;
+    right: 80px;
+    bottom: 30px;
+
+    z-index: 4;
+
+    display: flex;
+
+    border-top: 1px solid #dfccc1;
+
+    padding-top: 20px;
+}
+
+.hero-feature {
+    flex: 1;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    color: #8b7168;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    letter-spacing: 1.5px;
+
+    text-transform: uppercase;
+}
+
+.hero-feature:not(:last-child) {
+    border-right: 1px solid #dfccc1;
+}
+
+.hero-feature strong {
+    color: #9b5444;
+
+    font-family: Georgia, serif;
+
+    font-size: 12px;
+
+    font-weight: 400;
 }
 
 
@@ -388,25 +696,34 @@
 @media (max-width: 900px) {
 
     .hero-card {
-
-        grid-template-columns: 1fr;
-
+        min-height: 620px;
     }
-
 
     .hero-content {
+        width: 80%;
 
-        min-height: 470px;
-
-        padding: 60px 55px 60px 65px;
-
+        padding:
+            80px
+            55px
+            120px;
     }
 
+    .hero-title {
+        font-size: clamp(
+            58px,
+            9vw,
+            78px
+        );
+    }
 
-    .hero-image {
+    .hero-mark {
+        right: 5%;
+        opacity: 0.45;
+    }
 
-        min-height: 480px;
-
+    .hero-features {
+        left: 55px;
+        right: 55px;
     }
 
 }
@@ -419,89 +736,154 @@
 @media (max-width: 600px) {
 
     .hero-section {
-
         min-height: auto;
 
-        padding: 18px 12px 30px;
-
+        padding:
+            18px
+            12px
+            30px;
     }
 
 
     .hero-card {
+        min-height: 680px;
 
-        min-height: auto;
-
-        border-radius: 24px;
-
+        border-radius: 25px;
     }
 
 
     .hero-card::before {
+        top: 25px;
+        bottom: 25px;
 
-        top: 18px;
-
-        bottom: 18px;
-
-        width: 5px;
-
+        width: 4px;
     }
 
 
     .hero-content {
+        width: 100%;
 
-        min-height: 430px;
-
-        padding: 45px 28px 45px 38px;
-
+        padding:
+            55px
+            28px
+            145px
+            38px;
     }
 
 
     .hero-brand {
+        gap: 9px;
 
-        margin-bottom: 20px;
+        margin-bottom: 25px;
 
-        font-size: 9px;
+        font-size: 8px;
 
         letter-spacing: 3px;
+    }
 
+
+    .brand-line {
+        width: 20px;
     }
 
 
     .hero-title {
+        font-size: 56px;
 
-        font-size: 50px;
+        letter-spacing: -3px;
 
-        letter-spacing: -2px;
+        line-height: 0.95;
+    }
 
+
+    .hero-title span {
+        margin-left: 25px;
     }
 
 
     .hero-description {
-
-        margin-top: 24px;
+        margin-top: 28px;
 
         font-size: 14px;
 
         line-height: 1.75;
+    }
 
+
+    .hero-actions {
+        width: 100%;
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 20px;
+
+        margin-top: 32px;
+    }
+
+
+    .hero-button {
+        padding:
+            14px
+            18px
+            14px
+            21px;
     }
 
 
     .hero-signature {
+        margin-top: 35px;
 
-        margin-top: 30px;
-
-        font-size: 8px;
+        font-size: 7px;
 
         letter-spacing: 1.5px;
-
     }
 
 
-    .hero-image {
+    .hero-mark {
+        right: -70px;
+        top: 52%;
 
-        min-height: 390px;
+        opacity: 0.25;
+    }
 
+
+    .mark-circle {
+        width: 260px;
+        height: 260px;
+    }
+
+
+    .hero-decoration-one {
+        width: 300px;
+        height: 300px;
+
+        right: -180px;
+        top: -100px;
+    }
+
+
+    .hero-features {
+        left: 38px;
+        right: 28px;
+        bottom: 25px;
+
+        flex-direction: column;
+
+        gap: 12px;
+
+        padding-top: 15px;
+    }
+
+
+    .hero-feature {
+        font-size: 8px;
+    }
+
+
+    .hero-feature:not(:last-child) {
+        border-right: none;
     }
 
 }
