@@ -1,6 +1,6 @@
 // ==========================================================
-// corevester/utils/seedUser.js
-// COREVESTER DEFAULT ADMIN USER SEED
+// verrah/utils/seedUser.js
+// VERRAH DEFAULT ADMIN USER SEED
 // ==========================================================
 //
 // PURPOSE:
