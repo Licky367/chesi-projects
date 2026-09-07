@@ -1,0 +1,10 @@
+<!-- =========================================================
+     VERAH COSMETICS — HOME PAGE
+========================================================= -->
+
+<%- include("home-partials/hero") %>
+
+<%- include("home-partials/services", {
+    services: services,
+    user: user
+}) %>
