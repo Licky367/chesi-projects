@@ -12,16 +12,31 @@
 
     <title>VERAH COSMETICS</title>
 
+
+    <!-- =====================================================
+       FAVICON
+    ====================================================== -->
+
     <link
         rel="icon"
         type="image/png"
         href="/images/cfp-logo.png"
     >
 
+
+    <!-- =====================================================
+       MAIN LAYOUT CSS
+    ====================================================== -->
+
     <link
         rel="stylesheet"
         href="/css/verrah/layout.css"
     >
+
+
+    <!-- =====================================================
+       OPEN GRAPH
+    ====================================================== -->
 
     <meta
         property="og:title"
@@ -52,6 +67,11 @@
         property="og:site_name"
         content="VERAH COSMETICS"
     >
+
+
+    <!-- =====================================================
+       TWITTER / X
+    ====================================================== -->
 
     <meta
         name="twitter:card"
@@ -89,10 +109,12 @@ const authPages = [
     "/reset-password"
 ];
 
+
 const currentPagePath =
     currentPath ||
     (typeof req !== "undefined" && req.path) ||
     "";
+
 
 const isAuthPage =
     authPages.includes(
@@ -102,7 +124,6 @@ const isAuthPage =
 
 /* =========================================================
    HOME LINK
-   ALL ROLES USE /
 ========================================================= */
 
 const homeLink = "/";
@@ -110,7 +131,7 @@ const homeLink = "/";
 
 /* =========================================================
    ROLE FLAGS
-   ONLY THREE ROLES EXIST:
+   AVAILABLE ROLES:
    admin
    staff
    client
@@ -120,9 +141,11 @@ const isAdmin =
     !!user &&
     user.role === "admin";
 
+
 const isStaff =
     !!user &&
     user.role === "staff";
+
 
 const isClient =
     !!user &&
@@ -131,7 +154,9 @@ const isClient =
 %>
 
 
-<body class="<%= isAuthPage ? 'auth-page' : 'app-page' %>">
+<body
+    class="<%= isAuthPage ? 'auth-page' : 'app-page' %>"
+>
 
 
 <% if(!isAuthPage){ %>
@@ -148,12 +173,15 @@ const isClient =
 
 
 <!-- =========================================================
-   ADMIN SIDEBAR
+   SIDEBAR
+   SAME SIDEBAR FOR EVERYONE
 ========================================================= -->
 
-<%- include("layout-partials/admin-sidebar", {
+<%- include("layout-partials/sidebar", {
     homeLink: homeLink,
-    isAdmin: isAdmin
+    isAdmin: isAdmin,
+    isStaff: isStaff,
+    isClient: isClient
 }) %>
 
 
@@ -209,28 +237,38 @@ function toggleProfile(event){
 
 
 /* =========================================================
-   ADMIN SIDEBAR
+   SIDEBAR ELEMENTS
 ========================================================= */
 
-const adminSidebar =
+const sidebar =
     document.getElementById(
-        "adminDashboardSidebar"
+        "sidebar"
     );
 
-const adminSidebarMenuButton =
+
+const menuButton =
     document.getElementById(
-        "adminSidebarMenuButton"
+        "menuButton"
     );
 
-const adminSidebarOverlay =
+
+const sidebarMenuButton =
     document.getElementById(
-        "adminSidebarOverlay"
+        "sidebarMenuButton"
     );
+
+
+const overlay =
+    document.getElementById(
+        "sidebarOverlay"
+    );
+
 
 const dairyActivitiesButton =
     document.getElementById(
         "dairyActivitiesButton"
     );
+
 
 const dairyActivitiesSubmenu =
     document.getElementById(
@@ -239,37 +277,51 @@ const dairyActivitiesSubmenu =
 
 
 /* =========================================================
-   OPEN ADMIN SIDEBAR
+   OPEN SIDEBAR
 ========================================================= */
 
-function openAdminSidebar(){
+function openSidebar(){
 
     if(
-        !adminSidebar ||
-        !adminSidebarOverlay
+        !sidebar ||
+        !overlay
     ){
 
         return;
 
     }
 
-    adminSidebar.classList.add(
-        "open"
-    );
 
-    adminSidebarOverlay.classList.add(
+    sidebar.classList.add(
         "active"
     );
 
-    adminSidebar.setAttribute(
+
+    overlay.classList.add(
+        "active"
+    );
+
+
+    sidebar.setAttribute(
         "aria-expanded",
         "true"
     );
 
-    adminSidebarOverlay.setAttribute(
+
+    overlay.setAttribute(
         "aria-hidden",
         "false"
     );
+
+
+    if(menuButton){
+
+        menuButton.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+
+    }
 
 }
 
@@ -289,14 +341,17 @@ function closeDairyActivities(){
 
     }
 
+
     dairyActivitiesButton.setAttribute(
         "aria-expanded",
         "false"
     );
 
+
     dairyActivitiesButton.classList.remove(
         "expanded"
     );
+
 
     dairyActivitiesSubmenu.classList.remove(
         "open"
@@ -306,37 +361,52 @@ function closeDairyActivities(){
 
 
 /* =========================================================
-   CLOSE ADMIN SIDEBAR
+   CLOSE SIDEBAR
 ========================================================= */
 
-function closeAdminSidebar(){
+function closeSidebar(){
 
     if(
-        !adminSidebar ||
-        !adminSidebarOverlay
+        !sidebar ||
+        !overlay
     ){
 
         return;
 
     }
 
-    adminSidebar.classList.remove(
-        "open"
-    );
 
-    adminSidebarOverlay.classList.remove(
+    sidebar.classList.remove(
         "active"
     );
 
-    adminSidebar.setAttribute(
+
+    overlay.classList.remove(
+        "active"
+    );
+
+
+    sidebar.setAttribute(
         "aria-expanded",
         "false"
     );
 
-    adminSidebarOverlay.setAttribute(
+
+    overlay.setAttribute(
         "aria-hidden",
         "true"
     );
+
+
+    if(menuButton){
+
+        menuButton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+    }
+
 
     closeDairyActivities();
 
@@ -344,12 +414,12 @@ function closeAdminSidebar(){
 
 
 /* =========================================================
-   ADMIN SIDEBAR MENU BUTTON
+   HEADER MENU BUTTON
 ========================================================= */
 
-if(adminSidebarMenuButton){
+if(menuButton){
 
-    adminSidebarMenuButton.addEventListener(
+    menuButton.addEventListener(
         "click",
         function(event){
 
@@ -357,22 +427,46 @@ if(adminSidebarMenuButton){
 
             event.stopPropagation();
 
+
             if(
-                adminSidebar &&
-                adminSidebar.classList.contains(
-                    "open"
+                sidebar &&
+                sidebar.classList.contains(
+                    "active"
                 )
             ){
 
-                closeAdminSidebar();
+                closeSidebar();
 
             }
 
             else{
 
-                openAdminSidebar();
+                openSidebar();
 
             }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   SIDEBAR MENU BUTTON
+   CLOSES SIDEBAR
+========================================================= */
+
+if(sidebarMenuButton){
+
+    sidebarMenuButton.addEventListener(
+        "click",
+        function(event){
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+            closeSidebar();
 
         }
     );
@@ -397,20 +491,24 @@ if(
 
             event.stopPropagation();
 
+
             const isExpanded =
                 dairyActivitiesButton.getAttribute(
                     "aria-expanded"
                 ) === "true";
+
 
             dairyActivitiesButton.setAttribute(
                 "aria-expanded",
                 String(!isExpanded)
             );
 
+
             dairyActivitiesButton.classList.toggle(
                 "expanded",
                 !isExpanded
             );
+
 
             dairyActivitiesSubmenu.classList.toggle(
                 "open",
@@ -424,14 +522,14 @@ if(
 
 
 /* =========================================================
-   ADMIN SIDEBAR LINKS
+   SIDEBAR LINKS
 ========================================================= */
 
-if(adminSidebar){
+if(sidebar){
 
-    adminSidebar
+    sidebar
         .querySelectorAll(
-            ".admin-sidebar-link"
+            ".sidebar-link"
         )
         .forEach(
             function(link){
@@ -440,7 +538,7 @@ if(adminSidebar){
                     "click",
                     function(){
 
-                        closeAdminSidebar();
+                        closeSidebar();
 
                     }
                 );
@@ -452,16 +550,16 @@ if(adminSidebar){
 
 
 /* =========================================================
-   ADMIN OVERLAY
+   SIDEBAR OVERLAY
 ========================================================= */
 
-if(adminSidebarOverlay){
+if(overlay){
 
-    adminSidebarOverlay.addEventListener(
+    overlay.addEventListener(
         "click",
         function(){
 
-            closeAdminSidebar();
+            closeSidebar();
 
         }
     );
@@ -504,7 +602,8 @@ document.addEventListener(
 
         if(event.key === "Escape"){
 
-            closeAdminSidebar();
+            closeSidebar();
+
 
             if(profileBox){
 
@@ -528,7 +627,7 @@ window.addEventListener(
     "resize",
     function(){
 
-        closeAdminSidebar();
+        closeSidebar();
 
     }
 );
