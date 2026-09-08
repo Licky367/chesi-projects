@@ -1,25 +1,40 @@
 <%
-// ==========================================================
-// views/stock/stock.ejs
-// STOCK LISTING
-//
-// Displays ALL active stocks returned by stockService.listStock()
-// grouped by category.
-//
-// IMPORTANT:
-// This view does NOT create or modify stock.
-// It only displays the data already returned by the backend.
-// ==========================================================
+/* ==========================================================
+   views/stock/stock.ejs
+
+   VERRAH COSMETICS
+   STOCK MANAGEMENT
+   STOCK LISTING
+
+   IMPORTANT:
+   This view only displays stock returned by
+   stockService.listStock().
+
+   It does NOT create or modify stock.
+
+   DATA STRUCTURE:
+
+   stocks[]
+      ├── category
+      ├── label
+      └── rows[]
+           └── products[]
+
+   Product/stock category:
+   - Product.category may be Category._id
+   - Displayed category must be Category.name/label
+========================================================== */
 %>
 
-<section class="stock-page">
+
+<section class="shop-page stock-page">
 
 
     <!-- ======================================================
-         PAGE HEADER
+         PAGE HEADING
     ======================================================= -->
 
-    <div class="page-head">
+    <div class="products-heading page-head">
 
         <div>
 
@@ -88,7 +103,7 @@
 
 
     <!-- ======================================================
-         NO STOCK
+         EMPTY STOCK STATE
     ======================================================= -->
 
     <% if (
@@ -97,17 +112,19 @@
     ) { %>
 
 
-        <div class="empty">
+        <div class="empty stock-empty">
 
             <i class="fas fa-warehouse"></i>
 
             <div>
-                No stock records exist yet.
-            </div>
 
-            <div style="margin-top:8px;">
+                <strong>
+                    No stock records exist yet.
+                </strong>
 
-                Add stock using the button above.
+                <div class="empty-help">
+                    Add stock using the button above.
+                </div>
 
             </div>
 
@@ -122,50 +139,111 @@
              CATEGORY GROUPS
         =================================================== -->
 
-        <% stocks.forEach((group) => { %>
+        <% (stocks || []).forEach((group) => { %>
 
 
-            <% /*
-               ------------------------------------------------
-               stockService.listStock() returns:
+            <%
+            /* ==================================================
+               CATEGORY NAME
 
-               group
-                 ├── category
-                 ├── label
-                 └── rows
-                      ├── products
-                      ├── products
-                      └── ...
+               Supported structures:
 
-               Flatten all rows so EVERY stock is displayed.
-               ------------------------------------------------
-            */ %>
+               group.category.name
+               group.categoryName
+               group.label
+               group.category
 
-            <% const products =
-                (group.rows || []).reduce(
-                    (all, row) => {
+               ObjectId values are never intentionally
+               displayed to the customer.
+            ================================================== */
 
-                        if (
-                            Array.isArray(row.products)
-                        ) {
+            let categoryName = "Other";
 
-                            return all.concat(
-                                row.products
-                            );
 
-                        }
+            if (
+                group.category &&
+                typeof group.category === "object" &&
+                group.category.name
+            ) {
 
-                        return all;
+                categoryName = group.category.name;
 
-                    },
-                    []
-                );
+            } else if (group.categoryName) {
+
+                categoryName = group.categoryName;
+
+            } else if (group.label) {
+
+                categoryName = group.label;
+
+            } else if (
+                group.category &&
+                typeof group.category === "string" &&
+                !/^[a-fA-F0-9]{24}$/.test(group.category)
+            ) {
+
+                categoryName = group.category;
+
+            }
+
+
+            /* ==================================================
+               FLATTEN PRODUCTS
+
+               Every row belonging to this category is
+               flattened into one product list.
+
+               Subcategory does NOT create separate rows.
+            ================================================== */
+
+            const categoryProducts = [];
+
+
+            (group.rows || []).forEach((row) => {
+
+                if (Array.isArray(row.products)) {
+
+                    row.products.forEach((product) => {
+
+                        categoryProducts.push(product);
+
+                    });
+
+                }
+
+            });
+
+
+            /* ==================================================
+               FALLBACK
+
+               Some service responses may expose products
+               directly on the group.
+            ================================================== */
+
+            if (
+                categoryProducts.length === 0 &&
+                Array.isArray(group.products)
+            ) {
+
+                group.products.forEach((product) => {
+
+                    categoryProducts.push(product);
+
+                });
+
+            }
+
             %>
 
 
 
-            <% if (products.length) { %>
+            <% if (categoryProducts.length) { %>
 
+
+                <!-- ==========================================
+                     CATEGORY SECTION
+                =========================================== -->
 
                 <section class="category-section">
 
@@ -177,29 +255,19 @@
                     <div class="category-head">
 
                         <h2>
-
-                            <%=
-
-                                group.label ||
-
-                                group.category?.name ||
-
-                                "Other"
-
-                            %>
-
+                            <%= categoryName %>
                         </h2>
 
 
                         <span class="category-count">
 
-                            <%= products.length %>
+                            <%= categoryProducts.length %>
 
                             stock
 
                             <%=
 
-                                products.length === 1
+                                categoryProducts.length === 1
 
                                     ? "item"
 
@@ -214,208 +282,288 @@
 
 
                     <!-- ======================================
-                         STOCK CARDS
+                         PRODUCT / STOCK ROWS
+
+                         Six products per desktop row,
+                         horizontal scrolling on mobile.
                     ======================================= -->
 
-                    <div class="stock-grid">
+
+                    <%
+                    for (
+                        let rowStart = 0;
+                        rowStart < categoryProducts.length;
+                        rowStart += 6
+                    ) {
+
+                        const rowProducts =
+                            categoryProducts.slice(
+                                rowStart,
+                                rowStart + 6
+                            );
+                    %>
 
 
-                        <% products.forEach((stock) => { %>
+                        <div class="subcategory-row-block">
 
 
-                            <a
-                                href="/stock/<%= stock._id %>"
-                                class="stock-card"
+                            <!-- ==================================
+                                 SUBCATEGORY / ROW HEADER
+                            =================================== -->
+
+                            <div class="subcategory-head">
+
+                                <h3>
+                                    <%= categoryName %>
+                                </h3>
+
+
+                                <% if (
+                                    categoryProducts.length > 6
+                                ) { %>
+
+                                    <span>
+                                        Swipe left/right
+                                    </span>
+
+                                <% } %>
+
+                            </div>
+
+
+
+                            <!-- ==================================
+                                 STOCK ROW
+                            =================================== -->
+
+                            <div
+                                class="product-row category-product-row stock-product-row"
+                                aria-label="<%= categoryName %> stock"
                             >
 
 
-                                <!-- ==========================
-                                     IMAGE
-                                =========================== -->
-
-                                <div class="product-image">
+                                <% rowProducts.forEach((stock) => { %>
 
 
-                                    <% if (stock.image) { %>
+                                    <a
+                                        href="/stock/<%= stock._id %>"
+                                        class="product-card stock-card"
+                                    >
 
 
-                                        <img
-                                            src="<%= stock.image %>"
-                                            alt="<%=
+                                        <!-- ======================
+                                             STOCK IMAGE
+                                        ======================= -->
 
-                                                stock.subcategory ||
-
-                                                stock.name ||
-
-                                                'Stock item'
-
-                                            %>"
-                                            loading="lazy"
-
-                                            onerror="
-                                                this.style.display='none';
-                                                this.nextElementSibling.style.display='flex';
-                                            "
-                                        >
+                                        <div class="product-image">
 
 
-                                        <div
-                                            class="placeholder"
-                                            style="display:none;"
-                                        >
+                                            <% if (stock.image) { %>
 
-                                            <i class="fas fa-box"></i>
+
+                                                <img
+                                                    src="<%= stock.image %>"
+                                                    alt="<%=
+
+                                                        stock.subcategory ||
+
+                                                        stock.name ||
+
+                                                        'Stock item'
+
+                                                    %>"
+                                                    loading="lazy"
+
+                                                    onerror="
+                                                        this.style.display='none';
+                                                        this.nextElementSibling.style.display='flex';
+                                                    "
+                                                >
+
+
+                                                <div
+                                                    class="placeholder product-image-fallback stock-image-fallback"
+                                                    style="display:none;"
+                                                >
+
+                                                    <i class="fas fa-box"></i>
+
+                                                </div>
+
+
+                                            <% } else { %>
+
+
+                                                <div class="placeholder">
+
+                                                    <i class="fas fa-box"></i>
+
+                                                </div>
+
+
+                                            <% } %>
+
 
                                         </div>
 
 
-                                    <% } else { %>
+
+                                        <!-- ======================
+                                             STOCK INFORMATION
+                                        ======================= -->
+
+                                        <div class="product-info">
 
 
-                                        <div class="placeholder">
+                                            <!-- PRODUCT / STOCK NAME -->
 
-                                            <i class="fas fa-box"></i>
+                                            <div class="product-name">
+
+                                                <%=
+
+                                                    stock.name ||
+
+                                                    stock.subcategory ||
+
+                                                    "Unnamed stock"
+
+                                                %>
+
+                                            </div>
+
+
+
+                                            <!-- SUBCATEGORY -->
+
+                                            <div class="stock-meta-line">
+
+                                                Subcategory:
+
+                                                <strong>
+
+                                                    <%=
+
+                                                        stock.subcategory ||
+
+                                                        "Other"
+
+                                                    %>
+
+                                                </strong>
+
+                                            </div>
+
+
+
+                                            <!-- BUY PRICE -->
+
+                                            <div class="product-price">
+
+                                                KSh
+
+                                                <%=
+
+                                                    Number(
+                                                        stock.buyPrice || 0
+                                                    ).toLocaleString()
+
+                                                %>
+
+                                            </div>
+
+
+
+                                            <!-- AVAILABILITY -->
+
+                                            <div
+                                                class="stock-text <%=
+
+                                                    Number(
+                                                        stock.units || 0
+                                                    ) <= 0
+
+                                                        ? 'out'
+
+                                                        : ''
+
+                                                %>"
+                                            >
+
+
+                                                <% if (
+                                                    Number(
+                                                        stock.units || 0
+                                                    ) > 0
+                                                ) { %>
+
+
+                                                    <strong>
+
+                                                        <%=
+
+                                                            Number(
+                                                                stock.units
+                                                            ).toLocaleString()
+
+                                                        %>
+
+                                                    </strong>
+
+                                                    available
+
+
+                                                <% } else { %>
+
+
+                                                    Out of stock
+
+
+                                                <% } %>
+
+
+                                            </div>
+
+
+
+                                            <!-- WAREHOUSE UNITS -->
+
+                                            <div class="stock-text">
+
+                                                Warehouse units:
+
+                                                <strong>
+
+                                                    <%=
+
+                                                        Number(
+                                                            stock.units || 0
+                                                        ).toLocaleString()
+
+                                                    %>
+
+                                                </strong>
+
+                                            </div>
+
 
                                         </div>
 
 
-                                    <% } %>
+                                    </a>
 
 
-                                </div>
+                                <% }) %>
 
 
+                            </div>
 
-                                <!-- ==========================
-                                     STOCK DETAILS
-                                =========================== -->
 
-                                <div class="product-info">
+                        </div>
 
 
-                                    <div class="product-name">
-
-                                        <%=
-
-                                            stock.name ||
-
-                                            stock.subcategory ||
-
-                                            "Unnamed stock"
-
-                                        %>
-
-                                    </div>
-
-
-
-                                    <div class="subcategory">
-
-                                        Subcategory:
-
-                                        <strong>
-
-                                            <%=
-
-                                                stock.subcategory ||
-
-                                                "Other"
-
-                                            %>
-
-                                        </strong>
-
-                                    </div>
-
-
-
-                                    <div class="price">
-
-                                        KSh
-
-                                        <%=
-
-                                            Number(
-                                                stock.buyPrice || 0
-                                            ).toLocaleString()
-
-                                        %>
-
-                                    </div>
-
-
-
-                                    <!-- ======================
-                                         AVAILABILITY
-                                    ======================= -->
-
-                                    <% if (
-                                        Number(stock.units || 0) > 0
-                                    ) { %>
-
-
-                                        <span class="stock-status">
-
-                                            <%=
-
-                                                Number(
-                                                    stock.units
-                                                ).toLocaleString()
-
-                                            %>
-
-                                            available
-
-                                        </span>
-
-
-                                    <% } else { %>
-
-
-                                        <span class="stock-status out">
-
-                                            Out of stock
-
-                                        </span>
-
-
-                                    <% } %>
-
-
-
-                                    <!-- ======================
-                                         UNITS
-                                    ======================= -->
-
-                                    <div class="units">
-
-                                        Warehouse units:
-
-                                        <strong>
-
-                                            <%=
-
-                                                Number(
-                                                    stock.units || 0
-                                                ).toLocaleString()
-
-                                            %>
-
-                                        </strong>
-
-                                    </div>
-
-
-                                </div>
-
-
-                            </a>
-
-
-                        <% }) %>
-
-
-                    </div>
+                    <%
+                    }
+                    %>
 
 
                 </section>
