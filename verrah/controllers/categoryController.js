@@ -1,5 +1,5 @@
 // ==========================================================
-// controllers/categoryController.js
+// verrah/controllers/categoryController.js
 // CATEGORY CONTROLLER
 // ==========================================================
 
@@ -10,78 +10,119 @@ const categoryService =
 // ADD CATEGORY FORM
 // ==========================================================
 
-exports.addForm =
-  async (req, res) => {
+exports.addForm = async (req, res) => {
+  return res.render(
+    "products/category/add",
+    {
+      title: "Add Category | Verrah Cosmetics",
 
-    return res.render(
-      "products/category/add",
-      {
-        title:
-          "Add Category | Verrah Cosmetics",
+      error: null,
 
-        error:
-          null,
+      success: null,
 
-        success:
-          null,
-
-        formData:
-          {}
+      formData: {
+        name: "",
+        categoryIconUrl: ""
       }
-    );
-  };
-
+    }
+  );
+};
 
 // ==========================================================
 // CREATE CATEGORY
 // ==========================================================
 
-exports.create =
-  async (req, res) => {
-
-    try {
-
-      const category =
-        await categoryService.createCategory(
-          req.body,
-          req.file
-        );
-
-      // ------------------------------------------------------
-      // Redirect to the newly created category
-      // ------------------------------------------------------
-
-      return res.redirect(
-        `/products/category/${category._id}`
+exports.create = async (req, res) => {
+  try {
+    const category =
+      await categoryService.createCategory(
+        req.body,
+        req.file
       );
 
-    } catch (error) {
+    return res.redirect(
+      `/products/category/${category._id}`
+    );
+  } catch (error) {
+    console.error(
+      "Create category error:",
+      error
+    );
 
-      console.error(
-        "Create category error:",
-        error
-      );
+    return res
+      .status(error.statusCode || 400)
+      .render(
+        "products/category/add",
+        {
+          title:
+            "Add Category | Verrah Cosmetics",
 
-      return res
-        .status(
-          error.statusCode || 400
-        )
-        .render(
-          "products/category/add",
-          {
-            title:
-              "Add Category | Verrah Cosmetics",
+          error:
+            error.message ||
+            "Unable to create category.",
 
-            error:
-              error.message ||
-              "Unable to create category.",
+          success: null,
 
-            success:
-              null,
+          formData: {
+            name:
+              req.body?.name || "",
 
-            formData:
-              req.body || {}
+            categoryIconUrl:
+              req.body?.categoryIconUrl || ""
           }
-        );
-    }
-  };
+        }
+      );
+  }
+};
+
+// ==========================================================
+// CATEGORY PRODUCTS
+// ==========================================================
+
+exports.products = async (req, res) => {
+  try {
+    const result =
+      await categoryService.getCategoryProducts(
+        req.params.id
+      );
+
+    return res.render(
+      "products/category",
+      {
+        title:
+          `${result.category.name} | Verrah Cosmetics`,
+
+        category:
+          result.category,
+
+        products:
+          result.products,
+
+        error: null
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Category products error:",
+      error
+    );
+
+    return res
+      .status(error.statusCode || 500)
+      .render(
+        "products/category",
+        {
+          title:
+            "Category | Verrah Cosmetics",
+
+          category: null,
+
+          products: [],
+
+          error:
+            error.message ||
+            "Unable to load category."
+        }
+      );
+  }
+};
