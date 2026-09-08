@@ -23,21 +23,26 @@ exports.newStockForm = async (req, res) => {
   try {
     const stockCatalog = await service.getStockCategories();
     const categories = await service.getCategories();
+
     const selectedStock = req.query.stockId
       ? await service.getStock(req.query.stockId)
       : null;
 
     res.render("stock/product-entry", {
-      title: selectedStock ? "Update Stock Subcategory" : "Add Stock Subcategory",
+      title: selectedStock
+        ? "Update Stock Subcategory"
+        : "Add Stock Subcategory",
       error: req.query.error || null,
       saved: req.query.saved || "",
       old: selectedStock || {},
       stockCatalog,
       categories,
-      selectedStockId: selectedStock?._id?.toString() || ""
+      selectedStockId:
+        selectedStock?._id?.toString() || ""
     });
   } catch (error) {
     console.error(error);
+
     res.status(500).render("stock/product-entry", {
       title: "Add Stock Subcategory",
       error: error.message,
@@ -53,19 +58,27 @@ exports.newStockForm = async (req, res) => {
 exports.createOrUpdateStock = async (req, res) => {
   try {
     const stockId = String(req.body.stockId || "").trim();
+
     if (stockId) {
       await service.updateStockEntry(stockId, req.body);
     } else {
       await service.createStock(req.body);
     }
+
     return res.redirect("/stock?saved=1");
   } catch (error) {
     console.error(error);
-    const stockCatalog = await service.getStockCategories().catch(() => []);
-    const categories = await service.getCategories().catch(() => []);
+
+    const stockCatalog =
+      await service.getStockCategories().catch(() => []);
+
+    const categories =
+      await service.getCategories().catch(() => []);
 
     return res.status(400).render("stock/product-entry", {
-      title: req.body.stockId ? "Update Stock Subcategory" : "Add Stock Subcategory",
+      title: req.body.stockId
+        ? "Update Stock Subcategory"
+        : "Add Stock Subcategory",
       error: error.message,
       saved: "",
       old: req.body,
@@ -97,16 +110,25 @@ exports.entry = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.redirect(`/stock?error=${encodeURIComponent(error.message)}`);
+    res.redirect(
+      `/stock?error=${encodeURIComponent(error.message)}`
+    );
   }
 };
 
 exports.createProduct = async (req, res) => {
   try {
-    await service.createProductFromStock(req.params.id, req.body);
-    return res.redirect(`/stock/${req.params.id}?saved=1`);
+    await service.createProductFromStock(
+      req.params.id,
+      req.body
+    );
+
+    return res.redirect(
+      `/stock/${req.params.id}?saved=1`
+    );
   } catch (error) {
     console.error(error);
+
     const [stock, substations] = await Promise.all([
       service.getStock(req.params.id),
       service.getSubstations()
