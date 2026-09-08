@@ -1,0 +1,1082 @@
+<section class="shop-page">
+
+  <div class="form-card stock-management-form">
+
+    <a href="/stock" class="secondary-btn">
+
+      <i class="fas fa-arrow-left"></i>
+
+      Stock
+
+    </a>
+
+
+    <h1 class="page-title">
+      <%= title %>
+    </h1>
+
+
+    <p class="page-subtitle">
+      Add the stock details and, when needed, give customers clear
+      instructions for using the product.
+    </p>
+
+
+    <% if (error) { %>
+
+      <div class="error">
+        <%= error %>
+      </div>
+
+    <% } %>
+
+
+    <% if (saved === "1") { %>
+
+      <div class="notice">
+        Stock subcategory saved successfully.
+      </div>
+
+    <% } %>
+
+
+    <form
+      action="/stock"
+      method="POST"
+      id="stockForm"
+    >
+
+      <input
+        type="hidden"
+        name="stockId"
+        id="stockId"
+        value="<%= selectedStockId || old.stockId || '' %>"
+      >
+
+
+      <!-- EXISTING STOCK -->
+
+      <div class="field full">
+
+        <label for="existingStockId">
+          Existing stock subcategory
+        </label>
+
+
+        <select id="existingStockId">
+
+          <option value="">
+            + Create new subcategory
+          </option>
+
+
+          <% (stockCatalog || []).forEach((stock) => { %>
+
+            <option
+              value="<%= stock._id %>"
+              data-category="<%= stock.category || '' %>"
+              data-subcategory="<%= stock.subcategory || '' %>"
+              data-units="<%= stock.units || 0 %>"
+              data-buy-price="<%= stock.buyPrice || 0 %>"
+              data-image="<%= stock.image || '' %>"
+              data-description="<%= stock.description || '' %>"
+              data-days="<%= stock.days || 0 %>"
+              data-directions="<%= encodeURIComponent(JSON.stringify(stock.directionsOfUse || { title: '', items: [] })) %>"
+              <%= String(selectedStockId || old.stockId || '') === String(stock._id) ? 'selected' : '' %>
+            >
+
+              <%= stock.category %>
+              —
+              <%= stock.subcategory %>
+              (<%= stock.units || 0 %> units)
+
+            </option>
+
+          <% }) %>
+
+        </select>
+
+
+        <small class="form-help">
+
+          Select an existing subcategory to edit it and add
+          warehouse units.
+
+        </small>
+
+      </div>
+
+
+      <!-- STOCK FORM -->
+
+      <div class="form-grid">
+
+
+        <div class="field">
+
+          <label for="category">
+            Category
+          </label>
+
+
+          <select
+            id="category"
+            name="category"
+            required
+          >
+
+            <option value="">
+              Select category
+            </option>
+
+
+            <% (categories || []).forEach((category) => { %>
+
+              <option
+                value="<%= category %>"
+                <%= String(old.category || '') === String(category) ? 'selected' : '' %>
+              >
+
+                <%= category %>
+
+              </option>
+
+            <% }) %>
+
+          </select>
+
+
+          <small class="form-help">
+            Choose an existing category.
+          </small>
+
+        </div>
+
+
+        <div class="field">
+
+          <label for="subcategory">
+            Subcategory
+          </label>
+
+
+          <input
+            id="subcategory"
+            name="subcategory"
+            value="<%= old.subcategory || '' %>"
+            required
+          >
+
+
+          <small class="form-help">
+            This becomes the product name.
+          </small>
+
+        </div>
+
+
+        <div class="field">
+
+          <label for="units" id="unitsLabel">
+            Initial warehouse units
+          </label>
+
+
+          <input
+            id="units"
+            name="units"
+            type="number"
+            min="0"
+            step="1"
+            value="<%= old.additionalUnits ?? old.units ?? '' %>"
+          >
+
+
+          <small
+            class="form-help"
+            id="unitsHelp"
+          >
+            Units for a new subcategory.
+          </small>
+
+        </div>
+
+
+        <div class="field">
+
+          <label for="buyPrice">
+            Buy price per unit
+          </label>
+
+
+          <input
+            id="buyPrice"
+            name="buyPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            value="<%= old.buyPrice ?? 0 %>"
+            required
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label for="days">
+            Delivery days
+          </label>
+
+
+          <input
+            id="days"
+            name="days"
+            type="number"
+            min="0"
+            step="1"
+            value="<%= old.days ?? 0 %>"
+            required
+          >
+
+
+          <small class="form-help">
+            Delivery time for this subcategory.
+          </small>
+
+        </div>
+
+
+        <div class="field full">
+
+          <label for="image">
+
+            Image URL
+
+            <span class="optional">
+              (optional when updating)
+            </span>
+
+          </label>
+
+
+          <input
+            id="image"
+            name="image"
+            value="<%= old.image || '' %>"
+          >
+
+        </div>
+
+
+        <div class="field full">
+
+          <label for="description">
+            Description
+          </label>
+
+
+          <textarea
+            id="description"
+            name="description"
+            placeholder="Briefly describe the product"
+          ><%= old.description || '' %></textarea>
+
+        </div>
+
+      </div>
+
+
+      <!-- =====================================================
+           DIRECTIONS OF USE
+      ====================================================== -->
+
+      <section
+        class="directions-editor"
+        aria-labelledby="directionsHeading"
+      >
+
+        <div class="directions-editor-head">
+
+          <div>
+
+            <span class="directions-kicker">
+
+              <i class="fas fa-circle-info"></i>
+
+              Customer information
+
+            </span>
+
+
+            <h2 id="directionsHeading">
+              Directions of Use
+            </h2>
+
+
+            <p>
+              Add practical instructions that customers should see
+              on the product page. This section is optional.
+            </p>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="secondary-btn directions-add-btn"
+            id="addDirectionBtn"
+          >
+
+            <i class="fas fa-plus"></i>
+
+            Add instruction
+
+          </button>
+
+        </div>
+
+
+        <div class="field full">
+
+          <label for="directionsTitle">
+            Section title
+          </label>
+
+
+          <input
+            id="directionsTitle"
+            name="directionsOfUse[title]"
+            value="<%= old.directionsOfUse?.title || '' %>"
+            placeholder="e.g. How to use this product"
+          >
+
+        </div>
+
+
+        <div
+          id="directionsList"
+          class="directions-list"
+        >
+
+          <%
+            const savedDirections =
+              old.directionsOfUse?.items || [];
+
+            const existingDirections =
+              savedDirections.length
+                ? savedDirections
+                : [{ subtitle: '', content: '' }];
+          %>
+
+
+          <% existingDirections.forEach((item, index) => { %>
+
+
+            <div
+              class="direction-item"
+              data-index="<%= index %>"
+            >
+
+              <div class="direction-item-number">
+                <%= index + 1 %>
+              </div>
+
+
+              <div class="direction-item-fields">
+
+
+                <div class="field">
+
+                  <label>
+                    Instruction heading
+                  </label>
+
+
+                  <input
+                    name="directionsOfUse[items][<%= index %>][subtitle]"
+                    value="<%= item.subtitle || '' %>"
+                    placeholder="e.g. Before use"
+                  >
+
+                </div>
+
+
+                <div class="field full">
+
+                  <label>
+                    Instruction
+                  </label>
+
+
+                  <textarea
+                    name="directionsOfUse[items][<%= index %>][content]"
+                    placeholder="Explain what the customer should do"
+                  ><%= item.content || '' %></textarea>
+
+                </div>
+
+
+              </div>
+
+
+              <button
+                type="button"
+                class="direction-remove"
+                aria-label="Remove instruction"
+                title="Remove instruction"
+              >
+
+                <i class="fas fa-trash"></i>
+
+              </button>
+
+            </div>
+
+
+          <% }) %>
+
+        </div>
+
+
+        <div
+          id="directionsEmpty"
+          class="directions-empty"
+          hidden
+        >
+
+          <i class="fas fa-list-check"></i>
+
+          <strong>
+            No directions added yet
+          </strong>
+
+          <span>
+            Add another instruction when the product needs
+            more than one step.
+          </span>
+
+        </div>
+
+
+        <input
+          type="hidden"
+          name="directionsOfUse[clear]"
+          id="directionsClear"
+          value="0"
+        >
+
+
+        <label class="directions-clear-option">
+
+          <input
+            type="checkbox"
+            id="clearDirections"
+          >
+
+          <span>
+            Remove directions of use from this stock item
+          </span>
+
+        </label>
+
+      </section>
+
+
+      <!-- STOCK UPDATE SUMMARY -->
+
+      <div
+        class="stock-edit-summary"
+        id="stockEditSummary"
+        hidden
+      >
+
+        <div>
+
+          <strong>
+            Current warehouse units:
+          </strong>
+
+          <span id="currentUnits">
+            0
+          </span>
+
+        </div>
+
+
+        <div>
+
+          <strong>
+            After this update:
+          </strong>
+
+          <span id="projectedUnits">
+            0
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <!-- FORM ACTIONS -->
+
+      <div class="form-actions">
+
+        <button
+          type="submit"
+          class="primary-btn"
+          id="submitButton"
+        >
+
+          <i class="fas fa-plus"></i>
+
+          Create Stock Subcategory
+
+        </button>
+
+
+        <a
+          href="/stock"
+          class="secondary-btn"
+        >
+          Cancel
+        </a>
+
+      </div>
+
+
+    </form>
+
+  </div>
+
+</section>
+
+
+<script>
+(function () {
+  "use strict";
+
+  const selector =
+    document.getElementById("existingStockId");
+
+  const stockId =
+    document.getElementById("stockId");
+
+  const category =
+    document.getElementById("category");
+
+  const subcategory =
+    document.getElementById("subcategory");
+
+  const units =
+    document.getElementById("units");
+
+  const buyPrice =
+    document.getElementById("buyPrice");
+
+  const days =
+    document.getElementById("days");
+
+  const image =
+    document.getElementById("image");
+
+  const description =
+    document.getElementById("description");
+
+  const submitButton =
+    document.getElementById("submitButton");
+
+  const unitsLabel =
+    document.getElementById("unitsLabel");
+
+  const unitsHelp =
+    document.getElementById("unitsHelp");
+
+  const summary =
+    document.getElementById("stockEditSummary");
+
+  const currentUnits =
+    document.getElementById("currentUnits");
+
+  const projectedUnits =
+    document.getElementById("projectedUnits");
+
+  const directionsList =
+    document.getElementById("directionsList");
+
+  const directionsEmpty =
+    document.getElementById("directionsEmpty");
+
+  const addDirectionBtn =
+    document.getElementById("addDirectionBtn");
+
+  const clearDirections =
+    document.getElementById("clearDirections");
+
+  const directionsClear =
+    document.getElementById("directionsClear");
+
+  const directionsTitle =
+    document.getElementById("directionsTitle");
+
+
+  function selectedOption() {
+    return selector.options[selector.selectedIndex];
+  }
+
+
+  function updateSummary() {
+
+    if (!stockId.value) {
+
+      summary.hidden = true;
+
+      return;
+    }
+
+
+    const current =
+      Number(
+        selectedOption()?.dataset.units || 0
+      );
+
+
+    const additional =
+      Math.max(
+        0,
+        Number(units.value || 0)
+      );
+
+
+    currentUnits.textContent =
+      current.toLocaleString();
+
+
+    projectedUnits.textContent =
+      (current + additional).toLocaleString();
+
+
+    summary.hidden = false;
+  }
+
+
+  function renumberDirections() {
+
+    Array.from(
+      directionsList.querySelectorAll(
+        ".direction-item"
+      )
+    ).forEach((item, index) => {
+
+      item.dataset.index = index;
+
+
+      item.querySelector(
+        ".direction-item-number"
+      ).textContent = index + 1;
+
+
+      item.querySelectorAll(
+        "input, textarea"
+      ).forEach((field) => {
+
+        const type =
+          field.name.includes("subtitle")
+            ? "subtitle"
+            : "content";
+
+
+        field.name =
+          `directionsOfUse[items][${index}][${type}]`;
+
+      });
+
+    });
+
+
+    directionsEmpty.hidden =
+      directionsList.querySelectorAll(
+        ".direction-item"
+      ).length > 0;
+  }
+
+
+  function updateDirectionsDisabledState() {
+
+    const disabled =
+      clearDirections.checked;
+
+
+    directionsList.classList.toggle(
+      "directions-disabled",
+      disabled
+    );
+
+
+    directionsTitle.disabled =
+      disabled;
+
+
+    directionsList
+      .querySelectorAll(
+        "input, textarea"
+      )
+      .forEach((field) => {
+
+        field.disabled = disabled;
+
+      });
+
+
+    directionsClear.value =
+      disabled ? "1" : "0";
+  }
+
+
+  function addDirection(
+    subtitle = "",
+    content = ""
+  ) {
+
+    const index =
+      directionsList.querySelectorAll(
+        ".direction-item"
+      ).length;
+
+
+    const item =
+      document.createElement("div");
+
+
+    item.className =
+      "direction-item";
+
+
+    item.dataset.index =
+      index;
+
+
+    item.innerHTML = `
+      <div class="direction-item-number">
+        ${index + 1}
+      </div>
+
+      <div class="direction-item-fields">
+
+        <div class="field">
+
+          <label>
+            Instruction heading
+          </label>
+
+          <input
+            name="directionsOfUse[items][${index}][subtitle]"
+            placeholder="e.g. Before use"
+          >
+
+        </div>
+
+        <div class="field full">
+
+          <label>
+            Instruction
+          </label>
+
+          <textarea
+            name="directionsOfUse[items][${index}][content]"
+            placeholder="Explain what the customer should do"
+          ></textarea>
+
+        </div>
+
+      </div>
+
+      <button
+        type="button"
+        class="direction-remove"
+        aria-label="Remove instruction"
+        title="Remove instruction"
+      >
+
+        <i class="fas fa-trash"></i>
+
+      </button>
+    `;
+
+
+    item.querySelector("input").value =
+      subtitle;
+
+
+    item.querySelector("textarea").value =
+      content;
+
+
+    directionsList.appendChild(item);
+
+
+    directionsEmpty.hidden =
+      true;
+
+
+    clearDirections.checked =
+      false;
+
+
+    updateDirectionsDisabledState();
+  }
+
+
+  directionsList.addEventListener(
+    "click",
+    (event) => {
+
+      const remove =
+        event.target.closest(
+          ".direction-remove"
+        );
+
+
+      if (!remove) return;
+
+
+      remove
+        .closest(".direction-item")
+        .remove();
+
+
+      renumberDirections();
+
+    }
+  );
+
+
+  addDirectionBtn.addEventListener(
+    "click",
+    () => {
+
+      addDirection();
+
+    }
+  );
+
+
+  clearDirections.addEventListener(
+    "change",
+    () => {
+
+      updateDirectionsDisabledState();
+
+    }
+  );
+
+
+  function loadDirections(encoded) {
+
+    directionsList.innerHTML =
+      "";
+
+
+    directionsTitle.value =
+      "";
+
+
+    clearDirections.checked =
+      false;
+
+
+    directionsClear.value =
+      "0";
+
+
+    try {
+
+      const directions =
+        encoded
+          ? JSON.parse(
+              decodeURIComponent(encoded)
+            )
+          : null;
+
+
+      directionsTitle.value =
+        directions?.title || "";
+
+
+      (
+        directions?.items || []
+      ).forEach((item) => {
+
+        addDirection(
+          item.subtitle || "",
+          item.content || ""
+        );
+
+      });
+
+
+      renumberDirections();
+
+
+    } catch (error) {
+
+      console.error(
+        "Unable to load directions of use:",
+        error
+      );
+
+
+      renumberDirections();
+
+    }
+
+  }
+
+
+  function setMode() {
+
+    const option =
+      selectedOption();
+
+
+    const id =
+      selector.value;
+
+
+    if (!id) {
+
+      stockId.value =
+        "";
+
+
+      units.name =
+        "units";
+
+
+      units.value =
+        "<%= old.units ?? '' %>";
+
+
+      units.required =
+        true;
+
+
+      unitsLabel.textContent =
+        "Initial warehouse units";
+
+
+      unitsHelp.textContent =
+        "Units for a new subcategory.";
+
+
+      submitButton.innerHTML =
+        '<i class="fas fa-plus"></i> Create Stock Subcategory';
+
+
+      summary.hidden =
+        true;
+
+
+      return;
+
+    }
+
+
+    stockId.value =
+      id;
+
+
+    category.value =
+      option.dataset.category || "";
+
+
+    subcategory.value =
+      option.dataset.subcategory || "";
+
+
+    buyPrice.value =
+      option.dataset.buyPrice || "0";
+
+
+    image.value =
+      option.dataset.image || "";
+
+
+    description.value =
+      option.dataset.description || "";
+
+
+    days.value =
+      option.dataset.days || "0";
+
+
+    loadDirections(
+      option.dataset.directions || ""
+    );
+
+
+    units.name =
+      "additionalUnits";
+
+
+    units.value =
+      "0";
+
+
+    units.required =
+      false;
+
+
+    unitsLabel.textContent =
+      "Additional warehouse units";
+
+
+    unitsHelp.textContent =
+      "These units are added to the existing warehouse balance.";
+
+
+    submitButton.innerHTML =
+      '<i class="fas fa-save"></i> Update Stock Subcategory';
+
+
+    updateSummary();
+
+  }
+
+
+  selector.addEventListener(
+    "change",
+    setMode
+  );
+
+
+  units.addEventListener(
+    "input",
+    updateSummary
+  );
+
+
+  document
+    .getElementById("stockForm")
+    .addEventListener(
+      "submit",
+      () => {
+
+        directionsClear.value =
+          clearDirections.checked
+            ? "1"
+            : "0";
+
+      }
+    );
+
+
+  if (selector.value) {
+
+    setMode();
+
+  }
+
+})();
+</script>
