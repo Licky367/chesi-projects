@@ -1,0 +1,283 @@
+<section class="shop-page">
+
+  <div class="products-heading">
+    <h1 class="page-title">Products</h1>
+
+    <p class="page-subtitle">
+      Welcome to Verrah Cosmetics Products. Browse through the products and order your wish.
+    </p>
+  </div>
+
+
+  <% if (typeof error !== "undefined" && error) { %>
+
+    <div class="error">
+      <%= error %>
+    </div>
+
+  <% } %>
+
+
+  <% if (!categories || !categories.length) { %>
+
+    <div class="empty products-empty">
+
+      <i class="fas fa-box-open"></i>
+
+      <div>
+        No products are available right now.
+      </div>
+
+    </div>
+
+  <% } %>
+
+
+  <% (categories || []).forEach((group) => { %>
+
+    <section class="category-section">
+
+      <!-- CATEGORY HEADER -->
+
+      <div class="category-head">
+
+        <h2>
+          <%= group.label || group.category || "Other" %>
+        </h2>
+
+      </div>
+
+
+      <%
+        /*
+         * ==================================================
+         * FLATTEN PRODUCTS
+         *
+         * Products are collected from all rows belonging
+         * to this category.
+         *
+         * Subcategory does NOT create separate rows.
+         * ==================================================
+         */
+
+        const categoryProducts = [];
+
+        (group.rows || []).forEach((row) => {
+
+          (row.products || []).forEach((product) => {
+
+            categoryProducts.push(product);
+
+          });
+
+        });
+
+
+        /*
+         * FALLBACK
+         */
+
+        if (
+          categoryProducts.length === 0 &&
+          Array.isArray(group.products)
+        ) {
+
+          group.products.forEach((product) => {
+
+            categoryProducts.push(product);
+
+          });
+
+        }
+      %>
+
+
+      <% if (categoryProducts.length) { %>
+
+
+        <%
+          /*
+           * ==================================================
+           * SIX PRODUCTS PER ROW
+           * ==================================================
+           */
+
+          for (
+            let rowStart = 0;
+            rowStart < categoryProducts.length;
+            rowStart += 6
+          ) {
+
+            const rowProducts =
+              categoryProducts.slice(
+                rowStart,
+                rowStart + 6
+              );
+        %>
+
+
+          <div class="subcategory-row-block">
+
+            <div class="subcategory-head">
+
+              <h3>
+                <%= group.label || group.category || "Other" %>
+              </h3>
+
+
+              <% if (categoryProducts.length > 6) { %>
+
+                <span>
+                  Swipe left/right
+                </span>
+
+              <% } %>
+
+            </div>
+
+
+            <!-- PRODUCT ROW -->
+
+            <div
+              class="product-row category-product-row"
+              aria-label="<%= group.label || group.category || 'Products' %> products"
+            >
+
+
+              <% rowProducts.forEach((product) => { %>
+
+
+                <a
+                  class="product-card"
+                  href="/products/<%= product._id %>"
+                >
+
+
+                  <!-- PRODUCT IMAGE -->
+
+                  <div class="product-image">
+
+                    <% if (product.image) { %>
+
+                      <img
+                        src="<%= product.image %>"
+                        alt="<%= product.name %>"
+                        loading="lazy"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                      >
+
+                      <div class="placeholder product-image-fallback">
+
+                        <i class="fas fa-box"></i>
+
+                      </div>
+
+                    <% } else { %>
+
+                      <div class="placeholder">
+
+                        <i class="fas fa-box"></i>
+
+                      </div>
+
+                    <% } %>
+
+                  </div>
+
+
+                  <!-- PRODUCT INFORMATION -->
+
+                  <div class="product-info">
+
+                    <div class="product-name">
+                      <%= product.name %>
+                    </div>
+
+
+                    <div class="stock-meta-line">
+                      <%= product.subcategory || "Other" %>
+                    </div>
+
+
+                    <div class="product-price">
+
+                      KSh
+
+                      <%= Number(
+                        product.unitSellPrice || 0
+                      ).toLocaleString() %>
+
+                    </div>
+
+
+                    <div class="stock-text">
+
+                      <strong>
+                        <%= Number(product.days || 0) %>
+                      </strong>
+
+                      day delivery
+
+                    </div>
+
+
+                    <div
+                      class="stock-text <%= Number(product.units || 0) <= 0 ? 'out' : '' %>"
+                    >
+
+                      <% if (Number(product.units || 0) > 0) { %>
+
+                        <%= Number(
+                          product.units
+                        ).toLocaleString() %>
+
+                        available
+
+                      <% } else { %>
+
+                        Out of stock
+
+                      <% } %>
+
+                    </div>
+
+                  </div>
+
+                </a>
+
+
+              <% }) %>
+
+
+            </div>
+
+          </div>
+
+
+        <%
+          }
+        %>
+
+
+      <% } else { %>
+
+
+        <div class="empty category-empty">
+
+          <i class="fas fa-box-open"></i>
+
+          <div>
+            No products are available in this category.
+          </div>
+
+        </div>
+
+
+      <% } %>
+
+
+    </section>
+
+  <% }) %>
+
+</section>
