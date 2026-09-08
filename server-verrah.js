@@ -1198,7 +1198,7 @@ function startServer(port) {
         () => {
 
             console.log("==========================================================");
-            console.log(`🚀 COREVESTER running on port ${port}`);
+            console.log(`🚀 VERRAH COSMETICS running on port ${port}`);
             console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
             console.log("==========================================================");
         }
