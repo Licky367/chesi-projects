@@ -967,9 +967,3 @@ The critical database-backed portion is this:
     <%= category.name %>
   </option>
 <% }) %>
-
-That matches the controller's "categories" array when it passes the actual Category documents to the view. The current repository controller/service already obtains the categories from MongoDB.
-
-One more thing I corrected while reproducing the complete file: the original script blindly calls "selector.value" even though "existingStockId" is not present in the form. I changed the final initialization to "if (selector && selector.value)" so "/stock/new" doesn't crash in the browser. The original file indeed has that mismatch.
-
-This preserves the rest of your stock form and directions-of-use UI.
