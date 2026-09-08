@@ -27,6 +27,43 @@
   <% if (product) { %>
 
 
+    <%
+      /*
+       * ==========================================================
+       * CATEGORY NAME
+       *
+       * Product.category is stored as Category._id.
+       * The customer-facing page must display Category.name,
+       * never the Category._id.
+       *
+       * Supported populated structures:
+       *
+       * product.category.name
+       * product.categoryName
+       *
+       * If product.category is still an ObjectId/string ID,
+       * do not display the ID.
+       * ==========================================================
+       */
+
+      let categoryName = "Other";
+
+      if (
+        product.category &&
+        typeof product.category === "object" &&
+        product.category.name
+      ) {
+
+        categoryName = product.category.name;
+
+      } else if (product.categoryName) {
+
+        categoryName = product.categoryName;
+
+      }
+    %>
+
+
     <!-- PRODUCT DETAILS -->
 
     <div class="detail-card">
@@ -63,8 +100,10 @@
         <div class="detail-content">
 
 
+          <!-- CATEGORY NAME -->
+
           <span class="detail-category">
-            <%= product.category %>
+            <%= categoryName %>
           </span>
 
 
@@ -114,7 +153,7 @@
           </div>
 
 
-          <% if (product.units > 0) { %>
+          <% if (Number(product.units || 0) > 0) { %>
 
 
             <div class="stock-text detail-stock">
