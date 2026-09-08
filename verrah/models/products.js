@@ -1,81 +1,274 @@
+// ==========================================================
+// models/products.js
+// PRODUCT MODEL
+// VERRAH COSMETICS
+// ==========================================================
+
 const mongoose = require("mongoose");
 
+
+// ==========================================================
+// DIRECTIONS OF USE ITEM
+// ==========================================================
+
 const directionsOfUseItemSchema = new mongoose.Schema(
-  {
-    subtitle: { type: String, trim: true, default: "" },
-    content: { type: String, trim: true, default: "" }
-  },
-  { _id: false }
+    {
+        subtitle: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
+        content: {
+            type: String,
+            trim: true,
+            default: ""
+        }
+    },
+    {
+        _id: false
+    }
 );
+
+
+// ==========================================================
+// DIRECTIONS OF USE
+// ==========================================================
 
 const directionsOfUseSchema = new mongoose.Schema(
-  {
-    title: { type: String, trim: true, default: "" },
-    items: { type: [directionsOfUseItemSchema], default: [] }
-  },
-  { _id: false }
+    {
+        title: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
+        items: {
+            type: [directionsOfUseItemSchema],
+            default: []
+        }
+    },
+    {
+        _id: false
+    }
 );
+
+
+// ==========================================================
+// PRODUCT SCHEMA
+// ==========================================================
 
 const productSchema = new mongoose.Schema(
-  {
-    stock: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Stock",
-      required: true,
-      index: true
+    {
+
+        // ======================================================
+        // STOCK
+        // ======================================================
+
+        stock: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Stock",
+            required: true,
+            index: true
+        },
+
+
+        // ======================================================
+        // PRODUCT NAME
+        // ======================================================
+
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+            index: true
+        },
+
+
+        // ======================================================
+        // CATEGORY
+        // ======================================================
+        //
+        // IMPORTANT:
+        //
+        // The database stores the Category._id.
+        //
+        // The frontend must NOT display this ObjectId.
+        //
+        // productService resolves this reference and exposes:
+        //
+        //     categoryName
+        //
+        //     label
+        //
+        // to the frontend.
+        //
+        // ======================================================
+
+        category: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Category",
+            required: true,
+            index: true
+        },
+
+
+        // ======================================================
+        // SUBCATEGORY
+        // ======================================================
+
+        subcategory: {
+            type: String,
+            required: true,
+            trim: true,
+            lowercase: true,
+            index: true
+        },
+
+
+        // ======================================================
+        // DELIVERY DAYS
+        // ======================================================
+
+        days: {
+            type: Number,
+            required: true,
+            min: 0,
+            default: 1
+        },
+
+
+        // ======================================================
+        // PRODUCT IMAGE
+        // ======================================================
+
+        image: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
+
+        // ======================================================
+        // AVAILABLE UNITS
+        // ======================================================
+
+        units: {
+            type: Number,
+            required: true,
+            min: 0,
+            default: 0
+        },
+
+
+        // ======================================================
+        // BUYING PRICE
+        // ======================================================
+
+        buyPrice: {
+            type: Number,
+            min: 0,
+            default: 0
+        },
+
+
+        // ======================================================
+        // SELLING PRICE
+        // ======================================================
+
+        unitSellPrice: {
+            type: Number,
+            required: true,
+            min: 0
+        },
+
+
+        // ======================================================
+        // DESCRIPTION
+        // ======================================================
+
+        description: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
+
+        // ======================================================
+        // DIRECTIONS OF USE
+        // ======================================================
+
+        directionsOfUse: {
+            type: directionsOfUseSchema,
+            default: undefined
+        },
+
+
+        // ======================================================
+        // SUBSTATION
+        // ======================================================
+
+        substation: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Substation",
+            default: null,
+            index: true
+        },
+
+
+        // ======================================================
+        // ACTIVE STATUS
+        // ======================================================
+
+        isActive: {
+            type: Boolean,
+            default: true,
+            index: true
+        }
+
     },
+    {
 
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-      index: true
-    },
+        timestamps: true,
 
-    // Keep Product.category aligned with Stock.category.
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      required: true,
-      index: true
-    },
+        toJSON: {
+            virtuals: true
+        },
 
-    subcategory: {
-      type: String,
-      required: true,
-      trim: true,
-      lowercase: true,
-      index: true
-    },
+        toObject: {
+            virtuals: true
+        }
 
-    days: { type: Number, required: true, min: 0, default: 1 },
-    image: { type: String, trim: true, default: "" },
-    units: { type: Number, required: true, min: 0, default: 0 },
-    buyPrice: { type: Number, min: 0, default: 0 },
-    unitSellPrice: { type: Number, required: true, min: 0 },
-    description: { type: String, default: "" },
-
-    directionsOfUse: {
-      type: directionsOfUseSchema,
-      default: undefined
-    },
-
-    substation: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Substation",
-      default: null,
-      index: true
-    },
-
-    isActive: { type: Boolean, default: true }
-  },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
-  }
+    }
 );
 
-productSchema.index({ stock: 1, isActive: 1 });
 
-module.exports = mongoose.model("Product", productSchema);
+// ==========================================================
+// INDEXES
+// ==========================================================
+
+productSchema.index({
+    stock: 1,
+    isActive: 1
+});
+
+productSchema.index({
+    category: 1,
+    isActive: 1
+});
+
+productSchema.index({
+    category: 1,
+    subcategory: 1,
+    name: 1
+});
+
+
+// ==========================================================
+// EXPORT
+// ==========================================================
+
+module.exports = mongoose.model(
+    "Product",
+    productSchema
+);
