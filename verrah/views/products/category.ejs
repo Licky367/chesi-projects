@@ -1,0 +1,323 @@
+<%
+  /*
+   * Expected controller data:
+   *
+   * category
+   * products
+   *
+   * category.name
+   *
+   * products = [
+   *   {
+   *     _id,
+   *     name,
+   *     category,
+   *     subcategory,
+   *     image,
+   *     units,
+   *     unitSellPrice,
+   *     description,
+   *     isActive
+   *   }
+   * ]
+   */
+
+  const categoryName =
+    category?.name ||
+    (products && products.length ? products[0].category : "Products");
+
+  /*
+   * Group products by subcategory.
+   */
+  const groupedProducts = {};
+
+  (products || []).forEach((product) => {
+
+    const subcategory =
+      product.subcategory ||
+      "Other";
+
+    if (!groupedProducts[subcategory]) {
+      groupedProducts[subcategory] = [];
+    }
+
+    groupedProducts[subcategory].push(product);
+  });
+
+  const subcategories =
+    Object.keys(groupedProducts);
+%>
+
+
+<section class="shop-page category-products-page">
+
+
+  <!-- =====================================================
+       PAGE HEADER
+  ====================================================== -->
+
+  <div class="products-heading">
+
+    <div class="product-back">
+
+      <a
+        href="/products"
+        class="secondary-btn"
+      >
+        <i class="fas fa-arrow-left"></i>
+
+        <span>All Products</span>
+      </a>
+
+    </div>
+
+
+    <h1 class="page-title">
+      <%= categoryName %>
+    </h1>
+
+
+    <p class="page-subtitle">
+
+      Explore our
+      <%= categoryName %>
+      collection.
+
+    </p>
+
+  </div>
+
+
+  <!-- =====================================================
+       EMPTY CATEGORY
+  ====================================================== -->
+
+  <% if (!products || products.length === 0) { %>
+
+    <div class="empty category-empty">
+
+      <i class="fas fa-box-open"></i>
+
+      <span>
+        There are currently no products in this category.
+      </span>
+
+    </div>
+
+  <% } %>
+
+
+  <!-- =====================================================
+       SUBCATEGORIES
+  ====================================================== -->
+
+  <% subcategories.forEach((subcategory) => { %>
+
+    <section class="category-section">
+
+
+      <!-- =================================================
+           SUBCATEGORY HEADER
+      ================================================== -->
+
+      <div class="category-head">
+
+        <h2>
+          <%= subcategory %>
+        </h2>
+
+        <span>
+          <%= groupedProducts[subcategory].length %>
+          product<%= groupedProducts[subcategory].length === 1 ? "" : "s" %>
+        </span>
+
+      </div>
+
+
+      <!-- =================================================
+           PRODUCT ROWS
+
+           Six products per row.
+
+           1 - 6   => row 1
+           7 - 12  => row 2
+           13 - 18 => row 3
+           etc.
+      ================================================== -->
+
+      <%
+        const subcategoryProducts =
+          groupedProducts[subcategory];
+
+        for (
+          let rowStart = 0;
+          rowStart < subcategoryProducts.length;
+          rowStart += 6
+        ) {
+
+          const rowProducts =
+            subcategoryProducts.slice(
+              rowStart,
+              rowStart + 6
+            );
+      %>
+
+
+        <div class="subcategory-row-block">
+
+
+          <div class="product-row">
+
+
+            <% rowProducts.forEach((product) => { %>
+
+
+              <!-- =========================================
+                   PRODUCT CARD
+              ========================================== -->
+
+              <a
+                href="/products/<%= product._id %>"
+                class="product-card"
+                aria-label="View <%= product.name %>"
+              >
+
+
+                <!-- =====================================
+                     PRODUCT IMAGE
+                ====================================== -->
+
+                <div class="product-image">
+
+
+                  <% if (product.image) { %>
+
+                    <img
+                      src="<%= product.image %>"
+                      alt="<%= product.name %>"
+                      loading="lazy"
+                      onerror="
+                        this.style.display='none';
+                        this.nextElementSibling.style.display='flex';
+                      "
+                    >
+
+                  <% } %>
+
+
+                  <!-- ===================================
+                       IMAGE FALLBACK
+                  ==================================== -->
+
+                  <div
+                    class="placeholder"
+                    style="<%= product.image ? 'display:none;' : 'display:flex;' %>"
+                    aria-hidden="true"
+                  >
+
+                    <i class="fas fa-image"></i>
+
+                  </div>
+
+
+                </div>
+
+
+                <!-- =====================================
+                     PRODUCT INFORMATION
+                ====================================== -->
+
+                <div class="product-info">
+
+
+                  <div class="product-name">
+
+                    <%= product.name %>
+
+                  </div>
+
+
+                  <div class="stock-meta-line">
+
+                    <%= categoryName %>
+
+                    <% if (product.subcategory) { %>
+
+                      ·
+
+                      <%= product.subcategory %>
+
+                    <% } %>
+
+                  </div>
+
+
+                  <!-- =================================
+                       PRICE
+                  ================================== -->
+
+                  <div class="product-price">
+
+                    KSh
+                    <%= Number(product.unitSellPrice || 0).toLocaleString("en-KE", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    }) %>
+
+                  </div>
+
+
+                  <!-- =================================
+                       STOCK
+                  ================================== -->
+
+                  <% if (Number(product.units || 0) > 0) { %>
+
+                    <div class="stock-text">
+
+                      <strong>
+                        <%= product.units %>
+                      </strong>
+
+                      unit<%= Number(product.units) === 1 ? "" : "s" %>
+                      available
+
+                    </div>
+
+                  <% } else { %>
+
+                    <div class="stock-text out">
+
+                      <i class="fas fa-times-circle"></i>
+
+                      Out of stock
+
+                    </div>
+
+                  <% } %>
+
+
+                </div>
+
+
+              </a>
+
+
+            <% }); %>
+
+
+          </div>
+
+
+        </div>
+
+
+      <% } %>
+
+
+    </section>
+
+  <% }); %>
+
+
+</section>
