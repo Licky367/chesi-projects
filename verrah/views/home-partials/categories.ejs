@@ -1,0 +1,196 @@
+<%
+/* ==========================================================
+   views/home-partials/categories.ejs
+
+   VERRAH COSMETICS
+   PRODUCT CATEGORY CARDS
+
+   ----------------------------------------------------------
+   CARD SIZE:
+       116px × 155px
+
+   BEHAVIOUR:
+       - Horizontal left/right scrolling
+       - Admin sees Add Category as first card
+       - Category name is displayed
+       - Category description is displayed
+       - Category icon/image is displayed
+       - Category card links to:
+             /products/category/:id
+       - Add Category links to:
+             /products/category/add
+
+   EXPECTED DATA:
+       categories = [
+           {
+               _id,
+               name,
+               categoryIcon,
+               description
+           }
+       ]
+
+   EXPECTED USER:
+       currentUser.role
+   ========================================================== */
+%>
+
+
+<section class="home-categories">
+
+    <!-- ======================================================
+         CATEGORY SCROLLER
+    ======================================================= -->
+
+    <div
+        class="home-category-scroller"
+        aria-label="Product categories"
+    >
+
+
+        <!-- ==================================================
+             ADMIN — ADD CATEGORY
+        =================================================== -->
+
+        <% if (
+            typeof currentUser !== "undefined" &&
+            currentUser &&
+            currentUser.role === "admin"
+        ) { %>
+
+            <a
+                href="/products/category/add"
+                class="home-category-card home-category-add"
+                aria-label="Add new product category"
+            >
+
+                <div class="home-category-add-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+
+                <div class="home-category-add-title">
+                    Add Category
+                </div>
+
+                <div class="home-category-add-description">
+                    Create a new product category
+                </div>
+
+            </a>
+
+        <% } %>
+
+
+        <!-- ==================================================
+             CATEGORY CARDS
+        =================================================== -->
+
+        <% if (
+            Array.isArray(categories) &&
+            categories.length > 0
+        ) { %>
+
+
+            <% categories.forEach(function(category) { %>
+
+                <a
+                    href="/products/category/<%= category._id %>"
+                    class="home-category-card"
+                    aria-label="<%= category.name %>"
+                >
+
+
+                    <!-- ======================================
+                         CATEGORY ICON
+                    ======================================= -->
+
+                    <div class="home-category-icon">
+
+                        <% if (
+                            category.categoryIcon &&
+                            String(category.categoryIcon).trim()
+                        ) { %>
+
+                            <img
+                                src="<%= category.categoryIcon %>"
+                                alt="<%= category.name %>"
+                                loading="lazy"
+                                onerror="
+                                    this.style.display='none';
+                                    this.nextElementSibling.style.display='flex';
+                                "
+                            >
+
+                            <div
+                                class="home-category-icon-fallback"
+                                style="display:none;"
+                            >
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+
+                        <% } else { %>
+
+                            <div class="home-category-icon-fallback">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+
+                        <% } %>
+
+                    </div>
+
+
+                    <!-- ======================================
+                         CATEGORY INFORMATION
+                    ======================================= -->
+
+                    <div class="home-category-content">
+
+
+                        <!-- CATEGORY NAME -->
+
+                        <h3 class="home-category-name">
+                            <%= category.name || "Category" %>
+                        </h3>
+
+
+                        <!-- CATEGORY DESCRIPTION -->
+
+                        <p class="home-category-description">
+
+                            <%= category.description ||
+                                "Browse products in this category." %>
+
+                        </p>
+
+
+                    </div>
+
+                </a>
+
+            <% }); %>
+
+
+        <% } else { %>
+
+
+            <!-- ============================================
+                 EMPTY STATE
+            ============================================= -->
+
+            <div class="home-category-empty">
+
+                <i class="fas fa-layer-group"></i>
+
+                <span>
+                    No product categories are available yet.
+                </span>
+
+            </div>
+
+
+        <% } %>
+
+
+    </div>
+
+</section>
