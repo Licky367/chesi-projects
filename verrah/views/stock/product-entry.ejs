@@ -54,59 +54,6 @@
       >
 
 
-      <!-- EXISTING STOCK -->
-
-      <div class="field full">
-
-        <label for="existingStockId">
-          Existing stock subcategory
-        </label>
-
-
-        <select id="existingStockId">
-
-          <option value="">
-            + Create new subcategory
-          </option>
-
-
-          <% (stockCatalog || []).forEach((stock) => { %>
-
-            <option
-              value="<%= stock._id %>"
-              data-category="<%= stock.category || '' %>"
-              data-subcategory="<%= stock.subcategory || '' %>"
-              data-units="<%= stock.units || 0 %>"
-              data-buy-price="<%= stock.buyPrice || 0 %>"
-              data-image="<%= stock.image || '' %>"
-              data-description="<%= stock.description || '' %>"
-              data-days="<%= stock.days || 0 %>"
-              data-directions="<%= encodeURIComponent(JSON.stringify(stock.directionsOfUse || { title: '', items: [] })) %>"
-              <%= String(selectedStockId || old.stockId || '') === String(stock._id) ? 'selected' : '' %>
-            >
-
-              <%= stock.category %>
-              —
-              <%= stock.subcategory %>
-              (<%= stock.units || 0 %> units)
-
-            </option>
-
-          <% }) %>
-
-        </select>
-
-
-        <small class="form-help">
-
-          Select an existing subcategory to edit it and add
-          warehouse units.
-
-        </small>
-
-      </div>
-
-
       <!-- STOCK FORM -->
 
       <div class="form-grid">
