@@ -10,6 +10,7 @@ const Product = require("../models/products");
 const Category = require("../models/category");
 const Substation = require("../models/substations");
 
+
 // ==========================================================
 // HELPERS
 // ==========================================================
@@ -17,60 +18,81 @@ const Substation = require("../models/substations");
 const text = (value) =>
   String(value ?? "").trim();
 
+
 const cleanSubcategory = (value) =>
   text(value).replace(/\s+/g, " ");
+
 
 const displayLabel = (value) =>
   text(value)
     .replace(/[-_]+/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
+
 // ==========================================================
 // CATEGORY VALIDATION
 // ==========================================================
 //
-// Category is NOT an enum.
+// Stock.category is a MongoDB reference to Category.
 //
-// The supplied value must be a valid MongoDB ObjectId
-// belonging to an active Category document.
+// The supplied value MUST be a valid Category._id.
 //
-// The returned value is the Category._id.
+// Only active categories are accepted.
 //
+// Returns the actual Category._id.
 // ==========================================================
 
 async function validateCategory(value) {
-  const categoryId = text(value);
+
+  const categoryId =
+    text(value);
+
 
   if (!categoryId) {
+
     throw new Error(
       "Select a valid stock category."
     );
+
   }
+
 
   if (
     !mongoose.isValidObjectId(
       categoryId
     )
   ) {
+
     throw new Error(
       "The selected category is invalid."
     );
+
   }
+
 
   const category =
     await Category.findOne({
       _id: categoryId,
       isActive: true
-    }).lean();
+    })
+      .select(
+        "_id name categoryIcon isActive"
+      )
+      .lean();
+
 
   if (!category) {
+
     throw new Error(
       "The selected category was not found or is inactive."
     );
+
   }
+
 
   return category._id;
 }
+
 
 // ==========================================================
 // NUMBER HELPERS
@@ -81,36 +103,49 @@ function number(
   label,
   required = false
 ) {
+
   if (
     value === "" ||
     value == null
   ) {
-    if (!required) return 0;
+
+    if (!required) {
+      return 0;
+    }
 
     throw new Error(
       `${label} is required.`
     );
+
   }
 
-  const result = Number(value);
+
+  const result =
+    Number(value);
+
 
   if (
     !Number.isFinite(result) ||
     result < 0
   ) {
+
     throw new Error(
       `${label} must be zero or greater.`
     );
+
   }
+
 
   return result;
 }
+
 
 function wholeNumber(
   value,
   label,
   required = false
 ) {
+
   const result =
     number(
       value,
@@ -118,70 +153,80 @@ function wholeNumber(
       required
     );
 
+
   if (
     !Number.isInteger(result)
   ) {
+
     throw new Error(
       `${label} must be a whole number.`
     );
+
   }
+
 
   return result;
 }
+
 
 // ==========================================================
 // DIRECTIONS OF USE
 // ==========================================================
 
-/*
- * Returns undefined when directionsOfUse
- * was not submitted.
- *
- * Returns null when the user explicitly
- * asked to remove it.
- *
- * Returns a clean object otherwise.
- */
-
 function cleanDirectionsOfUse(
   input
 ) {
+
   if (input == null) {
     return undefined;
   }
+
 
   if (
     typeof input !== "object" ||
     Array.isArray(input)
   ) {
+
     return undefined;
+
   }
+
 
   if (
     text(input.clear) === "1"
   ) {
+
     return null;
+
   }
+
 
   const title =
     text(input.title);
 
+
   let items =
     input.items || [];
 
+
   if (!Array.isArray(items)) {
+
     items =
       Object.values(items);
+
   }
+
 
   const cleanedItems =
     items
       .map((item) => ({
+
         subtitle:
           text(item?.subtitle),
 
         content:
           text(item?.content)
+
       }))
       .filter(
         (item) =>
@@ -189,18 +234,28 @@ function cleanDirectionsOfUse(
           item.content
       );
 
+
   if (
     !title &&
     !cleanedItems.length
   ) {
+
     return null;
+
   }
 
+
   return {
+
     title,
-    items: cleanedItems
+
+    items:
+      cleanedItems
+
   };
+
 }
+
 
 // ==========================================================
 // DIRECTIONS FOR PRODUCT
@@ -209,21 +264,28 @@ function cleanDirectionsOfUse(
 function directionsForProduct(
   stock
 ) {
+
   const directions =
     stock?.directionsOfUse;
+
 
   if (!directions) {
     return undefined;
   }
 
+
   if (
     !directions.title &&
     !directions.items?.length
   ) {
+
     return undefined;
+
   }
 
+
   return {
+
     title:
       text(directions.title),
 
@@ -231,8 +293,10 @@ function directionsForProduct(
       Array.isArray(
         directions.items
       )
+
         ? directions.items.map(
             (item) => ({
+
               subtitle:
                 text(
                   item.subtitle
@@ -242,11 +306,16 @@ function directionsForProduct(
                 text(
                   item.content
                 )
+
             })
           )
+
         : []
+
   };
+
 }
+
 
 // ==========================================================
 // RECALCULATE STOCK TOTALS
@@ -255,6 +324,7 @@ function directionsForProduct(
 async function recalculateStockTotals(
   session = null
 ) {
+
   const query =
     Stock.find({
       isActive: true
@@ -263,25 +333,31 @@ async function recalculateStockTotals(
         "_id category units buyPrice"
       );
 
+
   if (session) {
     query.session(session);
   }
 
+
   const stocks =
     await query.lean();
+
 
   const categoryTotals =
     new Map();
 
+
   let overall = 0;
 
+
   // --------------------------------------------------------
-  // Calculate totals
+  // CALCULATE TOTALS
   // --------------------------------------------------------
 
   for (
     const stock of stocks
   ) {
+
     const value =
       Number(
         stock.units || 0
@@ -290,10 +366,12 @@ async function recalculateStockTotals(
         stock.buyPrice || 0
       );
 
+
     const categoryId =
       String(
         stock.category
       );
+
 
     categoryTotals.set(
       categoryId,
@@ -304,19 +382,24 @@ async function recalculateStockTotals(
       ) + value
     );
 
+
     overall += value;
+
   }
 
+
   // --------------------------------------------------------
-  // Save totals
+  // SAVE TOTALS
   // --------------------------------------------------------
 
   const now =
     new Date();
 
+
   for (
     const stock of stocks
   ) {
+
     const value =
       Number(
         stock.units || 0
@@ -325,18 +408,23 @@ async function recalculateStockTotals(
         stock.buyPrice || 0
       );
 
+
     const categoryId =
       String(
         stock.category
       );
 
+
     await Stock.updateOne(
+
       {
         _id:
           stock._id
       },
+
       {
         $set: {
+
           cashOutflow:
             value,
 
@@ -350,38 +438,67 @@ async function recalculateStockTotals(
 
           totalsUpdatedAt:
             now
+
         }
       },
+
       {
         session,
         timestamps: true
       }
+
     );
+
   }
 
+
   return {
+
     categoryTotals,
+
     overal:
       overall
+
   };
+
 }
 
+
 // ==========================================================
-// GET CATEGORIES
+// GET ACTIVE CATEGORIES
 // ==========================================================
 //
-// Returns categories directly from MongoDB.
+// THIS IS THE DATABASE-BACKED SOURCE FOR THE FRONTEND.
 //
-// No enum.
+// Returns complete Category documents:
+//
+//   _id
+//   name
+//   categoryIcon
+//   isActive
+//
+// The controller passes this array directly to:
+//
+//   views/stock/product-entry.ejs
+//
+// The EJS can therefore use:
+//
+//   category._id
+//   category.name
+//   category.categoryIcon
+//
 // No hard-coded category list.
-//
+// No enum.
+// No conversion to strings.
 // ==========================================================
 
 exports.getCategories =
   async () => {
-    return Category.find({
-      isActive: true
-    })
+
+    return Category
+      .find({
+        isActive: true
+      })
       .select(
         "_id name categoryIcon isActive"
       )
@@ -389,7 +506,9 @@ exports.getCategories =
         name: 1
       })
       .lean();
+
   };
+
 
 // ==========================================================
 // LIST STOCK
@@ -397,12 +516,15 @@ exports.getCategories =
 
 exports.listStock =
   async () => {
+
     const stocks =
       await Stock.find({
         isActive: true
       })
         .populate({
-          path: "category",
+          path:
+            "category",
+
           select:
             "_id name categoryIcon isActive"
         })
@@ -413,29 +535,36 @@ exports.listStock =
         })
         .lean();
 
+
     const categoryMap =
       new Map();
+
 
     for (
       const stock of stocks
     ) {
+
       if (!stock.category) {
         continue;
       }
+
 
       const categoryId =
         String(
           stock.category._id
         );
 
+
       if (
         !categoryMap.has(
           categoryId
         )
       ) {
+
         categoryMap.set(
           categoryId,
           {
+
             category:
               stock.category,
 
@@ -445,41 +574,59 @@ exports.listStock =
               ),
 
             stocks: []
+
           }
         );
+
       }
+
 
       categoryMap
         .get(categoryId)
         .stocks
         .push(stock);
+
     }
+
 
     return Array.from(
       categoryMap.values()
     ).map((group) => {
+
       const rows = [];
+
 
       for (
         let i = 0;
         i < group.stocks.length;
         i += 6
       ) {
+
         rows.push({
+
           products:
             group.stocks.slice(
               i,
               i + 6
             )
+
         });
+
       }
 
+
       return {
+
         ...group,
+
         rows
+
       };
+
     });
+
   };
+
 
 // ==========================================================
 // GET SINGLE STOCK
@@ -487,32 +634,53 @@ exports.listStock =
 
 exports.getStock =
   async (id) => {
+
     if (
       !mongoose.isValidObjectId(
         id
       )
     ) {
+
       return null;
+
     }
 
+
     return Stock.findOne({
-      _id: id,
-      isActive: true
+
+      _id:
+        id,
+
+      isActive:
+        true
+
     })
       .populate({
-        path: "category",
+
+        path:
+          "category",
+
         select:
           "_id name categoryIcon isActive"
+
       })
       .lean();
+
   };
 
+
 // ==========================================================
-// GET STOCK CATEGORIES / STOCK RECORDS
+// GET STOCK RECORDS
+// ==========================================================
+//
+// Used by the stock-entry/update interface.
+//
+// Category remains populated as the actual Category object.
 // ==========================================================
 
 exports.getStockCategories =
   () =>
+
     Stock.find({
       isActive: true
     })
@@ -520,15 +688,25 @@ exports.getStockCategories =
         "name category subcategory days image units buyPrice description directionsOfUse"
       )
       .populate({
-        path: "category",
+
+        path:
+          "category",
+
         select:
           "_id name categoryIcon isActive"
+
       })
       .sort({
-        subcategory: 1,
-        name: 1
+
+        subcategory:
+          1,
+
+        name:
+          1
+
       })
       .lean();
+
 
 // ==========================================================
 // GET SUBSTATIONS
@@ -536,6 +714,7 @@ exports.getStockCategories =
 
 exports.getSubstations =
   () =>
+
     Substation.find({
       isActive: true
     })
@@ -547,6 +726,7 @@ exports.getSubstations =
       })
       .lean();
 
+
 // ==========================================================
 // EXPORT RECALCULATION
 // ==========================================================
@@ -554,20 +734,23 @@ exports.getSubstations =
 exports.recalculateStockTotals =
   recalculateStockTotals;
 
+
 // ==========================================================
 // CREATE STOCK
 // ==========================================================
 
 exports.createStock =
   async (body) => {
+
     const name =
       cleanSubcategory(
         body.name ||
-          body.subcategory
+        body.subcategory
       );
 
+
     // ------------------------------------------------------
-    // Validate category from MongoDB
+    // CATEGORY
     // ------------------------------------------------------
 
     const category =
@@ -575,10 +758,12 @@ exports.createStock =
         body.category
       );
 
+
     const subcategory =
       cleanSubcategory(
         body.subcategory
       );
+
 
     const units =
       wholeNumber(
@@ -587,6 +772,7 @@ exports.createStock =
         true
       );
 
+
     const buyPrice =
       number(
         body.buyPrice,
@@ -594,52 +780,70 @@ exports.createStock =
         true
       );
 
+
     const days =
       wholeNumber(
         body.days || 0,
         "Delivery days"
       );
 
+
     const image =
       text(body.image);
 
+
     const description =
       text(body.description);
+
 
     const directionsOfUse =
       cleanDirectionsOfUse(
         body.directionsOfUse
       );
 
+
     if (!subcategory) {
+
       throw new Error(
         "Subcategory is required."
       );
+
     }
 
+
     // ------------------------------------------------------
-    // Check duplicate
+    // DUPLICATE
     // ------------------------------------------------------
 
     const existing =
       await Stock.findOne({
+
         category,
+
         subcategory,
-        isActive: true
+
+        isActive:
+          true
+
       });
 
+
     if (existing) {
+
       throw new Error(
         `The subcategory "${subcategory}" already exists under the selected category. Select the existing stock record to update it.`
       );
+
     }
 
+
     // ------------------------------------------------------
-    // Create
+    // CREATE
     // ------------------------------------------------------
 
     const stock =
       await Stock.create({
+
         name:
           name || subcategory,
 
@@ -660,24 +864,33 @@ exports.createStock =
         directionsOfUse:
           directionsOfUse ||
           undefined
+
       });
 
+
     // ------------------------------------------------------
-    // Recalculate totals
+    // RECALCULATE
     // ------------------------------------------------------
 
     await recalculateStockTotals();
+
 
     return Stock.findById(
       stock._id
     )
       .populate({
-        path: "category",
+
+        path:
+          "category",
+
         select:
           "_id name categoryIcon isActive"
+
       })
       .lean();
+
   };
+
 
 // ==========================================================
 // UPDATE STOCK ENTRY
@@ -688,137 +901,189 @@ exports.updateStockEntry =
     stockId,
     body
   ) => {
+
     if (
       !mongoose.isValidObjectId(
         stockId
       )
     ) {
+
       throw new Error(
         "Invalid stock subcategory."
       );
+
     }
+
 
     const stock =
       await Stock.findOne({
-        _id: stockId,
-        isActive: true
+
+        _id:
+          stockId,
+
+        isActive:
+          true
+
       });
 
+
     if (!stock) {
+
       throw new Error(
         "Stock subcategory not found."
       );
+
     }
 
+
     // ------------------------------------------------------
-    // Category
+    // CATEGORY
     // ------------------------------------------------------
 
     const category =
       await validateCategory(
+
         body.category ||
-          stock.category
+        stock.category
+
       );
 
+
     // ------------------------------------------------------
-    // Subcategory
+    // SUBCATEGORY
     // ------------------------------------------------------
 
     const subcategory =
       cleanSubcategory(
+
         body.subcategory ||
-          stock.subcategory
+        stock.subcategory
+
       );
 
+
     // ------------------------------------------------------
-    // Additional units
+    // ADDITIONAL UNITS
     // ------------------------------------------------------
 
     const additionalUnits =
       wholeNumber(
+
         body.additionalUnits ??
-          0,
+        0,
+
         "Additional units"
+
       );
 
+
     // ------------------------------------------------------
-    // Buy price
+    // BUY PRICE
     // ------------------------------------------------------
 
     const buyPrice =
       number(
+
         body.buyPrice,
+
         "Buy price",
+
         true
+
       );
 
+
     // ------------------------------------------------------
-    // Delivery days
+    // DELIVERY DAYS
     // ------------------------------------------------------
 
     const days =
       wholeNumber(
+
         body.days ??
-          stock.days ??
-          0,
+        stock.days ??
+        0,
+
         "Delivery days"
+
       );
+
 
     const directionsOfUse =
       cleanDirectionsOfUse(
         body.directionsOfUse
       );
 
+
     if (!subcategory) {
+
       throw new Error(
         "Subcategory is required."
       );
+
     }
 
+
     // ------------------------------------------------------
-    // Check duplicate
+    // DUPLICATE
     // ------------------------------------------------------
 
     const duplicate =
       await Stock.findOne({
+
         _id: {
-          $ne: stock._id
+          $ne:
+            stock._id
         },
 
         category,
 
         subcategory,
 
-        isActive: true
+        isActive:
+          true
+
       });
 
+
     if (duplicate) {
+
       throw new Error(
         `The subcategory "${subcategory}" already belongs to another stock record under the selected category.`
       );
+
     }
 
+
     // ------------------------------------------------------
-    // Update stock
+    // UPDATE
     // ------------------------------------------------------
 
     stock.name =
       subcategory;
 
+
     stock.category =
       category;
+
 
     stock.subcategory =
       subcategory;
 
+
     stock.days =
       days;
+
 
     stock.buyPrice =
       buyPrice;
 
+
     stock.description =
-      text(body.description);
+      text(
+        body.description
+      );
+
 
     stock.units =
       Number(
@@ -826,31 +1091,42 @@ exports.updateStockEntry =
       ) +
       additionalUnits;
 
+
     if (
       directionsOfUse !==
       undefined
     ) {
+
       stock.directionsOfUse =
         directionsOfUse ||
         undefined;
+
     }
+
 
     const image =
       text(body.image);
 
+
     if (image) {
+
       stock.image =
         image;
+
     }
+
 
     await stock.save();
 
-    // ========================================================
+
+    // ======================================================
     // SYNCHRONIZE PRODUCTS
-    // ========================================================
+    // ======================================================
 
     const productSync = {
+
       $set: {
+
         name:
           stock.name,
 
@@ -875,58 +1151,86 @@ exports.updateStockEntry =
 
         description:
           stock.description || ""
+
       }
+
     };
+
 
     const productDirections =
       directionsForProduct(
         stock
       );
 
+
     if (productDirections) {
+
       productSync.$set
         .directionsOfUse =
         productDirections;
+
     } else {
+
       productSync.$unset = {
-        directionsOfUse: 1
+
+        directionsOfUse:
+          1
+
       };
+
     }
 
+
     await Product.updateMany(
+
       {
+
         stock:
           stock._id,
 
         isActive:
           true
+
       },
+
       productSync
+
     );
 
-    // ========================================================
+
+    // ======================================================
     // SYNCHRONIZE SUBSTATION INVENTORY
-    // ========================================================
+    // ======================================================
 
     const productIds =
       await Product.find({
+
         stock:
           stock._id
+
       }).distinct(
         "_id"
       );
 
+
     if (productIds.length) {
+
       await Substation.updateMany(
+
         {
+
           "productInventory.productId":
             {
               $in:
                 productIds
             }
+
         },
+
         {
+
           $set: {
+
             "productInventory.$[item].productName":
               stock.name,
 
@@ -943,38 +1247,57 @@ exports.updateStockEntry =
 
             "productInventory.$[item].updatedAt":
               new Date()
+
           }
+
         },
+
         {
+
           arrayFilters: [
+
             {
+
               "item.productId":
                 {
                   $in:
                     productIds
                 }
+
             }
+
           ]
+
         }
+
       );
+
     }
 
+
     // ------------------------------------------------------
-    // Recalculate totals
+    // RECALCULATE
     // ------------------------------------------------------
 
     await recalculateStockTotals();
+
 
     return Stock.findById(
       stock._id
     )
       .populate({
-        path: "category",
+
+        path:
+          "category",
+
         select:
           "_id name categoryIcon isActive"
+
       })
       .lean();
+
   };
+
 
 // ==========================================================
 // NORMALIZE ALLOCATIONS
@@ -983,13 +1306,17 @@ exports.updateStockEntry =
 function normalizeAllocations(
   input
 ) {
+
   if (
     !input ||
     typeof input !== "object" ||
     Array.isArray(input)
   ) {
+
     return [];
+
   }
+
 
   return Object.entries(
     input
@@ -999,22 +1326,31 @@ function normalizeAllocations(
         substationId,
         rawValue
       ]) => ({
+
         substationId:
           text(substationId),
 
         units:
           wholeNumber(
+
             rawValue,
+
             `Units for substation ${substationId}`
+
           )
+
       })
     )
     .filter(
+
       (entry) =>
         entry.substationId &&
         entry.units > 0
+
     );
+
 }
+
 
 // ==========================================================
 // CREATE PRODUCT FROM STOCK
@@ -1025,40 +1361,57 @@ exports.createProductFromStock =
     stockId,
     body
   ) => {
+
     if (
       !mongoose.isValidObjectId(
         stockId
       )
     ) {
+
       throw new Error(
         "Invalid stock."
       );
+
     }
+
 
     const unitSellPrice =
       number(
+
         body.unitSellPrice,
+
         "Selling price",
+
         true
+
       );
+
 
     const allocations =
       normalizeAllocations(
         body.allocations
       );
 
+
     if (!allocations.length) {
+
       throw new Error(
         "Allocate at least one unit to at least one substation."
       );
+
     }
+
 
     const allocationTotal =
       allocations.reduce(
+
         (sum, item) =>
           sum + item.units,
+
         0
+
       );
+
 
     const ids =
       allocations.map(
@@ -1066,99 +1419,141 @@ exports.createProductFromStock =
           item.substationId
       );
 
-    // --------------------------------------------------------
-    // Validate IDs
-    // --------------------------------------------------------
+
+    // ------------------------------------------------------
+    // VALIDATE IDs
+    // ------------------------------------------------------
 
     if (
+
       ids.some(
+
         (id) =>
           !mongoose.isValidObjectId(
             id
           )
+
       )
+
     ) {
+
       throw new Error(
         "One or more selected substations are invalid."
       );
+
     }
 
-    // --------------------------------------------------------
-    // Prevent duplicate substations
-    // --------------------------------------------------------
+
+    // ------------------------------------------------------
+    // DUPLICATE SUBSTATIONS
+    // ------------------------------------------------------
 
     if (
+
       new Set(ids).size !==
       ids.length
+
     ) {
+
       throw new Error(
         "Each substation can appear only once in the allocation."
       );
+
     }
+
 
     const session =
       await mongoose.startSession();
 
+
     let product;
 
+
     try {
+
       await session.withTransaction(
         async () => {
+
           // ==================================================
           // GET STOCK
           // ==================================================
 
           const stock =
             await Stock.findOne({
-              _id: stockId,
-              isActive: true
+
+              _id:
+                stockId,
+
+              isActive:
+                true
+
             })
               .populate({
+
                 path:
                   "category",
+
                 select:
                   "_id name categoryIcon isActive"
+
               })
               .session(
                 session
               );
 
+
           if (!stock) {
+
             throw new Error(
               "Stock subcategory not found."
             );
+
           }
 
+
           // ==================================================
-          // ENSURE CATEGORY STILL EXISTS
+          // CATEGORY
           // ==================================================
 
           if (
+
             !stock.category ||
             !stock.category._id
+
           ) {
+
             throw new Error(
               "The category assigned to this stock record no longer exists or is inactive."
             );
+
           }
+
 
           const warehouseUnits =
             Number(
               stock.units || 0
             );
 
+
           // ==================================================
-          // CHECK STOCK
+          // STOCK CHECK
           // ==================================================
 
           if (
+
             allocationTotal >
             warehouseUnits
+
           ) {
+
             throw new Error(
+
               `Only ${warehouseUnits} units are available in this stock subcategory.`
+
             );
+
           }
+
 
           // ==================================================
           // GET SUBSTATIONS
@@ -1166,26 +1561,38 @@ exports.createProductFromStock =
 
           const substations =
             await Substation.find({
+
               _id: {
-                $in: ids
+                $in:
+                  ids
               },
 
-              isActive: true
-            }).session(
-              session
-            );
+              isActive:
+                true
+
+            })
+              .session(
+                session
+              );
+
 
           const substationMap =
             new Map(
+
               substations.map(
                 (s) => [
+
                   String(
                     s._id
                   ),
+
                   s
+
                 ]
               )
+
             );
+
 
           // ==================================================
           // VALIDATE SUBSTATIONS
@@ -1195,16 +1602,21 @@ exports.createProductFromStock =
             const allocation of
               allocations
           ) {
+
             if (
               !substationMap.has(
                 allocation.substationId
               )
             ) {
+
               throw new Error(
                 "One or more selected substations were not found or are inactive."
               );
+
             }
+
           }
+
 
           // ==================================================
           // FIND EXISTING PRODUCT
@@ -1212,27 +1624,25 @@ exports.createProductFromStock =
 
           let existingProduct =
             await Product.findOne({
+
               stock:
                 stock._id,
 
               isActive:
                 true
-            }).session(
-              session
-            );
+
+            })
+              .session(
+                session
+              );
+
 
           // ==================================================
-          // STOCK INFORMATION INHERITED BY PRODUCT
-          // ==================================================
-          //
-          // category is the Category._id.
-          //
-          // Product.category is therefore NOT a string
-          // and NOT an enum.
-          //
+          // STOCK DATA INHERITED BY PRODUCT
           // ==================================================
 
           const inherited = {
+
             name:
               stock.name,
 
@@ -1262,7 +1672,9 @@ exports.createProductFromStock =
               directionsForProduct(
                 stock
               )
+
           };
+
 
           // ==================================================
           // UPDATE EXISTING PRODUCT
@@ -1271,38 +1683,49 @@ exports.createProductFromStock =
           if (
             existingProduct
           ) {
+
             existingProduct.units =
               Number(
                 existingProduct.units ||
-                  0
+                0
               ) +
               allocationTotal;
 
+
             existingProduct.unitSellPrice =
               unitSellPrice;
+
 
             Object.assign(
               existingProduct,
               inherited
             );
 
+
             await existingProduct.save({
               session
             });
 
+
             product =
               existingProduct;
+
           }
+
 
           // ==================================================
           // CREATE PRODUCT
           // ==================================================
 
           else {
+
             const created =
               await Product.create(
+
                 [
+
                   {
+
                     stock:
                       stock._id,
 
@@ -1312,28 +1735,37 @@ exports.createProductFromStock =
                       allocationTotal,
 
                     unitSellPrice
+
                   }
+
                 ],
+
                 {
                   session
                 }
+
               );
+
 
             product =
               created[0];
+
           }
 
+
           // ==================================================
-          // DEDUCT FROM WAREHOUSE STOCK
+          // DEDUCT STOCK
           // ==================================================
 
           stock.units =
             warehouseUnits -
             allocationTotal;
 
+
           await stock.save({
             session
           });
+
 
           // ==================================================
           // UPDATE SUBSTATION INVENTORY
@@ -1343,91 +1775,110 @@ exports.createProductFromStock =
             const allocation of
               allocations
           ) {
+
             const substation =
               substationMap.get(
                 allocation.substationId
               );
 
+
             const inventory =
               substation.productInventory.find(
+
                 (entry) =>
+
                   String(
                     entry.productId
                   ) ===
                   String(
                     product._id
                   )
+
               );
 
+
             // ------------------------------------------------
-            // Existing inventory entry
+            // EXISTING INVENTORY
             // ------------------------------------------------
 
             if (inventory) {
+
               inventory.units =
                 Number(
                   inventory.units ||
-                    0
+                  0
                 ) +
                 allocation.units;
+
 
               inventory.productName =
                 product.name;
 
+
               inventory.category =
                 product.category;
+
 
               inventory.subcategory =
                 product.subcategory;
 
+
               inventory.days =
                 Number(
                   product.days ||
-                    0
+                  0
                 );
+
 
               inventory.updatedAt =
                 new Date();
+
             }
 
+
             // ------------------------------------------------
-            // New inventory entry
+            // NEW INVENTORY
             // ------------------------------------------------
 
             else {
-              substation.productInventory.push(
-                {
-                  productId:
-                    product._id,
 
-                  productName:
-                    product.name,
+              substation.productInventory.push({
 
-                  category:
-                    product.category,
+                productId:
+                  product._id,
 
-                  subcategory:
-                    product.subcategory,
+                productName:
+                  product.name,
 
-                  days:
-                    Number(
-                      product.days ||
-                        0
-                    ),
+                category:
+                  product.category,
 
-                  units:
-                    allocation.units,
+                subcategory:
+                  product.subcategory,
 
-                  updatedAt:
-                    new Date()
-                }
-              );
+                days:
+                  Number(
+                    product.days ||
+                    0
+                  ),
+
+                units:
+                  allocation.units,
+
+                updatedAt:
+                  new Date()
+
+              });
+
             }
+
 
             await substation.save({
               session
             });
+
           }
+
 
           // ==================================================
           // RECALCULATE TOTALS
@@ -1436,11 +1887,17 @@ exports.createProductFromStock =
           await recalculateStockTotals(
             session
           );
+
         }
       );
 
+
       return product;
+
     } finally {
+
       await session.endSession();
+
     }
+
   };
