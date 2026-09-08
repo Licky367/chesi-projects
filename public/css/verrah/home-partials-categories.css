@@ -62,7 +62,10 @@
 
     margin: 0;
 
-    padding: 0;
+    padding:
+        24px
+        0
+        28px;
 
     box-sizing: border-box;
 }
@@ -77,7 +80,7 @@
     margin:
         0
         0
-        14px;
+        18px;
 
     padding:
         0
@@ -91,7 +94,7 @@
 
     font-weight: 800;
 
-    line-height: 1.2;
+    line-height: 1.25;
 
     text-align: left;
 
@@ -102,7 +105,7 @@
 
 
 /* ==========================================================
-   CATEGORY SECTION TITLE ACCENT
+   TITLE ACCENT
 ========================================================== */
 
 .home-categories-title::after {
@@ -111,11 +114,11 @@
 
     display: block;
 
-    width: 55px;
+    width: 60px;
 
     height: 3px;
 
-    margin-top: 8px;
+    margin-top: 9px;
 
     background:
         var(--category-brown);
@@ -145,7 +148,7 @@
     padding:
         6px
         4px
-        14px;
+        18px;
 
     box-sizing: border-box;
 
@@ -195,8 +198,7 @@
 
 /* ==========================================================
    CATEGORY CARD
-   ORIGINAL: 116px × 155px
-   NEW:      232px × 310px
+   SIZE: 232px × 310px
 ========================================================== */
 
 .home-category-card {
@@ -209,7 +211,8 @@
 
     min-height: 310px;
 
-    flex: 0 0 232px;
+    flex:
+        0 0 232px;
 
     display: flex;
 
@@ -284,14 +287,13 @@
         3px solid
         rgba(139, 69, 19, 0.25);
 
-    outline-offset: 3px;
+    outline-offset:
+        3px;
 }
 
 
 /* ==========================================================
    CATEGORY IMAGE / ICON AREA
-   ORIGINAL: 72px
-   NEW:      144px
 ========================================================== */
 
 .home-category-icon {
@@ -664,11 +666,20 @@
 
 @media (max-width: 768px) {
 
+    .home-categories {
+
+        padding:
+            20px
+            0
+            24px;
+    }
+
+
     .home-categories-title {
 
-        font-size: 22px;
+        margin-bottom: 16px;
 
-        margin-bottom: 12px;
+        font-size: 22px;
     }
 
 
@@ -679,6 +690,8 @@
         padding-left: 3px;
 
         padding-right: 3px;
+
+        padding-bottom: 16px;
     }
 
 }
@@ -690,13 +703,22 @@
 
 @media (max-width: 480px) {
 
+    .home-categories {
+
+        padding:
+            18px
+            0
+            22px;
+    }
+
+
     .home-categories-title {
 
-        font-size: 20px;
-
-        margin-bottom: 10px;
+        margin-bottom: 14px;
 
         padding-bottom: 8px;
+
+        font-size: 20px;
     }
 
 
@@ -707,7 +729,7 @@
         padding:
             4px
             2px
-            12px;
+            14px;
     }
 
 
