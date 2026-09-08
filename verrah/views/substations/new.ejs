@@ -1,0 +1,85 @@
+<section class="shop-page substations-page">
+
+  <div class="product-back">
+    <a href="/substations" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i>
+      Substations
+    </a>
+  </div>
+
+  <div class="form-card substation-form-card">
+
+    <div class="form-heading">
+      <div class="form-heading-icon">
+        <i class="fas fa-bolt"></i>
+      </div>
+      <div>
+        <span class="section-kicker">SUBSTATIONS</span>
+        <h1 class="page-title">New Substation</h1>
+        <p class="page-subtitle">
+          Add a new location where products can be allocated.
+        </p>
+      </div>
+    </div>
+
+    <% if (typeof error !== "undefined" && error) { %>
+      <div class="error" role="alert">
+        <i class="fas fa-circle-exclamation"></i>
+        <span><%= error %></span>
+      </div>
+    <% } %>
+
+    <form action="/substations" method="POST" class="substation-form">
+
+      <div class="form-grid">
+
+        <div class="field">
+          <label for="name">Substation name</label>
+          <input
+            id="name"
+            name="name"
+            value="<%= typeof old !== 'undefined' && old ? (old.name || '') : '' %>"
+            placeholder="e.g. Nairobi Substation"
+            required
+            autocomplete="organization"
+          >
+        </div>
+
+        <div class="field">
+          <label for="location">Location</label>
+          <input
+            id="location"
+            name="location"
+            value="<%= typeof old !== 'undefined' && old ? (old.location || '') : '' %>"
+            placeholder="e.g. Nairobi CBD"
+            autocomplete="street-address"
+          >
+        </div>
+
+        <div class="field full">
+          <label for="description">Description</label>
+          <textarea
+            id="description"
+            name="description"
+            placeholder="Describe this substation or its location"
+          ><%= typeof old !== 'undefined' && old ? (old.description || '') : '' %></textarea>
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="primary-btn">
+          <i class="fas fa-plus"></i>
+          Create Substation
+        </button>
+
+        <a href="/substations" class="secondary-btn">
+          Cancel
+        </a>
+      </div>
+
+    </form>
+
+  </div>
+
+</section>

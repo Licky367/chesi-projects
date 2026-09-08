@@ -1,0 +1,147 @@
+<section class="shop-page substations-page">
+
+  <div class="product-back">
+    <a href="/substations" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i>
+      Substations
+    </a>
+  </div>
+
+  <% if (!substation) { %>
+    <div class="empty-state-card">
+      <div class="empty-icon">
+        <i class="fas fa-building-circle-exclamation"></i>
+      </div>
+      <h2>Substation not found</h2>
+      <p>The requested substation could not be found.</p>
+      <a href="/substations" class="primary-btn">
+        <i class="fas fa-arrow-left"></i>
+        Back to Substations
+      </a>
+    </div>
+  <% } else { %>
+
+    <div class="substation-detail-card">
+
+      <div class="substation-detail-header">
+        <div class="substation-detail-icon">
+          <i class="fas fa-bolt"></i>
+        </div>
+
+        <div class="substation-detail-title">
+          <span class="section-kicker">SUBSTATION</span>
+          <h1><%= substation.name %></h1>
+
+          <% if (substation.location) { %>
+            <p>
+              <i class="fas fa-location-dot"></i>
+              <%= substation.location %>
+            </p>
+          <% } %>
+        </div>
+      </div>
+
+      <% if (substation.description) { %>
+        <div class="substation-description">
+          <span class="description-label">ABOUT THIS SUBSTATION</span>
+          <p><%= substation.description %></p>
+        </div>
+      <% } %>
+
+      <div class="substation-overview">
+        <div class="detail-stat-card">
+          <span class="detail-stat-icon">
+            <i class="fas fa-boxes-stacked"></i>
+          </span>
+          <div>
+            <small>Products</small>
+            <strong>
+              <%= substation.products ? substation.products.length : 0 %>
+            </strong>
+          </div>
+        </div>
+
+        <div class="detail-stat-card">
+          <span class="detail-stat-icon">
+            <i class="fas fa-location-dot"></i>
+          </span>
+          <div>
+            <small>Location</small>
+            <strong>
+              <%= substation.location || "Not specified" %>
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="substation-products-panel">
+        <div class="panel-heading">
+          <div>
+            <span class="section-kicker">INVENTORY</span>
+            <h2>Products in this Substation</h2>
+          </div>
+          <span class="panel-count">
+            <%= substation.products ? substation.products.length : 0 %>
+          </span>
+        </div>
+
+        <% if (!substation.products || !substation.products.length) { %>
+          <div class="substations-empty compact-empty">
+            <div class="empty-icon">
+              <i class="fas fa-box-open"></i>
+            </div>
+            <h3>No products allocated</h3>
+            <p>No products have been allocated to this substation yet.</p>
+          </div>
+        <% } else { %>
+          <div class="substation-product-list">
+            <% substation.products.forEach((product) => { %>
+              <a
+                href="/substations/product/<%= product._id %>"
+                class="substation-product-item"
+              >
+                <div class="list-thumb">
+                  <% if (product.image) { %>
+                    <img
+                      src="<%= product.image %>"
+                      alt="<%= product.name %>"
+                      loading="lazy"
+                    >
+                  <% } else { %>
+                    <span>
+                      <i class="fas fa-box"></i>
+                    </span>
+                  <% } %>
+                </div>
+
+                <div class="list-main">
+                  <h3><%= product.name %></h3>
+
+                  <div class="list-meta">
+                    <span><%= product.category || "Other" %></span>
+                    <span>•</span>
+                    <span><%= product.subcategory || "Other" %></span>
+                  </div>
+
+                  <div class="list-price">
+                    <strong>
+                      <%= Number(product.substationUnits || 0).toLocaleString() %>
+                    </strong>
+                    units here
+                  </div>
+                </div>
+
+                <span class="substation-product-arrow" aria-hidden="true">
+                  <i class="fas fa-chevron-right"></i>
+                </span>
+              </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+
+  <% } %>
+
+</section>

@@ -1,0 +1,130 @@
+<section class="shop-page substations-page">
+
+  <div class="substations-header">
+    <div class="substations-brand-block">
+      <div class="substations-icon" aria-hidden="true">
+        <i class="fas fa-bolt"></i>
+      </div>
+      <div>
+        <span class="section-kicker">SUBSTATIONS</span>
+        <h1 class="page-title">Substations</h1>
+        <p class="page-subtitle">Select a substation to view the products allocated to it.</p>
+      </div>
+    </div>
+
+    <a href="/substations/new" class="primary-btn">
+      <i class="fas fa-plus"></i>
+      New Substation
+    </a>
+  </div>
+
+  <% if (typeof error !== "undefined" && error) { %>
+    <div class="error" role="alert">
+      <i class="fas fa-circle-exclamation"></i>
+      <span><%= error %></span>
+    </div>
+  <% } %>
+
+  <% if (typeof saved !== "undefined" && saved === "1") { %>
+    <div class="notice" role="status">
+      <i class="fas fa-circle-check"></i>
+      <span>Substation created successfully.</span>
+    </div>
+  <% } %>
+
+  <section class="substation-overview-card">
+    <div class="overview-heading">
+      <div>
+        <span class="section-kicker">OVERVIEW</span>
+        <h2>Substation Network</h2>
+      </div>
+      <span class="overview-count-label">
+        <%= Array.isArray(substations) ? substations.length : 0 %> total
+      </span>
+    </div>
+
+    <div class="overview-grid">
+      <div class="overview-stat">
+        <span class="overview-stat-icon">
+          <i class="fas fa-building-circle-check"></i>
+        </span>
+        <div>
+          <small>Total substations</small>
+          <strong>
+            <%= Array.isArray(substations) ? substations.length : 0 %>
+          </strong>
+        </div>
+      </div>
+
+      <a href="/substations/new" class="overview-action">
+        <span class="overview-action-icon">
+          <i class="fas fa-plus"></i>
+        </span>
+        <span>
+          <strong>Add Substation</strong>
+          <small>Create a new location</small>
+        </span>
+        <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+  </section>
+
+  <section class="substation-list-panel">
+    <div class="panel-heading">
+      <div>
+        <span class="section-kicker">LOCATIONS</span>
+        <h2>Substations List</h2>
+      </div>
+      <span class="panel-count">
+        <%= Array.isArray(substations) ? substations.length : 0 %>
+      </span>
+    </div>
+
+    <% if (!substations || substations.length === 0) { %>
+      <div class="substations-empty">
+        <div class="empty-icon">
+          <i class="fas fa-bolt"></i>
+        </div>
+        <h3>No substations yet</h3>
+        <p>Create your first substation to start allocating products.</p>
+        <a href="/substations/new" class="primary-btn">
+          <i class="fas fa-plus"></i>
+          Create First Substation
+        </a>
+      </div>
+    <% } else { %>
+      <div class="substations-list">
+        <% substations.forEach((substation, idx) => { %>
+          <a
+            href="/substations/<%= substation._id %>"
+            class="substation-list-item"
+          >
+            <div class="substation-index">
+              <%= idx + 1 %>
+            </div>
+
+            <div class="substation-list-main">
+              <h3><%= substation.name %></h3>
+
+              <% if (substation.location) { %>
+                <span class="substation-location">
+                  <i class="fas fa-location-dot"></i>
+                  <%= substation.location %>
+                </span>
+              <% } %>
+
+              <% if (substation.description) { %>
+                <p><%= substation.description %></p>
+              <% } %>
+            </div>
+
+            <div class="substation-list-arrow" aria-hidden="true">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+
+</section>
