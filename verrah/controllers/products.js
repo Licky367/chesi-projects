@@ -4,10 +4,10 @@
 // ==========================================================
 
 const productService =
-  require("../services/productService");
+    require("../services/productService");
 
 const cartService =
-  require("../services/cartService");
+    require("../services/cartService");
 
 
 // ==========================================================
@@ -20,48 +20,60 @@ const cartService =
 
 exports.list = async (req, res) => {
 
-  try {
+    try {
 
-    const categories =
-      await productService
-        .getProductsByCategory();
-
-
-    return res.render(
-      "products/products",
-      {
-        title: "Products | Verrah Cosmetics",
-
-        categories,
-
-        error: null
-      }
-    );
-
-  } catch (err) {
-
-    console.error(
-      "PRODUCT LIST ERROR:",
-      err
-    );
+        const categories =
+            await productService
+                .getProductsByCategory();
 
 
-    return res
-      .status(500)
-      .render(
-        "products/products",
-        {
-          title:
-            "Products | Verrah Cosmetics",
+        return res.render(
+            "products/products",
+            {
+                title:
+                    "Products | Verrah Cosmetics",
 
-          categories: [],
+                categories,
 
-          error:
-            "Unable to load products."
-        }
-      );
+                error: null
+            }
+        );
 
-  }
+    } catch (err) {
+
+        console.error(
+            "================================================"
+        );
+
+        console.error(
+            "PRODUCT LIST ERROR"
+        );
+
+        console.error(
+            "================================================"
+        );
+
+        console.error(
+            err
+        );
+
+
+        return res
+            .status(500)
+            .render(
+                "products/products",
+                {
+                    title:
+                        "Products | Verrah Cosmetics",
+
+                    categories: [],
+
+                    error:
+                        "Unable to load products."
+                }
+            );
+
+    }
 
 };
 
@@ -76,88 +88,99 @@ exports.list = async (req, res) => {
 
 exports.details = async (req, res) => {
 
-  try {
+    try {
 
-    const product =
-      await productService.getProduct(
-        req.params.id
-      );
+        const product =
+            await productService.getProduct(
+                req.params.id
+            );
 
 
-    // ======================================================
-    // PRODUCT NOT FOUND
-    // ======================================================
+        // ====================================================
+        // NOT FOUND
+        // ====================================================
 
-    if (!product) {
+        if (!product) {
 
-      return res
-        .status(404)
-        .render(
-          "products/product-details",
-          {
-            title:
-              "Product not found | Verrah Cosmetics",
+            return res
+                .status(404)
+                .render(
+                    "products/product-details",
+                    {
+                        title:
+                            "Product not found | Verrah Cosmetics",
 
-            product: null,
+                        product: null,
 
-            error:
-              "Product not found."
-          }
+                        error:
+                            "Product not found."
+                    }
+                );
+
+        }
+
+
+        // ====================================================
+        // RENDER
+        // ====================================================
+
+        return res.render(
+            "products/product-details",
+            {
+                title:
+                    `${product.name} | Verrah Cosmetics`,
+
+                product,
+
+                error:
+                    req.query.error || null,
+
+                query:
+                    req.query.added || ""
+            }
         );
 
+    } catch (err) {
+
+        console.error(
+            "================================================"
+        );
+
+        console.error(
+            "PRODUCT DETAILS ERROR"
+        );
+
+        console.error(
+            "================================================"
+        );
+
+        console.error(
+            err
+        );
+
+
+        return res
+            .status(404)
+            .render(
+                "products/product-details",
+                {
+                    title:
+                        "Product | Verrah Cosmetics",
+
+                    product: null,
+
+                    error:
+                        "Product not found."
+                }
+            );
+
     }
-
-
-    // ======================================================
-    // RENDER PRODUCT
-    // ======================================================
-
-    return res.render(
-      "products/product-details",
-      {
-        title:
-          `${product.name} | Verrah Cosmetics`,
-
-        product,
-
-        error:
-          req.query.error || null,
-
-        query:
-          req.query.added || ""
-      }
-    );
-
-  } catch (err) {
-
-    console.error(
-      "PRODUCT DETAILS ERROR:",
-      err
-    );
-
-
-    return res
-      .status(404)
-      .render(
-        "products/product-details",
-        {
-          title:
-            "Product | Verrah Cosmetics",
-
-          product: null,
-
-          error:
-            "Product not found."
-        }
-      );
-
-  }
 
 };
 
 
 // ==========================================================
-// ADD PRODUCT TO CART
+// ADD TO CART
 // ==========================================================
 //
 // POST /products/:id
@@ -166,33 +189,33 @@ exports.details = async (req, res) => {
 
 exports.addToCart = async (req, res) => {
 
-  try {
+    try {
 
-    await cartService.addToCart(
-      req,
-      req.params.id,
-      req.body.qty
-    );
-
-
-    return res.redirect(
-      `/products/${req.params.id}?added=1`
-    );
-
-  } catch (err) {
-
-    console.error(
-      "ADD TO CART ERROR:",
-      err
-    );
+        await cartService.addToCart(
+            req,
+            req.params.id,
+            req.body.qty
+        );
 
 
-    return res.redirect(
-      `/products/${req.params.id}?error=${encodeURIComponent(
-        err.message
-      )}`
-    );
+        return res.redirect(
+            `/products/${req.params.id}?added=1`
+        );
 
-  }
+    } catch (err) {
+
+        console.error(
+            "ADD TO CART ERROR:",
+            err
+        );
+
+
+        return res.redirect(
+            `/products/${req.params.id}?error=${encodeURIComponent(
+                err.message
+            )}`
+        );
+
+    }
 
 };
