@@ -1,0 +1,355 @@
+<section class="shop-page">
+
+  <!-- BACK TO PRODUCTS -->
+
+  <div class="product-back">
+
+    <a href="/products" class="secondary-btn">
+
+      <i class="fas fa-arrow-left"></i>
+
+      Products
+
+    </a>
+
+  </div>
+
+
+  <% if (typeof error !== "undefined" && error) { %>
+
+    <div class="error">
+      <%= error %>
+    </div>
+
+  <% } %>
+
+
+  <% if (product) { %>
+
+
+    <!-- PRODUCT DETAILS -->
+
+    <div class="detail-card">
+
+      <div class="detail-grid">
+
+
+        <!-- PRODUCT IMAGE -->
+
+        <div class="detail-image">
+
+          <% if (product.image) { %>
+
+            <img
+              src="<%= product.image %>"
+              alt="<%= product.name %>"
+            >
+
+          <% } else { %>
+
+            <div class="placeholder">
+
+              <i class="fas fa-box"></i>
+
+            </div>
+
+          <% } %>
+
+        </div>
+
+
+        <!-- PRODUCT INFORMATION -->
+
+        <div class="detail-content">
+
+
+          <span class="detail-category">
+            <%= product.category %>
+          </span>
+
+
+          <h1>
+            <%= product.name %>
+          </h1>
+
+
+          <div class="detail-subcategory">
+
+            <i class="fas fa-layer-group"></i>
+
+            <%= product.subcategory || "Other" %>
+
+          </div>
+
+
+          <div class="detail-price">
+
+            KSh
+
+            <%= Number(
+              product.unitSellPrice || 0
+            ).toLocaleString() %>
+
+          </div>
+
+
+          <div class="stock-days-badge">
+
+            <i class="fas fa-calendar-days"></i>
+
+            <strong>
+              <%= product.days || 0 %>
+            </strong>
+
+            day delivery
+
+          </div>
+
+
+          <div class="detail-description">
+
+            <%= product.description ||
+              "No description has been provided for this product." %>
+
+          </div>
+
+
+          <% if (product.units > 0) { %>
+
+
+            <div class="stock-text detail-stock">
+
+              <strong>
+                <%= Number(product.units).toLocaleString() %>
+              </strong>
+
+              units available
+
+            </div>
+
+
+            <% if (typeof user !== "undefined" && user) { %>
+
+
+              <form
+                action="/products/<%= product._id %>/cart"
+                method="POST"
+                class="cart-form"
+              >
+
+                <div class="qty-row">
+
+                  <label for="qty">
+                    <strong>Quantity</strong>
+                  </label>
+
+                  <input
+                    id="qty"
+                    name="qty"
+                    type="number"
+                    min="1"
+                    max="<%= product.units %>"
+                    value="1"
+                    required
+                  >
+
+                </div>
+
+
+                <button
+                  class="primary-btn"
+                  type="submit"
+                >
+
+                  <i class="fas fa-cart-plus"></i>
+
+                  Add to Cart
+
+                </button>
+
+              </form>
+
+
+            <% } else { %>
+
+
+              <a
+                class="primary-btn login-buy-btn"
+                href="/auth/login?next=/products/<%= product._id %>"
+              >
+
+                <i class="fas fa-sign-in-alt"></i>
+
+                Log in to buy
+
+              </a>
+
+
+            <% } %>
+
+
+          <% } else %>
+
+
+            <div class="error detail-out-of-stock">
+
+              This product is currently out of stock.
+
+            </div>
+
+
+          <% } %>
+
+
+          <% if (typeof query !== "undefined" && query === "1") { %>
+
+            <div class="notice">
+
+              Product added to your cart.
+
+            </div>
+
+          <% } %>
+
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- DIRECTIONS OF USE -->
+
+    <% if (
+      product.directionsOfUse &&
+      (
+        product.directionsOfUse.title ||
+        (
+          product.directionsOfUse.items &&
+          product.directionsOfUse.items.length
+        )
+      )
+    ) { %>
+
+
+      <section
+        class="directions-display"
+        aria-labelledby="directionsOfUseTitle"
+      >
+
+
+        <div class="directions-display-head">
+
+
+          <div class="directions-icon">
+
+            <i class="fas fa-list-check"></i>
+
+          </div>
+
+
+          <div>
+
+            <span class="directions-kicker">
+              Product guidance
+            </span>
+
+
+            <h2 id="directionsOfUseTitle">
+
+              <%= product.directionsOfUse.title ||
+                "Directions of Use" %>
+
+            </h2>
+
+
+            <p>
+              Follow these instructions when using this product.
+            </p>
+
+          </div>
+
+
+        </div>
+
+
+        <% if (
+          product.directionsOfUse.items &&
+          product.directionsOfUse.items.length
+        ) { %>
+
+
+          <div class="directions-display-list">
+
+
+            <% product.directionsOfUse.items.forEach(
+              (item, index) => {
+            %>
+
+
+              <article class="directions-display-item">
+
+
+                <div class="directions-display-number">
+
+                  <%= index + 1 %>
+
+                </div>
+
+
+                <div>
+
+                  <h3>
+                    <%= item.subtitle %>
+                  </h3>
+
+
+                  <p>
+                    <%= item.content %>
+                  </p>
+
+                </div>
+
+
+              </article>
+
+
+            <% }) %>
+
+
+          </div>
+
+
+        <% } %>
+
+
+        <% if (
+          !(
+            product.directionsOfUse.items &&
+            product.directionsOfUse.items.length
+          ) &&
+          product.directionsOfUse.title
+        ) { %>
+
+
+          <p class="directions-display-note">
+
+            Please follow the product guidance provided by
+            the supplier.
+
+          </p>
+
+
+        <% } %>
+
+
+      </section>
+
+
+    <% } %>
+
+
+  <% } %>
+
+</section>
