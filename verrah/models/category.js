@@ -21,6 +21,12 @@ const categorySchema = new mongoose.Schema(
       trim: true,
       default: ""
     },
+    description: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+
 
     isActive: {
       type: Boolean,
