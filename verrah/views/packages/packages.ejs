@@ -1,0 +1,75 @@
+<section class="shop-page packages-page">
+
+  <div class="packages-header">
+    <div class="packages-heading-icon">
+      <i class="fas fa-box-open"></i>
+    </div>
+    <div>
+      <span class="packages-kicker">COREVESTER</span>
+      <h1 class="page-title">My Packages</h1>
+      <p class="page-subtitle">Orders created from your completed checkout.</p>
+    </div>
+  </div>
+
+  <% if (typeof error !== "undefined" && error) { %>
+    <div class="packages-alert packages-alert-error">
+      <i class="fas fa-circle-exclamation"></i>
+      <span><%= error %></span>
+    </div>
+  <% } %>
+
+  <% if (!packages || !packages.length) { %>
+    <div class="packages-empty">
+      <div class="packages-empty-icon">
+        <i class="fas fa-box-open"></i>
+      </div>
+      <h2>No packages yet</h2>
+      <p>You do not have any packages yet. Start shopping to create your first order.</p>
+      <a class="primary-btn packages-primary-btn" href="/products">
+        <i class="fas fa-bag-shopping"></i>
+        Shop Products
+      </a>
+    </div>
+  <% } else { %>
+
+    <div class="package-list">
+      <% packages.forEach(pkg => { %>
+        <a href="/packages/<%= pkg._id %>" class="package-card">
+
+          <div class="package-card-icon">
+            <i class="fas fa-box"></i>
+          </div>
+
+          <div class="package-card-main">
+            <div class="package-card-top">
+              <h3>Package <%= String(pkg._id).slice(-8) %></h3>
+              <span class="package-status status-<%= pkg.status %>">
+                <%= pkg.status %>
+              </span>
+            </div>
+
+            <div class="package-items">
+              <span>
+                <i class="fas fa-cubes"></i>
+                <%= pkg.items.reduce((sum, item) => sum + Number(item.qty || 0), 0) %> item(s)
+              </span>
+              <span>
+                <i class="fas fa-money-bill-wave"></i>
+                KSh <%= Number(pkg.totalAmount || 0).toLocaleString() %>
+              </span>
+              <span>
+                <i class="fas fa-credit-card"></i>
+                <%= pkg.paymentMethod === "mpesa" ? "M-Pesa" : "Pay on delivery" %>
+              </span>
+            </div>
+          </div>
+
+          <i class="fas fa-chevron-right package-card-arrow"></i>
+
+        </a>
+      <% }) %>
+    </div>
+
+  <% } %>
+
+</section>

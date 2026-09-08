@@ -1,0 +1,115 @@
+<% const safePackages = Array.isArray(packages) ? packages : []; %>
+<% const tabCounts = counts || { all: safePackages.length, pending: 0, confirmed: 0, delivered: 0 }; %>
+
+<section class="package-staff-page">
+
+  <div class="staff-package-header">
+    <div class="staff-package-icon">
+      <i class="fas fa-boxes-stacked"></i>
+    </div>
+    <div>
+      <span class="staff-kicker">COREVESTER</span>
+      <h1>Package Management</h1>
+      <p><%= role === 'admin' ? 'Manage all client packages.' : 'Claim and process pending packages.' %></p>
+    </div>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="staff-alert staff-alert-error">
+      <i class="fas fa-circle-exclamation"></i>
+      <span><%= error %></span>
+    </div>
+  <% } %>
+
+  <% if (typeof success !== 'undefined' && success) { %>
+    <div class="staff-alert staff-alert-success">
+      <i class="fas fa-circle-check"></i>
+      <span><%= success %></span>
+    </div>
+  <% } %>
+
+  <div class="staff-overview-card">
+    <div class="staff-section-label">OVERVIEW</div>
+
+    <div class="staff-status-tabs">
+      <% ['all', 'pending', 'confirmed', 'delivered'].forEach(t => {
+        const active = status === t;
+        const icon = t === 'all'
+          ? 'fa-box'
+          : t === 'pending'
+            ? 'fa-hourglass-half'
+            : t === 'confirmed'
+              ? 'fa-circle-check'
+              : 'fa-truck';
+      %>
+
+        <a
+          href="/packages/staff?status=<%= t %>"
+          class="staff-status-tab <%= active ? 'is-active' : '' %>"
+        >
+          <span>
+            <i class="fas <%= icon %>"></i>
+            <%= t.charAt(0).toUpperCase() + t.slice(1) %>
+          </span>
+          <span class="staff-tab-count">
+            <%= tabCounts[t] || 0 %>
+          </span>
+        </a>
+
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="staff-packages-card">
+    <div class="staff-packages-heading">
+      <div>
+        <h2>Packages - <%= String(status || 'all').toUpperCase() %></h2>
+        <p><%= safePackages.length %> in this section</p>
+      </div>
+    </div>
+
+    <div class="staff-package-list">
+
+      <% if (!safePackages.length) { %>
+        <div class="staff-empty">
+          <i class="fas fa-inbox"></i>
+          <strong>No packages in this section</strong>
+        </div>
+      <% } %>
+
+      <% safePackages.forEach(pkg => { %>
+        <a href="/packages/staff/<%= pkg._id %>" class="staff-package-item">
+
+          <div class="staff-package-item-icon">
+            <i class="fas fa-box"></i>
+          </div>
+
+          <div class="staff-package-item-main">
+            <div class="staff-package-item-title">
+              <span>Package <%= String(pkg._id).slice(-6) %></span>
+              <span class="package-status status-<%= pkg.status %>">
+                <%= pkg.status %>
+              </span>
+            </div>
+
+            <div class="staff-package-item-meta">
+              Client:
+              <strong><%= pkg.client?.name || 'Unknown' %></strong>
+              <br>
+              <%= pkg.items.reduce((s, i) => s + Number(i.qty || 0), 0) %> item(s)
+              · KSh <%= Number(pkg.totalAmount || 0).toLocaleString() %>
+              <% if (pkg.confirmedByStaffName) { %>
+                <br>Staff: <%= pkg.confirmedByStaffName %>
+              <% } %>
+            </div>
+          </div>
+
+          <i class="fas fa-chevron-right staff-package-arrow"></i>
+
+        </a>
+      <% }) %>
+
+    </div>
+  </div>
+
+</section>

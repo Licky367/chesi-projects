@@ -1,0 +1,141 @@
+<section class="shop-page packages-page package-details-page">
+
+  <div class="package-back">
+    <a href="/packages" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i>
+      Packages
+    </a>
+  </div>
+
+  <% if (packageDoc) { %>
+
+    <% if (typeof error !== "undefined" && error) { %>
+      <div class="packages-alert packages-alert-error">
+        <i class="fas fa-circle-exclamation"></i>
+        <span><%= error %></span>
+      </div>
+    <% } %>
+
+    <div class="package-summary-card">
+
+      <div class="package-detail-header">
+        <div>
+          <span class="packages-kicker">ORDER DETAILS</span>
+          <h1>Package <%= String(packageDoc._id).slice(-8) %></h1>
+          <p><%= new Date(packageDoc.createdAt).toLocaleString() %></p>
+        </div>
+
+        <span class="package-status status-<%= packageDoc.status %>">
+          <%= packageDoc.status %>
+        </span>
+      </div>
+
+      <div class="package-detail-items">
+        <% packageDoc.items.forEach(item => { %>
+          <div class="package-item-card">
+
+            <div class="package-item-image">
+              <% if (item.image) { %>
+                <img src="<%= item.image %>" alt="<%= item.name %>">
+              <% } else { %>
+                <i class="fas fa-box"></i>
+              <% } %>
+            </div>
+
+            <div class="package-item-main">
+              <h3><%= item.name %></h3>
+              <div class="package-item-meta">
+                Quantity: <strong><%= item.qty %></strong>
+              </div>
+              <div class="package-item-meta">
+                KSh <%= Number(item.price || 0).toLocaleString() %> each
+              </div>
+            </div>
+
+            <strong class="package-item-total">
+              KSh <%= Number((item.price || 0) * (item.qty || 0)).toLocaleString() %>
+            </strong>
+
+          </div>
+        <% }) %>
+      </div>
+
+      <div class="package-payment-overview">
+        <div class="package-total-line">
+          <span>Total</span>
+          <strong>KSh <%= Number(packageDoc.totalAmount || 0).toLocaleString() %></strong>
+        </div>
+
+        <div class="package-payment-meta">
+          <span>
+            Payment:
+            <strong>
+              <%= packageDoc.paymentMethod === 'mpesa' ? 'M-Pesa' : 'Pay upon delivery' %>
+            </strong>
+          </span>
+
+          <% if (packageDoc.paymentStatus === 'paid' || packageDoc.paymentStatus === 'confirmed') { %>
+            <span class="payment-confirmed">
+              <i class="fas fa-circle-check"></i>
+              Paid
+            </span>
+          <% } %>
+
+          <% if (packageDoc.mpesaReceiptNumber) { %>
+            <span>
+              Receipt: <strong><%= packageDoc.mpesaReceiptNumber %></strong>
+            </span>
+          <% } %>
+        </div>
+      </div>
+
+      <% if (
+        packageDoc.status !== 'delivered' &&
+        packageDoc.paymentMethod === 'pay_on_delivery' &&
+        packageDoc.paymentStatus !== 'paid' &&
+        packageDoc.paymentStatus !== 'confirmed'
+      ) { %>
+
+        <div class="package-mpesa-card">
+          <div class="package-mpesa-icon">
+            <i class="fas fa-mobile-screen-button"></i>
+          </div>
+
+          <div class="package-mpesa-content">
+            <h3>Pay this package with M-Pesa</h3>
+            <p>You selected pay on delivery when placing this order. You can pay now using M-Pesa instead.</p>
+
+            <form action="/packages/<%= packageDoc._id %>/pay" method="POST" class="package-mpesa-form">
+              <label for="package-phone">M-Pesa phone number</label>
+              <input
+                id="package-phone"
+                name="phoneNumber"
+                type="tel"
+                inputmode="numeric"
+                autocomplete="tel"
+                placeholder="0712345678"
+                required
+              >
+
+              <button type="submit" class="primary-btn packages-primary-btn">
+                <i class="fas fa-mobile-screen-button"></i>
+                Pay KSh <%= Number(packageDoc.totalAmount || 0).toLocaleString() %> with M-Pesa
+              </button>
+            </form>
+          </div>
+        </div>
+
+      <% } %>
+
+    </div>
+
+  <% } else { %>
+
+    <div class="packages-alert packages-alert-error">
+      <i class="fas fa-box-open"></i>
+      <span><%= error || 'Package not found.' %></span>
+    </div>
+
+  <% } %>
+
+</section>
