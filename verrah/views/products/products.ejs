@@ -1,499 +1,371 @@
 <%
 /* ==========================================================
-views/products/products.ejs
-VERRAH COSMETICS
-PRODUCT LISTING
+   views/products/products.ejs
+   VERRAH COSMETICS
+   PRODUCT LISTING
 
-PURPOSE:
+   STRUCTURE:
+   ----------------------------------------------------------
+   - Products are grouped by category
+   - Category NAME is displayed
+   - Category ObjectId is NEVER displayed
+   - Maximum 6 products per desktop row
+   - Mobile horizontal scrolling is handled by CSS
+   - Subcategories do not create separate sections
+   ========================================================== */
+%>
 
-Displays all products returned by the backend.
+<section class="shop-page">
 
-Products are grouped by CATEGORY.
+    <!-- ======================================================
+         PAGE HEADER
+    ======================================================= -->
 
-IMPORTANT:
+    <div class="products-heading">
 
-- Product.category is handled by the backend.
-- This view NEVER displays Category._id.
-- The frontend displays the category NAME only.
-- Product._id is used only to open the product detail page.
-- Subcategories do NOT create separate product sections.
-- Maximum of SIX products are displayed per desktop row.
-- Mobile uses horizontal scrolling.
-  ==========================================================
-  %>
+        <h1 class="page-title">
+            Products
+        </h1>
 
-<section class="shop-page"><!-- ======================================================
-     PAGE HEADER
-======================================================= -->
-
-<div class="products-heading">
-
-    <h1 class="page-title">
-        Products
-    </h1>
-
-
-    <p class="page-subtitle">
-        Welcome to Verrah Cosmetics Products.
-        Browse through our products and order your wish.
-    </p>
-
-</div>
-
-
-
-<!-- ======================================================
-     ERROR MESSAGE
-======================================================= -->
-
-<% if (
-    typeof error !== "undefined" &&
-    error
-) { %>
-
-    <div class="error">
-
-        <%= error %>
+        <p class="page-subtitle">
+            Welcome to Verrah Cosmetics Products.
+            Browse through our products and order your wish.
+        </p>
 
     </div>
 
-<% } %>
+
+    <!-- ======================================================
+         ERROR MESSAGE
+    ======================================================= -->
+
+    <% if (typeof error !== "undefined" && error) { %>
+
+        <div class="error">
+            <%= error %>
+        </div>
+
+    <% } %>
 
 
+    <!-- ======================================================
+         NO CATEGORIES / NO PRODUCTS
+    ======================================================= -->
 
-<!-- ======================================================
-     NO PRODUCTS
-======================================================= -->
+    <% if (!Array.isArray(categories) || categories.length === 0) { %>
 
-<% if (
-    !Array.isArray(categories) ||
-    categories.length === 0
-) { %>
+        <div class="empty products-empty">
 
+            <i class="fas fa-box-open"></i>
 
-    <div class="empty products-empty">
-
-        <i class="fas fa-box-open"></i>
-
-        <div>
-
-            No products are available right now.
+            <div>
+                No products are available right now.
+            </div>
 
         </div>
 
-    </div>
-
-
-<% } else { %>
-
-
-
-    <!-- ==================================================
-         CATEGORY GROUPS
-    =================================================== -->
-
-    <% categories.forEach((group) => { %>
-
-
-        <%
-        /* ==================================================
-           CATEGORY NAME
-
-           The backend should provide the category name.
-
-           Supported backend structures:
-             group.label
-             group.categoryName
-             group.category.name
-             group.category
-
-           The view NEVER intentionally renders a
-           MongoDB ObjectId as a category name.
-        ================================================== */
-
-        let categoryName = "Other";
-
-
-        if (
-            typeof group.label === "string" &&
-            group.label.trim()
-        ) {
-
-            categoryName = group.label.trim();
-
-        } else if (
-            typeof group.categoryName === "string" &&
-            group.categoryName.trim()
-        ) {
-
-            categoryName = group.categoryName.trim();
-
-        } else if (
-            group.category &&
-            typeof group.category === "object" &&
-            typeof group.category.name === "string" &&
-            group.category.name.trim()
-        ) {
-
-            categoryName =
-                group.category.name.trim();
-
-        } else if (
-            typeof group.category === "string" &&
-            group.category.trim() &&
-            !/^[a-fA-F0-9]{24}$/.test(
-                group.category.trim()
-            )
-        ) {
-
-            categoryName =
-                group.category.trim();
-
-        }
-        %>
-
-
-
-        <%
-        /* ==================================================
-           FLATTEN CATEGORY PRODUCTS
-
-           The backend may return products directly on
-           group.products or inside group.rows[].products.
-
-           All products belonging to this category are
-           placed into ONE collection.
-
-           CSS controls the six-column layout.
-        ================================================== */
-
-        const categoryProducts = [];
-
-
-        if (Array.isArray(group.rows)) {
-
-            group.rows.forEach((row) => {
-
-                if (
-                    row &&
-                    Array.isArray(row.products)
-                ) {
-
-                    row.products.forEach((product) => {
-
-                        if (product) {
-
-                            categoryProducts.push(product);
-
-                        }
-
-                    });
-
-                }
-
-            });
-
-        }
-
-
-        /*
-         * FALLBACK:
-         *
-         * Some backend responses may provide products
-         * directly on the category group.
-         */
-
-        if (
-            categoryProducts.length === 0 &&
-            Array.isArray(group.products)
-        ) {
-
-            group.products.forEach((product) => {
-
-                if (product) {
-
-                    categoryProducts.push(product);
-
-                }
-
-            });
-
-        }
-        %>
-
+    <% } else { %>
 
 
         <!-- ==================================================
-             CATEGORY SECTION
+             CATEGORY GROUPS
         =================================================== -->
 
-        <% if (categoryProducts.length) { %>
+        <% categories.forEach(function(group) { %>
+
+            <%
+            /*
+             * ------------------------------------------------
+             * CATEGORY DISPLAY NAME
+             * ------------------------------------------------
+             *
+             * IMPORTANT:
+             *
+             * The frontend does NOT use:
+             *
+             *     group.category._id
+             *
+             *     group.category
+             *
+             *     Category._id
+             *
+             * The backend should provide the human-readable
+             * category name through:
+             *
+             *     group.label
+             *
+             * or:
+             *
+             *     group.categoryName
+             *
+             * ------------------------------------------------
+             */
 
+            var categoryName = "Other";
 
-            <section class="category-section">
+            if (
+                typeof group.label === "string" &&
+                group.label.trim()
+            ) {
+                categoryName = group.label.trim();
 
+            } else if (
+                typeof group.categoryName === "string" &&
+                group.categoryName.trim()
+            ) {
+                categoryName = group.categoryName.trim();
+            }
 
-                <!-- ==========================================
-                     CATEGORY HEADER
-                =========================================== -->
 
-                <div class="category-head">
+            /*
+             * ------------------------------------------------
+             * COLLECT PRODUCTS
+             * ------------------------------------------------
+             *
+             * Supports the same structure used by /stock:
+             *
+             * group.rows[].products
+             *
+             * Also supports:
+             *
+             * group.products
+             * ------------------------------------------------
+             */
 
-                    <h2>
-                        <%= categoryName %>
-                    </h2>
+            var categoryProducts = [];
 
+            if (Array.isArray(group.rows)) {
 
-                    <span class="category-count">
+                group.rows.forEach(function(row) {
 
-                        <%= categoryProducts.length %>
+                    if (
+                        row &&
+                        Array.isArray(row.products)
+                    ) {
 
-                        product
+                        row.products.forEach(function(product) {
 
-                        <%=
+                            if (product) {
+                                categoryProducts.push(product);
+                            }
 
-                            categoryProducts.length === 1
-                                ? ""
-                                : "s"
+                        });
 
-                        %>
+                    }
 
-                    </span>
+                });
 
-                </div>
+            }
 
 
+            /*
+             * FALLBACK
+             */
 
-                <!-- ==========================================
-                     PRODUCT ROW
+            if (
+                categoryProducts.length === 0 &&
+                Array.isArray(group.products)
+            ) {
 
-                     CSS:
-                     Desktop = maximum 6 columns
-                     Tablet  = 4 columns
-                     Mobile  = horizontal scroll
-                =========================================== -->
+                group.products.forEach(function(product) {
 
-                <div
-                    class="product-row category-product-row"
-                    aria-label="<%= categoryName %> products"
-                >
+                    if (product) {
+                        categoryProducts.push(product);
+                    }
 
+                });
 
-                    <% categoryProducts.forEach((product) => { %>
+            }
+            %>
 
 
-                        <!-- ==================================
-                             PRODUCT CARD
-                        =================================== -->
+            <!-- ==================================================
+                 CATEGORY
+            =================================================== -->
 
-                        <a
-                            href="/products/<%= product._id %>"
-                            class="product-card"
-                        >
+            <% if (categoryProducts.length > 0) { %>
 
+                <section class="category-section">
 
-                            <!-- ==============================
-                                 PRODUCT IMAGE
-                            =============================== -->
 
-                            <div class="product-image">
+                    <!-- ==========================================
+                         CATEGORY HEADER
+                    =========================================== -->
 
+                    <div class="category-head">
 
-                                <% if (product.image) { %>
+                        <h2>
+                            <%= categoryName %>
+                        </h2>
 
+                        <span class="category-count">
 
-                                    <img
-                                        src="<%= product.image %>"
-                                        alt="<%= product.name || 'Product' %>"
-                                        loading="lazy"
+                            <%= categoryProducts.length %>
 
-                                        onerror="
-                                            this.style.display='none';
-                                            this.nextElementSibling.style.display='flex';
-                                        "
-                                    >
+                            product<%= categoryProducts.length === 1 ? "" : "s" %>
 
+                        </span>
 
-                                    <div
-                                        class="placeholder product-image-fallback"
-                                        style="display:none;"
-                                    >
+                    </div>
 
-                                        <i class="fas fa-box"></i>
 
-                                    </div>
+                    <!-- ==========================================
+                         PRODUCTS
+                         CSS CONTROLS THE SIX-COLUMN LAYOUT
+                    =========================================== -->
 
+                    <div
+                        class="product-row category-product-row"
+                        aria-label="<%= categoryName %> products"
+                    >
 
-                                <% } else { %>
 
+                        <% categoryProducts.forEach(function(product) { %>
 
-                                    <div class="placeholder">
 
-                                        <i class="fas fa-box"></i>
+                            <!-- ==================================
+                                 PRODUCT CARD
+                            =================================== -->
 
-                                    </div>
+                            <a
+                                href="/products/<%= product._id %>"
+                                class="product-card"
+                            >
 
 
-                                <% } %>
+                                <!-- ==============================
+                                     PRODUCT IMAGE
+                                =============================== -->
 
+                                <div class="product-image">
 
-                            </div>
+                                    <% if (product.image) { %>
 
+                                        <img
+                                            src="<%= product.image %>"
+                                            alt="<%= product.name || 'Product' %>"
+                                            loading="lazy"
+                                            onerror="
+                                                this.style.display='none';
+                                                this.nextElementSibling.style.display='flex';
+                                            "
+                                        >
 
+                                        <div
+                                            class="placeholder product-image-fallback"
+                                            style="display:none;"
+                                        >
 
-                            <!-- ==============================
-                                 PRODUCT INFORMATION
-                            =============================== -->
+                                            <i class="fas fa-box"></i>
 
-                            <div class="product-info">
-
-
-                                <!-- PRODUCT NAME -->
-
-                                <div class="product-name">
-
-                                    <%=
-
-                                        product.name ||
-
-                                        "Unnamed product"
-
-                                    %>
-
-                                </div>
-
-
-
-                                <!-- SUBCATEGORY -->
-
-                                <div class="stock-meta-line">
-
-                                    <%=
-
-                                        product.subcategory ||
-
-                                        "Other"
-
-                                    %>
-
-                                </div>
-
-
-
-                                <!-- SELLING PRICE -->
-
-                                <div class="product-price">
-
-                                    KSh
-
-                                    <%=
-
-                                        Number(
-                                            product.unitSellPrice || 0
-                                        ).toLocaleString()
-
-                                    %>
-
-                                </div>
-
-
-
-                                <!-- DELIVERY -->
-
-                                <div class="stock-text">
-
-                                    <strong>
-
-                                        <%=
-
-                                            Number(
-                                                product.days || 0
-                                            )
-
-                                        %>
-
-                                    </strong>
-
-                                    day
-
-                                    <%=
-
-                                        Number(product.days || 0) === 1
-                                            ? ""
-                                            : "s"
-
-                                    %>
-
-                                    delivery
-
-                                </div>
-
-
-
-                                <!-- AVAILABILITY -->
-
-                                <div
-                                    class="stock-text <%=
-
-                                        Number(product.units || 0) <= 0
-
-                                            ? "out"
-
-                                            : ""
-
-                                    %>"
-                                >
-
-
-                                    <% if (
-                                        Number(product.units || 0) > 0
-                                    ) { %>
-
-
-                                        <%=
-
-                                            Number(
-                                                product.units
-                                            ).toLocaleString()
-
-                                        %>
-
-                                        available
-
+                                        </div>
 
                                     <% } else { %>
 
+                                        <div class="placeholder">
 
-                                        Out of stock
+                                            <i class="fas fa-box"></i>
 
+                                        </div>
+
+                                    <% } %>
+
+                                </div>
+
+
+                                <!-- ==============================
+                                     PRODUCT INFORMATION
+                                =============================== -->
+
+                                <div class="product-info">
+
+
+                                    <!-- PRODUCT NAME -->
+
+                                    <div class="product-name">
+                                        <%= product.name || "Unnamed product" %>
+                                    </div>
+
+
+                                    <!-- SUBCATEGORY -->
+
+                                    <div class="stock-meta-line">
+                                        <%= product.subcategory || "Other" %>
+                                    </div>
+
+
+                                    <!-- PRICE -->
+
+                                    <div class="product-price">
+
+                                        KSh
+
+                                        <%= Number(
+                                            product.unitSellPrice || 0
+                                        ).toLocaleString() %>
+
+                                    </div>
+
+
+                                    <!-- DELIVERY -->
+
+                                    <div class="stock-text">
+
+                                        <strong>
+                                            <%= Number(
+                                                product.days || 0
+                                            ) %>
+                                        </strong>
+
+                                        day<%= Number(product.days || 0) === 1 ? "" : "s" %>
+                                        delivery
+
+                                    </div>
+
+
+                                    <!-- STOCK -->
+
+                                    <% if (Number(product.units || 0) > 0) { %>
+
+                                        <div class="stock-text">
+
+                                            <%= Number(
+                                                product.units
+                                            ).toLocaleString() %>
+
+                                            available
+
+                                        </div>
+
+                                    <% } else { %>
+
+                                        <div class="stock-text out">
+
+                                            Out of stock
+
+                                        </div>
 
                                     <% } %>
 
 
                                 </div>
 
-
-                            </div>
-
-
-                        </a>
+                            </a>
 
 
-                    <% }) %>
+                        <% }); %>
 
 
-                </div>
+                    </div>
+
+                </section>
+
+            <% } %>
 
 
-            </section>
+        <% }); %>
 
 
-        <% } %>
-
-
-    <% }) %>
-
-
-<% } %>
+    <% } %>
 
 </section>
