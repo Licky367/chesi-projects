@@ -35,6 +35,56 @@
 
   <% (categories || []).forEach((group) => { %>
 
+    <%
+      /*
+       * ==========================================================
+       * CATEGORY NAME
+       *
+       * Product.category is stored as Category._id.
+       * However, the category displayed to the customer must
+       * always be the Category.name.
+       *
+       * Supported group structures:
+       *
+       * group.category.name
+       * group.categoryName
+       * group.label
+       * group.category
+       *
+       * The ObjectId itself is never intentionally displayed.
+       * ==========================================================
+       */
+
+      let categoryName = "Other";
+
+      if (
+        group.category &&
+        typeof group.category === "object" &&
+        group.category.name
+      ) {
+
+        categoryName = group.category.name;
+
+      } else if (group.categoryName) {
+
+        categoryName = group.categoryName;
+
+      } else if (group.label) {
+
+        categoryName = group.label;
+
+      } else if (
+        group.category &&
+        typeof group.category === "string" &&
+        !/^[a-fA-F0-9]{24}$/.test(group.category)
+      ) {
+
+        categoryName = group.category;
+
+      }
+    %>
+
+
     <section class="category-section">
 
       <!-- CATEGORY HEADER -->
@@ -42,7 +92,7 @@
       <div class="category-head">
 
         <h2>
-          <%= group.label || group.category || "Other" %>
+          <%= categoryName %>
         </h2>
 
       </div>
@@ -50,14 +100,14 @@
 
       <%
         /*
-         * ==================================================
+         * ==========================================================
          * FLATTEN PRODUCTS
          *
          * Products are collected from all rows belonging
          * to this category.
          *
          * Subcategory does NOT create separate rows.
-         * ==================================================
+         * ==========================================================
          */
 
         const categoryProducts = [];
@@ -97,9 +147,9 @@
 
         <%
           /*
-           * ==================================================
+           * ==========================================================
            * SIX PRODUCTS PER ROW
-           * ==================================================
+           * ==========================================================
            */
 
           for (
@@ -121,7 +171,7 @@
             <div class="subcategory-head">
 
               <h3>
-                <%= group.label || group.category || "Other" %>
+                <%= categoryName %>
               </h3>
 
 
@@ -140,7 +190,7 @@
 
             <div
               class="product-row category-product-row"
-              aria-label="<%= group.label || group.category || 'Products' %> products"
+              aria-label="<%= categoryName %> products"
             >
 
 
@@ -166,7 +216,10 @@
                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
                       >
 
-                      <div class="placeholder product-image-fallback">
+                      <div
+                        class="placeholder product-image-fallback"
+                        style="display:none;"
+                      >
 
                         <i class="fas fa-box"></i>
 
