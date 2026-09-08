@@ -1,0 +1,661 @@
+/* ==========================================================
+   VERRAH COSMETICS
+   HOME CATEGORY CARDS
+   BROWN THEME
+========================================================== */
+
+
+/* ==========================================================
+   THEME VARIABLES
+========================================================== */
+
+:root {
+
+    --category-brown:
+        #8b4513;
+
+    --category-brown-dark:
+        #6f350f;
+
+    --category-brown-deep:
+        #5f2f13;
+
+    --category-brown-light:
+        #a0522d;
+
+    --category-brown-soft:
+        #f5ebe4;
+
+    --category-cream:
+        #fffaf7;
+
+    --category-white:
+        #ffffff;
+
+    --category-text:
+        #2f211a;
+
+    --category-muted:
+        #786960;
+
+    --category-border:
+        #eadbd2;
+
+    --category-border-dark:
+        #cda88f;
+
+    --category-shadow:
+        0 3px 10px rgba(91, 48, 24, 0.08);
+
+    --category-shadow-hover:
+        0 8px 20px rgba(91, 48, 24, 0.15);
+}
+
+
+/* ==========================================================
+   CATEGORY SECTION
+========================================================== */
+
+.home-categories {
+
+    width: 100%;
+
+    margin: 0;
+
+    padding: 0;
+
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   CATEGORY SCROLLER
+========================================================== */
+
+.home-category-scroller {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: stretch;
+
+    gap: 10px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding:
+        4px
+        2px
+        10px;
+
+    box-sizing: border-box;
+
+    scroll-behavior: smooth;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        var(--category-border-dark)
+        transparent;
+}
+
+
+/* ==========================================================
+   WEBKIT SCROLLBAR
+========================================================== */
+
+.home-category-scroller::-webkit-scrollbar {
+
+    height: 5px;
+}
+
+
+.home-category-scroller::-webkit-scrollbar-track {
+
+    background: transparent;
+}
+
+
+.home-category-scroller::-webkit-scrollbar-thumb {
+
+    background:
+        var(--category-border-dark);
+
+    border-radius: 20px;
+}
+
+
+.home-category-scroller::-webkit-scrollbar-thumb:hover {
+
+    background:
+        var(--category-brown);
+}
+
+
+/* ==========================================================
+   CATEGORY CARD
+========================================================== */
+
+.home-category-card {
+
+    width: 116px;
+
+    min-width: 116px;
+
+    height: 155px;
+
+    min-height: 155px;
+
+    flex: 0 0 116px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+
+    text-decoration: none;
+
+    background:
+        var(--category-white);
+
+    border:
+        1px solid
+        var(--category-border);
+
+    border-radius: 10px;
+
+    box-shadow:
+        var(--category-shadow);
+
+    color:
+        var(--category-text);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+
+    -webkit-tap-highlight-color:
+        transparent;
+}
+
+
+/* ==========================================================
+   CARD HOVER
+========================================================== */
+
+.home-category-card:hover {
+
+    transform:
+        translateY(-2px);
+
+    border-color:
+        var(--category-brown);
+
+    box-shadow:
+        var(--category-shadow-hover);
+}
+
+
+/* ==========================================================
+   CARD ACTIVE
+========================================================== */
+
+.home-category-card:active {
+
+    transform:
+        translateY(0);
+}
+
+
+/* ==========================================================
+   CARD FOCUS
+========================================================== */
+
+.home-category-card:focus-visible {
+
+    outline:
+        3px solid
+        rgba(139, 69, 19, 0.25);
+
+    outline-offset: 2px;
+}
+
+
+/* ==========================================================
+   CATEGORY IMAGE / ICON AREA
+========================================================== */
+
+.home-category-icon {
+
+    width: 100%;
+
+    height: 72px;
+
+    min-height: 72px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    overflow: hidden;
+
+    flex-shrink: 0;
+
+    background:
+        var(--category-brown-soft);
+}
+
+
+/* ==========================================================
+   CATEGORY IMAGE
+========================================================== */
+
+.home-category-icon img {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+
+/* ==========================================================
+   FALLBACK ICON
+========================================================== */
+
+.home-category-icon-fallback {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color:
+        var(--category-brown);
+
+    font-size: 26px;
+}
+
+
+/* ==========================================================
+   CATEGORY CONTENT
+========================================================== */
+
+.home-category-content {
+
+    flex: 1;
+
+    min-height: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    box-sizing: border-box;
+
+    padding:
+        8px
+        7px
+        7px;
+}
+
+
+/* ==========================================================
+   CATEGORY NAME
+========================================================== */
+
+.home-category-name {
+
+    margin:
+        0
+        0
+        5px;
+
+    padding: 0;
+
+    color:
+        var(--category-brown-deep);
+
+    font-size: 13px;
+
+    font-weight: 800;
+
+    line-height: 1.2;
+
+    text-align: center;
+
+    overflow: hidden;
+
+    display: -webkit-box;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 2;
+}
+
+
+/* ==========================================================
+   CATEGORY DESCRIPTION
+========================================================== */
+
+.home-category-description {
+
+    margin: 0;
+
+    padding: 0;
+
+    color:
+        var(--category-muted);
+
+    font-size: 10px;
+
+    font-weight: 400;
+
+    line-height: 1.25;
+
+    text-align: center;
+
+    overflow: hidden;
+
+    display: -webkit-box;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 3;
+}
+
+
+/* ==========================================================
+   ADD CATEGORY CARD
+========================================================== */
+
+.home-category-add {
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding:
+        10px;
+
+    text-align: center;
+
+    background:
+        var(--category-cream);
+
+    border:
+        1px dashed
+        var(--category-border-dark);
+}
+
+
+/* ==========================================================
+   ADD CATEGORY HOVER
+========================================================== */
+
+.home-category-add:hover {
+
+    background:
+        var(--category-brown-soft);
+
+    border-color:
+        var(--category-brown);
+}
+
+
+/* ==========================================================
+   ADD CATEGORY ICON
+========================================================== */
+
+.home-category-add-icon {
+
+    width: 44px;
+
+    height: 44px;
+
+    min-width: 44px;
+
+    min-height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 8px;
+
+    border-radius: 50%;
+
+    background:
+        var(--category-brown-soft);
+
+    color:
+        var(--category-brown);
+
+    font-size: 19px;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+
+/* ==========================================================
+   ADD CATEGORY ICON HOVER
+========================================================== */
+
+.home-category-add:hover
+.home-category-add-icon {
+
+    background:
+        var(--category-brown);
+
+    color:
+        var(--category-white);
+}
+
+
+/* ==========================================================
+   ADD CATEGORY TITLE
+========================================================== */
+
+.home-category-add-title {
+
+    margin: 0;
+
+    padding: 0;
+
+    color:
+        var(--category-brown-dark);
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    line-height: 1.2;
+
+    text-align: center;
+}
+
+
+/* ==========================================================
+   ADD CATEGORY DESCRIPTION
+========================================================== */
+
+.home-category-add-description {
+
+    margin:
+        4px
+        0
+        0;
+
+    padding: 0;
+
+    color:
+        var(--category-muted);
+
+    font-size: 9px;
+
+    line-height: 1.25;
+
+    text-align: center;
+}
+
+
+/* ==========================================================
+   EMPTY CATEGORY STATE
+========================================================== */
+
+.home-category-empty {
+
+    width: 100%;
+
+    min-height: 80px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    box-sizing: border-box;
+
+    padding: 18px;
+
+    background:
+        var(--category-cream);
+
+    border:
+        1px dashed
+        var(--category-border);
+
+    border-radius: 10px;
+
+    color:
+        var(--category-muted);
+
+    font-size: 13px;
+
+    text-align: center;
+}
+
+
+/* ==========================================================
+   EMPTY STATE ICON
+========================================================== */
+
+.home-category-empty i {
+
+    color:
+        var(--category-brown);
+
+    font-size: 16px;
+}
+
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (max-width: 768px) {
+
+    .home-category-scroller {
+
+        gap: 9px;
+
+        padding-left: 2px;
+
+        padding-right: 2px;
+    }
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 480px) {
+
+    .home-category-scroller {
+
+        gap: 8px;
+
+        padding:
+            3px
+            1px
+            9px;
+    }
+
+
+    .home-category-card {
+
+        width: 116px;
+
+        min-width: 116px;
+
+        height: 155px;
+
+        min-height: 155px;
+
+        flex-basis: 116px;
+    }
+
+
+    .home-category-card:hover {
+
+        transform: none;
+
+        box-shadow:
+            var(--category-shadow);
+    }
+
+}
+
+
+/* ==========================================================
+   REDUCED MOTION
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .home-category-scroller {
+
+        scroll-behavior: auto;
+    }
+
+
+    .home-category-card {
+
+        transition: none;
+    }
+
+
+    .home-category-add-icon {
+
+        transition: none;
+    }
+
+}
