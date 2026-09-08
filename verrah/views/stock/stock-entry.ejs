@@ -6,11 +6,8 @@
       href="/stock"
       class="secondary-btn"
     >
-
       <i class="fas fa-arrow-left"></i>
-
       Stock
-
     </a>
 
   </div>
@@ -34,13 +31,11 @@
   <% } %>
 
 
-  <% if (!stock) %>
-
+  <% if (!stock) { %>
 
     <div class="error">
       Stock item not found.
     </div>
-
 
   <% } else { %>
 
@@ -48,63 +43,49 @@
     <div class="detail-card stock-allocation-card">
 
 
-      <!-- STOCK DETAILS -->
+      <!-- =====================================================
+           STOCK DETAILS
+      ====================================================== -->
 
       <div class="detail-grid">
 
 
         <div class="detail-image stock-detail-image">
 
-
           <% if (stock.image) { %>
-
 
             <img
               src="<%= stock.image %>"
               alt="<%= stock.name || stock.subcategory || 'Stock item' %>"
-              onerror="this.style.display='none';this.nextElementSibling.classList.add('is-visible');"
+              class="stock-detail-image-source"
             >
 
-
             <div class="placeholder stock-image-fallback">
-
               <i class="fas fa-box"></i>
-
             </div>
-
 
           <% } else { %>
 
-
             <div class="placeholder">
-
               <i class="fas fa-box"></i>
-
             </div>
 
-
           <% } %>
-
 
         </div>
 
 
         <div class="detail-content">
 
-
           <span class="detail-category">
-
             <%= stock.category || "Other" %>
-
           </span>
 
 
           <h1>
-
             <%= stock.subcategory ||
                 stock.name ||
                 "Stock item" %>
-
           </h1>
 
 
@@ -137,9 +118,7 @@
           <% if (stock.description) { %>
 
             <div class="detail-description">
-
               <%= stock.description %>
-
             </div>
 
           <% } %>
@@ -150,7 +129,6 @@
             <span>
               Warehouse balance
             </span>
-
 
             <strong>
 
@@ -164,14 +142,13 @@
 
           </div>
 
-
         </div>
 
       </div>
 
 
       <!-- =====================================================
-           DIRECTIONS OF USE - READ ONLY
+           DIRECTIONS OF USE
       ====================================================== -->
 
       <% if (
@@ -188,18 +165,13 @@
 
         <div class="stock-directions-display">
 
-
           <div class="stock-directions-head">
-
 
             <h3>
 
               <span class="stock-directions-icon">
-
                 <i class="fas fa-list-check"></i>
-
               </span>
-
 
               <%= stock.directionsOfUse.title ||
                   "Directions of Use" %>
@@ -218,57 +190,46 @@
 
             </a>
 
-
           </div>
 
 
           <div class="stock-directions-list">
 
-
             <% (
               stock.directionsOfUse.items || []
-            ).forEach((it, idx) => { %>
-
+            ).forEach((item, index) => { %>
 
               <div class="stock-direction-item">
 
-
                 <div class="stock-direction-number">
-
-                  <%= idx + 1 %>
-
+                  <%= index + 1 %>
                 </div>
 
 
                 <div>
 
-                  <div class="stock-direction-title">
+                  <% if (item.subtitle) { %>
 
-                    <%= it.subtitle %>
+                    <div class="stock-direction-title">
+                      <%= item.subtitle %>
+                    </div>
 
-                  </div>
+                  <% } %>
 
 
                   <div class="stock-direction-content">
-
-                    <%= it.content %>
-
+                    <%= item.content || "" %>
                   </div>
 
                 </div>
 
-
               </div>
-
 
             <% }) %>
 
-
           </div>
 
-
         </div>
-
 
       <% } %>
 
@@ -282,13 +243,11 @@
 
         <div class="allocation-heading">
 
-
           <div>
 
             <h2>
               Dispatch to substations
             </h2>
-
 
             <p>
               Enter the units each substation receives.
@@ -303,13 +262,11 @@
               Total allocated
             </small>
 
-
             <strong id="allocationTotal">
               0
             </strong>
 
           </div>
-
 
         </div>
 
@@ -320,7 +277,6 @@
           class="allocation-form"
           id="allocationForm"
         >
-
 
           <input
             type="hidden"
@@ -333,11 +289,8 @@
           <div class="field">
 
             <label for="unitSellPrice">
-
               Selling price per unit
-
             </label>
-
 
             <input
               id="unitSellPrice"
@@ -345,7 +298,9 @@
               min="0"
               step="0.01"
               name="unitSellPrice"
-              value="<%= old && old.unitSellPrice != null ? old.unitSellPrice : '' %>"
+              value="<%= old && old.unitSellPrice != null
+                ? old.unitSellPrice
+                : "" %>"
               required
             >
 
@@ -358,19 +313,20 @@
             <% if (substations && substations.length) { %>
 
 
-              <% substations.forEach((s) => { %>
-
+              <% substations.forEach((substation) => { %>
 
                 <%
                   const substationId =
-                    String(s._id);
+                    String(substation._id);
 
                   const value =
                     old &&
                     old.allocations &&
                     typeof old.allocations === "object"
                       ? (
-                          old.allocations[substationId] ?? ""
+                          old.allocations[
+                            substationId
+                          ] ?? ""
                         )
                       : "";
                 %>
@@ -378,45 +334,37 @@
 
                 <div class="substation-allocation-row">
 
-
                   <div class="substation-name">
 
-
                     <i class="fas fa-store"></i>
-
 
                     <div>
 
                       <strong>
-                        <%= s.name %>
+                        <%= substation.name %>
                       </strong>
 
 
-                      <% if (s.location) { %>
+                      <% if (substation.location) { %>
 
                         <small>
-                          <%= s.location %>
+                          <%= substation.location %>
                         </small>
 
                       <% } %>
 
                     </div>
 
-
                   </div>
 
 
                   <div class="substation-unit-input">
 
-
                     <label
                       for="allocation-<%= substationId %>"
                     >
-
                       Units
-
                     </label>
-
 
                     <input
                       id="allocation-<%= substationId %>"
@@ -431,9 +379,7 @@
                       autocomplete="off"
                     >
 
-
                   </div>
-
 
                 </div>
 
@@ -441,13 +387,11 @@
               <% }) %>
 
 
-            <% } else %>
+            <% } else { %>
 
 
               <div class="error">
-
                 No active substations are available.
-
               </div>
 
 
@@ -457,7 +401,9 @@
           </div>
 
 
-          <!-- ALLOCATION SUMMARY -->
+          <!-- =================================================
+               ALLOCATION SUMMARY
+          ================================================== -->
 
           <div class="allocation-summary">
 
@@ -468,13 +414,10 @@
                 Warehouse available
               </span>
 
-
               <strong>
-
                 <%= Number(
                   stock.units || 0
                 ).toLocaleString() %>
-
               </strong>
 
             </div>
@@ -485,7 +428,6 @@
               <span>
                 Being dispatched
               </span>
-
 
               <strong id="summaryTotal">
                 0
@@ -500,7 +442,6 @@
                 Remaining warehouse
               </span>
 
-
               <strong id="summaryRemaining">
 
                 <%= Number(
@@ -510,7 +451,6 @@
               </strong>
 
             </div>
-
 
           </div>
 
@@ -522,16 +462,20 @@
           ></div>
 
 
-          <!-- ACTIONS -->
+          <!-- =================================================
+               ACTIONS
+          ================================================== -->
 
           <div class="form-actions">
-
 
             <button
               type="submit"
               class="primary-btn"
               id="allocateButton"
-              <%= !substations || !substations.length ? "disabled" : "" %>
+              <%= !substations ||
+                  !substations.length
+                    ? "disabled"
+                    : "" %>
             >
 
               <i class="fas fa-boxes-stacked"></i>
@@ -560,15 +504,12 @@
               Cancel
             </a>
 
-
           </div>
 
 
         </form>
 
-
       </div>
-
 
     </div>
 
@@ -588,6 +529,11 @@
     document.getElementById(
       "allocationForm"
     );
+
+
+  if (!form) {
+    return;
+  }
 
 
   const inputs =
@@ -642,11 +588,10 @@
 
   const warehouse =
     Number(
-      <%= stock ? Number(stock.units || 0) : 0 %>
+      <%= stock
+        ? Number(stock.units || 0)
+        : 0 %>
     );
-
-
-  if (!form) return;
 
 
   function valueOf(input) {
@@ -657,7 +602,9 @@
       ).trim();
 
 
-    if (raw === "") return 0;
+    if (raw === "") {
+      return 0;
+    }
 
 
     const value =
@@ -683,8 +630,17 @@
 
     const sum =
       inputs.reduce(
-        (totalValue, input) =>
-          totalValue + valueOf(input),
+        function (
+          totalValue,
+          input
+        ) {
+
+          return (
+            totalValue +
+            valueOf(input)
+          );
+
+        },
         0
       );
 
@@ -708,7 +664,8 @@
       ).toLocaleString();
 
 
-    let message = "";
+    let message =
+      "";
 
 
     if (sum <= 0) {
@@ -745,20 +702,22 @@
   }
 
 
-  inputs.forEach((input) => {
+  inputs.forEach(
+    function (input) {
 
-    input.addEventListener(
-      "input",
-      calculate
-    );
+      input.addEventListener(
+        "input",
+        calculate
+      );
 
 
-    input.addEventListener(
-      "change",
-      calculate
-    );
+      input.addEventListener(
+        "change",
+        calculate
+      );
 
-  });
+    }
+  );
 
 
   form.addEventListener(
@@ -802,6 +761,41 @@
 
     }
   );
+
+
+  const image =
+    document.querySelector(
+      ".stock-detail-image-source"
+    );
+
+
+  if (image) {
+
+    image.addEventListener(
+      "error",
+      function () {
+
+        image.classList.add(
+          "is-hidden"
+        );
+
+
+        const fallback =
+          image.nextElementSibling;
+
+
+        if (fallback) {
+
+          fallback.classList.add(
+            "is-visible"
+          );
+
+        }
+
+      }
+    );
+
+  }
 
 
   calculate();
