@@ -6,8 +6,22 @@
 const categoryService =
   require("../services/categoryService");
 
+
+// ==========================================================
+// ADMIN STATUS
+// ==========================================================
+
+function getIsAdmin(req) {
+  return Boolean(
+    req.user &&
+    String(req.user.role || "").toLowerCase() === "admin"
+  );
+}
+
+
 // ==========================================================
 // ADD CATEGORY FORM
+// GET /products/category/add
 // ==========================================================
 
 exports.addForm = async (req, res) => {
@@ -23,17 +37,22 @@ exports.addForm = async (req, res) => {
       formData: {
         name: "",
         categoryIconUrl: ""
-      }
+      },
+
+      isAdmin: getIsAdmin(req)
     }
   );
 };
 
+
 // ==========================================================
 // CREATE CATEGORY
+// POST /products/category/add
 // ==========================================================
 
 exports.create = async (req, res) => {
   try {
+
     const category =
       await categoryService.createCategory(
         req.body,
@@ -43,7 +62,9 @@ exports.create = async (req, res) => {
     return res.redirect(
       `/products/category/${category._id}`
     );
+
   } catch (error) {
+
     console.error(
       "Create category error:",
       error
@@ -69,19 +90,27 @@ exports.create = async (req, res) => {
 
             categoryIconUrl:
               req.body?.categoryIconUrl || ""
-          }
+          },
+
+          isAdmin: getIsAdmin(req)
         }
       );
   }
 };
 
+
 // ==========================================================
 // CATEGORY PRODUCTS
+// GET /products/category/:id
 // ==========================================================
 
 exports.products = async (req, res) => {
   try {
-    const result =
+
+    const {
+      category,
+      products
+    } =
       await categoryService.getCategoryProducts(
         req.params.id
       );
@@ -90,18 +119,21 @@ exports.products = async (req, res) => {
       "products/category",
       {
         title:
-          `${result.category.name} | Verrah Cosmetics`,
+          `${category.name} | Verrah Cosmetics`,
 
-        category:
-          result.category,
+        category,
 
-        products:
-          result.products,
+        products,
+
+        isAdmin:
+          getIsAdmin(req),
 
         error: null
       }
     );
+
   } catch (error) {
+
     console.error(
       "Category products error:",
       error
@@ -118,6 +150,9 @@ exports.products = async (req, res) => {
           category: null,
 
           products: [],
+
+          isAdmin:
+            getIsAdmin(req),
 
           error:
             error.message ||
