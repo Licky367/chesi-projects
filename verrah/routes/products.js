@@ -1,6 +1,7 @@
-// =========================================================
+// ==========================================================
 // routes/products.js
-// =========================================================
+// PRODUCT ROUTES
+// ==========================================================
 
 const express = require("express");
 
@@ -10,70 +11,66 @@ const router =
 const controller =
   require("../controllers/products");
 
-const categoryProductsController =
-  require(
-    "../controllers/categoryProductsController"
-  );
+const categoryController =
+  require("../controllers/categoryController");
 
 const requireLogin =
   require("../middleware/requireLogin");
 
-
-// =========================================================
-// ALL PRODUCTS
-//
-// GET /products
-// =========================================================
+// ==========================================================
+// PRODUCTS
+// ==========================================================
 
 router.get(
   "/",
   controller.list
 );
 
-
-// =========================================================
-// PRODUCTS BY CATEGORY
-//
-// GET /products/category/:id
+// ==========================================================
+// CATEGORY
+// ==========================================================
 //
 // IMPORTANT:
-// This MUST come before /:id.
-// Otherwise "category" can be interpreted as the :id.
-// =========================================================
+// This MUST appear before /:id.
+//
+// Otherwise:
+// /products/category/add
+//
+// could be interpreted as:
+//
+// /products/:id
+//
+// with id = "category".
+//
+// ==========================================================
 
 router.get(
-  "/category/:id",
-  categoryProductsController.list
+  "/category/add",
+  categoryController.addForm
 );
 
+router.post(
+  "/category/add",
+  categoryController.create
+);
 
-// =========================================================
+// ==========================================================
 // PRODUCT DETAILS
-//
-// GET /products/:id
-// =========================================================
+// ==========================================================
 
 router.get(
   "/:id",
   controller.details
 );
 
-
-// =========================================================
+// ==========================================================
 // ADD PRODUCT TO CART
-//
-// POST /products/:id/cart
-// =========================================================
+// ==========================================================
 
 router.post(
   "/:id/cart",
   requireLogin,
   controller.addToCart
 );
-
-
-// =========================================================
-// EXPORT
-// =========================================================
 
 module.exports = router;
