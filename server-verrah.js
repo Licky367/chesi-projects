@@ -213,13 +213,13 @@ const verrahRoutes =
 // PRODUCTS
 // ----------------------------------------------------------
 
-/*
+
 const productsRoutes =
     safeLoad(
         "productsRoutes",
-        "./corevester/routes/products"
+        "./verrah/routes/products"
     );
-*/
+
 
 
 // ----------------------------------------------------------
@@ -728,7 +728,7 @@ if (authRoutes) {
 // ==========================================================
 // PRODUCTS
 // ==========================================================
-/*
+
 if (productsRoutes) {
 
     app.use(
@@ -746,7 +746,7 @@ if (productsRoutes) {
         "❌ /products was not mounted"
     );
 }
-*/
+
 
 // ==========================================================
 // CARTS
