@@ -3,42 +3,30 @@
   <div class="form-card stock-management-form">
 
     <a href="/stock" class="secondary-btn">
-
       <i class="fas fa-arrow-left"></i>
-
       Stock
-
     </a>
-
 
     <h1 class="page-title">
       <%= title %>
     </h1>
-
 
     <p class="page-subtitle">
       Add the stock details and, when needed, give customers clear
       instructions for using the product.
     </p>
 
-
     <% if (error) { %>
-
       <div class="error">
         <%= error %>
       </div>
-
     <% } %>
 
-
     <% if (saved === "1") { %>
-
       <div class="notice">
         Stock subcategory saved successfully.
       </div>
-
     <% } %>
-
 
     <form
       action="/stock"
@@ -53,18 +41,14 @@
         value="<%= selectedStockId || old.stockId || '' %>"
       >
 
-
       <!-- STOCK FORM -->
 
       <div class="form-grid">
 
-
         <div class="field">
-
           <label for="category">
             Category
           </label>
-
 
           <select
             id="category"
@@ -76,36 +60,29 @@
               Select category
             </option>
 
-
             <% (categories || []).forEach((category) => { %>
 
               <option
-                value="<%= category %>"
-                <%= String(old.category || '') === String(category) ? 'selected' : '' %>
+                value="<%= category._id %>"
+                <%= String(old.category || '') === String(category._id) ? 'selected' : '' %>
               >
-
-                <%= category %>
-
+                <%= category.name %>
               </option>
 
             <% }) %>
 
           </select>
 
-
           <small class="form-help">
             Choose an existing category.
           </small>
-
         </div>
 
 
         <div class="field">
-
           <label for="subcategory">
             Subcategory
           </label>
-
 
           <input
             id="subcategory"
@@ -114,20 +91,16 @@
             required
           >
 
-
           <small class="form-help">
             This becomes the product name.
           </small>
-
         </div>
 
 
         <div class="field">
-
           <label for="units" id="unitsLabel">
             Initial warehouse units
           </label>
-
 
           <input
             id="units"
@@ -138,23 +111,19 @@
             value="<%= old.additionalUnits ?? old.units ?? '' %>"
           >
 
-
           <small
             class="form-help"
             id="unitsHelp"
           >
             Units for a new subcategory.
           </small>
-
         </div>
 
 
         <div class="field">
-
           <label for="buyPrice">
             Buy price per unit
           </label>
-
 
           <input
             id="buyPrice"
@@ -165,16 +134,13 @@
             value="<%= old.buyPrice ?? 0 %>"
             required
           >
-
         </div>
 
 
         <div class="field">
-
           <label for="days">
             Delivery days
           </label>
-
 
           <input
             id="days"
@@ -186,16 +152,13 @@
             required
           >
 
-
           <small class="form-help">
             Delivery time for this subcategory.
           </small>
-
         </div>
 
 
         <div class="field full">
-
           <label for="image">
 
             Image URL
@@ -206,13 +169,11 @@
 
           </label>
 
-
           <input
             id="image"
             name="image"
             value="<%= old.image || '' %>"
           >
-
         </div>
 
 
@@ -221,7 +182,6 @@
           <label for="description">
             Description
           </label>
-
 
           <textarea
             id="description"
@@ -248,18 +208,13 @@
           <div>
 
             <span class="directions-kicker">
-
               <i class="fas fa-circle-info"></i>
-
               Customer information
-
             </span>
-
 
             <h2 id="directionsHeading">
               Directions of Use
             </h2>
-
 
             <p>
               Add practical instructions that customers should see
@@ -268,17 +223,13 @@
 
           </div>
 
-
           <button
             type="button"
             class="secondary-btn directions-add-btn"
             id="addDirectionBtn"
           >
-
             <i class="fas fa-plus"></i>
-
             Add instruction
-
           </button>
 
         </div>
@@ -289,7 +240,6 @@
           <label for="directionsTitle">
             Section title
           </label>
-
 
           <input
             id="directionsTitle"
@@ -319,7 +269,6 @@
 
           <% existingDirections.forEach((item, index) => { %>
 
-
             <div
               class="direction-item"
               data-index="<%= index %>"
@@ -332,13 +281,11 @@
 
               <div class="direction-item-fields">
 
-
                 <div class="field">
 
                   <label>
                     Instruction heading
                   </label>
-
 
                   <input
                     name="directionsOfUse[items][<%= index %>][subtitle]"
@@ -355,14 +302,12 @@
                     Instruction
                   </label>
 
-
                   <textarea
                     name="directionsOfUse[items][<%= index %>][content]"
                     placeholder="Explain what the customer should do"
                   ><%= item.content || '' %></textarea>
 
                 </div>
-
 
               </div>
 
@@ -373,13 +318,10 @@
                 aria-label="Remove instruction"
                 title="Remove instruction"
               >
-
                 <i class="fas fa-trash"></i>
-
               </button>
 
             </div>
-
 
           <% }) %>
 
@@ -439,7 +381,6 @@
       >
 
         <div>
-
           <strong>
             Current warehouse units:
           </strong>
@@ -447,12 +388,10 @@
           <span id="currentUnits">
             0
           </span>
-
         </div>
 
 
         <div>
-
           <strong>
             After this update:
           </strong>
@@ -460,7 +399,6 @@
           <span id="projectedUnits">
             0
           </span>
-
         </div>
 
       </div>
@@ -475,11 +413,8 @@
           class="primary-btn"
           id="submitButton"
         >
-
           <i class="fas fa-plus"></i>
-
           Create Stock Subcategory
-
         </button>
 
 
@@ -745,9 +680,7 @@
         aria-label="Remove instruction"
         title="Remove instruction"
       >
-
         <i class="fas fa-trash"></i>
-
       </button>
     `;
 
@@ -926,7 +859,6 @@
 
 
       return;
-
     }
 
 
@@ -988,7 +920,6 @@
 
 
     updateSummary();
-
   }
 
 
@@ -1019,11 +950,26 @@
     );
 
 
-  if (selector.value) {
-
+  if (selector && selector.value) {
     setMode();
-
   }
 
 })();
 </script>
+
+The critical database-backed portion is this:
+
+<% (categories || []).forEach((category) => { %>
+  <option
+    value="<%= category._id %>"
+    <%= String(old.category || '') === String(category._id) ? 'selected' : '' %>
+  >
+    <%= category.name %>
+  </option>
+<% }) %>
+
+That matches the controller's "categories" array when it passes the actual Category documents to the view. The current repository controller/service already obtains the categories from MongoDB.
+
+One more thing I corrected while reproducing the complete file: the original script blindly calls "selector.value" even though "existingStockId" is not present in the form. I changed the final initialization to "if (selector && selector.value)" so "/stock/new" doesn't crash in the browser. The original file indeed has that mismatch.
+
+This preserves the rest of your stock form and directions-of-use UI.
