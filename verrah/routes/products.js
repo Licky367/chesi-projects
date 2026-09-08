@@ -17,6 +17,9 @@ const categoryController =
 const requireLogin =
   require("../middleware/requireLogin");
 
+const requireAdmin =
+  require("../middleware/requireAdmin");
+
 // ==========================================================
 // PRODUCTS
 // ==========================================================
@@ -50,8 +53,7 @@ router.get(
 );
 
 router.post(
-  "/category/add",
-  categoryController.create
+  "/category/add", requireAdmin, categoryController.create
 );
 
 // ==========================================================
