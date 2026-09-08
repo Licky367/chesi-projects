@@ -8,10 +8,19 @@ const categoryService =
 
 
 // ==========================================================
-// GET CATEGORIES
+// GET CATEGORIES / HOME PAGE
 // ==========================================================
 //
 // Used when the home page needs category cards.
+//
+// Passes:
+// - categories
+// - currentUser
+// - title
+// - error
+//
+// to:
+// views/index.ejs
 //
 // ==========================================================
 
@@ -25,10 +34,10 @@ exports.list = async (req, res) => {
 
 
         return res.render(
-            "products/category",
+            "index",
             {
                 title:
-                    "Product Categories | Verrah Cosmetics",
+                    "Verrah Cosmetics",
 
                 categories,
 
@@ -50,10 +59,10 @@ exports.list = async (req, res) => {
         return res
             .status(500)
             .render(
-                "products/category",
+                "index",
                 {
                     title:
-                        "Product Categories | Verrah Cosmetics",
+                        "Verrah Cosmetics",
 
                     categories: [],
 
@@ -192,7 +201,7 @@ exports.create = async (req, res) => {
 
 
         return res.redirect(
-            "/products"
+            "/"
         );
 
     } catch (err) {
@@ -222,8 +231,3 @@ exports.create = async (req, res) => {
     }
 
 };
-
-
-// ==========================================================
-// EXPORT
-// ==========================================================
