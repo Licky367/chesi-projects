@@ -1,0 +1,18 @@
+--- a/verrah/views/stock/product-entry.ejs
++++ b/verrah/views/stock/product-entry.ejs
+@@
+-            <% (categories || []).forEach((category) => { %>
++            <% (categories || []).forEach((category) => { %>
+
+               <option
+-                value="<%= category %>"
+-                <%= String(old.category || '') === String(category) ? 'selected' : '' %>
++                value="<%= category._id %>"
++                <%= String(old.category?._id || old.category || '') === String(category._id) ? 'selected' : '' %>
+               >
+-                <%= category %>
++                <%= category.name %>
+
+               </option>
+
+             <% }) %>
