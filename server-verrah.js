@@ -300,25 +300,25 @@ const substationsRoutes =
 //     dedicated substation product-reduction field.
 //
 // ----------------------------------------------------------
-/*
+
 const packageRoutes =
     safeLoad(
         "packageRoutes",
-        "./corevester/routes/packages"
+        "./verrah/routes/packages"
     );
-*/
+
 
 // ----------------------------------------------------------
 // MPESA
 // ----------------------------------------------------------
-/*
+
 const mpesaRoutes =
     safeLoad(
         "mpesaRoutes",
-        "./corevester/routes/mpesa"
+        "./verrah/routes/mpesa"
     );
 
-*/
+
 // ----------------------------------------------------------
 // CONTACT
 // ----------------------------------------------------------
@@ -838,7 +838,7 @@ if (substationsRoutes) {
 // NOT inside this server bootstrap file.
 //
 // ==========================================================
-/*
+
 if (packageRoutes) {
 
     app.use(
@@ -857,11 +857,11 @@ if (packageRoutes) {
     );
 }
 
-*/
+
 // ==========================================================
 // MPESA
 // ==========================================================
-/*
+
 if (mpesaRoutes) {
 
     app.use(
@@ -879,7 +879,7 @@ if (mpesaRoutes) {
         "❌ /mpesa was not mounted"
     );
 }
-*/
+
 
 // ==========================================================
 // VERRAH MAIN / 
