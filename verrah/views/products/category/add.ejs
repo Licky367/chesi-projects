@@ -1,54 +1,42 @@
-<!-- ==========================================================
-     views/products/category/add.ejs
+<!-- ======================================================
+     verrah/views/products/category/add.ejs
      ADD CATEGORY
-=========================================================== -->
+====================================================== -->
+
+<link
+  rel="stylesheet"
+  href="/css/products/category-add.css"
+/>
 
 <section class="category-add-page">
 
-  <div class="category-add-shell">
+  <div class="category-add-card">
 
-    <!-- ======================================================
+    <!-- ==================================================
          HEADER
-    ======================================================= -->
+    =================================================== -->
 
     <div class="category-add-header">
 
-      <a
-        href="/products"
-        class="category-back-link"
-      >
-        <i class="fas fa-arrow-left"></i>
-        <span>Back to Products</span>
-      </a>
+      <div class="category-add-icon">
+        <i class="fas fa-layer-group"></i>
+      </div>
 
-      <div class="category-heading">
+      <div>
+        <h1>
+          Add Category
+        </h1>
 
-        <div class="category-heading-icon">
-          <i class="fas fa-layer-group"></i>
-        </div>
-
-        <div>
-          <p class="category-eyebrow">
-            Product Management
-          </p>
-
-          <h1>
-            Add Category
-          </h1>
-
-          <p class="category-subtitle">
-            Create a new product category for Verrah Cosmetics.
-          </p>
-        </div>
-
+        <p>
+          Create a new Verrah Cosmetics category.
+        </p>
       </div>
 
     </div>
 
-
-    <!-- ======================================================
+    <!-- ==================================================
          ERROR
-    ======================================================= -->
+    =================================================== -->
 
     <% if (error) { %>
 
@@ -64,268 +52,390 @@
 
     <% } %>
 
+    <!-- ==================================================
+         FORM
+    =================================================== -->
 
-    <!-- ======================================================
-         SUCCESS
-    ======================================================= -->
+    <form
+      class="category-form"
+      action="/products/category/add"
+      method="POST"
+      enctype="multipart/form-data"
+      id="categoryForm"
+    >
 
-    <% if (success) { %>
+      <!-- =================================================
+           CATEGORY NAME
+      ================================================== -->
 
-      <div class="category-alert category-alert-success">
+      <div class="form-group">
 
-        <i class="fas fa-circle-check"></i>
+        <label for="name">
+          Category Name
+        </label>
 
-        <span>
-          <%= success %>
-        </span>
-
-      </div>
-
-    <% } %>
-
-
-    <!-- ======================================================
-         FORM CARD
-    ======================================================= -->
-
-    <div class="category-form-card">
-
-      <div class="category-form-header">
-
-        <div class="category-form-icon">
-          <i class="fas fa-folder-plus"></i>
-        </div>
-
-        <div>
-
-          <h2>
-            Category Details
-          </h2>
-
-          <p>
-            Enter the name and icon for the new category.
-          </p>
-
-        </div>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          value="<%= formData?.name || '' %>"
+          placeholder="e.g. skincare"
+          autocomplete="off"
+          required
+        />
 
       </div>
 
+      <!-- =================================================
+           IMAGE SOURCE
+      ================================================== -->
 
-      <form
-        action="/products/category/add"
-        method="POST"
-        enctype="multipart/form-data"
-        class="category-form"
+      <div class="image-source-heading">
+
+        <h2>
+          Category Icon
+        </h2>
+
+        <p>
+          Choose one way to provide the category image.
+        </p>
+
+      </div>
+
+      <!-- =================================================
+           UPLOAD OPTION
+      ================================================== -->
+
+      <div
+        class="image-option"
+        id="uploadOption"
       >
 
-        <!-- ==================================================
-             CATEGORY NAME
-        =================================================== -->
+        <label class="option-label">
 
-        <div class="form-group">
+          <input
+            type="radio"
+            name="imageSource"
+            value="upload"
+            id="imageSourceUpload"
+            checked
+          />
 
-          <label for="name">
-            Category Name
-            <span>*</span>
+          <span>
+            Upload a photo
+          </span>
+
+        </label>
+
+        <div
+          class="option-content"
+          id="uploadContent"
+        >
+
+          <label
+            for="categoryIcon"
+            class="file-drop"
+            id="fileDrop"
+          >
+
+            <i class="fas fa-cloud-arrow-up"></i>
+
+            <strong>
+              Choose category photo
+            </strong>
+
+            <span>
+              JPG, JPEG, PNG, WEBP or GIF
+            </span>
+
+            <span>
+              Maximum size: 5 MB
+            </span>
+
           </label>
 
-          <div class="input-wrapper">
+          <input
+            type="file"
+            id="categoryIcon"
+            name="categoryIcon"
+            accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
+          />
 
-            <i class="fas fa-tag"></i>
+        </div>
 
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value="<%= formData?.name || '' %>"
-              placeholder="e.g. Skincare"
-              autocomplete="off"
-              required
-            />
+      </div>
 
-          </div>
+      <!-- =================================================
+           URL OPTION
+      ================================================== -->
+
+      <div
+        class="image-option"
+        id="urlOption"
+      >
+
+        <label class="option-label">
+
+          <input
+            type="radio"
+            name="imageSource"
+            value="url"
+            id="imageSourceUrl"
+          />
+
+          <span>
+            Use an image URL
+          </span>
+
+        </label>
+
+        <div
+          class="option-content hidden-option"
+          id="urlContent"
+        >
+
+          <label for="categoryIconUrl">
+            Image URL
+          </label>
+
+          <input
+            type="url"
+            id="categoryIconUrl"
+            name="categoryIconUrl"
+            value="<%= formData?.categoryIconUrl || '' %>"
+            placeholder="https://example.com/category-image.jpg"
+            autocomplete="off"
+          />
 
           <small>
-            Use a clear name such as Skincare, Haircare,
-            Makeup, Fragrance, or Body Care.
+            Enter a publicly accessible HTTP or HTTPS image URL.
           </small>
 
         </div>
 
+      </div>
 
-        <!-- ==================================================
-             CATEGORY ICON
-        =================================================== -->
+      <!-- =================================================
+           PREVIEW
+      ================================================== -->
 
-        <div class="form-group">
+      <div
+        class="image-preview-wrapper"
+        id="previewWrapper"
+        hidden
+      >
 
-          <label for="categoryIcon">
-            Category Icon
-            <span>*</span>
-          </label>
+        <p>
+          Preview
+        </p>
 
-          <div class="icon-upload-box">
+        <div class="image-preview">
 
-            <div
-              class="icon-preview"
-              id="iconPreview"
-            >
-              <i class="fas fa-image"></i>
-            </div>
-
-            <div class="icon-upload-content">
-
-              <label
-                for="categoryIcon"
-                class="upload-button"
-              >
-                <i class="fas fa-cloud-arrow-up"></i>
-
-                <span>
-                  Choose Image
-                </span>
-              </label>
-
-              <input
-                type="file"
-                id="categoryIcon"
-                name="categoryIcon"
-                accept="image/*"
-                required
-              />
-
-              <p>
-                Upload an image that represents this category.
-              </p>
-
-              <span
-                class="selected-file"
-                id="selectedFile"
-              >
-                No image selected
-              </span>
-
-            </div>
-
-          </div>
+          <img
+            id="imagePreview"
+            src=""
+            alt="Category icon preview"
+          />
 
         </div>
 
+      </div>
 
-        <!-- ==================================================
-             INFORMATION
-        =================================================== -->
+      <!-- =================================================
+           ACTIONS
+      ================================================== -->
 
-        <div class="category-info-box">
+      <div class="category-form-actions">
 
-          <div class="info-icon">
-            <i class="fas fa-circle-info"></i>
-          </div>
+        <a
+          href="/products"
+          class="category-btn category-btn-secondary"
+        >
+          Cancel
+        </a>
 
-          <div>
+        <button
+          type="submit"
+          class="category-btn category-btn-primary"
+        >
 
-            <strong>
-              Category information
-            </strong>
+          <i class="fas fa-plus"></i>
 
-            <p>
-              A unique MongoDB <code>_id</code> will be
-              generated automatically when this category
-              is created.
-            </p>
+          Create Category
 
-          </div>
+        </button>
 
-        </div>
+      </div>
 
-
-        <!-- ==================================================
-             ACTIONS
-        =================================================== -->
-
-        <div class="category-form-actions">
-
-          <a
-            href="/products"
-            class="category-cancel-button"
-          >
-            <i class="fas fa-xmark"></i>
-            Cancel
-          </a>
-
-          <button
-            type="submit"
-            class="category-submit-button"
-          >
-            <i class="fas fa-plus"></i>
-            Create Category
-          </button>
-
-        </div>
-
-      </form>
-
-    </div>
+    </form>
 
   </div>
 
 </section>
 
-
 <script>
-  const iconInput =
-    document.getElementById("categoryIcon");
 
-  const iconPreview =
-    document.getElementById("iconPreview");
+  const uploadRadio =
+    document.getElementById(
+      "imageSourceUpload"
+    );
 
-  const selectedFile =
-    document.getElementById("selectedFile");
+  const urlRadio =
+    document.getElementById(
+      "imageSourceUrl"
+    );
 
+  const uploadContent =
+    document.getElementById(
+      "uploadContent"
+    );
 
-  iconInput?.addEventListener(
-    "change",
-    function () {
+  const urlContent =
+    document.getElementById(
+      "urlContent"
+    );
 
-      const file =
-        this.files?.[0];
+  const fileInput =
+    document.getElementById(
+      "categoryIcon"
+    );
 
-      if (!file) {
+  const urlInput =
+    document.getElementById(
+      "categoryIconUrl"
+    );
 
-        selectedFile.textContent =
-          "No image selected";
+  const previewWrapper =
+    document.getElementById(
+      "previewWrapper"
+    );
 
-        iconPreview.innerHTML =
-          '<i class="fas fa-image"></i>';
+  const preview =
+    document.getElementById(
+      "imagePreview"
+    );
 
-        return;
-      }
+  // ======================================================
+  // UPDATE IMAGE SOURCE
+  // ======================================================
 
+  function updateImageSource() {
 
-      selectedFile.textContent =
-        file.name;
+    if (uploadRadio.checked) {
 
+      uploadContent.classList.remove(
+        "hidden-option"
+      );
 
-      const reader =
-        new FileReader();
+      urlContent.classList.add(
+        "hidden-option"
+      );
 
+      urlInput.value = "";
 
-      reader.onload =
-        function (event) {
+      showUploadPreview();
 
-          iconPreview.innerHTML =
-            `
-              <img
-                src="${event.target.result}"
-                alt="Category preview"
-              >
-            `;
-
-        };
-
-
-      reader.readAsDataURL(file);
-
+      return;
     }
+
+    uploadContent.classList.add(
+      "hidden-option"
+    );
+
+    urlContent.classList.remove(
+      "hidden-option"
+    );
+
+    fileInput.value = "";
+
+    showUrlPreview();
+  }
+
+  // ======================================================
+  // UPLOAD PREVIEW
+  // ======================================================
+
+  function showUploadPreview() {
+
+    const file =
+      fileInput.files[0];
+
+    if (!file) {
+
+      previewWrapper.hidden = true;
+
+      preview.src = "";
+
+      return;
+    }
+
+    const reader =
+      new FileReader();
+
+    reader.onload =
+      function (event) {
+
+        preview.src =
+          event.target.result;
+
+        previewWrapper.hidden =
+          false;
+      };
+
+    reader.readAsDataURL(file);
+  }
+
+  // ======================================================
+  // URL PREVIEW
+  // ======================================================
+
+  function showUrlPreview() {
+
+    const url =
+      urlInput.value.trim();
+
+    if (!url) {
+
+      previewWrapper.hidden = true;
+
+      preview.src = "";
+
+      return;
+    }
+
+    preview.src = url;
+
+    previewWrapper.hidden = false;
+  }
+
+  // ======================================================
+  // EVENTS
+  // ======================================================
+
+  uploadRadio.addEventListener(
+    "change",
+    updateImageSource
   );
+
+  urlRadio.addEventListener(
+    "change",
+    updateImageSource
+  );
+
+  fileInput.addEventListener(
+    "change",
+    showUploadPreview
+  );
+
+  urlInput.addEventListener(
+    "input",
+    showUrlPreview
+  );
+
+  // ======================================================
+  // INITIAL STATE
+  // ======================================================
+
+  updateImageSource();
+
 </script>
