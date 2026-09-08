@@ -1,46 +1,47 @@
 // ==========================================================
-// services/productService.js
+// verrah/services/productService.js
 // PRODUCT SERVICE
-// VERRAH COSMETICS
 // ==========================================================
+
+const mongoose = require("mongoose");
 
 const Product = require("../models/products");
 const Stock = require("../models/stock");
 
+// IMPORTANT:
+// Explicitly register Category before populate() is used.
+const Category = require("../models/category");
+
 
 // ==========================================================
-// CHUNK PRODUCTS
+// CHUNK PRODUCTS INTO ROWS
 // ==========================================================
 //
-// Used to create rows of six products.
+// Desktop:
+//     Maximum 6 products per row.
 //
-// Example:
-//
-// 14 products
-//
-// Row 1 = 6
-// Row 2 = 6
-// Row 3 = 2
+// Mobile:
+//     Frontend CSS handles horizontal scrolling.
 //
 // ==========================================================
 
 function chunk(items, size = 6) {
 
-    const rows = [];
+  const rows = [];
 
-    for (
-        let i = 0;
-        i < items.length;
-        i += size
-    ) {
+  for (
+    let i = 0;
+    i < items.length;
+    i += size
+  ) {
 
-        rows.push({
-            products: items.slice(i, i + size)
-        });
+    rows.push({
+      products: items.slice(i, i + size)
+    });
 
-    }
+  }
 
-    return rows;
+  return rows;
 }
 
 
@@ -50,58 +51,93 @@ function chunk(items, size = 6) {
 
 function normalizeDirections(directions) {
 
-    if (!directions) {
-        return undefined;
+  if (!directions) {
+    return undefined;
+  }
+
+
+  const items = Array.isArray(
+    directions.items
+  )
+
+    ? directions.items
+        .map((item) => {
+
+          return {
+            subtitle: String(
+              item?.subtitle || ""
+            ).trim(),
+
+            content: String(
+              item?.content || ""
+            ).trim()
+          };
+
+        })
+        .filter((item) => {
+
+          return (
+            item.subtitle &&
+            item.content
+          );
+
+        })
+
+    : [];
+
+
+  const title = String(
+    directions.title || ""
+  ).trim();
+
+
+  if (
+    !title &&
+    items.length === 0
+  ) {
+
+    return undefined;
+
+  }
+
+
+  return {
+    title,
+    items
+  };
+}
+
+
+// ==========================================================
+// GET CATEGORY NAME
+// ==========================================================
+//
+// This function accepts the populated Category.
+//
+// It NEVER converts an ObjectId into a fake label.
+//
+// It gets the actual Category.name.
+//
+// ==========================================================
+
+function getCategoryName(category) {
+
+  if (
+    category &&
+    typeof category === "object" &&
+    typeof category.name === "string"
+  ) {
+
+    const name = category.name.trim();
+
+    if (name) {
+      return name;
     }
 
-
-    const items = Array.isArray(directions.items)
-
-        ? directions.items
-            .map((item) => {
-
-                return {
-                    subtitle: String(
-                        item?.subtitle || ""
-                    ).trim(),
-
-                    content: String(
-                        item?.content || ""
-                    ).trim()
-                };
-
-            })
-            .filter((item) => {
-
-                return (
-                    item.subtitle &&
-                    item.content
-                );
-
-            })
-
-        : [];
+  }
 
 
-    const title = String(
-        directions.title || ""
-    ).trim();
-
-
-    if (
-        !title &&
-        items.length === 0
-    ) {
-
-        return undefined;
-
-    }
-
-
-    return {
-        title,
-        items
-    };
+  return "Other";
 }
 
 
@@ -109,75 +145,67 @@ function normalizeDirections(directions) {
 // PREPARE PRODUCT FOR FRONTEND
 // ==========================================================
 //
-// This function deliberately removes the need for the
-// frontend to understand Category._id.
+// MongoDB:
 //
-// Internally:
+//     category: Category._id
 //
-//     product.category
+// After populate:
 //
-// may be:
-//
-//     {
+//     category: {
 //         _id: "...",
-//         name: "Skin Care"
+//         name: "skin care"
 //     }
 //
-// But the frontend receives:
+// Before sending to EJS:
 //
-//     categoryName: "Skin Care"
-//     label: "Skin Care"
+//     categoryName: "skin care"
 //
-// The category ObjectId is not needed by the listing view.
+//     category is removed.
 //
 // ==========================================================
 
 function prepareProduct(product) {
 
-    if (!product) {
-        return null;
-    }
+  if (!product) {
+    return null;
+  }
 
 
-    const prepared = {
-        ...product
-    };
+  const prepared = {
+    ...product
+  };
 
 
-    // ------------------------------------------------------
-    // RESOLVE CATEGORY NAME
-    // ------------------------------------------------------
+  // --------------------------------------------------------
+  // RESOLVE ACTUAL CATEGORY NAME
+  // --------------------------------------------------------
 
-    if (
-        prepared.category &&
-        typeof prepared.category === "object"
-    ) {
-
-        prepared.categoryName =
-            String(
-                prepared.category.name || "Other"
-            ).trim() || "Other";
-
-    } else {
-
-        prepared.categoryName = "Other";
-
-    }
+  prepared.categoryName =
+    getCategoryName(
+      prepared.category
+    );
 
 
-    // ------------------------------------------------------
-    // REMOVE CATEGORY OBJECT FROM FRONTEND DATA
-    // ------------------------------------------------------
-    //
-    // The products listing does not need the Category
-    // ObjectId at all.
-    //
-    // ------------------------------------------------------
+  // --------------------------------------------------------
+  // REMOVE CATEGORY OBJECT
+  // --------------------------------------------------------
+  //
+  // The frontend does not need:
+  //
+  //     category._id
+  //
+  //     category.name
+  //
+  // It only needs:
+  //
+  //     categoryName
+  //
+  // --------------------------------------------------------
 
-    delete prepared.category;
+  delete prepared.category;
 
 
-    return prepared;
+  return prepared;
 }
 
 
@@ -185,147 +213,159 @@ function prepareProduct(product) {
 // GET PRODUCTS BY CATEGORY
 // ==========================================================
 //
-// Returns:
+// FRONTEND RESULT:
 //
 // [
-//     {
-//         label: "Skin Care",
-//         categoryName: "Skin Care",
-//         rows: [
-//             {
-//                 products: [ ...6 products... ]
-//             },
-//             {
-//                 products: [ ...6 products... ]
-//             }
-//         ]
-//     }
+//   {
+//     label: "skin care",
+//     categoryName: "skin care",
+//     rows: [
+//       {
+//         products: [ ... up to 6 ... ]
+//       }
+//     ]
+//   }
 // ]
 //
-// IMPORTANT:
-//
-// No category ObjectId is exposed to the frontend.
+// NO Category._id is exposed here.
 //
 // ==========================================================
 
 async function getProductsByCategory() {
 
-    const products = await Product.find({
-        isActive: true
+  // ========================================================
+  // FETCH ACTIVE PRODUCTS
+  // ========================================================
+
+  const products = await Product.find({
+    isActive: true
+  })
+
+    // ------------------------------------------------------
+    // RESOLVE CATEGORY REFERENCE
+    // ------------------------------------------------------
+
+    .populate({
+      path: "category",
+      select: "name"
     })
 
-        // --------------------------------------------------
-        // RESOLVE CATEGORY ID -> CATEGORY NAME
-        // --------------------------------------------------
+    // ------------------------------------------------------
+    // SORT PRODUCTS
+    // ------------------------------------------------------
 
-        .populate({
-            path: "category",
-            select: "name"
-        })
+    .sort({
+      name: 1,
+      createdAt: 1
+    })
 
-        // --------------------------------------------------
-        // SORT
-        // --------------------------------------------------
-
-        .sort({
-            category: 1,
-            name: 1,
-            createdAt: 1
-        })
-
-        .lean();
+    .lean();
 
 
-    // ======================================================
-    // GROUP PRODUCTS BY CATEGORY NAME
-    // ======================================================
+  // ========================================================
+  // CATEGORY MAP
+  // ========================================================
+  //
+  // IMPORTANT:
+  //
+  // The Map is keyed by the CATEGORY NAME.
+  //
+  // We are not using Category._id for frontend grouping.
+  //
+  // ========================================================
 
-    const categoryMap = new Map();
+  const categoryMap = new Map();
 
 
-    for (const rawProduct of products) {
+  // ========================================================
+  // PROCESS PRODUCTS
+  // ========================================================
 
-        const product = prepareProduct(
-            rawProduct
-        );
+  for (const rawProduct of products) {
+
+    const product =
+      prepareProduct(rawProduct);
 
 
-        if (!product) {
-            continue;
+    if (!product) {
+      continue;
+    }
+
+
+    // ------------------------------------------------------
+    // ACTUAL CATEGORY NAME
+    // ------------------------------------------------------
+
+    const categoryName =
+      product.categoryName ||
+      "Other";
+
+
+    // ------------------------------------------------------
+    // CREATE CATEGORY GROUP
+    // ------------------------------------------------------
+
+    if (
+      !categoryMap.has(categoryName)
+    ) {
+
+      categoryMap.set(
+        categoryName,
+        {
+          label: categoryName,
+          categoryName,
+          products: []
         }
-
-
-        // --------------------------------------------------
-        // CATEGORY NAME
-        // --------------------------------------------------
-        //
-        // This comes from Category.name.
-        //
-        // We never convert the ObjectId into a label.
-        //
-        // --------------------------------------------------
-
-        const categoryName =
-            product.categoryName ||
-            "Other";
-
-
-        // --------------------------------------------------
-        // CREATE CATEGORY GROUP
-        // --------------------------------------------------
-
-        if (!categoryMap.has(categoryName)) {
-
-            categoryMap.set(
-                categoryName,
-                {
-                    categoryName,
-                    label: categoryName,
-                    products: []
-                }
-            );
-
-        }
-
-
-        // --------------------------------------------------
-        // ADD PRODUCT TO CATEGORY
-        // --------------------------------------------------
-
-        const group =
-            categoryMap.get(categoryName);
-
-        group.products.push(product);
+      );
 
     }
 
 
-    // ======================================================
-    // BUILD FRONTEND GROUPS
-    // ======================================================
+    // ------------------------------------------------------
+    // ADD PRODUCT
+    // ------------------------------------------------------
 
-    return Array.from(
-        categoryMap.values()
-    ).map((group) => {
+    const group =
+      categoryMap.get(categoryName);
 
-        return {
 
-            // Human-readable category name.
-            label: group.label,
+    group.products.push(product);
 
-            // Explicit category name for any future
-            // frontend component that prefers this field.
-            categoryName: group.categoryName,
+  }
 
-            // Six products per row.
-            rows: chunk(
-                group.products,
-                6
-            )
 
-        };
+  // ========================================================
+  // CONVERT MAP INTO FRONTEND STRUCTURE
+  // ========================================================
 
-    });
+  return Array.from(
+    categoryMap.values()
+  ).map((group) => {
+
+    return {
+
+      // ----------------------------------------------------
+      // CATEGORY NAME
+      // ----------------------------------------------------
+
+      label: group.label,
+
+      categoryName:
+        group.categoryName,
+
+
+      // ----------------------------------------------------
+      // PRODUCT ROWS
+      // ----------------------------------------------------
+
+      rows: chunk(
+        group.products,
+        6
+      )
+
+    };
+
+  });
 }
 
 
@@ -335,116 +375,136 @@ async function getProductsByCategory() {
 //
 // Used by:
 //
-//     /products/:id
+//     GET /products/:id
 //
 // ==========================================================
 
 async function getProduct(id) {
 
-    const product = await Product.findOne({
-        _id: id,
-        isActive: true
+  // ========================================================
+  // VALIDATE PRODUCT ID
+  // ========================================================
+
+  if (
+    !mongoose.Types.ObjectId.isValid(id)
+  ) {
+
+    return null;
+
+  }
+
+
+  // ========================================================
+  // FIND PRODUCT
+  // ========================================================
+
+  const product =
+    await Product.findOne({
+      _id: id,
+      isActive: true
     })
 
-        .populate({
-            path: "category",
-            select: "name"
-        })
+      // ----------------------------------------------------
+      // RESOLVE CATEGORY
+      // ----------------------------------------------------
 
+      .populate({
+        path: "category",
+        select: "name"
+      })
+
+      .lean();
+
+
+  // ========================================================
+  // PRODUCT NOT FOUND
+  // ========================================================
+
+  if (!product) {
+    return null;
+  }
+
+
+  // ========================================================
+  // CATEGORY NAME
+  // ========================================================
+
+  product.categoryName =
+    getCategoryName(
+      product.category
+    );
+
+
+  // ========================================================
+  // REMOVE CATEGORY OBJECT
+  // ========================================================
+  //
+  // Product-details EJS should use:
+  //
+  //     product.categoryName
+  //
+  // NOT:
+  //
+  //     product.category._id
+  //
+  // ========================================================
+
+  delete product.category;
+
+
+  // ========================================================
+  // PRODUCT DIRECTIONS
+  // ========================================================
+
+  const productDirections =
+    normalizeDirections(
+      product.directionsOfUse
+    );
+
+
+  // ========================================================
+  // STOCK DIRECTIONS FALLBACK
+  // ========================================================
+  //
+  // This preserves compatibility with older products whose
+  // directions were stored on Stock instead of Product.
+  //
+  // ========================================================
+
+  if (
+    !productDirections &&
+    product.stock &&
+    mongoose.Types.ObjectId.isValid(
+      product.stock
+    )
+  ) {
+
+    const stock =
+      await Stock.findById(
+        product.stock
+      )
+        .select("directionsOfUse")
         .lean();
 
 
-    if (!product) {
-        return null;
-    }
+    product.directionsOfUse =
+      normalizeDirections(
+        stock?.directionsOfUse
+      );
+
+  } else {
+
+    product.directionsOfUse =
+      productDirections;
+
+  }
 
 
-    // ======================================================
-    // CATEGORY NAME
-    // ======================================================
+  // ========================================================
+  // RETURN PRODUCT
+  // ========================================================
 
-    if (
-        product.category &&
-        typeof product.category === "object"
-    ) {
-
-        product.categoryName =
-            String(
-                product.category.name || "Other"
-            ).trim() || "Other";
-
-    } else {
-
-        product.categoryName = "Other";
-
-    }
-
-
-    // ======================================================
-    // REMOVE CATEGORY OBJECT
-    // ======================================================
-    //
-    // Product details can use:
-    //
-    //     product.categoryName
-    //
-    // instead of:
-    //
-    //     product.category._id
-    //
-    // ======================================================
-
-    delete product.category;
-
-
-    // ======================================================
-    // DIRECTIONS OF USE
-    // ======================================================
-
-    const productDirections =
-        normalizeDirections(
-            product.directionsOfUse
-        );
-
-
-    // ======================================================
-    // FALLBACK TO STOCK DIRECTIONS
-    // ======================================================
-    //
-    // Older Product documents may not have their own
-    // directionsOfUse.
-    //
-    // In that case use the Stock directions.
-    //
-    // ======================================================
-
-    if (
-        !productDirections &&
-        product.stock
-    ) {
-
-        const stock =
-            await Stock.findById(
-                product.stock
-            )
-                .select("directionsOfUse")
-                .lean();
-
-
-        product.directionsOfUse =
-            normalizeDirections(
-                stock?.directionsOfUse
-            );
-
-    } else {
-
-        product.directionsOfUse =
-            productDirections;
-
-    }
-
-
-    return product;
+  return product;
 }
 
 
@@ -454,8 +514,8 @@ async function getProduct(id) {
 
 module.exports = {
 
-    getProductsByCategory,
+  getProductsByCategory,
 
-    getProduct
+  getProduct
 
 };
