@@ -1,0 +1,143 @@
+<%
+const userList = Array.isArray(users) ? users : [];
+const currentTab = ["all", "admin", "staff", "client"].includes(tab) ? tab : "all";
+const filtered = currentTab === "all"
+  ? userList
+  : userList.filter(u => String(u.role || "").toLowerCase() === currentTab);
+const adminCount = userList.filter(u => u.role === "admin").length;
+const staffCount = userList.filter(u => u.role === "staff").length;
+const clientCount = userList.filter(u => u.role === "client").length;
+const totalCount = userList.length;
+function active(t) { return currentTab === t; }
+%>
+
+<section class="admin-page admin-users-page">
+
+  <header class="admin-page-header">
+    <div class="admin-header-icon">
+      <i class="fas fa-users"></i>
+    </div>
+    <div class="admin-header-copy">
+      <span class="admin-eyebrow">ADMINISTRATION</span>
+      <h1>User Management</h1>
+      <p>Organize accounts, roles and staff assignments.</p>
+    </div>
+  </header>
+
+  <section class="admin-panel admin-overview-panel">
+    <div class="admin-panel-heading">
+      <div>
+        <span class="admin-eyebrow">OVERVIEW</span>
+        <h2>Accounts</h2>
+      </div>
+      <span class="admin-count-badge"><%= totalCount %></span>
+    </div>
+
+    <div class="admin-filter-grid">
+      <a href="/auth/users?tab=all" class="admin-filter-card <%= active('all') ? 'is-active' : '' %>">
+        <span><i class="fas fa-users"></i> Total Users</span>
+        <strong><%= totalCount %></strong>
+      </a>
+
+      <a href="/auth/users?tab=admin" class="admin-filter-card <%= active('admin') ? 'is-active' : '' %>">
+        <span><i class="fas fa-shield-halved"></i> Administrators</span>
+        <strong><%= adminCount %></strong>
+      </a>
+
+      <a href="/auth/users?tab=staff" class="admin-filter-card <%= active('staff') ? 'is-active' : '' %>">
+        <span><i class="fas fa-user-gear"></i> Staff</span>
+        <strong><%= staffCount %></strong>
+      </a>
+
+      <a href="/auth/users?tab=client" class="admin-filter-card <%= active('client') ? 'is-active' : '' %>">
+        <span><i class="fas fa-user"></i> Clients</span>
+        <strong><%= clientCount %></strong>
+      </a>
+    </div>
+
+    <a href="/auth/users/invitation" class="admin-primary-action">
+      <i class="fas fa-user-plus"></i>
+      Invite User
+    </a>
+  </section>
+
+  <section class="admin-panel admin-user-list-panel">
+    <div class="admin-panel-heading admin-list-heading">
+      <div>
+        <span class="admin-eyebrow">USER DIRECTORY</span>
+        <h2>Users — <%= currentTab.toUpperCase() %></h2>
+        <p><%= filtered.length %> accounts in this section.</p>
+      </div>
+      <span class="admin-tab-badge"><%= currentTab %></span>
+    </div>
+
+    <% if (!filtered.length) { %>
+      <div class="admin-empty-state">
+        <div class="admin-empty-icon">
+          <i class="fas fa-user-slash"></i>
+        </div>
+        <h3>No users found</h3>
+        <p>There are no accounts in this section yet.</p>
+      </div>
+    <% } else { %>
+      <div class="admin-user-list">
+        <% filtered.forEach(acc => { %>
+          <article class="admin-user-card">
+            <div class="admin-user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+
+            <div class="admin-user-main">
+              <strong class="admin-user-name"><%= acc.name %></strong>
+
+              <span class="admin-role-pill role-<%= String(acc.role || 'client').toLowerCase() %>">
+                <%= acc.role %>
+              </span>
+
+              <span class="admin-user-email">
+                <i class="fas fa-envelope"></i>
+                <%= acc.email %>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              class="admin-menu-button"
+              aria-label="Manage <%= acc.name %>"
+              aria-expanded="false"
+              onclick="toggleAdminUserMenu('<%= acc._id %>', this)"
+            >
+              <i class="fas fa-ellipsis-vertical"></i>
+            </button>
+          </article>
+
+          <div id="admin-user-menu-<%= acc._id %>" class="admin-user-menu" hidden>
+            <form action="/auth/users/<%= acc._id %>/role" method="POST" class="admin-role-form">
+              <label for="role-<%= acc._id %>">Change role</label>
+              <div class="admin-role-form-row">
+                <select id="role-<%= acc._id %>" name="role">
+                  <option value="admin" <%= acc.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                  <option value="staff" <%= acc.role === 'staff' ? 'selected' : '' %>>Staff</option>
+                  <option value="client" <%= acc.role === 'client' ? 'selected' : '' %>>Client</option>
+                </select>
+                <button type="submit">Save</button>
+              </div>
+            </form>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+
+</section>
+
+<script>
+  function toggleAdminUserMenu(id, button) {
+    const menu = document.getElementById("admin-user-menu-" + id);
+    if (!menu) return;
+
+    const willOpen = menu.hidden;
+    menu.hidden = !willOpen;
+    button.setAttribute("aria-expanded", String(willOpen));
+  }
+</script>
