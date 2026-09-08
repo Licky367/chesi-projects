@@ -1,0 +1,136 @@
+<section class="shop-page cart-page">
+
+  <div class="cart-page-head">
+    <div>
+      <span class="cart-kicker">COREVESTER</span>
+      <h1 class="page-title">Your Cart</h1>
+      <p class="page-subtitle">Products you have reserved for checkout.</p>
+    </div>
+
+    <a href="/products" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i>
+      Continue Shopping
+    </a>
+  </div>
+
+  <% if (typeof error !== "undefined" && error) { %>
+    <div class="cart-alert cart-alert-error">
+      <i class="fas fa-circle-exclamation"></i>
+      <span><%= error %></span>
+    </div>
+  <% } %>
+
+  <% if (!cart || !cart.items || !cart.items.length) { %>
+
+    <div class="cart-empty">
+      <div class="cart-empty-icon">
+        <i class="fas fa-shopping-basket"></i>
+      </div>
+
+      <h2>Your cart is empty</h2>
+      <p>You have not added any products to your cart yet.</p>
+
+      <a class="primary-btn" href="/products">
+        <i class="fas fa-store"></i>
+        Browse Products
+      </a>
+    </div>
+
+  <% } else { %>
+
+    <div class="cart-layout">
+
+      <div class="cart-items-section">
+        <div class="cart-section-heading">
+          <div>
+            <span class="cart-section-kicker">YOUR SELECTION</span>
+            <h2>Cart Items</h2>
+          </div>
+          <span class="cart-item-count">
+            <%= cart.items.length %>
+            <%= cart.items.length === 1 ? "item" : "items" %>
+          </span>
+        </div>
+
+        <div class="cart-list">
+          <% cart.items.forEach(item => { %>
+
+            <a href="/carts/<%= item.productId %>" class="cart-item-card">
+
+              <div class="cart-item-image">
+                <% if (item.image) { %>
+                  <img src="<%= item.image %>" alt="<%= item.name %>">
+                <% } else { %>
+                  <div class="cart-item-placeholder">
+                    <i class="fas fa-box"></i>
+                  </div>
+                <% } %>
+              </div>
+
+              <div class="cart-item-main">
+                <div class="cart-item-topline">
+                  <span class="cart-item-label">Product</span>
+                  <i class="fas fa-chevron-right cart-item-arrow"></i>
+                </div>
+
+                <h3><%= item.name %></h3>
+
+                <div class="cart-item-meta">
+                  <span>
+                    <i class="fas fa-layer-group"></i>
+                    Quantity: <strong><%= item.qty %></strong>
+                  </span>
+                  <span>
+                    <i class="fas fa-tag"></i>
+                    Unit price:
+                    <strong>KSh <%= Number(item.price || 0).toLocaleString() %></strong>
+                  </span>
+                </div>
+
+                <div class="cart-item-total">
+                  KSh <%= Number((item.price || 0) * (item.qty || 0)).toLocaleString() %>
+                </div>
+              </div>
+
+            </a>
+
+          <% }) %>
+        </div>
+      </div>
+
+      <aside class="cart-summary-card">
+        <div class="cart-summary-head">
+          <span class="cart-section-kicker">ORDER SUMMARY</span>
+          <i class="fas fa-receipt"></i>
+        </div>
+
+        <div class="cart-summary-row">
+          <span>Items</span>
+          <strong><%= cart.items.length %></strong>
+        </div>
+
+        <div class="cart-summary-row cart-summary-total">
+          <span>Total</span>
+          <strong>KSh <%= Number(total || 0).toLocaleString() %></strong>
+        </div>
+
+        <p class="cart-summary-note">
+          Select a cart item to review its details, remove it, or continue to checkout.
+        </p>
+
+        <a class="primary-btn cart-checkout-btn" href="/carts/<%= cart.items[0].productId %>">
+          <i class="fas fa-credit-card"></i>
+          Checkout
+        </a>
+
+        <a class="cart-summary-back" href="/products">
+          <i class="fas fa-arrow-left"></i>
+          Continue shopping
+        </a>
+      </aside>
+
+    </div>
+
+  <% } %>
+
+</section>

@@ -1,0 +1,175 @@
+<section class="shop-page cart-page">
+
+  <div class="product-back cart-back">
+    <a href="/carts" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i>
+      Cart
+    </a>
+  </div>
+
+  <% if (typeof error !== "undefined" && error) { %>
+    <div class="cart-alert cart-alert-error">
+      <i class="fas fa-circle-exclamation"></i>
+      <span><%= error %></span>
+    </div>
+  <% } %>
+
+  <% if (item) { %>
+
+    <div class="cart-detail-card">
+
+      <div class="cart-detail-grid">
+
+        <div class="cart-detail-image">
+          <% if (item.image) { %>
+            <img src="<%= item.image %>" alt="<%= item.name %>">
+          <% } else { %>
+            <div class="cart-detail-placeholder">
+              <i class="fas fa-box"></i>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="cart-detail-content">
+
+          <span class="cart-detail-category">Cart Item</span>
+
+          <h1><%= item.name %></h1>
+
+          <div class="cart-detail-price">
+            KSh <%= Number(item.price || 0).toLocaleString() %>
+            <small>per unit</small>
+          </div>
+
+          <div class="cart-detail-meta-grid">
+            <div class="cart-detail-meta-card">
+              <span>Quantity reserved</span>
+              <strong><%= item.qty %></strong>
+            </div>
+
+            <div class="cart-detail-meta-card">
+              <span>Item total</span>
+              <strong>
+                KSh <%= Number((item.price || 0) * (item.qty || 0)).toLocaleString() %>
+              </strong>
+            </div>
+          </div>
+
+          <p class="cart-detail-description">
+            This item is currently reserved in your cart. You can remove it or proceed with checkout below.
+          </p>
+
+          <form action="/carts/<%= item.productId %>/remove" method="POST" class="cart-remove-form">
+            <button class="secondary-btn cart-remove-btn" type="submit">
+              <i class="fas fa-trash"></i>
+              Remove item
+            </button>
+          </form>
+
+          <div class="cart-checkout-card">
+            <div class="cart-checkout-heading">
+              <div>
+                <span class="cart-section-kicker">CHECKOUT</span>
+                <h2>Complete your order</h2>
+              </div>
+              <i class="fas fa-bag-shopping"></i>
+            </div>
+
+            <div class="cart-total-line">
+              <span>Cart total</span>
+              <strong>KSh <%= Number(total || 0).toLocaleString() %></strong>
+            </div>
+
+            <form action="/carts/checkout" method="POST" class="checkout-form" id="checkoutForm">
+
+              <fieldset class="payment-methods">
+                <legend>Payment method</legend>
+
+                <label class="payment-choice">
+                  <input type="radio" name="paymentMethod" value="mpesa" required>
+                  <span class="payment-choice-icon">
+                    <i class="fas fa-mobile-screen-button"></i>
+                  </span>
+                  <span class="payment-choice-copy">
+                    <strong>Pay now with M-Pesa</strong>
+                    <small>An STK Push will be sent to your phone.</small>
+                  </span>
+                </label>
+
+                <div id="phoneField" class="phone-field">
+                  <label for="phoneNumber">M-Pesa phone number</label>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    id="phoneNumber"
+                    placeholder="0712345678"
+                    inputmode="numeric"
+                    autocomplete="tel"
+                  >
+                </div>
+
+                <label class="payment-choice">
+                  <input type="radio" name="paymentMethod" value="pay_on_delivery" required>
+                  <span class="payment-choice-icon">
+                    <i class="fas fa-truck"></i>
+                  </span>
+                  <span class="payment-choice-copy">
+                    <strong>Pay upon delivery</strong>
+                    <small>Your package will be created immediately.</small>
+                  </span>
+                </label>
+              </fieldset>
+
+              <button class="primary-btn cart-continue-btn" type="submit">
+                <i class="fas fa-check-circle"></i>
+                Continue Checkout
+              </button>
+
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  <% } else { %>
+
+    <div class="cart-empty">
+      <div class="cart-empty-icon">
+        <i class="fas fa-box-open"></i>
+      </div>
+      <h2>Cart item not found</h2>
+      <p>The selected cart item is no longer available.</p>
+      <a href="/carts" class="primary-btn">
+        <i class="fas fa-shopping-basket"></i>
+        Back to Cart
+      </a>
+    </div>
+
+  <% } %>
+
+</section>
+
+<script>
+(function () {
+  const phoneField = document.getElementById("phoneField");
+  const phoneInput = document.getElementById("phoneNumber");
+  const paymentRadios = document.querySelectorAll('input[name="paymentMethod"]');
+
+  if (!phoneField || !phoneInput || !paymentRadios.length) return;
+
+  function updatePhoneField() {
+    const selected = document.querySelector('input[name="paymentMethod"]:checked');
+    const mpesaSelected = selected && selected.value === "mpesa";
+
+    phoneField.classList.toggle("show", mpesaSelected);
+    phoneInput.required = !!mpesaSelected;
+  }
+
+  paymentRadios.forEach(function (radio) {
+    radio.addEventListener("change", updatePhoneField);
+  });
+
+  updatePhoneField();
+})();
+</script>

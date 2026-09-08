@@ -1,0 +1,128 @@
+<section class="shop-page cart-page payment-page">
+
+  <div class="payment-status-card">
+
+    <div class="payment-status-icon" id="icon">
+      <i class="fas fa-mobile-screen-button"></i>
+    </div>
+
+    <span class="cart-section-kicker">PAYMENT</span>
+
+    <h1 id="heading">Confirm M-Pesa payment</h1>
+
+    <p id="message">
+      Check your phone and enter your M-Pesa PIN. This page will update automatically.
+    </p>
+
+    <div class="payment-status-wrap">
+      <span id="status" class="payment-status-badge pending">Pending</span>
+    </div>
+
+    <a
+      id="packagesLink"
+      href="/packages"
+      class="primary-btn"
+      style="display:none"
+    >
+      <i class="fas fa-box"></i>
+      View My Packages
+    </a>
+
+    <a href="/carts" class="secondary-btn payment-back-btn">
+      <i class="fas fa-arrow-left"></i>
+      Back to Cart
+    </a>
+
+  </div>
+
+</section>
+
+<script>
+(function () {
+  const paymentId = "<%= payment._id %>";
+  const statusEl = document.getElementById("status");
+  const messageEl = document.getElementById("message");
+  const headingEl = document.getElementById("heading");
+  const iconEl = document.getElementById("icon");
+  const packagesLink = document.getElementById("packagesLink");
+
+  let attempts = 0;
+
+  function setStatus(status) {
+    statusEl.textContent = status;
+    statusEl.className = "payment-status-badge " + status;
+    iconEl.className = "payment-status-icon " + status;
+
+    if (status === "confirmed") {
+      iconEl.innerHTML = '<i class="fas fa-circle-check"></i>';
+    } else if (status === "failed") {
+      iconEl.innerHTML = '<i class="fas fa-circle-xmark"></i>';
+    } else {
+      iconEl.innerHTML = '<i class="fas fa-mobile-screen-button"></i>';
+    }
+  }
+
+  async function check() {
+    try {
+      const response = await fetch(
+        `/carts/payment/${paymentId}/status`,
+        {
+          headers: {
+            "Accept": "application/json"
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        throw new Error(data.message || "Unable to check payment.");
+      }
+
+      setStatus(data.status);
+
+      if (data.status === "confirmed") {
+        headingEl.textContent = "Payment confirmed";
+        messageEl.textContent = data.receipt
+          ? `M-Pesa receipt: ${data.receipt}. Your payment has been confirmed.`
+          : "Payment confirmed successfully.";
+
+        packagesLink.style.display = "inline-flex";
+
+        setTimeout(function () {
+          window.location.href = data.packageId
+            ? `/packages/${data.packageId}`
+            : "/packages";
+        }, 1200);
+
+        return;
+      }
+
+      if (data.status === "failed") {
+        headingEl.textContent = "Payment failed";
+        messageEl.textContent = data.description || "The M-Pesa payment was not completed.";
+        return;
+      }
+
+      attempts++;
+
+      if (attempts < 40) {
+        setTimeout(check, 3000);
+      } else {
+        messageEl.textContent = "Payment is still pending. Refresh this page to check again.";
+      }
+
+    } catch (err) {
+      attempts++;
+
+      if (attempts < 40) {
+        setTimeout(check, 4000);
+      } else {
+        messageEl.textContent = "Unable to check payment status right now. Refresh this page to try again.";
+      }
+    }
+  }
+
+  check();
+})();
+</script>
