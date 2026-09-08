@@ -1,198 +1,245 @@
 /* ==========================================================
-   public/css/products/category-add.css
-   ADD CATEGORY
-========================================================== */
+   verrah/public/css/products/category-add.css
+   ========================================================== */
 
 :root {
-
   --verrah-brown: #8b4513;
   --verrah-brown-dark: #5c2d0c;
   --verrah-brown-deep: #3f1f08;
   --verrah-brown-light: #a85d27;
-
   --verrah-brown-soft: #f5e8dc;
   --verrah-cream: #fffaf5;
   --verrah-white: #ffffff;
-
   --verrah-text: #2f1b10;
   --verrah-muted: #795548;
-
   --verrah-border: #e4cdbb;
-
+  --verrah-danger: #a52828;
 }
-
 
 /* ==========================================================
    PAGE
-========================================================== */
+   ========================================================== */
 
 .category-add-page {
+  width: 100%;
+  min-height: calc(100vh - 70px);
 
-  min-height: 100vh;
-
-  padding:
-    40px 20px
-    70px;
+  padding: 40px 20px;
 
   background:
-    var(--verrah-cream);
+    linear-gradient(
+      135deg,
+      var(--verrah-cream),
+      #f8eee6
+    );
 
-  color:
-    var(--verrah-text);
-
+  color: var(--verrah-text);
 }
 
+/* ==========================================================
+   CARD
+   ========================================================== */
 
-.category-add-shell {
-
+.category-add-card {
   width: 100%;
-
-  max-width: 850px;
+  max-width: 760px;
 
   margin: 0 auto;
 
-}
+  background: var(--verrah-white);
 
-
-/* ==========================================================
-   HEADER
-========================================================== */
-
-.category-add-header {
-
-  margin-bottom: 28px;
-
-}
-
-
-.category-back-link {
-
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 8px;
-
-  margin-bottom: 24px;
-
-  color:
-    var(--verrah-brown);
-
-  text-decoration: none;
-
-  font-size: 14px;
-
-  font-weight: 700;
-
-  transition:
-    color 0.2s ease,
-    transform 0.2s ease;
-
-}
-
-
-.category-back-link:hover {
-
-  color:
-    var(--verrah-brown-dark);
-
-  transform:
-    translateX(-3px);
-
-}
-
-
-.category-heading {
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 18px;
-
-}
-
-
-.category-heading-icon {
-
-  width: 64px;
-
-  height: 64px;
-
-  flex: 0 0 64px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
+  border: 1px solid var(--verrah-border);
 
   border-radius: 18px;
 
-  background:
-    var(--verrah-brown);
-
-  color:
-    var(--verrah-white);
-
-  font-size: 25px;
+  padding: 32px;
 
   box-shadow:
-    0 10px 25px
-    rgba(92, 45, 12, 0.16);
-
+    0 14px 40px
+    rgba(63, 31, 8, 0.12);
 }
 
+/* ==========================================================
+   HEADER
+   ========================================================== */
 
-.category-eyebrow {
+.category-add-header {
+  display: flex;
 
+  align-items: center;
+
+  gap: 16px;
+
+  margin-bottom: 28px;
+}
+
+.category-add-icon {
+  width: 58px;
+  height: 58px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 15px;
+
+  background: var(--verrah-brown);
+
+  color: var(--verrah-white);
+
+  font-size: 23px;
+
+  flex-shrink: 0;
+}
+
+.category-add-header h1 {
   margin: 0 0 5px;
 
-  color:
-    var(--verrah-brown);
+  color: var(--verrah-brown-deep);
 
-  font-size: 12px;
-
-  font-weight: 800;
-
-  letter-spacing: 0.12em;
-
-  text-transform: uppercase;
-
+  font-size: 27px;
 }
 
-
-.category-heading h1 {
-
+.category-add-header p {
   margin: 0;
 
-  color:
-    var(--verrah-brown-deep);
+  color: var(--verrah-muted);
 
-  font-size: 32px;
-
-  line-height: 1.15;
-
+  font-size: 14px;
 }
 
+/* ==========================================================
+   ALERT
+   ========================================================== */
 
-.category-subtitle {
+.category-alert {
+  display: flex;
 
-  margin: 8px 0 0;
+  align-items: center;
 
-  color:
-    var(--verrah-muted);
+  gap: 10px;
+
+  padding: 13px 15px;
+
+  border-radius: 10px;
+
+  margin-bottom: 22px;
+
+  font-size: 14px;
+}
+
+.category-alert-error {
+  background: #fce9e9;
+
+  border: 1px solid #edbcbc;
+
+  color: var(--verrah-danger);
+}
+
+/* ==========================================================
+   FORM
+   ========================================================== */
+
+.category-form {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.form-group label,
+.option-content label {
+  font-weight: 700;
+
+  font-size: 14px;
+
+  color: var(--verrah-brown-deep);
+}
+
+.form-group input,
+.option-content input[type="url"] {
+  width: 100%;
+
+  height: 48px;
+
+  padding: 0 14px;
+
+  border: 1px solid var(--verrah-border);
+
+  border-radius: 10px;
+
+  background: var(--verrah-cream);
+
+  color: var(--verrah-text);
+
+  outline: none;
 
   font-size: 15px;
 
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
+.form-group input:focus,
+.option-content input[type="url"]:focus {
+  border-color: var(--verrah-brown);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(139, 69, 19, 0.12);
+}
 
 /* ==========================================================
-   ALERTS
-========================================================== */
+   IMAGE SOURCE HEADING
+   ========================================================== */
 
-.category-alert {
+.image-source-heading {
+  margin-top: 5px;
+}
+
+.image-source-heading h2 {
+  margin: 0 0 5px;
+
+  font-size: 19px;
+
+  color: var(--verrah-brown-deep);
+}
+
+.image-source-heading p {
+  margin: 0;
+
+  color: var(--verrah-muted);
+
+  font-size: 13px;
+}
+
+/* ==========================================================
+   IMAGE OPTION
+   ========================================================== */
+
+.image-option {
+  border: 1px solid var(--verrah-border);
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  background: #fffdfb;
+}
+
+.option-label {
+  min-height: 54px;
 
   display: flex;
 
@@ -200,545 +247,157 @@
 
   gap: 11px;
 
-  margin-bottom: 20px;
+  padding: 0 16px;
 
-  padding: 13px 16px;
+  cursor: pointer;
 
-  border-radius: 12px;
+  color: var(--verrah-brown-deep);
 
-  font-size: 14px;
+  font-weight: 700;
 
-  font-weight: 600;
-
+  border-bottom: 1px solid var(--verrah-border);
 }
 
+.option-label input {
+  accent-color: var(--verrah-brown);
 
-.category-alert-error {
-
-  border:
-    1px solid #e3aaa0;
-
-  background:
-    #fff0ed;
-
-  color:
-    #8a2418;
-
+  width: 17px;
+  height: 17px;
 }
 
-
-.category-alert-success {
-
-  border:
-    1px solid #a8d5b1;
-
-  background:
-    #eef9f0;
-
-  color:
-    #246b32;
-
+.option-content {
+  padding: 18px;
 }
 
-
-/* ==========================================================
-   FORM CARD
-========================================================== */
-
-.category-form-card {
-
-  overflow: hidden;
-
-  border:
-    1px solid var(--verrah-border);
-
-  border-radius: 20px;
-
-  background:
-    var(--verrah-white);
-
-  box-shadow:
-    0 18px 45px
-    rgba(63, 31, 8, 0.09);
-
-}
-
-
-/* ==========================================================
-   FORM HEADER
-========================================================== */
-
-.category-form-header {
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 14px;
-
-  padding: 25px 28px;
-
-  border-bottom:
-    1px solid var(--verrah-border);
-
-  background:
-    linear-gradient(
-      135deg,
-      var(--verrah-brown-soft),
-      var(--verrah-cream)
-    );
-
-}
-
-
-.category-form-icon {
-
-  width: 48px;
-
-  height: 48px;
-
-  flex: 0 0 48px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  border-radius: 14px;
-
-  background:
-    var(--verrah-white);
-
-  color:
-    var(--verrah-brown);
-
-  font-size: 20px;
-
-}
-
-
-.category-form-header h2 {
-
-  margin: 0;
-
-  color:
-    var(--verrah-brown-deep);
-
-  font-size: 20px;
-
-}
-
-
-.category-form-header p {
-
-  margin: 5px 0 0;
-
-  color:
-    var(--verrah-muted);
-
-  font-size: 13px;
-
-}
-
-
-/* ==========================================================
-   FORM
-========================================================== */
-
-.category-form {
-
-  padding: 30px 28px;
-
-}
-
-
-.form-group {
-
-  margin-bottom: 26px;
-
-}
-
-
-.form-group > label {
-
+.option-content label {
   display: block;
 
-  margin-bottom: 9px;
-
-  color:
-    var(--verrah-brown-deep);
-
-  font-size: 14px;
-
-  font-weight: 800;
-
+  margin-bottom: 8px;
 }
 
-
-.form-group > label span {
-
-  color:
-    #b3261e;
-
-}
-
-
-.form-group small {
-
+.option-content small {
   display: block;
 
   margin-top: 7px;
 
-  color:
-    var(--verrah-muted);
-
-  font-size: 12px;
+  color: var(--verrah-muted);
 
   line-height: 1.5;
-
 }
 
+.hidden-option {
+  display: none;
+}
 
 /* ==========================================================
-   TEXT INPUT
-========================================================== */
+   FILE DROP
+   ========================================================== */
 
-.input-wrapper {
-
-  position: relative;
-
-}
-
-
-.input-wrapper > i {
-
-  position: absolute;
-
-  top: 50%;
-
-  left: 15px;
-
-  transform:
-    translateY(-50%);
-
-  color:
-    var(--verrah-brown);
-
-  pointer-events: none;
-
-}
-
-
-.input-wrapper input {
-
-  width: 100%;
-
-  box-sizing: border-box;
-
-  padding:
-    14px
-    15px
-    14px
-    43px;
-
-  border:
-    1px solid var(--verrah-border);
-
-  border-radius: 11px;
-
-  outline: none;
-
-  background:
-    var(--verrah-cream);
-
-  color:
-    var(--verrah-text);
-
-  font: inherit;
-
-  font-size: 15px;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease;
-
-}
-
-
-.input-wrapper input:focus {
-
-  border-color:
-    var(--verrah-brown);
-
-  background:
-    var(--verrah-white);
-
-  box-shadow:
-    0 0 0 4px
-    rgba(139, 69, 19, 0.10);
-
-}
-
-
-/* ==========================================================
-   IMAGE UPLOAD
-========================================================== */
-
-.icon-upload-box {
+.file-drop {
+  min-height: 160px;
 
   display: flex;
 
-  align-items: center;
-
-  gap: 20px;
-
-  padding: 20px;
-
-  border:
-    1px dashed var(--verrah-border);
-
-  border-radius: 15px;
-
-  background:
-    var(--verrah-cream);
-
-}
-
-
-.icon-preview {
-
-  width: 105px;
-
-  height: 105px;
-
-  flex: 0 0 105px;
-
-  overflow: hidden;
-
-  display: flex;
+  flex-direction: column;
 
   align-items: center;
 
   justify-content: center;
 
-  border:
-    1px solid var(--verrah-border);
+  gap: 7px;
 
-  border-radius: 16px;
+  padding: 20px;
 
-  background:
-    var(--verrah-white);
+  border: 2px dashed var(--verrah-border);
 
-  color:
-    var(--verrah-brown);
+  border-radius: 12px;
 
-  font-size: 28px;
+  background: var(--verrah-cream);
 
+  color: var(--verrah-muted);
+
+  text-align: center;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s,
+    background 0.2s;
 }
 
+.file-drop:hover {
+  border-color: var(--verrah-brown);
 
-.icon-preview img {
+  background: var(--verrah-brown-soft);
+}
 
+.file-drop i {
+  color: var(--verrah-brown);
+
+  font-size: 29px;
+
+  margin-bottom: 4px;
+}
+
+.file-drop strong {
+  color: var(--verrah-brown-deep);
+
+  font-size: 15px;
+}
+
+.file-drop span {
+  font-size: 12px;
+}
+
+#categoryIcon {
+  display: none;
+}
+
+/* ==========================================================
+   PREVIEW
+   ========================================================== */
+
+.image-preview-wrapper {
+  padding-top: 2px;
+}
+
+.image-preview-wrapper > p {
+  margin: 0 0 8px;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  color: var(--verrah-brown-deep);
+}
+
+.image-preview {
+  width: 170px;
+  height: 170px;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--verrah-border);
+
+  background: var(--verrah-cream);
+}
+
+.image-preview img {
   width: 100%;
-
   height: 100%;
 
   object-fit: cover;
 
-}
-
-
-.icon-upload-content {
-
-  min-width: 0;
-
-  flex: 1;
-
-}
-
-
-.icon-upload-content input[type="file"] {
-
-  display: none;
-
-}
-
-
-.upload-button {
-
-  display: inline-flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  gap: 9px;
-
-  padding:
-    11px
-    17px;
-
-  border-radius: 9px;
-
-  background:
-    var(--verrah-brown);
-
-  color:
-    var(--verrah-white);
-
-  cursor: pointer;
-
-  font-size: 13px;
-
-  font-weight: 800;
-
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
-
-}
-
-
-.upload-button:hover {
-
-  background:
-    var(--verrah-brown-dark);
-
-  transform:
-    translateY(-1px);
-
-}
-
-
-.icon-upload-content p {
-
-  margin: 10px 0 5px;
-
-  color:
-    var(--verrah-muted);
-
-  font-size: 12px;
-
-  line-height: 1.5;
-
-}
-
-
-.selected-file {
-
   display: block;
-
-  overflow: hidden;
-
-  color:
-    var(--verrah-brown);
-
-  font-size: 12px;
-
-  font-weight: 700;
-
-  text-overflow: ellipsis;
-
-  white-space: nowrap;
-
 }
-
-
-/* ==========================================================
-   INFORMATION BOX
-========================================================== */
-
-.category-info-box {
-
-  display: flex;
-
-  align-items: flex-start;
-
-  gap: 12px;
-
-  margin-bottom: 28px;
-
-  padding: 15px;
-
-  border:
-    1px solid var(--verrah-border);
-
-  border-radius: 12px;
-
-  background:
-    var(--verrah-brown-soft);
-
-}
-
-
-.info-icon {
-
-  flex: 0 0 auto;
-
-  color:
-    var(--verrah-brown);
-
-  font-size: 18px;
-
-}
-
-
-.category-info-box strong {
-
-  display: block;
-
-  margin-bottom: 4px;
-
-  color:
-    var(--verrah-brown-deep);
-
-  font-size: 13px;
-
-}
-
-
-.category-info-box p {
-
-  margin: 0;
-
-  color:
-    var(--verrah-muted);
-
-  font-size: 12px;
-
-  line-height: 1.6;
-
-}
-
-
-.category-info-box code {
-
-  padding:
-    2px 5px;
-
-  border-radius: 4px;
-
-  background:
-    var(--verrah-white);
-
-  color:
-    var(--verrah-brown);
-
-  font-size: 11px;
-
-  font-weight: 800;
-
-}
-
 
 /* ==========================================================
    ACTIONS
-========================================================== */
+   ========================================================== */
 
 .category-form-actions {
-
   display: flex;
 
   justify-content: flex-end;
@@ -747,13 +406,11 @@
 
   gap: 12px;
 
-  padding-top: 4px;
-
+  padding-top: 8px;
 }
 
-
-.category-cancel-button,
-.category-submit-button {
+.category-btn {
+  min-height: 46px;
 
   display: inline-flex;
 
@@ -763,269 +420,86 @@
 
   gap: 8px;
 
-  min-height: 45px;
-
-  padding:
-    0 18px;
+  padding: 0 20px;
 
   border-radius: 10px;
 
   font-size: 14px;
 
-  font-weight: 800;
+  font-weight: 700;
 
   text-decoration: none;
 
   cursor: pointer;
 
   transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
-
+    transform 0.15s,
+    background 0.2s;
 }
 
-
-.category-cancel-button {
-
-  border:
-    1px solid var(--verrah-border);
-
-  background:
-    var(--verrah-white);
-
-  color:
-    var(--verrah-muted);
-
+.category-btn:hover {
+  transform: translateY(-1px);
 }
 
+.category-btn-primary {
+  border: 1px solid var(--verrah-brown);
 
-.category-cancel-button:hover {
+  background: var(--verrah-brown);
 
-  border-color:
-    var(--verrah-brown);
-
-  color:
-    var(--verrah-brown);
-
+  color: var(--verrah-white);
 }
 
-
-.category-submit-button {
-
-  border:
-    1px solid var(--verrah-brown);
-
-  background:
-    var(--verrah-brown);
-
-  color:
-    var(--verrah-white);
-
+.category-btn-primary:hover {
+  background: var(--verrah-brown-dark);
 }
 
+.category-btn-secondary {
+  border: 1px solid var(--verrah-border);
 
-.category-submit-button:hover {
+  background: var(--verrah-white);
 
-  background:
-    var(--verrah-brown-dark);
-
-  border-color:
-    var(--verrah-brown-dark);
-
-  transform:
-    translateY(-1px);
-
+  color: var(--verrah-brown-deep);
 }
 
-
-/* ==========================================================
-   FOCUS
-========================================================== */
-
-.category-back-link:focus-visible,
-.upload-button:focus-visible,
-.category-cancel-button:focus-visible,
-.category-submit-button:focus-visible {
-
-  outline:
-    3px solid
-    rgba(139, 69, 19, 0.25);
-
-  outline-offset: 3px;
-
+.category-btn-secondary:hover {
+  background: var(--verrah-brown-soft);
 }
-
 
 /* ==========================================================
    MOBILE
-========================================================== */
+   ========================================================== */
 
-@media (max-width: 650px) {
+@media (max-width: 600px) {
 
   .category-add-page {
-
-    padding:
-      25px 14px
-      50px;
-
+    padding: 20px 12px;
   }
 
-
-  .category-heading {
-
-    align-items: flex-start;
-
-  }
-
-
-  .category-heading-icon {
-
-    width: 52px;
-
-    height: 52px;
-
-    flex-basis: 52px;
+  .category-add-card {
+    padding: 22px 17px;
 
     border-radius: 14px;
-
-    font-size: 21px;
-
   }
 
-
-  .category-heading h1 {
-
-    font-size: 26px;
-
+  .category-add-header h1 {
+    font-size: 23px;
   }
 
+  .category-add-icon {
+    width: 50px;
+    height: 50px;
 
-  .category-subtitle {
-
-    font-size: 13px;
-
+    font-size: 20px;
   }
-
-
-  .category-form-header {
-
-    padding:
-      20px;
-
-  }
-
-
-  .category-form {
-
-    padding:
-      22px 20px;
-
-  }
-
-
-  .icon-upload-box {
-
-    align-items: flex-start;
-
-    flex-direction: column;
-
-  }
-
-
-  .icon-preview {
-
-    width: 90px;
-
-    height: 90px;
-
-    flex-basis: 90px;
-
-  }
-
 
   .category-form-actions {
-
     flex-direction: column-reverse;
 
     align-items: stretch;
-
   }
 
-
-  .category-cancel-button,
-  .category-submit-button {
-
+  .category-btn {
     width: 100%;
-
-  }
-
-}
-
-
-@media (max-width: 420px) {
-
-  .category-heading {
-
-    gap: 12px;
-
-  }
-
-
-  .category-heading-icon {
-
-    width: 46px;
-
-    height: 46px;
-
-    flex-basis: 46px;
-
-    font-size: 18px;
-
-  }
-
-
-  .category-heading h1 {
-
-    font-size: 23px;
-
-  }
-
-
-  .category-form-header {
-
-    gap: 10px;
-
-  }
-
-
-  .category-form-icon {
-
-    width: 42px;
-
-    height: 42px;
-
-    flex-basis: 42px;
-
-  }
-
-}
-
-
-/* ==========================================================
-   REDUCED MOTION
-========================================================== */
-
-@media (prefers-reduced-motion: reduce) {
-
-  .category-back-link,
-  .upload-button,
-  .category-cancel-button,
-  .category-submit-button {
-
-    transition: none;
-
   }
 
 }
