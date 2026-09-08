@@ -1,208 +1,113 @@
-// ==========================================================
-// verrah/models/stock.js
-// STOCK MODEL
-// ==========================================================
-
 const mongoose = require("mongoose");
 
 // ==========================================================
-// DIRECTIONS OF USE ITEM
-// ==========================================================
-
-const directionsOfUseItemSchema =
-  new mongoose.Schema(
-    {
-      subtitle: {
-        type: String,
-        trim: true,
-        default: ""
-      },
-
-      content: {
-        type: String,
-        trim: true,
-        default: ""
-      }
-    },
-    {
-      _id: false
-    }
-  );
-
-// ==========================================================
-// DIRECTIONS OF USE
-// ==========================================================
-
-const directionsOfUseSchema =
-  new mongoose.Schema(
-    {
-      title: {
-        type: String,
-        trim: true,
-        default: ""
-      },
-
-      items: {
-        type: [
-          directionsOfUseItemSchema
-        ],
-
-        default: []
-      }
-    },
-    {
-      _id: false
-    }
-  );
-
-// ==========================================================
 // STOCK SCHEMA
+// Category is stored as a reference to the Category collection.
 // ==========================================================
 
-const stockSchema =
-  new mongoose.Schema(
-    {
-      // ----------------------------------------------------
-      // STOCK / PRODUCT NAME
-      // ----------------------------------------------------
+const directionsOfUseItemSchema = new mongoose.Schema(
+  {
+    subtitle: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    content: {
+      type: String,
+      trim: true,
+      default: ""
+    }
+  },
+  { _id: false }
+);
 
-      name: {
-        type: String,
-        required: true,
-        trim: true,
-        index: true
-      },
+const directionsOfUseSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    items: {
+      type: [directionsOfUseItemSchema],
+      default: []
+    }
+  },
+  { _id: false }
+);
 
-      // ----------------------------------------------------
-      // CATEGORY
-      //
-      // References Category._id
-      // ----------------------------------------------------
-
-      category: {
-        type:
-          mongoose.Schema.Types.ObjectId,
-
-        ref: "Category",
-
-        required: true,
-
-        index: true
-      },
-
-      // ----------------------------------------------------
-      // SUBCATEGORY
-      //
-      // The subcategory belongs to the selected Category.
-      // ----------------------------------------------------
-
-      subcategory: {
-        type: String,
-        required: true,
-        trim: true,
-        lowercase: true,
-        index: true
-      },
-
-      // ----------------------------------------------------
-      // DAYS
-      // ----------------------------------------------------
-
-      days: {
-        type: Number,
-        required: true,
-        min: 0,
-        default: 0
-      },
-
-      // ----------------------------------------------------
-      // IMAGE
-      // ----------------------------------------------------
-
-      image: {
-        type: String,
-        trim: true,
-        default: ""
-      },
-
-      // ----------------------------------------------------
-      // UNITS IN STOCK
-      //
-      // This is warehouse stock.
-      // It is NOT the same thing as Product.units.
-      // ----------------------------------------------------
-
-      units: {
-        type: Number,
-        required: true,
-        min: 0,
-        default: 0
-      },
-
-      // ----------------------------------------------------
-      // BUY PRICE
-      // ----------------------------------------------------
-
-      buyPrice: {
-        type: Number,
-        min: 0,
-        default: 0
-      },
-
-      // ----------------------------------------------------
-      // DESCRIPTION
-      // ----------------------------------------------------
-
-      description: {
-        type: String,
-        default: ""
-      },
-
-      // ----------------------------------------------------
-      // DIRECTIONS OF USE
-      // ----------------------------------------------------
-
-      directionsOfUse: {
-        type: directionsOfUseSchema,
-        default: undefined
-      },
-
-      // ----------------------------------------------------
-      // ACTIVE STATUS
-      // ----------------------------------------------------
-
-      isActive: {
-        type: Boolean,
-        default: true,
-        index: true
-      }
+const stockSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true
     },
 
-    {
-      timestamps: true
-    }
-  );
+    // Category is a MongoDB reference, not a hard-coded enum.
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+      index: true
+    },
 
-// ==========================================================
-// INDEXES
-// ==========================================================
+    subcategory: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      index: true
+    },
+
+    days: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
+    },
+
+    image: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+
+    units: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
+    },
+
+    buyPrice: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+
+    description: {
+      type: String,
+      default: ""
+    },
+
+    directionsOfUse: {
+      type: directionsOfUseSchema,
+      default: undefined
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true
+    }
+  },
+  { timestamps: true }
+);
 
 stockSchema.index({
   category: 1,
   subcategory: 1
 });
 
-stockSchema.index({
-  category: 1,
-  isActive: 1
-});
-
-// ==========================================================
-// EXPORT
-// ==========================================================
-
-module.exports =
-  mongoose.model(
-    "Stock",
-    stockSchema
-  );
+module.exports = mongoose.model("Stock", stockSchema);
