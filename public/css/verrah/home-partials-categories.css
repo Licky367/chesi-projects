@@ -45,10 +45,10 @@
         #cda88f;
 
     --category-shadow:
-        0 3px 10px rgba(91, 48, 24, 0.08);
+        0 4px 12px rgba(91, 48, 24, 0.08);
 
     --category-shadow-hover:
-        0 8px 20px rgba(91, 48, 24, 0.15);
+        0 10px 24px rgba(91, 48, 24, 0.16);
 }
 
 
@@ -69,6 +69,62 @@
 
 
 /* ==========================================================
+   CATEGORY SECTION TITLE
+========================================================== */
+
+.home-categories-title {
+
+    margin:
+        0
+        0
+        14px;
+
+    padding:
+        0
+        0
+        10px;
+
+    color:
+        var(--category-brown-deep);
+
+    font-size: 24px;
+
+    font-weight: 800;
+
+    line-height: 1.2;
+
+    text-align: left;
+
+    border-bottom:
+        2px solid
+        var(--category-border);
+}
+
+
+/* ==========================================================
+   CATEGORY SECTION TITLE ACCENT
+========================================================== */
+
+.home-categories-title::after {
+
+    content: "";
+
+    display: block;
+
+    width: 55px;
+
+    height: 3px;
+
+    margin-top: 8px;
+
+    background:
+        var(--category-brown);
+
+    border-radius: 10px;
+}
+
+
+/* ==========================================================
    CATEGORY SCROLLER
 ========================================================== */
 
@@ -80,16 +136,16 @@
 
     align-items: stretch;
 
-    gap: 10px;
+    gap: 16px;
 
     overflow-x: auto;
 
     overflow-y: hidden;
 
     padding:
+        6px
         4px
-        2px
-        10px;
+        14px;
 
     box-sizing: border-box;
 
@@ -111,7 +167,7 @@
 
 .home-category-scroller::-webkit-scrollbar {
 
-    height: 5px;
+    height: 6px;
 }
 
 
@@ -139,19 +195,21 @@
 
 /* ==========================================================
    CATEGORY CARD
+   ORIGINAL: 116px × 155px
+   NEW:      232px × 310px
 ========================================================== */
 
 .home-category-card {
 
-    width: 116px;
+    width: 232px;
 
-    min-width: 116px;
+    min-width: 232px;
 
-    height: 155px;
+    height: 310px;
 
-    min-height: 155px;
+    min-height: 310px;
 
-    flex: 0 0 116px;
+    flex: 0 0 232px;
 
     display: flex;
 
@@ -170,7 +228,7 @@
         1px solid
         var(--category-border);
 
-    border-radius: 10px;
+    border-radius: 16px;
 
     box-shadow:
         var(--category-shadow);
@@ -195,7 +253,7 @@
 .home-category-card:hover {
 
     transform:
-        translateY(-2px);
+        translateY(-4px);
 
     border-color:
         var(--category-brown);
@@ -226,21 +284,23 @@
         3px solid
         rgba(139, 69, 19, 0.25);
 
-    outline-offset: 2px;
+    outline-offset: 3px;
 }
 
 
 /* ==========================================================
    CATEGORY IMAGE / ICON AREA
+   ORIGINAL: 72px
+   NEW:      144px
 ========================================================== */
 
 .home-category-icon {
 
     width: 100%;
 
-    height: 72px;
+    height: 144px;
 
-    min-height: 72px;
+    min-height: 144px;
 
     display: flex;
 
@@ -292,7 +352,7 @@
     color:
         var(--category-brown);
 
-    font-size: 26px;
+    font-size: 52px;
 }
 
 
@@ -313,9 +373,9 @@
     box-sizing: border-box;
 
     padding:
-        8px
-        7px
-        7px;
+        16px
+        14px
+        14px;
 }
 
 
@@ -328,20 +388,29 @@
     margin:
         0
         0
-        5px;
+        10px;
 
-    padding: 0;
+    padding:
+        0
+        0
+        8px;
 
     color:
         var(--category-brown-deep);
 
-    font-size: 13px;
+    font-size: 22px;
 
     font-weight: 800;
 
     line-height: 1.2;
 
     text-align: center;
+
+    text-transform: capitalize;
+
+    border-bottom:
+        2px solid
+        var(--category-border);
 
     overflow: hidden;
 
@@ -350,6 +419,20 @@
     -webkit-box-orient: vertical;
 
     -webkit-line-clamp: 2;
+}
+
+
+/* ==========================================================
+   CATEGORY NAME HOVER
+========================================================== */
+
+.home-category-card:hover .home-category-name {
+
+    color:
+        var(--category-brown);
+
+    border-bottom-color:
+        var(--category-brown);
 }
 
 
@@ -366,11 +449,11 @@
     color:
         var(--category-muted);
 
-    font-size: 10px;
+    font-size: 15px;
 
     font-weight: 400;
 
-    line-height: 1.25;
+    line-height: 1.4;
 
     text-align: center;
 
@@ -380,7 +463,7 @@
 
     -webkit-box-orient: vertical;
 
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 4;
 }
 
 
@@ -395,7 +478,7 @@
     justify-content: center;
 
     padding:
-        10px;
+        20px;
 
     text-align: center;
 
@@ -403,7 +486,7 @@
         var(--category-cream);
 
     border:
-        1px dashed
+        2px dashed
         var(--category-border-dark);
 }
 
@@ -428,13 +511,13 @@
 
 .home-category-add-icon {
 
-    width: 44px;
+    width: 88px;
 
-    height: 44px;
+    height: 88px;
 
-    min-width: 44px;
+    min-width: 88px;
 
-    min-height: 44px;
+    min-height: 88px;
 
     display: flex;
 
@@ -442,7 +525,7 @@
 
     justify-content: center;
 
-    margin-bottom: 8px;
+    margin-bottom: 16px;
 
     border-radius: 50%;
 
@@ -452,7 +535,7 @@
     color:
         var(--category-brown);
 
-    font-size: 19px;
+    font-size: 38px;
 
     transition:
         background 0.2s ease,
@@ -488,7 +571,7 @@
     color:
         var(--category-brown-dark);
 
-    font-size: 12px;
+    font-size: 22px;
 
     font-weight: 800;
 
@@ -505,7 +588,7 @@
 .home-category-add-description {
 
     margin:
-        4px
+        8px
         0
         0;
 
@@ -514,9 +597,9 @@
     color:
         var(--category-muted);
 
-    font-size: 9px;
+    font-size: 14px;
 
-    line-height: 1.25;
+    line-height: 1.4;
 
     text-align: center;
 }
@@ -530,7 +613,7 @@
 
     width: 100%;
 
-    min-height: 80px;
+    min-height: 100px;
 
     display: flex;
 
@@ -538,11 +621,11 @@
 
     justify-content: center;
 
-    gap: 8px;
+    gap: 10px;
 
     box-sizing: border-box;
 
-    padding: 18px;
+    padding: 24px;
 
     background:
         var(--category-cream);
@@ -551,12 +634,12 @@
         1px dashed
         var(--category-border);
 
-    border-radius: 10px;
+    border-radius: 12px;
 
     color:
         var(--category-muted);
 
-    font-size: 13px;
+    font-size: 15px;
 
     text-align: center;
 }
@@ -571,7 +654,7 @@
     color:
         var(--category-brown);
 
-    font-size: 16px;
+    font-size: 20px;
 }
 
 
@@ -581,13 +664,21 @@
 
 @media (max-width: 768px) {
 
+    .home-categories-title {
+
+        font-size: 22px;
+
+        margin-bottom: 12px;
+    }
+
+
     .home-category-scroller {
 
-        gap: 9px;
+        gap: 14px;
 
-        padding-left: 2px;
+        padding-left: 3px;
 
-        padding-right: 2px;
+        padding-right: 3px;
     }
 
 }
@@ -599,28 +690,38 @@
 
 @media (max-width: 480px) {
 
+    .home-categories-title {
+
+        font-size: 20px;
+
+        margin-bottom: 10px;
+
+        padding-bottom: 8px;
+    }
+
+
     .home-category-scroller {
 
-        gap: 8px;
+        gap: 12px;
 
         padding:
-            3px
-            1px
-            9px;
+            4px
+            2px
+            12px;
     }
 
 
     .home-category-card {
 
-        width: 116px;
+        width: 232px;
 
-        min-width: 116px;
+        min-width: 232px;
 
-        height: 155px;
+        height: 310px;
 
-        min-height: 155px;
+        min-height: 310px;
 
-        flex-basis: 116px;
+        flex-basis: 232px;
     }
 
 
