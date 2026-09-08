@@ -2,46 +2,63 @@
 // verrah/services/productService.js
 // PRODUCT SERVICE
 // ==========================================================
+//
+// PRODUCT CATEGORY RELATION:
+//
+// Product.category
+//       ↓
+// Category._id
+//       ↓
+// Category.name
+//
+// IMPORTANT:
+// ----------------------------------------------------------
+// The database continues storing Category._id in Product.
+//
+// The frontend NEVER receives the category ObjectId.
+//
+// Frontend receives:
+//
+//     group.label
+//
+//     group.categoryName
+//
+// ==========================================================
 
 const mongoose = require("mongoose");
 
 const Product = require("../models/products");
 const Stock = require("../models/stock");
 
-// IMPORTANT:
-// Explicitly register Category before populate() is used.
-const Category = require("../models/category");
-
 
 // ==========================================================
-// CHUNK PRODUCTS INTO ROWS
+// CHUNK PRODUCTS
 // ==========================================================
 //
-// Desktop:
-//     Maximum 6 products per row.
+// Maximum six products in one row.
 //
-// Mobile:
-//     Frontend CSS handles horizontal scrolling.
+// The EJS can flatten the rows when necessary.
+// CSS controls the actual responsive presentation.
 //
 // ==========================================================
 
 function chunk(items, size = 6) {
 
-  const rows = [];
+    const rows = [];
 
-  for (
-    let i = 0;
-    i < items.length;
-    i += size
-  ) {
+    for (
+        let i = 0;
+        i < items.length;
+        i += size
+    ) {
 
-    rows.push({
-      products: items.slice(i, i + size)
-    });
+        rows.push({
+            products: items.slice(i, i + size)
+        });
 
-  }
+    }
 
-  return rows;
+    return rows;
 }
 
 
@@ -51,161 +68,87 @@ function chunk(items, size = 6) {
 
 function normalizeDirections(directions) {
 
-  if (!directions) {
-    return undefined;
-  }
-
-
-  const items = Array.isArray(
-    directions.items
-  )
-
-    ? directions.items
-        .map((item) => {
-
-          return {
-            subtitle: String(
-              item?.subtitle || ""
-            ).trim(),
-
-            content: String(
-              item?.content || ""
-            ).trim()
-          };
-
-        })
-        .filter((item) => {
-
-          return (
-            item.subtitle &&
-            item.content
-          );
-
-        })
-
-    : [];
-
-
-  const title = String(
-    directions.title || ""
-  ).trim();
-
-
-  if (
-    !title &&
-    items.length === 0
-  ) {
-
-    return undefined;
-
-  }
-
-
-  return {
-    title,
-    items
-  };
-}
-
-
-// ==========================================================
-// GET CATEGORY NAME
-// ==========================================================
-//
-// This function accepts the populated Category.
-//
-// It NEVER converts an ObjectId into a fake label.
-//
-// It gets the actual Category.name.
-//
-// ==========================================================
-
-function getCategoryName(category) {
-
-  if (
-    category &&
-    typeof category === "object" &&
-    typeof category.name === "string"
-  ) {
-
-    const name = category.name.trim();
-
-    if (name) {
-      return name;
+    if (!directions) {
+        return undefined;
     }
 
-  }
+
+    const items = Array.isArray(
+        directions.items
+    )
+
+        ? directions.items
+            .map((item) => {
+
+                return {
+                    subtitle: String(
+                        item?.subtitle || ""
+                    ).trim(),
+
+                    content: String(
+                        item?.content || ""
+                    ).trim()
+                };
+
+            })
+            .filter((item) => {
+
+                return (
+                    item.subtitle &&
+                    item.content
+                );
+
+            })
+
+        : [];
 
 
-  return "Other";
+    const title = String(
+        directions.title || ""
+    ).trim();
+
+
+    if (
+        !title &&
+        items.length === 0
+    ) {
+
+        return undefined;
+
+    }
+
+
+    return {
+        title,
+        items
+    };
 }
 
 
 // ==========================================================
-// PREPARE PRODUCT FOR FRONTEND
+// REMOVE CATEGORY DATABASE FIELD
 // ==========================================================
 //
-// MongoDB:
+// The frontend does not need Product.category.
 //
-//     category: Category._id
-//
-// After populate:
-//
-//     category: {
-//         _id: "...",
-//         name: "skin care"
-//     }
-//
-// Before sending to EJS:
-//
-//     categoryName: "skin care"
-//
-//     category is removed.
+// It receives categoryName separately.
 //
 // ==========================================================
 
-function prepareProduct(product) {
+function prepareProduct(product, categoryName) {
 
-  if (!product) {
-    return null;
-  }
+    const prepared = {
+        ...product,
 
-
-  const prepared = {
-    ...product
-  };
+        categoryName:
+            categoryName || "Other"
+    };
 
 
-  // --------------------------------------------------------
-  // RESOLVE ACTUAL CATEGORY NAME
-  // --------------------------------------------------------
-
-  prepared.categoryName =
-    getCategoryName(
-      prepared.category
-    );
+    delete prepared.category;
 
 
-  // --------------------------------------------------------
-  // REMOVE CATEGORY OBJECT
-  // --------------------------------------------------------
-  //
-  // The frontend does not need:
-  //
-  //     category._id
-  //
-  //     category.name
-  //
-  // It only needs:
-  //
-  //     categoryName
-  //
-  // --------------------------------------------------------
-
-  delete prepared.category;
-
-
-  return prepared;
+    return prepared;
 }
 
 
@@ -213,159 +156,192 @@ function prepareProduct(product) {
 // GET PRODUCTS BY CATEGORY
 // ==========================================================
 //
-// FRONTEND RESULT:
+// THIS IS THE MAIN PRODUCT LISTING SERVICE.
 //
-// [
-//   {
-//     label: "skin care",
-//     categoryName: "skin care",
-//     rows: [
-//       {
-//         products: [ ... up to 6 ... ]
-//       }
-//     ]
-//   }
-// ]
+// The aggregation performs:
 //
-// NO Category._id is exposed here.
+// Product
+//    ↓
+// $lookup
+//    ↓
+// Category
+//    ↓
+// Category.name
+//
+// Then the service groups products using the actual
+// category name.
 //
 // ==========================================================
 
 async function getProductsByCategory() {
 
-  // ========================================================
-  // FETCH ACTIVE PRODUCTS
-  // ========================================================
+    const products = await Product.aggregate([
 
-  const products = await Product.find({
-    isActive: true
-  })
+        // ====================================================
+        // ACTIVE PRODUCTS ONLY
+        // ====================================================
 
-    // ------------------------------------------------------
-    // RESOLVE CATEGORY REFERENCE
-    // ------------------------------------------------------
-
-    .populate({
-      path: "category",
-      select: "name"
-    })
-
-    // ------------------------------------------------------
-    // SORT PRODUCTS
-    // ------------------------------------------------------
-
-    .sort({
-      name: 1,
-      createdAt: 1
-    })
-
-    .lean();
-
-
-  // ========================================================
-  // CATEGORY MAP
-  // ========================================================
-  //
-  // IMPORTANT:
-  //
-  // The Map is keyed by the CATEGORY NAME.
-  //
-  // We are not using Category._id for frontend grouping.
-  //
-  // ========================================================
-
-  const categoryMap = new Map();
-
-
-  // ========================================================
-  // PROCESS PRODUCTS
-  // ========================================================
-
-  for (const rawProduct of products) {
-
-    const product =
-      prepareProduct(rawProduct);
-
-
-    if (!product) {
-      continue;
-    }
-
-
-    // ------------------------------------------------------
-    // ACTUAL CATEGORY NAME
-    // ------------------------------------------------------
-
-    const categoryName =
-      product.categoryName ||
-      "Other";
-
-
-    // ------------------------------------------------------
-    // CREATE CATEGORY GROUP
-    // ------------------------------------------------------
-
-    if (
-      !categoryMap.has(categoryName)
-    ) {
-
-      categoryMap.set(
-        categoryName,
         {
-          label: categoryName,
-          categoryName,
-          products: []
+            $match: {
+                isActive: true
+            }
+        },
+
+
+        // ====================================================
+        // RESOLVE CATEGORY
+        // ====================================================
+        //
+        // Product.category = Category._id
+        //
+        // ====================================================
+
+        {
+            $lookup: {
+                from: "categories",
+
+                localField: "category",
+
+                foreignField: "_id",
+
+                as: "categoryData"
+            }
+        },
+
+
+        // ====================================================
+        // GET SINGLE CATEGORY
+        // ====================================================
+
+        {
+            $unwind: {
+                path: "$categoryData",
+
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+
+        // ====================================================
+        // SORT
+        // ====================================================
+
+        {
+            $sort: {
+                "categoryData.name": 1,
+                subcategory: 1,
+                name: 1,
+                createdAt: 1
+            }
         }
-      );
+
+    ]);
+
+
+    // ========================================================
+    // GROUP BY CATEGORY NAME
+    // ========================================================
+
+    const categoryMap = new Map();
+
+
+    for (const product of products) {
+
+        // ----------------------------------------------------
+        // ACTUAL CATEGORY NAME
+        // ----------------------------------------------------
+        //
+        // This is Category.name.
+        //
+        // NOT Category._id.
+        //
+        // ----------------------------------------------------
+
+        const categoryName =
+            product.categoryData &&
+            typeof product.categoryData.name === "string" &&
+            product.categoryData.name.trim()
+
+                ? product.categoryData.name.trim()
+
+                : "Other";
+
+
+        // ----------------------------------------------------
+        // PREPARE PRODUCT FOR FRONTEND
+        // ----------------------------------------------------
+
+        const preparedProduct =
+            prepareProduct(
+                product,
+                categoryName
+            );
+
+
+        // ----------------------------------------------------
+        // CREATE CATEGORY GROUP
+        // ----------------------------------------------------
+
+        if (!categoryMap.has(categoryName)) {
+
+            categoryMap.set(
+                categoryName,
+                {
+                    label: categoryName,
+
+                    categoryName,
+
+                    products: []
+                }
+            );
+
+        }
+
+
+        // ----------------------------------------------------
+        // ADD PRODUCT
+        // ----------------------------------------------------
+
+        categoryMap
+            .get(categoryName)
+            .products
+            .push(preparedProduct);
 
     }
 
 
-    // ------------------------------------------------------
-    // ADD PRODUCT
-    // ------------------------------------------------------
+    // ========================================================
+    // CREATE FRONTEND STRUCTURE
+    // ========================================================
 
-    const group =
-      categoryMap.get(categoryName);
+    return Array.from(
+        categoryMap.values()
+    ).map((group) => {
 
+        return {
 
-    group.products.push(product);
+            // ------------------------------------------------
+            // HUMAN-READABLE CATEGORY NAME
+            // ------------------------------------------------
 
-  }
+            label: group.label,
 
-
-  // ========================================================
-  // CONVERT MAP INTO FRONTEND STRUCTURE
-  // ========================================================
-
-  return Array.from(
-    categoryMap.values()
-  ).map((group) => {
-
-    return {
-
-      // ----------------------------------------------------
-      // CATEGORY NAME
-      // ----------------------------------------------------
-
-      label: group.label,
-
-      categoryName:
-        group.categoryName,
+            categoryName:
+                group.categoryName,
 
 
-      // ----------------------------------------------------
-      // PRODUCT ROWS
-      // ----------------------------------------------------
+            // ------------------------------------------------
+            // PRODUCTS IN ROWS OF SIX
+            // ------------------------------------------------
 
-      rows: chunk(
-        group.products,
-        6
-      )
+            rows: chunk(
+                group.products,
+                6
+            )
 
-    };
+        };
 
-  });
+    });
 }
 
 
@@ -375,136 +351,190 @@ async function getProductsByCategory() {
 //
 // Used by:
 //
-//     GET /products/:id
+//     /products/:id
 //
 // ==========================================================
 
 async function getProduct(id) {
 
-  // ========================================================
-  // VALIDATE PRODUCT ID
-  // ========================================================
+    // ========================================================
+    // VALIDATE ID
+    // ========================================================
 
-  if (
-    !mongoose.Types.ObjectId.isValid(id)
-  ) {
+    if (
+        !mongoose.Types.ObjectId.isValid(id)
+    ) {
 
-    return null;
+        return null;
 
-  }
-
-
-  // ========================================================
-  // FIND PRODUCT
-  // ========================================================
-
-  const product =
-    await Product.findOne({
-      _id: id,
-      isActive: true
-    })
-
-      // ----------------------------------------------------
-      // RESOLVE CATEGORY
-      // ----------------------------------------------------
-
-      .populate({
-        path: "category",
-        select: "name"
-      })
-
-      .lean();
+    }
 
 
-  // ========================================================
-  // PRODUCT NOT FOUND
-  // ========================================================
+    // ========================================================
+    // GET PRODUCT
+    // ========================================================
 
-  if (!product) {
-    return null;
-  }
+    const results =
+        await Product.aggregate([
 
+            // ------------------------------------------------
+            // PRODUCT
+            // ------------------------------------------------
 
-  // ========================================================
-  // CATEGORY NAME
-  // ========================================================
+            {
+                $match: {
+                    _id:
+                        new mongoose.Types.ObjectId(id),
 
-  product.categoryName =
-    getCategoryName(
-      product.category
-    );
-
-
-  // ========================================================
-  // REMOVE CATEGORY OBJECT
-  // ========================================================
-  //
-  // Product-details EJS should use:
-  //
-  //     product.categoryName
-  //
-  // NOT:
-  //
-  //     product.category._id
-  //
-  // ========================================================
-
-  delete product.category;
+                    isActive: true
+                }
+            },
 
 
-  // ========================================================
-  // PRODUCT DIRECTIONS
-  // ========================================================
+            // ------------------------------------------------
+            // CATEGORY
+            // ------------------------------------------------
 
-  const productDirections =
-    normalizeDirections(
-      product.directionsOfUse
-    );
+            {
+                $lookup: {
+                    from: "categories",
 
+                    localField: "category",
 
-  // ========================================================
-  // STOCK DIRECTIONS FALLBACK
-  // ========================================================
-  //
-  // This preserves compatibility with older products whose
-  // directions were stored on Stock instead of Product.
-  //
-  // ========================================================
+                    foreignField: "_id",
 
-  if (
-    !productDirections &&
-    product.stock &&
-    mongoose.Types.ObjectId.isValid(
-      product.stock
-    )
-  ) {
-
-    const stock =
-      await Stock.findById(
-        product.stock
-      )
-        .select("directionsOfUse")
-        .lean();
+                    as: "categoryData"
+                }
+            },
 
 
-    product.directionsOfUse =
-      normalizeDirections(
-        stock?.directionsOfUse
-      );
+            // ------------------------------------------------
+            // CATEGORY OBJECT
+            // ------------------------------------------------
 
-  } else {
+            {
+                $unwind: {
+                    path: "$categoryData",
 
-    product.directionsOfUse =
-      productDirections;
+                    preserveNullAndEmptyArrays: true
+                }
+            },
 
-  }
+
+            // ------------------------------------------------
+            // ONE PRODUCT
+            // ------------------------------------------------
+
+            {
+                $limit: 1
+            }
+
+        ]);
 
 
-  // ========================================================
-  // RETURN PRODUCT
-  // ========================================================
+    // ========================================================
+    // NOT FOUND
+    // ========================================================
 
-  return product;
+    if (!results.length) {
+
+        return null;
+
+    }
+
+
+    const rawProduct =
+        results[0];
+
+
+    // ========================================================
+    // CATEGORY NAME
+    // ========================================================
+
+    const categoryName =
+        rawProduct.categoryData &&
+        typeof rawProduct.categoryData.name === "string" &&
+        rawProduct.categoryData.name.trim()
+
+            ? rawProduct.categoryData.name.trim()
+
+            : "Other";
+
+
+    // ========================================================
+    // PREPARE PRODUCT
+    // ========================================================
+
+    const product =
+        prepareProduct(
+            rawProduct,
+            categoryName
+        );
+
+
+    // ========================================================
+    // REMOVE CATEGORY DATA
+    // ========================================================
+    //
+    // categoryData contains the MongoDB category document.
+    //
+    // It is backend-only.
+    //
+    // ========================================================
+
+    delete product.categoryData;
+
+
+    // ========================================================
+    // DIRECTIONS OF USE
+    // ========================================================
+
+    const productDirections =
+        normalizeDirections(
+            product.directionsOfUse
+        );
+
+
+    // ========================================================
+    // STOCK FALLBACK
+    // ========================================================
+
+    if (
+        !productDirections &&
+        product.stock &&
+        mongoose.Types.ObjectId.isValid(
+            product.stock
+        )
+    ) {
+
+        const stock =
+            await Stock.findById(
+                product.stock
+            )
+                .select(
+                    "directionsOfUse"
+                )
+                .lean();
+
+
+        product.directionsOfUse =
+            normalizeDirections(
+                stock?.directionsOfUse
+            );
+
+    } else {
+
+        product.directionsOfUse =
+            productDirections;
+
+    }
+
+
+    // ========================================================
+    // RETURN
+    // ========================================================
+
+    return product;
 }
 
 
@@ -514,8 +544,8 @@ async function getProduct(id) {
 
 module.exports = {
 
-  getProductsByCategory,
+    getProductsByCategory,
 
-  getProduct
+    getProduct
 
 };
