@@ -23,9 +23,7 @@
       </div>
 
       <div>
-        <h1>
-          Add Category
-        </h1>
+        <h1>Add Category</h1>
 
         <p>
           Create a new Verrah Cosmetics category.
@@ -33,6 +31,7 @@
       </div>
 
     </div>
+
 
     <!-- ==================================================
          ERROR
@@ -52,16 +51,17 @@
 
     <% } %>
 
+
     <!-- ==================================================
          FORM
     =================================================== -->
 
     <form
+      id="categoryForm"
       class="category-form"
       action="/products/category/add"
       method="POST"
       enctype="multipart/form-data"
-      id="categoryForm"
     >
 
       <!-- =================================================
@@ -79,69 +79,72 @@
           id="name"
           name="name"
           value="<%= formData?.name || '' %>"
-          placeholder="e.g. skincare"
+          placeholder="Enter category name"
           autocomplete="off"
           required
         />
 
       </div>
 
+
       <!-- =================================================
-           IMAGE SOURCE
+           CATEGORY IMAGE
       ================================================== -->
 
-      <div class="image-source-heading">
+      <div class="form-group">
 
-        <h2>
-          Category Icon
-        </h2>
+        <label>
+          Category Image
+        </label>
 
-        <p>
-          Choose one way to provide the category image.
+        <p class="field-description">
+          Choose one of the two options below.
         </p>
 
       </div>
 
+
       <!-- =================================================
-           UPLOAD OPTION
+           UPLOAD IMAGE OPTION
       ================================================== -->
 
-      <div
-        class="image-option"
-        id="uploadOption"
-      >
+      <div class="image-source-card">
 
-        <label class="option-label">
+        <div class="image-source-header">
 
-          <input
-            type="radio"
-            name="imageSource"
-            value="upload"
-            id="imageSourceUpload"
-            checked
-          />
+          <label
+            class="source-radio"
+            for="sourceUpload"
+          >
 
-          <span>
-            Upload a photo
-          </span>
+            <input
+              type="radio"
+              id="sourceUpload"
+              name="imageSource"
+              value="upload"
+              checked
+            />
 
-        </label>
+            <span>
+              Upload a photo
+            </span>
 
-        <div
-          class="option-content"
-          id="uploadContent"
-        >
+          </label>
+
+        </div>
+
+
+        <div class="image-source-body">
 
           <label
             for="categoryIcon"
-            class="file-drop"
-            id="fileDrop"
+            class="file-upload-box"
           >
 
             <i class="fas fa-cloud-arrow-up"></i>
 
             <strong>
-              Choose category photo
+              Choose a category image
             </strong>
 
             <span>
@@ -149,7 +152,7 @@
             </span>
 
             <span>
-              Maximum size: 5 MB
+              Maximum file size: 5 MB
             </span>
 
           </label>
@@ -158,43 +161,60 @@
             type="file"
             id="categoryIcon"
             name="categoryIcon"
-            accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
+            accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
           />
 
         </div>
 
       </div>
 
+
       <!-- =================================================
-           URL OPTION
+           OR
       ================================================== -->
 
-      <div
-        class="image-option"
-        id="urlOption"
-      >
+      <div class="image-source-divider">
 
-        <label class="option-label">
+        <span>OR</span>
 
-          <input
-            type="radio"
-            name="imageSource"
-            value="url"
-            id="imageSourceUrl"
-          />
+      </div>
 
-          <span>
-            Use an image URL
-          </span>
 
-        </label>
+      <!-- =================================================
+           IMAGE URL OPTION
+      ================================================== -->
 
-        <div
-          class="option-content hidden-option"
-          id="urlContent"
-        >
+      <div class="image-source-card">
 
-          <label for="categoryIconUrl">
+        <div class="image-source-header">
+
+          <label
+            class="source-radio"
+            for="sourceUrl"
+          >
+
+            <input
+              type="radio"
+              id="sourceUrl"
+              name="imageSource"
+              value="url"
+            />
+
+            <span>
+              Use an image URL
+            </span>
+
+          </label>
+
+        </div>
+
+
+        <div class="image-source-body">
+
+          <label
+            for="categoryIconUrl"
+            class="url-label"
+          >
             Image URL
           </label>
 
@@ -207,16 +227,17 @@
             autocomplete="off"
           />
 
-          <small>
-            Enter a publicly accessible HTTP or HTTPS image URL.
+          <small class="url-help">
+            Enter the complete HTTP or HTTPS URL of the image.
           </small>
 
         </div>
 
       </div>
 
+
       <!-- =================================================
-           PREVIEW
+           IMAGE PREVIEW
       ================================================== -->
 
       <div
@@ -225,21 +246,22 @@
         hidden
       >
 
-        <p>
-          Preview
-        </p>
+        <div class="preview-heading">
+          Image Preview
+        </div>
 
         <div class="image-preview">
 
           <img
             id="imagePreview"
             src=""
-            alt="Category icon preview"
+            alt="Category image preview"
           />
 
         </div>
 
       </div>
+
 
       <!-- =================================================
            ACTIONS
@@ -251,8 +273,11 @@
           href="/products"
           class="category-btn category-btn-secondary"
         >
+          <i class="fas fa-arrow-left"></i>
+
           Cancel
         </a>
+
 
         <button
           type="submit"
@@ -273,100 +298,60 @@
 
 </section>
 
+
 <script>
 
+  // ======================================================
+  // ELEMENTS
+  // ======================================================
+
   const uploadRadio =
-    document.getElementById(
-      "imageSourceUpload"
-    );
+    document.getElementById("sourceUpload");
 
   const urlRadio =
-    document.getElementById(
-      "imageSourceUrl"
-    );
-
-  const uploadContent =
-    document.getElementById(
-      "uploadContent"
-    );
-
-  const urlContent =
-    document.getElementById(
-      "urlContent"
-    );
+    document.getElementById("sourceUrl");
 
   const fileInput =
-    document.getElementById(
-      "categoryIcon"
-    );
+    document.getElementById("categoryIcon");
 
   const urlInput =
-    document.getElementById(
-      "categoryIconUrl"
-    );
+    document.getElementById("categoryIconUrl");
 
   const previewWrapper =
-    document.getElementById(
-      "previewWrapper"
-    );
+    document.getElementById("previewWrapper");
 
-  const preview =
-    document.getElementById(
-      "imagePreview"
-    );
+  const imagePreview =
+    document.getElementById("imagePreview");
+
 
   // ======================================================
-  // UPDATE IMAGE SOURCE
+  // IMAGE PREVIEW
   // ======================================================
 
-  function updateImageSource() {
+  function hidePreview() {
 
-    if (uploadRadio.checked) {
+    previewWrapper.hidden = true;
 
-      uploadContent.classList.remove(
-        "hidden-option"
-      );
+    imagePreview.removeAttribute("src");
 
-      urlContent.classList.add(
-        "hidden-option"
-      );
-
-      urlInput.value = "";
-
-      showUploadPreview();
-
-      return;
-    }
-
-    uploadContent.classList.add(
-      "hidden-option"
-    );
-
-    urlContent.classList.remove(
-      "hidden-option"
-    );
-
-    fileInput.value = "";
-
-    showUrlPreview();
   }
 
+
   // ======================================================
-  // UPLOAD PREVIEW
+  // UPLOADED IMAGE PREVIEW
   // ======================================================
 
-  function showUploadPreview() {
+  function previewUploadedImage() {
 
     const file =
       fileInput.files[0];
 
     if (!file) {
 
-      previewWrapper.hidden = true;
-
-      preview.src = "";
+      hidePreview();
 
       return;
+
     }
 
     const reader =
@@ -375,67 +360,190 @@
     reader.onload =
       function (event) {
 
-        preview.src =
+        imagePreview.src =
           event.target.result;
 
         previewWrapper.hidden =
           false;
+
       };
 
     reader.readAsDataURL(file);
+
   }
 
+
   // ======================================================
-  // URL PREVIEW
+  // URL IMAGE PREVIEW
   // ======================================================
 
-  function showUrlPreview() {
+  function previewUrlImage() {
 
     const url =
       urlInput.value.trim();
 
     if (!url) {
 
-      previewWrapper.hidden = true;
-
-      preview.src = "";
+      hidePreview();
 
       return;
+
     }
 
-    preview.src = url;
+    imagePreview.src =
+      url;
 
-    previewWrapper.hidden = false;
+    previewWrapper.hidden =
+      false;
+
   }
 
+
   // ======================================================
-  // EVENTS
+  // UPLOAD OPTION SELECTED
   // ======================================================
 
   uploadRadio.addEventListener(
     "change",
-    updateImageSource
+    function () {
+
+      if (!uploadRadio.checked) {
+        return;
+      }
+
+      // Clear URL because only one source
+      // should be submitted.
+
+      urlInput.value = "";
+
+      hidePreview();
+
+    }
   );
+
+
+  // ======================================================
+  // URL OPTION SELECTED
+  // ======================================================
 
   urlRadio.addEventListener(
     "change",
-    updateImageSource
+    function () {
+
+      if (!urlRadio.checked) {
+        return;
+      }
+
+      // Clear uploaded file because only one
+      // source should be submitted.
+
+      fileInput.value = "";
+
+      previewUrlImage();
+
+    }
   );
+
+
+  // ======================================================
+  // FILE SELECTED
+  // ======================================================
 
   fileInput.addEventListener(
     "change",
-    showUploadPreview
+    function () {
+
+      if (!fileInput.files.length) {
+
+        hidePreview();
+
+        return;
+
+      }
+
+      // Automatically choose upload mode.
+
+      uploadRadio.checked = true;
+
+      urlInput.value = "";
+
+      previewUploadedImage();
+
+    }
   );
+
+
+  // ======================================================
+  // URL ENTERED
+  // ======================================================
 
   urlInput.addEventListener(
     "input",
-    showUrlPreview
+    function () {
+
+      if (!urlInput.value.trim()) {
+
+        hidePreview();
+
+        return;
+
+      }
+
+      // Automatically choose URL mode.
+
+      urlRadio.checked = true;
+
+      fileInput.value = "";
+
+      previewUrlImage();
+
+    }
   );
 
+
   // ======================================================
-  // INITIAL STATE
+  // PREVENT BOTH SOURCES
   // ======================================================
 
-  updateImageSource();
+  document
+    .getElementById("categoryForm")
+    .addEventListener(
+      "submit",
+      function (event) {
+
+        const hasFile =
+          fileInput.files.length > 0;
+
+        const hasUrl =
+          urlInput.value.trim().length > 0;
+
+
+        if (!hasFile && !hasUrl) {
+
+          event.preventDefault();
+
+          alert(
+            "Please upload a category image or enter an image URL."
+          );
+
+          return;
+
+        }
+
+
+        if (hasFile && hasUrl) {
+
+          event.preventDefault();
+
+          alert(
+            "Please use either the uploaded image or the image URL, not both."
+          );
+
+          return;
+
+        }
+
+      }
+    );
 
 </script>
