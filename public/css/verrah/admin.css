@@ -1,0 +1,698 @@
+/* ==========================================================
+   COREVESTER ADMIN
+   Brown theme for views/admin/*
+========================================================== */
+
+.admin-page,
+.admin-page * {
+  box-sizing: border-box;
+}
+
+.admin-page {
+  --brown-950: #2d1810;
+  --brown-900: #3b2117;
+  --brown-800: #4d2b1d;
+  --brown-700: #633b28;
+  --brown-600: #76503a;
+  --brown-500: #8b6048;
+  --brown-400: #a77d65;
+  --brown-300: #c6a897;
+  --brown-200: #dcc9bc;
+  --brown-100: #eee3dc;
+  --brown-50: #faf6f3;
+
+  --ink: #2c211d;
+  --text: #665953;
+  --muted: #8c7d75;
+  --border: #e0d4cd;
+  --border-soft: #eee7e2;
+  --white: #ffffff;
+  --danger: #a52b2b;
+  --danger-bg: #fff1f0;
+
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 18px 70px;
+  color: var(--ink);
+  font-family: inherit;
+}
+
+.admin-page h1,
+.admin-page h2,
+.admin-page h3,
+.admin-page p {
+  margin-top: 0;
+}
+
+.admin-eyebrow {
+  display: block;
+  color: var(--brown-700);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+
+.admin-page-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 20px;
+}
+
+.admin-back-link {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.admin-back-link:hover {
+  color: var(--brown-700);
+}
+
+.admin-page-header .admin-header-icon,
+.admin-header-icon {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--brown-100);
+  color: var(--brown-700);
+  font-size: 17px;
+}
+
+.admin-page-header .admin-header-icon {
+  margin-top: 28px;
+}
+
+.admin-header-copy {
+  min-width: 0;
+  margin-top: 28px;
+}
+
+.admin-header-copy h1 {
+  margin: 6px 0 5px;
+  font-size: clamp(30px, 5vw, 43px);
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+
+.admin-header-copy p {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.admin-panel {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: 0 7px 24px rgba(61, 33, 23, .055);
+}
+
+.admin-overview-panel,
+.admin-user-list-panel,
+.admin-form-panel,
+.admin-process-panel,
+.admin-pending-panel {
+  padding: 19px;
+}
+
+.admin-user-list-panel,
+.admin-process-panel,
+.admin-pending-panel {
+  margin-top: 15px;
+}
+
+.admin-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 16px;
+  margin-bottom: 17px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.admin-panel-heading h2 {
+  margin: 5px 0 3px;
+  font-size: 19px;
+  letter-spacing: -.015em;
+}
+
+.admin-panel-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.admin-heading-icon {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--brown-100);
+  color: var(--brown-700);
+  font-size: 13px;
+}
+
+.admin-count-badge,
+.admin-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: var(--brown-100);
+  color: var(--brown-700);
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-panel-heading > .admin-count-badge,
+.admin-pending-heading > .admin-count-badge,
+.admin-list-heading > .admin-tab-badge {
+  margin-left: auto;
+}
+
+.admin-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-filter-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+  transition: .18s ease;
+}
+
+.admin-filter-card:hover {
+  border-color: var(--brown-300);
+  transform: translateY(-1px);
+}
+
+.admin-filter-card span {
+  display: block;
+  font-size: 10px;
+  opacity: .9;
+}
+
+.admin-filter-card span i {
+  margin-right: 4px;
+  color: var(--brown-600);
+}
+
+.admin-filter-card strong {
+  margin-top: 3px;
+  font-size: 20px;
+}
+
+.admin-filter-card.is-active {
+  border-color: var(--brown-700);
+  background: var(--brown-700);
+  color: #fff;
+}
+
+.admin-filter-card.is-active span i {
+  color: #fff;
+}
+
+.admin-primary-action,
+.admin-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--brown-700);
+  border-radius: 11px;
+  background: var(--brown-700);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+  transition: .18s ease;
+}
+
+.admin-primary-action:hover,
+.admin-primary-button:hover {
+  background: var(--brown-800);
+  border-color: var(--brown-800);
+}
+
+.admin-list-heading {
+  align-items: flex-start;
+}
+
+.admin-user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fefdfc;
+}
+
+.admin-user-avatar,
+.admin-invitation-icon,
+.admin-role-icon,
+.admin-empty-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background: var(--brown-100);
+  color: var(--brown-700);
+}
+
+.admin-user-avatar {
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  font-size: 15px;
+}
+
+.admin-user-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-user-name {
+  display: block;
+  overflow: hidden;
+  color: var(--brown-950);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.admin-role-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 3px;
+  padding: 4px 7px;
+  border-radius: 20px;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-role-pill.role-admin {
+  background: #eee4f5;
+  color: #634187;
+}
+
+.admin-role-pill.role-staff {
+  background: #eee4dc;
+  color: #744b31;
+}
+
+.admin-role-pill.role-client {
+  background: #f6edcf;
+  color: #785d17;
+}
+
+.admin-user-email {
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.admin-user-email i {
+  margin-right: 3px;
+}
+
+.admin-menu-button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid var(--brown-200);
+  border-radius: 9px;
+  background: var(--brown-50);
+  color: var(--brown-700);
+  cursor: pointer;
+}
+
+.admin-menu-button:hover {
+  background: var(--brown-100);
+}
+
+.admin-user-menu {
+  margin-top: -3px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #fff;
+}
+
+.admin-user-menu[hidden] {
+  display: none;
+}
+
+.admin-role-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.admin-role-form-row {
+  display: flex;
+  gap: 7px;
+}
+
+.admin-role-form select,
+.admin-role-form button {
+  min-height: 38px;
+  border-radius: 9px;
+  font-size: 10px;
+}
+
+.admin-role-form select {
+  flex: 1;
+  min-width: 0;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+}
+
+.admin-role-form button {
+  padding: 0 14px;
+  border: 0;
+  background: var(--brown-700);
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-empty-state {
+  padding: 34px 15px;
+  border: 1px dashed var(--brown-300);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.admin-empty-icon {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto;
+  border-radius: 13px;
+  font-size: 14px;
+}
+
+.admin-empty-state h3 {
+  margin: 10px 0 4px;
+  font-size: 14px;
+}
+
+.admin-empty-state p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.admin-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  font-size: 10px;
+}
+
+.admin-alert-success {
+  background: var(--brown-100);
+  color: var(--brown-700);
+}
+
+.admin-alert-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-field label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+
+.admin-input {
+  width: 100%;
+  height: 43px;
+  padding: 0 12px;
+  border: 1px solid var(--brown-200);
+  border-radius: 10px;
+  outline: none;
+  background: #fff;
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.admin-input:focus {
+  border-color: var(--brown-600);
+  box-shadow: 0 0 0 3px rgba(118, 80, 58, .10);
+}
+
+.admin-role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.admin-role-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 51px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 11px;
+  background: #fdfbf9;
+}
+
+.admin-role-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  font-size: 11px;
+}
+
+.admin-role-card strong {
+  display: block;
+  font-size: 9px;
+}
+
+.admin-role-card p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.admin-form-note,
+.admin-info-note {
+  display: flex;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: var(--brown-50);
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.admin-form-note i,
+.admin-info-note i {
+  color: var(--brown-700);
+}
+
+.admin-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-step {
+  display: grid;
+  grid-template-columns: 31px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 57px;
+  padding: 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: #fdfbf9;
+}
+
+.admin-step-number {
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--brown-100);
+  color: var(--brown-700);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.admin-step strong {
+  display: block;
+  font-size: 9px;
+}
+
+.admin-step p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.admin-info-note {
+  margin-top: 11px;
+}
+
+.admin-invitation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-invitation-card {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 57px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #fefdfc;
+}
+
+.admin-invitation-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 10px;
+}
+
+.admin-invitation-main {
+  min-width: 0;
+}
+
+.admin-invitation-main strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+}
+
+.admin-invitation-main small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+@media (max-width: 560px) {
+  .admin-page {
+    padding: 18px 11px 55px;
+  }
+
+  .admin-overview-panel,
+  .admin-user-list-panel,
+  .admin-form-panel,
+  .admin-process-panel,
+  .admin-pending-panel {
+    padding: 15px;
+  }
+
+  .admin-page-header {
+    align-items: flex-start;
+  }
+
+  .admin-page-header .admin-header-icon {
+    margin-top: 25px;
+  }
+
+  .admin-header-copy {
+    margin-top: 25px;
+  }
+
+  .admin-header-copy h1 {
+    font-size: 29px;
+  }
+
+  .admin-filter-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-invitation-card {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .admin-invitation-card .admin-role-pill {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: -2px;
+  }
+
+  .admin-role-form-row {
+    flex-direction: column;
+  }
+
+  .admin-role-form button {
+    width: 100%;
+  }
+}
