@@ -4,12 +4,12 @@
 
 <%- include("home-partials/hero") %>
 
-<%- include("home-partials/services", {
-    services: services,
-    user: user
-}) %>
-
 <%- include("home-partials/categories", {
     categories: categories,
     currentUser: currentUser
+}) %>
+
+<%- include("home-partials/services", {
+    services: services,
+    user: user
 }) %>
