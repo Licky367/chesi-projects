@@ -2,18 +2,27 @@
 // services/stockService.js
 // STOCK SERVICE
 //
-// IMPORTANT:
+// IMPORTANT DATA RELATION:
 //
-// Stock.category stores Category.name.
+// Category
+//    _id
+//    name
 //
-// Product.category still stores Category._id.
+//        ↓
+//
+// Stock.category
+//    stores Category.name
+//
+//        ↓
+//
+// Product.category
+//    stores Category._id
 //
 // Therefore:
 //
-// Category._id
-//      ↓
-// Stock.category = Category.name
-//      ↓
+// Stock.category !== Product.category
+//
+// Stock.category  = Category.name
 // Product.category = Category._id
 // ==========================================================
 
@@ -31,6 +40,7 @@ const Category =
 const Substation =
     require("../models/substations");
 
+
 // ==========================================================
 // HELPERS
 // ==========================================================
@@ -38,8 +48,11 @@ const Substation =
 const text = (value) =>
     String(value ?? "").trim();
 
+
 const cleanSubcategory = (value) =>
-    text(value).replace(/\s+/g, " ");
+    text(value)
+        .replace(/\s+/g, " ");
+
 
 const displayLabel = (value) =>
     text(value)
@@ -48,18 +61,31 @@ const displayLabel = (value) =>
             c.toUpperCase()
         );
 
+
 // ==========================================================
 // CATEGORY
 // ==========================================================
 //
-// Accepts Category._id OR Category.name.
+// Accepts:
 //
-// Returns Category.name.
+// 1. Category._id
+// 2. Category.name
 //
-// This is what gets stored in Stock.category.
+// Returns the complete active Category document.
+//
+// Stock.category must receive:
+//
+//     category.name
+//
+// Product.category must receive:
+//
+//     category._id
 // ==========================================================
 
-async function getCategory(value) {
+async function getCategory(
+    value,
+    session = null
+) {
     const raw =
         text(value);
 
@@ -72,32 +98,36 @@ async function getCategory(value) {
     let category;
 
     // ------------------------------------------------------
-    // CATEGORY OBJECT ID
+    // SEARCH BY CATEGORY ID
     // ------------------------------------------------------
 
     if (
-        mongoose.isValidObjectId(
-            raw
-        )
+        mongoose.isValidObjectId(raw)
     ) {
-        category =
-            await Category.findOne({
+        const query =
+            Category.findOne({
                 _id: raw,
                 isActive: true
             })
                 .select(
                     "_id name categoryIcon isActive"
-                )
-                .lean();
+                );
+
+        if (session) {
+            query.session(session);
+        }
+
+        category =
+            await query.lean();
     }
 
     // ------------------------------------------------------
-    // CATEGORY NAME
+    // SEARCH BY CATEGORY NAME
     // ------------------------------------------------------
 
     else {
-        category =
-            await Category.findOne({
+        const query =
+            Category.findOne({
                 name:
                     raw.toLowerCase(),
 
@@ -105,8 +135,14 @@ async function getCategory(value) {
             })
                 .select(
                     "_id name categoryIcon isActive"
-                )
-                .lean();
+                );
+
+        if (session) {
+            query.session(session);
+        }
+
+        category =
+            await query.lean();
     }
 
     if (!category) {
@@ -128,37 +164,68 @@ async function getCategory(value) {
     return category;
 }
 
+
 // ==========================================================
 // VALIDATE CATEGORY
+// ==========================================================
 //
-// Returns Category.name.
+// Returns:
+//
+//     Category.name
+//
+// This value is what gets stored in Stock.category.
 // ==========================================================
 
 async function validateCategory(
-    value
+    value,
+    session = null
 ) {
     const category =
-        await getCategory(value);
+        await getCategory(
+            value,
+            session
+        );
 
     return text(
         category.name
     ).toLowerCase();
 }
 
+
 // ==========================================================
 // GET CATEGORY BY NAME
+// ==========================================================
+//
+// Used when a Stock record contains:
+//
+//     Stock.category = Category.name
+//
+// and we need the actual Category document.
+//
+// Used especially when creating/updating Products because:
+//
+//     Product.category = Category._id
 // ==========================================================
 
 async function getCategoryByName(
     name,
     session = null
 ) {
+    const categoryName =
+        text(name)
+            .toLowerCase();
+
+    if (!categoryName) {
+        return null;
+    }
+
     const query =
         Category.findOne({
             name:
-                text(name).toLowerCase(),
+                categoryName,
 
-            isActive: true
+            isActive:
+                true
         })
             .select(
                 "_id name categoryIcon isActive"
@@ -170,6 +237,7 @@ async function getCategoryByName(
 
     return query.lean();
 }
+
 
 // ==========================================================
 // NUMBER
@@ -208,6 +276,7 @@ function number(
     return result;
 }
 
+
 // ==========================================================
 // WHOLE NUMBER
 // ==========================================================
@@ -225,9 +294,7 @@ function wholeNumber(
         );
 
     if (
-        !Number.isInteger(
-            result
-        )
+        !Number.isInteger(result)
     ) {
         throw new Error(
             `${label} must be a whole number.`
@@ -236,6 +303,7 @@ function wholeNumber(
 
     return result;
 }
+
 
 // ==========================================================
 // DIRECTIONS OF USE
@@ -302,10 +370,12 @@ function cleanDirectionsOfUse(
 
     return {
         title,
+
         items:
             cleanedItems
     };
 }
+
 
 // ==========================================================
 // DIRECTIONS FOR PRODUCT
@@ -342,12 +412,12 @@ function directionsForProduct(
                     (item) => ({
                         subtitle:
                             text(
-                                item.subtitle
+                                item?.subtitle
                             ),
 
                         content:
                             text(
-                                item.content
+                                item?.content
                             )
                     })
                 )
@@ -355,8 +425,14 @@ function directionsForProduct(
     };
 }
 
+
 // ==========================================================
 // RECALCULATE STOCK TOTALS
+// ==========================================================
+//
+// Stock.category is already Category.name.
+//
+// Therefore totals are grouped directly by category name.
 // ==========================================================
 
 async function recalculateStockTotals(
@@ -382,6 +458,10 @@ async function recalculateStockTotals(
 
     let overall = 0;
 
+    // ------------------------------------------------------
+    // CALCULATE TOTALS
+    // ------------------------------------------------------
+
     for (
         const stock of stocks
     ) {
@@ -398,20 +478,29 @@ async function recalculateStockTotals(
                 stock.category
             ).toLowerCase();
 
-        categoryTotals.set(
-            categoryName,
-            (
-                categoryTotals.get(
-                    categoryName
-                ) || 0
-            ) + value
-        );
+        if (
+            categoryName
+        ) {
+            categoryTotals.set(
+                categoryName,
+
+                (
+                    categoryTotals.get(
+                        categoryName
+                    ) || 0
+                ) + value
+            );
+        }
 
         overall += value;
     }
 
     const now =
         new Date();
+
+    // ------------------------------------------------------
+    // WRITE TOTALS BACK TO STOCK
+    // ------------------------------------------------------
 
     for (
         const stock of stocks
@@ -434,6 +523,7 @@ async function recalculateStockTotals(
                 _id:
                     stock._id
             },
+
             {
                 $set: {
                     cashOutflow:
@@ -451,6 +541,7 @@ async function recalculateStockTotals(
                         now
                 }
             },
+
             {
                 session,
                 timestamps: true
@@ -460,10 +551,12 @@ async function recalculateStockTotals(
 
     return {
         categoryTotals,
+
         overal:
             overall
     };
 }
+
 
 // ==========================================================
 // GET ACTIVE CATEGORIES
@@ -471,6 +564,7 @@ async function recalculateStockTotals(
 
 exports.getCategories =
     async () => {
+
         return Category
             .find({
                 isActive: true
@@ -484,49 +578,89 @@ exports.getCategories =
             .lean();
     };
 
+
 // ==========================================================
 // LIST STOCK
+// ==========================================================
 //
-// Stock.category contains Category.name.
+// Stock.category stores Category.name.
 //
-// Categories are loaded separately so the UI still receives
-// the Category document for icon/name information.
+// Categories are therefore loaded separately.
+//
+// Returned structure:
+//
+// [
+//     {
+//         category: {
+//             _id,
+//             name,
+//             categoryIcon,
+//             isActive
+//         },
+//
+//         label: "Category Name",
+//
+//         stocks: [...],
+//
+//         rows: [
+//             {
+//                 products: [...]
+//             }
+//         ]
+//     }
+// ]
+//
+// This allows EJS to safely use:
+//
+//     group.category.name
+//
+// instead of displaying:
+//
+//     group.category._id
 // ==========================================================
 
 exports.listStock =
     async () => {
+
         const [
             stocks,
             categories
-        ] = await Promise.all([
-            Stock.find({
-                isActive: true
-            })
-                .sort({
-                    category: 1,
-                    subcategory: 1,
-                    name: 1,
-                    createdAt: 1
-                })
-                .lean(),
+        ] =
+            await Promise.all([
 
-            Category.find({
-                isActive: true
-            })
-                .select(
-                    "_id name categoryIcon isActive"
-                )
-                .sort({
-                    name: 1
+                Stock.find({
+                    isActive: true
                 })
-                .lean()
-        ]);
+                    .sort({
+                        category: 1,
+                        subcategory: 1,
+                        name: 1,
+                        createdAt: 1
+                    })
+                    .lean(),
+
+                Category.find({
+                    isActive: true
+                })
+                    .select(
+                        "_id name categoryIcon isActive"
+                    )
+                    .sort({
+                        name: 1
+                    })
+                    .lean()
+            ]);
+
+        // --------------------------------------------------
+        // CATEGORY MAP
+        // --------------------------------------------------
 
         const categoryMap =
             new Map();
 
         for (
-            const category of categories
+            const category
+            of categories
         ) {
             const key =
                 text(
@@ -543,11 +677,16 @@ exports.listStock =
             );
         }
 
+        // --------------------------------------------------
+        // GROUP STOCK BY CATEGORY NAME
+        // --------------------------------------------------
+
         const groups =
             new Map();
 
         for (
-            const stock of stocks
+            const stock
+            of stocks
         ) {
             const categoryName =
                 text(
@@ -574,13 +713,12 @@ exports.listStock =
             ) {
                 groups.set(
                     categoryName,
+
                     {
                         category,
 
                         label:
-                            displayLabel(
-                                category.name
-                            ),
+                            category.name,
 
                         stocks: []
                     }
@@ -593,41 +731,68 @@ exports.listStock =
                 .push(stock);
         }
 
-        return Array.from(
-            groups.values()
-        ).map(
-            (group) => {
-                const rows = [];
+        // --------------------------------------------------
+        // BUILD SIX-PRODUCT ROWS
+        // --------------------------------------------------
 
-                for (
-                    let i = 0;
-                    i <
-                    group.stocks.length;
-                    i += 6
-                ) {
-                    rows.push({
-                        products:
-                            group.stocks.slice(
-                                i,
-                                i + 6
-                            )
-                    });
+        return Array
+            .from(
+                groups.values()
+            )
+            .map(
+                (group) => {
+
+                    const rows =
+                        [];
+
+                    for (
+                        let i = 0;
+                        i <
+                        group.stocks.length;
+                        i += 6
+                    ) {
+                        rows.push({
+                            products:
+                                group.stocks.slice(
+                                    i,
+                                    i + 6
+                                )
+                        });
+                    }
+
+                    return {
+                        ...group,
+
+                        rows
+                    };
                 }
-
-                return {
-                    ...group,
-                    rows
-                };
-            }
-        );
+            );
     };
+
 
 // ==========================================================
 // GET SINGLE STOCK
 // ==========================================================
+//
+// Stock.category:
+//
+//     "skin care"
+//
+// categoryDocument:
+//
+//     {
+//         _id: "...",
+//         name: "skin care",
+//         ...
+//     }
+//
+// This is important for /stock/new because the form needs
+// Category._id while Stock itself stores Category.name.
+// ==========================================================
 
 exports.getStock =
     async (id) => {
+
         if (
             !mongoose.isValidObjectId(
                 id
@@ -639,7 +804,9 @@ exports.getStock =
         const stock =
             await Stock.findOne({
                 _id: id,
-                isActive: true
+
+                isActive:
+                    true
             })
                 .lean();
 
@@ -660,12 +827,20 @@ exports.getStock =
         };
     };
 
+
 // ==========================================================
 // GET STOCK RECORDS
+// ==========================================================
+//
+// This returns Stock.category as Category.name.
+//
+// It does NOT populate category because Stock.category is
+// no longer an ObjectId.
 // ==========================================================
 
 exports.getStockCategories =
     async () => {
+
         return Stock.find({
             isActive: true
         })
@@ -680,12 +855,14 @@ exports.getStockCategories =
             .lean();
     };
 
+
 // ==========================================================
 // GET SUBSTATIONS
 // ==========================================================
 
 exports.getSubstations =
     () => {
+
         return Substation.find({
             isActive: true
         })
@@ -698,6 +875,7 @@ exports.getSubstations =
             .lean();
     };
 
+
 // ==========================================================
 // EXPORT RECALCULATION
 // ==========================================================
@@ -705,19 +883,41 @@ exports.getSubstations =
 exports.recalculateStockTotals =
     recalculateStockTotals;
 
+
 // ==========================================================
 // CREATE STOCK
+// ==========================================================
+//
+// IMPORTANT:
+//
+// body.category may be:
+//
+//     Category._id
+//
+// or:
+//
+//     Category.name
+//
+// validateCategory() converts it to:
+//
+//     Category.name
+//
+// That name is stored in Stock.category.
 // ==========================================================
 
 exports.createStock =
     async (body) => {
+
         const name =
             cleanSubcategory(
                 body.name ||
                 body.subcategory
             );
 
-        // Category._id → Category.name
+        // --------------------------------------------------
+        // CATEGORY ID → CATEGORY NAME
+        // --------------------------------------------------
+
         const category =
             await validateCategory(
                 body.category
@@ -731,20 +931,25 @@ exports.createStock =
         const units =
             wholeNumber(
                 body.units,
+
                 "Warehouse units",
+
                 true
             );
 
         const buyPrice =
             number(
                 body.buyPrice,
+
                 "Buy price",
+
                 true
             );
 
         const days =
             wholeNumber(
                 body.days || 0,
+
                 "Delivery days"
             );
 
@@ -769,11 +974,18 @@ exports.createStock =
             );
         }
 
+        // --------------------------------------------------
+        // DUPLICATE CHECK
+        // --------------------------------------------------
+
         const existing =
             await Stock.findOne({
                 category,
+
                 subcategory,
-                isActive: true
+
+                isActive:
+                    true
             });
 
         if (existing) {
@@ -782,12 +994,19 @@ exports.createStock =
             );
         }
 
+        // --------------------------------------------------
+        // CREATE STOCK
+        // --------------------------------------------------
+
         const stock =
             await Stock.create({
+
                 name:
                     name ||
                     subcategory,
 
+                // IMPORTANT:
+                // Category.name
                 category,
 
                 subcategory,
@@ -814,8 +1033,21 @@ exports.createStock =
         ).lean();
     };
 
+
 // ==========================================================
 // UPDATE STOCK ENTRY
+// ==========================================================
+//
+// Category input can be:
+//
+//     Category._id
+//
+// or:
+//
+//     Category.name
+//
+// It is always converted to Category.name before updating
+// Stock.category.
 // ==========================================================
 
 exports.updateStockEntry =
@@ -823,6 +1055,7 @@ exports.updateStockEntry =
         stockId,
         body
     ) => {
+
         if (
             !mongoose.isValidObjectId(
                 stockId
@@ -850,9 +1083,6 @@ exports.updateStockEntry =
 
         // --------------------------------------------------
         // CATEGORY
-        //
-        // If the form supplies an ID, convert it to name.
-        // If no category was supplied, retain existing name.
         // --------------------------------------------------
 
         let category;
@@ -860,11 +1090,15 @@ exports.updateStockEntry =
         if (
             text(body.category)
         ) {
+
+            // Category._id/name → Category.name
             category =
                 await validateCategory(
                     body.category
                 );
+
         } else {
+
             category =
                 text(
                     stock.category
@@ -876,6 +1110,10 @@ exports.updateStockEntry =
                 );
             }
         }
+
+        // --------------------------------------------------
+        // OTHER VALUES
+        // --------------------------------------------------
 
         const subcategory =
             cleanSubcategory(
@@ -894,7 +1132,9 @@ exports.updateStockEntry =
         const buyPrice =
             number(
                 body.buyPrice,
+
                 "Buy price",
+
                 true
             );
 
@@ -918,8 +1158,13 @@ exports.updateStockEntry =
             );
         }
 
+        // --------------------------------------------------
+        // DUPLICATE CHECK
+        // --------------------------------------------------
+
         const duplicate =
             await Stock.findOne({
+
                 _id: {
                     $ne:
                         stock._id
@@ -946,6 +1191,8 @@ exports.updateStockEntry =
         stock.name =
             subcategory;
 
+        // IMPORTANT:
+        // Category.name
         stock.category =
             category;
 
@@ -991,9 +1238,9 @@ exports.updateStockEntry =
         await stock.save();
 
         // --------------------------------------------------
-        // PRODUCT CATEGORY
+        // GET CATEGORY DOCUMENT
         //
-        // Product.category still expects Category._id.
+        // Needed because Product.category must be _id.
         // --------------------------------------------------
 
         const categoryDocument =
@@ -1008,11 +1255,14 @@ exports.updateStockEntry =
         }
 
         // --------------------------------------------------
-        // SYNCHRONIZE PRODUCTS
+        // PRODUCT DATA
+        //
+        // Product.category = Category._id
         // --------------------------------------------------
 
         const productSync = {
             $set: {
+
                 name:
                     stock.name,
 
@@ -1046,17 +1296,27 @@ exports.updateStockEntry =
             );
 
         if (productDirections) {
-            productSync.$set
+
+            productSync
+                .$set
                 .directionsOfUse =
-                productDirections;
+                    productDirections;
+
         } else {
-            productSync.$unset = {
-                directionsOfUse:
-                    1
-            };
+
+            productSync
+                .$unset = {
+                    directionsOfUse:
+                        1
+                };
         }
 
+        // --------------------------------------------------
+        // SYNCHRONIZE PRODUCTS
+        // --------------------------------------------------
+
         await Product.updateMany(
+
             {
                 stock:
                     stock._id,
@@ -1069,21 +1329,29 @@ exports.updateStockEntry =
         );
 
         // --------------------------------------------------
-        // SYNCHRONIZE SUBSTATION INVENTORY
+        // FIND RELATED PRODUCTS
         // --------------------------------------------------
 
         const productIds =
             await Product.find({
+
                 stock:
                     stock._id
+
             }).distinct(
                 "_id"
             );
 
+        // --------------------------------------------------
+        // SYNCHRONIZE SUBSTATION INVENTORY
+        // --------------------------------------------------
+
         if (
             productIds.length
         ) {
+
             await Substation.updateMany(
+
                 {
                     "productInventory.productId":
                         {
@@ -1094,6 +1362,7 @@ exports.updateStockEntry =
 
                 {
                     $set: {
+
                         "productInventory.$[item].productName":
                             stock.name,
 
@@ -1121,11 +1390,15 @@ exports.updateStockEntry =
                                     $in:
                                         productIds
                                 }
-                        }
+                        ]
                     ]
                 }
             );
         }
+
+        // --------------------------------------------------
+        // RECALCULATE TOTALS
+        // --------------------------------------------------
 
         await recalculateStockTotals();
 
@@ -1133,6 +1406,7 @@ exports.updateStockEntry =
             stock._id
         ).lean();
     };
+
 
 // ==========================================================
 // NORMALIZE ALLOCATIONS
@@ -1157,6 +1431,7 @@ function normalizeAllocations(
                 substationId,
                 rawValue
             ]) => ({
+
                 substationId:
                     text(
                         substationId
@@ -1164,6 +1439,7 @@ function normalizeAllocations(
 
                 units:
                     wholeNumber(
+
                         rawValue,
 
                         `Units for substation ${substationId}`
@@ -1177,8 +1453,30 @@ function normalizeAllocations(
         );
 }
 
+
 // ==========================================================
 // CREATE PRODUCT FROM STOCK
+// ==========================================================
+//
+// IMPORTANT:
+//
+// Stock.category:
+//
+//     Category.name
+//
+// Product.category:
+//
+//     Category._id
+//
+// Therefore this method explicitly resolves:
+//
+//     Stock.category
+//          ↓
+//     Category document
+//          ↓
+//     Category._id
+//
+// before creating/updating Product.
 // ==========================================================
 
 exports.createProductFromStock =
@@ -1186,6 +1484,7 @@ exports.createProductFromStock =
         stockId,
         body
     ) => {
+
         if (
             !mongoose.isValidObjectId(
                 stockId
@@ -1196,12 +1495,22 @@ exports.createProductFromStock =
             );
         }
 
+        // --------------------------------------------------
+        // SELLING PRICE
+        // --------------------------------------------------
+
         const unitSellPrice =
             number(
                 body.unitSellPrice,
+
                 "Selling price",
+
                 true
             );
+
+        // --------------------------------------------------
+        // ALLOCATIONS
+        // --------------------------------------------------
 
         const allocations =
             normalizeAllocations(
@@ -1220,6 +1529,7 @@ exports.createProductFromStock =
             allocations.reduce(
                 (sum, item) =>
                     sum + item.units,
+
                 0
             );
 
@@ -1228,6 +1538,10 @@ exports.createProductFromStock =
                 (item) =>
                     item.substationId
             );
+
+        // --------------------------------------------------
+        // VALIDATE IDS
+        // --------------------------------------------------
 
         if (
             ids.some(
@@ -1242,6 +1556,10 @@ exports.createProductFromStock =
             );
         }
 
+        // --------------------------------------------------
+        // DUPLICATE SUBSTATIONS
+        // --------------------------------------------------
+
         if (
             new Set(ids).size !==
             ids.length
@@ -1251,26 +1569,33 @@ exports.createProductFromStock =
             );
         }
 
+        // --------------------------------------------------
+        // START TRANSACTION
+        // --------------------------------------------------
+
         const session =
             await mongoose.startSession();
 
         let product;
 
         try {
+
             await session.withTransaction(
                 async () => {
 
-                    // ------------------------------------------
+                    // --------------------------------------
                     // GET STOCK
-                    // ------------------------------------------
+                    // --------------------------------------
 
                     const stock =
                         await Stock.findOne({
+
                             _id:
                                 stockId,
 
                             isActive:
                                 true
+
                         })
                             .session(
                                 session
@@ -1282,13 +1607,20 @@ exports.createProductFromStock =
                         );
                     }
 
-                    // ------------------------------------------
-                    // RESOLVE CATEGORY NAME → CATEGORY DOCUMENT
-                    // ------------------------------------------
+                    // --------------------------------------
+                    // RESOLVE STOCK CATEGORY NAME
+                    //
+                    // Stock.category = Category.name
+                    //
+                    // We now retrieve the Category document
+                    // so Product.category can receive _id.
+                    // --------------------------------------
 
                     const category =
                         await getCategoryByName(
+
                             stock.category,
+
                             session
                         );
 
@@ -1303,9 +1635,9 @@ exports.createProductFromStock =
                             stock.units || 0
                         );
 
-                    // ------------------------------------------
-                    // STOCK CHECK
-                    // ------------------------------------------
+                    // --------------------------------------
+                    // STOCK AVAILABILITY
+                    // --------------------------------------
 
                     if (
                         allocationTotal >
@@ -1316,12 +1648,13 @@ exports.createProductFromStock =
                         );
                     }
 
-                    // ------------------------------------------
+                    // --------------------------------------
                     // GET SUBSTATIONS
-                    // ------------------------------------------
+                    // --------------------------------------
 
                     const substations =
                         await Substation.find({
+
                             _id: {
                                 $in:
                                     ids
@@ -1329,6 +1662,7 @@ exports.createProductFromStock =
 
                             isActive:
                                 true
+
                         })
                             .session(
                                 session
@@ -1341,19 +1675,21 @@ exports.createProductFromStock =
                                     String(
                                         s._id
                                     ),
+
                                     s
                                 ]
                             )
                         );
 
-                    // ------------------------------------------
+                    // --------------------------------------
                     // VALIDATE SUBSTATIONS
-                    // ------------------------------------------
+                    // --------------------------------------
 
                     for (
                         const allocation
                         of allocations
                     ) {
+
                         if (
                             !substationMap.has(
                                 allocation.substationId
@@ -1365,29 +1701,32 @@ exports.createProductFromStock =
                         }
                     }
 
-                    // ------------------------------------------
+                    // --------------------------------------
                     // FIND EXISTING PRODUCT
-                    // ------------------------------------------
+                    // --------------------------------------
 
                     let existingProduct =
                         await Product.findOne({
+
                             stock:
                                 stock._id,
 
                             isActive:
                                 true
+
                         })
                             .session(
                                 session
                             );
 
-                    // ------------------------------------------
+                    // --------------------------------------
                     // PRODUCT DATA
                     //
                     // Product.category = Category._id
-                    // ------------------------------------------
+                    // --------------------------------------
 
                     const inherited = {
+
                         name:
                             stock.name,
 
@@ -1419,13 +1758,14 @@ exports.createProductFromStock =
                             )
                     };
 
-                    // ------------------------------------------
+                    // --------------------------------------
                     // UPDATE EXISTING PRODUCT
-                    // ------------------------------------------
+                    // --------------------------------------
 
                     if (
                         existingProduct
                     ) {
+
                         existingProduct.units =
                             Number(
                                 existingProduct.units ||
@@ -1438,6 +1778,7 @@ exports.createProductFromStock =
 
                         Object.assign(
                             existingProduct,
+
                             inherited
                         );
 
@@ -1447,17 +1788,21 @@ exports.createProductFromStock =
 
                         product =
                             existingProduct;
+
                     }
 
-                    // ------------------------------------------
-                    // CREATE PRODUCT
-                    // ------------------------------------------
+                    // --------------------------------------
+                    // CREATE NEW PRODUCT
+                    // --------------------------------------
 
                     else {
+
                         const created =
                             await Product.create(
+
                                 [
                                     {
+
                                         stock:
                                             stock._id,
 
@@ -1469,6 +1814,7 @@ exports.createProductFromStock =
                                         unitSellPrice
                                     }
                                 ],
+
                                 {
                                     session
                                 }
@@ -1478,9 +1824,9 @@ exports.createProductFromStock =
                             created[0];
                     }
 
-                    // ------------------------------------------
+                    // --------------------------------------
                     // DEDUCT STOCK
-                    // ------------------------------------------
+                    // --------------------------------------
 
                     stock.units =
                         warehouseUnits -
@@ -1490,35 +1836,39 @@ exports.createProductFromStock =
                         session
                     });
 
-                    // ------------------------------------------
+                    // --------------------------------------
                     // UPDATE SUBSTATION INVENTORY
-                    // ------------------------------------------
+                    // --------------------------------------
 
                     for (
                         const allocation
                         of allocations
                     ) {
+
                         const substation =
                             substationMap.get(
                                 allocation.substationId
                             );
 
                         const inventory =
-                            substation.productInventory.find(
-                                (entry) =>
-                                    String(
-                                        entry.productId
-                                    ) ===
-                                    String(
-                                        product._id
-                                    )
-                            );
+                            substation
+                                .productInventory
+                                .find(
+                                    (entry) =>
+                                        String(
+                                            entry.productId
+                                        ) ===
+                                        String(
+                                            product._id
+                                        )
+                                );
 
-                        // --------------------------------------
+                        // ----------------------------------
                         // EXISTING INVENTORY
-                        // --------------------------------------
+                        // ----------------------------------
 
                         if (inventory) {
+
                             inventory.units =
                                 Number(
                                     inventory.units ||
@@ -1529,6 +1879,8 @@ exports.createProductFromStock =
                             inventory.productName =
                                 product.name;
 
+                            // IMPORTANT:
+                            // Product.category = Category._id
                             inventory.category =
                                 product.category;
 
@@ -1543,38 +1895,45 @@ exports.createProductFromStock =
 
                             inventory.updatedAt =
                                 new Date();
+
                         }
 
-                        // --------------------------------------
+                        // ----------------------------------
                         // NEW INVENTORY
-                        // --------------------------------------
+                        // ----------------------------------
 
                         else {
-                            substation.productInventory.push({
-                                productId:
-                                    product._id,
 
-                                productName:
-                                    product.name,
+                            substation
+                                .productInventory
+                                .push({
 
-                                category:
-                                    product.category,
+                                    productId:
+                                        product._id,
 
-                                subcategory:
-                                    product.subcategory,
+                                    productName:
+                                        product.name,
 
-                                days:
-                                    Number(
-                                        product.days ||
-                                        0
-                                    ),
+                                    // Product.category
+                                    // = Category._id
+                                    category:
+                                        product.category,
 
-                                units:
-                                    allocation.units,
+                                    subcategory:
+                                        product.subcategory,
 
-                                updatedAt:
-                                    new Date()
-                            });
+                                    days:
+                                        Number(
+                                            product.days ||
+                                            0
+                                        ),
+
+                                    units:
+                                        allocation.units,
+
+                                    updatedAt:
+                                        new Date()
+                                });
                         }
 
                         await substation.save({
@@ -1582,9 +1941,9 @@ exports.createProductFromStock =
                         });
                     }
 
-                    // ------------------------------------------
+                    // --------------------------------------
                     // RECALCULATE TOTALS
-                    // ------------------------------------------
+                    // --------------------------------------
 
                     await recalculateStockTotals(
                         session
@@ -1595,6 +1954,7 @@ exports.createProductFromStock =
             return product;
 
         } finally {
+
             await session.endSession();
         }
     };
