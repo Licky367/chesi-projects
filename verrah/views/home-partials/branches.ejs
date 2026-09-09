@@ -1,248 +1,233 @@
 <%
 /* ==========================================================
-views/home-partials/branches.ejs
+   views/home-partials/branches.ejs
 
-VERRAH COSMETICS
-SUBSTATION / BRANCH CARDS
+   VERRAH COSMETICS
+   SUBSTATION / BRANCH CARDS
 
----
-
-BEHAVIOUR:
-- Horizontal left/right scrolling
-- Admin sees Add Branch as first card
-- Every branch remains ONE card
-- Admin sees Edit button inside each branch card
-- Normal users see the same branch card without Edit
-- Branch card links to:
-/branch/:id
-- Edit button links to:
-/substations/branch/:id/edit
-- Add Branch links to:
-/substations/new
-
-EXPECTED DATA:
-substations = [
-{
-_id,
-name,
-location,
-substationIcon
-}
-]
-
-EXPECTED USER:
-currentUser.role
+   BEHAVIOUR:
+   - Horizontal left/right scrolling
+   - Admin sees Add Branch as first card
+   - Every branch remains ONE card
+   - Admin sees Edit button inside each branch card
+   - Normal users see the same branch card without Edit
+   - Branch card links to:
+       /branch/:id
+   - Edit button links to:
+       /substations/branch/:id/edit
+   - Add Branch links to:
+       /substations/new
 ========================================================== */
 %>
 
-<section class="home-categories"><!-- ======================================================
-     SECTION TITLE
-======================================================= -->
+<section class="home-categories">
 
-<h2 class="home-categories-title">
-    Our Locations
-</h2>
+    <!-- ======================================================
+         SECTION TITLE
+    ======================================================= -->
 
-
-<!-- ======================================================
-     SECTION DESCRIPTION
-======================================================= -->
-
-<p class="home-category-description">
-    Visit us wherever you wish. Find a Verrah Cosmetics
-    location that is convenient for you.
-</p>
+    <h2 class="home-categories-title">
+        Our Locations
+    </h2>
 
 
-<!-- ======================================================
-     BRANCH SCROLLER
-======================================================= -->
+    <!-- ======================================================
+         SECTION DESCRIPTION
+    ======================================================= -->
 
-<div
-    class="home-category-scroller"
-    aria-label="Our Locations"
->
-
-
-    <!-- ==================================================
-         ADMIN — ADD BRANCH
-    =================================================== -->
-
-    <% if (
-        typeof currentUser !== "undefined" &&
-        currentUser &&
-        currentUser.role === "admin"
-    ) { %>
-
-        <a
-            href="/substations/new"
-            class="home-category-card home-category-add"
-            aria-label="Add new branch"
-        >
-
-            <div class="home-category-add-icon">
-                <i class="fas fa-plus"></i>
-            </div>
-
-            <div class="home-category-add-title">
-                Add Branch
-            </div>
-
-            <div class="home-category-add-description">
-                Create a new Verrah Cosmetics location
-            </div>
-
-        </a>
-
-    <% } %>
+    <p class="home-category-description">
+        Visit us wherever you wish. Find a Verrah Cosmetics
+        location that is convenient for you.
+    </p>
 
 
-    <!-- ==================================================
-         SUBSTATION / BRANCH CARDS
-    =================================================== -->
+    <!-- ======================================================
+         BRANCH SCROLLER
+    ======================================================= -->
 
-    <% if (
-        Array.isArray(substations) &&
-        substations.length > 0
-    ) { %>
-
-
-        <% substations.forEach(function(substation) { %>
+    <div
+        class="home-category-scroller"
+        aria-label="Our Locations"
+    >
 
 
-            <!-- ==========================================
-                 ONE BRANCH = ONE CARD
-            =========================================== -->
+        <!-- ==================================================
+             ADMIN — ADD BRANCH
+        =================================================== -->
 
-            <div class="home-category-card">
+        <% if (
+            typeof currentUser !== "undefined" &&
+            currentUser &&
+            currentUser.role === "admin"
+        ) { %>
 
+            <a
+                href="/substations/new"
+                class="home-category-card home-category-add"
+                aria-label="Add new branch"
+                style="
+                    text-decoration: none;
+                    color: inherit;
+                "
+            >
 
-                <!-- ======================================
-                     BRANCH LINK
-                ======================================= -->
+                <div class="home-category-add-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
 
-                <a
-                    href="/branch/<%= substation._id %>"
-                    class="home-category-card-link"
-                    aria-label="<%= substation.name %>"
-                >
+                <div class="home-category-add-title">
+                    Add Branch
+                </div>
 
+                <div class="home-category-add-description">
+                    Create a new Verrah Cosmetics location
+                </div>
 
-                    <!-- ==================================
-                         SUBSTATION ICON
-                    =================================== -->
+            </a>
 
-                    <div class="home-category-icon">
-
-                        <% if (
-                            substation.substationIcon &&
-                            String(substation.substationIcon).trim()
-                        ) { %>
-
-                            <img
-                                src="<%= substation.substationIcon %>"
-                                alt="<%= substation.name %>"
-                                loading="lazy"
-                                onerror="
-                                    this.style.display='none';
-                                    this.nextElementSibling.style.display='flex';
-                                "
-                            >
-
-                            <div
-                                class="home-category-icon-fallback"
-                                style="display:none;"
-                            >
-                                <i class="fas fa-store"></i>
-                            </div>
-
-                        <% } else { %>
-
-                            <div class="home-category-icon-fallback">
-                                <i class="fas fa-store"></i>
-                            </div>
-
-                        <% } %>
-
-                    </div>
+        <% } %>
 
 
-                    <!-- ==================================
-                         SUBSTATION INFORMATION
-                    =================================== -->
+        <!-- ==================================================
+             BRANCH CARDS
+        =================================================== -->
 
-                    <div class="home-category-content">
-
-                        <h3 class="home-category-name">
-                            <%= substation.name || "Our Branch" %>
-                        </h3>
-
-                        <p class="home-category-description">
-
-                            <i class="fas fa-location-dot"></i>
-
-                            <%= substation.location ||
-                                "Location available on request." %>
-
-                        </p>
-
-                    </div>
+        <% if (
+            Array.isArray(substations) &&
+            substations.length > 0
+        ) { %>
 
 
-                </a>
+            <% substations.forEach(function(substation) { %>
+
+                <div class="home-category-card">
 
 
-                <!-- ======================================
-                     ADMIN — EDIT BUTTON
-                     CLASS IS ONLY FOR THIS BUTTON
-                ======================================= -->
-
-                <% if (
-                    typeof currentUser !== "undefined" &&
-                    currentUser &&
-                    currentUser.role === "admin"
-                ) { %>
+                    <!-- ======================================
+                         CLICKABLE BRANCH CONTENT
+                    ======================================= -->
 
                     <a
-                        href="/substations/branch/<%= substation._id %>/edit"
-                        class="edit-branch"
-                        aria-label="Edit <%= substation.name %>"
-                        onclick="event.stopPropagation();"
+                        href="/branch/<%= substation._id %>"
+                        class="home-category-card-link"
+                        aria-label="<%= substation.name || 'Our Branch' %>"
+                        style="
+                            text-decoration: none;
+                            color: inherit;
+                        "
                     >
-                        <i class="fas fa-pen"></i>
-                        Edit
+
+                        <!-- ==================================
+                             BRANCH IMAGE / ICON
+                        =================================== -->
+
+                        <div class="home-category-icon">
+
+                            <% if (
+                                substation.substationIcon &&
+                                String(substation.substationIcon).trim()
+                            ) { %>
+
+                                <img
+                                    src="<%= substation.substationIcon %>"
+                                    alt="<%= substation.name || 'Branch' %>"
+                                    loading="lazy"
+                                    onerror="
+                                        this.style.display='none';
+                                        this.nextElementSibling.style.display='flex';
+                                    "
+                                >
+
+                                <div
+                                    class="home-category-icon-fallback"
+                                    style="display:none;"
+                                >
+                                    <i class="fas fa-store"></i>
+                                </div>
+
+                            <% } else { %>
+
+                                <div class="home-category-icon-fallback">
+                                    <i class="fas fa-store"></i>
+                                </div>
+
+                            <% } %>
+
+                        </div>
+
+
+                        <!-- ==================================
+                             BRANCH INFORMATION
+                        =================================== -->
+
+                        <div class="home-category-content">
+
+                            <h3 class="home-category-name">
+                                <%= substation.name || "Our Branch" %>
+                            </h3>
+
+                            <p class="home-category-description">
+
+                                <i class="fas fa-location-dot"></i>
+
+                                <%= substation.location ||
+                                    "Location available on request." %>
+
+                            </p>
+
+                        </div>
+
                     </a>
 
-                <% } %>
 
+                    <!-- ======================================
+                         ADMIN — EDIT BUTTON
+                    ======================================= -->
+
+                    <% if (
+                        typeof currentUser !== "undefined" &&
+                        currentUser &&
+                        currentUser.role === "admin"
+                    ) { %>
+
+                        <a
+                            href="/substations/branch/<%= substation._id %>/edit"
+                            class="edit-branch"
+                            aria-label="Edit <%= substation.name || 'branch' %>"
+                            onclick="event.stopPropagation();"
+                        >
+                            <i class="fas fa-pen"></i>
+                            <span>Edit</span>
+                        </a>
+
+                    <% } %>
+
+
+                </div>
+
+            <% }); %>
+
+
+        <% } else { %>
+
+
+            <!-- ==================================================
+                 EMPTY STATE
+            =================================================== -->
+
+            <div class="home-category-empty">
+
+                <i class="fas fa-store"></i>
+
+                <span>
+                    No locations are available yet.
+                </span>
 
             </div>
 
 
-        <% }); %>
+        <% } %>
 
-
-    <% } else { %>
-
-
-        <!-- ============================================
-             EMPTY STATE
-        ============================================= -->
-
-        <div class="home-category-empty">
-
-            <i class="fas fa-store"></i>
-
-            <span>
-                No locations are available yet.
-            </span>
-
-        </div>
-
-
-    <% } %>
-
-
-</div>
+    </div>
 
 </section>
