@@ -6,22 +6,19 @@
    SUBSTATION / BRANCH CARDS
 
    ----------------------------------------------------------
-   TITLE:
-       Our Locations
-
-   DESCRIPTION:
-       Visit us wherever you wish.
-
    BEHAVIOUR:
        - Horizontal left/right scrolling
        - Admin sees Add Branch as first card
+       - Admin sees Edit button on every branch card
        - Substation icon is displayed
        - Substation name is displayed
        - Substation location is displayed
        - Branch card links to:
              /branch/:id
+       - Edit button links to:
+             /branch/:id/edit
        - Add Branch links to:
-             /substations/add
+             /substations/new
 
    EXPECTED DATA:
        substations = [
@@ -189,6 +186,33 @@
                                 "Location available on request." %>
 
                         </p>
+
+
+                        <!-- ==================================
+                             ADMIN — EDIT BRANCH
+                        =================================== -->
+
+                        <% if (
+                            typeof currentUser !== "undefined" &&
+                            currentUser &&
+                            currentUser.role === "admin"
+                        ) { %>
+
+                            <div class="home-category-admin-actions">
+
+                                <a
+                                    href="/branch/<%= substation._id %>/edit"
+                                    class="home-category-edit-btn"
+                                    aria-label="Edit <%= substation.name %>"
+                                    onclick="event.stopPropagation();"
+                                >
+                                    <i class="fas fa-pen"></i>
+                                    Edit
+                                </a>
+
+                            </div>
+
+                        <% } %>
 
 
                     </div>
