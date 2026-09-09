@@ -109,7 +109,7 @@ exports.update = async (req, res) => {
     await service.update(req.params.id, req.body);
 
     res.redirect(
-      `/branch/${req.params.id}/edit?saved=1`
+      `/substations/branch/${req.params.id}/edit?saved=1`
     );
 
   } catch (e) {
