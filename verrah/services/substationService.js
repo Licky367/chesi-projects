@@ -182,3 +182,66 @@ exports.updateProductUnits = async (productId, body) => {
     await session.endSession();
   }
 };
+
+
+// ==========================================================
+// EDIT SUBSTATION
+// Added only — existing service methods above are unchanged.
+// ==========================================================
+
+exports.getById = async (id) => {
+  if (!mongoose.isValidObjectId(id)) return null;
+
+  return Substation.findOne({
+    _id: id,
+    isActive: true
+  }).lean();
+};
+
+
+exports.update = async (id, body) => {
+  if (!mongoose.isValidObjectId(id)) {
+    throw new Error("Invalid substation.");
+  }
+
+  const name = text(body.name);
+
+  if (!name) {
+    throw new Error("Substation name is required.");
+  }
+
+  const existing = await Substation.findOne({
+    name,
+    _id: { $ne: id }
+  });
+
+  if (existing) {
+    throw new Error(
+      "A substation with that name already exists."
+    );
+  }
+
+  const substation = await Substation.findOneAndUpdate(
+    {
+      _id: id,
+      isActive: true
+    },
+    {
+      $set: {
+        name,
+        location: text(body.location),
+        description: text(body.description)
+      }
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  ).lean();
+
+  if (!substation) {
+    throw new Error("Substation not found.");
+  }
+
+  return substation;
+};
