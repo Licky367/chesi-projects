@@ -1314,3 +1314,107 @@
   }
 
 }
+
+
+/* ==========================================================
+   CATEGORY EDIT BUTTON
+   ========================================================== */
+
+.edit-category {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    width: calc(100% - 28px);
+    min-height: 46px;
+
+    margin: 0 14px 14px;
+
+    padding: 10px 16px;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+    color: #6b3518;
+
+    border: 2px solid #8b4a24;
+    border-radius: 12px;
+
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+/* EDIT ICON */
+
+.edit-category i {
+    font-size: 14px;
+}
+
+
+/* HOVER */
+
+.edit-category:hover {
+    background: #6b3518;
+    color: #ffffff;
+    border-color: #6b3518;
+
+    text-decoration: none;
+
+    transform: translateY(-1px);
+}
+
+
+/* ACTIVE */
+
+.edit-category:active {
+    transform: translateY(0);
+}
+
+
+/* REMOVE DEFAULT LINK STYLING */
+
+.edit-category:visited,
+.edit-category:focus {
+    color: #6b3518;
+    text-decoration: none;
+}
+
+
+/* KEEP WHITE TEXT ON HOVER EVEN AFTER VISITED */
+
+.edit-category:hover,
+.edit-category:hover:visited,
+.edit-category:hover:focus {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+
+    .edit-category {
+        width: calc(100% - 24px);
+
+        margin-left: 12px;
+        margin-right: 12px;
+        margin-bottom: 12px;
+
+        min-height: 44px;
+
+        font-size: 14px;
+    }
+
+}
