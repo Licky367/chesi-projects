@@ -402,3 +402,56 @@
     }
 
 }
+
+.edit-branch {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 7px;
+
+margin: 0 14px 14px;
+padding: 8px 13px;
+
+border: 1px solid #0a4d1e;
+border-radius: 8px;
+
+background: #ffffff;
+color: #0a4d1e;
+
+font-size: 13px;
+font-weight: 700;
+line-height: 1;
+
+text-decoration: none;
+cursor: pointer;
+
+transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+}
+
+.edit-branch i {
+font-size: 12px;
+}
+
+.edit-branch:hover {
+background: #0a4d1e;
+color: #ffffff;
+border-color: #0a4d1e;
+transform: translateY(-1px);
+box-shadow: 0 4px 10px rgba(10, 77, 30, 0.15);
+}
+
+.edit-branch:active {
+transform: translateY(0);
+box-shadow: none;
+}
+
+.edit-branch:focus-visible {
+outline: 2px solid #0a4d1e;
+outline-offset: 2px;
+}
