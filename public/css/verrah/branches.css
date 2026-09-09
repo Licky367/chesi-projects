@@ -1,0 +1,404 @@
+/* ==========================================================
+   public/css/branch.css
+
+   VERRAH COSMETICS
+   BRANCH / LOCATION PAGE
+========================================================== */
+
+
+/* ==========================================================
+   PAGE
+========================================================== */
+
+.branch-page {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px 40px;
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   BRANCH HEADER
+========================================================== */
+
+.branch-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    padding: 24px;
+
+    background: #ffffff;
+
+    border: 1px solid #eadfd5;
+    border-radius: 16px;
+
+    box-shadow:
+        0 5px 18px rgba(0, 0, 0, 0.05);
+}
+
+
+/* ==========================================================
+   BRANCH ICON
+========================================================== */
+
+.branch-header-icon {
+    width: 90px;
+    height: 90px;
+
+    flex: 0 0 90px;
+
+    overflow: hidden;
+
+    border-radius: 16px;
+
+    background: #f8f1eb;
+}
+
+.branch-header-icon img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+}
+
+.branch-icon-fallback {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 34px;
+
+    color: #7b4b2a;
+}
+
+
+/* ==========================================================
+   BRANCH TITLE
+========================================================== */
+
+.branch-header-content h1 {
+    margin: 0 0 8px;
+
+    color: #5b321d;
+
+    font-size: 28px;
+    font-weight: 800;
+}
+
+
+/* ==========================================================
+   LOCATION
+========================================================== */
+
+.branch-location {
+    margin: 0;
+
+    color: #765f50;
+
+    font-size: 15px;
+}
+
+.branch-location i {
+    margin-right: 6px;
+
+    color: #8a572f;
+}
+
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.branch-description {
+    margin-top: 22px;
+
+    padding: 20px;
+
+    background: #ffffff;
+
+    border: 1px solid #eadfd5;
+    border-radius: 14px;
+}
+
+.branch-description h2,
+.branch-section-heading h2 {
+    margin: 0 0 8px;
+
+    color: #5b321d;
+
+    font-size: 21px;
+    font-weight: 800;
+}
+
+.branch-description p,
+.branch-section-heading p {
+    margin: 0;
+
+    color: #765f50;
+
+    line-height: 1.6;
+}
+
+
+/* ==========================================================
+   PRODUCTS SECTION
+========================================================== */
+
+.branch-products {
+    margin-top: 28px;
+}
+
+.branch-section-heading {
+    margin-bottom: 16px;
+}
+
+
+/* ==========================================================
+   PRODUCT GRID
+========================================================== */
+
+.branch-product-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 16px;
+}
+
+
+/* ==========================================================
+   PRODUCT CARD
+========================================================== */
+
+.branch-product-card {
+    display: flex;
+
+    gap: 14px;
+
+    padding: 18px;
+
+    background: #ffffff;
+
+    border: 1px solid #eadfd5;
+    border-radius: 14px;
+
+    box-shadow:
+        0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+
+/* ==========================================================
+   PRODUCT ICON
+========================================================== */
+
+.branch-product-icon {
+    width: 48px;
+    height: 48px;
+
+    flex: 0 0 48px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #f8f1eb;
+
+    color: #7b4b2a;
+}
+
+
+/* ==========================================================
+   PRODUCT CONTENT
+========================================================== */
+
+.branch-product-content {
+    min-width: 0;
+
+    flex: 1;
+}
+
+.branch-product-content h3 {
+    margin: 0 0 6px;
+
+    color: #4f2d1b;
+
+    font-size: 16px;
+    font-weight: 750;
+}
+
+
+/* ==========================================================
+   PRODUCT CATEGORY
+========================================================== */
+
+.branch-product-category,
+.branch-product-subcategory {
+    margin: 3px 0;
+
+    color: #806c60;
+
+    font-size: 13px;
+}
+
+
+/* ==========================================================
+   PRODUCT STOCK
+========================================================== */
+
+.branch-product-stock {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-top: 12px;
+    padding-top: 10px;
+
+    border-top: 1px solid #eee4dc;
+
+    color: #765f50;
+
+    font-size: 13px;
+}
+
+.branch-product-stock strong {
+    color: #5b321d;
+
+    font-size: 15px;
+}
+
+
+/* ==========================================================
+   EMPTY STATE
+========================================================== */
+
+.branch-empty,
+.branch-error {
+    padding: 40px 20px;
+
+    text-align: center;
+
+    background: #ffffff;
+
+    border: 1px solid #eadfd5;
+    border-radius: 16px;
+}
+
+.branch-empty i,
+.branch-error i {
+    display: block;
+
+    margin-bottom: 12px;
+
+    color: #8a572f;
+
+    font-size: 34px;
+}
+
+.branch-empty h2,
+.branch-empty h3 {
+    margin: 0 0 8px;
+
+    color: #5b321d;
+}
+
+.branch-empty p,
+.branch-error span {
+    color: #765f50;
+}
+
+
+/* ==========================================================
+   ACTIONS
+========================================================== */
+
+.branch-actions {
+    margin-top: 24px;
+}
+
+.branch-back-button {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 11px 17px;
+
+    background: #5b321d;
+
+    color: #ffffff;
+
+    border-radius: 9px;
+
+    text-decoration: none;
+
+    font-weight: 700;
+}
+
+.branch-back-button:hover {
+    opacity: 0.9;
+}
+
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (max-width: 850px) {
+
+    .branch-product-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+    .branch-page {
+        padding: 18px 12px 30px;
+    }
+
+
+    .branch-header {
+        padding: 18px;
+    }
+
+
+    .branch-header-icon {
+        width: 70px;
+        height: 70px;
+
+        flex-basis: 70px;
+    }
+
+
+    .branch-header-content h1 {
+        font-size: 22px;
+    }
+
+
+    .branch-product-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
