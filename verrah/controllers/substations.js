@@ -72,3 +72,55 @@ exports.updateProductUnits = async (req, res) => {
     );
   }
 };
+
+
+// ==========================================================
+// EDIT SUBSTATION
+// Added only — existing controller code above is unchanged.
+// ==========================================================
+
+exports.editForm = async (req, res) => {
+  try {
+    const substation = await service.getById(req.params.id);
+
+    if (!substation) {
+      return res.redirect(
+        "/substations?error=Substation+not+found"
+      );
+    }
+
+    res.render("substations/new", {
+      title: "Edit Substation",
+      substation,
+      error: null,
+      old: {}
+    });
+
+  } catch (e) {
+    res.redirect(
+      `/substations?error=${encodeURIComponent(e.message)}`
+    );
+  }
+};
+
+
+exports.update = async (req, res) => {
+  try {
+    await service.update(req.params.id, req.body);
+
+    res.redirect(
+      `/branch/${req.params.id}/edit?saved=1`
+    );
+
+  } catch (e) {
+    res.status(400).render("substations/new", {
+      title: "Edit Substation",
+      substation: {
+        _id: req.params.id,
+        ...req.body
+      },
+      error: e.message,
+      old: req.body
+    });
+  }
+};
