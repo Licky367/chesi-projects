@@ -1231,3 +1231,110 @@
     }
 
 }
+
+
+/* =========================================================
+   VERAH COSMETICS
+   SERVICE EDIT BUTTON
+========================================================= */
+
+.verah-edit-service {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    width: calc(100% - 28px);
+    min-height: 44px;
+
+    margin: 0 14px 14px;
+    padding: 10px 16px;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+    color: #6b3518;
+
+    border: 2px solid #8b4a24;
+    border-radius: 12px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+/* ICON */
+
+.verah-edit-service i {
+    font-size: 13px;
+}
+
+
+/* HOVER */
+
+.verah-edit-service:hover {
+    background: #6b3518;
+    color: #ffffff;
+    border-color: #6b3518;
+
+    text-decoration: none;
+
+    transform: translateY(-1px);
+}
+
+
+/* ACTIVE */
+
+.verah-edit-service:active {
+    transform: translateY(0);
+}
+
+
+/* VISITED / FOCUS */
+
+.verah-edit-service:visited,
+.verah-edit-service:focus {
+    color: #6b3518;
+    text-decoration: none;
+}
+
+
+/* HOVER + VISITED / FOCUS */
+
+.verah-edit-service:hover,
+.verah-edit-service:hover:visited,
+.verah-edit-service:hover:focus {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .verah-edit-service {
+        width: calc(100% - 24px);
+
+        margin-left: 12px;
+        margin-right: 12px;
+        margin-bottom: 12px;
+
+        min-height: 44px;
+
+        font-size: 14px;
+    }
+
+}
