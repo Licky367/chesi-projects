@@ -1,16 +1,64 @@
 <!-- ======================================================
      verrah/views/products/category/add.ejs
-     ADD CATEGORY
+
+     ADD / EDIT CATEGORY
 ====================================================== -->
+
+<%
+/* ==========================================================
+   DETERMINE MODE
+========================================================== */
+
+const isEdit =
+  typeof category !== "undefined" &&
+  category &&
+  category._id;
+
+const categoryId =
+  isEdit
+    ? category._id
+    : null;
+
+
+/* ==========================================================
+   FORM DATA
+
+   During edit:
+       category.name
+       category.description
+       category.categoryIcon
+
+   During create after validation error:
+       formData
+========================================================== */
+
+const categoryName =
+  isEdit
+    ? (category.name || "")
+    : (formData?.name || "");
+
+const categoryDescription =
+  isEdit
+    ? (category.description || "")
+    : (formData?.description || "");
+
+const existingImage =
+  isEdit
+    ? (category.categoryIcon || "")
+    : "";
+%>
+
 
 <link
   rel="stylesheet"
   href="/css/products/category-add.css"
 />
 
+
 <section class="category-add-page">
 
   <div class="category-add-card">
+
 
     <!-- ==================================================
          HEADER
@@ -19,15 +67,29 @@
     <div class="category-add-header">
 
       <div class="category-add-icon">
-        <i class="fas fa-layer-group"></i>
+
+        <i class="fas <%= isEdit
+          ? 'fa-pen-to-square'
+          : 'fa-layer-group'
+        %>"></i>
+
       </div>
+
 
       <div class="category-add-heading">
 
-        <h1>Add Category</h1>
+        <h1>
+          <%= isEdit
+            ? "Edit Category"
+            : "Add Category"
+          %>
+        </h1>
 
         <p>
-          Create a new category and give it a beautiful icon.
+          <%= isEdit
+            ? "Update the category details and image."
+            : "Create a new category and give it a beautiful icon."
+          %>
         </p>
 
       </div>
@@ -48,11 +110,18 @@
         </div>
 
         <div class="alert-content">
-          <strong>Unable to create category</strong>
+
+          <strong>
+            <%= isEdit
+              ? "Unable to update category"
+              : "Unable to create category"
+            %>
+          </strong>
 
           <span>
             <%= error %>
           </span>
+
         </div>
 
       </div>
@@ -67,10 +136,14 @@
     <form
       id="categoryForm"
       class="category-form"
-      action="/products/category/add"
+      action="<%= isEdit
+        ? '/products/category/add/' + categoryId
+        : '/products/category/add'
+      %>"
       method="POST"
       enctype="multipart/form-data"
     >
+
 
       <!-- =================================================
            CATEGORY NAME
@@ -85,11 +158,15 @@
           </div>
 
           <div>
-            <h2>Category details</h2>
+
+            <h2>
+              Category details
+            </h2>
 
             <p>
               Give your category a clear and recognizable name.
             </p>
+
           </div>
 
         </div>
@@ -98,9 +175,13 @@
         <div class="form-group">
 
           <label for="name">
+
             Category Name
+
             <span class="required">*</span>
+
           </label>
+
 
           <div class="input-wrapper">
 
@@ -110,7 +191,7 @@
               type="text"
               id="name"
               name="name"
-              value="<%= formData?.name || '' %>"
+              value="<%= categoryName %>"
               placeholder="e.g. Skincare"
               autocomplete="off"
               required
@@ -136,11 +217,18 @@
           </div>
 
           <div>
-            <h2>Category image</h2>
+
+            <h2>
+              Category image
+            </h2>
 
             <p>
-              Upload an image from your device or use an image URL.
+              <%= isEdit
+                ? "Keep the current image or choose a new one."
+                : "Upload an image from your device or use an image URL."
+              %>
             </p>
+
           </div>
 
         </div>
@@ -218,19 +306,23 @@
 
                 </div>
 
+
                 <strong>
                   Select category image
                 </strong>
 
+
                 <span>
                   Click here to browse your device
                 </span>
+
 
                 <small>
                   JPG, PNG, WEBP or GIF · Max 5 MB
                 </small>
 
               </label>
+
 
               <input
                 type="file"
@@ -239,6 +331,7 @@
                 accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
               />
 
+
               <div
                 class="selected-file"
                 id="selectedFile"
@@ -246,8 +339,11 @@
               >
 
                 <div class="selected-file-icon">
+
                   <i class="fas fa-file-image"></i>
+
                 </div>
+
 
                 <div class="selected-file-info">
 
@@ -261,13 +357,16 @@
 
                 </div>
 
+
                 <button
                   type="button"
                   id="removeFile"
                   class="remove-file"
                   aria-label="Remove selected image"
                 >
+
                   <i class="fas fa-xmark"></i>
+
                 </button>
 
               </div>
@@ -336,6 +435,7 @@
                 Image URL
               </label>
 
+
               <div class="url-input-wrapper">
 
                 <i class="fas fa-globe"></i>
@@ -350,6 +450,7 @@
                 />
 
               </div>
+
 
               <div class="url-hint">
 
@@ -369,7 +470,72 @@
 
 
         <!-- ===============================================
-             PREVIEW
+             EXISTING IMAGE
+        ================================================ -->
+
+        <% if (existingImage) { %>
+
+          <div
+            class="image-preview-wrapper"
+            id="existingImageWrapper"
+          >
+
+            <div class="preview-heading">
+
+              <div>
+
+                <span class="preview-label">
+                  Current Image
+                </span>
+
+                <span class="preview-description">
+                  Your current category image.
+                </span>
+
+              </div>
+
+            </div>
+
+
+            <div class="image-preview-card">
+
+              <div class="preview-image-container">
+
+                <img
+                  id="existingImagePreview"
+                  src="<%= existingImage %>"
+                  alt="<%= categoryName || 'Category' %>"
+                  onerror="this.style.display='none';"
+                />
+
+              </div>
+
+
+              <div class="preview-details">
+
+                <span class="preview-details-label">
+                  CATEGORY ICON
+                </span>
+
+                <strong>
+                  <%= categoryName || "Category" %>
+                </strong>
+
+                <span>
+                  Current image
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        <% } %>
+
+
+        <!-- ===============================================
+             NEW IMAGE PREVIEW
         ================================================ -->
 
         <div
@@ -381,14 +547,17 @@
           <div class="preview-heading">
 
             <div>
+
               <span class="preview-label">
-                Preview
+                New Image Preview
               </span>
 
               <span class="preview-description">
-                This is how your category image will appear.
+                This image will replace the current image.
               </span>
+
             </div>
+
 
             <button
               type="button"
@@ -413,6 +582,7 @@
 
             </div>
 
+
             <div class="preview-details">
 
               <span class="preview-details-label">
@@ -420,11 +590,11 @@
               </span>
 
               <strong id="previewCategoryName">
-                New Category
+                <%= categoryName || "New Category" %>
               </strong>
 
               <span>
-                Image preview
+                New image preview
               </span>
 
             </div>
@@ -442,6 +612,9 @@
 
       <div class="category-form-actions">
 
+
+        <!-- CANCEL -->
+
         <a
           href="/products"
           class="category-btn category-btn-secondary"
@@ -456,18 +629,27 @@
         </a>
 
 
+        <!-- CREATE / SAVE -->
+
         <button
           type="submit"
           class="category-btn category-btn-primary"
         >
 
-          <i class="fas fa-plus"></i>
+          <i class="fas <%= isEdit
+            ? 'fa-floppy-disk'
+            : 'fa-plus'
+          %>"></i>
 
           <span>
-            Create Category
+            <%= isEdit
+              ? "Save Changes"
+              : "Create Category"
+            %>
           </span>
 
         </button>
+
 
       </div>
 
@@ -479,6 +661,18 @@
 
 
 <script>
+
+  // ======================================================
+  // MODE
+  // ======================================================
+
+  const isEditMode =
+    <%= isEdit ? "true" : "false" %>;
+
+
+  const existingImageUrl =
+    <%- JSON.stringify(existingImage || "") %>;
+
 
   // ======================================================
   // ELEMENTS
@@ -553,7 +747,7 @@
 
 
   // ======================================================
-  // UPDATE SELECTED METHOD
+  // UPDATE METHOD
   // ======================================================
 
   function updateMethod() {
@@ -572,7 +766,7 @@
 
 
   // ======================================================
-  // HIDE PREVIEW
+  // HIDE NEW PREVIEW
   // ======================================================
 
   function hidePreview() {
@@ -585,7 +779,7 @@
 
 
   // ======================================================
-  // SHOW PREVIEW
+  // SHOW NEW PREVIEW
   // ======================================================
 
   function showPreview(src) {
@@ -641,14 +835,16 @@
     const reader =
       new FileReader();
 
+
     reader.onload =
-      function (event) {
+      function(event) {
 
         showPreview(
           event.target.result
         );
 
       };
+
 
     reader.readAsDataURL(file);
 
@@ -683,7 +879,7 @@
 
   uploadRadio.addEventListener(
     "change",
-    function () {
+    function() {
 
       updateMethod();
 
@@ -701,7 +897,7 @@
 
   urlRadio.addEventListener(
     "change",
-    function () {
+    function() {
 
       updateMethod();
 
@@ -721,11 +917,12 @@
 
   fileInput.addEventListener(
     "change",
-    function () {
+    function() {
 
       if (!fileInput.files.length) {
         return;
       }
+
 
       uploadRadio.checked = true;
 
@@ -745,7 +942,7 @@
 
   urlInput.addEventListener(
     "input",
-    function () {
+    function() {
 
       if (urlInput.value.trim()) {
 
@@ -775,7 +972,7 @@
 
   removeFile.addEventListener(
     "click",
-    function () {
+    function() {
 
       fileInput.value = "";
 
@@ -788,12 +985,12 @@
 
 
   // ======================================================
-  // CLEAR PREVIEW
+  // CLEAR NEW PREVIEW
   // ======================================================
 
   clearPreview.addEventListener(
     "click",
-    function () {
+    function() {
 
       if (uploadRadio.checked) {
 
@@ -819,7 +1016,7 @@
 
   nameInput.addEventListener(
     "input",
-    function () {
+    function() {
 
       previewCategoryName.textContent =
         nameInput.value.trim() ||
@@ -835,18 +1032,11 @@
 
   imagePreview.addEventListener(
     "error",
-    function () {
+    function() {
 
-      if (
-        !previewWrapper.hidden &&
-        urlRadio.checked
-      ) {
-
-        imagePreview.classList.add(
-          "preview-error"
-        );
-
-      }
+      imagePreview.classList.add(
+        "preview-error"
+      );
 
     }
   );
@@ -854,7 +1044,7 @@
 
   imagePreview.addEventListener(
     "load",
-    function () {
+    function() {
 
       imagePreview.classList.remove(
         "preview-error"
@@ -870,7 +1060,7 @@
 
   form.addEventListener(
     "submit",
-    function (event) {
+    function(event) {
 
       const hasFile =
         fileInput.files.length > 0;
@@ -878,6 +1068,10 @@
       const hasUrl =
         urlInput.value.trim().length > 0;
 
+
+      // -----------------------------------------------
+      // NAME REQUIRED
+      // -----------------------------------------------
 
       if (!nameInput.value.trim()) {
 
@@ -890,7 +1084,34 @@
       }
 
 
-      if (!hasFile && !hasUrl) {
+      // -----------------------------------------------
+      // BOTH IMAGE SOURCES USED
+      // -----------------------------------------------
+
+      if (hasFile && hasUrl) {
+
+        event.preventDefault();
+
+        alert(
+          "Please use either the uploaded image or the image URL, not both."
+        );
+
+        return;
+
+      }
+
+
+      // -----------------------------------------------
+      // CREATE MODE
+      //
+      // New category must have an image.
+      // -----------------------------------------------
+
+      if (
+        !isEditMode &&
+        !hasFile &&
+        !hasUrl
+      ) {
 
         event.preventDefault();
 
@@ -903,12 +1124,23 @@
       }
 
 
-      if (hasFile && hasUrl) {
+      // -----------------------------------------------
+      // EDIT MODE
+      //
+      // Existing image is allowed to remain.
+      // -----------------------------------------------
+
+      if (
+        isEditMode &&
+        !hasFile &&
+        !hasUrl &&
+        !existingImageUrl
+      ) {
 
         event.preventDefault();
 
         alert(
-          "Please use either the uploaded image or the image URL, not both."
+          "Please upload a category image or enter an image URL."
         );
 
         return;
