@@ -1,4 +1,6 @@
-const Services = require("../../models/services");
+const Services =
+    require("../../models/services");
+
 
 /* =========================================================
    GET ACTIVE SERVICES
@@ -57,25 +59,66 @@ exports.createService = function (data) {
    UPDATE SERVICE
 ========================================================= */
 
-exports.updateService = async function (id, data) {
+exports.updateService = async function (
+    id,
+    data
+) {
 
-    const service = await Services.findById(id);
+    const service =
+        await Services.findById(id);
 
     if (!service) {
         return null;
     }
 
-    service.name = data.name;
 
-    service.description = data.description;
+    /* -----------------------------------------------------
+       UPDATE BASIC INFORMATION
+    ----------------------------------------------------- */
 
-    service.price = data.price;
+    service.name =
+        data.name;
 
-    service.duration = data.duration;
+    service.description =
+        data.description;
 
-    service.image = data.image || "";
+    service.price =
+        data.price;
 
-    service.active = data.active !== "false";
+    service.duration =
+        data.duration;
+
+
+    /* -----------------------------------------------------
+       IMAGE
+       
+       Only replace the existing image when a new
+       image URL has been provided.
+    ----------------------------------------------------- */
+
+    if (
+        data.image !== undefined &&
+        data.image !== null &&
+        String(data.image).trim() !== ""
+    ) {
+
+        service.image =
+            String(data.image).trim();
+
+    }
+
+
+    /* -----------------------------------------------------
+       ACTIVE STATUS
+    ----------------------------------------------------- */
+
+    service.active =
+        data.active !== "false";
+
+
+    /* -----------------------------------------------------
+       SAVE
+    ----------------------------------------------------- */
 
     return service.save();
 
