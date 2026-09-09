@@ -1,0 +1,224 @@
+<%
+/* ==========================================================
+   views/home-partials/branches.ejs
+
+   VERRAH COSMETICS
+   SUBSTATION / BRANCH CARDS
+
+   ----------------------------------------------------------
+   TITLE:
+       Our Locations
+
+   DESCRIPTION:
+       Visit us wherever you wish.
+
+   BEHAVIOUR:
+       - Horizontal left/right scrolling
+       - Admin sees Add Branch as first card
+       - Substation icon is displayed
+       - Substation name is displayed
+       - Substation location is displayed
+       - Branch card links to:
+             /branch/:id
+       - Add Branch links to:
+             /substations/add
+
+   EXPECTED DATA:
+       substations = [
+           {
+               _id,
+               name,
+               location,
+               substationIcon
+           }
+       ]
+
+   EXPECTED USER:
+       currentUser.role
+
+   CSS:
+       Uses the existing home category card CSS.
+   ========================================================== */
+%>
+
+
+<section class="home-categories">
+
+
+    <!-- ======================================================
+         SECTION TITLE
+    ======================================================= -->
+
+    <h2 class="home-categories-title">
+        Our Locations
+    </h2>
+
+
+    <!-- ======================================================
+         SECTION DESCRIPTION
+    ======================================================= -->
+
+    <p class="home-category-description">
+        Visit us wherever you wish. Find a Verrah Cosmetics
+        location that is convenient for you.
+    </p>
+
+
+    <!-- ======================================================
+         BRANCH SCROLLER
+    ======================================================= -->
+
+    <div
+        class="home-category-scroller"
+        aria-label="Our Locations"
+    >
+
+
+        <!-- ==================================================
+             ADMIN — ADD BRANCH
+        =================================================== -->
+
+        <% if (
+            typeof currentUser !== "undefined" &&
+            currentUser &&
+            currentUser.role === "admin"
+        ) { %>
+
+            <a
+                href="/substations/add"
+                class="home-category-card home-category-add"
+                aria-label="Add new branch"
+            >
+
+                <div class="home-category-add-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+
+                <div class="home-category-add-title">
+                    Add Branch
+                </div>
+
+                <div class="home-category-add-description">
+                    Create a new Verrah Cosmetics location
+                </div>
+
+            </a>
+
+        <% } %>
+
+
+        <!-- ==================================================
+             SUBSTATION / BRANCH CARDS
+        =================================================== -->
+
+        <% if (
+            Array.isArray(substations) &&
+            substations.length > 0
+        ) { %>
+
+
+            <% substations.forEach(function(substation) { %>
+
+                <a
+                    href="/branch/<%= substation._id %>"
+                    class="home-category-card"
+                    aria-label="<%= substation.name %>"
+                >
+
+
+                    <!-- ======================================
+                         SUBSTATION ICON
+                    ======================================= -->
+
+                    <div class="home-category-icon">
+
+                        <% if (
+                            substation.substationIcon &&
+                            String(substation.substationIcon).trim()
+                        ) { %>
+
+                            <img
+                                src="<%= substation.substationIcon %>"
+                                alt="<%= substation.name %>"
+                                loading="lazy"
+                                onerror="
+                                    this.style.display='none';
+                                    this.nextElementSibling.style.display='flex';
+                                "
+                            >
+
+                            <div
+                                class="home-category-icon-fallback"
+                                style="display:none;"
+                            >
+                                <i class="fas fa-store"></i>
+                            </div>
+
+                        <% } else { %>
+
+                            <div class="home-category-icon-fallback">
+                                <i class="fas fa-store"></i>
+                            </div>
+
+                        <% } %>
+
+                    </div>
+
+
+                    <!-- ======================================
+                         SUBSTATION INFORMATION
+                    ======================================= -->
+
+                    <div class="home-category-content">
+
+
+                        <!-- SUBSTATION NAME -->
+
+                        <h3 class="home-category-name">
+                            <%= substation.name || "Our Branch" %>
+                        </h3>
+
+
+                        <!-- SUBSTATION LOCATION -->
+
+                        <p class="home-category-description">
+
+                            <i class="fas fa-location-dot"></i>
+
+                            <%= substation.location ||
+                                "Location available on request." %>
+
+                        </p>
+
+
+                    </div>
+
+                </a>
+
+            <% }); %>
+
+
+        <% } else { %>
+
+
+            <!-- ============================================
+                 EMPTY STATE
+            ============================================= -->
+
+            <div class="home-category-empty">
+
+                <i class="fas fa-store"></i>
+
+                <span>
+                    No locations are available yet.
+                </span>
+
+            </div>
+
+
+        <% } %>
+
+
+    </div>
+
+</section>
