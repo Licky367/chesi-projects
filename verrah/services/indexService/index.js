@@ -7,6 +7,8 @@ module.exports = {
 
     ...require("./servicesService"),
 
+    ...require("./branches"),
+
     ...require("./category")
 
 };
