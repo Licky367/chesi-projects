@@ -1,0 +1,26 @@
+<%
+/* ==========================================================
+   BRANCH ABOUT
+   DESCRIPTION
+   ========================================================== */
+%>
+
+<% if (
+    !error &&
+    substation &&
+    substation.description
+) { %>
+
+    <div class="branch-description">
+
+        <h2>
+            About This Location
+        </h2>
+
+        <p>
+            <%= substation.description %>
+        </p>
+
+    </div>
+
+<% } %>
