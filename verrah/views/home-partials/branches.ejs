@@ -9,10 +9,9 @@
    BEHAVIOUR:
        - Horizontal left/right scrolling
        - Admin sees Add Branch as first card
-       - Admin sees Edit button on every branch card
-       - Substation icon is displayed
-       - Substation name is displayed
-       - Substation location is displayed
+       - Every branch remains ONE card
+       - Admin sees Edit button inside each branch card
+       - Normal users see the same branch card without Edit
        - Branch card links to:
              /branch/:id
        - Edit button links to:
@@ -32,9 +31,6 @@
 
    EXPECTED USER:
        currentUser.role
-
-   CSS:
-       Uses the existing home category card CSS.
    ========================================================== */
 %>
 
@@ -116,108 +112,119 @@
 
             <% substations.forEach(function(substation) { %>
 
-                <a
-                    href="/branch/<%= substation._id %>"
-                    class="home-category-card"
-                    aria-label="<%= substation.name %>"
-                >
+
+                <!-- ==========================================
+                     ONE BRANCH = ONE CARD
+                =========================================== -->
+
+                <div class="home-category-card">
 
 
                     <!-- ======================================
-                         SUBSTATION ICON
+                         BRANCH LINK
                     ======================================= -->
 
-                    <div class="home-category-icon">
-
-                        <% if (
-                            substation.substationIcon &&
-                            String(substation.substationIcon).trim()
-                        ) { %>
-
-                            <img
-                                src="<%= substation.substationIcon %>"
-                                alt="<%= substation.name %>"
-                                loading="lazy"
-                                onerror="
-                                    this.style.display='none';
-                                    this.nextElementSibling.style.display='flex';
-                                "
-                            >
-
-                            <div
-                                class="home-category-icon-fallback"
-                                style="display:none;"
-                            >
-                                <i class="fas fa-store"></i>
-                            </div>
-
-                        <% } else { %>
-
-                            <div class="home-category-icon-fallback">
-                                <i class="fas fa-store"></i>
-                            </div>
-
-                        <% } %>
-
-                    </div>
-
-
-                    <!-- ======================================
-                         SUBSTATION INFORMATION
-                    ======================================= -->
-
-                    <div class="home-category-content">
-
-
-                        <!-- SUBSTATION NAME -->
-
-                        <h3 class="home-category-name">
-                            <%= substation.name || "Our Branch" %>
-                        </h3>
-
-
-                        <!-- SUBSTATION LOCATION -->
-
-                        <p class="home-category-description">
-
-                            <i class="fas fa-location-dot"></i>
-
-                            <%= substation.location ||
-                                "Location available on request." %>
-
-                        </p>
+                    <a
+                        href="/branch/<%= substation._id %>"
+                        class="home-category-card-link"
+                        aria-label="<%= substation.name %>"
+                    >
 
 
                         <!-- ==================================
-                             ADMIN — EDIT BRANCH
+                             SUBSTATION ICON
                         =================================== -->
 
-                        <% if (
-                            typeof currentUser !== "undefined" &&
-                            currentUser &&
-                            currentUser.role === "admin"
-                        ) { %>
+                        <div class="home-category-icon">
 
-                            <div class="home-category-admin-actions">
+                            <% if (
+                                substation.substationIcon &&
+                                String(substation.substationIcon).trim()
+                            ) { %>
 
-                                <a
-                                    href="/branch/<%= substation._id %>/edit"
-                                    class="home-category-edit-btn"
-                                    aria-label="Edit <%= substation.name %>"
-                                    onclick="event.stopPropagation();"
+                                <img
+                                    src="<%= substation.substationIcon %>"
+                                    alt="<%= substation.name %>"
+                                    loading="lazy"
+                                    onerror="
+                                        this.style.display='none';
+                                        this.nextElementSibling.style.display='flex';
+                                    "
                                 >
-                                    <i class="fas fa-pen"></i>
-                                    Edit
-                                </a>
 
-                            </div>
+                                <div
+                                    class="home-category-icon-fallback"
+                                    style="display:none;"
+                                >
+                                    <i class="fas fa-store"></i>
+                                </div>
 
-                        <% } %>
+                            <% } else { %>
+
+                                <div class="home-category-icon-fallback">
+                                    <i class="fas fa-store"></i>
+                                </div>
+
+                            <% } %>
+
+                        </div>
 
 
-                    </div>
+                        <!-- ==================================
+                             SUBSTATION INFORMATION
+                        =================================== -->
 
-                </a>
+                        <div class="home-category-content">
+
+                            <h3 class="home-category-name">
+                                <%= substation.name || "Our Branch" %>
+                            </h3>
+
+                            <p class="home-category-description">
+
+                                <i class="fas fa-location-dot"></i>
+
+                                <%= substation.location ||
+                                    "Location available on request." %>
+
+                            </p>
+
+                        </div>
+
+
+                    </a>
+
+
+                    <!-- ======================================
+                         ADMIN — EDIT BUTTON
+                         SAME CARD, NOT ANOTHER CARD
+                    ======================================= -->
+
+                    <% if (
+                        typeof currentUser !== "undefined" &&
+                        currentUser &&
+                        currentUser.role === "admin"
+                    ) { %>
+
+                        <div class="branch-actions">
+
+                            <a
+                                href="/branch/<%= substation._id %>/edit"
+                                class="branch-actions"
+                                aria-label="Edit <%= substation.name %>"
+                                onclick="event.stopPropagation();"
+                            >
+                                <i class="fas fa-pen"></i>
+                                Edit
+                            </a>
+
+                        </div>
+
+                    <% } %>
+
+
+                </div>
+
 
             <% }); %>
 
