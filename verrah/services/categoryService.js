@@ -197,6 +197,228 @@ exports.createCategory = async (
 };
 
 // ==========================================================
+// GET CATEGORY BY ID
+//
+// Used by the category edit page.
+//
+// Unlike getCategory(), this does not require isActive:true.
+// This allows an admin to edit an inactive category as well.
+// ==========================================================
+
+exports.getCategoryById = async (
+  categoryId
+) => {
+  if (
+    !categoryId ||
+    !mongoose.Types.ObjectId.isValid(
+      categoryId
+    )
+  ) {
+    const error =
+      new Error(
+        "Invalid category ID."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+  }
+
+  const category =
+    await Category.findById(
+      categoryId
+    ).lean();
+
+  if (!category) {
+    const error =
+      new Error(
+        "Category not found."
+      );
+
+    error.statusCode = 404;
+
+    throw error;
+  }
+
+  return category;
+};
+
+// ==========================================================
+// UPDATE CATEGORY
+// ==========================================================
+
+exports.updateCategory = async (
+  categoryId,
+  body = {},
+  file = null
+) => {
+  // --------------------------------------------------------
+  // VALIDATE CATEGORY ID
+  // --------------------------------------------------------
+
+  if (
+    !categoryId ||
+    !mongoose.Types.ObjectId.isValid(
+      categoryId
+    )
+  ) {
+    const error =
+      new Error(
+        "Invalid category ID."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+  }
+
+  // --------------------------------------------------------
+  // FIND CATEGORY
+  // --------------------------------------------------------
+
+  const category =
+    await Category.findById(
+      categoryId
+    );
+
+  if (!category) {
+    const error =
+      new Error(
+        "Category not found."
+      );
+
+    error.statusCode = 404;
+
+    throw error;
+  }
+
+  // --------------------------------------------------------
+  // CATEGORY NAME
+  // --------------------------------------------------------
+
+  const name =
+    cleanCategoryName(body.name);
+
+  if (!name) {
+    const error =
+      new Error(
+        "Category name is required."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+  }
+
+  // --------------------------------------------------------
+  // IMAGE URL
+  // --------------------------------------------------------
+
+  const categoryIconUrl =
+    text(body.categoryIconUrl);
+
+  const hasUpload =
+    Boolean(file);
+
+  const hasUrl =
+    Boolean(categoryIconUrl);
+
+  // --------------------------------------------------------
+  // DO NOT ALLOW BOTH
+  // --------------------------------------------------------
+
+  if (hasUpload && hasUrl) {
+    const error =
+      new Error(
+        "Use either an uploaded image or an image URL, not both."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+  }
+
+  // --------------------------------------------------------
+  // IMAGE URL VALIDATION
+  // --------------------------------------------------------
+
+  if (
+    hasUrl &&
+    !isValidImageUrl(categoryIconUrl)
+  ) {
+    const error =
+      new Error(
+        "The image URL must be a valid HTTP or HTTPS URL."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+  }
+
+  // --------------------------------------------------------
+  // CHECK DUPLICATE CATEGORY NAME
+  //
+  // Exclude the category currently being edited.
+  // --------------------------------------------------------
+
+  const normalizedName =
+    name.toLowerCase();
+
+  const existing =
+    await Category.findOne({
+      name: normalizedName,
+      _id: {
+        $ne: categoryId
+      }
+    });
+
+  if (existing) {
+    const error =
+      new Error(
+        `The category "${name}" already exists.`
+      );
+
+    error.statusCode = 409;
+
+    throw error;
+  }
+
+  // --------------------------------------------------------
+  // UPDATE NAME
+  // --------------------------------------------------------
+
+  category.name =
+    normalizedName;
+
+  // --------------------------------------------------------
+  // UPDATE IMAGE ONLY WHEN A NEW IMAGE
+  // SOURCE WAS PROVIDED
+  //
+  // If neither file nor URL is supplied,
+  // the existing image is preserved.
+  // --------------------------------------------------------
+
+  if (file) {
+    category.categoryIcon =
+      `/uploads/categories/${file.filename}`;
+  }
+
+  if (categoryIconUrl) {
+    category.categoryIcon =
+      categoryIconUrl;
+  }
+
+  // --------------------------------------------------------
+  // SAVE
+  // --------------------------------------------------------
+
+  await category.save();
+
+  return category;
+};
+
+// ==========================================================
 // GET CATEGORY
 // ==========================================================
 
