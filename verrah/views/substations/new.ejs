@@ -66,12 +66,12 @@
              POST /substations
 
          EDIT:
-             POST /branch/:id/edit
+             POST /substations/branch/:id/edit
     ======================================================= -->
 
     <form
       action="<%= typeof substation !== 'undefined' && substation
-        ? '/branch/' + substation._id + '/edit'
+        ? '/substations/branch/' + substation._id + '/edit'
         : '/substations'
       %>"
       method="POST"
@@ -173,8 +173,6 @@
           substation
         ) { %>
 
-          <!-- EDIT -->
-
           <button
             type="submit"
             class="primary-btn"
@@ -184,8 +182,6 @@
           </button>
 
         <% } else { %>
-
-          <!-- CREATE -->
 
           <button
             type="submit"
