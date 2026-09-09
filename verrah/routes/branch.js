@@ -11,7 +11,7 @@ const branchController =
 ======================================================== */
 
 router.get(
-    "/branch/:id",
+    "/:id",
     branchController.getBranch
 );
 
