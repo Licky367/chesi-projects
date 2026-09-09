@@ -20,6 +20,10 @@ router.get(
    SERVICES
 ======================================================== */
 
+/* --------------------------------------------------------
+   ADD SERVICE
+-------------------------------------------------------- */
+
 router.get(
     "/services/add",
     indexController.getAddService
@@ -32,15 +36,29 @@ router.post(
 );
 
 
+/* --------------------------------------------------------
+   EDIT SERVICE
+-------------------------------------------------------- */
+
 router.get(
-    "/services/:id",
-    indexController.getService
+    "/services/add/:id",
+    indexController.getEditService
 );
 
 
-router.put(
-    "/services/:id",
+router.post(
+    "/services/add/:id",
     indexController.updateService
+);
+
+
+/* --------------------------------------------------------
+   VIEW SERVICE
+-------------------------------------------------------- */
+
+router.get(
+    "/services/:id",
+    indexController.getService
 );
 
 
