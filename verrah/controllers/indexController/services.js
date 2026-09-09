@@ -34,7 +34,9 @@ exports.getAddService = function (req, res) {
 
     res.render("services/add", {
 
-        title: "Add Service"
+        title: "Add Service",
+
+        service: null
 
     });
 
@@ -68,6 +70,101 @@ exports.createService = async function (req, res) {
 
         res.status(500).send(
             "Unable to create service"
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   GET /services/add/:id
+========================================================= */
+
+exports.getEditService = async function (req, res) {
+
+    if (!requireAdmin(req, res)) {
+        return;
+    }
+
+    try {
+
+        const service =
+            await indexService.getServiceById(
+                req.params.id
+            );
+
+        if (!service) {
+
+            return res.status(404).send(
+                "Service not found"
+            );
+
+        }
+
+        res.render("services/add", {
+
+            title: "Edit Service",
+
+            service: service
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "GET EDIT SERVICE ERROR:",
+            error
+        );
+
+        res.status(500).send(
+            "Unable to load service"
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   POST /services/add/:id
+========================================================= */
+
+exports.updateService = async function (req, res) {
+
+    if (!requireAdmin(req, res)) {
+        return;
+    }
+
+    try {
+
+        const service =
+            await indexService.updateService(
+                req.params.id,
+                req.body
+            );
+
+        if (!service) {
+
+            return res.status(404).send(
+                "Service not found"
+            );
+
+        }
+
+        res.redirect(
+            `/services/${service._id}`
+        );
+
+    } catch (error) {
+
+        console.error(
+            "UPDATE SERVICE ERROR:",
+            error
+        );
+
+        res.status(500).send(
+            "Unable to update service"
         );
 
     }
@@ -113,52 +210,6 @@ exports.getService = async function (req, res) {
 
         res.status(500).send(
             "Internal Server Error"
-        );
-
-    }
-
-};
-
-
-/* =========================================================
-   PUT /services/:id
-========================================================= */
-
-exports.updateService = async function (req, res) {
-
-    if (!requireAdmin(req, res)) {
-        return;
-    }
-
-    try {
-
-        const service =
-            await indexService.updateService(
-                req.params.id,
-                req.body
-            );
-
-        if (!service) {
-
-            return res.status(404).send(
-                "Service not found"
-            );
-
-        }
-
-        res.redirect(
-            `/services/${service._id}`
-        );
-
-    } catch (error) {
-
-        console.error(
-            "UPDATE SERVICE ERROR:",
-            error
-        );
-
-        res.status(500).send(
-            "Unable to update service"
         );
 
     }
