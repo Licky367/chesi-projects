@@ -34,6 +34,8 @@ exports.addForm = async (req, res) => {
 
       success: null,
 
+      category: null,
+
       formData: {
         name: "",
         categoryIconUrl: ""
@@ -84,6 +86,8 @@ exports.create = async (req, res) => {
 
           success: null,
 
+          category: null,
+
           formData: {
             name:
               req.body?.name || "",
@@ -93,6 +97,160 @@ exports.create = async (req, res) => {
           },
 
           isAdmin: getIsAdmin(req)
+        }
+      );
+  }
+};
+
+
+// ==========================================================
+// EDIT CATEGORY FORM
+// GET /products/category/add/:id
+// ==========================================================
+
+exports.editForm = async (req, res) => {
+  try {
+
+    const category =
+      await categoryService.getCategoryById(
+        req.params.id
+      );
+
+    return res.render(
+      "products/category/add",
+      {
+        title:
+          `Edit ${category.name} | Verrah Cosmetics`,
+
+        error: null,
+
+        success: null,
+
+        category,
+
+        formData: {
+          name:
+            category.name || "",
+
+          categoryIconUrl:
+            ""
+        },
+
+        isAdmin:
+          getIsAdmin(req)
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Edit category form error:",
+      error
+    );
+
+    return res
+      .status(error.statusCode || 404)
+      .render(
+        "products/category/add",
+        {
+          title:
+            "Edit Category | Verrah Cosmetics",
+
+          error:
+            error.message ||
+            "Unable to load category.",
+
+          success: null,
+
+          category: null,
+
+          formData: {
+            name: "",
+            categoryIconUrl: ""
+          },
+
+          isAdmin:
+            getIsAdmin(req)
+        }
+      );
+  }
+};
+
+
+// ==========================================================
+// UPDATE CATEGORY
+// POST /products/category/add/:id
+// ==========================================================
+
+exports.update = async (req, res) => {
+  try {
+
+    const category =
+      await categoryService.updateCategory(
+        req.params.id,
+        req.body,
+        req.file
+      );
+
+    return res.redirect(
+      `/products/category/${category._id}`
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Update category error:",
+      error
+    );
+
+    let category = null;
+
+    try {
+
+      category =
+        await categoryService.getCategoryById(
+          req.params.id
+        );
+
+    } catch (loadError) {
+
+      console.error(
+        "Reload category after update error:",
+        loadError
+      );
+
+    }
+
+
+    return res
+      .status(error.statusCode || 400)
+      .render(
+        "products/category/add",
+        {
+          title:
+            "Edit Category | Verrah Cosmetics",
+
+          error:
+            error.message ||
+            "Unable to update category.",
+
+          success: null,
+
+          category,
+
+          formData: {
+            name:
+              req.body?.name ||
+              category?.name ||
+              "",
+
+            categoryIconUrl:
+              req.body?.categoryIconUrl ||
+              ""
+          },
+
+          isAdmin:
+            getIsAdmin(req)
         }
       );
   }
