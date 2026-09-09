@@ -86,6 +86,12 @@ const substationSchema = new mongoose.Schema(
       trim: true,
       default: ""
     },
+    substationIcon: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+
     description: {
       type: String,
       default: ""
