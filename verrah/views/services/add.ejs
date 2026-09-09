@@ -1,3 +1,53 @@
+<%
+/* =========================================================
+   VERAH COSMETICS — ADD / EDIT SERVICE
+========================================================= */
+
+const isEdit =
+    typeof service !== "undefined" &&
+    service &&
+    service._id;
+
+const serviceId =
+    isEdit ? service._id : null;
+
+const serviceName =
+    isEdit
+        ? (service.name || "")
+        : (formData?.name || "");
+
+const serviceImage =
+    isEdit
+        ? (service.image || "")
+        : (formData?.image || "");
+
+const serviceDescription =
+    isEdit
+        ? (service.description || "")
+        : (formData?.description || "");
+
+const servicePrice =
+    isEdit
+        ? (
+            service.price !== undefined &&
+            service.price !== null
+                ? service.price
+                : ""
+          )
+        : (formData?.price || "");
+
+const serviceDuration =
+    isEdit
+        ? (service.duration || "")
+        : (formData?.duration || "");
+
+const serviceActive =
+    isEdit
+        ? service.active !== false
+        : true;
+%>
+
+
 <section class="verah-service-page">
 
     <div class="verah-service-form-card">
@@ -8,20 +58,45 @@
                 VERAH COSMETICS
             </span>
 
-            <h1>Add Service</h1>
 
-            <p>
-                Add a service that will appear in the services section.
-            </p>
+            <% if (isEdit) { %>
+
+                <h1>
+                    Edit Service
+                </h1>
+
+                <p>
+                    Update the service details shown in the services section.
+                </p>
+
+            <% } else { %>
+
+                <h1>
+                    Add Service
+                </h1>
+
+                <p>
+                    Add a service that will appear in the services section.
+                </p>
+
+            <% } %>
 
         </div>
 
 
         <form
-            action="/services/add"
+            action="<%= isEdit
+                ? `/services/add/${serviceId}`
+                : `/services/add`
+            %>"
             method="POST"
             class="verah-service-form"
         >
+
+
+            <!-- =================================================
+                 SERVICE NAME
+            ================================================== -->
 
             <div class="verah-form-group">
 
@@ -33,11 +108,16 @@
                     type="text"
                     id="name"
                     name="name"
+                    value="<%= serviceName %>"
                     required
                 >
 
             </div>
 
+
+            <!-- =================================================
+                 IMAGE URL
+            ================================================== -->
 
             <div class="verah-form-group">
 
@@ -49,11 +129,34 @@
                     type="url"
                     id="image"
                     name="image"
+                    value="<%= serviceImage %>"
                     placeholder="https://example.com/image.jpg"
                 >
 
+                <% if (isEdit && serviceImage) { %>
+
+                    <div class="verah-current-image">
+
+                        <span>
+                            Current Image
+                        </span>
+
+                        <img
+                            src="<%= serviceImage %>"
+                            alt="<%= serviceName %>"
+                            loading="lazy"
+                        >
+
+                    </div>
+
+                <% } %>
+
             </div>
 
+
+            <!-- =================================================
+                 DESCRIPTION
+            ================================================== -->
 
             <div class="verah-form-group">
 
@@ -66,10 +169,14 @@
                     name="description"
                     rows="5"
                     required
-                ></textarea>
+                ><%= serviceDescription %></textarea>
 
             </div>
 
+
+            <!-- =================================================
+                 PRICE + DURATION
+            ================================================== -->
 
             <div class="verah-form-row">
 
@@ -85,6 +192,7 @@
                         name="price"
                         min="0"
                         step="0.01"
+                        value="<%= servicePrice %>"
                         required
                     >
 
@@ -101,6 +209,7 @@
                         type="text"
                         id="duration"
                         name="duration"
+                        value="<%= serviceDuration %>"
                         placeholder="e.g. 45 minutes"
                     >
 
@@ -108,6 +217,10 @@
 
             </div>
 
+
+            <!-- =================================================
+                 ACTIVE
+            ================================================== -->
 
             <div class="verah-form-group verah-checkbox-group">
 
@@ -117,7 +230,7 @@
                         type="checkbox"
                         name="active"
                         value="true"
-                        checked
+                        <%= serviceActive ? "checked" : "" %>
                     >
 
                     Active service
@@ -126,6 +239,10 @@
 
             </div>
 
+
+            <!-- =================================================
+                 ACTIONS
+            ================================================== -->
 
             <div class="verah-form-actions">
 
@@ -136,12 +253,26 @@
                     Cancel
                 </a>
 
-                <button
-                    type="submit"
-                    class="verah-primary-button"
-                >
-                    Save Service
-                </button>
+
+                <% if (isEdit) { %>
+
+                    <button
+                        type="submit"
+                        class="verah-primary-button"
+                    >
+                        Save Changes
+                    </button>
+
+                <% } else { %>
+
+                    <button
+                        type="submit"
+                        class="verah-primary-button"
+                    >
+                        Save Service
+                    </button>
+
+                <% } %>
 
             </div>
 
