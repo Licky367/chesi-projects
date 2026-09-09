@@ -320,15 +320,15 @@ const mpesaRoutes =
 
 
 // ----------------------------------------------------------
-// CONTACT
+// BRANCHES
 // ----------------------------------------------------------
-/*
-const contactRoutes =
+
+const branchRoutes =
     safeLoad(
-        "contactRoutes",
-        "./corevester/routes/contact"
+        "branchRoutes",
+        "./verrah/routes/branch"
     );
-*/
+
 
 // ==========================================================
 // SOCKET.IO
@@ -915,24 +915,24 @@ if (verrahRoutes) {
 
 
 // ==========================================================
-// CONTACT
+// BRANCHES
 // ==========================================================
 /*
-if (contactRoutes) {
+if (branchRoutes) {
 
     app.use(
-        "/contact",
-        contactRoutes
+        "/branch",
+        branchRoutes
     );
 
     console.log(
-        "✅ Mounted /contact"
+        "✅ Mounted /branch"
     );
 
 } else {
 
     console.error(
-        "❌ /contact was not mounted"
+        "❌ /branch was not mounted"
     );
 }
 
