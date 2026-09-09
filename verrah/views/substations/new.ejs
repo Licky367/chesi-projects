@@ -10,73 +10,203 @@
   <div class="form-card substation-form-card">
 
     <div class="form-heading">
+
       <div class="form-heading-icon">
         <i class="fas fa-bolt"></i>
       </div>
+
       <div>
-        <span class="section-kicker">SUBSTATIONS</span>
-        <h1 class="page-title">New Substation</h1>
+
+        <span class="section-kicker">
+          SUBSTATIONS
+        </span>
+
+        <h1 class="page-title">
+          <%= typeof substation !== "undefined" && substation
+            ? "Edit Substation"
+            : "New Substation"
+          %>
+        </h1>
+
         <p class="page-subtitle">
-          Add a new location where products can be allocated.
+          <%= typeof substation !== "undefined" && substation
+            ? "Update the details of this substation."
+            : "Add a new location where products can be allocated."
+          %>
         </p>
+
       </div>
+
     </div>
 
+
+    <!-- ======================================================
+         ERROR
+    ======================================================= -->
+
     <% if (typeof error !== "undefined" && error) { %>
+
       <div class="error" role="alert">
+
         <i class="fas fa-circle-exclamation"></i>
-        <span><%= error %></span>
+
+        <span>
+          <%= error %>
+        </span>
+
       </div>
+
     <% } %>
 
-    <form action="/substations" method="POST" class="substation-form">
+
+    <!-- ======================================================
+         CREATE / EDIT FORM
+
+         CREATE:
+             POST /substations
+
+         EDIT:
+             POST /branch/:id/edit
+    ======================================================= -->
+
+    <form
+      action="<%= typeof substation !== 'undefined' && substation
+        ? '/branch/' + substation._id + '/edit'
+        : '/substations'
+      %>"
+      method="POST"
+      class="substation-form"
+    >
+
 
       <div class="form-grid">
 
+
+        <!-- ==================================================
+             SUBSTATION NAME
+        =================================================== -->
+
         <div class="field">
-          <label for="name">Substation name</label>
+
+          <label for="name">
+            Substation name
+          </label>
+
           <input
             id="name"
             name="name"
-            value="<%= typeof old !== 'undefined' && old ? (old.name || '') : '' %>"
+            value="<%= typeof substation !== 'undefined' && substation
+              ? (substation.name || '')
+              : (typeof old !== 'undefined' && old
+                  ? (old.name || '')
+                  : '')
+            %>"
             placeholder="e.g. Nairobi Substation"
             required
             autocomplete="organization"
           >
+
         </div>
 
+
+        <!-- ==================================================
+             LOCATION
+        =================================================== -->
+
         <div class="field">
-          <label for="location">Location</label>
+
+          <label for="location">
+            Location
+          </label>
+
           <input
             id="location"
             name="location"
-            value="<%= typeof old !== 'undefined' && old ? (old.location || '') : '' %>"
+            value="<%= typeof substation !== 'undefined' && substation
+              ? (substation.location || '')
+              : (typeof old !== 'undefined' && old
+                  ? (old.location || '')
+                  : '')
+            %>"
             placeholder="e.g. Nairobi CBD"
             autocomplete="street-address"
           >
+
         </div>
 
+
+        <!-- ==================================================
+             DESCRIPTION
+        =================================================== -->
+
         <div class="field full">
-          <label for="description">Description</label>
+
+          <label for="description">
+            Description
+          </label>
+
           <textarea
             id="description"
             name="description"
             placeholder="Describe this substation or its location"
-          ><%= typeof old !== 'undefined' && old ? (old.description || '') : '' %></textarea>
+          ><%= typeof substation !== 'undefined' && substation
+            ? (substation.description || '')
+            : (typeof old !== 'undefined' && old
+                ? (old.description || '')
+                : '')
+          %></textarea>
+
         </div>
 
+
       </div>
+
+
+      <!-- ====================================================
+           FORM ACTIONS
+      ===================================================== -->
 
       <div class="form-actions">
-        <button type="submit" class="primary-btn">
-          <i class="fas fa-plus"></i>
-          Create Substation
-        </button>
 
-        <a href="/substations" class="secondary-btn">
+        <% if (
+          typeof substation !== "undefined" &&
+          substation
+        ) { %>
+
+          <!-- EDIT -->
+
+          <button
+            type="submit"
+            class="primary-btn"
+          >
+            <i class="fas fa-save"></i>
+            Save Changes
+          </button>
+
+        <% } else { %>
+
+          <!-- CREATE -->
+
+          <button
+            type="submit"
+            class="primary-btn"
+          >
+            <i class="fas fa-plus"></i>
+            Create Substation
+          </button>
+
+        <% } %>
+
+
+        <a
+          href="/substations"
+          class="secondary-btn"
+        >
           Cancel
         </a>
+
       </div>
+
 
     </form>
 
