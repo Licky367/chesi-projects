@@ -17,9 +17,11 @@ const indexService =
 //
 //     views/index.ejs
 //
-// Currently:
+// Data:
 //     - services
 //     - categories
+//     - substations
+//     - currentUser
 //
 // ==========================================================
 
@@ -46,6 +48,15 @@ exports.getHome = async function (req, res) {
 
 
         // ------------------------------------------------------
+        // GET ACTIVE SUBSTATIONS
+        // ------------------------------------------------------
+
+        const substations =
+            await indexService
+                .getActiveSubstations();
+
+
+        // ------------------------------------------------------
         // RENDER HOME PAGE
         // ------------------------------------------------------
 
@@ -59,6 +70,8 @@ exports.getHome = async function (req, res) {
                 services,
 
                 categories,
+
+                substations,
 
                 currentUser:
                     req.session?.user || null,
@@ -77,7 +90,7 @@ exports.getHome = async function (req, res) {
 
 
         // ------------------------------------------------------
-        // RENDER HOME PAGE WITH SAFE DEFAULTS
+        // SAFE FALLBACK
         // ------------------------------------------------------
 
         return res
@@ -92,6 +105,8 @@ exports.getHome = async function (req, res) {
                     services: [],
 
                     categories: [],
+
+                    substations: [],
 
                     currentUser:
                         req.session?.user || null,
