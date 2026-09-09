@@ -1,8 +1,8 @@
-// ==========================================================
-// Verrah Cosmetics
-// products/category.css
-// CATEGORY PRODUCTS PAGE
-// ==========================================================
+/* ==========================================================
+   Verrah Cosmetics
+   products/category.css
+   CATEGORY PRODUCTS PAGE
+========================================================== */
 
 
 /* ==========================================================
@@ -24,6 +24,7 @@
   --verrah-muted: #795548;
 
   --verrah-border: #e4cdbb;
+
   --verrah-shadow:
     0 8px 24px rgba(91, 45, 12, 0.10);
 
@@ -197,7 +198,6 @@
 .category-page-icon img {
 
   width: 100%;
-
   height: 100%;
 
   display: block;
@@ -210,13 +210,11 @@
 .category-page-icon-placeholder {
 
   width: 100%;
-
   height: 100%;
 
   display: flex;
 
   align-items: center;
-
   justify-content: center;
 
   color: var(--verrah-brown);
@@ -308,7 +306,6 @@
   display: flex;
 
   align-items: center;
-
   justify-content: center;
 
   gap: 10px;
@@ -352,7 +349,6 @@
   flex-direction: column;
 
   align-items: center;
-
   justify-content: center;
 
   gap: 12px;
@@ -400,7 +396,7 @@
 
   width: 100%;
 
-  margin-bottom: 38px;
+  margin-bottom: 42px;
 
 }
 
@@ -419,7 +415,7 @@
 
   gap: 20px;
 
-  margin-bottom: 16px;
+  margin-bottom: 17px;
 
   padding-bottom: 10px;
 
@@ -466,11 +462,29 @@
    ROW BLOCK
 ========================================================== */
 
+/*
+ * Each row is deliberately separated from the next row.
+ *
+ * EJS creates:
+ *
+ *   Row 1 → products 1 - 6
+ *   Row 2 → products 7 - 12
+ *   Row 3 → products 13 - 18
+ *
+ * The extra vertical padding prevents neighbouring rows
+ * from visually touching each other.
+ */
+
 .subcategory-row-block {
 
   width: 100%;
 
-  margin-bottom: 17px;
+  margin-bottom: 24px;
+
+  padding-top: 5px;
+  padding-bottom: 7px;
+
+  box-sizing: border-box;
 
 }
 
@@ -480,25 +494,84 @@
 ========================================================== */
 
 /*
- * SIX CARDS PER ROW
+ * IMPORTANT
  *
- * 1 - 6   = row 1
- * 7 - 12  = row 2
- * 13 - 18 = row 3
+ * Every row is horizontally scrollable.
  *
- * The EJS already groups the products into groups of six.
+ * The EJS controls the six-product grouping.
+ *
+ * Therefore:
+ *
+ *   Product 1 - 6  → Row 1
+ *   Product 7 - 12 → Row 2
+ *   Product 13-18  → Row 3
+ *
+ * The cards never wrap inside a row.
  */
 
 .product-row {
 
-  display: grid;
+  display: flex;
 
-  grid-template-columns:
-    repeat(6, minmax(0, 1fr));
+  flex-wrap: nowrap;
+
+  align-items: stretch;
 
   gap: 16px;
 
   width: 100%;
+
+  overflow-x: auto;
+
+  overflow-y: hidden;
+
+  padding: 6px 4px 14px;
+
+  box-sizing: border-box;
+
+  -webkit-overflow-scrolling: touch;
+
+  overscroll-behavior-x: contain;
+
+  scroll-snap-type: x proximity;
+
+  scrollbar-width: thin;
+
+}
+
+
+/* ==========================================================
+   PRODUCT ROW SCROLLBAR
+========================================================== */
+
+.product-row::-webkit-scrollbar {
+
+  height: 6px;
+
+}
+
+
+.product-row::-webkit-scrollbar-track {
+
+  background: var(--verrah-brown-soft);
+
+  border-radius: 20px;
+
+}
+
+
+.product-row::-webkit-scrollbar-thumb {
+
+  background: var(--verrah-brown);
+
+  border-radius: 20px;
+
+}
+
+
+.product-row::-webkit-scrollbar-thumb:hover {
+
+  background: var(--verrah-brown-dark);
 
 }
 
@@ -507,9 +580,34 @@
    PRODUCT CARD
 ========================================================== */
 
+/*
+ * SIX-CARD LAYOUT
+ *
+ * The calculation below gives each card exactly enough
+ * width for six cards plus five gaps inside the available
+ * row width.
+ *
+ * On narrower screens the cards are allowed to remain at
+ * their minimum width and the row becomes horizontally
+ * scrollable.
+ */
+
 .product-card {
 
-  min-width: 0;
+  flex:
+
+    0 0
+    calc(
+      (100% - 80px) / 6
+    );
+
+  width:
+
+    calc(
+      (100% - 80px) / 6
+    );
+
+  min-width: 150px;
 
   display: flex;
 
@@ -529,6 +627,8 @@
 
   box-shadow: var(--verrah-shadow);
 
+  scroll-snap-align: start;
+
   transition:
     transform 0.22s ease,
     box-shadow 0.22s ease,
@@ -537,14 +637,17 @@
 }
 
 
+/* ==========================================================
+   PRODUCT CARD HOVER
+========================================================== */
+
 .product-card:hover {
 
   transform: translateY(-5px);
 
   border-color: var(--verrah-brown-light);
 
-  box-shadow:
-    var(--verrah-shadow-hover);
+  box-shadow: var(--verrah-shadow-hover);
 
 }
 
@@ -571,7 +674,6 @@
 .product-image img {
 
   width: 100%;
-
   height: 100%;
 
   display: block;
@@ -604,7 +706,6 @@
   inset: 0;
 
   align-items: center;
-
   justify-content: center;
 
   background: var(--verrah-brown-soft);
@@ -743,6 +844,45 @@
 
 
 /* ==========================================================
+   LARGE DESKTOP
+========================================================== */
+
+@media (min-width: 1400px) {
+
+  .shop-page {
+
+    padding-left: 28px;
+
+    padding-right: 28px;
+
+  }
+
+
+  .product-row {
+
+    gap: 18px;
+
+  }
+
+
+  .product-card {
+
+    flex-basis:
+      calc(
+        (100% - 90px) / 6
+      );
+
+    width:
+      calc(
+        (100% - 90px) / 6
+      );
+
+  }
+
+}
+
+
+/* ==========================================================
    TABLET
 ========================================================== */
 
@@ -759,8 +899,24 @@
 
   .product-row {
 
-    grid-template-columns:
-      repeat(4, minmax(0, 1fr));
+    gap: 14px;
+
+  }
+
+
+  .product-card {
+
+    flex-basis:
+      calc(
+        (100% - 70px) / 6
+      );
+
+    width:
+      calc(
+        (100% - 70px) / 6
+      );
+
+    min-width: 145px;
 
   }
 
@@ -775,10 +931,26 @@
 
   .product-row {
 
-    grid-template-columns:
-      repeat(3, minmax(0, 1fr));
+    gap: 13px;
 
-    gap: 14px;
+    padding-left: 3px;
+    padding-right: 3px;
+
+  }
+
+
+  .product-card {
+
+    /*
+     * Keep six cards as the intended row.
+     * If they no longer fit, the row scrolls.
+     */
+
+    flex-basis: 180px;
+
+    width: 180px;
+
+    min-width: 180px;
 
   }
 
@@ -820,7 +992,7 @@
 
       14px
 
-      38px;
+      44px;
 
   }
 
@@ -874,7 +1046,7 @@
 
   .category-section {
 
-    margin-bottom: 30px;
+    margin-bottom: 36px;
 
   }
 
@@ -883,7 +1055,7 @@
 
     align-items: center;
 
-    margin-bottom: 13px;
+    margin-bottom: 14px;
 
   }
 
@@ -905,38 +1077,31 @@
 
 
   /*
-   * MOBILE HORIZONTAL SCROLL
+   * MOBILE ROW
    *
-   * Each row can be swiped left/right.
+   * Still horizontally scrollable.
+   *
+   * Products 1-6 remain in this row.
+   * Product 7 starts the next EJS row.
    */
 
   .product-row {
-
-    display: flex;
-
-    width: 100%;
-
-    overflow-x: auto;
-
-    overflow-y: hidden;
 
     gap: 13px;
 
     padding:
 
-      4px
+      5px
 
-      2px
+      3px
 
-      12px;
+      14px;
 
-    box-sizing: border-box;
+    overflow-x: auto;
+
+    overflow-y: hidden;
 
     scroll-snap-type: x proximity;
-
-    scrollbar-width: thin;
-
-    -webkit-overflow-scrolling: touch;
 
   }
 
@@ -949,42 +1114,7 @@
 
     width: 185px;
 
-    scroll-snap-align: start;
-
-  }
-
-
-  .product-row::-webkit-scrollbar {
-
-    height: 5px;
-
-  }
-
-
-  .product-row::-webkit-scrollbar-track {
-
-    background:
-      var(--verrah-brown-soft);
-
-    border-radius: 10px;
-
-  }
-
-
-  .product-row::-webkit-scrollbar-thumb {
-
-    background:
-      var(--verrah-brown);
-
-    border-radius: 10px;
-
-  }
-
-
-  .product-row::-webkit-scrollbar-thumb:hover {
-
-    background:
-      var(--verrah-brown-dark);
+    min-width: 185px;
 
   }
 
@@ -1009,6 +1139,8 @@
     padding-left: 11px;
 
     padding-right: 11px;
+
+    padding-bottom: 42px;
 
   }
 
@@ -1065,11 +1197,41 @@
   }
 
 
+  .subcategory-row-block {
+
+    margin-bottom: 21px;
+
+    padding-top: 4px;
+
+    padding-bottom: 6px;
+
+  }
+
+
+  .product-row {
+
+    gap: 12px;
+
+    padding:
+
+      5px
+
+      2px
+
+      13px;
+
+  }
+
+
   .product-card {
 
-    flex-basis: 170px;
+    flex:
+
+      0 0 170px;
 
     width: 170px;
+
+    min-width: 170px;
 
   }
 
@@ -1105,9 +1267,13 @@
 
   .product-card {
 
-    flex-basis: 160px;
+    flex:
+
+      0 0 160px;
 
     width: 160px;
+
+    min-width: 160px;
 
   }
 
@@ -1129,7 +1295,9 @@
 .product-card:focus-visible,
 .secondary-btn:focus-visible {
 
-  outline: 3px solid
+  outline:
+
+    3px solid
     rgba(139, 69, 19, 0.35);
 
   outline-offset: 3px;
