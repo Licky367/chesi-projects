@@ -1,16 +1,24 @@
-const mongoose = require("mongoose");
+// ==========================================================
+// verrah/services/branchService.js
+// PUBLIC BRANCH SERVICE
+// ==========================================================
+
+const mongoose =
+    require("mongoose");
 
 const Substation =
     require("../models/substations");
 
 
-/* =========================================================
-   GET BRANCH BY ID
-========================================================= */
+// ==========================================================
+// GET BRANCH BY ID
+// ==========================================================
 
 async function getBranchById(id) {
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (
+        !mongoose.Types.ObjectId.isValid(id)
+    ) {
         return null;
     }
 
@@ -21,21 +29,27 @@ async function getBranchById(id) {
                 isActive: true
             })
             .select(
-                "_id name location substationIcon description productInventory"
+                [
+                    "_id",
+                    "name",
+                    "location",
+                    "phoneNumber",
+                    "directions",
+                    "substationIcon",
+                    "images",
+                    "description",
+                    "productInventory"
+                ].join(" ")
             )
             .lean();
 
-    if (!substation) {
-        return null;
-    }
-
-    return substation;
+    return substation || null;
 }
 
 
-/* =========================================================
-   EXPORT
-========================================================= */
+// ==========================================================
+// EXPORT
+// ==========================================================
 
 module.exports = {
     getBranchById
