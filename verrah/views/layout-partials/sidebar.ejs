@@ -1,14 +1,11 @@
 <!-- =========================================================
    SIDEBAR
-======================================================== -->
+========================================================= -->
 
 <aside
     id="sidebar"
-
     class="sidebar"
-
     aria-label="Project navigation"
-
     aria-expanded="false"
 >
 
@@ -28,19 +25,14 @@
 
             <button
                 type="button"
-
                 id="sidebarMenuButton"
-
                 class="sidebar-menu-button"
-
                 aria-label="Close navigation menu"
-
                 aria-expanded="true"
             >
 
                 <span
                     class="sidebar-menu-icon"
-
                     aria-hidden="true"
                 >
                     ☰
@@ -63,15 +55,12 @@
 
             <a
                 href="<%= homeLink %>"
-
                 class="sidebar-link active"
-
                 title="Dashboard"
             >
 
                 <span
                     class="sidebar-icon"
-
                     aria-hidden="true"
                 >
                     ⌂
@@ -86,27 +75,25 @@
         </li>
 
 
+        <% if (user && user.role === "admin") { %>
+
         <!-- =================================================
            MANAGEMENT ACTIVITIES
+           ADMIN ONLY
         ================================================== -->
 
         <li class="sidebar-item">
 
             <button
                 type="button"
-
                 id="dairyActivitiesButton"
-
                 class="sidebar-section-button"
-
                 aria-expanded="false"
-
                 aria-controls="dairyActivitiesSubmenu"
             >
 
                 <span
                     class="sidebar-icon"
-
                     aria-hidden="true"
                 >
                     📒
@@ -118,7 +105,6 @@
 
                 <span
                     class="sidebar-section-arrow"
-
                     aria-hidden="true"
                 >
                     ▶
@@ -133,26 +119,24 @@
 
             <ul
                 id="dairyActivitiesSubmenu"
-
                 class="sidebar-submenu"
             >
 
 
-                <!-- Add Asset -->
+                <!-- =========================================
+                   STOCK MANAGEMENT
+                ========================================== -->
 
                 <li class="sidebar-item">
 
                     <a
                         href="/stock"
-
                         class="sidebar-link"
-
                         title="Stock Management"
                     >
 
                         <span
                             class="sidebar-icon"
-
                             aria-hidden="true"
                         >
                             📈
@@ -167,21 +151,20 @@
                 </li>
 
 
-                <!-- Substations/branches-->
+                <!-- =========================================
+                   SUBSTATIONS / BRANCHES
+                ========================================== -->
 
                 <li class="sidebar-item">
 
                     <a
                         href="/substations"
-
                         class="sidebar-link"
-
                         title="Substations"
                     >
 
                         <span
                             class="sidebar-icon"
-
                             aria-hidden="true"
                         >
                             🛃
@@ -196,21 +179,21 @@
                 </li>
 
 
-                <!-- Record Milk Sales -->
-<!--
+                <!-- =========================================
+                   RECORD MILK SALES
+                ========================================== -->
+
+                <!--
                 <li class="sidebar-item">
 
                     <a
                         href="/milk/sales"
-
                         class="sidebar-link"
-
                         title="Record Milk Sales"
                     >
 
                         <span
                             class="sidebar-icon"
-
                             aria-hidden="true"
                         >
                             💰
@@ -223,23 +206,24 @@
                     </a>
 
                 </li>
--->
+                -->
 
-                <!-- Milk Statistics -->
-<!--
+
+                <!-- =========================================
+                   MILK STATISTICS
+                ========================================== -->
+
+                <!--
                 <li class="sidebar-item">
 
                     <a
                         href="/stats"
-
                         class="sidebar-link"
-
                         title="Milk Statistics"
                     >
 
                         <span
                             class="sidebar-icon"
-
                             aria-hidden="true"
                         >
                             📊
@@ -252,11 +236,13 @@
                     </a>
 
                 </li>
--->
+                -->
 
             </ul>
 
         </li>
+
+        <% } %>
 
 
         <!-- =================================================
@@ -267,15 +253,12 @@
 
             <a
                 href="/products"
-
                 class="sidebar-link"
-
-                title="View Assets"
+                title="View Products"
             >
 
                 <span
                     class="sidebar-icon"
-
                     aria-hidden="true"
                 >
                     🛍️
@@ -288,23 +271,22 @@
             </a>
 
         </li>
+
+
         <!-- =================================================
-           CARTS
+           CART
         ================================================== -->
 
         <li class="sidebar-item">
 
             <a
                 href="/carts"
-
                 class="sidebar-link"
-
                 title="Carts"
             >
 
                 <span
                     class="sidebar-icon"
-
                     aria-hidden="true"
                 >
                     🛒
@@ -317,6 +299,8 @@
             </a>
 
         </li>
+
+
         <!-- =================================================
            CLIENT ORDERS
         ================================================== -->
@@ -325,15 +309,12 @@
 
             <a
                 href="/packages"
-
                 class="sidebar-link"
-
-                title="packages"
+                title="My Orders"
             >
 
                 <span
                     class="sidebar-icon"
-
                     aria-hidden="true"
                 >
                     🎁
@@ -347,23 +328,27 @@
 
         </li>
 
+
+        <% if (
+            user &&
+            (user.role === "admin" || user.role === "staff")
+        ) { %>
+
         <!-- =================================================
            STAFF DELIVERIES
+           ADMIN + STAFF
         ================================================== -->
 
         <li class="sidebar-item">
 
             <a
                 href="/packages/staff"
-
                 class="sidebar-link"
-
                 title="Staff Deliveries"
             >
 
                 <span
                     class="sidebar-icon"
-
                     aria-hidden="true"
                 >
                     🚚
@@ -377,24 +362,26 @@
 
         </li>
 
+        <% } %>
+
+
+        <% if (user && user.role === "admin") { %>
 
         <!-- =================================================
            FINANCIALS
+           ADMIN ONLY
         ================================================== -->
 
         <li class="sidebar-item">
 
             <a
                 href="/financials/summary"
-
                 class="sidebar-link"
-
                 title="Financials"
             >
 
                 <span
                     class="sidebar-icon"
-
                     aria-hidden="true"
                 >
                     💱
@@ -407,6 +394,8 @@
             </a>
 
         </li>
+
+        <% } %>
 
 
     </ul>
@@ -432,8 +421,6 @@
 
 <div
     id="sidebarOverlay"
-
     class="overlay"
-
     aria-hidden="true"
 ></div>
