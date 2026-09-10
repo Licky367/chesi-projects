@@ -28,7 +28,7 @@ const requireAdmin =
   require("../middleware/requireAdmin");
 
 const categoryUpload =
-  require("../middleware/imageUpload");
+  require("../middleware/categoryUpload");
 
 // ==========================================================
 // PRODUCTS
