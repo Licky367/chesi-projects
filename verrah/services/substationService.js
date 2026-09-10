@@ -1,60 +1,227 @@
 // ==========================================================
-// CREATE SUBSTATION
+// verrah/models/substations.js
+// SUBSTATION MODEL
 // ==========================================================
 
-exports.create = async (body) => {
+const mongoose = require("mongoose");
 
-  const name =
-    text(body.name);
 
-  if (!name) {
-    throw new Error(
-      "Substation name is required."
-    );
-  }
+// ==========================================================
+// PRODUCT INVENTORY SCHEMA
+// ==========================================================
 
-  if (
-    await Substation.findOne({ name })
-  ) {
-    throw new Error(
-      "A substation with that name already exists."
-    );
-  }
+const productInventorySchema = new mongoose.Schema(
+  {
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true
+    },
 
-  let phoneNumber = null;
+    productName: {
+      type: String,
+      required: true,
+      trim: true
+    },
 
-  if (
-    body.phoneNumber !== undefined &&
-    body.phoneNumber !== ""
-  ) {
+    category: {
+      type: String,
+      default: "",
+      trim: true
+    },
 
-    phoneNumber =
-      Number(body.phoneNumber);
+    subcategory: {
+      type: String,
+      default: "",
+      trim: true
+    },
 
-    if (!Number.isFinite(phoneNumber)) {
-      throw new Error(
-        "Phone number must be a valid number."
-      );
+    days: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+
+    units: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
+    },
+
+    updatedAt: {
+      type: Date,
+      default: Date.now
     }
+  },
+  {
+    _id: false
   }
+);
 
-  return Substation.create({
 
-    name,
+// ==========================================================
+// SUBSTATION PRODUCT REDUCTION SCHEMA
+// ==========================================================
 
-    location:
-      text(body.location),
+const substationProductReductionSchema = new mongoose.Schema(
+  {
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true
+    },
 
-    phoneNumber,
+    productName: {
+      type: String,
+      required: true,
+      trim: true
+    },
 
-    directions:
-      text(body.directions),
+    category: {
+      type: String,
+      default: "",
+      trim: true
+    },
 
-    description:
-      text(body.description),
+    unitsReduced: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
+    },
 
-    substationIcon: "",
+    lastReducedAt: {
+      type: Date,
+      default: null
+    }
+  },
+  {
+    _id: false
+  }
+);
 
-    images: []
-  });
-};
+
+// ==========================================================
+// SUBSTATION SCHEMA
+// ==========================================================
+
+const substationSchema = new mongoose.Schema(
+  {
+    // ------------------------------------------------------
+    // BASIC INFORMATION
+    // ------------------------------------------------------
+
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
+      index: true
+    },
+
+    location: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+
+
+    // ------------------------------------------------------
+    // CONTACT INFORMATION
+    // ------------------------------------------------------
+
+    phoneNumber: {
+      type: Number,
+      default: null
+    },
+
+
+    // ------------------------------------------------------
+    // SUBSTATION ICON
+    // One image
+    // ------------------------------------------------------
+
+    substationIcon: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+
+
+    // ------------------------------------------------------
+    // SUBSTATION IMAGES
+    // Multiple images
+    // ------------------------------------------------------
+
+    images: {
+      type: [String],
+      default: []
+    },
+
+
+    // ------------------------------------------------------
+    // DESCRIPTION
+    // ------------------------------------------------------
+
+    description: {
+      type: String,
+      default: ""
+    },
+
+
+    // ------------------------------------------------------
+    // DIRECTIONS
+    // ------------------------------------------------------
+
+    directions: {
+      type: String,
+      default: ""
+    },
+
+
+    // ------------------------------------------------------
+    // STATUS
+    // ------------------------------------------------------
+
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+
+
+    // ------------------------------------------------------
+    // PRODUCT INVENTORY
+    // ------------------------------------------------------
+
+    productInventory: {
+      type: [productInventorySchema],
+      default: []
+    },
+
+
+    // ------------------------------------------------------
+    // PRODUCT REDUCTIONS
+    // ------------------------------------------------------
+
+    productReductions: {
+      type: [substationProductReductionSchema],
+      default: []
+    }
+  },
+
+  {
+    timestamps: true
+  }
+);
+
+
+// ==========================================================
+// EXPORT
+// ==========================================================
+
+module.exports =
+  mongoose.model(
+    "Substation",
+    substationSchema
+  );
