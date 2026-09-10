@@ -1,34 +1,65 @@
 // ==========================================================
-// controllers/substations.js
+// verrah/controllers/substations.js
 // SUBSTATION CONTROLLER
 // ==========================================================
 
-const service = require("../services/substationService");
+const service =
+  require("../services/substationService");
 
 
 // ==========================================================
 // LIST SUBSTATIONS
 // ==========================================================
 
-exports.list = async (req, res) => {
+exports.list = async (
+  req,
+  res
+) => {
+
   try {
-    res.render("substations/index", {
-      title: "Substations",
-      substations: await service.list(),
-      error: req.query.error || null,
-      saved: req.query.saved || "",
-      user: req.user
-    });
+
+    res.render(
+      "substations/index",
+      {
+        title: "Substations",
+
+        substations:
+          await service.list(),
+
+        error:
+          req.query.error || null,
+
+        saved:
+          req.query.saved || "",
+
+        user:
+          req.user
+      }
+    );
 
   } catch (e) {
 
-    res.status(500).render("substations/index", {
-      title: "Substations",
-      substations: [],
-      error: e.message,
-      saved: "",
-      user: req.user
-    });
+    console.error(
+      "SUBSTATION LIST ERROR:",
+      e
+    );
+
+    res.status(500).render(
+      "substations/index",
+      {
+        title: "Substations",
+
+        substations: [],
+
+        error:
+          e.message,
+
+        saved: "",
+
+        user:
+          req.user
+      }
+    );
   }
 };
 
@@ -37,34 +68,70 @@ exports.list = async (req, res) => {
 // NEW SUBSTATION FORM
 // ==========================================================
 
-exports.newForm = (req, res) =>
-  res.render("substations/new", {
-    title: "New Substation",
-    error: null,
-    old: {},
-    user: req.user
-  });
+exports.newForm = (
+  req,
+  res
+) => {
+
+  res.render(
+    "substations/new",
+    {
+      title:
+        "New Substation",
+
+      error: null,
+
+      old: {},
+
+      user:
+        req.user
+    }
+  );
+};
 
 
 // ==========================================================
 // CREATE SUBSTATION
 // ==========================================================
 
-exports.create = async (req, res) => {
+exports.create = async (
+  req,
+  res
+) => {
+
   try {
 
-    await service.create(req.body);
+    await service.create(
+      req.body
+    );
 
-    res.redirect("/substations?saved=1");
+    res.redirect(
+      "/substations?saved=1"
+    );
 
   } catch (e) {
 
-    res.status(400).render("substations/new", {
-      title: "New Substation",
-      error: e.message,
-      old: req.body,
-      user: req.user
-    });
+    console.error(
+      "CREATE SUBSTATION ERROR:",
+      e
+    );
+
+    res.status(400).render(
+      "substations/new",
+      {
+        title:
+          "New Substation",
+
+        error:
+          e.message,
+
+        old:
+          req.body,
+
+        user:
+          req.user
+      }
+    );
   }
 };
 
@@ -73,28 +140,49 @@ exports.create = async (req, res) => {
 // SUBSTATION DETAIL
 // ==========================================================
 
-exports.detail = async (req, res) => {
+exports.detail = async (
+  req,
+  res
+) => {
+
   try {
 
     const substation =
-      await service.getWithProducts(req.params.id);
+      await service.getWithProducts(
+        req.params.id
+      );
 
     if (!substation) {
+
       return res.redirect(
         "/substations?error=Substation+not+found"
       );
     }
 
-    res.render("substations/detail", {
-      title: substation.name,
-      substation,
-      user: req.user
-    });
+    return res.render(
+      "substations/detail",
+      {
+        title:
+          substation.name,
+
+        substation,
+
+        user:
+          req.user
+      }
+    );
 
   } catch (e) {
 
-    res.redirect(
-      `/substations?error=${encodeURIComponent(e.message)}`
+    console.error(
+      "SUBSTATION DETAIL ERROR:",
+      e
+    );
+
+    return res.redirect(
+      `/substations?error=${encodeURIComponent(
+        e.message
+      )}`
     );
   }
 };
@@ -104,33 +192,61 @@ exports.detail = async (req, res) => {
 // PRODUCT DETAIL
 // ==========================================================
 
-exports.productDetail = async (req, res) => {
+exports.productDetail =
+async (
+  req,
+  res
+) => {
+
   try {
 
     const product =
-      await service.getProduct(req.params.id);
+      await service.getProduct(
+        req.params.id
+      );
 
     if (!product) {
+
       return res.redirect(
         "/substations?error=Product+not+found"
       );
     }
 
-    res.render("substations/product-detail", {
-      title: product.name,
-      product,
-      role: String(
-        req.user?.role || ""
-      ).toLowerCase(),
-      error: req.query.error || null,
-      success: req.query.success || null,
-      user: req.user
-    });
+    return res.render(
+      "substations/product-detail",
+      {
+        title:
+          product.name,
+
+        product,
+
+        role:
+          String(
+            req.user?.role || ""
+          ).toLowerCase(),
+
+        error:
+          req.query.error || null,
+
+        success:
+          req.query.success || null,
+
+        user:
+          req.user
+      }
+    );
 
   } catch (e) {
 
-    res.redirect(
-      `/substations?error=${encodeURIComponent(e.message)}`
+    console.error(
+      "PRODUCT DETAIL ERROR:",
+      e
+    );
+
+    return res.redirect(
+      `/substations?error=${encodeURIComponent(
+        e.message
+      )}`
     );
   }
 };
@@ -140,14 +256,23 @@ exports.productDetail = async (req, res) => {
 // UPDATE PRODUCT UNITS
 // ==========================================================
 
-exports.updateProductUnits = async (req, res) => {
+exports.updateProductUnits =
+async (
+  req,
+  res
+) => {
+
   try {
 
     if (
-      String(req.user?.role || "").toLowerCase() !==
-      "admin"
+      String(
+        req.user?.role || ""
+      ).toLowerCase() !== "admin"
     ) {
-      throw new Error("Admin access required.");
+
+      throw new Error(
+        "Admin access required."
+      );
     }
 
     await service.updateProductUnits(
@@ -163,7 +288,10 @@ exports.updateProductUnits = async (req, res) => {
 
   } catch (e) {
 
-    console.error(e);
+    console.error(
+      "UPDATE PRODUCT UNITS ERROR:",
+      e
+    );
 
     return res.redirect(
       `/substations/product/${req.params.id}?error=${encodeURIComponent(
@@ -178,30 +306,55 @@ exports.updateProductUnits = async (req, res) => {
 // EDIT SUBSTATION
 // ==========================================================
 
-exports.editForm = async (req, res) => {
+exports.editForm =
+async (
+  req,
+  res
+) => {
+
   try {
 
     const substation =
-      await service.getById(req.params.id);
+      await service.getById(
+        req.params.id
+      );
 
     if (!substation) {
+
       return res.redirect(
         "/substations?error=Substation+not+found"
       );
     }
 
-    res.render("substations/new", {
-      title: "Edit Substation",
-      substation,
-      error: null,
-      old: {},
-      user: req.user
-    });
+    return res.render(
+      "substations/new",
+      {
+        title:
+          "Edit Substation",
+
+        substation,
+
+        error:
+          null,
+
+        old: {},
+
+        user:
+          req.user
+      }
+    );
 
   } catch (e) {
 
-    res.redirect(
-      `/substations?error=${encodeURIComponent(e.message)}`
+    console.error(
+      "EDIT SUBSTATION ERROR:",
+      e
+    );
+
+    return res.redirect(
+      `/substations?error=${encodeURIComponent(
+        e.message
+      )}`
     );
   }
 };
@@ -211,7 +364,12 @@ exports.editForm = async (req, res) => {
 // UPDATE SUBSTATION
 // ==========================================================
 
-exports.update = async (req, res) => {
+exports.update =
+async (
+  req,
+  res
+) => {
+
   try {
 
     await service.update(
@@ -219,93 +377,143 @@ exports.update = async (req, res) => {
       req.body
     );
 
-    res.redirect(
+    return res.redirect(
       `/substations/branch/${req.params.id}/edit?saved=1`
     );
 
   } catch (e) {
 
-    res.status(400).render("substations/new", {
-      title: "Edit Substation",
+    console.error(
+      "UPDATE SUBSTATION ERROR:",
+      e
+    );
 
-      substation: {
-        _id: req.params.id,
-        ...req.body
-      },
+    return res.status(400).render(
+      "substations/new",
+      {
+        title:
+          "Edit Substation",
 
-      error: e.message,
-      old: req.body,
-      user: req.user
-    });
-  }
-};
+        substation: {
+          _id:
+            req.params.id,
 
+          ...req.body
+        },
 
-// ==========================================================
-// EDIT SUBSTATION ICON FORM
-// GET /substations/branch/icon/:id
-// ==========================================================
+        error:
+          e.message,
 
-exports.editIconForm = async (req, res) => {
-  try {
+        old:
+          req.body,
 
-    const substation =
-      await service.getById(req.params.id);
-
-    if (!substation) {
-      return res.redirect(
-        "/substations?error=Substation+not+found"
-      );
-    }
-
-    res.render("branch-partials/icon", {
-      title: `Edit Icon - ${substation.name}`,
-      substation,
-      error: req.query.error || null,
-      success: req.query.success || null,
-      user: req.user
-    });
-
-  } catch (e) {
-
-    console.error(e);
-
-    res.redirect(
-      `/substations?error=${encodeURIComponent(e.message)}`
+        user:
+          req.user
+      }
     );
   }
 };
 
 
 // ==========================================================
-// UPDATE SUBSTATION ICON
-// POST /substations/branch/icon/:id
+// EDIT ICON FORM
 // ==========================================================
 
-exports.updateIcon = async (req, res) => {
+exports.editIconForm =
+async (
+  req,
+  res
+) => {
+
+  try {
+
+    const substation =
+      await service.getById(
+        req.params.id
+      );
+
+    if (!substation) {
+
+      return res.redirect(
+        "/substations?error=Substation+not+found"
+      );
+    }
+
+    return res.render(
+      "branch-partials/icon",
+      {
+        title:
+          `Edit Icon - ${substation.name}`,
+
+        substation,
+
+        editMode:
+          true,
+
+        error:
+          req.query.error || null,
+
+        success:
+          req.query.success || null,
+
+        user:
+          req.user
+      }
+    );
+
+  } catch (e) {
+
+    console.error(
+      "EDIT ICON FORM ERROR:",
+      e
+    );
+
+    return res.redirect(
+      `/substations?error=${encodeURIComponent(
+        e.message
+      )}`
+    );
+  }
+};
+
+
+// ==========================================================
+// UPDATE ICON
+// ==========================================================
+
+exports.updateIcon =
+async (
+  req,
+  res
+) => {
+
   try {
 
     if (
-      String(req.user?.role || "").toLowerCase() !==
-      "admin"
+      String(
+        req.user?.role || ""
+      ).toLowerCase() !== "admin"
     ) {
-      throw new Error("Admin access required.");
-    }
 
+      throw new Error(
+        "Admin access required."
+      );
+    }
 
     const substation =
-      await service.getById(req.params.id);
+      await service.getById(
+        req.params.id
+      );
 
     if (!substation) {
-      throw new Error("Substation not found.");
+
+      throw new Error(
+        "Substation not found."
+      );
     }
 
-
-    // ------------------------------------------------------
-    // Ensure an image was uploaded
-    // ------------------------------------------------------
-
     if (!req.file) {
+
       return res.redirect(
         `/substations/branch/icon/${req.params.id}?error=${encodeURIComponent(
           "Please select an icon image."
@@ -313,26 +521,15 @@ exports.updateIcon = async (req, res) => {
       );
     }
 
-
-    // ------------------------------------------------------
-    // Public path stored in MongoDB
-    // ------------------------------------------------------
-
     const imagePath =
       `/uploads/substations/${req.file.filename}`;
-
-
-    // ------------------------------------------------------
-    // Update icon
-    // ------------------------------------------------------
 
     await service.updateIcon(
       req.params.id,
       imagePath
     );
 
-
-    res.redirect(
+    return res.redirect(
       `/substations/branch/icon/${req.params.id}?success=${encodeURIComponent(
         "Substation icon updated successfully."
       )}`
@@ -340,9 +537,12 @@ exports.updateIcon = async (req, res) => {
 
   } catch (e) {
 
-    console.error(e);
+    console.error(
+      "UPDATE ICON ERROR:",
+      e
+    );
 
-    res.redirect(
+    return res.redirect(
       `/substations/branch/icon/${req.params.id}?error=${encodeURIComponent(
         e.message
       )}`
@@ -352,111 +552,154 @@ exports.updateIcon = async (req, res) => {
 
 
 // ==========================================================
-// EDIT SUBSTATION IMAGES FORM
-// GET /substations/branch/images/:id
+// EDIT IMAGES FORM
 // ==========================================================
 
-exports.editImagesForm = async (req, res) => {
+exports.editImagesForm =
+async (
+  req,
+  res
+) => {
+
   try {
 
     const substation =
-      await service.getById(req.params.id);
+      await service.getById(
+        req.params.id
+      );
 
     if (!substation) {
+
       return res.redirect(
         "/substations?error=Substation+not+found"
       );
     }
 
-    res.render("branch-partials/images", {
-      title: `Manage Images - ${substation.name}`,
-      substation,
-      error: req.query.error || null,
-      success: req.query.success || null,
-      user: req.user
-    });
+    return res.render(
+      "branch-partials/images",
+      {
+        title:
+          `Manage Images - ${substation.name}`,
+
+        substation,
+
+        editMode:
+          true,
+
+        error:
+          req.query.error || null,
+
+        success:
+          req.query.success || null,
+
+        user:
+          req.user
+      }
+    );
 
   } catch (e) {
 
-    console.error(e);
+    console.error(
+      "EDIT IMAGES FORM ERROR:",
+      e
+    );
 
-    res.redirect(
-      `/substations?error=${encodeURIComponent(e.message)}`
+    return res.redirect(
+      `/substations?error=${encodeURIComponent(
+        e.message
+      )}`
     );
   }
 };
 
 
 // ==========================================================
-// UPDATE SUBSTATION IMAGES
-// POST /substations/branch/images/:id
+// UPDATE IMAGES
 // ==========================================================
 
-exports.updateImages = async (req, res) => {
+exports.updateImages =
+async (
+  req,
+  res
+) => {
+
   try {
 
     if (
-      String(req.user?.role || "").toLowerCase() !==
-      "admin"
+      String(
+        req.user?.role || ""
+      ).toLowerCase() !== "admin"
     ) {
-      throw new Error("Admin access required.");
-    }
 
+      throw new Error(
+        "Admin access required."
+      );
+    }
 
     const substation =
-      await service.getById(req.params.id);
+      await service.getById(
+        req.params.id
+      );
 
     if (!substation) {
-      throw new Error("Substation not found.");
+
+      throw new Error(
+        "Substation not found."
+      );
     }
 
 
     // ------------------------------------------------------
-    // Uploaded images
+    // EXISTING IMAGES TO KEEP
     // ------------------------------------------------------
 
-    const uploadedImages =
-      Array.isArray(req.files)
-        ? req.files.map(
-            file =>
-              `/uploads/substations/${file.filename}`
-          )
-        : [];
+    let keepImages =
+      req.body.keepImages || [];
 
+    if (
+      !Array.isArray(
+        keepImages
+      )
+    ) {
 
-    // ------------------------------------------------------
-    // Existing images selected to keep
-    //
-    // Expected form field:
-    // keepImages
-    // ------------------------------------------------------
-
-    let keepImages = req.body.keepImages || [];
-
-
-    if (!Array.isArray(keepImages)) {
-      keepImages = [keepImages];
+      keepImages =
+        [keepImages];
     }
 
-
-    // ------------------------------------------------------
-    // Only keep images that actually belong to this
-    // substation.
-    // ------------------------------------------------------
 
     const existingImages =
-      Array.isArray(substation.images)
+      Array.isArray(
+        substation.images
+      )
         ? substation.images
         : [];
 
 
-    keepImages = keepImages.filter(
-      image => existingImages.includes(image)
-    );
+    keepImages =
+      keepImages.filter(
+        image =>
+          existingImages.includes(
+            image
+          )
+      );
 
 
     // ------------------------------------------------------
-    // Combine retained + newly uploaded images
+    // NEWLY UPLOADED IMAGES
+    // ------------------------------------------------------
+
+    const uploadedImages =
+      Array.isArray(req.files)
+        ? req.files
+            .map(
+              file =>
+                `/uploads/substations/${file.filename}`
+            )
+        : [];
+
+
+    // ------------------------------------------------------
+    // FINAL IMAGE LIST
     // ------------------------------------------------------
 
     const images = [
@@ -465,8 +708,16 @@ exports.updateImages = async (req, res) => {
     ];
 
 
+    if (images.length > 20) {
+
+      throw new Error(
+        "A substation can have a maximum of 20 images."
+      );
+    }
+
+
     // ------------------------------------------------------
-    // Update database
+    // SAVE
     // ------------------------------------------------------
 
     await service.updateImages(
@@ -475,7 +726,7 @@ exports.updateImages = async (req, res) => {
     );
 
 
-    res.redirect(
+    return res.redirect(
       `/substations/branch/images/${req.params.id}?success=${encodeURIComponent(
         "Substation images updated successfully."
       )}`
@@ -483,9 +734,12 @@ exports.updateImages = async (req, res) => {
 
   } catch (e) {
 
-    console.error(e);
+    console.error(
+      "UPDATE IMAGES ERROR:",
+      e
+    );
 
-    res.redirect(
+    return res.redirect(
       `/substations/branch/images/${req.params.id}?error=${encodeURIComponent(
         e.message
       )}`
