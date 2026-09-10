@@ -9,6 +9,9 @@
    BEHAVIOUR:
        - Horizontal left/right scrolling
        - Admin sees Add Category as first card
+       - All users see All Products card
+       - Admin: All Products is the second card
+       - Normal users: All Products is the first card
        - Category card links to:
              /products/category/:id
        - Admin sees Edit button on each category card
@@ -76,6 +79,46 @@
             </a>
 
         <% } %>
+
+
+        <!-- ==================================================
+             ALL PRODUCTS
+             - First for normal users
+             - Second for admins
+        =================================================== -->
+
+        <a
+            href="/products"
+            class="home-category-card home-category-all-products"
+            aria-label="All Products"
+            style="
+                text-decoration: none;
+                color: inherit;
+            "
+        >
+
+            <div class="home-category-icon">
+
+                <div class="home-category-icon-fallback">
+                    <i class="fas fa-boxes-stacked"></i>
+                </div>
+
+            </div>
+
+
+            <div class="home-category-content">
+
+                <h3 class="home-category-name">
+                    All Products
+                </h3>
+
+                <p class="home-category-description">
+                    Browse all available products.
+                </p>
+
+            </div>
+
+        </a>
 
 
         <!-- ==================================================
