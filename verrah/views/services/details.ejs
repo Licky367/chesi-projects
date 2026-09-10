@@ -1,407 +1,173 @@
-<section class="verah-service-page">
-
-    <div class="verah-service-detail-card">
+<section class="verah-service-page"><div class="verah-service-detail-card">
 
 
-        <!-- =================================================
-             SERVICE IMAGE
-        ================================================== -->
+    <!-- =================================================
+         SERVICE IMAGE
+    ================================================== -->
 
-        <div class="verah-detail-image-box">
+    <div class="verah-detail-image-box">
 
-            <% if (service.image) { %>
+        <% if (service.image) { %>
 
-                <img
-                    src="<%= service.image %>"
-                    alt="<%= service.name %>"
-                    class="verah-detail-image"
-                >
+            <img
+                src="<%= service.image %>"
+                alt="<%= service.name %>"
+                class="verah-detail-image"
+            >
 
-            <% } else { %>
+        <% } else { %>
 
-                <div class="verah-detail-image-placeholder">
+            <div class="verah-detail-image-placeholder">
+                VERAH COSMETICS
+            </div>
+
+        <% } %>
+
+    </div>
+
+
+    <!-- =================================================
+         DETAIL CONTENT
+    ================================================== -->
+
+    <div class="verah-detail-content">
+
+
+        <!-- =============================================
+             HEADER
+        ============================================== -->
+
+        <div class="verah-detail-header">
+
+            <div>
+
+                <span class="verah-service-page-label">
                     VERAH COSMETICS
-                </div>
+                </span>
 
-            <% } %>
+                <h1>
+                    <%= service.name %>
+                </h1>
+
+            </div>
+
+
+            <span
+                class="verah-service-status <%= service.active
+                    ? 'verah-status-active'
+                    : 'verah-status-inactive'
+                %>"
+            >
+                <%= service.active
+                    ? "Active"
+                    : "Inactive"
+                %>
+            </span>
 
         </div>
 
 
-        <!-- =================================================
-             DETAIL CONTENT
-        ================================================== -->
+        <!-- =============================================
+             DESCRIPTION
+        ============================================== -->
 
-        <div class="verah-detail-content">
+        <div class="verah-detail-description-section">
 
+            <h2>
+                About this service
+            </h2>
 
-            <!-- =============================================
-                 HEADER
-            ============================================== -->
+            <p class="verah-service-detail-description">
+                <%= service.description %>
+            </p>
 
-            <div class="verah-detail-header">
-
-                <div>
-
-                    <span class="verah-service-page-label">
-                        VERAH COSMETICS
-                    </span>
-
-                    <h1>
-                        <%= service.name %>
-                    </h1>
-
-                </div>
+        </div>
 
 
-                <span
-                    class="verah-service-status <%= service.active
+        <!-- =============================================
+             SERVICE DETAILS
+        ============================================== -->
+
+        <div class="verah-detail-info-grid">
+
+
+            <!-- PRICE -->
+
+            <div class="verah-detail-info-card">
+
+                <span class="verah-detail-info-label">
+                    Price
+                </span>
+
+                <strong class="verah-detail-price">
+                    KSh
+                    <%= Number(
+                        service.price
+                    ).toLocaleString() %>
+                </strong>
+
+            </div>
+
+
+            <!-- DURATION -->
+
+            <div class="verah-detail-info-card">
+
+                <span class="verah-detail-info-label">
+                    Duration
+                </span>
+
+                <strong>
+                    <%= service.duration || "Not specified" %>
+                </strong>
+
+            </div>
+
+
+            <!-- STATUS -->
+
+            <div class="verah-detail-info-card">
+
+                <span class="verah-detail-info-label">
+                    Status
+                </span>
+
+                <strong
+                    class="<%= service.active
                         ? 'verah-status-active'
                         : 'verah-status-inactive'
                     %>"
                 >
                     <%= service.active
-                        ? "Active"
-                        : "Inactive"
+                        ? "Available"
+                        : "Unavailable"
                     %>
-                </span>
-
-            </div>
-
-
-            <!-- =============================================
-                 DESCRIPTION
-            ============================================== -->
-
-            <div class="verah-detail-description-section">
-
-                <h2>
-                    About this service
-                </h2>
-
-                <p class="verah-service-detail-description">
-                    <%= service.description %>
-                </p>
-
-            </div>
-
-
-            <!-- =============================================
-                 SERVICE INFORMATION
-            ============================================== -->
-
-            <div class="verah-detail-info-grid">
-
-
-                <div class="verah-detail-info-card">
-
-                    <span class="verah-detail-info-label">
-                        Price
-                    </span>
-
-                    <strong class="verah-detail-price">
-                        KSh
-                        <%= Number(
-                            service.price
-                        ).toLocaleString() %>
-                    </strong>
-
-                </div>
-
-
-                <div class="verah-detail-info-card">
-
-                    <span class="verah-detail-info-label">
-                        Duration
-                    </span>
-
-                    <strong>
-                        <%= service.duration || "Not specified" %>
-                    </strong>
-
-                </div>
-
-
-                <div class="verah-detail-info-card">
-
-                    <span class="verah-detail-info-label">
-                        Status
-                    </span>
-
-                    <strong
-                        class="<%= service.active
-                            ? 'verah-status-active'
-                            : 'verah-status-inactive'
-                        %>"
-                    >
-                        <%= service.active
-                            ? "Available"
-                            : "Unavailable"
-                        %>
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <!-- =============================================
-                 SERVICE RECORD
-            ============================================== -->
-
-            <div class="verah-service-record">
-
-                <h2>
-                    Service Information
-                </h2>
-
-
-                <div class="verah-service-record-grid">
-
-
-                    <div>
-
-                        <span>
-                            Service ID
-                        </span>
-
-                        <strong>
-                            <%= service._id %>
-                        </strong>
-
-                    </div>
-
-
-                    <% if (service.createdAt) { %>
-
-                        <div>
-
-                            <span>
-                                Created
-                            </span>
-
-                            <strong>
-                                <%= new Date(
-                                    service.createdAt
-                                ).toLocaleString() %>
-                            </strong>
-
-                        </div>
-
-                    <% } %>
-
-
-                    <% if (service.updatedAt) { %>
-
-                        <div>
-
-                            <span>
-                                Last Updated
-                            </span>
-
-                            <strong>
-                                <%= new Date(
-                                    service.updatedAt
-                                ).toLocaleString() %>
-                            </strong>
-
-                        </div>
-
-                    <% } %>
-
-
-                </div>
-
-            </div>
-
-
-            <!-- =================================================
-                 ADMIN EDIT
-            ================================================== -->
-
-            <% if (user && user.role === "admin") { %>
-
-                <section class="verah-admin-edit-section">
-
-
-                    <div class="verah-admin-edit-header">
-
-                        <span class="verah-service-page-label">
-                            ADMINISTRATION
-                        </span>
-
-                        <h2>
-                            Edit Service
-                        </h2>
-
-                        <p>
-                            Update the service information below.
-                        </p>
-
-                    </div>
-
-
-                    <form
-                        action="/services/<%= service._id %>?_method=PUT"
-                        method="POST"
-                        class="verah-service-form"
-                    >
-
-
-                        <!-- =====================================
-                             IMAGE
-                        ====================================== -->
-
-                        <div class="verah-form-group">
-
-                            <label for="service-image">
-                                Image URL
-                            </label>
-
-                            <input
-                                type="url"
-                                id="service-image"
-                                name="image"
-                                value="<%= service.image || '' %>"
-                                placeholder="https://example.com/image.jpg"
-                            >
-
-                            <small class="verah-form-help">
-                                Enter the publicly accessible URL of
-                                the service image.
-                            </small>
-
-                        </div>
-
-
-                        <!-- =====================================
-                             NAME
-                        ====================================== -->
-
-                        <div class="verah-form-group">
-
-                            <label for="service-name">
-                                Service Name
-                            </label>
-
-                            <input
-                                type="text"
-                                id="service-name"
-                                name="name"
-                                value="<%= service.name %>"
-                                required
-                            >
-
-                        </div>
-
-
-                        <!-- =====================================
-                             DESCRIPTION
-                        ====================================== -->
-
-                        <div class="verah-form-group">
-
-                            <label for="service-description">
-                                Description
-                            </label>
-
-                            <textarea
-                                id="service-description"
-                                name="description"
-                                rows="6"
-                                required
-                            ><%= service.description %></textarea>
-
-                        </div>
-
-
-                        <!-- =====================================
-                             PRICE + DURATION
-                        ====================================== -->
-
-                        <div class="verah-form-row">
-
-
-                            <div class="verah-form-group">
-
-                                <label for="service-price">
-                                    Price
-                                </label>
-
-                                <input
-                                    type="number"
-                                    id="service-price"
-                                    name="price"
-                                    min="0"
-                                    step="0.01"
-                                    value="<%= service.price %>"
-                                    required
-                                >
-
-                            </div>
-
-
-                            <div class="verah-form-group">
-
-                                <label for="service-duration">
-                                    Duration
-                                </label>
-
-                                <input
-                                    type="text"
-                                    id="service-duration"
-                                    name="duration"
-                                    value="<%= service.duration || '' %>"
-                                    placeholder="e.g. 45 minutes"
-                                >
-
-                            </div>
-
-
-                        </div>
-
-
-                        <!-- =====================================
-                             SUBMIT
-                        ====================================== -->
-
-                        <div class="verah-form-actions">
-
-                            <button
-                                type="submit"
-                                class="verah-primary-button"
-                            >
-                                Save Changes
-                            </button>
-
-                        </div>
-
-
-                    </form>
-
-                </section>
-
-            <% } %>
-
-
-            <!-- =============================================
-                 BACK
-            ============================================== -->
-
-            <div class="verah-detail-actions">
-
-                <a
-                    href="/"
-                    class="verah-secondary-button"
-                >
-                    ← Back to Services
-                </a>
+                </strong>
 
             </div>
 
 
         </div>
 
+
+        <!-- =============================================
+             BACK
+        ============================================== -->
+
+        <div class="verah-detail-actions">
+
+            <a
+                href="/"
+                class="verah-secondary-button"
+            >
+                ← Back to Services
+            </a>
+
+        </div>
+
+
     </div>
+
+</div>
 
 </section>
