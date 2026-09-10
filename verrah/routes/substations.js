@@ -3,16 +3,17 @@
 // SUBSTATION ROUTES
 // ==========================================================
 
-const router = require("express").Router();
+const router =
+    require("express").Router();
 
-const c =
-  require("../controllers/substations");
+const controller =
+    require("../controllers/substations");
 
 const requireAdmin =
-  require("../middleware/requireAdmin");
+    require("../middleware/requireAdmin");
 
 const substationsUpload =
-  require("../middleware/substationsUpload");
+    require("../middleware/substationsUpload");
 
 
 // ==========================================================
@@ -20,21 +21,21 @@ const substationsUpload =
 // ==========================================================
 
 router.get(
-  "/",
-  requireAdmin,
-  c.list
+    "/",
+    requireAdmin,
+    controller.list
 );
 
 router.get(
-  "/new",
-  requireAdmin,
-  c.newForm
+    "/new",
+    requireAdmin,
+    controller.newForm
 );
 
 router.post(
-  "/",
-  requireAdmin,
-  c.create
+    "/",
+    requireAdmin,
+    controller.create
 );
 
 
@@ -43,15 +44,15 @@ router.post(
 // ==========================================================
 
 router.get(
-  "/product/:id",
-  requireAdmin,
-  c.productDetail
+    "/product/:id",
+    requireAdmin,
+    controller.productDetail
 );
 
 router.post(
-  "/product/:id",
-  requireAdmin,
-  c.updateProductUnits
+    "/product/:id",
+    requireAdmin,
+    controller.updateProductUnits
 );
 
 
@@ -60,15 +61,15 @@ router.post(
 // ==========================================================
 
 router.get(
-  "/branch/:id/edit",
-  requireAdmin,
-  c.editForm
+    "/branch/:id/edit",
+    requireAdmin,
+    controller.editForm
 );
 
 router.post(
-  "/branch/:id/edit",
-  requireAdmin,
-  c.update
+    "/branch/:id/edit",
+    requireAdmin,
+    controller.update
 );
 
 
@@ -77,16 +78,18 @@ router.post(
 // ==========================================================
 
 router.get(
-  "/branch/icon/:id",
-  requireAdmin,
-  c.editIconForm
+    "/branch/icon/:id",
+    requireAdmin,
+    controller.editIconForm
 );
 
 router.post(
-  "/branch/icon/:id",
-  requireAdmin,
-  substationsUpload.single("substationIcon"),
-  c.updateIcon
+    "/branch/icon/:id",
+    requireAdmin,
+    substationsUpload.single(
+        "substationIcon"
+    ),
+    controller.updateIcon
 );
 
 
@@ -95,19 +98,19 @@ router.post(
 // ==========================================================
 
 router.get(
-  "/branch/images/:id",
-  requireAdmin,
-  c.editImagesForm
+    "/branch/images/:id",
+    requireAdmin,
+    controller.editImagesForm
 );
 
 router.post(
-  "/branch/images/:id",
-  requireAdmin,
-  substationsUpload.array(
-    "images",
-    20
-  ),
-  c.updateImages
+    "/branch/images/:id",
+    requireAdmin,
+    substationsUpload.array(
+        "images",
+        20
+    ),
+    controller.updateImages
 );
 
 
@@ -116,9 +119,9 @@ router.post(
 // ==========================================================
 
 router.get(
-  "/:id",
-  requireAdmin,
-  c.detail
+    "/:id",
+    requireAdmin,
+    controller.detail
 );
 
 
