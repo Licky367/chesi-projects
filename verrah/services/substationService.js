@@ -6,191 +6,428 @@ const Stock = require("../models/stock");
 
 const text = (value) => String(value ?? "").trim();
 
+
+// ==========================================================
+// LIST SUBSTATIONS
+// ==========================================================
+
 exports.list = () =>
-  Substation.find({ isActive: true }).sort({ name: 1 }).lean();
+  Substation.find({ isActive: true })
+    .sort({ name: 1 })
+    .lean();
+
+
+// ==========================================================
+// CREATE SUBSTATION
+// ==========================================================
 
 exports.create = async (body) => {
   const name = text(body.name);
-  if (!name) throw Error("Substation name is required.");
-  if (await Substation.findOne({ name })) {
-    throw Error("A substation with that name already exists.");
+
+  if (!name) {
+    throw Error("Substation name is required.");
   }
+
+  if (await Substation.findOne({ name })) {
+    throw Error(
+      "A substation with that name already exists."
+    );
+  }
+
   return Substation.create({
     name,
     location: text(body.location),
+
+    phoneNumber:
+      body.phoneNumber !== undefined &&
+      body.phoneNumber !== ""
+        ? Number(body.phoneNumber)
+        : null,
+
+    directions: text(body.directions),
+
     description: text(body.description)
   });
 };
 
+
+// ==========================================================
+// GET SUBSTATION WITH PRODUCTS
+// ==========================================================
+
 exports.getWithProducts = async (id) => {
   if (!mongoose.isValidObjectId(id)) return null;
 
-  const substation = await Substation.findById(id).lean();
+  const substation =
+    await Substation.findById(id).lean();
+
   if (!substation) return null;
 
-  const inventory = Array.isArray(substation.productInventory)
-    ? substation.productInventory
-    : [];
-  const productIds = inventory.map((item) => item.productId).filter(Boolean);
+  const inventory =
+    Array.isArray(substation.productInventory)
+      ? substation.productInventory
+      : [];
+
+  const productIds =
+    inventory
+      .map((item) => item.productId)
+      .filter(Boolean);
 
   const products = await Product.find({
     _id: { $in: productIds },
     isActive: true
-  }).sort({ name: 1 }).lean();
+  })
+    .sort({ name: 1 })
+    .lean();
 
-  const productMap = new Map(products.map((p) => [String(p._id), p]));
+  const productMap =
+    new Map(
+      products.map((p) => [
+        String(p._id),
+        p
+      ])
+    );
 
-  const physicalProducts = inventory
-    .map((item) => {
-      const product = productMap.get(String(item.productId));
-      if (!product) return null;
-      return {
-        ...product,
-        substationUnits: Number(item.units || 0),
-        substationInventoryId: item.productId
-      };
-    })
-    .filter(Boolean);
+  const physicalProducts =
+    inventory
+      .map((item) => {
 
-  return { ...substation, products: physicalProducts };
+        const product =
+          productMap.get(
+            String(item.productId)
+          );
+
+        if (!product) return null;
+
+        return {
+          ...product,
+
+          substationUnits:
+            Number(item.units || 0),
+
+          substationInventoryId:
+            item.productId
+        };
+      })
+      .filter(Boolean);
+
+  return {
+    ...substation,
+    products: physicalProducts
+  };
 };
+
+
+// ==========================================================
+// GET PRODUCT
+// ==========================================================
 
 exports.getProduct = async (id) => {
-  if (!mongoose.isValidObjectId(id)) return null;
-
-  const product = await Product.findOne({ _id: id, isActive: true })
-    .populate("stock", "name category subcategory days units buyPrice")
-    .lean();
-  if (!product) return null;
-
-  const substations = await Substation.find({
-    isActive: true,
-    "productInventory.productId": product._id
-  }).select("name location productInventory").lean();
-
-  const substationStocks = substations.map((substation) => {
-    const inventory = (substation.productInventory || []).find(
-      (entry) => String(entry.productId) === String(product._id)
-    );
-    return {
-      _id: substation._id,
-      name: substation.name,
-      location: substation.location,
-      units: Number(inventory?.units || 0)
-    };
-  });
-
-  return { ...product, substationStocks };
-};
-
-exports.updateProductUnits = async (productId, body) => {
-  if (!mongoose.isValidObjectId(productId)) throw new Error("Invalid product.");
-  if (!mongoose.isValidObjectId(body.substationId)) throw new Error("Invalid substation.");
-
-  const newUnits = Number(body.units);
-  if (!Number.isInteger(newUnits) || newUnits < 0) {
-    throw new Error("Units must be a whole number greater than or equal to zero.");
+  if (!mongoose.isValidObjectId(id)) {
+    return null;
   }
 
-  const session = await mongoose.startSession();
-  try {
-    let result;
-    await session.withTransaction(async () => {
-      const product = await Product.findOne({ _id: productId, isActive: true }).session(session);
-      if (!product) throw new Error("Product not found.");
+  const product =
+    await Product.findOne({
+      _id: id,
+      isActive: true
+    })
+      .populate(
+        "stock",
+        "name category subcategory days units buyPrice"
+      )
+      .lean();
 
-      const stock = await Stock.findOne({ _id: product.stock, isActive: true }).session(session);
-      if (!stock) throw new Error("The source stock subcategory was not found.");
+  if (!product) return null;
 
-      const substation = await Substation.findOne({
-        _id: body.substationId,
-        isActive: true
-      }).session(session);
-      if (!substation) throw new Error("Substation not found or inactive.");
+  const substations =
+    await Substation.find({
+      isActive: true,
+      "productInventory.productId": product._id
+    })
+      .select(
+        "name location productInventory"
+      )
+      .lean();
 
-      const inventory = substation.productInventory.find(
-        (entry) => String(entry.productId) === String(product._id)
-      );
-      if (!inventory) {
-        throw new Error("This product is not allocated to the selected substation.");
-      }
+  const substationStocks =
+    substations.map((substation) => {
 
-      const oldUnits = Number(inventory.units || 0);
-      const delta = newUnits - oldUnits;
+      const inventory =
+        (substation.productInventory || [])
+          .find(
+            (entry) =>
+              String(entry.productId) ===
+              String(product._id)
+          );
 
-      // Increasing a substation balance consumes only the additional units
-      // from the source stock. Reducing it returns the difference to stock.
-      if (delta > 0 && Number(stock.units || 0) < delta) {
-        throw new Error(
-          `Only ${Number(stock.units || 0)} units remain in the source stock. You need ${delta} additional units.`
-        );
-      }
-
-      inventory.units = newUnits;
-      inventory.updatedAt = new Date();
-      inventory.productName = product.name;
-      inventory.category = product.category;
-      inventory.subcategory = product.subcategory;
-      inventory.days = Number(product.days || 0);
-      await substation.save({ session });
-
-      product.units = Math.max(0, Number(product.units || 0) + delta);
-      product.updatedAt = new Date();
-      await product.save({ session });
-
-      stock.units = Math.max(0, Number(stock.units || 0) - delta);
-      stock.totalsUpdatedAt = new Date();
-      await stock.save({ session });
-
-      const allStocks = await Stock.find({ isActive: true })
-        .select("_id category units buyPrice")
-        .session(session)
-        .lean();
-      const categoryTotals = new Map();
-      let overall = 0;
-      for (const item of allStocks) {
-        const value = Number(item.units || 0) * Number(item.buyPrice || 0);
-        categoryTotals.set(item.category, (categoryTotals.get(item.category) || 0) + value);
-        overall += value;
-      }
-      const now = new Date();
-      for (const item of allStocks) {
-        const value = Number(item.units || 0) * Number(item.buyPrice || 0);
-        await Stock.updateOne(
-          { _id: item._id },
-          {
-            $set: {
-              cashOutflow: value,
-              categoryOveral: categoryTotals.get(item.category) || 0,
-              overal: overall,
-              totalsUpdatedAt: now
-            }
-          },
-          { session, timestamps: true }
-        );
-      }
-
-      result = {
-        productId: product._id,
-        substationId: substation._id,
-        units: newUnits,
-        delta
+      return {
+        _id: substation._id,
+        name: substation.name,
+        location: substation.location,
+        units: Number(
+          inventory?.units || 0
+        )
       };
     });
+
+  return {
+    ...product,
+    substationStocks
+  };
+};
+
+
+// ==========================================================
+// UPDATE PRODUCT UNITS
+// ==========================================================
+
+exports.updateProductUnits = async (
+  productId,
+  body
+) => {
+
+  if (!mongoose.isValidObjectId(productId)) {
+    throw new Error("Invalid product.");
+  }
+
+  if (!mongoose.isValidObjectId(body.substationId)) {
+    throw new Error("Invalid substation.");
+  }
+
+  const newUnits =
+    Number(body.units);
+
+  if (
+    !Number.isInteger(newUnits) ||
+    newUnits < 0
+  ) {
+    throw new Error(
+      "Units must be a whole number greater than or equal to zero."
+    );
+  }
+
+  const session =
+    await mongoose.startSession();
+
+  try {
+
+    let result;
+
+    await session.withTransaction(
+      async () => {
+
+        const product =
+          await Product.findOne({
+            _id: productId,
+            isActive: true
+          }).session(session);
+
+        if (!product) {
+          throw new Error(
+            "Product not found."
+          );
+        }
+
+        const stock =
+          await Stock.findOne({
+            _id: product.stock,
+            isActive: true
+          }).session(session);
+
+        if (!stock) {
+          throw new Error(
+            "The source stock subcategory was not found."
+          );
+        }
+
+        const substation =
+          await Substation.findOne({
+            _id: body.substationId,
+            isActive: true
+          }).session(session);
+
+        if (!substation) {
+          throw new Error(
+            "Substation not found or inactive."
+          );
+        }
+
+        const inventory =
+          substation.productInventory.find(
+            (entry) =>
+              String(entry.productId) ===
+              String(product._id)
+          );
+
+        if (!inventory) {
+          throw new Error(
+            "This product is not allocated to the selected substation."
+          );
+        }
+
+        const oldUnits =
+          Number(inventory.units || 0);
+
+        const delta =
+          newUnits - oldUnits;
+
+        if (
+          delta > 0 &&
+          Number(stock.units || 0) < delta
+        ) {
+          throw new Error(
+            `Only ${Number(stock.units || 0)} units remain in the source stock. You need ${delta} additional units.`
+          );
+        }
+
+        inventory.units =
+          newUnits;
+
+        inventory.updatedAt =
+          new Date();
+
+        inventory.productName =
+          product.name;
+
+        inventory.category =
+          product.category;
+
+        inventory.subcategory =
+          product.subcategory;
+
+        inventory.days =
+          Number(product.days || 0);
+
+        await substation.save({
+          session
+        });
+
+        product.units =
+          Math.max(
+            0,
+            Number(product.units || 0) +
+              delta
+          );
+
+        product.updatedAt =
+          new Date();
+
+        await product.save({
+          session
+        });
+
+        stock.units =
+          Math.max(
+            0,
+            Number(stock.units || 0) -
+              delta
+          );
+
+        stock.totalsUpdatedAt =
+          new Date();
+
+        await stock.save({
+          session
+        });
+
+        const allStocks =
+          await Stock.find({
+            isActive: true
+          })
+            .select(
+              "_id category units buyPrice"
+            )
+            .session(session)
+            .lean();
+
+        const categoryTotals =
+          new Map();
+
+        let overall = 0;
+
+        for (
+          const item of allStocks
+        ) {
+
+          const value =
+            Number(item.units || 0) *
+            Number(item.buyPrice || 0);
+
+          categoryTotals.set(
+            item.category,
+            (
+              categoryTotals.get(
+                item.category
+              ) || 0
+            ) + value
+          );
+
+          overall += value;
+        }
+
+        const now =
+          new Date();
+
+        for (
+          const item of allStocks
+        ) {
+
+          const value =
+            Number(item.units || 0) *
+            Number(item.buyPrice || 0);
+
+          await Stock.updateOne(
+            { _id: item._id },
+            {
+              $set: {
+                cashOutflow: value,
+
+                categoryOveral:
+                  categoryTotals.get(
+                    item.category
+                  ) || 0,
+
+                overal: overall,
+
+                totalsUpdatedAt: now
+              }
+            },
+            {
+              session,
+              timestamps: true
+            }
+          );
+        }
+
+        result = {
+          productId: product._id,
+          substationId:
+            substation._id,
+          units: newUnits,
+          delta
+        };
+      }
+    );
+
     return result;
+
   } finally {
+
     await session.endSession();
   }
 };
 
 
 // ==========================================================
-// EDIT SUBSTATION
-// Added only — existing service methods above are unchanged.
+// GET SUBSTATION BY ID
 // ==========================================================
 
 exports.getById = async (id) => {
-  if (!mongoose.isValidObjectId(id)) return null;
+
+  if (!mongoose.isValidObjectId(id)) {
+    return null;
+  }
 
   return Substation.findOne({
     _id: id,
@@ -199,21 +436,35 @@ exports.getById = async (id) => {
 };
 
 
-exports.update = async (id, body) => {
+// ==========================================================
+// UPDATE SUBSTATION
+// ==========================================================
+
+exports.update = async (
+  id,
+  body
+) => {
+
   if (!mongoose.isValidObjectId(id)) {
-    throw new Error("Invalid substation.");
+    throw new Error(
+      "Invalid substation."
+    );
   }
 
-  const name = text(body.name);
+  const name =
+    text(body.name);
 
   if (!name) {
-    throw new Error("Substation name is required.");
+    throw new Error(
+      "Substation name is required."
+    );
   }
 
-  const existing = await Substation.findOne({
-    name,
-    _id: { $ne: id }
-  });
+  const existing =
+    await Substation.findOne({
+      name,
+      _id: { $ne: id }
+    });
 
   if (existing) {
     throw new Error(
@@ -221,26 +472,169 @@ exports.update = async (id, body) => {
     );
   }
 
-  const substation = await Substation.findOneAndUpdate(
-    {
-      _id: id,
-      isActive: true
-    },
-    {
-      $set: {
-        name,
-        location: text(body.location),
-        description: text(body.description)
-      }
-    },
-    {
-      new: true,
-      runValidators: true
+
+  // --------------------------------------------------------
+  // PHONE NUMBER
+  // --------------------------------------------------------
+
+  let phoneNumber = null;
+
+  if (
+    body.phoneNumber !== undefined &&
+    body.phoneNumber !== ""
+  ) {
+    phoneNumber =
+      Number(body.phoneNumber);
+
+    if (!Number.isFinite(phoneNumber)) {
+      throw new Error(
+        "Phone number must be a valid number."
+      );
     }
-  ).lean();
+  }
+
+
+  const substation =
+    await Substation.findOneAndUpdate(
+      {
+        _id: id,
+        isActive: true
+      },
+
+      {
+        $set: {
+          name,
+
+          location:
+            text(body.location),
+
+          phoneNumber,
+
+          directions:
+            text(body.directions),
+
+          description:
+            text(body.description)
+        }
+      },
+
+      {
+        new: true,
+        runValidators: true
+      }
+    ).lean();
 
   if (!substation) {
-    throw new Error("Substation not found.");
+    throw new Error(
+      "Substation not found."
+    );
+  }
+
+  return substation;
+};
+
+
+// ==========================================================
+// UPDATE SUBSTATION ICON
+// ==========================================================
+
+exports.updateIcon = async (
+  id,
+  imagePath
+) => {
+
+  if (!mongoose.isValidObjectId(id)) {
+    throw new Error(
+      "Invalid substation."
+    );
+  }
+
+  if (!imagePath) {
+    throw new Error(
+      "Substation icon is required."
+    );
+  }
+
+  const substation =
+    await Substation.findOneAndUpdate(
+      {
+        _id: id,
+        isActive: true
+      },
+
+      {
+        $set: {
+          substationIcon:
+            text(imagePath)
+        }
+      },
+
+      {
+        new: true,
+        runValidators: true
+      }
+    ).lean();
+
+  if (!substation) {
+    throw new Error(
+      "Substation not found."
+    );
+  }
+
+  return substation;
+};
+
+
+// ==========================================================
+// UPDATE SUBSTATION IMAGES
+// ==========================================================
+
+exports.updateImages = async (
+  id,
+  images
+) => {
+
+  if (!mongoose.isValidObjectId(id)) {
+    throw new Error(
+      "Invalid substation."
+    );
+  }
+
+  if (!Array.isArray(images)) {
+    throw new Error(
+      "Images must be an array."
+    );
+  }
+
+  const cleanImages =
+    images
+      .map((image) => text(image))
+      .filter(Boolean);
+
+
+  const substation =
+    await Substation.findOneAndUpdate(
+      {
+        _id: id,
+        isActive: true
+      },
+
+      {
+        $set: {
+          images: cleanImages
+        }
+      },
+
+      {
+        new: true,
+        runValidators: true
+      }
+    ).lean();
+
+  if (!substation) {
+    throw new Error(
+      "Substation not found."
+    );
   }
 
   return substation;
