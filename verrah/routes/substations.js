@@ -1,11 +1,21 @@
+// ==========================================================
+// verrah/routes/substations.js
+// SUBSTATION ROUTES
+// ==========================================================
+
 const router = require("express").Router();
 
-const c = require("../controllers/substations");
-const requireAdmin = require("../middleware/requireAdmin");
-const substationsUpload = require("../middleware/substationsUpload");
+const c =
+  require("../controllers/substations");
+
+const requireAdmin =
+  require("../middleware/requireAdmin");
+
+const substationsUpload =
+  require("../middleware/substationsUpload");
 
 
-// =========================================================
+// ==========================================================
 // SUBSTATIONS
 // ==========================================================
 
@@ -93,7 +103,10 @@ router.get(
 router.post(
   "/branch/images/:id",
   requireAdmin,
-  substationsUpload.array("images", 20),
+  substationsUpload.array(
+    "images",
+    20
+  ),
   c.updateImages
 );
 
