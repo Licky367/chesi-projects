@@ -19,7 +19,7 @@ const invitationSchema = new mongoose.Schema(
 
         invitedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "CorevesterUser",
+            ref: "VerrahUser",
             required: true
         },
 
