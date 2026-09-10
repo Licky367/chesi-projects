@@ -1,0 +1,76 @@
+<%
+/* ==========================================================
+   SUBSTATION BRANCH — ICON CARD
+   views/branch-partials/icon.ejs
+
+   Behaviour:
+   - Displays substationIcon
+   - Admin can edit the icon
+   - Edit route:
+     /substations/branch/icon/:id
+========================================================== */
+
+const isAdmin =
+    typeof user !== "undefined" &&
+    user &&
+    user.role === "admin";
+
+const icon =
+    substation &&
+    substation.substationIcon
+        ? substation.substationIcon
+        : "";
+%>
+
+
+<div class="substation-icon-card">
+
+    <div class="substation-icon-card-header">
+
+        <h3>Substation Icon</h3>
+
+        <% if (isAdmin) { %>
+
+            <a
+                href="/substations/branch/icon/<%= substation._id %>"
+                class="substation-icon-edit"
+                aria-label="Edit substation icon"
+            >
+                Edit
+            </a>
+
+        <% } %>
+
+    </div>
+
+
+    <div class="substation-icon-display">
+
+        <% if (icon) { %>
+
+            <img
+                src="<%= icon %>"
+                alt="<%= substation.name || 'Substation' %>"
+                class="substation-icon-image"
+            >
+
+        <% } else { %>
+
+            <div class="substation-icon-empty">
+                <span>No icon</span>
+
+                <% if (isAdmin) { %>
+                    <a
+                        href="/substations/branch/icon/<%= substation._id %>"
+                        class="substation-icon-add"
+                    >
+                        Add Icon
+                    </a>
+                <% } %>
+            </div>
+
+        <% } %>
+
+    </div>
+
+</div>
