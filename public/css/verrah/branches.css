@@ -3,6 +3,7 @@
 
    VERRAH COSMETICS
    BRANCH / LOCATION PAGE
+   SUBSTATION ICON + IMAGE MANAGEMENT
 ========================================================== */
 
 
@@ -37,6 +38,8 @@
 
     box-shadow:
         0 5px 18px rgba(0, 0, 0, 0.05);
+
+    box-sizing: border-box;
 }
 
 
@@ -58,6 +61,8 @@
 }
 
 .branch-header-icon img {
+    display: block;
+
     width: 100%;
     height: 100%;
 
@@ -69,7 +74,6 @@
     height: 100%;
 
     display: flex;
-
     align-items: center;
     justify-content: center;
 
@@ -83,6 +87,11 @@
    BRANCH TITLE
 ========================================================== */
 
+.branch-header-content {
+    min-width: 0;
+    flex: 1;
+}
+
 .branch-header-content h1 {
     margin: 0 0 8px;
 
@@ -90,6 +99,8 @@
 
     font-size: 28px;
     font-weight: 800;
+
+    line-height: 1.2;
 }
 
 
@@ -103,6 +114,7 @@
     color: #765f50;
 
     font-size: 15px;
+    line-height: 1.5;
 }
 
 .branch-location i {
@@ -125,6 +137,8 @@
 
     border: 1px solid #eadfd5;
     border-radius: 14px;
+
+    box-sizing: border-box;
 }
 
 .branch-description h2,
@@ -144,6 +158,69 @@
     color: #765f50;
 
     line-height: 1.6;
+}
+
+
+/* ==========================================================
+   BRANCH ACTION
+========================================================== */
+
+.edit-branch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    margin: 0 14px 14px;
+    padding: 8px 13px;
+
+    border: 1px solid #7a4b2a;
+    border-radius: 8px;
+
+    background: #ffffff;
+    color: #7a4b2a;
+
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+
+    text-decoration: none;
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+
+    box-sizing: border-box;
+}
+
+.edit-branch i {
+    font-size: 12px;
+}
+
+.edit-branch:hover {
+    background: #7a4b2a;
+    color: #ffffff;
+    border-color: #7a4b2a;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 4px 10px rgba(122, 75, 42, 0.18);
+}
+
+.edit-branch:active {
+    transform: translateY(0);
+
+    box-shadow: none;
+}
+
+.edit-branch:focus-visible {
+    outline: 2px solid #7a4b2a;
+    outline-offset: 2px;
 }
 
 
@@ -192,6 +269,8 @@
 
     box-shadow:
         0 4px 14px rgba(0, 0, 0, 0.04);
+
+    box-sizing: border-box;
 }
 
 
@@ -235,6 +314,7 @@
 
     font-size: 16px;
     font-weight: 750;
+    line-height: 1.3;
 }
 
 
@@ -249,6 +329,7 @@
     color: #806c60;
 
     font-size: 13px;
+    line-height: 1.4;
 }
 
 
@@ -282,7 +363,7 @@
 
 
 /* ==========================================================
-   EMPTY STATE
+   EMPTY / ERROR
 ========================================================== */
 
 .branch-empty,
@@ -295,6 +376,8 @@
 
     border: 1px solid #eadfd5;
     border-radius: 16px;
+
+    box-sizing: border-box;
 }
 
 .branch-empty i,
@@ -339,7 +422,6 @@
     padding: 11px 17px;
 
     background: #5b321d;
-
     color: #ffffff;
 
     border-radius: 9px;
@@ -355,148 +437,7 @@
 
 
 /* ==========================================================
-   TABLET
-========================================================== */
-
-@media (max-width: 850px) {
-
-    .branch-product-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-    }
-
-}
-
-
-/* ==========================================================
-   MOBILE
-========================================================== */
-
-@media (max-width: 600px) {
-
-    .branch-page {
-        padding: 18px 12px 30px;
-    }
-
-
-    .branch-header {
-        padding: 18px;
-    }
-
-
-    .branch-header-icon {
-        width: 70px;
-        height: 70px;
-
-        flex-basis: 70px;
-    }
-
-
-    .branch-header-content h1 {
-        font-size: 22px;
-    }
-
-
-    .branch-product-grid {
-        grid-template-columns: 1fr;
-    }
-
-}
-
-.edit-branch {
-display: inline-flex;
-align-items: center;
-justify-content: center;
-gap: 7px;
-
-margin: 0 14px 14px;
-padding: 8px 13px;
-
-border: 1px solid #0a4d1e;
-border-radius: 8px;
-
-background: #ffffff;
-color: #0a4d1e;
-
-font-size: 13px;
-font-weight: 700;
-line-height: 1;
-
-text-decoration: none;
-cursor: pointer;
-
-transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-
-}
-
-.edit-branch {
-display: inline-flex;
-align-items: center;
-justify-content: center;
-gap: 7px;
-
-margin: 0 14px 14px;
-padding: 8px 13px;
-
-border: 1px solid #7a4b2a;
-border-radius: 8px;
-
-background: #ffffff;
-color: #7a4b2a;
-
-font-size: 13px;
-font-weight: 700;
-line-height: 1;
-
-text-decoration: none;
-cursor: pointer;
-
-transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-
-}
-
-.edit-branch i {
-font-size: 12px;
-}
-
-.edit-branch:hover {
-background: #7a4b2a;
-color: #ffffff;
-border-color: #7a4b2a;
-transform: translateY(-1px);
-box-shadow: 0 4px 10px rgba(122, 75, 42, 0.18);
-}
-
-.edit-branch:active {
-transform: translateY(0);
-box-shadow: none;
-}
-
-.edit-branch:focus-visible {
-outline: 2px solid #7a4b2a;
-outline-offset: 2px;
-}
-
-
-/* ==========================================================
-   SUBSTATION BRANCH
-   ICON + IMAGES CARDS
-   BROWN THEME
-========================================================== */
-
-
-/* ==========================================================
-   THEME VARIABLES
+   SUBSTATION MANAGEMENT VARIABLES
 ========================================================== */
 
 :root {
@@ -519,7 +460,7 @@ outline-offset: 2px;
 
 
 /* ==========================================================
-   COMMON CARD
+   COMMON MANAGEMENT CARD
 ========================================================== */
 
 .substation-icon-card,
@@ -530,7 +471,6 @@ outline-offset: 2px;
     background: var(--branch-white);
 
     border: 1px solid var(--branch-border);
-
     border-radius: var(--branch-radius);
 
     box-shadow: var(--branch-shadow);
@@ -551,7 +491,6 @@ outline-offset: 2px;
     display: flex;
 
     align-items: center;
-
     justify-content: space-between;
 
     gap: 12px;
@@ -561,8 +500,9 @@ outline-offset: 2px;
     background: var(--branch-cream);
 
     border-bottom: 1px solid var(--branch-border);
-}
 
+    box-sizing: border-box;
+}
 
 .substation-icon-card-header h3,
 .substation-images-card-header h3 {
@@ -572,15 +512,13 @@ outline-offset: 2px;
     color: var(--branch-brown-dark);
 
     font-size: 17px;
-
     font-weight: 700;
-
     line-height: 1.3;
 }
 
 
 /* ==========================================================
-   ADMIN ACTION LINKS
+   ADMIN LINKS
 ========================================================== */
 
 .substation-icon-edit,
@@ -589,7 +527,6 @@ outline-offset: 2px;
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     min-height: 34px;
@@ -597,7 +534,6 @@ outline-offset: 2px;
     padding: 7px 13px;
 
     background: var(--branch-brown);
-
     color: var(--branch-white);
 
     border-radius: 8px;
@@ -605,14 +541,14 @@ outline-offset: 2px;
     text-decoration: none;
 
     font-size: 13px;
-
     font-weight: 600;
+
+    white-space: nowrap;
 
     transition:
         background 0.2s ease,
         transform 0.2s ease;
 }
-
 
 .substation-icon-edit:hover,
 .substation-images-edit:hover {
@@ -622,11 +558,17 @@ outline-offset: 2px;
     transform: translateY(-1px);
 }
 
-
 .substation-icon-edit:active,
 .substation-images-edit:active {
 
     transform: translateY(0);
+}
+
+.substation-icon-edit:focus-visible,
+.substation-images-edit:focus-visible {
+
+    outline: 2px solid var(--branch-brown-light);
+    outline-offset: 2px;
 }
 
 
@@ -637,25 +579,22 @@ outline-offset: 2px;
 .substation-icon-display {
 
     width: 100%;
-
     min-height: 230px;
 
     padding: 20px;
 
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
-    box-sizing: border-box;
-
     background: var(--branch-white);
+
+    box-sizing: border-box;
 }
 
 
 /* ==========================================================
-   SUBSTATION ICON IMAGE
+   ICON IMAGE
 ========================================================== */
 
 .substation-icon-image {
@@ -663,7 +602,6 @@ outline-offset: 2px;
     display: block;
 
     width: 100%;
-
     max-width: 260px;
 
     height: 230px;
@@ -683,22 +621,19 @@ outline-offset: 2px;
 
 
 /* ==========================================================
-   EMPTY ICON
+   EMPTY ICON / EMPTY IMAGES
 ========================================================== */
 
 .substation-icon-empty,
 .substation-images-empty {
 
     width: 100%;
-
     min-height: 160px;
 
     display: flex;
-
     flex-direction: column;
 
     align-items: center;
-
     justify-content: center;
 
     gap: 12px;
@@ -708,7 +643,6 @@ outline-offset: 2px;
     background: var(--branch-cream);
 
     border: 1px dashed var(--branch-border);
-
     border-radius: 10px;
 
     box-sizing: border-box;
@@ -723,13 +657,11 @@ outline-offset: 2px;
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 8px 14px;
 
     background: var(--branch-brown);
-
     color: var(--branch-white);
 
     border-radius: 8px;
@@ -737,24 +669,27 @@ outline-offset: 2px;
     text-decoration: none;
 
     font-size: 13px;
-
     font-weight: 600;
-}
 
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
 
 .substation-icon-add:hover,
 .substation-images-add:hover {
 
     background: var(--branch-brown-dark);
+
+    transform: translateY(-1px);
 }
 
 
 /* ==========================================================
-   IMAGES CARD CONTENT
+   IMAGES CARD
 ========================================================== */
 
 .substation-images-card {
-
     position: relative;
 }
 
@@ -793,11 +728,9 @@ outline-offset: 2px;
     aspect-ratio: 1 / 1;
 
     padding: 0;
-
     margin: 0;
 
     border: 0;
-
     border-radius: 10px;
 
     overflow: hidden;
@@ -809,11 +742,9 @@ outline-offset: 2px;
     -webkit-tap-highlight-color: transparent;
 }
 
-
 .substation-image-item:focus-visible {
 
     outline: 3px solid var(--branch-brown-light);
-
     outline-offset: 2px;
 }
 
@@ -827,7 +758,6 @@ outline-offset: 2px;
     display: block;
 
     width: 100%;
-
     height: 100%;
 
     object-fit: cover;
@@ -836,7 +766,6 @@ outline-offset: 2px;
         transform 0.25s ease,
         filter 0.25s ease;
 }
-
 
 .substation-image-item:hover .substation-grid-image {
 
@@ -847,7 +776,7 @@ outline-offset: 2px;
 
 
 /* ==========================================================
-   +N MORE OVERLAY
+   MORE IMAGES
 ========================================================== */
 
 .substation-more-overlay {
@@ -859,15 +788,14 @@ outline-offset: 2px;
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
-    background: rgba(50, 27, 16, 0.62);
+    background:
+        rgba(50, 27, 16, 0.62);
 
     color: var(--branch-white);
 
     font-size: 25px;
-
     font-weight: 700;
 
     pointer-events: none;
@@ -875,7 +803,7 @@ outline-offset: 2px;
 
 
 /* ==========================================================
-   IMAGE VIEWER
+   FULLSCREEN IMAGE VIEWER
 ========================================================== */
 
 .substation-image-viewer {
@@ -888,14 +816,13 @@ outline-offset: 2px;
 
     display: none;
 
-    background: rgba(28, 15, 9, 0.96);
+    background:
+        rgba(28, 15, 9, 0.96);
 
     overflow: hidden;
 }
 
-
 .substation-image-viewer.is-open {
-
     display: block;
 }
 
@@ -907,17 +834,14 @@ outline-offset: 2px;
 .substation-viewer-track {
 
     width: 100%;
-
     height: 100%;
 
     display: flex;
 
     overflow-x: auto;
-
     overflow-y: hidden;
 
     scroll-snap-type: x mandatory;
-
     scroll-behavior: smooth;
 
     overscroll-behavior-x: contain;
@@ -927,9 +851,7 @@ outline-offset: 2px;
     scrollbar-width: none;
 }
 
-
 .substation-viewer-track::-webkit-scrollbar {
-
     display: none;
 }
 
@@ -943,20 +865,18 @@ outline-offset: 2px;
     flex: 0 0 100%;
 
     width: 100%;
-
     height: 100%;
 
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
     scroll-snap-align: center;
 
-    box-sizing: border-box;
-
     padding: 55px 18px 25px;
+
+    box-sizing: border-box;
 }
 
 
@@ -969,11 +889,9 @@ outline-offset: 2px;
     display: block;
 
     max-width: 100%;
-
     max-height: 100%;
 
     width: auto;
-
     height: auto;
 
     object-fit: contain;
@@ -987,7 +905,7 @@ outline-offset: 2px;
 
 
 /* ==========================================================
-   VIEWER CLOSE BUTTON
+   VIEWER CLOSE
 ========================================================== */
 
 .substation-viewer-close {
@@ -995,33 +913,29 @@ outline-offset: 2px;
     position: absolute;
 
     top: 14px;
-
     right: 14px;
 
     z-index: 10;
 
     width: 42px;
-
     height: 42px;
 
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 0;
 
     border: 0;
-
     border-radius: 50%;
 
-    background: rgba(107, 63, 36, 0.92);
+    background:
+        rgba(107, 63, 36, 0.92);
 
     color: var(--branch-white);
 
     font-size: 29px;
-
     line-height: 1;
 
     cursor: pointer;
@@ -1030,10 +944,421 @@ outline-offset: 2px;
         0 3px 12px rgba(0, 0, 0, 0.25);
 }
 
-
 .substation-viewer-close:hover {
-
     background: var(--branch-brown-light);
+}
+
+.substation-viewer-close:focus-visible {
+    outline: 2px solid var(--branch-white);
+    outline-offset: 3px;
+}
+
+
+/* ==========================================================
+   EDITOR PAGES
+   Used by editMode in icon.ejs / images.ejs
+========================================================== */
+
+.substation-icon-edit-page,
+.substation-images-edit-page {
+
+    width: 100%;
+    max-width: 900px;
+
+    margin: 0 auto;
+
+    padding: 24px 16px 40px;
+
+    box-sizing: border-box;
+}
+
+
+.substation-icon-edit-card,
+.substation-images-edit-card {
+
+    width: 100%;
+
+    background: var(--branch-white);
+
+    border: 1px solid var(--branch-border);
+    border-radius: var(--branch-radius);
+
+    box-shadow: var(--branch-shadow);
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   EDITOR HEADER
+========================================================== */
+
+.substation-icon-edit-header,
+.substation-images-edit-header {
+
+    padding: 20px;
+
+    background: var(--branch-cream);
+
+    border-bottom: 1px solid var(--branch-border);
+}
+
+.substation-icon-edit-header h1,
+.substation-images-edit-header h1 {
+
+    margin: 0 0 6px;
+
+    color: var(--branch-brown-dark);
+
+    font-size: 24px;
+    font-weight: 800;
+
+    line-height: 1.25;
+}
+
+.substation-icon-edit-header p,
+.substation-images-edit-header p {
+
+    margin: 0;
+
+    color: var(--branch-brown-light);
+
+    font-size: 14px;
+}
+
+
+/* ==========================================================
+   EDITOR FORM
+========================================================== */
+
+.substation-icon-edit-card form,
+.substation-images-edit-card form {
+
+    padding: 20px;
+
+    box-sizing: border-box;
+}
+
+
+.substation-icon-edit-card label,
+.substation-images-edit-card label {
+
+    color: var(--branch-brown-dark);
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+
+/* ==========================================================
+   FILE INPUT
+========================================================== */
+
+.substation-icon-edit-card input[type="file"],
+.substation-images-edit-card input[type="file"] {
+
+    display: block;
+
+    width: 100%;
+
+    margin-top: 8px;
+
+    padding: 10px;
+
+    background: var(--branch-cream);
+
+    color: var(--branch-brown-dark);
+
+    border: 1px solid var(--branch-border);
+    border-radius: 9px;
+
+    font-size: 13px;
+
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   CURRENT ICON
+========================================================== */
+
+.substation-icon-current {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: var(--branch-white);
+
+    box-sizing: border-box;
+}
+
+
+.substation-icon-current img {
+
+    display: block;
+
+    width: 100%;
+    max-width: 280px;
+
+    height: 230px;
+
+    object-fit: contain;
+
+    padding: 10px;
+
+    background: var(--branch-cream);
+
+    border: 1px solid var(--branch-border);
+    border-radius: 12px;
+
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   EXISTING IMAGE MANAGEMENT
+========================================================== */
+
+.substation-existing-images {
+
+    margin-bottom: 24px;
+}
+
+.substation-existing-images h3 {
+
+    margin: 0 0 12px;
+
+    color: var(--branch-brown-dark);
+
+    font-size: 17px;
+    font-weight: 800;
+}
+
+
+.substation-manage-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 10px;
+}
+
+
+.substation-manage-image {
+
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+
+    padding: 7px;
+
+    background: var(--branch-cream);
+
+    border: 1px solid var(--branch-border);
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    box-sizing: border-box;
+}
+
+
+.substation-manage-image img {
+
+    display: block;
+
+    width: 100%;
+    height: 130px;
+
+    object-fit: cover;
+
+    border-radius: 7px;
+}
+
+
+.substation-manage-image span {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    color: var(--branch-brown-dark);
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+.substation-manage-image input[type="checkbox"] {
+
+    width: 15px;
+    height: 15px;
+
+    margin: 0;
+
+    accent-color: var(--branch-brown);
+}
+
+
+/* ==========================================================
+   NEW IMAGES
+========================================================== */
+
+.substation-new-images {
+
+    margin-top: 18px;
+    padding-top: 18px;
+
+    border-top: 1px solid var(--branch-border);
+}
+
+
+.substation-new-images small {
+
+    display: block;
+
+    margin-top: 7px;
+
+    color: var(--branch-brown-light);
+
+    font-size: 12px;
+}
+
+
+/* ==========================================================
+   FORM ACTIONS
+========================================================== */
+
+.substation-form-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    margin-top: 22px;
+}
+
+
+.substation-form-actions button {
+
+    min-height: 40px;
+
+    padding: 9px 17px;
+
+    border: 1px solid var(--branch-brown);
+    border-radius: 9px;
+
+    background: var(--branch-brown);
+    color: var(--branch-white);
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.substation-form-actions button:hover {
+
+    background: var(--branch-brown-dark);
+
+    transform: translateY(-1px);
+}
+
+
+.substation-form-actions a {
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-height: 40px;
+
+    padding: 9px 17px;
+
+    border: 1px solid var(--branch-border);
+    border-radius: 9px;
+
+    background: var(--branch-white);
+    color: var(--branch-brown-dark);
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    box-sizing: border-box;
+}
+
+
+.substation-form-actions a:hover {
+
+    background: var(--branch-cream);
+}
+
+
+/* ==========================================================
+   FORM MESSAGES
+========================================================== */
+
+.substation-icon-edit-card .error,
+.substation-images-edit-card .error,
+.substation-icon-edit-card .success,
+.substation-images-edit-card .success {
+
+    margin: 16px 20px 0;
+
+    padding: 11px 13px;
+
+    border-radius: 8px;
+
+    font-size: 13px;
+
+    box-sizing: border-box;
+}
+
+
+.substation-icon-edit-card .error,
+.substation-images-edit-card .error {
+
+    background: #fff1f1;
+
+    border: 1px solid #e6b8b8;
+
+    color: #8b2222;
+}
+
+
+.substation-icon-edit-card .success,
+.substation-images-edit-card .success {
+
+    background: #f1f8f1;
+
+    border: 1px solid #b9d5b9;
+
+    color: #285c28;
 }
 
 
@@ -1042,8 +1367,27 @@ outline-offset: 2px;
 ========================================================== */
 
 body.substation-viewer-open {
-
     overflow: hidden;
+}
+
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (max-width: 850px) {
+
+    .branch-product-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+
+    .substation-manage-grid {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+    }
+
 }
 
 
@@ -1052,6 +1396,34 @@ body.substation-viewer-open {
 ========================================================== */
 
 @media (max-width: 700px) {
+
+    .branch-page {
+        padding: 18px 12px 30px;
+    }
+
+
+    .branch-header {
+        padding: 18px;
+    }
+
+
+    .branch-header-icon {
+        width: 70px;
+        height: 70px;
+
+        flex-basis: 70px;
+    }
+
+
+    .branch-header-content h1 {
+        font-size: 22px;
+    }
+
+
+    .branch-product-grid {
+        grid-template-columns: 1fr;
+    }
+
 
     .substation-icon-card-header,
     .substation-images-card-header {
@@ -1109,6 +1481,50 @@ body.substation-viewer-open {
             60px 10px 15px;
     }
 
+
+    .substation-icon-edit-page,
+    .substation-images-edit-page {
+
+        padding:
+            18px 12px 30px;
+    }
+
+
+    .substation-icon-edit-header,
+    .substation-images-edit-header {
+
+        padding: 17px;
+    }
+
+
+    .substation-icon-edit-header h1,
+    .substation-images-edit-header h1 {
+
+        font-size: 21px;
+    }
+
+
+    .substation-icon-edit-card form,
+    .substation-images-edit-card form {
+
+        padding: 17px;
+    }
+
+
+    .substation-manage-grid {
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 8px;
+    }
+
+
+    .substation-manage-image img {
+
+        height: 125px;
+    }
+
 }
 
 
@@ -1118,13 +1534,30 @@ body.substation-viewer-open {
 
 @media (max-width: 420px) {
 
+    .branch-header {
+        gap: 12px;
+    }
+
+
+    .branch-header-icon {
+        width: 60px;
+        height: 60px;
+
+        flex-basis: 60px;
+    }
+
+
+    .branch-header-content h1 {
+        font-size: 19px;
+    }
+
+
     .substation-icon-edit,
     .substation-images-edit {
 
         min-height: 31px;
 
-        padding:
-            6px 10px;
+        padding: 6px 10px;
 
         font-size: 12px;
     }
@@ -1155,6 +1588,33 @@ body.substation-viewer-open {
     .substation-more-overlay {
 
         font-size: 18px;
+    }
+
+
+    .substation-form-actions {
+
+        align-items: stretch;
+
+        flex-direction: column;
+    }
+
+
+    .substation-form-actions button,
+    .substation-form-actions a {
+
+        width: 100%;
+    }
+
+
+    .substation-manage-grid {
+
+        grid-template-columns: 1fr 1fr;
+    }
+
+
+    .substation-manage-image img {
+
+        height: 105px;
     }
 
 }
