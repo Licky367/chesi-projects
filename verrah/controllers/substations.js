@@ -258,7 +258,7 @@ exports.editIconForm = async (req, res) => {
       );
     }
 
-    res.render("substations/icon", {
+    res.render("branch-partials/icon", {
       title: `Edit Icon - ${substation.name}`,
       substation,
       error: req.query.error || null,
@@ -368,7 +368,7 @@ exports.editImagesForm = async (req, res) => {
       );
     }
 
-    res.render("substations/images", {
+    res.render("branch-partials/images", {
       title: `Manage Images - ${substation.name}`,
       substation,
       error: req.query.error || null,
