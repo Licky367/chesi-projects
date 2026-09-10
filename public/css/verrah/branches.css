@@ -486,3 +486,675 @@ box-shadow: none;
 outline: 2px solid #7a4b2a;
 outline-offset: 2px;
 }
+
+
+/* ==========================================================
+   SUBSTATION BRANCH
+   ICON + IMAGES CARDS
+   BROWN THEME
+========================================================== */
+
+
+/* ==========================================================
+   THEME VARIABLES
+========================================================== */
+
+:root {
+    --branch-brown: #6b3f24;
+    --branch-brown-dark: #4a2918;
+    --branch-brown-deep: #321b10;
+    --branch-brown-light: #8b5a36;
+
+    --branch-cream: #f8f3ee;
+    --branch-cream-dark: #eee4da;
+
+    --branch-white: #ffffff;
+    --branch-border: #dfd1c5;
+
+    --branch-shadow:
+        0 4px 16px rgba(50, 27, 16, 0.10);
+
+    --branch-radius: 14px;
+}
+
+
+/* ==========================================================
+   COMMON CARD
+========================================================== */
+
+.substation-icon-card,
+.substation-images-card {
+
+    width: 100%;
+
+    background: var(--branch-white);
+
+    border: 1px solid var(--branch-border);
+
+    border-radius: var(--branch-radius);
+
+    box-shadow: var(--branch-shadow);
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   CARD HEADERS
+========================================================== */
+
+.substation-icon-card-header,
+.substation-images-card-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 15px 17px;
+
+    background: var(--branch-cream);
+
+    border-bottom: 1px solid var(--branch-border);
+}
+
+
+.substation-icon-card-header h3,
+.substation-images-card-header h3 {
+
+    margin: 0;
+
+    color: var(--branch-brown-dark);
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+    line-height: 1.3;
+}
+
+
+/* ==========================================================
+   ADMIN ACTION LINKS
+========================================================== */
+
+.substation-icon-edit,
+.substation-images-edit {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 34px;
+
+    padding: 7px 13px;
+
+    background: var(--branch-brown);
+
+    color: var(--branch-white);
+
+    border-radius: 8px;
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.substation-icon-edit:hover,
+.substation-images-edit:hover {
+
+    background: var(--branch-brown-dark);
+
+    transform: translateY(-1px);
+}
+
+
+.substation-icon-edit:active,
+.substation-images-edit:active {
+
+    transform: translateY(0);
+}
+
+
+/* ==========================================================
+   ICON DISPLAY
+========================================================== */
+
+.substation-icon-display {
+
+    width: 100%;
+
+    min-height: 230px;
+
+    padding: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    background: var(--branch-white);
+}
+
+
+/* ==========================================================
+   SUBSTATION ICON IMAGE
+========================================================== */
+
+.substation-icon-image {
+
+    display: block;
+
+    width: 100%;
+
+    max-width: 260px;
+
+    height: 230px;
+
+    object-fit: contain;
+
+    border-radius: 12px;
+
+    background: var(--branch-cream);
+
+    border: 1px solid var(--branch-border);
+
+    padding: 10px;
+
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   EMPTY ICON
+========================================================== */
+
+.substation-icon-empty,
+.substation-images-empty {
+
+    width: 100%;
+
+    min-height: 160px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 12px;
+
+    color: var(--branch-brown-light);
+
+    background: var(--branch-cream);
+
+    border: 1px dashed var(--branch-border);
+
+    border-radius: 10px;
+
+    box-sizing: border-box;
+
+    font-size: 14px;
+}
+
+
+.substation-icon-add,
+.substation-images-add {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 8px 14px;
+
+    background: var(--branch-brown);
+
+    color: var(--branch-white);
+
+    border-radius: 8px;
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+
+.substation-icon-add:hover,
+.substation-images-add:hover {
+
+    background: var(--branch-brown-dark);
+}
+
+
+/* ==========================================================
+   IMAGES CARD CONTENT
+========================================================== */
+
+.substation-images-card {
+
+    position: relative;
+}
+
+
+/* ==========================================================
+   IMAGE GRID
+========================================================== */
+
+.substation-images-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 8px;
+
+    padding: 12px;
+
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   IMAGE ITEM
+========================================================== */
+
+.substation-image-item {
+
+    position: relative;
+
+    display: block;
+
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    padding: 0;
+
+    margin: 0;
+
+    border: 0;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+
+    background: var(--branch-cream);
+
+    cursor: pointer;
+
+    -webkit-tap-highlight-color: transparent;
+}
+
+
+.substation-image-item:focus-visible {
+
+    outline: 3px solid var(--branch-brown-light);
+
+    outline-offset: 2px;
+}
+
+
+/* ==========================================================
+   GRID IMAGE
+========================================================== */
+
+.substation-grid-image {
+
+    display: block;
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+    transition:
+        transform 0.25s ease,
+        filter 0.25s ease;
+}
+
+
+.substation-image-item:hover .substation-grid-image {
+
+    transform: scale(1.04);
+
+    filter: brightness(0.88);
+}
+
+
+/* ==========================================================
+   +N MORE OVERLAY
+========================================================== */
+
+.substation-more-overlay {
+
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: rgba(50, 27, 16, 0.62);
+
+    color: var(--branch-white);
+
+    font-size: 25px;
+
+    font-weight: 700;
+
+    pointer-events: none;
+}
+
+
+/* ==========================================================
+   IMAGE VIEWER
+========================================================== */
+
+.substation-image-viewer {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 9999;
+
+    display: none;
+
+    background: rgba(28, 15, 9, 0.96);
+
+    overflow: hidden;
+}
+
+
+.substation-image-viewer.is-open {
+
+    display: block;
+}
+
+
+/* ==========================================================
+   VIEWER TRACK
+========================================================== */
+
+.substation-viewer-track {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    scroll-snap-type: x mandatory;
+
+    scroll-behavior: smooth;
+
+    overscroll-behavior-x: contain;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+}
+
+
+.substation-viewer-track::-webkit-scrollbar {
+
+    display: none;
+}
+
+
+/* ==========================================================
+   VIEWER SLIDE
+========================================================== */
+
+.substation-viewer-slide {
+
+    flex: 0 0 100%;
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    scroll-snap-align: center;
+
+    box-sizing: border-box;
+
+    padding: 55px 18px 25px;
+}
+
+
+/* ==========================================================
+   VIEWER IMAGE
+========================================================== */
+
+.substation-viewer-image {
+
+    display: block;
+
+    max-width: 100%;
+
+    max-height: 100%;
+
+    width: auto;
+
+    height: auto;
+
+    object-fit: contain;
+
+    border-radius: 8px;
+
+    user-select: none;
+
+    -webkit-user-drag: none;
+}
+
+
+/* ==========================================================
+   VIEWER CLOSE BUTTON
+========================================================== */
+
+.substation-viewer-close {
+
+    position: absolute;
+
+    top: 14px;
+
+    right: 14px;
+
+    z-index: 10;
+
+    width: 42px;
+
+    height: 42px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 0;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: rgba(107, 63, 36, 0.92);
+
+    color: var(--branch-white);
+
+    font-size: 29px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.25);
+}
+
+
+.substation-viewer-close:hover {
+
+    background: var(--branch-brown-light);
+}
+
+
+/* ==========================================================
+   PREVENT PAGE SCROLL WHILE VIEWER IS OPEN
+========================================================== */
+
+body.substation-viewer-open {
+
+    overflow: hidden;
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 700px) {
+
+    .substation-icon-card-header,
+    .substation-images-card-header {
+
+        padding: 13px 14px;
+    }
+
+
+    .substation-icon-card-header h3,
+    .substation-images-card-header h3 {
+
+        font-size: 16px;
+    }
+
+
+    .substation-icon-display {
+
+        min-height: 190px;
+
+        padding: 14px;
+    }
+
+
+    .substation-icon-image {
+
+        height: 190px;
+
+        max-width: 220px;
+    }
+
+
+    .substation-images-grid {
+
+        gap: 6px;
+
+        padding: 9px;
+    }
+
+
+    .substation-image-item {
+
+        border-radius: 8px;
+    }
+
+
+    .substation-more-overlay {
+
+        font-size: 21px;
+    }
+
+
+    .substation-viewer-slide {
+
+        padding:
+            60px 10px 15px;
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL SCREENS
+========================================================== */
+
+@media (max-width: 420px) {
+
+    .substation-icon-edit,
+    .substation-images-edit {
+
+        min-height: 31px;
+
+        padding:
+            6px 10px;
+
+        font-size: 12px;
+    }
+
+
+    .substation-icon-display {
+
+        min-height: 160px;
+    }
+
+
+    .substation-icon-image {
+
+        height: 160px;
+
+        max-width: 190px;
+    }
+
+
+    .substation-images-grid {
+
+        gap: 5px;
+
+        padding: 7px;
+    }
+
+
+    .substation-more-overlay {
+
+        font-size: 18px;
+    }
+
+}
