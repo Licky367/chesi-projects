@@ -1,283 +1,345 @@
 <%
 /* =========================================================
-   VERAH COSMETICS — ADD / EDIT SERVICE
+VERAH COSMETICS — ADD / EDIT SERVICE
 ========================================================= */
 
-const isEdit =
-    typeof service !== "undefined" &&
-    service &&
-    service._id;
+/*
 
-const serviceId =
-    isEdit ? service._id : null;
+* Determine whether this page is editing an existing service.
+  */
+  const isEdit =
+  typeof service !== "undefined" &&
+  service &&
+  service._id;
 
-const serviceName =
-    isEdit
-        ? (service.name || "")
-        : (formData?.name || "");
+/*
 
-const serviceImage =
-    isEdit
-        ? (service.image || "")
-        : (formData?.image || "");
+* Use the existing service when editing.
+* Otherwise use an empty object for a new service.
+* 
+* This intentionally does NOT reference formData,
+* because formData may not be supplied by the controller.
+  */
+  const serviceData =
+  isEdit
+  ? service
+  : {};
 
-const serviceDescription =
-    isEdit
-        ? (service.description || "")
-        : (formData?.description || "");
+/*
 
-const servicePrice =
-    isEdit
-        ? (
-            service.price !== undefined &&
-            service.price !== null
-                ? service.price
-                : ""
-          )
-        : (formData?.price || "");
+* SERVICE ID
+  */
+  const serviceId =
+  isEdit
+  ? service._id
+  : "";
 
-const serviceDuration =
-    isEdit
-        ? (service.duration || "")
-        : (formData?.duration || "");
+/*
 
-const serviceActive =
-    isEdit
-        ? service.active !== false
-        : true;
-%>
+* SERVICE NAME
+  */
+  const serviceName =
+  serviceData.name || "";
+
+/*
+
+* SERVICE IMAGE
+  */
+  const serviceImage =
+  serviceData.image || "";
+
+/*
+
+* SERVICE DESCRIPTION
+  */
+  const serviceDescription =
+  serviceData.description || "";
+
+/*
+
+* SERVICE PRICE
+  */
+  const servicePrice =
+  serviceData.price !== undefined &&
+  serviceData.price !== null
+  ? serviceData.price
+  : "";
+
+/*
+
+* SERVICE DURATION
+  */
+  const serviceDuration =
+  serviceData.duration || "";
+
+/*
+
+* SERVICE ACTIVE STATUS
+* 
+* New services are active by default.
+* Existing services are active unless explicitly set to false.
+  */
+  const serviceActive =
+  isEdit
+  ? serviceData.active !== false
+  : true;
+  %>
+
+<section class="verah-service-page"><div class="verah-service-form-card">
 
 
-<section class="verah-service-page">
+    <!-- =================================================
+         PAGE HEADER
+    ================================================== -->
 
-    <div class="verah-service-form-card">
+    <div class="verah-service-page-header">
 
-        <div class="verah-service-page-header">
-
-            <span class="verah-service-page-label">
-                VERAH COSMETICS
-            </span>
+        <span class="verah-service-page-label">
+            VERAH COSMETICS
+        </span>
 
 
-            <% if (isEdit) { %>
+        <% if (isEdit) { %>
 
-                <h1>
-                    Edit Service
-                </h1>
+            <h1>
+                Edit Service
+            </h1>
 
-                <p>
-                    Update the service details shown in the services section.
-                </p>
+            <p>
+                Update the service details shown in the services section.
+            </p>
 
-            <% } else { %>
+        <% } else { %>
 
-                <h1>
-                    Add Service
-                </h1>
+            <h1>
+                Add Service
+            </h1>
 
-                <p>
-                    Add a service that will appear in the services section.
-                </p>
+            <p>
+                Add a service that will appear in the services section.
+            </p>
+
+        <% } %>
+
+    </div>
+
+
+
+    <!-- =================================================
+         SERVICE FORM
+    ================================================== -->
+
+    <form
+        action="<%= isEdit
+            ? `/services/add/${serviceId}`
+            : `/services/add`
+        %>"
+        method="POST"
+        class="verah-service-form"
+    >
+
+
+        <!-- =================================================
+             SERVICE NAME
+        ================================================== -->
+
+        <div class="verah-form-group">
+
+            <label for="name">
+                Service Name
+            </label>
+
+            <input
+                type="text"
+                id="name"
+                name="name"
+                value="<%= serviceName %>"
+                required
+            >
+
+        </div>
+
+
+
+        <!-- =================================================
+             IMAGE URL
+        ================================================== -->
+
+        <div class="verah-form-group">
+
+            <label for="image">
+                Image URL
+            </label>
+
+            <input
+                type="url"
+                id="image"
+                name="image"
+                value="<%= serviceImage %>"
+                placeholder="https://example.com/image.jpg"
+            >
+
+
+            <% if (isEdit && serviceImage) { %>
+
+                <div class="verah-current-image">
+
+                    <span>
+                        Current Image
+                    </span>
+
+                    <img
+                        src="<%= serviceImage %>"
+                        alt="<%= serviceName %>"
+                        loading="lazy"
+                    >
+
+                </div>
 
             <% } %>
 
         </div>
 
 
-        <form
-            action="<%= isEdit
-                ? `/services/add/${serviceId}`
-                : `/services/add`
-            %>"
-            method="POST"
-            class="verah-service-form"
-        >
+
+        <!-- =================================================
+             DESCRIPTION
+        ================================================== -->
+
+        <div class="verah-form-group">
+
+            <label for="description">
+                Description
+            </label>
+
+            <textarea
+                id="description"
+                name="description"
+                rows="5"
+                required
+            ><%= serviceDescription %></textarea>
+
+        </div>
 
 
-            <!-- =================================================
-                 SERVICE NAME
-            ================================================== -->
+
+        <!-- =================================================
+             PRICE + DURATION
+        ================================================== -->
+
+        <div class="verah-form-row">
+
+
+            <!-- PRICE -->
 
             <div class="verah-form-group">
 
-                <label for="name">
-                    Service Name
+                <label for="price">
+                    Price
+                </label>
+
+                <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    min="0"
+                    step="0.01"
+                    value="<%= servicePrice %>"
+                    required
+                >
+
+            </div>
+
+
+            <!-- DURATION -->
+
+            <div class="verah-form-group">
+
+                <label for="duration">
+                    Duration
                 </label>
 
                 <input
                     type="text"
-                    id="name"
-                    name="name"
-                    value="<%= serviceName %>"
-                    required
+                    id="duration"
+                    name="duration"
+                    value="<%= serviceDuration %>"
+                    placeholder="e.g. 45 minutes"
                 >
 
             </div>
 
+        </div>
 
-            <!-- =================================================
-                 IMAGE URL
-            ================================================== -->
 
-            <div class="verah-form-group">
 
-                <label for="image">
-                    Image URL
-                </label>
+        <!-- =================================================
+             ACTIVE STATUS
+        ================================================== -->
+
+        <div class="verah-form-group verah-checkbox-group">
+
+            <label for="active">
 
                 <input
-                    type="url"
-                    id="image"
-                    name="image"
-                    value="<%= serviceImage %>"
-                    placeholder="https://example.com/image.jpg"
+                    type="checkbox"
+                    id="active"
+                    name="active"
+                    value="true"
+                    <%= serviceActive ? "checked" : "" %>
                 >
 
-                <% if (isEdit && serviceImage) { %>
+                Active service
 
-                    <div class="verah-current-image">
+            </label>
 
-                        <span>
-                            Current Image
-                        </span>
-
-                        <img
-                            src="<%= serviceImage %>"
-                            alt="<%= serviceName %>"
-                            loading="lazy"
-                        >
-
-                    </div>
-
-                <% } %>
-
-            </div>
+        </div>
 
 
-            <!-- =================================================
-                 DESCRIPTION
-            ================================================== -->
 
-            <div class="verah-form-group">
+        <!-- =================================================
+             ACTION BUTTONS
+        ================================================== -->
 
-                <label for="description">
-                    Description
-                </label>
-
-                <textarea
-                    id="description"
-                    name="description"
-                    rows="5"
-                    required
-                ><%= serviceDescription %></textarea>
-
-            </div>
+        <div class="verah-form-actions">
 
 
-            <!-- =================================================
-                 PRICE + DURATION
-            ================================================== -->
+            <!-- CANCEL -->
 
-            <div class="verah-form-row">
-
-                <div class="verah-form-group">
-
-                    <label for="price">
-                        Price
-                    </label>
-
-                    <input
-                        type="number"
-                        id="price"
-                        name="price"
-                        min="0"
-                        step="0.01"
-                        value="<%= servicePrice %>"
-                        required
-                    >
-
-                </div>
+            <a
+                href="/"
+                class="verah-secondary-button"
+            >
+                Cancel
+            </a>
 
 
-                <div class="verah-form-group">
+            <!-- SAVE -->
 
-                    <label for="duration">
-                        Duration
-                    </label>
+            <% if (isEdit) { %>
 
-                    <input
-                        type="text"
-                        id="duration"
-                        name="duration"
-                        value="<%= serviceDuration %>"
-                        placeholder="e.g. 45 minutes"
-                    >
-
-                </div>
-
-            </div>
-
-
-            <!-- =================================================
-                 ACTIVE
-            ================================================== -->
-
-            <div class="verah-form-group verah-checkbox-group">
-
-                <label>
-
-                    <input
-                        type="checkbox"
-                        name="active"
-                        value="true"
-                        <%= serviceActive ? "checked" : "" %>
-                    >
-
-                    Active service
-
-                </label>
-
-            </div>
-
-
-            <!-- =================================================
-                 ACTIONS
-            ================================================== -->
-
-            <div class="verah-form-actions">
-
-                <a
-                    href="/"
-                    class="verah-secondary-button"
+                <button
+                    type="submit"
+                    class="verah-primary-button"
                 >
-                    Cancel
-                </a>
+                    Save Changes
+                </button>
 
+            <% } else { %>
 
-                <% if (isEdit) { %>
+                <button
+                    type="submit"
+                    class="verah-primary-button"
+                >
+                    Save Service
+                </button>
 
-                    <button
-                        type="submit"
-                        class="verah-primary-button"
-                    >
-                        Save Changes
-                    </button>
+            <% } %>
 
-                <% } else { %>
+        </div>
 
-                    <button
-                        type="submit"
-                        class="verah-primary-button"
-                    >
-                        Save Service
-                    </button>
+    </form>
 
-                <% } %>
-
-            </div>
-
-        </form>
-
-    </div>
+</div>
 
 </section>
