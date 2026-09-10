@@ -127,7 +127,7 @@ const substationSchema = new mongoose.Schema(
     // ------------------------------------------------------
 
     phoneNumber: {
-      type: Number,
+      type: string,
       default: null
     },
 
