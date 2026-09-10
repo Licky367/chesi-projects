@@ -73,9 +73,7 @@ const icon =
             enctype="multipart/form-data"
         >
 
-            <label
-                for="substationIcon"
-            >
+            <label for="substationIcon">
                 Select icon
             </label>
 
@@ -90,14 +88,12 @@ const icon =
 
             <div class="substation-form-actions">
 
-                <button
-                    type="submit"
-                >
+                <button type="submit">
                     Upload Icon
                 </button>
 
                 <a
-                    href="/substations/branch/<%= substation._id %>"
+                    href="/substations/<%= substation._id %>"
                 >
                     Cancel
                 </a>

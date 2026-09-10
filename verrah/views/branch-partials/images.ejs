@@ -68,7 +68,6 @@ const remainingImages =
             enctype="multipart/form-data"
         >
 
-
             <% if (branchImages.length) { %>
 
                 <div class="substation-existing-images">
@@ -77,14 +76,11 @@ const remainingImages =
                         Existing Images
                     </h3>
 
-
                     <div class="substation-manage-grid">
 
                         <% branchImages.forEach((image, index) => { %>
 
-                            <label
-                                class="substation-manage-image"
-                            >
+                            <label class="substation-manage-image">
 
                                 <img
                                     src="<%= image %>"
@@ -117,9 +113,7 @@ const remainingImages =
 
             <div class="substation-new-images">
 
-                <label
-                    for="images"
-                >
+                <label for="images">
                     Add new images
                 </label>
 
@@ -140,20 +134,17 @@ const remainingImages =
 
             <div class="substation-form-actions">
 
-                <button
-                    type="submit"
-                >
+                <button type="submit">
                     Save Images
                 </button>
 
                 <a
-                    href="/branch/<%= substation._id %>"
+                    href="/substations/<%= substation._id %>"
                 >
                     Cancel
                 </a>
 
             </div>
-
 
         </form>
 
@@ -206,15 +197,12 @@ const remainingImages =
                         loading="lazy"
                     >
 
-
                     <% if (
                         index === 3 &&
                         remainingImages > 0
                     ) { %>
 
-                        <span
-                            class="substation-more-overlay"
-                        >
+                        <span class="substation-more-overlay">
                             +<%= remainingImages %>
                         </span>
 
@@ -226,10 +214,6 @@ const remainingImages =
 
         </div>
 
-
-        <!-- ==================================================
-             FULL SCREEN IMAGE VIEWER
-        ================================================== -->
 
         <div
             class="substation-image-viewer"
@@ -245,7 +229,6 @@ const remainingImages =
                 &times;
             </button>
 
-
             <div
                 class="substation-viewer-track"
                 id="substationViewerTrack"
@@ -253,9 +236,7 @@ const remainingImages =
 
                 <% branchImages.forEach((image, index) => { %>
 
-                    <div
-                        class="substation-viewer-slide"
-                    >
+                    <div class="substation-viewer-slide">
 
                         <img
                             src="<%= image %>"
@@ -303,7 +284,6 @@ const remainingImages =
                 return;
             }
 
-
             imageItems.forEach(
                 function (item) {
 
@@ -332,13 +312,10 @@ const remainingImages =
                             track.scrollLeft =
                                 index *
                                 track.clientWidth;
-
                         }
                     );
-
                 }
             );
-
 
             function closeViewer() {
 
@@ -356,12 +333,10 @@ const remainingImages =
                 );
             }
 
-
             closeButton.addEventListener(
                 "click",
                 closeViewer
             );
-
 
             viewer.addEventListener(
                 "click",
@@ -375,7 +350,6 @@ const remainingImages =
 
                 }
             );
-
 
             document.addEventListener(
                 "keydown",
@@ -399,7 +373,6 @@ const remainingImages =
 
     <% } else { %>
 
-
         <div class="substation-images-empty">
 
             <span>
@@ -418,7 +391,6 @@ const remainingImages =
             <% } %>
 
         </div>
-
 
     <% } %>
 
