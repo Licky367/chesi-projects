@@ -1,22 +1,12 @@
 <%
-/* ==========================================================
-   SUBSTATION BRANCH — IMAGES CARD
-   views/branch-partials/images.ejs
-
-   Behaviour:
-   - Displays up to 4 images in the grid
-   - If more than 4 images exist, the fourth tile shows +N
-   - Clicking an image opens the image viewer
-   - Viewer supports left/right horizontal scrolling
-   - Admin can add/remove images
-   - Edit route:
-     /substations/branch/images/:id
-========================================================== */
-
 const isAdmin =
     typeof user !== "undefined" &&
     user &&
     user.role === "admin";
+
+const edit =
+    typeof editMode !== "undefined" &&
+    editMode;
 
 const branchImages =
     substation &&
@@ -24,19 +14,164 @@ const branchImages =
         ? substation.images.filter(Boolean)
         : [];
 
-const visibleImages = branchImages.slice(0, 4);
-const remainingImages = Math.max(
-    branchImages.length - 4,
-    0
-);
+const visibleImages =
+    branchImages.slice(0, 4);
+
+const remainingImages =
+    Math.max(
+        branchImages.length - 4,
+        0
+    );
 %>
+
+
+<% if (edit) { %>
+
+<section class="substation-images-edit-page">
+
+    <div class="substation-images-edit-card">
+
+        <div class="substation-images-edit-header">
+
+            <h1>
+                Manage Substation Images
+            </h1>
+
+            <p>
+                <%= substation.name %>
+            </p>
+
+        </div>
+
+
+        <% if (error) { %>
+
+            <div class="error" role="alert">
+                <%= error %>
+            </div>
+
+        <% } %>
+
+
+        <% if (success) { %>
+
+            <div class="success" role="status">
+                <%= success %>
+            </div>
+
+        <% } %>
+
+
+        <form
+            action="/substations/branch/images/<%= substation._id %>"
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+
+            <% if (branchImages.length) { %>
+
+                <div class="substation-existing-images">
+
+                    <h3>
+                        Existing Images
+                    </h3>
+
+
+                    <div class="substation-manage-grid">
+
+                        <% branchImages.forEach((image, index) => { %>
+
+                            <label
+                                class="substation-manage-image"
+                            >
+
+                                <img
+                                    src="<%= image %>"
+                                    alt="<%= substation.name %> image <%= index + 1 %>"
+                                >
+
+                                <span>
+
+                                    <input
+                                        type="checkbox"
+                                        name="keepImages"
+                                        value="<%= image %>"
+                                        checked
+                                    >
+
+                                    Keep image
+
+                                </span>
+
+                            </label>
+
+                        <% }) %>
+
+                    </div>
+
+                </div>
+
+            <% } %>
+
+
+            <div class="substation-new-images">
+
+                <label
+                    for="images"
+                >
+                    Add new images
+                </label>
+
+                <input
+                    id="images"
+                    type="file"
+                    name="images"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    multiple
+                >
+
+                <small>
+                    You can select up to 20 images.
+                </small>
+
+            </div>
+
+
+            <div class="substation-form-actions">
+
+                <button
+                    type="submit"
+                >
+                    Save Images
+                </button>
+
+                <a
+                    href="/branch/<%= substation._id %>"
+                >
+                    Cancel
+                </a>
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+</section>
+
+
+<% } else { %>
 
 
 <div class="substation-images-card">
 
     <div class="substation-images-card-header">
 
-        <h3>Images</h3>
+        <h3>
+            Images
+        </h3>
 
         <% if (isAdmin) { %>
 
@@ -62,20 +197,24 @@ const remainingImages = Math.max(
                     type="button"
                     class="substation-image-item <%= index === 3 && remainingImages > 0 ? 'has-more-images' : '' %>"
                     data-image-index="<%= index %>"
-                    aria-label="Open substation image <%= index + 1 %>"
                 >
 
                     <img
                         src="<%= image %>"
-                        alt="<%= substation.name || 'Substation' %> image <%= index + 1 %>"
+                        alt="<%= substation.name %> image <%= index + 1 %>"
                         class="substation-grid-image"
                         loading="lazy"
                     >
 
 
-                    <% if (index === 3 && remainingImages > 0) { %>
+                    <% if (
+                        index === 3 &&
+                        remainingImages > 0
+                    ) { %>
 
-                        <span class="substation-more-overlay">
+                        <span
+                            class="substation-more-overlay"
+                        >
                             +<%= remainingImages %>
                         </span>
 
@@ -89,8 +228,8 @@ const remainingImages = Math.max(
 
 
         <!-- ==================================================
-             FULL IMAGE VIEWER
-        =================================================== -->
+             FULL SCREEN IMAGE VIEWER
+        ================================================== -->
 
         <div
             class="substation-image-viewer"
@@ -102,7 +241,6 @@ const remainingImages = Math.max(
                 type="button"
                 class="substation-viewer-close"
                 id="substationViewerClose"
-                aria-label="Close image viewer"
             >
                 &times;
             </button>
@@ -115,11 +253,13 @@ const remainingImages = Math.max(
 
                 <% branchImages.forEach((image, index) => { %>
 
-                    <div class="substation-viewer-slide">
+                    <div
+                        class="substation-viewer-slide"
+                    >
 
                         <img
                             src="<%= image %>"
-                            alt="<%= substation.name || 'Substation' %> image <%= index + 1 %>"
+                            alt="<%= substation.name %> image <%= index + 1 %>"
                             class="substation-viewer-image"
                         >
 
@@ -136,65 +276,69 @@ const remainingImages = Math.max(
         (function () {
 
             const viewer =
-                document.getElementById("substationImageViewer");
+                document.getElementById(
+                    "substationImageViewer"
+                );
 
             const track =
-                document.getElementById("substationViewerTrack");
+                document.getElementById(
+                    "substationViewerTrack"
+                );
 
             const closeButton =
-                document.getElementById("substationViewerClose");
+                document.getElementById(
+                    "substationViewerClose"
+                );
 
             const imageItems =
                 document.querySelectorAll(
                     ".substation-image-item"
                 );
 
-            if (!viewer || !track || !closeButton) {
+            if (
+                !viewer ||
+                !track ||
+                !closeButton
+            ) {
                 return;
             }
 
 
-            /* =================================================
-               OPEN VIEWER
-            ================================================== */
+            imageItems.forEach(
+                function (item) {
 
-            imageItems.forEach(function (item) {
+                    item.addEventListener(
+                        "click",
+                        function () {
 
-                item.addEventListener("click", function () {
+                            const index =
+                                Number(
+                                    item.dataset.imageIndex
+                                );
 
-                    const index =
-                        Number(
-                            item.dataset.imageIndex
-                        );
+                            viewer.classList.add(
+                                "is-open"
+                            );
 
-                    viewer.classList.add(
-                        "is-open"
+                            viewer.setAttribute(
+                                "aria-hidden",
+                                "false"
+                            );
+
+                            document.body.classList.add(
+                                "substation-viewer-open"
+                            );
+
+                            track.scrollLeft =
+                                index *
+                                track.clientWidth;
+
+                        }
                     );
 
-                    viewer.setAttribute(
-                        "aria-hidden",
-                        "false"
-                    );
+                }
+            );
 
-                    document.body.classList.add(
-                        "substation-viewer-open"
-                    );
-
-
-                    track.scrollTo({
-                        left:
-                            index * track.clientWidth,
-                        behavior: "instant"
-                    });
-
-                });
-
-            });
-
-
-            /* =================================================
-               CLOSE VIEWER
-            ================================================== */
 
             function closeViewer() {
 
@@ -210,7 +354,6 @@ const remainingImages = Math.max(
                 document.body.classList.remove(
                     "substation-viewer-open"
                 );
-
             }
 
 
@@ -219,10 +362,6 @@ const remainingImages = Math.max(
                 closeViewer
             );
 
-
-            /* =================================================
-               CLOSE WHEN BACKDROP IS TAPPED
-            ================================================== */
 
             viewer.addEventListener(
                 "click",
@@ -238,17 +377,15 @@ const remainingImages = Math.max(
             );
 
 
-            /* =================================================
-               ESCAPE KEY
-            ================================================== */
-
             document.addEventListener(
                 "keydown",
                 function (event) {
 
                     if (
                         event.key === "Escape" &&
-                        viewer.classList.contains("is-open")
+                        viewer.classList.contains(
+                            "is-open"
+                        )
                     ) {
                         closeViewer();
                     }
@@ -262,9 +399,12 @@ const remainingImages = Math.max(
 
     <% } else { %>
 
+
         <div class="substation-images-empty">
 
-            <span>No images</span>
+            <span>
+                No images
+            </span>
 
             <% if (isAdmin) { %>
 
@@ -279,6 +419,10 @@ const remainingImages = Math.max(
 
         </div>
 
+
     <% } %>
 
 </div>
+
+
+<% } %>
