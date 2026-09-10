@@ -1,0 +1,284 @@
+<%
+/* ==========================================================
+   SUBSTATION BRANCH — IMAGES CARD
+   views/branch-partials/images.ejs
+
+   Behaviour:
+   - Displays up to 4 images in the grid
+   - If more than 4 images exist, the fourth tile shows +N
+   - Clicking an image opens the image viewer
+   - Viewer supports left/right horizontal scrolling
+   - Admin can add/remove images
+   - Edit route:
+     /substations/branch/images/:id
+========================================================== */
+
+const isAdmin =
+    typeof user !== "undefined" &&
+    user &&
+    user.role === "admin";
+
+const branchImages =
+    substation &&
+    Array.isArray(substation.images)
+        ? substation.images.filter(Boolean)
+        : [];
+
+const visibleImages = branchImages.slice(0, 4);
+const remainingImages = Math.max(
+    branchImages.length - 4,
+    0
+);
+%>
+
+
+<div class="substation-images-card">
+
+    <div class="substation-images-card-header">
+
+        <h3>Images</h3>
+
+        <% if (isAdmin) { %>
+
+            <a
+                href="/substations/branch/images/<%= substation._id %>"
+                class="substation-images-edit"
+            >
+                Manage
+            </a>
+
+        <% } %>
+
+    </div>
+
+
+    <% if (branchImages.length > 0) { %>
+
+        <div class="substation-images-grid">
+
+            <% visibleImages.forEach((image, index) => { %>
+
+                <button
+                    type="button"
+                    class="substation-image-item <%= index === 3 && remainingImages > 0 ? 'has-more-images' : '' %>"
+                    data-image-index="<%= index %>"
+                    aria-label="Open substation image <%= index + 1 %>"
+                >
+
+                    <img
+                        src="<%= image %>"
+                        alt="<%= substation.name || 'Substation' %> image <%= index + 1 %>"
+                        class="substation-grid-image"
+                        loading="lazy"
+                    >
+
+
+                    <% if (index === 3 && remainingImages > 0) { %>
+
+                        <span class="substation-more-overlay">
+                            +<%= remainingImages %>
+                        </span>
+
+                    <% } %>
+
+                </button>
+
+            <% }) %>
+
+        </div>
+
+
+        <!-- ==================================================
+             FULL IMAGE VIEWER
+        =================================================== -->
+
+        <div
+            class="substation-image-viewer"
+            id="substationImageViewer"
+            aria-hidden="true"
+        >
+
+            <button
+                type="button"
+                class="substation-viewer-close"
+                id="substationViewerClose"
+                aria-label="Close image viewer"
+            >
+                &times;
+            </button>
+
+
+            <div
+                class="substation-viewer-track"
+                id="substationViewerTrack"
+            >
+
+                <% branchImages.forEach((image, index) => { %>
+
+                    <div class="substation-viewer-slide">
+
+                        <img
+                            src="<%= image %>"
+                            alt="<%= substation.name || 'Substation' %> image <%= index + 1 %>"
+                            class="substation-viewer-image"
+                        >
+
+                    </div>
+
+                <% }) %>
+
+            </div>
+
+        </div>
+
+
+        <script>
+        (function () {
+
+            const viewer =
+                document.getElementById("substationImageViewer");
+
+            const track =
+                document.getElementById("substationViewerTrack");
+
+            const closeButton =
+                document.getElementById("substationViewerClose");
+
+            const imageItems =
+                document.querySelectorAll(
+                    ".substation-image-item"
+                );
+
+            if (!viewer || !track || !closeButton) {
+                return;
+            }
+
+
+            /* =================================================
+               OPEN VIEWER
+            ================================================== */
+
+            imageItems.forEach(function (item) {
+
+                item.addEventListener("click", function () {
+
+                    const index =
+                        Number(
+                            item.dataset.imageIndex
+                        );
+
+                    viewer.classList.add(
+                        "is-open"
+                    );
+
+                    viewer.setAttribute(
+                        "aria-hidden",
+                        "false"
+                    );
+
+                    document.body.classList.add(
+                        "substation-viewer-open"
+                    );
+
+
+                    track.scrollTo({
+                        left:
+                            index * track.clientWidth,
+                        behavior: "instant"
+                    });
+
+                });
+
+            });
+
+
+            /* =================================================
+               CLOSE VIEWER
+            ================================================== */
+
+            function closeViewer() {
+
+                viewer.classList.remove(
+                    "is-open"
+                );
+
+                viewer.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+                document.body.classList.remove(
+                    "substation-viewer-open"
+                );
+
+            }
+
+
+            closeButton.addEventListener(
+                "click",
+                closeViewer
+            );
+
+
+            /* =================================================
+               CLOSE WHEN BACKDROP IS TAPPED
+            ================================================== */
+
+            viewer.addEventListener(
+                "click",
+                function (event) {
+
+                    if (
+                        event.target === viewer
+                    ) {
+                        closeViewer();
+                    }
+
+                }
+            );
+
+
+            /* =================================================
+               ESCAPE KEY
+            ================================================== */
+
+            document.addEventListener(
+                "keydown",
+                function (event) {
+
+                    if (
+                        event.key === "Escape" &&
+                        viewer.classList.contains("is-open")
+                    ) {
+                        closeViewer();
+                    }
+
+                }
+            );
+
+        })();
+        </script>
+
+
+    <% } else { %>
+
+        <div class="substation-images-empty">
+
+            <span>No images</span>
+
+            <% if (isAdmin) { %>
+
+                <a
+                    href="/substations/branch/images/<%= substation._id %>"
+                    class="substation-images-add"
+                >
+                    Add Images
+                </a>
+
+            <% } %>
+
+        </div>
+
+    <% } %>
+
+</div>
