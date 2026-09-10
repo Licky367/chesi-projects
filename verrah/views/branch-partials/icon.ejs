@@ -1,19 +1,12 @@
 <%
-/* ==========================================================
-   SUBSTATION BRANCH — ICON CARD
-   views/branch-partials/icon.ejs
-
-   Behaviour:
-   - Displays substationIcon
-   - Admin can edit the icon
-   - Edit route:
-     /substations/branch/icon/:id
-========================================================== */
-
 const isAdmin =
     typeof user !== "undefined" &&
     user &&
     user.role === "admin";
+
+const edit =
+    typeof editMode !== "undefined" &&
+    editMode;
 
 const icon =
     substation &&
@@ -23,18 +16,117 @@ const icon =
 %>
 
 
+<% if (edit) { %>
+
+<section class="substation-icon-edit-page">
+
+    <div class="substation-icon-edit-card">
+
+        <div class="substation-icon-edit-header">
+
+            <h1>
+                Edit Substation Icon
+            </h1>
+
+            <p>
+                <%= substation.name %>
+            </p>
+
+        </div>
+
+
+        <% if (error) { %>
+
+            <div class="error" role="alert">
+                <%= error %>
+            </div>
+
+        <% } %>
+
+
+        <% if (success) { %>
+
+            <div class="success" role="status">
+                <%= success %>
+            </div>
+
+        <% } %>
+
+
+        <% if (icon) { %>
+
+            <div class="substation-icon-current">
+
+                <img
+                    src="<%= icon %>"
+                    alt="<%= substation.name %>"
+                >
+
+            </div>
+
+        <% } %>
+
+
+        <form
+            action="/substations/branch/icon/<%= substation._id %>"
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+            <label
+                for="substationIcon"
+            >
+                Select icon
+            </label>
+
+            <input
+                id="substationIcon"
+                type="file"
+                name="substationIcon"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                required
+            >
+
+
+            <div class="substation-form-actions">
+
+                <button
+                    type="submit"
+                >
+                    Upload Icon
+                </button>
+
+                <a
+                    href="/substations/branch/<%= substation._id %>"
+                >
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</section>
+
+
+<% } else { %>
+
+
 <div class="substation-icon-card">
 
     <div class="substation-icon-card-header">
 
-        <h3>Substation Icon</h3>
+        <h3>
+            Substation Icon
+        </h3>
 
         <% if (isAdmin) { %>
 
             <a
                 href="/substations/branch/icon/<%= substation._id %>"
                 class="substation-icon-edit"
-                aria-label="Edit substation icon"
             >
                 Edit
             </a>
@@ -57,16 +149,22 @@ const icon =
         <% } else { %>
 
             <div class="substation-icon-empty">
-                <span>No icon</span>
+
+                <span>
+                    No icon
+                </span>
 
                 <% if (isAdmin) { %>
+
                     <a
                         href="/substations/branch/icon/<%= substation._id %>"
                         class="substation-icon-add"
                     >
                         Add Icon
                     </a>
+
                 <% } %>
+
             </div>
 
         <% } %>
@@ -74,3 +172,6 @@ const icon =
     </div>
 
 </div>
+
+
+<% } %>
