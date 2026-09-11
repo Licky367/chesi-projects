@@ -1,0 +1,251 @@
+/* =========================================================
+   VERAH COSMETICS — STAFF DELIVERY & SALES
+   BROWN THEME
+========================================================= */
+
+
+/* =========================================================
+   DELIVERY TASKS
+========================================================= */
+
+.verah-delivery-tasks {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 16px;
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   DELIVERY HEADER
+========================================================= */
+
+.verah-delivery-header {
+    margin-bottom: 20px;
+}
+
+.verah-delivery-eyebrow {
+    display: block;
+    margin-bottom: 6px;
+
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+
+    color: #8b5e3c;
+    text-transform: uppercase;
+}
+
+.verah-delivery-header h2 {
+    margin: 0;
+
+    font-size: 1.7rem;
+    line-height: 1.25;
+    font-weight: 700;
+
+    color: #4b2e1f;
+}
+
+
+/* =========================================================
+   DELIVERY CONTENT
+========================================================= */
+
+.verah-delivery-content {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   DELIVERY LIST
+========================================================= */
+
+.verah-delivery-list {
+    margin: 0;
+    padding-left: 24px;
+
+    color: #4b2e1f;
+
+    font-size: 0.98rem;
+    line-height: 1.7;
+}
+
+.verah-delivery-list li {
+    margin-bottom: 9px;
+    padding-left: 4px;
+}
+
+.verah-delivery-list li:last-child {
+    margin-bottom: 0;
+}
+
+
+/* =========================================================
+   DELIVERY LINK
+========================================================= */
+
+.verah-delivery-link {
+    display: inline-block;
+
+    color: #7a4b2a;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.verah-delivery-link:hover {
+    color: #4b2e1f;
+    text-decoration: none;
+}
+
+
+/* =========================================================
+   SALES ACTIVITIES
+========================================================= */
+
+.verah-sales-activities {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 16px;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   SALES HEADER
+========================================================= */
+
+.verah-sales-header {
+    margin-bottom: 20px;
+}
+
+.verah-sales-eyebrow {
+    display: block;
+    margin-bottom: 6px;
+
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+
+    color: #8b5e3c;
+    text-transform: uppercase;
+}
+
+.verah-sales-header h2 {
+    margin: 0;
+
+    font-size: 1.7rem;
+    line-height: 1.25;
+    font-weight: 700;
+
+    color: #4b2e1f;
+}
+
+
+/* =========================================================
+   SALES CONTENT
+========================================================= */
+
+.verah-sales-content {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   SALES DESCRIPTION
+========================================================= */
+
+.verah-sales-description {
+    margin: 0 0 14px;
+
+    color: #5c4030;
+
+    font-size: 0.98rem;
+    line-height: 1.65;
+}
+
+
+/* =========================================================
+   SALES LIST
+========================================================= */
+
+.verah-sales-list {
+    margin: 0;
+    padding-left: 24px;
+
+    color: #4b2e1f;
+
+    font-size: 0.98rem;
+    line-height: 1.7;
+}
+
+.verah-sales-list li {
+    margin-bottom: 9px;
+    padding-left: 4px;
+}
+
+.verah-sales-list li:last-child {
+    margin-bottom: 0;
+}
+
+
+/* =========================================================
+   SALES LINK
+========================================================= */
+
+.verah-sales-link {
+    display: inline-block;
+
+    color: #7a4b2a;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.verah-sales-link:hover {
+    color: #4b2e1f;
+    text-decoration: none;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .verah-delivery-tasks,
+    .verah-sales-activities {
+        padding: 22px 14px;
+    }
+
+    .verah-delivery-header h2,
+    .verah-sales-header h2 {
+        font-size: 1.45rem;
+    }
+
+    .verah-delivery-list,
+    .verah-sales-list {
+        padding-left: 22px;
+        font-size: 0.94rem;
+        line-height: 1.65;
+    }
+
+    .verah-sales-description {
+        font-size: 0.94rem;
+    }
+
+}
