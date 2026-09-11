@@ -1,14 +1,21 @@
 <!-- ==========================================================
-     views/carts.ejs
+     views/cart/carts.ejs
      CART PAGE
 ========================================================== -->
 
 <section class="shop-page cart-page">
 
+  <!-- ========================================================
+       PAGE HEADER
+  ========================================================= -->
+
   <div class="cart-page-head">
 
     <div>
-      <span class="cart-kicker">COREVESTER</span>
+
+      <span class="cart-kicker">
+        COREVESTER
+      </span>
 
       <h1 class="page-title">
         Your Cart
@@ -17,6 +24,7 @@
       <p class="page-subtitle">
         Products you have reserved for checkout.
       </p>
+
     </div>
 
 
@@ -24,16 +32,19 @@
       href="/products"
       class="secondary-btn"
     >
+
       <i class="fas fa-arrow-left"></i>
+
       Continue Shopping
+
     </a>
 
   </div>
 
 
-  <!-- ======================================================
+  <!-- ========================================================
        ERROR
-  ======================================================= -->
+  ========================================================= -->
 
   <% if (
     typeof error !== "undefined" &&
@@ -53,9 +64,9 @@
   <% } %>
 
 
-  <!-- ======================================================
+  <!-- ========================================================
        EMPTY CART
-  ======================================================= -->
+  ========================================================= -->
 
   <% if (
     !cart ||
@@ -63,11 +74,12 @@
     !cart.items.length
   ) { %>
 
-
     <div class="cart-empty">
 
       <div class="cart-empty-icon">
+
         <i class="fas fa-shopping-basket"></i>
+
       </div>
 
       <h2>
@@ -82,8 +94,11 @@
         class="primary-btn"
         href="/products"
       >
+
         <i class="fas fa-store"></i>
+
         Browse Products
+
       </a>
 
     </div>
@@ -92,16 +107,16 @@
   <% } else { %>
 
 
-    <!-- ====================================================
+    <!-- ======================================================
          CART LAYOUT
-    ===================================================== -->
+    ======================================================= -->
 
     <div class="cart-layout">
 
 
-      <!-- ==================================================
+      <!-- ====================================================
            CART ITEMS
-      =================================================== -->
+      ===================================================== -->
 
       <div class="cart-items-section">
 
@@ -239,12 +254,11 @@
       </div>
 
 
-      <!-- ==================================================
+      <!-- ====================================================
            ORDER SUMMARY
-      =================================================== -->
+      ===================================================== -->
 
       <aside class="cart-summary-card">
-
 
         <div class="cart-summary-head">
 
@@ -294,9 +308,9 @@
         </p>
 
 
-        <!-- =================================================
-             STAFF SALE BUTTON
-        ================================================== -->
+        <!-- ==================================================
+             STAFF ACTION
+        =================================================== -->
 
         <% if (
           String(
@@ -307,8 +321,8 @@
 
           <button
             type="button"
-            class="primary-btn cart-checkout-btn staff-sale-btn"
-            id="open-staff-sale-modal"
+            class="primary-btn cart-checkout-btn staff-sale-open"
+            id="staff-sale-open"
           >
 
             <i class="fas fa-cash-register"></i>
@@ -321,9 +335,9 @@
         <% } else { %>
 
 
-          <!-- ===============================================
-               NORMAL CHECKOUT
-          ================================================ -->
+          <!-- ================================================
+               ADMIN / CLIENT CHECKOUT
+          ================================================= -->
 
           <a
             class="primary-btn cart-checkout-btn"
@@ -351,16 +365,14 @@
 
         </a>
 
-
       </aside>
-
 
     </div>
 
 
-    <!-- ====================================================
+    <!-- ======================================================
          STAFF SALE MODAL
-    ===================================================== -->
+    ======================================================= -->
 
     <% if (
       String(
@@ -375,34 +387,37 @@
         aria-hidden="true"
       >
 
+        <!-- BACKDROP -->
 
         <div
-          class="staff-sale-modal-overlay"
-          id="staff-sale-modal-overlay"
+          class="staff-sale-backdrop"
+          id="staff-sale-backdrop"
         ></div>
 
 
+        <!-- MODAL -->
+
         <div
-          class="staff-sale-modal-card"
+          class="staff-sale-dialog"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="staff-sale-modal-title"
+          aria-labelledby="staff-sale-title"
         >
 
 
-          <!-- ==============================================
+          <!-- =================================================
                MODAL HEADER
-          =============================================== -->
+          ================================================== -->
 
-          <div class="staff-sale-modal-header">
+          <div class="staff-sale-header">
 
             <div>
 
-              <span class="cart-section-kicker">
+              <span class="staff-sale-kicker">
                 STAFF SALE
               </span>
 
-              <h2 id="staff-sale-modal-title">
+              <h2 id="staff-sale-title">
                 Record Sale
               </h2>
 
@@ -411,8 +426,8 @@
 
             <button
               type="button"
-              class="staff-sale-modal-close"
-              id="close-staff-sale-modal"
+              class="staff-sale-close"
+              id="staff-sale-close"
               aria-label="Close"
             >
 
@@ -423,32 +438,29 @@
           </div>
 
 
-          <!-- ==============================================
+          <!-- =================================================
                MODAL BODY
-          =============================================== -->
+          ================================================== -->
 
-          <div class="staff-sale-modal-body">
+          <div class="staff-sale-body">
 
+            <p class="staff-sale-intro">
 
-            <p class="staff-sale-modal-description">
-
-              Enter a name for this sale before submitting
-              the items in your cart.
+              Enter the name of this sale.
+              All products currently in your cart
+              will be recorded under this sale.
 
             </p>
 
 
-            <!-- ============================================
-                 SALE PREVIEW
-            ============================================= -->
+            <!-- SALE SUMMARY -->
 
-            <div class="staff-sale-preview">
+            <div class="staff-sale-summary">
 
-
-              <div class="staff-sale-preview-row">
+              <div>
 
                 <span>
-                  Products
+                  Cart items
                 </span>
 
                 <strong>
@@ -458,74 +470,56 @@
               </div>
 
 
-              <div class="staff-sale-preview-row">
+              <div>
 
                 <span>
-                  Total Amount
+                  Total amount
                 </span>
 
                 <strong>
-
                   KSh
                   <%= Number(
                     total || 0
                   ).toLocaleString() %>
-
                 </strong>
 
               </div>
 
-
             </div>
 
 
-            <!-- ============================================
-                 SALE NAME FORM
-            ============================================= -->
+            <!-- =================================================
+                 FORM
+            ================================================== -->
 
             <form
-              method="POST"
               action="/carts/staff-sale"
+              method="POST"
               id="staff-sale-form"
-              class="staff-sale-form"
             >
 
+              <div class="staff-sale-field">
 
-              <div class="staff-sale-form-group">
-
-                <label
-                  for="sales-name"
-                >
+                <label for="salesName">
                   Sales Name
                 </label>
 
-
                 <input
                   type="text"
-                  id="sales-name"
+                  id="salesName"
                   name="salesName"
-                  placeholder="Enter sales name"
                   maxlength="150"
+                  placeholder="e.g. Morning Sales"
                   autocomplete="off"
                   required
                 >
 
-
-                <small>
-                  Enter the name you want this sale to be
-                  recorded under.
-                </small>
-
               </div>
 
 
-              <!-- ==========================================
-                   SUBMIT
-              =========================================== -->
-
               <button
                 type="submit"
-                class="primary-btn staff-sale-submit-btn"
+                class="primary-btn staff-sale-submit"
               >
 
                 <i class="fas fa-check-circle"></i>
@@ -534,9 +528,7 @@
 
               </button>
 
-
             </form>
-
 
           </div>
 
@@ -545,9 +537,9 @@
       </div>
 
 
-      <!-- ==================================================
-           STAFF SALE MODAL JAVASCRIPT
-      =================================================== -->
+      <!-- ====================================================
+           MODAL JAVASCRIPT
+      ===================================================== -->
 
       <script>
 
@@ -562,22 +554,22 @@
 
             const openButton =
               document.getElementById(
-                "open-staff-sale-modal"
+                "staff-sale-open"
               );
 
             const closeButton =
               document.getElementById(
-                "close-staff-sale-modal"
+                "staff-sale-close"
               );
 
-            const overlay =
+            const backdrop =
               document.getElementById(
-                "staff-sale-modal-overlay"
+                "staff-sale-backdrop"
               );
 
             const input =
               document.getElementById(
-                "sales-name"
+                "salesName"
               );
 
 
@@ -601,20 +593,22 @@
               );
 
               document.body.classList.add(
-                "staff-sale-modal-open"
+                "staff-sale-modal-active"
               );
 
 
-              setTimeout(
-                function () {
+              if (input) {
 
-                  if (input) {
+                setTimeout(
+                  function () {
+
                     input.focus();
-                  }
 
-                },
-                100
-              );
+                  },
+                  150
+                );
+              }
+
             }
 
 
@@ -630,7 +624,7 @@
               );
 
               document.body.classList.remove(
-                "staff-sale-modal-open"
+                "staff-sale-modal-active"
               );
 
             }
@@ -652,9 +646,9 @@
             }
 
 
-            if (overlay) {
+            if (backdrop) {
 
-              overlay.addEventListener(
+              backdrop.addEventListener(
                 "click",
                 closeModal
               );
