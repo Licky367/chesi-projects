@@ -1,42 +1,145 @@
-const mongoose = require("mongoose");
+// ==========================================================
+// verrah/models/invitation.js
+// VERRAH COSMETICS
+// INVITATION MODEL
+// ==========================================================
 
-const invitationSchema = new mongoose.Schema(
-    {
-        email: {
-            type: String,
-            required: true,
-            unique: true,
-            trim: true,
-            lowercase: true,
-            index: true
+const mongoose =
+    require("mongoose");
+
+
+// ==========================================================
+// INVITATION SCHEMA
+// ==========================================================
+
+const invitationSchema =
+    new mongoose.Schema(
+        {
+
+            // --------------------------------------------------
+            // EMAIL
+            // --------------------------------------------------
+
+            email: {
+
+                type: String,
+
+                required: true,
+
+                unique: true,
+
+                trim: true,
+
+                lowercase: true,
+
+                index: true
+
+            },
+
+
+            // --------------------------------------------------
+            // ROLE
+            // --------------------------------------------------
+
+            role: {
+
+                type: String,
+
+                enum: [
+                    "admin",
+                    "staff",
+                    "client"
+                ],
+
+                required: true
+
+            },
+
+
+            // --------------------------------------------------
+            // ASSIGNED SUBSTATION
+            // --------------------------------------------------
+            //
+            // Used when the invited user is staff.
+            //
+            // The invitation stores the Substation ID.
+            // When the staff member registers, this ID is
+            // transferred to User.assignedSubstation.
+            //
+            // --------------------------------------------------
+
+            assignedSubstation: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref: "Substation",
+
+                default: null
+
+            },
+
+
+            // --------------------------------------------------
+            // INVITED BY
+            // --------------------------------------------------
+
+            invitedBy: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref: "VerrahUser",
+
+                required: true
+
+            },
+
+
+            // --------------------------------------------------
+            // USED AT
+            // --------------------------------------------------
+
+            usedAt: {
+
+                type: Date,
+
+                default: null
+
+            },
+
+
+            // --------------------------------------------------
+            // USED BY
+            // --------------------------------------------------
+
+            usedBy: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref: "VerrahUser",
+
+                default: null
+
+            }
+
         },
 
-        role: {
-            type: String,
-            enum: ["admin", "staff", "client"],
-            required: true
-        },
+        {
 
-        invitedBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "VerrahUser",
-            required: true
-        },
+            timestamps: true
 
-        usedAt: {
-            type: Date,
-            default: null
-        },
-
-        usedBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "CorevesterUser",
-            default: null
         }
-    },
-    {
-        timestamps: true
-    }
-);
+    );
 
-module.exports = mongoose.model("VerrahInvitation", invitationSchema);
+
+// ==========================================================
+// MODEL
+// ==========================================================
+
+module.exports =
+    mongoose.model(
+        "VerrahInvitation",
+        invitationSchema
+    );
