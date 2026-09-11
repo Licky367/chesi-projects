@@ -107,12 +107,53 @@ const substationProductReductionSchema =
 
 
 // ==========================================================
+// GPS SCHEMA
+// ==========================================================
+// Stores the exact geographical coordinates of the
+// substation.
+//
+// Example:
+// latitude:  -1.28333
+// longitude: 36.81667
+//
+// These coordinates can later be used to generate a
+// Google Maps "Get Directions" link.
+// ==========================================================
+
+const gpsSchema =
+    new mongoose.Schema(
+        {
+            latitude: {
+                type: Number,
+                default: null,
+                min: -90,
+                max: 90
+            },
+
+            longitude: {
+                type: Number,
+                default: null,
+                min: -180,
+                max: 180
+            }
+        },
+        {
+            _id: false
+        }
+    );
+
+
+// ==========================================================
 // SUBSTATION SCHEMA
 // ==========================================================
 
 const substationSchema =
     new mongoose.Schema(
         {
+            // ------------------------------------------------
+            // BASIC INFORMATION
+            // ------------------------------------------------
+
             name: {
                 type: String,
                 required: true,
@@ -132,6 +173,11 @@ const substationSchema =
                 default: null
             },
 
+
+            // ------------------------------------------------
+            // SUBSTATION MEDIA
+            // ------------------------------------------------
+
             substationIcon: {
                 type: String,
                 trim: true,
@@ -143,26 +189,77 @@ const substationSchema =
                 default: []
             },
 
+
+            // ------------------------------------------------
+            // DESCRIPTION
+            // ------------------------------------------------
+
             description: {
                 type: String,
                 default: ""
             },
 
+
+            // ------------------------------------------------
+            // DIRECTIONS
+            // ------------------------------------------------
+            // Can contain human-readable directions or a
+            // directions/map URL.
+            //
+            // Example:
+            // "Next to the main shopping centre"
+            //
+            // Or:
+            // "https://www.google.com/maps/..."
+            // ------------------------------------------------
+
             directions: {
                 type: String,
+                trim: true,
                 default: ""
             },
+
+
+            // ------------------------------------------------
+            // GPS LOCATION
+            // ------------------------------------------------
+            // Stores the actual coordinates separately from
+            // the human-readable location/directions.
+            // ------------------------------------------------
+
+            gps: {
+                type: gpsSchema,
+                default: () => ({
+                    latitude: null,
+                    longitude: null
+                })
+            },
+
+
+            // ------------------------------------------------
+            // STATUS
+            // ------------------------------------------------
 
             isActive: {
                 type: Boolean,
                 default: true
             },
 
+
+            // ------------------------------------------------
+            // PRODUCT INVENTORY
+            // ------------------------------------------------
+
             productInventory: {
                 type:
                     [productInventorySchema],
                 default: []
             },
+
+
+            // ------------------------------------------------
+            // PRODUCT REDUCTIONS
+            // ------------------------------------------------
 
             productReductions: {
                 type:
@@ -173,11 +270,4 @@ const substationSchema =
         {
             timestamps: true
         }
-    );
-
-
-module.exports =
-    mongoose.model(
-        "Substation",
-        substationSchema
     );
