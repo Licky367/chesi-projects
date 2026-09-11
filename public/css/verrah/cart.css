@@ -131,12 +131,60 @@
    ========================================================== */
 
 .cart-page .staff-sale-btn {
+  width: 100%;
+  min-height: 46px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 11px 20px;
+
+  box-sizing: border-box;
+
+  border-radius: 10px;
+
   cursor: pointer;
+
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  transition:
+    background-color .18s ease,
+    border-color .18s ease,
+    color .18s ease,
+    transform .18s ease,
+    box-shadow .18s ease;
 }
 
 
 .cart-page .staff-sale-btn i {
-  margin-right: 5px;
+  margin-right: 0;
+}
+
+
+.cart-page .staff-sale-btn:hover {
+  transform: translateY(-1px);
+}
+
+
+.cart-page .staff-sale-btn:active {
+  transform: translateY(0);
+}
+
+
+.cart-page .staff-sale-btn:focus-visible {
+  outline: 3px solid
+    rgba(123, 77, 54, .20);
+
+  outline-offset: 2px;
 }
 
 
@@ -259,6 +307,9 @@
   overflow: hidden;
 
   transition: .18s ease;
+
+  text-decoration: none;
+  color: inherit;
 }
 
 
@@ -501,6 +552,13 @@
 
   font-size: 11px;
   font-weight: 800;
+
+  text-decoration: none;
+}
+
+
+.cart-summary-back:hover {
+  color: var(--cart-brown-900);
 }
 
 
@@ -573,28 +631,26 @@
    STAFF SALE MODAL
    ========================================================== */
 
-/*
-   The modal is hidden by default.
-
-   The EJS opens it by adding:
-   .is-open
-*/
-
 .staff-sale-modal {
   position: fixed;
 
   inset: 0;
 
-  z-index: 9999;
+  z-index: 999999;
 
   display: none;
 
   align-items: center;
   justify-content: center;
 
+  width: 100%;
+  height: 100%;
+
   padding: 20px;
 
   box-sizing: border-box;
+
+  isolation: isolate;
 }
 
 
@@ -612,8 +668,11 @@
 
   inset: 0;
 
+  width: 100%;
+  height: 100%;
+
   background:
-    rgba(45, 24, 16, .62);
+    rgba(45, 24, 16, .68);
 
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -624,19 +683,27 @@
 
 /* ==========================================================
    MODAL BOX
+   Supports both:
+   .staff-sale-modal-dialog
+   .staff-sale-modal-card
    ========================================================== */
 
-.staff-sale-modal-dialog {
+.staff-sale-modal-dialog,
+.staff-sale-modal-card {
   position: relative;
 
   z-index: 2;
 
   width: min(100%, 520px);
 
+  max-width: 520px;
+
   max-height:
     calc(100vh - 40px);
 
   overflow-y: auto;
+
+  box-sizing: border-box;
 
   background: var(--cart-cream);
 
@@ -650,6 +717,8 @@
 
   animation:
     staffSaleModalIn .20s ease;
+
+  overscroll-behavior: contain;
 }
 
 
@@ -657,13 +726,15 @@
 
   from {
     opacity: 0;
+
     transform:
-      translateY(12px)
+      translateY(14px)
       scale(.97);
   }
 
   to {
     opacity: 1;
+
     transform:
       translateY(0)
       scale(1);
@@ -678,7 +749,7 @@
 .staff-sale-modal-header {
   display: flex;
 
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
 
   gap: 15px;
@@ -688,6 +759,9 @@
 
   border-bottom:
     1px solid var(--cart-border);
+
+  background:
+    var(--cart-cream);
 }
 
 
@@ -712,7 +786,13 @@
 }
 
 
-.staff-sale-modal-title {
+.staff-sale-modal-header .cart-section-kicker {
+  margin-bottom: 4px;
+}
+
+
+.staff-sale-modal-title,
+.staff-sale-modal-header h2 {
   margin: 0;
 
   color: var(--cart-brown-950);
@@ -721,6 +801,10 @@
   line-height: 1.2;
 }
 
+
+/* ==========================================================
+   MODAL CLOSE BUTTON
+   ========================================================== */
 
 .staff-sale-modal-close {
   width: 38px;
@@ -746,6 +830,9 @@
 
   cursor: pointer;
 
+  appearance: none;
+  -webkit-appearance: none;
+
   transition: .18s ease;
 }
 
@@ -762,12 +849,31 @@
 }
 
 
+.staff-sale-modal-close:focus-visible {
+  outline: 3px solid
+    rgba(123, 77, 54, .18);
+
+  outline-offset: 2px;
+}
+
+
 /* ==========================================================
    MODAL BODY
    ========================================================== */
 
 .staff-sale-modal-body {
   padding: 20px;
+}
+
+
+.staff-sale-modal-description {
+  margin: 0 0 18px;
+
+  color: var(--cart-muted);
+
+  font-size: 12px;
+
+  line-height: 1.6;
 }
 
 
@@ -835,6 +941,40 @@
 
 
 /* ==========================================================
+   COMPATIBILITY FOR ROW-BASED PREVIEW
+   ========================================================== */
+
+.staff-sale-preview-row {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 11px 0;
+
+  color: var(--cart-muted);
+
+  font-size: 12px;
+}
+
+
+.staff-sale-preview-row + .staff-sale-preview-row {
+  border-top:
+    1px solid var(--cart-border);
+}
+
+
+.staff-sale-preview-row strong {
+  color: var(--cart-brown-700);
+
+  font-size: 14px;
+  font-weight: 900;
+}
+
+
+/* ==========================================================
    STAFF SALE FORM
    ========================================================== */
 
@@ -867,6 +1007,8 @@
 
   box-sizing: border-box;
 
+  min-height: 46px;
+
   padding:
     12px 13px;
 
@@ -891,6 +1033,12 @@
 
 .staff-sale-form-group input::placeholder {
   color: #a69a92;
+}
+
+
+.staff-sale-form-group input:hover {
+  border-color:
+    var(--cart-brown-300);
 }
 
 
@@ -924,14 +1072,35 @@
 .staff-sale-submit-btn {
   width: 100%;
 
+  min-height: 46px;
+
+  display: inline-flex;
+
+  align-items: center;
   justify-content: center;
 
+  gap: 8px;
+
+  padding: 11px 20px;
+
+  box-sizing: border-box;
+
+  border-radius: 10px;
+
   cursor: pointer;
+
+  font-family: inherit;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 
 .staff-sale-submit-btn i {
-  margin-right: 5px;
+  margin-right: 0;
 }
 
 
@@ -1749,8 +1918,11 @@ body.staff-sale-modal-open {
   }
 
 
-  .staff-sale-modal-dialog {
+  .staff-sale-modal-dialog,
+  .staff-sale-modal-card {
     width: 100%;
+
+    max-width: 100%;
 
     max-height:
       calc(100vh - 20px);
@@ -1776,7 +1948,8 @@ body.staff-sale-modal-open {
   }
 
 
-  .staff-sale-modal-title {
+  .staff-sale-modal-title,
+  .staff-sale-modal-header h2 {
     font-size: 19px;
   }
 
@@ -1874,7 +2047,8 @@ body.staff-sale-modal-open {
   }
 
 
-  .staff-sale-modal-dialog {
+  .staff-sale-modal-dialog,
+  .staff-sale-modal-card {
     border-radius: 18px;
   }
 
@@ -1904,7 +2078,8 @@ body.staff-sale-modal-open {
   }
 
 
-  .staff-sale-modal-title {
+  .staff-sale-modal-title,
+  .staff-sale-modal-header h2 {
     font-size: 18px;
   }
 
@@ -1916,6 +2091,11 @@ body.staff-sale-modal-open {
 
   .staff-sale-preview-card {
     padding: 10px;
+  }
+
+
+  .staff-sale-preview-row {
+    font-size: 11px;
   }
 
 
@@ -1938,7 +2118,8 @@ body.staff-sale-modal-open {
   }
 
 
-  .staff-sale-modal-title {
+  .staff-sale-modal-title,
+  .staff-sale-modal-header h2 {
     font-size: 17px;
   }
 
@@ -1956,6 +2137,31 @@ body.staff-sale-modal-open {
   .staff-sale-modal-footer {
     padding:
       0 11px 11px;
+  }
+
+}
+
+
+/* ==========================================================
+   REDUCED MOTION
+   ========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .cart-page .primary-btn,
+  .cart-page .secondary-btn,
+  .cart-item-card,
+  .staff-sale-modal-dialog,
+  .staff-sale-modal-card,
+  .staff-sale-modal-close,
+  .staff-sale-btn {
+    transition: none;
+  }
+
+
+  .staff-sale-modal-dialog,
+  .staff-sale-modal-card {
+    animation: none;
   }
 
 }
