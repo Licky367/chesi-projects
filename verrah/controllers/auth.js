@@ -41,7 +41,7 @@ function loginView(
         {
 
             title:
-                "Log In - COREVESTER",
+                "Log In - VERRAH COSMETICS",
 
             error:
                 null,
@@ -72,7 +72,7 @@ function registerView(
         {
 
             title:
-                "Create Account - COREVESTER",
+                "Create Account - VERRAH COSMETICS",
 
             error:
                 null,
@@ -654,7 +654,7 @@ exports.showUsers = [
                 {
 
                     title:
-                        "User Management - COREVESTER",
+                        "User Management - VERRAH COSMETICS",
 
                     user:
                         req.user,
