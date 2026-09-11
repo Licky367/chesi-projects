@@ -181,18 +181,39 @@ exports.register =
 
 
         // --------------------------------------------------
-        // INVITATION CONTROLS ROLE
+        // FIND INVITATION
         // --------------------------------------------------
 
         const invitation =
             await Invitation.findOne({
-                email
+                email,
+                usedAt: null
             });
 
+
+        // --------------------------------------------------
+        // INVITATION CONTROLS ROLE
+        // --------------------------------------------------
 
         const role =
             invitation?.role ||
             "client";
+
+
+        // --------------------------------------------------
+        // ASSIGNED SUBSTATION
+        // --------------------------------------------------
+        //
+        // A substation is only carried over when the
+        // invitation is for a staff member.
+        //
+        // --------------------------------------------------
+
+        const assignedSubstation =
+            role === "staff" &&
+            invitation?.assignedSubstation
+                ? invitation.assignedSubstation
+                : null;
 
 
         // --------------------------------------------------
@@ -212,8 +233,7 @@ exports.register =
 
                 role,
 
-                assignedSubstation:
-                    null
+                assignedSubstation
             });
 
 
@@ -351,6 +371,18 @@ exports.createInvitation =
             data?.invitedBy;
 
 
+        // --------------------------------------------------
+        // ASSIGNED SUBSTATION
+        // --------------------------------------------------
+
+        const assignedSubstation =
+            role === "staff"
+                ? cleanString(
+                    data?.assignedSubstation
+                ) || null
+                : null;
+
+
         if (!email) {
 
             const err =
@@ -413,19 +445,89 @@ exports.createInvitation =
         }
 
 
+        // --------------------------------------------------
+        // IF STAFF, VALIDATE SUBSTATION
+        // --------------------------------------------------
+
+        if (role === "staff") {
+
+            if (!assignedSubstation) {
+
+                const err =
+                    new Error(
+                        "A substation must be selected for staff."
+                    );
+
+                err.status = 400;
+
+                throw err;
+            }
+
+
+            const Substation =
+                require(
+                    "../models/substations"
+                );
+
+
+            const substation =
+                await Substation.findById(
+                    assignedSubstation
+                );
+
+
+            if (!substation) {
+
+                const err =
+                    new Error(
+                        "Substation not found."
+                    );
+
+                err.status = 404;
+
+                throw err;
+            }
+
+
+            if (
+                substation.isActive ===
+                false
+            ) {
+
+                const err =
+                    new Error(
+                        "The selected substation is inactive."
+                    );
+
+                err.status = 400;
+
+                throw err;
+            }
+        }
+
+
+        // --------------------------------------------------
+        // CREATE / UPDATE INVITATION
+        // --------------------------------------------------
+
         return Invitation.findOneAndUpdate(
 
             { email },
 
             {
+
                 email,
 
                 role,
 
+                assignedSubstation,
+
                 invitedBy
+
             },
 
             {
+
                 new: true,
 
                 upsert: true,
@@ -451,6 +553,10 @@ exports.getInvitations =
             .populate(
                 "invitedBy",
                 "name email"
+            )
+            .populate(
+                "assignedSubstation",
+                "name"
             )
             .sort({
                 createdAt: -1
@@ -575,8 +681,9 @@ exports.updateUserRole =
             role;
 
 
-        // A substation is meaningful
-        // only for staff.
+        // --------------------------------------------------
+        // SUBSTATION ONLY APPLIES TO STAFF
+        // --------------------------------------------------
 
         if (role !== "staff") {
 
