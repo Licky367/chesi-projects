@@ -1003,7 +1003,7 @@ if (salesRoutes) {
 if (profileRoutes) {
 
     app.use(
-        "/",
+        "/profile",
         profileRoutes
     );
 
