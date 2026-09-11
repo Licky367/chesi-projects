@@ -17,15 +17,16 @@ const Invitation =
 
 function cleanString(value) {
 
-    return typeof value === "string"
-        ? value.trim()
-        : "";
+    return String(
+        value ?? ""
+    ).trim();
 }
 
 
 function normalizeEmail(email) {
 
-    return cleanString(email).toLowerCase();
+    return cleanString(email)
+        .toLowerCase();
 }
 
 
@@ -42,7 +43,7 @@ function normalizePhone(phone) {
 const ALLOWED_ROLES = [
     "admin",
     "staff",
-    "customer"
+    "client"
 ];
 
 
@@ -50,423 +51,691 @@ const ALLOWED_ROLES = [
 // SESSION USER
 // ==========================================================
 
-function toSessionUser(user) {
+exports.toSessionUser =
+    function(user) {
 
-    return {
-        _id: user._id.toString(),
+        if (!user) {
+            return null;
+        }
 
-        name: user.name,
 
-        phone: user.phone || "",
+        return {
 
-        email: user.email,
+            _id:
+                String(user._id),
 
-        role: user.role,
+            name:
+                user.name,
 
-        assignedSubstation:
-            user.assignedSubstation
-                ? user.assignedSubstation.toString()
-                : null
+            phone:
+                user.phone || "",
+
+            email:
+                user.email,
+
+            role:
+                user.role,
+
+            assignedSubstation:
+                user.assignedSubstation
+                    ? String(
+                        user.assignedSubstation
+                    )
+                    : null
+        };
     };
-}
 
 
 // ==========================================================
 // REGISTER
 // ==========================================================
 
-async function register(data = {}) {
+exports.register =
+    async function(data) {
 
-    const name =
-        cleanString(data.name);
-
-    const phone =
-        normalizePhone(data.phone);
-
-    const email =
-        normalizeEmail(data.email);
-
-    const password =
-        typeof data.password === "string"
-            ? data.password
-            : "";
+        data =
+            data || {};
 
 
-    // ------------------------------------------------------
-    // VALIDATION
-    // ------------------------------------------------------
-
-    if (!name) {
-        throw new Error("Name is required.");
-    }
-
-    if (!phone) {
-        throw new Error("Phone number is required.");
-    }
-
-    if (!email) {
-        throw new Error("Email is required.");
-    }
-
-    if (!password) {
-        throw new Error("Password is required.");
-    }
-
-    if (password.length < 6) {
-        throw new Error(
-            "Password must be at least 6 characters."
-        );
-    }
+        const name =
+            cleanString(
+                data.name
+            );
 
 
-    // ------------------------------------------------------
-    // EXISTING EMAIL
-    // ------------------------------------------------------
-
-    const existingUser =
-        await User.findOne({ email });
-
-    if (existingUser) {
-
-        throw new Error(
-            "An account with this email already exists."
-        );
-    }
+        const phone =
+            normalizePhone(
+                data.phone
+            );
 
 
-    // ------------------------------------------------------
-    // INVITATION
-    // ------------------------------------------------------
-
-    const invitation =
-        await Invitation.findOne({
-            email,
-            status: "pending"
-        }).sort({
-            createdAt: -1
-        });
+        const email =
+            normalizeEmail(
+                data.email
+            );
 
 
-    // ------------------------------------------------------
-    // ROLE
-    // ------------------------------------------------------
-
-    let role = "customer";
-
-    if (
-        invitation &&
-        ALLOWED_ROLES.includes(invitation.role)
-    ) {
-
-        role = invitation.role;
-    }
+        const password =
+            String(
+                data.password ?? ""
+            );
 
 
-    // ------------------------------------------------------
-    // USER
-    // ------------------------------------------------------
+        if (!name) {
 
-    const user =
-        new User({
-            name,
-            phone,
-            email,
-            password,
-            role,
-            assignedSubstation: null
-        });
-
-
-    await user.save();
-
-
-    // ------------------------------------------------------
-    // CONSUME INVITATION
-    // ------------------------------------------------------
-
-    if (invitation) {
-
-        invitation.status = "accepted";
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                invitation,
-                "acceptedAt"
-            )
-        ) {
-            invitation.acceptedAt =
-                new Date();
+            throw new Error(
+                "Name is required."
+            );
         }
 
-        await invitation.save();
-    }
+
+        if (!phone) {
+
+            throw new Error(
+                "Phone number is required."
+            );
+        }
 
 
-    return toSessionUser(user);
-}
+        if (!email) {
+
+            throw new Error(
+                "Email is required."
+            );
+        }
+
+
+        if (!password) {
+
+            throw new Error(
+                "Password is required."
+            );
+        }
+
+
+        if (password.length < 6) {
+
+            throw new Error(
+                "Password must be at least 6 characters."
+            );
+        }
+
+
+        const existingUser =
+            await User.findOne({
+                email
+            });
+
+
+        if (existingUser) {
+
+            const err =
+                new Error(
+                    "An account with this email already exists."
+                );
+
+            err.status = 400;
+
+            throw err;
+        }
+
+
+        // --------------------------------------------------
+        // INVITATION CONTROLS ROLE
+        // --------------------------------------------------
+
+        const invitation =
+            await Invitation.findOne({
+                email
+            });
+
+
+        const role =
+            invitation?.role ||
+            "client";
+
+
+        // --------------------------------------------------
+        // CREATE USER
+        // --------------------------------------------------
+
+        const user =
+            new User({
+
+                name,
+
+                phone,
+
+                email,
+
+                password,
+
+                role,
+
+                assignedSubstation:
+                    null
+            });
+
+
+        await user.save();
+
+
+        // --------------------------------------------------
+        // MARK INVITATION AS USED
+        // --------------------------------------------------
+
+        if (invitation) {
+
+            invitation.usedAt =
+                new Date();
+
+            invitation.usedBy =
+                user._id;
+
+            await invitation.save();
+        }
+
+
+        return user;
+    };
 
 
 // ==========================================================
 // LOGIN
 // ==========================================================
 
-async function login(email, password) {
+exports.login =
+    async function(data) {
 
-    const normalizedEmail =
-        normalizeEmail(email);
-
-    const cleanPassword =
-        typeof password === "string"
-            ? password
-            : "";
+        data =
+            data || {};
 
 
-    if (!normalizedEmail) {
-        throw new Error("Email is required.");
-    }
-
-    if (!cleanPassword) {
-        throw new Error("Password is required.");
-    }
+        const email =
+            normalizeEmail(
+                data.email
+            );
 
 
-    const user =
-        await User.findOne({
-            email: normalizedEmail
-        });
+        const password =
+            String(
+                data.password ?? ""
+            );
 
 
-    if (!user) {
+        if (
+            !email ||
+            !password
+        ) {
 
-        throw new Error(
-            "Invalid email or password."
-        );
-    }
-
-
-    const valid =
-        user.comparePassword(
-            cleanPassword
-        );
+            throw new Error(
+                "Email and password are required."
+            );
+        }
 
 
-    if (!valid) {
+        const user =
+            await User
+                .findOne({
+                    email
+                })
+                .select("+password");
 
-        throw new Error(
-            "Invalid email or password."
-        );
-    }
+
+        if (!user) {
+
+            throw new Error(
+                "Invalid email or password."
+            );
+        }
 
 
-    return toSessionUser(user);
-}
+        const isPasswordCorrect =
+            await user.comparePassword(
+                password
+            );
+
+
+        if (!isPasswordCorrect) {
+
+            throw new Error(
+                "Invalid email or password."
+            );
+        }
+
+
+        return user;
+    };
 
 
 // ==========================================================
 // GET USER BY ID
 // ==========================================================
 
-async function getUserById(id) {
+exports.getUserById =
+    async function(userId) {
 
-    return User.findById(id);
-}
+        if (!userId) {
+            return null;
+        }
+
+
+        return User
+            .findById(userId)
+            .populate(
+                "assignedSubstation"
+            );
+    };
 
 
 // ==========================================================
-// CREATE INVITATION
+// ADMIN: CREATE / UPDATE INVITATION
 // ==========================================================
 
-async function createInvitation(data = {}) {
+exports.createInvitation =
+    async function(data) {
 
-    const email =
-        normalizeEmail(data.email);
+        const email =
+            normalizeEmail(
+                data?.email
+            );
 
-    const role =
-        cleanString(data.role);
+
+        const role =
+            cleanString(
+                data?.role
+            ).toLowerCase();
 
 
-    if (!email) {
-        throw new Error("Email is required.");
-    }
+        const invitedBy =
+            data?.invitedBy;
 
-    if (!ALLOWED_ROLES.includes(role)) {
 
-        throw new Error(
-            "Invalid role."
+        if (!email) {
+
+            const err =
+                new Error(
+                    "Email is required."
+                );
+
+            err.status = 400;
+
+            throw err;
+        }
+
+
+        if (
+            !ALLOWED_ROLES.includes(
+                role
+            )
+        ) {
+
+            const err =
+                new Error(
+                    "Invalid role."
+                );
+
+            err.status = 400;
+
+            throw err;
+        }
+
+
+        if (!invitedBy) {
+
+            const err =
+                new Error(
+                    "Inviting admin is required."
+                );
+
+            err.status = 400;
+
+            throw err;
+        }
+
+
+        const existingUser =
+            await User.findOne({
+                email
+            });
+
+
+        if (existingUser) {
+
+            const err =
+                new Error(
+                    "That email already belongs to a registered user. Change the user's role from the users list instead."
+                );
+
+            err.status = 400;
+
+            throw err;
+        }
+
+
+        return Invitation.findOneAndUpdate(
+
+            { email },
+
+            {
+                email,
+
+                role,
+
+                invitedBy
+            },
+
+            {
+                new: true,
+
+                upsert: true,
+
+                setDefaultsOnInsert:
+                    true
+            }
         );
-    }
-
-
-    const existingInvitation =
-        await Invitation.findOne({
-            email,
-            status: "pending"
-        });
-
-
-    if (existingInvitation) {
-
-        throw new Error(
-            "A pending invitation already exists for this email."
-        );
-    }
-
-
-    const invitation =
-        new Invitation({
-            email,
-            role,
-            status: "pending"
-        });
-
-
-    await invitation.save();
-
-    return invitation;
-}
+    };
 
 
 // ==========================================================
 // GET INVITATIONS
 // ==========================================================
 
-async function getInvitations() {
+exports.getInvitations =
+    async function() {
 
-    return Invitation.find()
-        .sort({
-            createdAt: -1
-        });
-}
+        return Invitation
+            .find({
+                usedAt: null
+            })
+            .populate(
+                "invitedBy",
+                "name email"
+            )
+            .sort({
+                createdAt: -1
+            });
+    };
 
 
 // ==========================================================
 // GET ALL USERS
 // ==========================================================
 
-async function getAllUsers() {
+exports.getAllUsers =
+    async function() {
 
-    return User.find()
-        .populate("assignedSubstation")
-        .sort({
-            createdAt: -1
-        });
-}
-
-
-// ==========================================================
-// UPDATE USER ROLE
-// ==========================================================
-
-async function updateUserRole(
-    userId,
-    role
-) {
-
-    if (!ALLOWED_ROLES.includes(role)) {
-
-        throw new Error(
-            "Invalid role."
-        );
-    }
-
-
-    const user =
-        await User.findById(userId);
-
-
-    if (!user) {
-
-        throw new Error(
-            "User not found."
-        );
-    }
-
-
-    user.role = role;
-
-    await user.save();
-
-    return user;
-}
+        return User
+            .find()
+            .select("-password")
+            .populate(
+                "assignedSubstation"
+            )
+            .sort({
+                createdAt: -1
+            });
+    };
 
 
 // ==========================================================
-// ASSIGN SUBSTATION
+// ADMIN: CHANGE ROLE
 // ==========================================================
 
-async function assignSubstation(
-    userId,
-    substationId
-) {
+exports.updateUserRole =
+    async function(data) {
 
-    const user =
-        await User.findById(userId);
+        const userId =
+            data?.userId;
 
 
-    if (!user) {
-
-        throw new Error(
-            "User not found."
-        );
-    }
+        const role =
+            cleanString(
+                data?.role
+            ).toLowerCase();
 
 
-    user.assignedSubstation =
-        substationId || null;
+        const actingAdminId =
+            String(
+                data?.actingAdminId ||
+                ""
+            );
 
 
-    await user.save();
+        if (!userId) {
 
-    return user;
-}
+            const err =
+                new Error(
+                    "User ID is required."
+                );
+
+            err.status = 400;
+
+            throw err;
+        }
+
+
+        if (
+            !ALLOWED_ROLES.includes(
+                role
+            )
+        ) {
+
+            const err =
+                new Error(
+                    "Invalid role."
+                );
+
+            err.status = 400;
+
+            throw err;
+        }
+
+
+        // --------------------------------------------------
+        // PREVENT SELF DEMOTION
+        // --------------------------------------------------
+
+        if (
+            String(userId) ===
+            actingAdminId &&
+            role !== "admin"
+        ) {
+
+            const err =
+                new Error(
+                    "You cannot remove your own admin role."
+                );
+
+            err.status = 400;
+
+            throw err;
+        }
+
+
+        const user =
+            await User.findById(
+                userId
+            );
+
+
+        if (!user) {
+
+            const err =
+                new Error(
+                    "User not found."
+                );
+
+            err.status = 404;
+
+            throw err;
+        }
+
+
+        user.role =
+            role;
+
+
+        // A substation is meaningful
+        // only for staff.
+
+        if (role !== "staff") {
+
+            user.assignedSubstation =
+                null;
+        }
+
+
+        await user.save();
+
+
+        return user;
+    };
+
+
+// ==========================================================
+// ADMIN: ASSIGN SUBSTATION
+// ==========================================================
+
+exports.assignSubstation =
+    async function(data) {
+
+        const userId =
+            data?.userId;
+
+
+        const substationId =
+            cleanString(
+                data?.substationId
+            ) || null;
+
+
+        if (!userId) {
+
+            const err =
+                new Error(
+                    "User ID is required."
+                );
+
+            err.status = 400;
+
+            throw err;
+        }
+
+
+        const user =
+            await User.findById(
+                userId
+            );
+
+
+        if (!user) {
+
+            const err =
+                new Error(
+                    "User not found."
+                );
+
+            err.status = 404;
+
+            throw err;
+        }
+
+
+        if (
+            user.role !== "staff"
+        ) {
+
+            const err =
+                new Error(
+                    "Only staff users can be assigned a substation."
+                );
+
+            err.status = 400;
+
+            throw err;
+        }
+
+
+        if (!substationId) {
+
+            user.assignedSubstation =
+                null;
+
+        } else {
+
+            const Substation =
+                require(
+                    "../models/substations"
+                );
+
+
+            const substation =
+                await Substation.findById(
+                    substationId
+                );
+
+
+            if (!substation) {
+
+                const err =
+                    new Error(
+                        "Substation not found."
+                    );
+
+                err.status = 404;
+
+                throw err;
+            }
+
+
+            if (
+                substation.isActive ===
+                false
+            ) {
+
+                const err =
+                    new Error(
+                        "The selected substation is inactive."
+                    );
+
+                err.status = 400;
+
+                throw err;
+            }
+
+
+            user.assignedSubstation =
+                substation._id;
+        }
+
+
+        await user.save();
+
+
+        return User
+            .findById(user._id)
+            .populate(
+                "assignedSubstation"
+            );
+    };
 
 
 // ==========================================================
 // GET ACTIVE SUBSTATIONS
 // ==========================================================
 
-async function getActiveSubstations() {
+exports.getActiveSubstations =
+    async function() {
 
-    // The Substation model is loaded lazily so that
-    // authentication can still initialize independently.
-
-    const Substation =
-        require("../models/substation");
-
-    return Substation.find({
-        status: {
-            $ne: "inactive"
-        }
-    }).sort({
-        name: 1
-    });
-}
+        const Substation =
+            require(
+                "../models/substations"
+            );
 
 
-// ==========================================================
-// EXPORTS
-// ==========================================================
-
-module.exports = {
-
-    register,
-
-    login,
-
-    getUserById,
-
-    createInvitation,
-
-    getInvitations,
-
-    getAllUsers,
-
-    updateUserRole,
-
-    assignSubstation,
-
-    getActiveSubstations,
-
-    toSessionUser
-
-};
+        return Substation.find({
+            isActive: true
+        }).sort({
+            name: 1
+        });
+    };
