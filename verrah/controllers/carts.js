@@ -1,3 +1,7 @@
+// =========================================================
+// controllers/carts.js
+// =========================================================
+
 const cartService =
   require("../services/cartService");
 
@@ -6,6 +10,12 @@ const paymentService =
 
 const packageService =
   require("../services/packageService");
+
+
+// =========================================================
+// CART LIST
+// GET /carts
+// =========================================================
 
 exports.list =
   async (req, res) => {
@@ -29,7 +39,10 @@ exports.list =
           total,
 
           error:
-            null
+            null,
+
+          user:
+            req.user
         }
       );
     } catch (err) {
@@ -48,11 +61,20 @@ exports.list =
             0,
 
           error:
-            "Unable to load your cart."
+            "Unable to load your cart.",
+
+          user:
+            req.user
         }
       );
     }
   };
+
+
+// =========================================================
+// CART DETAILS
+// GET /carts/:id
+// =========================================================
 
 exports.details =
   async (req, res) => {
@@ -106,7 +128,10 @@ exports.details =
 
           error:
             req.query.error ||
-            null
+            null,
+
+          user:
+            req.user
         }
       );
     } catch (err) {
@@ -116,6 +141,12 @@ exports.details =
         .redirect("/carts");
     }
   };
+
+
+// =========================================================
+// REMOVE CART ITEM
+// POST /carts/:id/remove
+// =========================================================
 
 exports.remove =
   async (req, res) => {
@@ -138,6 +169,12 @@ exports.remove =
       );
     }
   };
+
+
+// =========================================================
+// CHECKOUT
+// POST /carts/checkout
+// =========================================================
 
 exports.checkout =
   async (req, res) => {
@@ -208,6 +245,91 @@ exports.checkout =
     }
   };
 
+
+// =========================================================
+// STAFF SALE
+// POST /carts/staff-sale
+// =========================================================
+
+exports.staffSale =
+  async (req, res) => {
+    try {
+
+      // -----------------------------------------------------
+      // Ensure only staff can create staff sales
+      // -----------------------------------------------------
+
+      const role =
+        String(
+          req.user?.role ||
+          ""
+        ).toLowerCase();
+
+      if (role !== "staff") {
+        return res.redirect(
+          "/carts?error=Only staff members can record sales."
+        );
+      }
+
+
+      // -----------------------------------------------------
+      // Get sales name
+      // -----------------------------------------------------
+
+      const salesName =
+        String(
+          req.body.salesName ||
+          ""
+        ).trim();
+
+      if (!salesName) {
+        return res.redirect(
+          "/carts?error=Sales name is required."
+        );
+      }
+
+
+      // -----------------------------------------------------
+      // Save staff sale
+      // -----------------------------------------------------
+
+      await cartService.createStaffSale(
+        req,
+        salesName
+      );
+
+
+      // -----------------------------------------------------
+      // Sale completed
+      // Cart is cleared by the service.
+      // -----------------------------------------------------
+
+      return res.redirect(
+        "/"
+      );
+
+    } catch (err) {
+
+      console.error(
+        "Staff sale error:",
+        err
+      );
+
+      return res.redirect(
+        `/carts?error=${encodeURIComponent(
+          err.message ||
+          "Unable to record staff sale."
+        )}`
+      );
+    }
+  };
+
+
+// =========================================================
+// PAYMENT PAGE
+// GET /carts/payment/:id
+// =========================================================
+
 exports.paymentPage =
   async (req, res) => {
     try {
@@ -229,7 +351,10 @@ exports.paymentPage =
           title:
             "M-Pesa Payment | CoreVester",
 
-          payment
+          payment,
+
+          user:
+            req.user
         }
       );
     } catch (err) {
@@ -239,6 +364,12 @@ exports.paymentPage =
         .redirect("/carts");
     }
   };
+
+
+// =========================================================
+// PAYMENT STATUS
+// GET /carts/payment/:id/status
+// =========================================================
 
 exports.paymentStatus =
   async (req, res) => {
@@ -289,6 +420,11 @@ exports.paymentStatus =
     }
   };
 
+
+// =========================================================
+// M-PESA CALLBACK
+// =========================================================
+
 exports.mpesaCallback =
   async (req, res) => {
     try {
@@ -305,6 +441,7 @@ exports.mpesaCallback =
 
     return res.json({
       ResultCode: 0,
+
       ResultDesc:
         "Accepted"
     });
