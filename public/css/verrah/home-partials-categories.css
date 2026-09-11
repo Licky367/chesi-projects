@@ -198,21 +198,21 @@
 
 /* ==========================================================
    CATEGORY CARD
-   SIZE: 232px × 310px
+   SIZE: 175px × 232px
 ========================================================== */
 
 .home-category-card {
 
-    width: 232px;
+    width: 175px;
 
-    min-width: 232px;
+    min-width: 175px;
 
-    height: 310px;
+    height: 232px;
 
-    min-height: 310px;
+    min-height: 232px;
 
     flex:
-        0 0 232px;
+        0 0 175px;
 
     display: flex;
 
