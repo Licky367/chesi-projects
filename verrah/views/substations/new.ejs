@@ -7,6 +7,7 @@
     </a>
   </div>
 
+
   <div class="form-card substation-form-card">
 
     <div class="form-heading">
@@ -67,6 +68,9 @@
 
          EDIT:
              POST /substations/branch/:id/edit
+
+         multipart/form-data is required because the form
+         supports image uploading.
     ======================================================= -->
 
     <form
@@ -75,6 +79,7 @@
         : '/substations'
       %>"
       method="POST"
+      enctype="multipart/form-data"
       class="substation-form"
     >
 
@@ -131,6 +136,299 @@
             placeholder="e.g. Nairobi CBD"
             autocomplete="street-address"
           >
+
+        </div>
+
+
+        <!-- ==================================================
+             PHONE NUMBER
+        =================================================== -->
+
+        <div class="field">
+
+          <label for="phoneNumber">
+            Phone Number
+          </label>
+
+          <input
+            id="phoneNumber"
+            name="phoneNumber"
+            type="tel"
+            value="<%= typeof substation !== 'undefined' && substation
+              ? (substation.phoneNumber || '')
+              : (typeof old !== 'undefined' && old
+                  ? (old.phoneNumber || '')
+                  : '')
+            %>"
+            placeholder="e.g. 0712345678"
+            autocomplete="tel"
+          >
+
+        </div>
+
+
+        <!-- ==================================================
+             DIRECTIONS
+        =================================================== -->
+
+        <div class="field">
+
+          <label for="directions">
+            Directions
+          </label>
+
+          <input
+            id="directions"
+            name="directions"
+            value="<%= typeof substation !== 'undefined' && substation
+              ? (substation.directions || '')
+              : (typeof old !== 'undefined' && old
+                  ? (old.directions || '')
+                  : '')
+            %>"
+            placeholder="e.g. Near the main shopping centre"
+          >
+
+        </div>
+
+
+        <!-- ==================================================
+             GPS LOCATION
+        =================================================== -->
+
+        <div class="field full">
+
+          <label>
+            GPS Location
+            <span class="field-optional">
+              Optional
+            </span>
+          </label>
+
+
+          <div class="gps-fields">
+
+            <!-- LATITUDE -->
+
+            <div class="gps-coordinate">
+
+              <label for="latitude">
+                Latitude
+              </label>
+
+              <input
+                id="latitude"
+                name="latitude"
+                type="number"
+                step="any"
+                min="-90"
+                max="90"
+                value="<%= typeof substation !== 'undefined' &&
+                          substation &&
+                          substation.gps &&
+                          substation.gps.latitude !== null &&
+                          typeof substation.gps.latitude !== 'undefined'
+                          ? substation.gps.latitude
+                          : (typeof old !== 'undefined' && old &&
+                             old.gps &&
+                             old.gps.latitude !== null &&
+                             typeof old.gps.latitude !== 'undefined'
+                             ? old.gps.latitude
+                             : '')
+                %>"
+                placeholder="Latitude"
+              >
+
+            </div>
+
+
+            <!-- LONGITUDE -->
+
+            <div class="gps-coordinate">
+
+              <label for="longitude">
+                Longitude
+              </label>
+
+              <input
+                id="longitude"
+                name="longitude"
+                type="number"
+                step="any"
+                min="-180"
+                max="180"
+                value="<%= typeof substation !== 'undefined' &&
+                          substation &&
+                          substation.gps &&
+                          substation.gps.longitude !== null &&
+                          typeof substation.gps.longitude !== 'undefined'
+                          ? substation.gps.longitude
+                          : (typeof old !== 'undefined' && old &&
+                             old.gps &&
+                             old.gps.longitude !== null &&
+                             typeof old.gps.longitude !== 'undefined'
+                             ? old.gps.longitude
+                             : '')
+                %>"
+                placeholder="Longitude"
+              >
+
+            </div>
+
+
+            <!-- CURRENT LOCATION BUTTON -->
+
+            <button
+              type="button"
+              class="secondary-btn gps-current-btn"
+              id="use-current-location"
+            >
+              <i class="fas fa-location-crosshairs"></i>
+              Use Current Location
+            </button>
+
+          </div>
+
+
+          <small
+            id="gps-status"
+            class="field-help"
+          >
+            GPS is optional. You can enter the coordinates manually
+            or use your current device location.
+          </small>
+
+        </div>
+
+
+        <!-- ==================================================
+             SUBSTATION ICON
+        =================================================== -->
+
+        <div class="field full">
+
+          <label>
+            Substation Icon
+            <span class="field-optional">
+              Optional
+            </span>
+          </label>
+
+
+          <div class="icon-input-options">
+
+
+            <!-- ==============================================
+                 UPLOAD IMAGE
+            =============================================== -->
+
+            <div class="icon-option">
+
+              <div class="icon-option-heading">
+
+                <i class="fas fa-upload"></i>
+
+                <strong>
+                  Upload Image
+                </strong>
+
+              </div>
+
+              <input
+                type="file"
+                id="substationIcon"
+                name="substationIcon"
+                accept="image/*"
+              >
+
+              <small class="field-help">
+                Select an image from your device.
+              </small>
+
+            </div>
+
+
+            <!-- ==============================================
+                 IMAGE URL
+            =============================================== -->
+
+            <div class="icon-option">
+
+              <div class="icon-option-heading">
+
+                <i class="fas fa-link"></i>
+
+                <strong>
+                  Image URL
+                </strong>
+
+              </div>
+
+              <input
+                type="url"
+                id="substationIconUrl"
+                name="substationIconUrl"
+                value="<%= typeof substation !== 'undefined' && substation
+                  ? (
+                      substation.substationIcon &&
+                      /^https?:\/\//i.test(substation.substationIcon)
+                        ? substation.substationIcon
+                        : ''
+                    )
+                  : (
+                      typeof old !== 'undefined' &&
+                      old &&
+                      old.substationIconUrl
+                        ? old.substationIconUrl
+                        : ''
+                    )
+                %>"
+                placeholder="https://example.com/icon.jpg"
+                autocomplete="url"
+              >
+
+              <small class="field-help">
+                Paste the direct URL of the image.
+              </small>
+
+            </div>
+
+
+          </div>
+
+
+          <!-- ==============================================
+               CURRENT ICON
+          =============================================== -->
+
+          <% if (
+            typeof substation !== "undefined" &&
+            substation &&
+            substation.substationIcon
+          ) { %>
+
+            <div class="current-icon">
+
+              <span class="current-icon-label">
+                Current Icon
+              </span>
+
+              <img
+                src="<%= substation.substationIcon %>"
+                alt="<%= substation.name || 'Substation' %> icon"
+                class="substation-icon-preview"
+              >
+
+            </div>
+
+          <% } %>
+
+
+          <small class="field-help">
+            You can either upload an image or provide an image URL.
+            If both are provided, the uploaded image should take
+            priority.
+          </small>
 
         </div>
 
@@ -209,3 +507,148 @@
   </div>
 
 </section>
+
+
+<!-- ==========================================================
+     GPS CURRENT LOCATION SCRIPT
+=========================================================== -->
+
+<script>
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+      const button =
+        document.getElementById(
+          "use-current-location"
+        );
+
+      const latitudeInput =
+        document.getElementById(
+          "latitude"
+        );
+
+      const longitudeInput =
+        document.getElementById(
+          "longitude"
+        );
+
+      const status =
+        document.getElementById(
+          "gps-status"
+        );
+
+
+      if (
+        !button ||
+        !latitudeInput ||
+        !longitudeInput
+      ) {
+        return;
+      }
+
+
+      button.addEventListener(
+        "click",
+        function () {
+
+          if (!navigator.geolocation) {
+
+            status.textContent =
+              "GPS is not supported by this browser.";
+
+            return;
+          }
+
+
+          button.disabled = true;
+
+          status.textContent =
+            "Getting your current location...";
+
+
+          navigator.geolocation.getCurrentPosition(
+
+            function (position) {
+
+              const latitude =
+                position.coords.latitude;
+
+              const longitude =
+                position.coords.longitude;
+
+
+              latitudeInput.value =
+                latitude;
+
+              longitudeInput.value =
+                longitude;
+
+
+              status.textContent =
+                "Current location captured successfully.";
+
+
+              button.disabled = false;
+
+            },
+
+
+            function (error) {
+
+              button.disabled = false;
+
+
+              switch (error.code) {
+
+                case error.PERMISSION_DENIED:
+
+                  status.textContent =
+                    "Location permission was denied. Please allow location access.";
+
+                  break;
+
+
+                case error.POSITION_UNAVAILABLE:
+
+                  status.textContent =
+                    "Your current location could not be determined.";
+
+                  break;
+
+
+                case error.TIMEOUT:
+
+                  status.textContent =
+                    "Getting your location timed out. Please try again.";
+
+                  break;
+
+
+                default:
+
+                  status.textContent =
+                    "Unable to get your current location.";
+
+              }
+
+            },
+
+
+            {
+              enableHighAccuracy: true,
+              timeout: 15000,
+              maximumAge: 0
+            }
+
+          );
+
+        }
+      );
+
+    }
+
+  );
+
+</script>
