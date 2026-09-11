@@ -20,11 +20,22 @@ const substationsUpload =
 // SUBSTATIONS
 // ==========================================================
 
+// ----------------------------------------------------------
+// LIST SUBSTATIONS
+// GET /substations
+// ----------------------------------------------------------
+
 router.get(
     "/",
     requireAdmin,
     controller.list
 );
+
+
+// ----------------------------------------------------------
+// NEW SUBSTATION FORM
+// GET /substations/new
+// ----------------------------------------------------------
 
 router.get(
     "/new",
@@ -32,9 +43,25 @@ router.get(
     controller.newForm
 );
 
+
+// ----------------------------------------------------------
+// CREATE SUBSTATION
+// POST /substations
+//
+// Supports:
+// - Normal form fields
+// - GPS latitude
+// - GPS longitude
+// - substationIcon image upload
+// - substationIconUrl
+// ----------------------------------------------------------
+
 router.post(
     "/",
     requireAdmin,
+    substationsUpload.single(
+        "substationIcon"
+    ),
     controller.create
 );
 
@@ -43,11 +70,22 @@ router.post(
 // PRODUCTS
 // ==========================================================
 
+// ----------------------------------------------------------
+// PRODUCT DETAIL
+// GET /substations/product/:id
+// ----------------------------------------------------------
+
 router.get(
     "/product/:id",
     requireAdmin,
     controller.productDetail
 );
+
+
+// ----------------------------------------------------------
+// UPDATE PRODUCT UNITS
+// POST /substations/product/:id
+// ----------------------------------------------------------
 
 router.post(
     "/product/:id",
@@ -57,8 +95,13 @@ router.post(
 
 
 // ==========================================================
-// BRANCH EDITING
+// BRANCH / SUBSTATION EDITING
 // ==========================================================
+
+// ----------------------------------------------------------
+// EDIT SUBSTATION FORM
+// GET /substations/branch/:id/edit
+// ----------------------------------------------------------
 
 router.get(
     "/branch/:id/edit",
@@ -66,9 +109,29 @@ router.get(
     controller.editForm
 );
 
+
+// ----------------------------------------------------------
+// UPDATE SUBSTATION
+// POST /substations/branch/:id/edit
+//
+// Supports:
+// - Name
+// - Location
+// - Phone number
+// - Directions
+// - GPS latitude
+// - GPS longitude
+// - Description
+// - Uploaded substation icon
+// - Image URL icon
+// ----------------------------------------------------------
+
 router.post(
     "/branch/:id/edit",
     requireAdmin,
+    substationsUpload.single(
+        "substationIcon"
+    ),
     controller.update
 );
 
@@ -77,11 +140,25 @@ router.post(
 // SUBSTATION ICON
 // ==========================================================
 
+// ----------------------------------------------------------
+// EDIT ICON FORM
+// GET /substations/branch/icon/:id
+// ----------------------------------------------------------
+
 router.get(
     "/branch/icon/:id",
     requireAdmin,
     controller.editIconForm
 );
+
+
+// ----------------------------------------------------------
+// UPDATE ICON
+// POST /substations/branch/icon/:id
+//
+// Supports uploaded icon through:
+// name="substationIcon"
+// ----------------------------------------------------------
 
 router.post(
     "/branch/icon/:id",
@@ -97,11 +174,25 @@ router.post(
 // SUBSTATION IMAGES
 // ==========================================================
 
+// ----------------------------------------------------------
+// EDIT IMAGES FORM
+// GET /substations/branch/images/:id
+// ----------------------------------------------------------
+
 router.get(
     "/branch/images/:id",
     requireAdmin,
     controller.editImagesForm
 );
+
+
+// ----------------------------------------------------------
+// UPDATE / ADD IMAGES
+// POST /substations/branch/images/:id
+//
+// Supports up to 20 uploaded images through:
+// name="images"
+// ----------------------------------------------------------
 
 router.post(
     "/branch/images/:id",
@@ -118,11 +209,20 @@ router.post(
 // SUBSTATION DETAILS
 // ==========================================================
 
+// ----------------------------------------------------------
+// DETAIL PAGE
+// GET /substations/:id
+// ----------------------------------------------------------
+
 router.get(
     "/:id",
     requireAdmin,
     controller.detail
 );
 
+
+// ==========================================================
+// EXPORT
+// ==========================================================
 
 module.exports = router;
