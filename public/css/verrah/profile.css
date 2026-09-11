@@ -1,0 +1,662 @@
+/* =========================================================
+   VERRAH COSMETICS — PROFILE
+   BROWN THEME
+========================================================= */
+
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+.verah-profile-page {
+
+    width: 100%;
+    max-width: 1150px;
+
+    margin: 0 auto;
+
+    padding: 30px 18px 50px;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.verah-profile-header {
+
+    margin-bottom: 28px;
+}
+
+
+.verah-profile-back {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-bottom: 24px;
+
+    color: #7a4b2a;
+
+    font-size: 0.92rem;
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+
+.verah-profile-back:hover {
+
+    color: #4b2e1f;
+
+    text-decoration: none;
+}
+
+
+.verah-profile-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+}
+
+
+.verah-profile-avatar {
+
+    width: 64px;
+
+    height: 64px;
+
+    flex: 0 0 64px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #7a4b2a;
+
+    color: #ffffff;
+
+    font-size: 1.5rem;
+}
+
+
+.verah-profile-eyebrow {
+
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #8b5e3c;
+
+    font-size: 0.72rem;
+
+    font-weight: 800;
+
+    letter-spacing: 0.18em;
+}
+
+
+.verah-profile-heading h1 {
+
+    margin: 0;
+
+    color: #3e281c;
+
+    font-size: 2rem;
+
+    line-height: 1.2;
+}
+
+
+.verah-profile-heading p {
+
+    margin: 7px 0 0;
+
+    color: #765f52;
+
+    font-size: 0.95rem;
+}
+
+
+/* =========================================================
+   ALERTS
+========================================================= */
+
+.verah-profile-alert {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 22px;
+
+    padding: 14px 16px;
+
+    border-radius: 12px;
+
+    font-size: 0.94rem;
+
+    font-weight: 600;
+}
+
+
+.verah-profile-success {
+
+    background: #f2ebe5;
+
+    border: 1px solid #c8ad9b;
+
+    color: #5d3b28;
+}
+
+
+.verah-profile-error {
+
+    background: #f8eeee;
+
+    border: 1px solid #d7aaaa;
+
+    color: #7a2929;
+}
+
+
+/* =========================================================
+   GRID
+========================================================= */
+
+.verah-profile-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 24px;
+
+    align-items: start;
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.verah-profile-card {
+
+    position: relative;
+
+    background: #ffffff;
+
+    border-radius: 22px;
+
+    border-left: 7px solid #7a4b2a;
+
+    box-shadow:
+        0 10px 28px rgba(75, 46, 31, 0.10);
+
+    padding: 26px;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   CARD HEADER
+========================================================= */
+
+.verah-profile-card-header {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 14px;
+
+    margin-bottom: 26px;
+}
+
+
+.verah-profile-card-icon {
+
+    width: 46px;
+
+    height: 46px;
+
+    flex: 0 0 46px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background: #f1e8e1;
+
+    color: #7a4b2a;
+
+    font-size: 1.1rem;
+}
+
+
+.verah-profile-card-header > div:last-child {
+
+    min-width: 0;
+}
+
+
+.verah-profile-card-header span {
+
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #9a7054;
+
+    font-size: 0.68rem;
+
+    font-weight: 800;
+
+    letter-spacing: 0.14em;
+}
+
+
+.verah-profile-card-header h2 {
+
+    margin: 0;
+
+    color: #4b2e1f;
+
+    font-size: 1.3rem;
+
+    line-height: 1.3;
+}
+
+
+.verah-profile-card-header p {
+
+    margin: 6px 0 0;
+
+    color: #806c60;
+
+    font-size: 0.88rem;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.verah-profile-form {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 18px;
+}
+
+
+/* =========================================================
+   FIELD
+========================================================= */
+
+.verah-profile-field {
+
+    width: 100%;
+}
+
+
+.verah-profile-field label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #5c4030;
+
+    font-size: 0.72rem;
+
+    font-weight: 800;
+
+    letter-spacing: 0.08em;
+}
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+.verah-profile-input-wrap {
+
+    position: relative;
+
+    width: 100%;
+}
+
+
+.verah-profile-input-wrap > i {
+
+    position: absolute;
+
+    left: 15px;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: #9a7054;
+
+    font-size: 0.9rem;
+
+    pointer-events: none;
+}
+
+
+.verah-profile-input-wrap input {
+
+    width: 100%;
+
+    min-height: 48px;
+
+    box-sizing: border-box;
+
+    padding: 12px 14px 12px 42px;
+
+    border: 1px solid #d9c8bb;
+
+    border-radius: 12px;
+
+    background: #fffdfb;
+
+    color: #3e281c;
+
+    font-family: inherit;
+
+    font-size: 0.95rem;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+
+.verah-profile-input-wrap input:focus {
+
+    border-color: #8b5e3c;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 3px rgba(139, 94, 60, 0.12);
+}
+
+
+.verah-profile-input-wrap input::placeholder {
+
+    color: #ad9a8e;
+}
+
+
+/* =========================================================
+   READ ONLY ASSIGNMENT
+========================================================= */
+
+.verah-profile-readonly {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    min-height: 48px;
+
+    box-sizing: border-box;
+
+    padding: 12px 14px;
+
+    border: 1px solid #d9c8bb;
+
+    border-radius: 12px;
+
+    background: #f7f1ed;
+
+    color: #4b2e1f;
+
+    font-size: 0.95rem;
+
+    font-weight: 700;
+}
+
+
+.verah-profile-readonly i {
+
+    color: #8b5e3c;
+}
+
+
+.verah-profile-field small {
+
+    display: block;
+
+    margin-top: 6px;
+
+    color: #927e72;
+
+    font-size: 0.76rem;
+
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   NOTE
+========================================================= */
+
+.verah-profile-note {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 9px;
+
+    padding: 12px 14px;
+
+    border-radius: 11px;
+
+    background: #f6eee8;
+
+    color: #705344;
+
+    font-size: 0.8rem;
+
+    line-height: 1.5;
+}
+
+
+.verah-profile-note i {
+
+    margin-top: 2px;
+
+    color: #8b5e3c;
+}
+
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+.verah-profile-button {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 9px;
+
+    width: 100%;
+
+    min-height: 48px;
+
+    padding: 12px 18px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: #7a4b2a;
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 0.92rem;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.verah-profile-button:hover {
+
+    background: #5f3922;
+
+    box-shadow:
+        0 7px 18px rgba(75, 46, 31, 0.18);
+
+    transform: translateY(-1px);
+}
+
+
+.verah-profile-button:active {
+
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 760px) {
+
+    .verah-profile-page {
+
+        padding:
+            22px
+            14px
+            40px;
+    }
+
+
+    .verah-profile-grid {
+
+        grid-template-columns: 1fr;
+
+        gap: 18px;
+    }
+
+
+    .verah-profile-card {
+
+        padding: 22px 18px;
+
+        border-radius: 18px;
+
+        border-left-width: 6px;
+    }
+
+
+    .verah-profile-heading {
+
+        align-items: flex-start;
+    }
+
+
+    .verah-profile-avatar {
+
+        width: 54px;
+
+        height: 54px;
+
+        flex-basis: 54px;
+
+        font-size: 1.2rem;
+    }
+
+
+    .verah-profile-heading h1 {
+
+        font-size: 1.7rem;
+    }
+
+}
+
+
+@media (max-width: 430px) {
+
+    .verah-profile-heading {
+
+        gap: 12px;
+    }
+
+
+    .verah-profile-avatar {
+
+        width: 48px;
+
+        height: 48px;
+
+        flex-basis: 48px;
+    }
+
+
+    .verah-profile-heading h1 {
+
+        font-size: 1.5rem;
+    }
+
+
+    .verah-profile-heading p {
+
+        font-size: 0.86rem;
+    }
+
+
+    .verah-profile-card-header h2 {
+
+        font-size: 1.15rem;
+    }
+
+}
