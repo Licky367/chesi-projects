@@ -1,253 +1,567 @@
-const authService = require("../services/auth");
+// ==========================================================
+// verrah/controllers/auth.js
+// VERRAH COSMETICS
+// AUTHENTICATION CONTROLLER
+// ==========================================================
+
+const authService =
+    require("../services/auth");
+
+
+// ==========================================================
+// SAFE RETURN URL
+// ==========================================================
 
 function safeReturnTo(value) {
+
+    if (typeof value !== "string") {
+        return "/";
+    }
+
+    const trimmed =
+        value.trim();
+
+    if (!trimmed) {
+        return "/";
+    }
+
+    // Only allow local paths.
     if (
-        typeof value !== "string" ||
-        !value.startsWith("/") ||
-        value.startsWith("//")
+        !trimmed.startsWith("/") ||
+        trimmed.startsWith("//")
     ) {
         return "/";
     }
 
-    return value;
+    return trimmed;
 }
+
+
+// ==========================================================
+// LOGIN VIEW
+// ==========================================================
 
 function loginView(res, data = {}) {
-    return res.render("auth/login", {
-        title: "Log In - COREVESTER",
-        error: null,
-        email: "",
-        returnTo: "/",
-        ...data
-    });
+
+    return res.render(
+        "auth/login",
+        {
+            title: "Log In - COREVESTER",
+
+            error: null,
+
+            email: "",
+
+            returnTo: "/",
+
+            ...data
+        }
+    );
 }
+
+
+// ==========================================================
+// REGISTER VIEW
+// ==========================================================
 
 function registerView(res, data = {}) {
-    return res.render("auth/register", {
-        title: "Create Account - COREVESTER",
-        error: null,
-        name: "",
-        email: "",
-        ...data
-    });
+
+    return res.render(
+        "auth/register",
+        {
+            title: "Create Account - COREVESTER",
+
+            error: null,
+
+            name: "",
+
+            phone: "",
+
+            email: "",
+
+            ...data
+        }
+    );
 }
+
+
+// ==========================================================
+// REGENERATE SESSION
+// ==========================================================
 
 function regenerateSession(req) {
-    return new Promise((resolve, reject) => {
-        req.session.regenerate(err => {
-            if (err) return reject(err);
-            resolve();
-        });
-    });
+
+    return new Promise(
+        (resolve, reject) => {
+
+            req.session.regenerate(
+                (error) => {
+
+                    if (error) {
+                        return reject(error);
+                    }
+
+                    resolve();
+                }
+            );
+
+        }
+    );
 }
+
+
+// ==========================================================
+// SAVE SESSION
+// ==========================================================
 
 function saveSession(req) {
-    return new Promise((resolve, reject) => {
-        req.session.save(err => {
-            if (err) return reject(err);
-            resolve();
-        });
-    });
+
+    return new Promise(
+        (resolve, reject) => {
+
+            req.session.save(
+                (error) => {
+
+                    if (error) {
+                        return reject(error);
+                    }
+
+                    resolve();
+                }
+            );
+
+        }
+    );
 }
 
-exports.showLogin = (req, res) => {
-    if (req.user) {
-        return res.redirect("/");
-    }
-
-    return loginView(res, {
-        returnTo: safeReturnTo(req.query.returnTo)
-    });
-};
-
-exports.login = async (req, res, next) => {
-    try {
-        const email =
-            String(req.body?.email || "")
-                .trim()
-                .toLowerCase();
-
-        const password =
-            String(req.body?.password || "");
-
-        const returnTo =
-            safeReturnTo(req.body?.returnTo);
-
-        if (!email || !password) {
-            return loginView(res, {
-                error: "Email and password are required.",
-                email,
-                returnTo
-            });
-        }
-
-        const user =
-            await authService.login({
-                email,
-                password
-            });
-
-        if (!user) {
-            return loginView(res, {
-                error: "Invalid email or password.",
-                email,
-                returnTo
-            });
-        }
-
-        await regenerateSession(req);
-
-        req.session.user =
-            authService.toSessionUser(user);
-
-        await saveSession(req);
-
-        return res.redirect(returnTo);
-
-    } catch (err) {
-        return next(err);
-    }
-};
-
-exports.showRegister = (req, res) => {
-    if (req.user) {
-        return res.redirect("/");
-    }
-
-    return registerView(res);
-};
-
-exports.register = async (req, res, next) => {
-    try {
-        const name =
-            String(req.body?.name || "").trim();
-
-        const email =
-            String(req.body?.email || "")
-                .trim()
-                .toLowerCase();
-
-        const password =
-            String(req.body?.password || "");
-
-        const confirmPassword =
-            String(req.body?.confirmPassword || "");
-
-        if (!name || !email || !password) {
-            return registerView(res, {
-                error:
-                    "Name, email and password are required.",
-                name,
-                email
-            });
-        }
-
-        if (password.length < 8) {
-            return registerView(res, {
-                error:
-                    "Password must contain at least 8 characters.",
-                name,
-                email
-            });
-        }
-
-        if (password !== confirmPassword) {
-            return registerView(res, {
-                error:
-                    "Passwords do not match.",
-                name,
-                email
-            });
-        }
-
-        const user =
-            await authService.register({
-                name,
-                email,
-                password
-            });
-
-        await regenerateSession(req);
-
-        req.session.user =
-            authService.toSessionUser(user);
-
-        await saveSession(req);
-
-        return res.redirect("/");
-
-    } catch (err) {
-        if (
-            err?.code === 11000 ||
-            err?.status === 400
-        ) {
-            return registerView(res, {
-                error:
-                    err.code === 11000
-                        ? "An account with that email already exists."
-                        : err.message,
-                name:
-                    String(
-                        req.body?.name || ""
-                    ).trim(),
-                email:
-                    String(
-                        req.body?.email || ""
-                    ).trim().toLowerCase()
-            });
-        }
-
-        return next(err);
-    }
-};
-
-exports.logout = (req, res, next) => {
-    req.session.destroy(err => {
-        if (err) {
-            return next(err);
-        }
-
-        res.clearCookie("connect.sid", {
-            httpOnly: true,
-            sameSite: "lax",
-            secure:
-                process.env.NODE_ENV === "production"
-        });
-
-        return res.redirect("/");
-    });
-};
 
 // ==========================================================
-// ADMIN USER MANAGEMENT
+// SHOW LOGIN
 // ==========================================================
 
-function requireAdmin(req, res, next) {
-    if (!req.user) {
-        return res.redirect(
-            "/auth/login?returnTo=" +
-            encodeURIComponent("/auth/users")
-        );
-    }
+exports.showLogin =
+    function (req, res) {
 
-    if (req.user.role !== "admin") {
-        return res.status(403).render(
-            "error/403",
+        return loginView(
+            res,
             {
-                title: "Access Denied",
-                user: req.user,
-                error: "You do not have permission to access user management."
+                returnTo:
+                    safeReturnTo(
+                        req.query.returnTo
+                    )
             }
         );
+    };
+
+
+// ==========================================================
+// LOGIN
+// ==========================================================
+
+exports.login =
+    async function (req, res) {
+
+        const email =
+            String(
+                req.body?.email || ""
+            ).trim();
+
+        const password =
+            String(
+                req.body?.password || ""
+            );
+
+        const returnTo =
+            safeReturnTo(
+                req.body?.returnTo
+            );
+
+
+        try {
+
+            if (!email) {
+
+                return loginView(
+                    res,
+                    {
+                        error:
+                            "Email is required.",
+
+                        email,
+
+                        returnTo
+                    }
+                );
+            }
+
+
+            if (!password) {
+
+                return loginView(
+                    res,
+                    {
+                        error:
+                            "Password is required.",
+
+                        email,
+
+                        returnTo
+                    }
+                );
+            }
+
+
+            const user =
+                await authService.login(
+                    email,
+                    password
+                );
+
+
+            await regenerateSession(req);
+
+
+            req.session.user =
+                user;
+
+
+            await saveSession(req);
+
+
+            return res.redirect(
+                returnTo || "/"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Login error:",
+                error
+            );
+
+
+            return loginView(
+                res,
+                {
+                    error:
+                        error.message ||
+                        "Unable to log in.",
+
+                    email,
+
+                    returnTo
+                }
+            );
+        }
+    };
+
+
+// ==========================================================
+// SHOW REGISTER
+// ==========================================================
+
+exports.showRegister =
+    function (req, res) {
+
+        return registerView(
+            res
+        );
+    };
+
+
+// ==========================================================
+// REGISTER
+// ==========================================================
+
+exports.register =
+    async function (req, res) {
+
+        const name =
+            String(
+                req.body?.name || ""
+            ).trim();
+
+        const phone =
+            String(
+                req.body?.phone || ""
+            ).trim();
+
+        const email =
+            String(
+                req.body?.email || ""
+            ).trim();
+
+        const password =
+            String(
+                req.body?.password || ""
+            );
+
+        const confirmPassword =
+            String(
+                req.body?.confirmPassword || ""
+            );
+
+
+        try {
+
+            // ------------------------------------------------
+            // REQUIRED FIELDS
+            // ------------------------------------------------
+
+            if (!name) {
+
+                return registerView(
+                    res,
+                    {
+                        error:
+                            "Name is required.",
+
+                        name,
+
+                        phone,
+
+                        email
+                    }
+                );
+            }
+
+
+            if (!phone) {
+
+                return registerView(
+                    res,
+                    {
+                        error:
+                            "Phone number is required.",
+
+                        name,
+
+                        phone,
+
+                        email
+                    }
+                );
+            }
+
+
+            if (!email) {
+
+                return registerView(
+                    res,
+                    {
+                        error:
+                            "Email is required.",
+
+                        name,
+
+                        phone,
+
+                        email
+                    }
+                );
+            }
+
+
+            if (!password) {
+
+                return registerView(
+                    res,
+                    {
+                        error:
+                            "Password is required.",
+
+                        name,
+
+                        phone,
+
+                        email
+                    }
+                );
+            }
+
+
+            // ------------------------------------------------
+            // PASSWORD LENGTH
+            // ------------------------------------------------
+
+            if (password.length < 8) {
+
+                return registerView(
+                    res,
+                    {
+                        error:
+                            "Password must be at least 8 characters.",
+
+                        name,
+
+                        phone,
+
+                        email
+                    }
+                );
+            }
+
+
+            // ------------------------------------------------
+            // PASSWORD MATCH
+            // ------------------------------------------------
+
+            if (
+                password !==
+                confirmPassword
+            ) {
+
+                return registerView(
+                    res,
+                    {
+                        error:
+                            "Passwords do not match.",
+
+                        name,
+
+                        phone,
+
+                        email
+                    }
+                );
+            }
+
+
+            // ------------------------------------------------
+            // CREATE ACCOUNT
+            // ------------------------------------------------
+
+            const user =
+                await authService.register({
+                    name,
+
+                    phone,
+
+                    email,
+
+                    password
+                });
+
+
+            // ------------------------------------------------
+            // LOGIN NEW USER
+            // ------------------------------------------------
+
+            await regenerateSession(req);
+
+
+            req.session.user =
+                user;
+
+
+            await saveSession(req);
+
+
+            return res.redirect("/");
+
+        } catch (error) {
+
+            console.error(
+                "Registration error:",
+                error
+            );
+
+
+            return registerView(
+                res,
+                {
+                    error:
+                        error.message ||
+                        "Unable to create account.",
+
+                    name,
+
+                    phone,
+
+                    email
+                }
+            );
+        }
+    };
+
+
+// ==========================================================
+// LOGOUT
+// ==========================================================
+
+exports.logout =
+    function (req, res) {
+
+        req.session.destroy(
+            (error) => {
+
+                if (error) {
+
+                    console.error(
+                        "Logout error:",
+                        error
+                    );
+                }
+
+                res.clearCookie(
+                    "connect.sid"
+                );
+
+                return res.redirect(
+                    "/"
+                );
+            }
+        );
+    };
+
+
+// ==========================================================
+// REQUIRE ADMIN
+// ==========================================================
+
+function requireAdmin(
+    req,
+    res,
+    next
+) {
+
+    if (
+        !req.session ||
+        !req.session.user
+    ) {
+
+        return res.redirect(
+            "/auth/login"
+        );
     }
+
+
+    if (
+        req.session.user.role !==
+        "admin"
+    ) {
+
+        return res.status(403).send(
+            "Forbidden"
+        );
+    }
+
 
     next();
 }
 
+
+// ==========================================================
+// SHOW USERS
+// ==========================================================
+
 exports.showUsers = [
     requireAdmin,
-    async (req, res, next) => {
+
+    async function (req, res) {
+
         try {
+
             const users =
                 await authService.getAllUsers();
 
@@ -255,141 +569,253 @@ exports.showUsers = [
                 await authService.getInvitations();
 
             const substations =
-                await authService.getActiveSubstations();
+                await authService
+                    .getActiveSubstations();
 
-            const allowedTabs = [
-                "all",
-                "admin",
-                "staff",
-                "client",
-                "invitations"
-            ];
-
-            const tab =
-                allowedTabs.includes(req.query.tab)
-                    ? req.query.tab
-                    : "all";
 
             return res.render(
                 "admin/users",
                 {
-                    title: "User Management - COREVESTER",
-                    user: req.user,
+                    title:
+                        "User Management - COREVESTER",
+
                     users,
+
                     invitations,
+
                     substations,
-                    tab,
+
                     error: null,
+
                     success: null
                 }
             );
 
-        } catch (err) {
-            return next(err);
+        } catch (error) {
+
+            console.error(
+                "Show users error:",
+                error
+            );
+
+
+            return res.status(500).render(
+                "admin/users",
+                {
+                    title:
+                        "User Management - COREVESTER",
+
+                    users: [],
+
+                    invitations: [],
+
+                    substations: [],
+
+                    error:
+                        error.message ||
+                        "Unable to load users.",
+
+                    success: null
+                }
+            );
         }
     }
 ];
+
+
+// ==========================================================
+// SHOW INVITATION
+// ==========================================================
 
 exports.showInvitation = [
     requireAdmin,
-    async (req, res, next) => {
-        try {
-            const invitations = await authService.getInvitations();
-            return res.render("admin/invitation", { title: "Invite User - COREVESTER", user: req.user, invitations, error: null, success: null });
-        } catch (err) { return next(err); }
+
+    function (req, res) {
+
+        return res.render(
+            "admin/invite",
+            {
+                title:
+                    "Invite User - COREVESTER",
+
+                error: null,
+
+                success: null,
+
+                email: "",
+
+                role: "staff"
+            }
+        );
     }
 ];
+
+
+// ==========================================================
+// INVITE USER
+// ==========================================================
 
 exports.inviteUser = [
     requireAdmin,
-    async (req, res, next) => {
+
+    async function (req, res) {
+
+        const email =
+            String(
+                req.body?.email || ""
+            ).trim();
+
+        const role =
+            String(
+                req.body?.role || ""
+            ).trim();
+
+
         try {
+
             await authService.createInvitation({
-                email: req.body?.email,
-                role: req.body?.role,
-                invitedBy: req.user._id
+                email,
+
+                role
             });
 
-            return res.redirect(
-                "/auth/users/invitation?success=" +
-                encodeURIComponent(
-                    "Invitation role saved successfully."
-                )
+
+            return res.render(
+                "admin/invite",
+                {
+                    title:
+                        "Invite User - COREVESTER",
+
+                    error: null,
+
+                    success:
+                        "Invitation created successfully.",
+
+                    email: "",
+
+                    role: "staff"
+                }
             );
-        } catch (err) {
-            return next(err);
+
+        } catch (error) {
+
+            console.error(
+                "Invite user error:",
+                error
+            );
+
+
+            return res.status(400).render(
+                "admin/invite",
+                {
+                    title:
+                        "Invite User - COREVESTER",
+
+                    error:
+                        error.message ||
+                        "Unable to create invitation.",
+
+                    success: null,
+
+                    email,
+
+                    role
+                }
+            );
         }
     }
 ];
+
+
+// ==========================================================
+// CHANGE ROLE
+// ==========================================================
 
 exports.changeRole = [
     requireAdmin,
-    async (req, res, next) => {
+
+    async function (req, res) {
+
+        const userId =
+            req.params.id;
+
+        const role =
+            String(
+                req.body?.role || ""
+            ).trim();
+
+
         try {
-            const updated =
-                await authService.updateUserRole({
-                    userId: req.params.id,
-                    role: req.body?.role,
-                    actingAdminId: req.user._id
-                });
 
-            if (
-                String(updated._id) ===
-                String(req.user._id)
-            ) {
-                req.session.user =
-                    authService.toSessionUser(updated);
-
-                await saveSession(req);
-            }
-
-            return res.redirect(
-                "/auth/users?tab=" +
-                encodeURIComponent(
-                    updated.role
-                ) +
-                "&success=" +
-                encodeURIComponent(
-                    "User role updated successfully."
-                )
+            await authService.updateUserRole(
+                userId,
+                role
             );
 
-        } catch (err) {
-            return next(err);
+
+            return res.redirect(
+                "/auth/users"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Change role error:",
+                error
+            );
+
+
+            return res.status(400).send(
+                error.message ||
+                "Unable to change user role."
+            );
         }
     }
 ];
 
+
+// ==========================================================
+// ASSIGN SUBSTATION
+// ==========================================================
+
 exports.assignSubstation = [
     requireAdmin,
-    async (req, res, next) => {
+
+    async function (req, res) {
+
+        const userId =
+            req.params.id;
+
+        const substationId =
+            String(
+                req.body?.substationId || ""
+            ).trim();
+
+
         try {
-            const updated =
-                await authService.assignSubstation({
-                    userId: req.params.id,
-                    substationId:
-                        req.body?.assignedSubstation
-                });
 
-            if (
-                String(updated._id) ===
-                String(req.user._id)
-            ) {
-                req.session.user =
-                    authService.toSessionUser(updated);
-
-                await saveSession(req);
-            }
-
-            return res.redirect(
-                "/auth/users?tab=staff&success=" +
-                encodeURIComponent(
-                    "Substation assignment updated successfully."
-                )
+            await authService.assignSubstation(
+                userId,
+                substationId || null
             );
 
-        } catch (err) {
-            return next(err);
+
+            return res.redirect(
+                "/auth/users"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Assign substation error:",
+                error
+            );
+
+
+            return res.status(400).send(
+                error.message ||
+                "Unable to assign substation."
+            );
         }
     }
 ];
