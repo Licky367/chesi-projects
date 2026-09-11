@@ -3,13 +3,13 @@
 // =========================================================
 
 const cartService =
-  require("../services/cartService");
+    require("../services/cartService");
 
 const paymentService =
-  require("../services/paymentService");
+    require("../services/paymentService");
 
 const packageService =
-  require("../services/packageService");
+    require("../services/packageService");
 
 
 // =========================================================
@@ -18,57 +18,65 @@ const packageService =
 // =========================================================
 
 exports.list =
-  async (req, res) => {
-    try {
-      const cart =
-        await cartService.getCart(req);
+    async (req, res) => {
 
-      const total =
-        cartService.calculateTotal(
-          cart
-        );
+        try {
 
-      return res.render(
-        "cart/carts",
-        {
-          title:
-            "Your Cart | CoreVester",
+            const cart =
+                await cartService.getCart(req);
 
-          cart,
+            const total =
+                cartService.calculateTotal(
+                    cart
+                );
 
-          total,
+            return res.render(
+                "cart/carts",
+                {
+                    title:
+                        "Your Cart | CoreVester",
 
-          error:
-            null,
+                    cart,
 
-          user:
-            req.user
+                    total,
+
+                    error:
+                        req.query.error ||
+                        null,
+
+                    user:
+                        req.user
+                }
+            );
+
+        } catch (err) {
+
+            console.error(
+                "CART LIST ERROR:",
+                err
+            );
+
+            return res.status(500).render(
+                "cart/carts",
+                {
+                    title:
+                        "Your Cart | CoreVester",
+
+                    cart:
+                        null,
+
+                    total:
+                        0,
+
+                    error:
+                        "Unable to load your cart.",
+
+                    user:
+                        req.user
+                }
+            );
         }
-      );
-    } catch (err) {
-      console.error(err);
-
-      return res.status(500).render(
-        "cart/carts",
-        {
-          title:
-            "Your Cart | CoreVester",
-
-          cart:
-            null,
-
-          total:
-            0,
-
-          error:
-            "Unable to load your cart.",
-
-          user:
-            req.user
-        }
-      );
-    }
-  };
+    };
 
 
 // =========================================================
@@ -77,70 +85,78 @@ exports.list =
 // =========================================================
 
 exports.details =
-  async (req, res) => {
-    try {
-      const cart =
-        await cartService.getCart(
-          req
-        );
+    async (req, res) => {
 
-      if (
-        !cart ||
-        !cart.items.length
-      ) {
-        return res.redirect(
-          "/carts"
-        );
-      }
+        try {
 
-      const item =
-        cart.items.find(
-          i =>
-            String(
-              i.productId
-            ) ===
-            String(
-              req.params.id
-            )
-        );
+            const cart =
+                await cartService.getCart(
+                    req
+                );
 
-      if (!item) {
-        return res.status(404)
-          .redirect(
-            "/carts"
-          );
-      }
+            if (
+                !cart ||
+                !cart.items.length
+            ) {
 
-      return res.render(
-        "cart/cart-details",
-        {
-          title:
-            `${item.name} | Cart | CoreVester`,
+                return res.redirect(
+                    "/carts"
+                );
+            }
 
-          cart,
+            const item =
+                cart.items.find(
+                    i =>
+                        String(
+                            i.productId
+                        ) ===
+                        String(
+                            req.params.id
+                        )
+                );
 
-          item,
+            if (!item) {
 
-          total:
-            cartService.calculateTotal(
-              cart
-            ),
+                return res.status(404)
+                    .redirect(
+                        "/carts"
+                    );
+            }
 
-          error:
-            req.query.error ||
-            null,
+            return res.render(
+                "cart/cart-details",
+                {
+                    title:
+                        `${item.name} | Cart | CoreVester`,
 
-          user:
-            req.user
+                    cart,
+
+                    item,
+
+                    total:
+                        cartService.calculateTotal(
+                            cart
+                        ),
+
+                    error:
+                        req.query.error ||
+                        null,
+
+                    user:
+                        req.user
+                }
+            );
+
+        } catch (err) {
+
+            console.error(err);
+
+            return res.status(500)
+                .redirect(
+                    "/carts"
+                );
         }
-      );
-    } catch (err) {
-      console.error(err);
-
-      return res.status(500)
-        .redirect("/carts");
-    }
-  };
+    };
 
 
 // =========================================================
@@ -149,101 +165,113 @@ exports.details =
 // =========================================================
 
 exports.remove =
-  async (req, res) => {
-    try {
-      await cartService.removeItem(
-        req,
-        req.params.id
-      );
+    async (req, res) => {
 
-      return res.redirect(
-        "/carts"
-      );
-    } catch (err) {
-      console.error(err);
+        try {
 
-      return res.redirect(
-        `/carts/${req.params.id}?error=${encodeURIComponent(
-          err.message
-        )}`
-      );
-    }
-  };
+            await cartService.removeItem(
+                req,
+                req.params.id
+            );
+
+            return res.redirect(
+                "/carts"
+            );
+
+        } catch (err) {
+
+            console.error(err);
+
+            return res.redirect(
+                `/carts/${req.params.id}?error=${encodeURIComponent(
+                    err.message
+                )}`
+            );
+        }
+    };
 
 
 // =========================================================
-// CHECKOUT
+// NORMAL CHECKOUT
 // POST /carts/checkout
 // =========================================================
 
 exports.checkout =
-  async (req, res) => {
-    const method =
-      String(
-        req.body.paymentMethod ||
-        ""
-      ).trim();
+    async (req, res) => {
 
-    try {
-      if (
-        method ===
-        "pay_on_delivery"
-      ) {
-        await packageService
-          .createPackageFromCart(
-            req,
-            {
-              paymentMethod:
-                "pay_on_delivery",
-
-              paymentStatus:
-                "unpaid",
-
-              paidAmount:
-                0,
-
-              phoneNumber:
+        const method =
+            String(
+                req.body.paymentMethod ||
                 ""
+            ).trim();
+
+        try {
+
+            if (
+                method ===
+                "pay_on_delivery"
+            ) {
+
+                await packageService
+                    .createPackageFromCart(
+                        req,
+                        {
+                            paymentMethod:
+                                "pay_on_delivery",
+
+                            paymentStatus:
+                                "unpaid",
+
+                            paidAmount:
+                                0,
+
+                            phoneNumber:
+                                ""
+                        }
+                    );
+
+                return res.redirect(
+                    "/packages"
+                );
             }
-          );
 
-        return res.redirect(
-          "/packages"
-        );
-      }
 
-      if (
-        method ===
-        "mpesa"
-      ) {
-        const result =
-          await paymentService
-            .initiateStkPush(
-              req,
-              req.body.phoneNumber
+            if (
+                method ===
+                "mpesa"
+            ) {
+
+                const result =
+                    await paymentService
+                        .initiateStkPush(
+                            req,
+                            req.body.phoneNumber
+                        );
+
+                return res.redirect(
+                    `/carts/payment/${result.paymentId}`
+                );
+            }
+
+
+            return res.redirect(
+                "/carts?error=Choose a checkout method."
             );
 
-        return res.redirect(
-          `/carts/payment/${result.paymentId}`
-        );
-      }
+        } catch (err) {
 
-      return res.redirect(
-        "/carts?error=Choose a checkout method."
-      );
-    } catch (err) {
-      console.error(
-        "Checkout error:",
-        err
-      );
+            console.error(
+                "Checkout error:",
+                err
+            );
 
-      return res.redirect(
-        `/carts?error=${encodeURIComponent(
-          err.message
-        )}`
-      );
-    }
-  };
+            return res.redirect(
+                `/carts?error=${encodeURIComponent(
+                    err.message
+                )}`
+            );
+        }
+    };
 
 
 // =========================================================
@@ -252,77 +280,72 @@ exports.checkout =
 // =========================================================
 
 exports.staffSale =
-  async (req, res) => {
-    try {
+    async (req, res) => {
 
-      // -----------------------------------------------------
-      // Ensure only staff can create staff sales
-      // -----------------------------------------------------
+        try {
 
-      const role =
-        String(
-          req.user?.role ||
-          ""
-        ).toLowerCase();
-
-      if (role !== "staff") {
-        return res.redirect(
-          "/carts?error=Only staff members can record sales."
-        );
-      }
+            const role =
+                String(
+                    req.user?.role ||
+                    ""
+                ).toLowerCase();
 
 
-      // -----------------------------------------------------
-      // Get sales name
-      // -----------------------------------------------------
+            if (role !== "staff") {
 
-      const salesName =
-        String(
-          req.body.salesName ||
-          ""
-        ).trim();
-
-      if (!salesName) {
-        return res.redirect(
-          "/carts?error=Sales name is required."
-        );
-      }
+                return res.redirect(
+                    "/carts?error=Only staff can record sales."
+                );
+            }
 
 
-      // -----------------------------------------------------
-      // Save staff sale
-      // -----------------------------------------------------
-
-      await cartService.createStaffSale(
-        req,
-        salesName
-      );
+            const salesName =
+                String(
+                    req.body.salesName ||
+                    ""
+                ).trim();
 
 
-      // -----------------------------------------------------
-      // Sale completed
-      // Cart is cleared by the service.
-      // -----------------------------------------------------
+            if (!salesName) {
 
-      return res.redirect(
-        "/"
-      );
+                return res.redirect(
+                    "/carts?error=Please enter a sales name."
+                );
+            }
 
-    } catch (err) {
 
-      console.error(
-        "Staff sale error:",
-        err
-      );
+            const result =
+                await cartService.createStaffSale(
+                    req,
+                    salesName
+                );
 
-      return res.redirect(
-        `/carts?error=${encodeURIComponent(
-          err.message ||
-          "Unable to record staff sale."
-        )}`
-      );
-    }
-  };
+
+            /*
+             * The service returns the assigned
+             * substation ID belonging to the
+             * staff member.
+             */
+
+            return res.redirect(
+                `/substation/branch/${result.substationId}`
+            );
+
+        } catch (err) {
+
+            console.error(
+                "STAFF SALE ERROR:",
+                err
+            );
+
+            return res.redirect(
+                `/carts?error=${encodeURIComponent(
+                    err.message ||
+                    "Unable to record the sale."
+                )}`
+            );
+        }
+    };
 
 
 // =========================================================
@@ -331,39 +354,48 @@ exports.staffSale =
 // =========================================================
 
 exports.paymentPage =
-  async (req, res) => {
-    try {
-      const payment =
-        await paymentService
-          .getPaymentForUser(
-            req,
-            req.params.id
-          );
+    async (req, res) => {
 
-      if (!payment) {
-        return res.status(404)
-          .redirect("/carts");
-      }
+        try {
 
-      return res.render(
-        "cart/payment-status",
-        {
-          title:
-            "M-Pesa Payment | CoreVester",
+            const payment =
+                await paymentService
+                    .getPaymentForUser(
+                        req,
+                        req.params.id
+                    );
 
-          payment,
+            if (!payment) {
 
-          user:
-            req.user
+                return res.status(404)
+                    .redirect(
+                        "/carts"
+                    );
+            }
+
+            return res.render(
+                "cart/payment-status",
+                {
+                    title:
+                        "M-Pesa Payment | CoreVester",
+
+                    payment,
+
+                    user:
+                        req.user
+                }
+            );
+
+        } catch (err) {
+
+            console.error(err);
+
+            return res.status(500)
+                .redirect(
+                    "/carts"
+                );
         }
-      );
-    } catch (err) {
-      console.error(err);
-
-      return res.status(500)
-        .redirect("/carts");
-    }
-  };
+    };
 
 
 // =========================================================
@@ -372,53 +404,60 @@ exports.paymentPage =
 // =========================================================
 
 exports.paymentStatus =
-  async (req, res) => {
-    try {
-      const payment =
-        await paymentService
-          .getPaymentForUser(
-            req,
-            req.params.id
-          );
+    async (req, res) => {
 
-      if (!payment) {
-        return res.status(404)
-          .json({
-            ok: false,
-            message:
-              "Payment not found."
-          });
-      }
+        try {
 
-      return res.json({
-        ok: true,
+            const payment =
+                await paymentService
+                    .getPaymentForUser(
+                        req,
+                        req.params.id
+                    );
 
-        status:
-          payment.status,
+            if (!payment) {
 
-        receipt:
-          payment.mpesaReceiptNumber ||
-          "",
+                return res.status(404)
+                    .json({
+                        ok: false,
 
-        description:
-          payment.resultDescription ||
-          "",
+                        message:
+                            "Payment not found."
+                    });
+            }
 
-        packageId:
-          payment.packageId ||
-          null
-      });
-    } catch (err) {
-      console.error(err);
+            return res.json({
+                ok: true,
 
-      return res.status(500)
-        .json({
-          ok: false,
-          message:
-            "Unable to check payment status."
-        });
-    }
-  };
+                status:
+                    payment.status,
+
+                receipt:
+                    payment.mpesaReceiptNumber ||
+                    "",
+
+                description:
+                    payment.resultDescription ||
+                    "",
+
+                packageId:
+                    payment.packageId ||
+                    null
+            });
+
+        } catch (err) {
+
+            console.error(err);
+
+            return res.status(500)
+                .json({
+                    ok: false,
+
+                    message:
+                        "Unable to check payment status."
+                });
+        }
+    };
 
 
 // =========================================================
@@ -426,23 +465,27 @@ exports.paymentStatus =
 // =========================================================
 
 exports.mpesaCallback =
-  async (req, res) => {
-    try {
-      await paymentService
-        .handleCallback(
-          req.body
-        );
-    } catch (err) {
-      console.error(
-        "M-Pesa callback:",
-        err
-      );
-    }
+    async (req, res) => {
 
-    return res.json({
-      ResultCode: 0,
+        try {
 
-      ResultDesc:
-        "Accepted"
-    });
-  };
+            await paymentService
+                .handleCallback(
+                    req.body
+                );
+
+        } catch (err) {
+
+            console.error(
+                "M-Pesa callback:",
+                err
+            );
+        }
+
+        return res.json({
+            ResultCode: 0,
+
+            ResultDesc:
+                "Accepted"
+        });
+    };
