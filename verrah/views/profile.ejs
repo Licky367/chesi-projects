@@ -1,0 +1,413 @@
+<!-- =========================================================
+     VERAH COSMETICS — PROFILE
+========================================================= -->
+
+<section class="verah-profile-page">
+
+
+    <!-- =====================================================
+         PROFILE HEADER
+    ====================================================== -->
+
+    <header class="verah-profile-header">
+
+        <a
+            href="/"
+            class="verah-profile-back"
+        >
+            <i class="fas fa-arrow-left"></i>
+            Back Home
+        </a>
+
+
+        <div class="verah-profile-heading">
+
+            <div class="verah-profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+
+            <div>
+
+                <span class="verah-profile-eyebrow">
+                    VERRAH COSMETICS
+                </span>
+
+                <h1>
+                    My Profile
+                </h1>
+
+                <p>
+                    Manage your personal account details.
+                </p>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         SUCCESS MESSAGE
+    ====================================================== -->
+
+    <% if (success) { %>
+
+        <div class="verah-profile-alert verah-profile-success">
+
+            <i class="fas fa-circle-check"></i>
+
+            <span>
+                <%= success %>
+            </span>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- =====================================================
+         ERROR MESSAGE
+    ====================================================== -->
+
+    <% if (error) { %>
+
+        <div class="verah-profile-alert verah-profile-error">
+
+            <i class="fas fa-circle-exclamation"></i>
+
+            <span>
+                <%= error %>
+            </span>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- =====================================================
+         PROFILE CONTENT
+    ====================================================== -->
+
+    <div class="verah-profile-grid">
+
+
+        <!-- =================================================
+             PERSONAL DETAILS
+        ================================================== -->
+
+        <section class="verah-profile-card">
+
+
+            <div class="verah-profile-card-header">
+
+                <div class="verah-profile-card-icon">
+                    <i class="fas fa-user-pen"></i>
+                </div>
+
+                <div>
+
+                    <span>
+                        PERSONAL DETAILS
+                    </span>
+
+                    <h2>
+                        Account Information
+                    </h2>
+
+                    <p>
+                        Update the details connected to your account.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                action="/profile"
+                method="POST"
+                class="verah-profile-form"
+            >
+
+
+                <!-- NAME -->
+
+                <div class="verah-profile-field">
+
+                    <label for="profile-name">
+                        FULL NAME
+                    </label>
+
+                    <div class="verah-profile-input-wrap">
+
+                        <i class="fas fa-user"></i>
+
+                        <input
+                            type="text"
+                            id="profile-name"
+                            name="name"
+                            value="<%= user?.name || '' %>"
+                            placeholder="Your full name"
+                            autocomplete="name"
+                            maxlength="200"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- PHONE -->
+
+                <div class="verah-profile-field">
+
+                    <label for="profile-phone">
+                        PHONE NUMBER
+                    </label>
+
+                    <div class="verah-profile-input-wrap">
+
+                        <i class="fas fa-phone"></i>
+
+                        <input
+                            type="tel"
+                            id="profile-phone"
+                            name="phone"
+                            value="<%= user?.phone || '' %>"
+                            placeholder="Your phone number"
+                            autocomplete="tel"
+                            maxlength="30"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- EMAIL -->
+
+                <div class="verah-profile-field">
+
+                    <label for="profile-email">
+                        EMAIL ADDRESS
+                    </label>
+
+                    <div class="verah-profile-input-wrap">
+
+                        <i class="fas fa-envelope"></i>
+
+                        <input
+                            type="email"
+                            id="profile-email"
+                            name="email"
+                            value="<%= user?.email || '' %>"
+                            placeholder="name@example.com"
+                            autocomplete="email"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- ASSIGNED SUBSTATION -->
+
+                <% if (user?.assignedSubstation) { %>
+
+                    <div class="verah-profile-field">
+
+                        <label>
+                            ASSIGNED BRANCH
+                        </label>
+
+                        <div class="verah-profile-readonly">
+
+                            <i class="fas fa-location-dot"></i>
+
+                            <span>
+                                <%= user.assignedSubstation.name %>
+                            </span>
+
+                        </div>
+
+                        <small>
+                            Your assigned branch is managed by an administrator.
+                        </small>
+
+                    </div>
+
+                <% } %>
+
+
+                <!-- SAVE -->
+
+                <button
+                    type="submit"
+                    class="verah-profile-button"
+                >
+
+                    <i class="fas fa-floppy-disk"></i>
+
+                    Save Changes
+
+                </button>
+
+            </form>
+
+        </section>
+
+
+
+        <!-- =================================================
+             PASSWORD
+        ================================================== -->
+
+        <section class="verah-profile-card">
+
+
+            <div class="verah-profile-card-header">
+
+                <div class="verah-profile-card-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+
+                <div>
+
+                    <span>
+                        SECURITY
+                    </span>
+
+                    <h2>
+                        Change Password
+                    </h2>
+
+                    <p>
+                        Keep your account protected with a strong password.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                action="/profile/password"
+                method="POST"
+                class="verah-profile-form"
+            >
+
+
+                <!-- CURRENT PASSWORD -->
+
+                <div class="verah-profile-field">
+
+                    <label for="current-password">
+                        CURRENT PASSWORD
+                    </label>
+
+                    <div class="verah-profile-input-wrap">
+
+                        <i class="fas fa-key"></i>
+
+                        <input
+                            type="password"
+                            id="current-password"
+                            name="currentPassword"
+                            placeholder="Enter current password"
+                            autocomplete="current-password"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- NEW PASSWORD -->
+
+                <div class="verah-profile-field">
+
+                    <label for="new-password">
+                        NEW PASSWORD
+                    </label>
+
+                    <div class="verah-profile-input-wrap">
+
+                        <i class="fas fa-lock"></i>
+
+                        <input
+                            type="password"
+                            id="new-password"
+                            name="newPassword"
+                            placeholder="Enter new password"
+                            autocomplete="new-password"
+                            minlength="6"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- CONFIRM PASSWORD -->
+
+                <div class="verah-profile-field">
+
+                    <label for="confirm-password">
+                        CONFIRM NEW PASSWORD
+                    </label>
+
+                    <div class="verah-profile-input-wrap">
+
+                        <i class="fas fa-shield-halved"></i>
+
+                        <input
+                            type="password"
+                            id="confirm-password"
+                            name="confirmPassword"
+                            placeholder="Confirm new password"
+                            autocomplete="new-password"
+                            minlength="6"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="verah-profile-note">
+
+                    <i class="fas fa-circle-info"></i>
+
+                    <span>
+                        Your password must contain at least 6 characters.
+                    </span>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="verah-profile-button"
+                >
+
+                    <i class="fas fa-key"></i>
+
+                    Change Password
+
+                </button>
+
+            </form>
+
+        </section>
+
+    </div>
+
+
+</section>
