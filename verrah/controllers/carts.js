@@ -448,7 +448,7 @@ exports.staffSale = async (req, res) => {
         // -----------------------------------------------------
 
         return res.redirect(
-            `/substation/branch/${assignedSubstation}`
+            `/branch/${assignedSubstation}`
         );
 
     } catch (err) {
