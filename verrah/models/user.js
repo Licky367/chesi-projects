@@ -1,116 +1,139 @@
+// ==========================================================
+// verrah/models/user.js
+// VERRAH COSMETICS
+// USER MODEL
+// ==========================================================
+
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 
-const SALT_LENGTH = 32;
-const KEY_LENGTH = 64;
+
+// ==========================================================
+// PASSWORD HASHING
+// ==========================================================
+
+const PASSWORD_KEY_LENGTH = 64;
+
+const PASSWORD_SALT_LENGTH = 16;
+
+const PASSWORD_HASH_PREFIX = "scrypt";
+
+
+// ==========================================================
+// HASH PASSWORD
+// ==========================================================
 
 function hashPassword(password) {
-    return new Promise((resolve, reject) => {
-        const salt = crypto.randomBytes(SALT_LENGTH);
 
-        crypto.scrypt(
-            String(password),
-            salt,
-            KEY_LENGTH,
-            (err, derivedKey) => {
-                if (err) {
-                    return reject(err);
-                }
+    const salt = crypto.randomBytes(
+        PASSWORD_SALT_LENGTH
+    ).toString("hex");
 
-                resolve(
-                    `${salt.toString("hex")}:${derivedKey.toString("hex")}`
-                );
-            }
-        );
-    });
+    const derivedKey = crypto.scryptSync(
+        password,
+        salt,
+        PASSWORD_KEY_LENGTH
+    );
+
+    return [
+        PASSWORD_HASH_PREFIX,
+        salt,
+        derivedKey.toString("hex")
+    ].join("$");
 }
 
-function verifyPassword(password, storedPassword) {
-    return new Promise((resolve, reject) => {
-        if (
-            typeof password !== "string" ||
-            typeof storedPassword !== "string"
-        ) {
-            return resolve(false);
-        }
 
-        const parts = storedPassword.split(":");
+// ==========================================================
+// VERIFY PASSWORD
+// ==========================================================
 
-        if (parts.length !== 2) {
-            return resolve(false);
-        }
+function verifyPassword(password, storedHash) {
 
-        const [saltHex, hashHex] = parts;
-
-        if (!saltHex || !hashHex) {
-            return resolve(false);
-        }
-
-        let salt;
-        let originalHash;
-
-        try {
-            salt = Buffer.from(saltHex, "hex");
-            originalHash = Buffer.from(hashHex, "hex");
-        } catch (err) {
-            return resolve(false);
-        }
-
-        if (!salt.length || !originalHash.length) {
-            return resolve(false);
-        }
-
-        crypto.scrypt(
-            password,
-            salt,
-            originalHash.length,
-            (err, derivedKey) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                if (derivedKey.length !== originalHash.length) {
-                    return resolve(false);
-                }
-
-                return resolve(
-                    crypto.timingSafeEqual(
-                        derivedKey,
-                        originalHash
-                    )
-                );
-            }
-        );
-    });
-}
-
-function isPasswordHash(password) {
-    if (typeof password !== "string") {
+    if (!isPasswordHash(storedHash)) {
         return false;
     }
 
-    const parts = password.split(":");
+    const parts = storedHash.split("$");
 
-    if (parts.length !== 2) {
+    const salt = parts[1];
+
+    const storedKey = Buffer.from(
+        parts[2],
+        "hex"
+    );
+
+    const derivedKey = crypto.scryptSync(
+        password,
+        salt,
+        PASSWORD_KEY_LENGTH
+    );
+
+    if (storedKey.length !== derivedKey.length) {
         return false;
     }
 
-    const [saltHex, hashHex] = parts;
-
-    return (
-        /^[a-f0-9]+$/i.test(saltHex) &&
-        /^[a-f0-9]+$/i.test(hashHex)
+    return crypto.timingSafeEqual(
+        storedKey,
+        derivedKey
     );
 }
 
+
+// ==========================================================
+// PASSWORD HASH CHECK
+// ==========================================================
+
+function isPasswordHash(value) {
+
+    if (typeof value !== "string") {
+        return false;
+    }
+
+    const parts = value.split("$");
+
+    return (
+        parts.length === 3 &&
+        parts[0] === PASSWORD_HASH_PREFIX &&
+        parts[1].length > 0 &&
+        parts[2].length > 0
+    );
+}
+
+
+// ==========================================================
+// USER SCHEMA
+// ==========================================================
+
 const userSchema = new mongoose.Schema(
     {
+
+        // --------------------------------------------------
+        // NAME
+        // --------------------------------------------------
+
         name: {
             type: String,
             required: true,
             trim: true,
-            maxlength: 200
+            maxlength: 100
         },
+
+
+        // --------------------------------------------------
+        // PHONE
+        // --------------------------------------------------
+
+        phone: {
+            type: String,
+            required: true,
+            trim: true,
+            maxlength: 30
+        },
+
+
+        // --------------------------------------------------
+        // EMAIL
+        // --------------------------------------------------
 
         email: {
             type: String,
@@ -118,56 +141,95 @@ const userSchema = new mongoose.Schema(
             unique: true,
             trim: true,
             lowercase: true,
-            index: true
+            maxlength: 254
         },
 
-    phone: {
 
-      type: String,
-
-      default: null,
-
-    },
+        // --------------------------------------------------
+        // PASSWORD
+        // --------------------------------------------------
 
         password: {
             type: String,
-            required: true,
-            select: false
+            required: true
         },
+
+
+        // --------------------------------------------------
+        // ROLE
+        // --------------------------------------------------
 
         role: {
             type: String,
-            enum: ["admin", "staff", "client"],
-            default: "client",
-            required: true
+            enum: [
+                "admin",
+                "staff",
+                "customer"
+            ],
+            default: "customer"
         },
+
+
+        // --------------------------------------------------
+        // ASSIGNED SUBSTATION
+        // --------------------------------------------------
 
         assignedSubstation: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Substation",
             default: null
         }
+
     },
     {
         timestamps: true
     }
 );
 
-userSchema.pre("validate", function(next) {
-    if (this.email) {
-        this.email = String(this.email).trim().toLowerCase();
-    }
 
-    next();
-});
+// ==========================================================
+// NORMALIZE EMAIL
+// ==========================================================
 
-userSchema.pre("save", async function(next) {
-    try {
-        if (!this.isModified("password")) {
-            return next();
+userSchema.pre(
+    "validate",
+    function (next) {
+
+        if (typeof this.email === "string") {
+
+            this.email =
+                this.email.trim().toLowerCase();
+
         }
 
-        if (!this.password) {
+        if (typeof this.name === "string") {
+
+            this.name =
+                this.name.trim();
+
+        }
+
+        if (typeof this.phone === "string") {
+
+            this.phone =
+                this.phone.trim();
+
+        }
+
+        next();
+    }
+);
+
+
+// ==========================================================
+// HASH PASSWORD BEFORE SAVE
+// ==========================================================
+
+userSchema.pre(
+    "save",
+    function (next) {
+
+        if (!this.isModified("password")) {
             return next();
         }
 
@@ -175,32 +237,50 @@ userSchema.pre("save", async function(next) {
             return next();
         }
 
-        this.password = await hashPassword(this.password);
+        this.password =
+            hashPassword(this.password);
 
         next();
-    } catch (err) {
-        next(err);
     }
-});
-
-userSchema.methods.comparePassword = async function(password) {
-    if (!password || !this.password) {
-        return false;
-    }
-
-    return verifyPassword(
-        String(password),
-        this.password
-    );
-};
-
-userSchema.methods.toJSON = function() {
-    const user = this.toObject();
-    delete user.password;
-    return user;
-};
-
-module.exports = mongoose.model(
-    "VerrahUser",
-    userSchema
 );
+
+
+// ==========================================================
+// COMPARE PASSWORD
+// ==========================================================
+
+userSchema.methods.comparePassword =
+    function (password) {
+
+        return verifyPassword(
+            password,
+            this.password
+        );
+    };
+
+
+// ==========================================================
+// SAFE JSON
+// ==========================================================
+
+userSchema.methods.toJSON =
+    function () {
+
+        const object =
+            this.toObject();
+
+        delete object.password;
+
+        return object;
+    };
+
+
+// ==========================================================
+// MODEL
+// ==========================================================
+
+module.exports =
+    mongoose.model(
+        "VerrahUser",
+        userSchema
+    );
