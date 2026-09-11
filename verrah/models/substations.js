@@ -271,3 +271,14 @@ const substationSchema =
             timestamps: true
         }
     );
+
+
+// ==========================================================
+// EXPORT MODEL
+// ==========================================================
+
+module.exports =
+    mongoose.model(
+        "Substation",
+        substationSchema
+    );
