@@ -22,7 +22,6 @@ function safeReturnTo(value) {
         return "/";
     }
 
-
     return value;
 }
 
@@ -154,7 +153,6 @@ exports.showLogin =
             );
         }
 
-
         return loginView(
             res,
             {
@@ -225,7 +223,6 @@ exports.login =
             const user =
                 await authService.login({
                     email,
-
                     password
                 });
 
@@ -699,9 +696,27 @@ exports.showInvitation = [
 
         try {
 
+            // ------------------------------------------------
+            // GET PENDING INVITATIONS
+            // ------------------------------------------------
+
             const invitations =
                 await authService
                     .getInvitations();
+
+
+            // ------------------------------------------------
+            // GET ACTIVE SUBSTATIONS
+            // ------------------------------------------------
+            //
+            // Needed by the Staff invitation form so that
+            // the administrator can assign a substation.
+            //
+            // ------------------------------------------------
+
+            const substations =
+                await authService
+                    .getActiveSubstations();
 
 
             return res.render(
@@ -709,12 +724,14 @@ exports.showInvitation = [
                 {
 
                     title:
-                        "Invite User - COREVESTER",
+                        "Invite User - VERRAH COSMETICS",
 
                     user:
                         req.user,
 
                     invitations,
+
+                    substations,
 
                     error:
                         null,
@@ -748,14 +765,45 @@ exports.inviteUser = [
 
         try {
 
+            const email =
+                String(
+                    req.body?.email ||
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            const role =
+                String(
+                    req.body?.role ||
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            // ------------------------------------------------
+            // ONLY STAFF CAN HAVE A SUBSTATION
+            // ------------------------------------------------
+
+            const assignedSubstation =
+                role === "staff"
+                    ? String(
+                        req.body?.assignedSubstation ||
+                        ""
+                    ).trim()
+                    : null;
+
+
             await authService
                 .createInvitation({
 
-                    email:
-                        req.body?.email,
+                    email,
 
-                    role:
-                        req.body?.role,
+                    role,
+
+                    assignedSubstation,
 
                     invitedBy:
                         req.user._id
