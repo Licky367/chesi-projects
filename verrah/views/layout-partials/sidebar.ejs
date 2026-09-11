@@ -183,7 +183,6 @@
                    SALES
                 ========================================== -->
 
-                
                 <li class="sidebar-item">
 
                     <a
@@ -206,7 +205,6 @@
                     </a>
 
                 </li>
-                
 
 
                 <!-- =========================================
@@ -249,10 +247,21 @@
            PRODUCTS
         ================================================== -->
 
+        <%
+            const isStaff =
+                user &&
+                user.role === "staff";
+
+            const productsLink =
+                isStaff && user.assignedSubstation
+                    ? `/branch/${user.assignedSubstation}`
+                    : "/products";
+        %>
+
         <li class="sidebar-item">
 
             <a
-                href="/products"
+                href="<%= productsLink %>"
                 class="sidebar-link"
                 title="View Products"
             >
@@ -303,7 +312,10 @@
 
         <!-- =================================================
            CLIENT ORDERS
+           NON-STAFF ONLY
         ================================================== -->
+
+        <% if (!user || user.role !== "staff") { %>
 
         <li class="sidebar-item">
 
@@ -327,6 +339,8 @@
             </a>
 
         </li>
+
+        <% } %>
 
 
         <% if (
