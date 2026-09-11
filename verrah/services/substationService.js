@@ -9,7 +9,129 @@ const Substation = require("../models/substations");
 const Product = require("../models/products");
 const Stock = require("../models/stock");
 
-const text = (value) => String(value ?? "").trim();
+
+// ==========================================================
+// HELPERS
+// ==========================================================
+
+const text = (value) =>
+    String(value ?? "").trim();
+
+
+// ----------------------------------------------------------
+// PHONE NUMBER
+// ----------------------------------------------------------
+
+const normalizePhoneNumber = (value) => {
+
+    if (
+        value === undefined ||
+        value === null ||
+        String(value).trim() === ""
+    ) {
+        return null;
+    }
+
+    const cleaned =
+        String(value)
+            .trim()
+            .replace(/[^\d+]/g, "");
+
+    if (!cleaned) {
+        return null;
+    }
+
+    const number =
+        Number(cleaned);
+
+    if (!Number.isFinite(number)) {
+        throw new Error(
+            "Invalid phone number."
+        );
+    }
+
+    return number;
+};
+
+
+// ----------------------------------------------------------
+// GPS COORDINATE
+// ----------------------------------------------------------
+
+const normalizeCoordinate = (
+    value,
+    min,
+    max,
+    fieldName
+) => {
+
+    if (
+        value === undefined ||
+        value === null ||
+        String(value).trim() === ""
+    ) {
+        return null;
+    }
+
+    const number =
+        Number(value);
+
+    if (
+        !Number.isFinite(number) ||
+        number < min ||
+        number > max
+    ) {
+        throw new Error(
+            `${fieldName} must be between ${min} and ${max}.`
+        );
+    }
+
+    return number;
+};
+
+
+// ----------------------------------------------------------
+// BUILD GPS OBJECT
+// ----------------------------------------------------------
+
+const buildGPS = (body) => {
+
+    const latitude =
+        normalizeCoordinate(
+            body.latitude,
+            -90,
+            90,
+            "Latitude"
+        );
+
+    const longitude =
+        normalizeCoordinate(
+            body.longitude,
+            -180,
+            180,
+            "Longitude"
+        );
+
+
+    /*
+     * GPS must either contain both coordinates or neither.
+     */
+
+    if (
+        (latitude === null && longitude !== null) ||
+        (latitude !== null && longitude === null)
+    ) {
+        throw new Error(
+            "Both latitude and longitude are required for a GPS location."
+        );
+    }
+
+
+    return {
+        latitude,
+        longitude
+    };
+};
 
 
 // ==========================================================
@@ -18,8 +140,12 @@ const text = (value) => String(value ?? "").trim();
 
 exports.list = () =>
     Substation
-        .find({ isActive: true })
-        .sort({ name: 1 })
+        .find({
+            isActive: true
+        })
+        .sort({
+            name: 1
+        })
         .lean();
 
 
@@ -27,38 +153,61 @@ exports.list = () =>
 // CREATE SUBSTATION
 // ==========================================================
 
-exports.create = async (body) => {
+exports.create = async (
+    body
+) => {
 
-    const name = text(body.name);
+    const name =
+        text(body.name);
+
 
     if (!name) {
-        throw new Error("Substation name is required.");
+        throw new Error(
+            "Substation name is required."
+        );
     }
 
-    if (await Substation.findOne({ name })) {
+
+    if (
+        await Substation.findOne({
+            name
+        })
+    ) {
         throw new Error(
             "A substation with that name already exists."
         );
     }
 
-    return Substation.create({
+
+    const gps =
+        buildGPS(body);
+
+
+    const phoneNumber =
+        normalizePhoneNumber(
+            body.phoneNumber
+        );
+
+
+    const substationData = {
 
         name,
 
         location:
             text(body.location),
 
-        phoneNumber:
-            body.phoneNumber === "" ||
-            body.phoneNumber === undefined
-                ? null
-                : Number(body.phoneNumber),
+        phoneNumber,
+
+        substationIcon:
+            text(body.substationIcon),
 
         description:
             text(body.description),
 
         directions:
             text(body.directions),
+
+        gps,
 
         isActive:
             body.isActive === undefined
@@ -68,7 +217,12 @@ exports.create = async (body) => {
                     body.isActive === "true" ||
                     body.isActive === "on"
                 )
-    });
+    };
+
+
+    return Substation.create(
+        substationData
+    );
 };
 
 
@@ -76,11 +230,16 @@ exports.create = async (body) => {
 // GET SUBSTATION BY ID
 // ==========================================================
 
-exports.getById = async (id) => {
+exports.getById = async (
+    id
+) => {
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (
+        !mongoose.isValidObjectId(id)
+    ) {
         return null;
     }
+
 
     return Substation
         .findById(id)
@@ -92,30 +251,44 @@ exports.getById = async (id) => {
 // GET SUBSTATION WITH PRODUCTS
 // ==========================================================
 
-exports.getWithProducts = async (id) => {
+exports.getWithProducts = async (
+    id
+) => {
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (
+        !mongoose.isValidObjectId(id)
+    ) {
         return null;
     }
+
 
     const substation =
         await Substation
             .findById(id)
             .lean();
 
+
     if (!substation) {
         return null;
     }
 
+
     const inventory =
-        Array.isArray(substation.productInventory)
+        Array.isArray(
+            substation.productInventory
+        )
             ? substation.productInventory
             : [];
 
+
     const productIds =
         inventory
-            .map(item => item.productId)
+            .map(
+                item =>
+                    item.productId
+            )
             .filter(Boolean);
+
 
     const products =
         await Product
@@ -123,12 +296,14 @@ exports.getWithProducts = async (id) => {
                 _id: {
                     $in: productIds
                 },
+
                 isActive: true
             })
             .sort({
                 name: 1
             })
             .lean();
+
 
     const productMap =
         new Map(
@@ -140,32 +315,46 @@ exports.getWithProducts = async (id) => {
             )
         );
 
+
     const physicalProducts =
         inventory
-            .map(item => {
+            .map(
+                item => {
 
-                const product =
-                    productMap.get(
-                        String(item.productId)
-                    );
+                    const product =
+                        productMap.get(
+                            String(
+                                item.productId
+                            )
+                        );
 
-                if (!product) {
-                    return null;
+
+                    if (!product) {
+                        return null;
+                    }
+
+
+                    return {
+                        ...product,
+
+                        substationUnits:
+                            Number(
+                                item.units || 0
+                            ),
+
+                        substationInventoryId:
+                            item.productId
+                    };
                 }
-
-                return {
-                    ...product,
-                    substationUnits:
-                        Number(item.units || 0),
-                    substationInventoryId:
-                        item.productId
-                };
-            })
+            )
             .filter(Boolean);
+
 
     return {
         ...substation,
-        products: physicalProducts
+
+        products:
+            physicalProducts
     };
 };
 
@@ -174,16 +363,22 @@ exports.getWithProducts = async (id) => {
 // GET PRODUCT
 // ==========================================================
 
-exports.getProduct = async (id) => {
+exports.getProduct = async (
+    id
+) => {
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (
+        !mongoose.isValidObjectId(id)
+    ) {
         return null;
     }
+
 
     const product =
         await Product
             .findOne({
                 _id: id,
+
                 isActive: true
             })
             .populate(
@@ -192,14 +387,17 @@ exports.getProduct = async (id) => {
             )
             .lean();
 
+
     if (!product) {
         return null;
     }
+
 
     const substations =
         await Substation
             .find({
                 isActive: true,
+
                 "productInventory.productId":
                     product._id
             })
@@ -207,6 +405,7 @@ exports.getProduct = async (id) => {
                 "name location productInventory"
             )
             .lean();
+
 
     const substationStocks =
         substations.map(
@@ -218,11 +417,17 @@ exports.getProduct = async (id) => {
                         []
                     ).find(
                         entry =>
-                            String(entry.productId) ===
-                            String(product._id)
+                            String(
+                                entry.productId
+                            ) ===
+                            String(
+                                product._id
+                            )
                     );
 
+
                 return {
+
                     _id:
                         substation._id,
 
@@ -240,8 +445,10 @@ exports.getProduct = async (id) => {
             }
         );
 
+
     return {
         ...product,
+
         substationStocks
     };
 };
@@ -256,14 +463,31 @@ exports.update = async (
     body
 ) => {
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (
+        !mongoose.isValidObjectId(id)
+    ) {
         throw new Error(
             "Invalid substation ID."
         );
     }
 
+
+    const existing =
+        await Substation.findById(
+            id
+        );
+
+
+    if (!existing) {
+        throw new Error(
+            "Substation not found."
+        );
+    }
+
+
     const name =
         text(body.name);
+
 
     if (!name) {
         throw new Error(
@@ -271,13 +495,16 @@ exports.update = async (
         );
     }
 
+
     const duplicate =
         await Substation.findOne({
             name,
+
             _id: {
                 $ne: id
             }
         });
+
 
     if (duplicate) {
         throw new Error(
@@ -285,40 +512,87 @@ exports.update = async (
         );
     }
 
+
+    const gps =
+        buildGPS(body);
+
+
+    const phoneNumber =
+        normalizePhoneNumber(
+            body.phoneNumber
+        );
+
+
+    const updateData = {
+
+        name,
+
+        location:
+            text(body.location),
+
+        phoneNumber,
+
+        description:
+            text(body.description),
+
+        directions:
+            text(body.directions),
+
+        gps,
+
+        isActive:
+            body.isActive === undefined
+                ? existing.isActive
+                : (
+                    body.isActive === true ||
+                    body.isActive === "true" ||
+                    body.isActive === "on"
+                )
+    };
+
+
+    /*
+     * Only change the icon when the controller actually
+     * supplies a new icon.
+     *
+     * This prevents an edit of name/location/GPS/etc.
+     * from deleting the existing icon.
+     */
+
+    if (
+        body.substationIcon !== undefined
+    ) {
+
+        const icon =
+            text(
+                body.substationIcon
+            );
+
+
+        if (icon) {
+
+            updateData.substationIcon =
+                icon;
+
+        } else {
+
+            updateData.substationIcon =
+                existing.substationIcon || "";
+        }
+    }
+
+
     return Substation.findByIdAndUpdate(
         id,
+
         {
-            $set: {
-
-                name,
-
-                location:
-                    text(body.location),
-
-                phoneNumber:
-                    body.phoneNumber === "" ||
-                    body.phoneNumber === undefined
-                        ? null
-                        : Number(body.phoneNumber),
-
-                description:
-                    text(body.description),
-
-                directions:
-                    text(body.directions),
-
-                isActive:
-                    body.isActive === undefined
-                        ? true
-                        : (
-                            body.isActive === true ||
-                            body.isActive === "true" ||
-                            body.isActive === "on"
-                        )
-            }
+            $set:
+                updateData
         },
+
         {
             new: true,
+
             runValidators: true
         }
     ).lean();
@@ -334,11 +608,14 @@ exports.updateIcon = async (
     imagePath
 ) => {
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (
+        !mongoose.isValidObjectId(id)
+    ) {
         throw new Error(
             "Invalid substation ID."
         );
     }
+
 
     if (!imagePath) {
         throw new Error(
@@ -346,16 +623,20 @@ exports.updateIcon = async (
         );
     }
 
+
     return Substation.findByIdAndUpdate(
         id,
+
         {
             $set: {
                 substationIcon:
                     imagePath
             }
         },
+
         {
             new: true,
+
             runValidators: true
         }
     ).lean();
@@ -371,38 +652,51 @@ exports.updateImages = async (
     images
 ) => {
 
-    if (!mongoose.isValidObjectId(id)) {
+    if (
+        !mongoose.isValidObjectId(id)
+    ) {
         throw new Error(
             "Invalid substation ID."
         );
     }
 
+
     if (!Array.isArray(images)) {
         images = [];
     }
 
+
     images =
         images
             .filter(Boolean)
-            .map(image =>
-                String(image).trim()
-            );
+            .map(
+                image =>
+                    String(image).trim()
+            )
+            .filter(Boolean);
 
-    if (images.length > 20) {
+
+    if (
+        images.length > 20
+    ) {
         throw new Error(
             "A substation can have a maximum of 20 images."
         );
     }
 
+
     return Substation.findByIdAndUpdate(
         id,
+
         {
             $set: {
                 images
             }
         },
+
         {
             new: true,
+
             runValidators: true
         }
     ).lean();
@@ -418,20 +712,31 @@ exports.updateProductUnits = async (
     body
 ) => {
 
-    if (!mongoose.isValidObjectId(productId)) {
+    if (
+        !mongoose.isValidObjectId(
+            productId
+        )
+    ) {
         throw new Error(
             "Invalid product."
         );
     }
 
-    if (!mongoose.isValidObjectId(body.substationId)) {
+
+    if (
+        !mongoose.isValidObjectId(
+            body.substationId
+        )
+    ) {
         throw new Error(
             "Invalid substation."
         );
     }
 
+
     const newUnits =
         Number(body.units);
+
 
     if (
         !Number.isInteger(newUnits) ||
@@ -442,12 +747,15 @@ exports.updateProductUnits = async (
         );
     }
 
+
     const session =
         await mongoose.startSession();
+
 
     try {
 
         let result;
+
 
         await session.withTransaction(
             async () => {
@@ -456,9 +764,11 @@ exports.updateProductUnits = async (
                     await Product
                         .findOne({
                             _id: productId,
+
                             isActive: true
                         })
                         .session(session);
+
 
                 if (!product) {
                     throw new Error(
@@ -466,13 +776,18 @@ exports.updateProductUnits = async (
                     );
                 }
 
+
                 const stock =
                     await Stock
                         .findOne({
-                            _id: product.stock,
-                            isActive: true
+                            _id:
+                                product.stock,
+
+                            isActive:
+                                true
                         })
                         .session(session);
+
 
                 if (!stock) {
                     throw new Error(
@@ -480,13 +795,18 @@ exports.updateProductUnits = async (
                     );
                 }
 
+
                 const substation =
                     await Substation
                         .findOne({
-                            _id: body.substationId,
-                            isActive: true
+                            _id:
+                                body.substationId,
+
+                            isActive:
+                                true
                         })
                         .session(session);
+
 
                 if (!substation) {
                     throw new Error(
@@ -494,12 +814,20 @@ exports.updateProductUnits = async (
                     );
                 }
 
+
                 const inventory =
-                    substation.productInventory.find(
-                        entry =>
-                            String(entry.productId) ===
-                            String(product._id)
-                    );
+                    substation
+                        .productInventory
+                        .find(
+                            entry =>
+                                String(
+                                    entry.productId
+                                ) ===
+                                String(
+                                    product._id
+                                )
+                        );
+
 
                 if (!inventory) {
                     throw new Error(
@@ -507,72 +835,101 @@ exports.updateProductUnits = async (
                     );
                 }
 
+
                 const oldUnits =
                     Number(
                         inventory.units || 0
                     );
 
+
                 const delta =
-                    newUnits - oldUnits;
+                    newUnits -
+                    oldUnits;
+
 
                 if (
                     delta > 0 &&
-                    Number(stock.units || 0) < delta
+                    Number(
+                        stock.units || 0
+                    ) < delta
                 ) {
+
                     throw new Error(
-                        `Only ${Number(stock.units || 0)} units remain in the source stock. You need ${delta} additional units.`
+                        `Only ${Number(
+                            stock.units || 0
+                        )} units remain in the source stock. You need ${delta} additional units.`
                     );
                 }
+
 
                 inventory.units =
                     newUnits;
 
+
                 inventory.updatedAt =
                     new Date();
+
 
                 inventory.productName =
                     product.name;
 
+
                 inventory.category =
                     product.category;
+
 
                 inventory.subcategory =
                     product.subcategory;
 
+
                 inventory.days =
-                    Number(product.days || 0);
+                    Number(
+                        product.days || 0
+                    );
+
 
                 await substation.save({
                     session
                 });
 
+
                 product.units =
                     Math.max(
                         0,
-                        Number(product.units || 0) +
-                        delta
+
+                        Number(
+                            product.units || 0
+                        ) + delta
                     );
+
 
                 product.updatedAt =
                     new Date();
+
 
                 await product.save({
                     session
                 });
 
+
                 stock.units =
                     Math.max(
                         0,
-                        Number(stock.units || 0) -
-                        delta
+
+                        Number(
+                            stock.units || 0
+                        ) - delta
                     );
+
 
                 stock.totalsUpdatedAt =
                     new Date();
 
+
                 await stock.save({
                     session
                 });
+
 
                 const allStocks =
                     await Stock
@@ -585,21 +942,30 @@ exports.updateProductUnits = async (
                         .session(session)
                         .lean();
 
+
                 const categoryTotals =
                     new Map();
 
+
                 let overall = 0;
+
 
                 for (
                     const item of allStocks
                 ) {
 
                     const value =
-                        Number(item.units || 0) *
-                        Number(item.buyPrice || 0);
+                        Number(
+                            item.units || 0
+                        ) *
+                        Number(
+                            item.buyPrice || 0
+                        );
+
 
                     categoryTotals.set(
                         item.category,
+
                         (
                             categoryTotals.get(
                                 item.category
@@ -607,26 +973,38 @@ exports.updateProductUnits = async (
                         ) + value
                     );
 
-                    overall += value;
+
+                    overall +=
+                        value;
                 }
+
 
                 const now =
                     new Date();
+
 
                 for (
                     const item of allStocks
                 ) {
 
                     const value =
-                        Number(item.units || 0) *
-                        Number(item.buyPrice || 0);
+                        Number(
+                            item.units || 0
+                        ) *
+                        Number(
+                            item.buyPrice || 0
+                        );
+
 
                     await Stock.updateOne(
                         {
-                            _id: item._id
+                            _id:
+                                item._id
                         },
+
                         {
                             $set: {
+
                                 cashOutflow:
                                     value,
 
@@ -642,12 +1020,16 @@ exports.updateProductUnits = async (
                                     now
                             }
                         },
+
                         {
                             session,
-                            timestamps: true
+
+                            timestamps:
+                                true
                         }
                     );
                 }
+
 
                 result = {
 
@@ -664,6 +1046,7 @@ exports.updateProductUnits = async (
                 };
             }
         );
+
 
         return result;
 
