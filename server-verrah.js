@@ -319,7 +319,7 @@ const mpesaRoutes =
     );
 
 // ----------------------------------------------------------
-// ROUTES
+// SALESROUTES
 // ----------------------------------------------------------
 
 const salesRoutes =
@@ -339,6 +339,20 @@ const branchRoutes =
         "branchRoutes",
         "./verrah/routes/branch"
     );
+
+
+// ----------------------------------------------------------
+// PROFILE 
+// ----------------------------------------------------------
+
+
+const profileRoutes =
+    safeLoad(
+        "profileRoutes",
+        "./verrah/routes/profile"
+    );
+
+
 
 
 // ==========================================================
@@ -967,6 +981,40 @@ if (salesRoutes) {
 
     console.error(
         "❌ /sales was not mounted"
+    );
+}
+
+
+
+// ==========================================================
+// profile MAIN / 
+// ==========================================================
+//
+// Existing application structure is preserved:
+//
+//     ./verrah/routes/profile.js
+//
+// is mounted at:
+//
+//     /profile
+//
+// ==========================================================
+
+if (profileRoutes) {
+
+    app.use(
+        "/",
+        profileRoutes
+    );
+
+    console.log(
+        "✅ Mounted /profile"
+    );
+
+} else {
+
+    console.error(
+        "❌ /profile was not mounted"
     );
 }
 
