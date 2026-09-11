@@ -1,143 +1,625 @@
 <%
+/* ==========================================================
+USER MANAGEMENT
+VERRAH COSMETICS
+========================================================== */
+
 const userList = Array.isArray(users) ? users : [];
-const currentTab = ["all", "admin", "staff", "client"].includes(tab) ? tab : "all";
-const filtered = currentTab === "all"
-  ? userList
-  : userList.filter(u => String(u.role || "").toLowerCase() === currentTab);
-const adminCount = userList.filter(u => u.role === "admin").length;
-const staffCount = userList.filter(u => u.role === "staff").length;
-const clientCount = userList.filter(u => u.role === "client").length;
+
+const currentTab = ["all", "admin", "staff", "client"].includes(
+String(tab || "").toLowerCase()
+)
+? String(tab).toLowerCase()
+: "all";
+
+const filtered =
+currentTab === "all"
+? userList
+: userList.filter(
+user =>
+String(user.role || "client").toLowerCase() === currentTab
+);
+
+const adminCount = userList.filter(
+user => String(user.role || "").toLowerCase() === "admin"
+).length;
+
+const staffCount = userList.filter(
+user => String(user.role || "").toLowerCase() === "staff"
+).length;
+
+const clientCount = userList.filter(
+user => String(user.role || "").toLowerCase() === "client"
+).length;
+
 const totalCount = userList.length;
-function active(t) { return currentTab === t; }
+
+function active(t) {
+return currentTab === t;
+}
 %>
 
-<section class="admin-page admin-users-page">
+<section class="admin-page admin-users-page">  <!-- ======================================================
+       PAGE HEADER
+  ======================================================= -->  <header class="admin-page-header"><div class="admin-header-icon">
+  <i class="fas fa-users"></i>
+</div>
 
-  <header class="admin-page-header">
-    <div class="admin-header-icon">
+<div class="admin-header-copy">
+  <span class="admin-eyebrow">
+    ADMINISTRATION
+  </span>
+
+  <h1>
+    User Management
+  </h1>
+
+  <p>
+    Organize accounts, roles and staff assignments.
+  </p>
+</div>
+
+  </header>  <!-- ======================================================
+       ACCOUNT OVERVIEW
+  ======================================================= -->  <section class="admin-panel admin-overview-panel"><div class="admin-panel-heading">
+
+  <div>
+    <span class="admin-eyebrow">
+      OVERVIEW
+    </span>
+
+    <h2>
+      Accounts
+    </h2>
+  </div>
+
+  <span class="admin-count-badge">
+    <%= totalCount %>
+  </span>
+
+</div>
+
+
+<!-- ====================================================
+     FILTERS
+===================================================== -->
+
+<div class="admin-filter-grid">
+
+  <a
+    href="/auth/users?tab=all"
+    class="admin-filter-card <%= active('all') ? 'is-active' : '' %>"
+  >
+    <span>
       <i class="fas fa-users"></i>
+      Total Users
+    </span>
+
+    <strong>
+      <%= totalCount %>
+    </strong>
+  </a>
+
+
+  <a
+    href="/auth/users?tab=admin"
+    class="admin-filter-card <%= active('admin') ? 'is-active' : '' %>"
+  >
+    <span>
+      <i class="fas fa-shield-halved"></i>
+      Administrators
+    </span>
+
+    <strong>
+      <%= adminCount %>
+    </strong>
+  </a>
+
+
+  <a
+    href="/auth/users?tab=staff"
+    class="admin-filter-card <%= active('staff') ? 'is-active' : '' %>"
+  >
+    <span>
+      <i class="fas fa-user-gear"></i>
+      Staff
+    </span>
+
+    <strong>
+      <%= staffCount %>
+    </strong>
+  </a>
+
+
+  <a
+    href="/auth/users?tab=client"
+    class="admin-filter-card <%= active('client') ? 'is-active' : '' %>"
+  >
+    <span>
+      <i class="fas fa-user"></i>
+      Clients
+    </span>
+
+    <strong>
+      <%= clientCount %>
+    </strong>
+  </a>
+
+</div>
+
+
+<!-- ====================================================
+     INVITE
+===================================================== -->
+
+<a
+  href="/auth/users/invitation"
+  class="admin-primary-action"
+>
+  <i class="fas fa-user-plus"></i>
+  Invite User
+</a>
+
+  </section>  <!-- ======================================================
+       USER DIRECTORY
+  ======================================================= -->  <section class="admin-panel admin-user-list-panel"><div class="admin-panel-heading admin-list-heading">
+
+  <div>
+
+    <span class="admin-eyebrow">
+      USER DIRECTORY
+    </span>
+
+    <h2>
+      Users — <%= currentTab.toUpperCase() %>
+    </h2>
+
+    <p>
+      <%= filtered.length %> accounts in this section.
+    </p>
+
+  </div>
+
+  <span class="admin-tab-badge">
+    <%= currentTab %>
+  </span>
+
+</div>
+
+
+
+<!-- ====================================================
+     EMPTY STATE
+===================================================== -->
+
+<% if (!filtered.length) { %>
+
+  <div class="admin-empty-state">
+
+    <div class="admin-empty-icon">
+      <i class="fas fa-user-slash"></i>
     </div>
-    <div class="admin-header-copy">
-      <span class="admin-eyebrow">ADMINISTRATION</span>
-      <h1>User Management</h1>
-      <p>Organize accounts, roles and staff assignments.</p>
-    </div>
-  </header>
 
-  <section class="admin-panel admin-overview-panel">
-    <div class="admin-panel-heading">
-      <div>
-        <span class="admin-eyebrow">OVERVIEW</span>
-        <h2>Accounts</h2>
-      </div>
-      <span class="admin-count-badge"><%= totalCount %></span>
-    </div>
+    <h3>
+      No users found
+    </h3>
 
-    <div class="admin-filter-grid">
-      <a href="/auth/users?tab=all" class="admin-filter-card <%= active('all') ? 'is-active' : '' %>">
-        <span><i class="fas fa-users"></i> Total Users</span>
-        <strong><%= totalCount %></strong>
-      </a>
+    <p>
+      There are no accounts in this section yet.
+    </p>
 
-      <a href="/auth/users?tab=admin" class="admin-filter-card <%= active('admin') ? 'is-active' : '' %>">
-        <span><i class="fas fa-shield-halved"></i> Administrators</span>
-        <strong><%= adminCount %></strong>
-      </a>
+  </div>
 
-      <a href="/auth/users?tab=staff" class="admin-filter-card <%= active('staff') ? 'is-active' : '' %>">
-        <span><i class="fas fa-user-gear"></i> Staff</span>
-        <strong><%= staffCount %></strong>
-      </a>
+<% } else { %>
 
-      <a href="/auth/users?tab=client" class="admin-filter-card <%= active('client') ? 'is-active' : '' %>">
-        <span><i class="fas fa-user"></i> Clients</span>
-        <strong><%= clientCount %></strong>
-      </a>
-    </div>
 
-    <a href="/auth/users/invitation" class="admin-primary-action">
-      <i class="fas fa-user-plus"></i>
-      Invite User
-    </a>
-  </section>
 
-  <section class="admin-panel admin-user-list-panel">
-    <div class="admin-panel-heading admin-list-heading">
-      <div>
-        <span class="admin-eyebrow">USER DIRECTORY</span>
-        <h2>Users — <%= currentTab.toUpperCase() %></h2>
-        <p><%= filtered.length %> accounts in this section.</p>
-      </div>
-      <span class="admin-tab-badge"><%= currentTab %></span>
-    </div>
+  <!-- ==================================================
+       USER LIST
+  =================================================== -->
 
-    <% if (!filtered.length) { %>
-      <div class="admin-empty-state">
-        <div class="admin-empty-icon">
-          <i class="fas fa-user-slash"></i>
+  <div class="admin-user-list">
+
+    <% filtered.forEach(acc => { %>
+
+      <%
+        const userId = String(acc._id || "");
+        const userRole = String(acc.role || "client").toLowerCase();
+        const menuId = "admin-user-menu-" + userId;
+      %>
+
+
+      <!-- =================================================
+           USER CARD
+      ================================================== -->
+
+      <article
+        class="admin-user-card"
+        data-user-id="<%= userId %>"
+      >
+
+
+        <!-- ===============================================
+             AVATAR
+        ================================================ -->
+
+        <div class="admin-user-avatar">
+          <i class="fas fa-user"></i>
         </div>
-        <h3>No users found</h3>
-        <p>There are no accounts in this section yet.</p>
-      </div>
-    <% } else { %>
-      <div class="admin-user-list">
-        <% filtered.forEach(acc => { %>
-          <article class="admin-user-card">
-            <div class="admin-user-avatar">
-              <i class="fas fa-user"></i>
-            </div>
 
-            <div class="admin-user-main">
-              <strong class="admin-user-name"><%= acc.name %></strong>
 
-              <span class="admin-role-pill role-<%= String(acc.role || 'client').toLowerCase() %>">
-                <%= acc.role %>
-              </span>
 
-              <span class="admin-user-email">
-                <i class="fas fa-envelope"></i>
-                <%= acc.email %>
-              </span>
-            </div>
+        <!-- ===============================================
+             USER INFORMATION
+        ================================================ -->
 
-            <button
-              type="button"
-              class="admin-menu-button"
-              aria-label="Manage <%= acc.name %>"
-              aria-expanded="false"
-              onclick="toggleAdminUserMenu('<%= acc._id %>', this)"
-            >
-              <i class="fas fa-ellipsis-vertical"></i>
-            </button>
-          </article>
+        <div class="admin-user-main">
 
-          <div id="admin-user-menu-<%= acc._id %>" class="admin-user-menu" hidden>
-            <form action="/auth/users/<%= acc._id %>/role" method="POST" class="admin-role-form">
-              <label for="role-<%= acc._id %>">Change role</label>
-              <div class="admin-role-form-row">
-                <select id="role-<%= acc._id %>" name="role">
-                  <option value="admin" <%= acc.role === 'admin' ? 'selected' : '' %>>Admin</option>
-                  <option value="staff" <%= acc.role === 'staff' ? 'selected' : '' %>>Staff</option>
-                  <option value="client" <%= acc.role === 'client' ? 'selected' : '' %>>Client</option>
-                </select>
-                <button type="submit">Save</button>
-              </div>
-            </form>
+          <strong class="admin-user-name">
+            <%= acc.name || "Unnamed User" %>
+          </strong>
+
+
+          <span
+            class="admin-role-pill role-<%= userRole %>"
+          >
+            <%= userRole %>
+          </span>
+
+
+          <span class="admin-user-email">
+
+            <i class="fas fa-envelope"></i>
+
+            <%= acc.email || "No email address" %>
+
+          </span>
+
+        </div>
+
+
+
+        <!-- ===============================================
+             MANAGE BUTTON
+
+             IMPORTANT:
+             This deliberately contains visible text
+             in addition to the three-dot icon.
+        ================================================ -->
+
+        <button
+          type="button"
+          class="admin-menu-button"
+          data-menu-target="<%= menuId %>"
+          aria-label="Manage <%= acc.name || 'user' %>"
+          aria-expanded="false"
+        >
+
+          <span class="admin-menu-button-label">
+            Manage
+          </span>
+
+          <span class="admin-menu-button-dots">
+            <i class="fas fa-ellipsis-vertical"></i>
+          </span>
+
+        </button>
+
+      </article>
+
+
+
+      <!-- =================================================
+           MANAGEMENT MENU
+      ================================================== -->
+
+      <div
+        id="<%= menuId %>"
+        class="admin-user-menu"
+        hidden
+        data-user-menu
+      >
+
+
+        <!-- ===============================================
+             ROLE MANAGEMENT
+        ================================================ -->
+
+        <div class="admin-user-menu-section">
+
+          <div class="admin-user-menu-title">
+
+            <i class="fas fa-user-shield"></i>
+
+            <span>
+              Account Role
+            </span>
+
           </div>
-        <% }) %>
+
+
+          <form
+            action="/auth/users/<%= userId %>/role"
+            method="POST"
+            class="admin-role-form"
+          >
+
+            <label
+              for="role-<%= userId %>"
+            >
+              Change role
+            </label>
+
+
+            <div class="admin-role-form-row">
+
+              <select
+                id="role-<%= userId %>"
+                name="role"
+                required
+              >
+
+                <option
+                  value="admin"
+                  <%= userRole === "admin" ? "selected" : "" %>
+                >
+                  Administrator
+                </option>
+
+                <option
+                  value="staff"
+                  <%= userRole === "staff" ? "selected" : "" %>
+                >
+                  Staff
+                </option>
+
+                <option
+                  value="client"
+                  <%= userRole === "client" ? "selected" : "" %>
+                >
+                  Client
+                </option>
+
+              </select>
+
+
+              <button
+                type="submit"
+                class="admin-save-role-button"
+              >
+                <i class="fas fa-check"></i>
+                Save Role
+              </button>
+
+            </div>
+
+          </form>
+
+        </div>
+
+
+
+        <!-- ===============================================
+             STAFF MANAGEMENT
+
+             The actual substation selector will be
+             connected after the backend/model is checked.
+        ================================================ -->
+
+        <% if (userRole === "staff") { %>
+
+          <div class="admin-user-menu-section admin-staff-section">
+
+            <div class="admin-user-menu-title">
+
+              <i class="fas fa-location-dot"></i>
+
+              <span>
+                Staff Assignment
+              </span>
+
+            </div>
+
+
+            <div class="admin-assignment-placeholder">
+
+              <i class="fas fa-building"></i>
+
+              <div>
+
+                <strong>
+                  Substation Assignment
+                </strong>
+
+                <p>
+                  Staff substation assignment is ready
+                  to be connected to the substations system.
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        <% } %>
+
+
       </div>
-    <% } %>
-  </section>
 
-</section>
+    <% }) %>
 
-<script>
-  function toggleAdminUserMenu(id, button) {
-    const menu = document.getElementById("admin-user-menu-" + id);
-    if (!menu) return;
+  </div>
 
-    const willOpen = menu.hidden;
-    menu.hidden = !willOpen;
-    button.setAttribute("aria-expanded", String(willOpen));
+<% } %>
+
+  </section></section><!-- ==========================================================
+     USER MANAGEMENT JAVASCRIPT
+========================================================== --><script>
+
+(function () {
+
+  "use strict";
+
+
+  /*
+   * ----------------------------------------------------------
+   * CLOSE ALL USER MENUS
+   * ----------------------------------------------------------
+   */
+
+  function closeAllUserMenus(exceptMenu) {
+
+    const menus = document.querySelectorAll(
+      "[data-user-menu]"
+    );
+
+    menus.forEach(function (menu) {
+
+      if (menu !== exceptMenu) {
+
+        menu.hidden = true;
+
+        const targetId = menu.id;
+
+        const button = document.querySelector(
+          '[data-menu-target="' + targetId + '"]'
+        );
+
+        if (button) {
+
+          button.setAttribute(
+            "aria-expanded",
+            "false"
+          );
+
+        }
+
+      }
+
+    });
+
   }
+
+
+
+  /*
+   * ----------------------------------------------------------
+   * MANAGE BUTTONS
+   * ----------------------------------------------------------
+   */
+
+  const manageButtons = document.querySelectorAll(
+    ".admin-menu-button[data-menu-target]"
+  );
+
+
+  manageButtons.forEach(function (button) {
+
+    button.addEventListener(
+      "click",
+      function (event) {
+
+        event.preventDefault();
+
+        event.stopPropagation();
+
+
+        const targetId =
+          button.getAttribute("data-menu-target");
+
+
+        const menu =
+          document.getElementById(targetId);
+
+
+        if (!menu) {
+
+          console.error(
+            "User management menu not found:",
+            targetId
+          );
+
+          return;
+
+        }
+
+
+        const isOpening = menu.hidden;
+
+
+        /*
+         * Close every other user's menu first.
+         */
+
+        closeAllUserMenus(menu);
+
+
+        /*
+         * Toggle this user's menu.
+         */
+
+        menu.hidden = !isOpening;
+
+
+        button.setAttribute(
+          "aria-expanded",
+          String(isOpening)
+        );
+
+      }
+    );
+
+  });
+
+
+
+  /*
+   * ----------------------------------------------------------
+   * CLICK OUTSIDE
+   * ----------------------------------------------------------
+   */
+
+  document.addEventListener(
+    "click",
+    function (event) {
+
+      if (
+        event.target.closest(".admin-user-menu") ||
+        event.target.closest(".admin-menu-button")
+      ) {
+
+        return;
+
+      }
+
+
+      closeAllUserMenus();
+
+    }
+  );
+
+
+
+  /*
+   * ----------------------------------------------------------
+   * ESCAPE KEY
+   * ----------------------------------------------------------
+   */
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (event.key === "Escape") {
+
+        closeAllUserMenus();
+
+      }
+
+    }
+  );
+
+})();
+
 </script>
