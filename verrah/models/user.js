@@ -121,6 +121,14 @@ const userSchema = new mongoose.Schema(
             index: true
         },
 
+    phone: {
+
+      type: String,
+
+      default: null,
+
+    },
+
         password: {
             type: String,
             required: true,
