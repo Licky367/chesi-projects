@@ -1,6 +1,7 @@
 /* ==========================================================
-   COREVESTER SUBSTATIONS
+   COREVESTER / VERRAH SUBSTATIONS
    BROWN THEME
+   COMPLETE SUBSTATION STYLES
 ========================================================== */
 
 :root {
@@ -11,17 +12,26 @@
   --sub-brown-600: #7b4d36;
   --sub-brown-500: #8d6048;
   --sub-brown-400: #a77b61;
+  --sub-brown-300: #c2a18e;
   --sub-brown-200: #d9c1b2;
   --sub-brown-100: #eadbd1;
   --sub-brown-50: #faf6f2;
+
   --sub-white: #ffffff;
   --sub-text: #2d2521;
   --sub-muted: #766a63;
   --sub-border: #dfd2ca;
+
   --sub-danger: #9d2d2d;
   --sub-success: #356b43;
+
   --sub-shadow: 0 12px 30px rgba(45, 24, 16, .09);
 }
+
+
+/* ==========================================================
+   PAGE
+========================================================== */
 
 .shop-page.substations-page {
   width: 100%;
@@ -37,6 +47,11 @@
   box-sizing: border-box;
 }
 
+
+/* ==========================================================
+   GLOBAL ELEMENTS
+========================================================== */
+
 .substations-page a {
   color: inherit;
   text-decoration: none;
@@ -44,12 +59,18 @@
 
 .substations-page button,
 .substations-page input,
-.substations-page textarea {
+.substations-page textarea,
+.substations-page select {
   font: inherit;
 }
 
+.substations-page img {
+  max-width: 100%;
+}
+
+
 /* ==========================================================
-   COMMON
+   COMMON TYPOGRAPHY
 ========================================================== */
 
 .page-title {
@@ -74,19 +95,36 @@
   letter-spacing: .11em;
 }
 
+
+/* ==========================================================
+   BUTTONS
+========================================================== */
+
 .primary-btn,
 .secondary-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+
   min-height: 43px;
   padding: 10px 16px;
+
   border-radius: 11px;
+
   font-size: 13px;
   font-weight: 800;
+
   cursor: pointer;
-  transition: .2s ease;
+
+  text-decoration: none;
+
+  transition:
+    background .2s ease,
+    border-color .2s ease,
+    color .2s ease,
+    transform .2s ease,
+    box-shadow .2s ease;
 }
 
 .primary-btn {
@@ -96,6 +134,7 @@
 }
 
 .primary-btn:hover {
+  color: var(--sub-white);
   background: var(--sub-brown-950);
   border-color: var(--sub-brown-950);
   transform: translateY(-1px);
@@ -108,6 +147,7 @@
 }
 
 .secondary-btn:hover {
+  color: var(--sub-brown-950);
   background: var(--sub-brown-50);
   border-color: var(--sub-brown-500);
 }
@@ -119,18 +159,31 @@
   transform: none;
 }
 
+
+/* ==========================================================
+   BACK BUTTON
+========================================================== */
+
 .product-back {
   margin-bottom: 18px;
 }
+
+
+/* ==========================================================
+   ERROR / NOTICE
+========================================================== */
 
 .error,
 .notice {
   display: flex;
   align-items: flex-start;
   gap: 9px;
+
   margin-bottom: 18px;
   padding: 12px 14px;
+
   border-radius: 11px;
+
   font-size: 13px;
   line-height: 1.45;
 }
@@ -147,14 +200,23 @@
   border: 1px solid #cbe2cf;
 }
 
+
+/* ==========================================================
+   EMPTY STATES
+========================================================== */
+
 .empty-icon {
   width: 58px;
   height: 58px;
+
   display: grid;
   place-items: center;
+
   color: var(--sub-brown-700);
   background: var(--sub-brown-100);
+
   border-radius: 16px;
+
   font-size: 24px;
 }
 
@@ -163,12 +225,16 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
   min-height: 330px;
   padding: 30px;
+
   text-align: center;
+
   background: var(--sub-white);
   border: 1px solid var(--sub-border);
   border-radius: 18px;
+
   box-shadow: var(--sub-shadow);
 }
 
@@ -182,14 +248,16 @@
   color: var(--sub-muted);
 }
 
+
 /* ==========================================================
-   INDEX
+   INDEX HEADER
 ========================================================== */
 
 .substations-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 20px;
   margin-bottom: 22px;
 }
@@ -197,6 +265,7 @@
 .substations-brand-block {
   display: flex;
   align-items: center;
+
   gap: 14px;
   min-width: 0;
 }
@@ -206,29 +275,49 @@
 .form-heading-icon {
   width: 58px;
   height: 58px;
+
   flex: 0 0 58px;
+
   display: grid;
   place-items: center;
+
   color: var(--sub-white);
   background: var(--sub-brown-700);
+
   border-radius: 16px;
+
   font-size: 23px;
-  box-shadow: 0 8px 20px rgba(81, 48, 33, .18);
+
+  box-shadow:
+    0 8px 20px rgba(81, 48, 33, .18);
 }
+
+
+/* ==========================================================
+   COMMON CARDS
+========================================================== */
 
 .substation-overview-card,
 .substation-list-panel,
 .substation-detail-card,
 .form-card {
   background: var(--sub-white);
+
   border: 1px solid var(--sub-border);
   border-radius: 18px;
+
   box-shadow: var(--sub-shadow);
 }
+
+
+/* ==========================================================
+   OVERVIEW
+========================================================== */
 
 .substation-overview-card {
   padding: 18px;
   margin-bottom: 18px;
+
   background: var(--sub-brown-50);
 }
 
@@ -237,6 +326,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 15px;
 }
 
@@ -252,12 +342,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   min-width: 34px;
   min-height: 30px;
+
   padding: 4px 10px;
+
   color: var(--sub-brown-700);
   background: var(--sub-brown-100);
+
   border-radius: 99px;
+
   font-size: 11px;
   font-weight: 900;
 }
@@ -265,6 +360,7 @@
 .overview-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+
   gap: 10px;
   margin-top: 14px;
 }
@@ -272,10 +368,13 @@
 .overview-stat,
 .overview-action {
   min-height: 78px;
+
   display: flex;
   align-items: center;
+
   gap: 12px;
   padding: 13px;
+
   border-radius: 13px;
 }
 
@@ -288,11 +387,15 @@
 .detail-stat-icon {
   width: 40px;
   height: 40px;
+
   flex: 0 0 40px;
+
   display: grid;
   place-items: center;
+
   color: var(--sub-brown-700);
   background: var(--sub-brown-100);
+
   border-radius: 11px;
 }
 
@@ -306,6 +409,7 @@
 .overview-stat strong {
   display: block;
   margin-top: 2px;
+
   color: var(--sub-brown-900);
   font-size: 22px;
 }
@@ -317,14 +421,17 @@
 }
 
 .overview-action:hover {
+  color: var(--sub-white);
   background: var(--sub-brown-950);
 }
 
 .overview-action-icon {
   width: 36px;
   height: 36px;
+
   display: grid;
   place-items: center;
+
   background: rgba(255,255,255,.14);
   border-radius: 10px;
 }
@@ -348,6 +455,11 @@
   margin-left: auto;
 }
 
+
+/* ==========================================================
+   SUBSTATION LIST
+========================================================== */
+
 .substation-list-panel {
   padding: 17px;
 }
@@ -361,6 +473,7 @@
 .substations-list {
   display: flex;
   flex-direction: column;
+
   gap: 9px;
   margin-top: 12px;
 }
@@ -368,13 +481,20 @@
 .substation-list-item {
   display: flex;
   align-items: center;
+
   gap: 12px;
   min-width: 0;
+
   padding: 12px 13px;
+
   background: #fffdfb;
   border: 1px solid var(--sub-border);
   border-radius: 13px;
-  transition: .2s ease;
+
+  transition:
+    background .2s ease,
+    border-color .2s ease,
+    transform .2s ease;
 }
 
 .substation-list-item:hover {
@@ -386,12 +506,17 @@
 .substation-index {
   width: 36px;
   height: 36px;
+
   flex: 0 0 36px;
+
   display: grid;
   place-items: center;
+
   color: var(--sub-brown-700);
   background: var(--sub-brown-100);
+
   border-radius: 10px;
+
   font-size: 12px;
   font-weight: 900;
 }
@@ -403,8 +528,10 @@
 
 .substation-list-main h3 {
   margin: 0;
+
   color: var(--sub-brown-950);
   font-size: 14px;
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -412,19 +539,25 @@
 
 .substation-location {
   display: block;
+
   margin-top: 4px;
+
   color: var(--sub-muted);
   font-size: 11px;
 }
 
 .substation-list-main p {
   margin: 5px 0 0;
+
   color: var(--sub-muted);
+
   font-size: 11px;
   line-height: 1.4;
+
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+
   overflow: hidden;
 }
 
@@ -435,12 +568,19 @@
   font-size: 13px;
 }
 
+
+/* ==========================================================
+   EMPTY LIST
+========================================================== */
+
 .substations-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
   padding: 42px 18px;
+
   text-align: center;
 }
 
@@ -450,20 +590,25 @@
 
 .substations-empty h3 {
   margin: 13px 0 4px;
+
   color: var(--sub-brown-900);
   font-size: 16px;
 }
 
 .substations-empty p {
   max-width: 420px;
+
   margin: 0 0 17px;
+
   color: var(--sub-muted);
+
   font-size: 12px;
   line-height: 1.5;
 }
 
+
 /* ==========================================================
-   DETAIL
+   DETAIL PAGE
 ========================================================== */
 
 .substation-detail-card {
@@ -473,18 +618,22 @@
 .substation-detail-header {
   display: flex;
   align-items: center;
+
   gap: 15px;
 }
 
 .substation-detail-title h1 {
   margin: 4px 0 5px;
+
   color: var(--sub-brown-950);
+
   font-size: clamp(28px, 5vw, 40px);
   line-height: 1.1;
 }
 
 .substation-detail-title p {
   margin: 0;
+
   color: var(--sub-muted);
   font-size: 13px;
 }
@@ -493,9 +642,15 @@
   color: var(--sub-brown-600);
 }
 
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
 .substation-description {
   margin-top: 20px;
   padding: 15px;
+
   background: var(--sub-brown-50);
   border: 1px solid var(--sub-brown-100);
   border-radius: 13px;
@@ -503,20 +658,30 @@
 
 .description-label {
   color: var(--sub-brown-600);
+
   font-size: 10px;
   font-weight: 900;
+
   letter-spacing: .09em;
 }
 
 .substation-description p {
   margin: 7px 0 0;
+
   color: var(--sub-text);
+
   line-height: 1.6;
 }
+
+
+/* ==========================================================
+   DETAIL STATS
+========================================================== */
 
 .substation-overview {
   display: grid;
   grid-template-columns: 1fr 1fr;
+
   gap: 12px;
   margin-top: 18px;
 }
@@ -524,8 +689,10 @@
 .detail-stat-card {
   display: flex;
   align-items: center;
+
   gap: 12px;
   padding: 15px;
+
   background: var(--sub-brown-50);
   border: 1px solid var(--sub-brown-100);
   border-radius: 13px;
@@ -533,20 +700,57 @@
 
 .detail-stat-card strong {
   display: block;
+
   margin-top: 3px;
+
   color: var(--sub-brown-800);
   font-size: 16px;
 }
 
+
+/* ==========================================================
+   DIRECTIONS LINK
+========================================================== */
+
+.directions-link {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color: var(--sub-brown-700) !important;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  text-decoration: none !important;
+}
+
+.directions-link:hover {
+  color: var(--sub-brown-950) !important;
+  text-decoration: none !important;
+}
+
+.directions-link i {
+  color: var(--sub-brown-600);
+}
+
+
+/* ==========================================================
+   PRODUCTS PANEL
+========================================================== */
+
 .substation-products-panel {
   margin-top: 26px;
   padding-top: 23px;
+
   border-top: 1px solid var(--sub-border);
 }
 
 .substation-product-list {
   display: flex;
   flex-direction: column;
+
   gap: 10px;
   margin-top: 13px;
 }
@@ -554,13 +758,20 @@
 .substation-product-item {
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr) auto;
+
   align-items: center;
+
   gap: 12px;
   padding: 11px;
+
   background: #fffdfb;
   border: 1px solid var(--sub-border);
   border-radius: 13px;
-  transition: .2s ease;
+
+  transition:
+    background .2s ease,
+    border-color .2s ease,
+    transform .2s ease;
 }
 
 .substation-product-item:hover {
@@ -572,11 +783,15 @@
 .list-thumb {
   width: 58px;
   height: 58px;
+
   overflow: hidden;
+
   display: grid;
   place-items: center;
+
   color: var(--sub-brown-600);
   background: var(--sub-brown-100);
+
   border-radius: 11px;
 }
 
@@ -596,8 +811,10 @@
 
 .list-main h3 {
   margin: 0;
+
   color: var(--sub-brown-950);
   font-size: 14px;
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -606,13 +823,16 @@
 .list-meta {
   display: flex;
   gap: 5px;
+
   margin-top: 4px;
+
   color: var(--sub-muted);
   font-size: 10px;
 }
 
 .list-price {
   margin-top: 6px;
+
   color: var(--sub-muted);
   font-size: 11px;
 }
@@ -622,12 +842,15 @@
   font-size: 13px;
 }
 
+
 /* ==========================================================
-   NEW SUBSTATION FORM
+   SUBSTATION FORM
 ========================================================== */
 
 .substation-form-card {
+  width: 100%;
   max-width: 850px;
+
   margin: 0 auto;
   padding: 24px;
 }
@@ -635,6 +858,7 @@
 .form-heading {
   display: flex;
   align-items: center;
+
   gap: 15px;
   margin-bottom: 24px;
 }
@@ -642,13 +866,23 @@
 .form-heading-icon {
   width: 52px;
   height: 52px;
+
   flex-basis: 52px;
+
   font-size: 20px;
 }
 
+
+/* ==========================================================
+   FORM GRID
+========================================================== */
+
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
   gap: 18px;
 }
 
@@ -660,47 +894,404 @@
   grid-column: 1 / -1;
 }
 
+
+/* ==========================================================
+   FIELD LABELS
+========================================================== */
+
 .field label {
   display: block;
+
   margin-bottom: 7px;
+
   color: var(--sub-brown-900);
+
   font-size: 13px;
   font-weight: 800;
 }
 
-.field input,
-.field textarea {
-  width: 100%;
-  border: 1px solid var(--sub-border);
-  border-radius: 11px;
-  background: var(--sub-white);
-  color: var(--sub-text);
-  outline: none;
+.field-optional {
+  display: inline-block;
+
+  margin-left: 5px;
+
+  color: var(--sub-muted);
+
+  font-size: 10px;
+  font-weight: 600;
 }
 
-.field input {
+
+/* ==========================================================
+   FORM INPUTS
+========================================================== */
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+
+  color: var(--sub-text);
+  background: var(--sub-white);
+
+  border: 1px solid var(--sub-border);
+  border-radius: 11px;
+
+  outline: none;
+
+  transition:
+    border-color .2s ease,
+    box-shadow .2s ease,
+    background .2s ease;
+}
+
+.field input,
+.field select {
   min-height: 45px;
   padding: 10px 12px;
 }
 
 .field textarea {
   min-height: 135px;
+
   padding: 12px;
+
   resize: vertical;
 }
 
-.field input:focus,
-.field textarea:focus {
-  border-color: var(--sub-brown-500);
-  box-shadow: 0 0 0 3px rgba(141, 96, 72, .12);
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #a79b94;
 }
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  border-color: var(--sub-brown-500);
+
+  box-shadow:
+    0 0 0 3px rgba(141, 96, 72, .12);
+}
+
+.field input:disabled,
+.field textarea:disabled,
+.field select:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+  background: #f7f3f0;
+}
+
+
+/* ==========================================================
+   FIELD HELP
+========================================================== */
+
+.field-help {
+  display: block;
+
+  margin-top: 7px;
+
+  color: var(--sub-muted);
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+
+/* ==========================================================
+   GPS SECTION
+========================================================== */
+
+.gps-fields {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    auto;
+
+  align-items: end;
+
+  gap: 10px;
+
+  padding: 13px;
+
+  background: var(--sub-brown-50);
+
+  border: 1px solid var(--sub-brown-100);
+  border-radius: 13px;
+}
+
+
+/* ==========================================================
+   GPS COORDINATE
+========================================================== */
+
+.gps-coordinate {
+  min-width: 0;
+}
+
+.gps-coordinate label {
+  margin-bottom: 6px;
+
+  color: var(--sub-muted);
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.gps-coordinate input {
+  width: 100%;
+}
+
+
+/* ==========================================================
+   CURRENT LOCATION BUTTON
+========================================================== */
+
+.gps-current-btn {
+  min-height: 45px;
+
+  white-space: nowrap;
+}
+
+.gps-current-btn i {
+  color: var(--sub-brown-600);
+}
+
+.gps-current-btn:disabled i {
+  color: inherit;
+}
+
+
+/* ==========================================================
+   GPS STATUS
+========================================================== */
+
+#gps-status {
+  padding-left: 2px;
+}
+
+.gps-status-success {
+  color: var(--sub-success) !important;
+}
+
+.gps-status-error {
+  color: var(--sub-danger) !important;
+}
+
+
+/* ==========================================================
+   SUBSTATION ICON INPUT AREA
+========================================================== */
+
+.icon-input-options {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+
+  padding: 13px;
+
+  background: var(--sub-brown-50);
+
+  border: 1px solid var(--sub-brown-100);
+  border-radius: 13px;
+}
+
+
+/* ==========================================================
+   ICON OPTION CARD
+========================================================== */
+
+.icon-option {
+  min-width: 0;
+
+  padding: 14px;
+
+  background: var(--sub-white);
+
+  border: 1px solid var(--sub-border);
+  border-radius: 12px;
+
+  transition:
+    border-color .2s ease,
+    background .2s ease,
+    box-shadow .2s ease;
+}
+
+.icon-option:hover {
+  border-color: var(--sub-brown-300);
+  box-shadow: 0 5px 15px rgba(45, 24, 16, .05);
+}
+
+
+/* ==========================================================
+   ICON OPTION HEADING
+========================================================== */
+
+.icon-option-heading {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 10px;
+
+  color: var(--sub-brown-800);
+}
+
+.icon-option-heading i {
+  color: var(--sub-brown-600);
+
+  font-size: 14px;
+}
+
+.icon-option-heading strong {
+  font-size: 12px;
+}
+
+
+/* ==========================================================
+   FILE INPUT
+========================================================== */
+
+.icon-option input[type="file"] {
+  width: 100%;
+
+  min-height: 45px;
+
+  padding: 7px;
+
+  color: var(--sub-muted);
+
+  background: var(--sub-white);
+
+  border: 1px dashed var(--sub-brown-300);
+  border-radius: 9px;
+
+  cursor: pointer;
+}
+
+.icon-option input[type="file"]:hover {
+  border-color: var(--sub-brown-500);
+  background: var(--sub-brown-50);
+}
+
+.icon-option input[type="file"]:focus {
+  outline: none;
+
+  border-color: var(--sub-brown-500);
+
+  box-shadow:
+    0 0 0 3px rgba(141, 96, 72, .12);
+}
+
+
+/* ==========================================================
+   FILE INPUT BUTTON
+========================================================== */
+
+.icon-option input[type="file"]::file-selector-button {
+  margin-right: 8px;
+
+  padding: 7px 10px;
+
+  color: var(--sub-white);
+  background: var(--sub-brown-700);
+
+  border: 0;
+  border-radius: 7px;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.icon-option input[type="file"]::file-selector-button:hover {
+  background: var(--sub-brown-950);
+}
+
+
+/* ==========================================================
+   IMAGE URL INPUT
+========================================================== */
+
+.icon-option input[type="url"] {
+  min-height: 45px;
+}
+
+
+/* ==========================================================
+   CURRENT ICON
+========================================================== */
+
+.current-icon {
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+
+  margin-top: 13px;
+  padding: 12px;
+
+  background: var(--sub-white);
+
+  border: 1px solid var(--sub-border);
+  border-radius: 12px;
+}
+
+.current-icon-label {
+  align-self: flex-start;
+
+  margin-top: 4px;
+
+  color: var(--sub-muted);
+
+  font-size: 10px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.substation-icon-preview {
+  width: 72px;
+  height: 72px;
+
+  flex: 0 0 72px;
+
+  display: block;
+
+  object-fit: cover;
+
+  background: var(--sub-brown-50);
+
+  border: 1px solid var(--sub-brown-200);
+  border-radius: 12px;
+}
+
+
+/* ==========================================================
+   FORM ACTIONS
+========================================================== */
 
 .form-actions {
   display: flex;
   flex-wrap: wrap;
+
   gap: 10px;
+
   margin-top: 24px;
 }
+
+.form-actions .primary-btn,
+.form-actions .secondary-btn {
+  min-width: 135px;
+}
+
 
 /* ==========================================================
    PRODUCT DETAIL
@@ -712,31 +1303,48 @@
 
 .detail-grid {
   display: grid;
-  grid-template-columns: minmax(260px, .85fr) minmax(0, 1.15fr);
+
+  grid-template-columns:
+    minmax(260px, .85fr)
+    minmax(0, 1.15fr);
+
   gap: 26px;
 }
 
 .detail-image {
   min-height: 360px;
+
   overflow: hidden;
+
   background: var(--sub-brown-50);
+
   border-radius: 15px;
 }
 
 .detail-image img,
 .detail-image .placeholder {
   display: block;
+
   width: 100%;
   height: 100%;
   min-height: 360px;
+
   object-fit: cover;
 }
 
 .detail-image .placeholder {
   display: grid;
   place-items: center;
+
   color: var(--sub-brown-500);
-  background: linear-gradient(145deg, var(--sub-brown-50), var(--sub-brown-100));
+
+  background:
+    linear-gradient(
+      145deg,
+      var(--sub-brown-50),
+      var(--sub-brown-100)
+    );
+
   font-size: 38px;
 }
 
@@ -746,17 +1354,23 @@
 
 .detail-category {
   display: inline-flex;
+
   padding: 6px 10px;
+
   color: var(--sub-brown-700);
   background: var(--sub-brown-100);
+
   border-radius: 99px;
+
   font-size: 11px;
   font-weight: 900;
 }
 
 .detail-content h1 {
   margin: 12px 0 7px;
+
   color: var(--sub-brown-950);
+
   font-size: clamp(28px, 4vw, 40px);
   line-height: 1.1;
 }
@@ -768,31 +1382,45 @@
 
 .detail-price {
   margin-top: 20px;
+
   color: var(--sub-brown-700);
+
   font-size: 28px;
   font-weight: 900;
 }
 
 .detail-price small {
   color: var(--sub-muted);
+
   font-size: 11px;
   font-weight: 600;
 }
 
 .detail-description {
   margin-top: 18px;
+
   color: var(--sub-text);
+
   line-height: 1.65;
 }
+
+
+/* ==========================================================
+   STOCK BALANCE
+========================================================== */
 
 .stock-balance-box {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 15px;
+
   margin-top: 20px;
   padding: 15px;
+
   background: var(--sub-brown-50);
+
   border: 1px solid var(--sub-brown-100);
   border-radius: 13px;
 }
@@ -807,12 +1435,18 @@
   font-size: 20px;
 }
 
+
+/* ==========================================================
+   INVENTORY
+========================================================== */
+
 .inventory-heading {
   margin: 25px 0 13px;
 }
 
 .inventory-heading h2 {
   margin: 4px 0 0;
+
   color: var(--sub-brown-900);
   font-size: 18px;
 }
@@ -820,12 +1454,18 @@
 .empty-inline {
   display: flex;
   align-items: center;
+
   gap: 9px;
+
   padding: 14px;
+
   color: var(--sub-muted);
+
   background: var(--sub-brown-50);
+
   border: 1px dashed var(--sub-brown-200);
   border-radius: 12px;
+
   font-size: 12px;
 }
 
@@ -836,12 +1476,15 @@
 .substation-inventory-list {
   display: flex;
   flex-direction: column;
+
   gap: 10px;
 }
 
 .substation-inventory-item {
   padding: 14px;
+
   background: var(--sub-brown-50);
+
   border: 1px solid var(--sub-brown-100);
   border-radius: 13px;
 }
@@ -850,6 +1493,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 12px;
 }
 
@@ -860,14 +1504,18 @@
 
 .inventory-item-top small {
   display: block;
+
   margin-top: 4px;
+
   color: var(--sub-muted);
   font-size: 10px;
 }
 
 .inventory-units {
   flex: 0 0 auto;
+
   color: var(--sub-brown-700);
+
   font-size: 12px;
   font-weight: 900;
 }
@@ -875,10 +1523,14 @@
 .inventory-update-form {
   display: flex;
   align-items: flex-end;
+
   gap: 9px;
+
   flex-wrap: wrap;
+
   margin-top: 12px;
   padding-top: 12px;
+
   border-top: 1px solid var(--sub-border);
 }
 
@@ -891,14 +1543,55 @@
   min-height: 45px;
 }
 
+
 /* ==========================================================
-   RESPONSIVE
+   FOCUS ACCESSIBILITY
+========================================================== */
+
+.substations-page a:focus-visible,
+.substations-page button:focus-visible,
+.substations-page input:focus-visible,
+.substations-page textarea:focus-visible,
+.substations-page select:focus-visible {
+  outline: 3px solid rgba(141, 96, 72, .25);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================
+   RESPONSIVE — TABLET
+========================================================== */
+
+@media (max-width: 900px) {
+
+  .gps-fields {
+    grid-template-columns:
+      1fr
+      1fr;
+  }
+
+  .gps-current-btn {
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+
+}
+
+
+/* ==========================================================
+   RESPONSIVE — MOBILE
 ========================================================== */
 
 @media (max-width: 760px) {
+
   .shop-page.substations-page {
     padding: 20px 13px 45px;
   }
+
+
+  /* --------------------------------------------------------
+     HEADER
+  -------------------------------------------------------- */
 
   .substations-header {
     align-items: stretch;
@@ -909,6 +1602,11 @@
     width: 100%;
   }
 
+
+  /* --------------------------------------------------------
+     GRIDS
+  -------------------------------------------------------- */
+
   .overview-grid,
   .substation-overview,
   .form-grid,
@@ -916,17 +1614,32 @@
     grid-template-columns: 1fr;
   }
 
+
+  /* --------------------------------------------------------
+     CARDS
+  -------------------------------------------------------- */
+
   .substation-detail-card,
   .detail-card,
   .substation-form-card {
     padding: 17px;
   }
 
+
+  /* --------------------------------------------------------
+     DETAIL IMAGE
+  -------------------------------------------------------- */
+
   .detail-image,
   .detail-image img,
   .detail-image .placeholder {
     min-height: 300px;
   }
+
+
+  /* --------------------------------------------------------
+     DETAIL HEADER
+  -------------------------------------------------------- */
 
   .substation-detail-header {
     align-items: flex-start;
@@ -935,34 +1648,111 @@
   .substation-detail-title h1 {
     font-size: 29px;
   }
+
+
+  /* --------------------------------------------------------
+     GPS
+  -------------------------------------------------------- */
+
+  .gps-fields {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .gps-current-btn {
+    grid-column: auto;
+    width: 100%;
+  }
+
+
+  /* --------------------------------------------------------
+     ICON OPTIONS
+  -------------------------------------------------------- */
+
+  .icon-input-options {
+    grid-template-columns: 1fr;
+  }
+
 }
 
+
+/* ==========================================================
+   RESPONSIVE — SMALL MOBILE
+========================================================== */
+
 @media (max-width: 480px) {
+
   .substations-brand-block {
     align-items: flex-start;
   }
 
-  .substations-icon {
+
+  /* --------------------------------------------------------
+     ICONS
+  -------------------------------------------------------- */
+
+  .substations-icon,
+  .substation-detail-icon {
     width: 48px;
     height: 48px;
+
     flex-basis: 48px;
+
     border-radius: 13px;
   }
+
+
+  .form-heading {
+    align-items: flex-start;
+  }
+
+  .form-heading-icon {
+    width: 48px;
+    height: 48px;
+
+    flex-basis: 48px;
+
+    border-radius: 13px;
+  }
+
+
+  /* --------------------------------------------------------
+     TITLES
+  -------------------------------------------------------- */
 
   .page-title {
     font-size: 29px;
   }
 
+
+  /* --------------------------------------------------------
+     OVERVIEW
+  -------------------------------------------------------- */
+
   .overview-action {
     min-height: 70px;
   }
+
+
+  /* --------------------------------------------------------
+     LIST
+  -------------------------------------------------------- */
 
   .substation-list-item {
     padding: 11px;
   }
 
+
+  /* --------------------------------------------------------
+     PRODUCT LIST
+  -------------------------------------------------------- */
+
   .substation-product-item {
-    grid-template-columns: 50px minmax(0, 1fr) auto;
+    grid-template-columns:
+      50px
+      minmax(0, 1fr)
+      auto;
+
     padding: 9px;
   }
 
@@ -970,6 +1760,11 @@
     width: 50px;
     height: 50px;
   }
+
+
+  /* --------------------------------------------------------
+     INVENTORY
+  -------------------------------------------------------- */
 
   .inventory-item-top {
     align-items: flex-start;
@@ -986,6 +1781,11 @@
     width: 100%;
   }
 
+
+  /* --------------------------------------------------------
+     FORM ACTIONS
+  -------------------------------------------------------- */
+
   .form-actions {
     flex-direction: column;
   }
@@ -993,5 +1793,30 @@
   .form-actions .primary-btn,
   .form-actions .secondary-btn {
     width: 100%;
+    min-width: 0;
   }
+
+
+  /* --------------------------------------------------------
+     CURRENT ICON
+  -------------------------------------------------------- */
+
+  .current-icon {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .current-icon-label {
+    margin-top: 0;
+  }
+
+
+  /* --------------------------------------------------------
+     GPS INPUTS
+  -------------------------------------------------------- */
+
+  .gps-fields {
+    padding: 11px;
+  }
+
 }
