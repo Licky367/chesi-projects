@@ -1,0 +1,154 @@
+<!-- ==========================================================
+   views/branch-partials/products.ejs
+
+   VERRAH COSMETICS
+   SUBSTATION PRODUCTS / INVENTORY
+========================================================== -->
+
+<div class="substation-products-panel">
+
+  <!-- ========================================================
+       PANEL HEADER
+  ========================================================= -->
+
+  <div class="panel-heading">
+
+    <div>
+      <span class="section-kicker">INVENTORY</span>
+
+      <h2>Products in this Substation</h2>
+    </div>
+
+    <span class="panel-count">
+      <%= substation.products ? substation.products.length : 0 %>
+    </span>
+
+  </div>
+
+
+  <!-- ========================================================
+       EMPTY PRODUCTS STATE
+  ========================================================= -->
+
+  <% if (!substation.products || !substation.products.length) { %>
+
+    <div class="substations-empty compact-empty">
+
+      <div class="empty-icon">
+        <i class="fas fa-box-open"></i>
+      </div>
+
+      <h3>No products allocated</h3>
+
+      <p>
+        No products have been allocated to this substation yet.
+      </p>
+
+    </div>
+
+
+  <!-- ========================================================
+       PRODUCTS LIST
+  ======================================================== -->
+
+  <% } else { %>
+
+    <div class="substation-product-list">
+
+      <% substation.products.forEach((product) => { %>
+
+        <a
+          href="/substations/product/<%= product._id %>"
+          class="substation-product-item"
+        >
+
+          <!-- ==================================================
+               PRODUCT IMAGE
+          ================================================== -->
+
+          <div class="list-thumb">
+
+            <% if (product.image) { %>
+
+              <img
+                src="<%= product.image %>"
+                alt="<%= product.name %>"
+                loading="lazy"
+              >
+
+            <% } else { %>
+
+              <span>
+                <i class="fas fa-box"></i>
+              </span>
+
+            <% } %>
+
+          </div>
+
+
+          <!-- ==================================================
+               PRODUCT INFORMATION
+          ================================================== -->
+
+          <div class="list-main">
+
+            <h3>
+              <%= product.name %>
+            </h3>
+
+
+            <div class="list-meta">
+
+              <span>
+                <%= product.category || "Other" %>
+              </span>
+
+              <span>•</span>
+
+              <span>
+                <%= product.subcategory || "Other" %>
+              </span>
+
+            </div>
+
+
+            <!-- ================================================
+                 SUBSTATION STOCK
+            ================================================= -->
+
+            <div class="list-price">
+
+              <strong>
+                <%= Number(
+                  product.substationUnits || 0
+                ).toLocaleString() %>
+              </strong>
+
+              units here
+
+            </div>
+
+          </div>
+
+
+          <!-- ==================================================
+               ARROW
+          ================================================== -->
+
+          <span
+            class="substation-product-arrow"
+            aria-hidden="true"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </span>
+
+        </a>
+
+      <% }) %>
+
+    </div>
+
+  <% } %>
+
+</div>
