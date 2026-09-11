@@ -6,6 +6,9 @@
 const indexService =
     require("../../services/indexService");
 
+const Substation =
+    require("../../models/substations");
+
 
 // ==========================================================
 // GET HOME PAGE
@@ -22,6 +25,7 @@ const indexService =
 //     - categories
 //     - substations
 //     - currentUser
+//     - substation (assigned substation for staff)
 //
 // ==========================================================
 
@@ -57,6 +61,41 @@ exports.getHome = async function (req, res) {
 
 
         // ------------------------------------------------------
+        // CURRENT USER
+        // ------------------------------------------------------
+
+        const currentUser =
+            req.session?.user || null;
+
+
+        // ------------------------------------------------------
+        // GET ASSIGNED SUBSTATION
+        // ------------------------------------------------------
+        //
+        // Only staff users with an assignedSubstation need
+        // the actual Substation document.
+        //
+        // assignedSubstation may contain the Substation ID.
+        //
+        // ------------------------------------------------------
+
+        let substation = null;
+
+        if (
+            currentUser &&
+            currentUser.role === "staff" &&
+            currentUser.assignedSubstation
+        ) {
+
+            substation =
+                await Substation.findById(
+                    currentUser.assignedSubstation
+                );
+
+        }
+
+
+        // ------------------------------------------------------
         // RENDER HOME PAGE
         // ------------------------------------------------------
 
@@ -73,10 +112,13 @@ exports.getHome = async function (req, res) {
 
                 substations,
 
-                currentUser:
-                    req.session?.user || null,
+                currentUser,
 
-                error: null
+                // Assigned Substation document
+                substation,
+
+                error:
+                    null
 
             }
         );
@@ -110,6 +152,9 @@ exports.getHome = async function (req, res) {
 
                     currentUser:
                         req.session?.user || null,
+
+                    substation:
+                        null,
 
                     error:
                         "Unable to load home page."
