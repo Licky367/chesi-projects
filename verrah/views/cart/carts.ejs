@@ -1,135 +1,693 @@
+<!-- ==========================================================
+     views/carts.ejs
+     CART PAGE
+========================================================== -->
+
 <section class="shop-page cart-page">
 
   <div class="cart-page-head">
+
     <div>
       <span class="cart-kicker">COREVESTER</span>
-      <h1 class="page-title">Your Cart</h1>
-      <p class="page-subtitle">Products you have reserved for checkout.</p>
+
+      <h1 class="page-title">
+        Your Cart
+      </h1>
+
+      <p class="page-subtitle">
+        Products you have reserved for checkout.
+      </p>
     </div>
 
-    <a href="/products" class="secondary-btn">
+
+    <a
+      href="/products"
+      class="secondary-btn"
+    >
       <i class="fas fa-arrow-left"></i>
       Continue Shopping
     </a>
+
   </div>
 
-  <% if (typeof error !== "undefined" && error) { %>
+
+  <!-- ======================================================
+       ERROR
+  ======================================================= -->
+
+  <% if (
+    typeof error !== "undefined" &&
+    error
+  ) { %>
+
     <div class="cart-alert cart-alert-error">
+
       <i class="fas fa-circle-exclamation"></i>
-      <span><%= error %></span>
+
+      <span>
+        <%= error %>
+      </span>
+
     </div>
+
   <% } %>
 
-  <% if (!cart || !cart.items || !cart.items.length) { %>
+
+  <!-- ======================================================
+       EMPTY CART
+  ======================================================= -->
+
+  <% if (
+    !cart ||
+    !cart.items ||
+    !cart.items.length
+  ) { %>
+
 
     <div class="cart-empty">
+
       <div class="cart-empty-icon">
         <i class="fas fa-shopping-basket"></i>
       </div>
 
-      <h2>Your cart is empty</h2>
-      <p>You have not added any products to your cart yet.</p>
+      <h2>
+        Your cart is empty
+      </h2>
 
-      <a class="primary-btn" href="/products">
+      <p>
+        You have not added any products to your cart yet.
+      </p>
+
+      <a
+        class="primary-btn"
+        href="/products"
+      >
         <i class="fas fa-store"></i>
         Browse Products
       </a>
+
     </div>
+
 
   <% } else { %>
 
+
+    <!-- ====================================================
+         CART LAYOUT
+    ===================================================== -->
+
     <div class="cart-layout">
 
+
+      <!-- ==================================================
+           CART ITEMS
+      =================================================== -->
+
       <div class="cart-items-section">
+
         <div class="cart-section-heading">
+
           <div>
-            <span class="cart-section-kicker">YOUR SELECTION</span>
-            <h2>Cart Items</h2>
+
+            <span class="cart-section-kicker">
+              YOUR SELECTION
+            </span>
+
+            <h2>
+              Cart Items
+            </h2>
+
           </div>
+
+
           <span class="cart-item-count">
+
             <%= cart.items.length %>
-            <%= cart.items.length === 1 ? "item" : "items" %>
+
+            <%= cart.items.length === 1
+              ? "item"
+              : "items"
+            %>
+
           </span>
+
         </div>
 
+
         <div class="cart-list">
+
           <% cart.items.forEach(item => { %>
 
-            <a href="/carts/<%= item.productId %>" class="cart-item-card">
+            <a
+              href="/carts/<%= item.productId %>"
+              class="cart-item-card"
+            >
 
               <div class="cart-item-image">
+
                 <% if (item.image) { %>
-                  <img src="<%= item.image %>" alt="<%= item.name %>">
+
+                  <img
+                    src="<%= item.image %>"
+                    alt="<%= item.name %>"
+                  >
+
                 <% } else { %>
+
                   <div class="cart-item-placeholder">
+
                     <i class="fas fa-box"></i>
+
                   </div>
+
                 <% } %>
+
               </div>
 
+
               <div class="cart-item-main">
+
                 <div class="cart-item-topline">
-                  <span class="cart-item-label">Product</span>
-                  <i class="fas fa-chevron-right cart-item-arrow"></i>
+
+                  <span class="cart-item-label">
+                    Product
+                  </span>
+
+                  <i
+                    class="fas fa-chevron-right cart-item-arrow"
+                  ></i>
+
                 </div>
 
-                <h3><%= item.name %></h3>
+
+                <h3>
+                  <%= item.name %>
+                </h3>
+
 
                 <div class="cart-item-meta">
+
                   <span>
+
                     <i class="fas fa-layer-group"></i>
-                    Quantity: <strong><%= item.qty %></strong>
+
+                    Quantity:
+
+                    <strong>
+                      <%= item.qty %>
+                    </strong>
+
                   </span>
+
+
                   <span>
+
                     <i class="fas fa-tag"></i>
+
                     Unit price:
-                    <strong>KSh <%= Number(item.price || 0).toLocaleString() %></strong>
+
+                    <strong>
+                      KSh
+                      <%= Number(
+                        item.price || 0
+                      ).toLocaleString() %>
+                    </strong>
+
                   </span>
+
                 </div>
 
+
                 <div class="cart-item-total">
-                  KSh <%= Number((item.price || 0) * (item.qty || 0)).toLocaleString() %>
+
+                  KSh
+                  <%= Number(
+                    (item.price || 0) *
+                    (item.qty || 0)
+                  ).toLocaleString() %>
+
                 </div>
+
               </div>
 
             </a>
 
           <% }) %>
+
         </div>
+
       </div>
 
+
+      <!-- ==================================================
+           ORDER SUMMARY
+      =================================================== -->
+
       <aside class="cart-summary-card">
+
+
         <div class="cart-summary-head">
-          <span class="cart-section-kicker">ORDER SUMMARY</span>
+
+          <span class="cart-section-kicker">
+            ORDER SUMMARY
+          </span>
+
           <i class="fas fa-receipt"></i>
+
         </div>
+
 
         <div class="cart-summary-row">
-          <span>Items</span>
-          <strong><%= cart.items.length %></strong>
+
+          <span>
+            Items
+          </span>
+
+          <strong>
+            <%= cart.items.length %>
+          </strong>
+
         </div>
+
 
         <div class="cart-summary-row cart-summary-total">
-          <span>Total</span>
-          <strong>KSh <%= Number(total || 0).toLocaleString() %></strong>
+
+          <span>
+            Total
+          </span>
+
+          <strong>
+            KSh
+            <%= Number(
+              total || 0
+            ).toLocaleString() %>
+          </strong>
+
         </div>
 
+
         <p class="cart-summary-note">
-          Select a cart item to review its details, remove it, or continue to checkout.
+
+          Select a cart item to review its details,
+          remove it, or continue to checkout.
+
         </p>
 
-        <a class="primary-btn cart-checkout-btn" href="/carts/<%= cart.items[0].productId %>">
-          <i class="fas fa-credit-card"></i>
-          Checkout
+
+        <!-- =================================================
+             STAFF SALE BUTTON
+        ================================================== -->
+
+        <% if (
+          String(
+            user?.role || ""
+          ).toLowerCase() === "staff"
+        ) { %>
+
+
+          <button
+            type="button"
+            class="primary-btn cart-checkout-btn staff-sale-btn"
+            id="open-staff-sale-modal"
+          >
+
+            <i class="fas fa-cash-register"></i>
+
+            Sale Items
+
+          </button>
+
+
+        <% } else { %>
+
+
+          <!-- ===============================================
+               NORMAL CHECKOUT
+          ================================================ -->
+
+          <a
+            class="primary-btn cart-checkout-btn"
+            href="/carts/<%= cart.items[0].productId %>"
+          >
+
+            <i class="fas fa-credit-card"></i>
+
+            Checkout
+
+          </a>
+
+
+        <% } %>
+
+
+        <a
+          class="cart-summary-back"
+          href="/products"
+        >
+
+          <i class="fas fa-arrow-left"></i>
+
+          Continue shopping
+
         </a>
 
-        <a class="cart-summary-back" href="/products">
-          <i class="fas fa-arrow-left"></i>
-          Continue shopping
-        </a>
+
       </aside>
 
+
     </div>
+
+
+    <!-- ====================================================
+         STAFF SALE MODAL
+    ===================================================== -->
+
+    <% if (
+      String(
+        user?.role || ""
+      ).toLowerCase() === "staff"
+    ) { %>
+
+
+      <div
+        class="staff-sale-modal"
+        id="staff-sale-modal"
+        aria-hidden="true"
+      >
+
+
+        <div
+          class="staff-sale-modal-overlay"
+          id="staff-sale-modal-overlay"
+        ></div>
+
+
+        <div
+          class="staff-sale-modal-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="staff-sale-modal-title"
+        >
+
+
+          <!-- ==============================================
+               MODAL HEADER
+          =============================================== -->
+
+          <div class="staff-sale-modal-header">
+
+            <div>
+
+              <span class="cart-section-kicker">
+                STAFF SALE
+              </span>
+
+              <h2 id="staff-sale-modal-title">
+                Record Sale
+              </h2>
+
+            </div>
+
+
+            <button
+              type="button"
+              class="staff-sale-modal-close"
+              id="close-staff-sale-modal"
+              aria-label="Close"
+            >
+
+              <i class="fas fa-times"></i>
+
+            </button>
+
+          </div>
+
+
+          <!-- ==============================================
+               MODAL BODY
+          =============================================== -->
+
+          <div class="staff-sale-modal-body">
+
+
+            <p class="staff-sale-modal-description">
+
+              Enter a name for this sale before submitting
+              the items in your cart.
+
+            </p>
+
+
+            <!-- ============================================
+                 SALE PREVIEW
+            ============================================= -->
+
+            <div class="staff-sale-preview">
+
+
+              <div class="staff-sale-preview-row">
+
+                <span>
+                  Products
+                </span>
+
+                <strong>
+                  <%= cart.items.length %>
+                </strong>
+
+              </div>
+
+
+              <div class="staff-sale-preview-row">
+
+                <span>
+                  Total Amount
+                </span>
+
+                <strong>
+
+                  KSh
+                  <%= Number(
+                    total || 0
+                  ).toLocaleString() %>
+
+                </strong>
+
+              </div>
+
+
+            </div>
+
+
+            <!-- ============================================
+                 SALE NAME FORM
+            ============================================= -->
+
+            <form
+              method="POST"
+              action="/carts/staff-sale"
+              id="staff-sale-form"
+              class="staff-sale-form"
+            >
+
+
+              <div class="staff-sale-form-group">
+
+                <label
+                  for="sales-name"
+                >
+                  Sales Name
+                </label>
+
+
+                <input
+                  type="text"
+                  id="sales-name"
+                  name="salesName"
+                  placeholder="Enter sales name"
+                  maxlength="150"
+                  autocomplete="off"
+                  required
+                >
+
+
+                <small>
+                  Enter the name you want this sale to be
+                  recorded under.
+                </small>
+
+              </div>
+
+
+              <!-- ==========================================
+                   SUBMIT
+              =========================================== -->
+
+              <button
+                type="submit"
+                class="primary-btn staff-sale-submit-btn"
+              >
+
+                <i class="fas fa-check-circle"></i>
+
+                Submit Sale
+
+              </button>
+
+
+            </form>
+
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ==================================================
+           STAFF SALE MODAL JAVASCRIPT
+      =================================================== -->
+
+      <script>
+
+        document.addEventListener(
+          "DOMContentLoaded",
+          function () {
+
+            const modal =
+              document.getElementById(
+                "staff-sale-modal"
+              );
+
+            const openButton =
+              document.getElementById(
+                "open-staff-sale-modal"
+              );
+
+            const closeButton =
+              document.getElementById(
+                "close-staff-sale-modal"
+              );
+
+            const overlay =
+              document.getElementById(
+                "staff-sale-modal-overlay"
+              );
+
+            const input =
+              document.getElementById(
+                "sales-name"
+              );
+
+
+            if (
+              !modal ||
+              !openButton
+            ) {
+              return;
+            }
+
+
+            function openModal() {
+
+              modal.classList.add(
+                "is-open"
+              );
+
+              modal.setAttribute(
+                "aria-hidden",
+                "false"
+              );
+
+              document.body.classList.add(
+                "staff-sale-modal-open"
+              );
+
+
+              setTimeout(
+                function () {
+
+                  if (input) {
+                    input.focus();
+                  }
+
+                },
+                100
+              );
+            }
+
+
+            function closeModal() {
+
+              modal.classList.remove(
+                "is-open"
+              );
+
+              modal.setAttribute(
+                "aria-hidden",
+                "true"
+              );
+
+              document.body.classList.remove(
+                "staff-sale-modal-open"
+              );
+
+            }
+
+
+            openButton.addEventListener(
+              "click",
+              openModal
+            );
+
+
+            if (closeButton) {
+
+              closeButton.addEventListener(
+                "click",
+                closeModal
+              );
+
+            }
+
+
+            if (overlay) {
+
+              overlay.addEventListener(
+                "click",
+                closeModal
+              );
+
+            }
+
+
+            document.addEventListener(
+              "keydown",
+              function (event) {
+
+                if (
+                  event.key === "Escape" &&
+                  modal.classList.contains(
+                    "is-open"
+                  )
+                ) {
+
+                  closeModal();
+
+                }
+
+              }
+            );
+
+          }
+        );
+
+      </script>
+
+
+    <% } %>
+
 
   <% } %>
 
