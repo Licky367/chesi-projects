@@ -1,0 +1,93 @@
+<%
+// ==========================================================
+// views/sales.ejs
+// VERRAH COSMETICS - SALES MOTHER PAGE
+// ==========================================================
+%>
+
+<link rel="stylesheet" href="/css/sales.css">
+
+<div class="sales-page">
+
+    <div class="sales-header">
+        <div>
+            <h1>Sales</h1>
+            <p>Monitor revenue, products and customer arrears.</p>
+        </div>
+    </div>
+
+    <!-- ======================================================
+         TABS COME BEFORE THE FILTER
+    ======================================================= -->
+
+    <div class="sales-tabs" role="tablist">
+
+        <a
+            class="sales-tab <%= activeTab === 'summary' ? 'active' : '' %>"
+            href="/sales?tab=summary<%= salesQuerySuffix %>"
+            role="tab"
+            aria-selected="<%= activeTab === 'summary' ? 'true' : 'false' %>"
+        >
+            Sales Summary
+        </a>
+
+        <a
+            class="sales-tab <%= activeTab === 'products' ? 'active' : '' %>"
+            href="/sales?tab=products<%= salesQuerySuffix %>"
+            role="tab"
+            aria-selected="<%= activeTab === 'products' ? 'true' : 'false' %>"
+        >
+            Product Analytics
+        </a>
+
+        <a
+            class="sales-tab <%= activeTab === 'arrears' ? 'active' : '' %>"
+            href="/sales?tab=arrears<%= salesQuerySuffix %>"
+            role="tab"
+            aria-selected="<%= activeTab === 'arrears' ? 'true' : 'false' %>"
+        >
+            Customer Arrears
+        </a>
+
+    </div>
+
+
+    <!-- ======================================================
+         FILTER FOR THE CURRENT TAB ONLY
+    ======================================================= -->
+
+    <div class="sales-filter-wrapper">
+        <%- include("sales-partials/filter.js") %>
+    </div>
+
+
+    <!-- ======================================================
+         MOTHER CONTENT
+    ======================================================= -->
+
+    <div class="sales-content">
+
+        <section
+            class="sales-panel <%= activeTab === 'summary' ? 'active' : '' %>"
+            <%= activeTab === 'summary' ? '' : 'hidden' %>
+        >
+            <%- include("sales-partials/summary") %>
+        </section>
+
+        <section
+            class="sales-panel <%= activeTab === 'products' ? 'active' : '' %>"
+            <%= activeTab === 'products' ? '' : 'hidden' %>
+        >
+            <%- include("sales-partials/products") %>
+        </section>
+
+        <section
+            class="sales-panel <%= activeTab === 'arrears' ? 'active' : '' %>"
+            <%= activeTab === 'arrears' ? '' : 'hidden' %>
+        >
+            <%- include("sales-partials/arrears") %>
+        </section>
+
+    </div>
+
+</div>
