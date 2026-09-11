@@ -1,6 +1,11 @@
+<!-- =========================================================
+     VERAH COSMETICS — ADMIN USER INVITATION
+========================================================= -->
+
 <section class="admin-page admin-invitation-page">
 
   <header class="admin-page-header">
+
     <a class="admin-back-link" href="/auth/users">
       <i class="fas fa-arrow-left"></i>
       Back to users
@@ -11,41 +16,116 @@
     </div>
 
     <div class="admin-header-copy">
-      <span class="admin-eyebrow">ACCESS CONTROL</span>
-      <h1>Invite a User</h1>
-      <p>Reserve a role for an email address before the person creates their account.</p>
+
+      <span class="admin-eyebrow">
+        ACCESS CONTROL
+      </span>
+
+      <h1>
+        Invite a User
+      </h1>
+
+      <p>
+        Reserve a role for an email address before the person creates their account.
+      </p>
+
     </div>
+
   </header>
 
+
+  <!-- =======================================================
+       SUCCESS MESSAGE
+  ======================================================== -->
+
   <% if (req.query?.success) { %>
+
     <div class="admin-alert admin-alert-success">
+
       <i class="fas fa-circle-check"></i>
-      <span><%= req.query.success %></span>
+
+      <span>
+        <%= req.query.success %>
+      </span>
+
     </div>
+
   <% } %>
+
+
+  <!-- =======================================================
+       ERROR MESSAGE
+  ======================================================== -->
 
   <% if (req.query?.error) { %>
+
     <div class="admin-alert admin-alert-error">
+
       <i class="fas fa-circle-exclamation"></i>
-      <span><%= req.query.error %></span>
+
+      <span>
+        <%= req.query.error %>
+      </span>
+
     </div>
+
   <% } %>
 
+
+  <!-- =======================================================
+       CREATE INVITATION
+  ======================================================== -->
+
   <section class="admin-panel admin-form-panel">
+
     <header class="admin-panel-heading">
+
       <div class="admin-heading-icon">
+
         <i class="fas fa-envelope"></i>
+
       </div>
+
       <div>
-        <span class="admin-eyebrow">SECTION 01</span>
-        <h2>Create Invitation</h2>
-        <p>Enter the email address and choose the role.</p>
+
+        <span class="admin-eyebrow">
+          SECTION 01
+        </span>
+
+        <h2>
+          Create Invitation
+        </h2>
+
+        <p>
+          Enter the email address and choose the role.
+        </p>
+
       </div>
+
     </header>
 
-    <form class="admin-form" action="/auth/users/invite" method="POST">
+
+    <!-- =====================================================
+         INVITATION FORM
+    ====================================================== -->
+
+    <form
+      class="admin-form"
+      action="/auth/users/invite"
+      method="POST"
+    >
+
+
+      <!-- ===================================================
+           EMAIL
+      ==================================================== -->
+
       <div class="admin-field">
-        <label for="invite-email">EMAIL ADDRESS</label>
+
+        <label for="invite-email">
+          EMAIL ADDRESS
+        </label>
+
         <input
           class="admin-input"
           id="invite-email"
@@ -55,145 +135,465 @@
           autocomplete="email"
           required
         >
+
       </div>
+
+
+      <!-- ===================================================
+           ROLE
+      ==================================================== -->
 
       <div class="admin-field">
-        <label for="invite-role">ROLE TO GRANT</label>
-        <select class="admin-input" id="invite-role" name="role" required>
-          <option value="staff">Staff</option>
-          <option value="client">Client</option>
-          <option value="admin">Admin</option>
+
+        <label for="invite-role">
+          ROLE TO GRANT
+        </label>
+
+        <select
+          class="admin-input"
+          id="invite-role"
+          name="role"
+          required
+        >
+
+          <option value="staff">
+            Staff
+          </option>
+
+          <option value="client">
+            Client
+          </option>
+
+          <option value="admin">
+            Admin
+          </option>
+
         </select>
+
       </div>
+
+
+      <!-- ===================================================
+           ASSIGNED SUBSTATION
+           STAFF ONLY
+      ==================================================== -->
+
+      <div
+        class="admin-field"
+        id="assigned-substation-field"
+      >
+
+        <label for="invite-assigned-substation">
+          ASSIGNED SUBSTATION
+        </label>
+
+        <select
+          class="admin-input"
+          id="invite-assigned-substation"
+          name="assignedSubstation"
+        >
+
+          <option value="">
+            Select a substation
+          </option>
+
+          <% if (Array.isArray(substations)) { %>
+
+            <% substations.forEach(function(substation) { %>
+
+              <option value="<%= substation._id %>">
+                <%= substation.name %>
+              </option>
+
+            <% }) %>
+
+          <% } %>
+
+        </select>
+
+      </div>
+
+
+      <!-- ===================================================
+           ROLE INFORMATION
+      ==================================================== -->
 
       <div class="admin-role-list">
-        <div class="admin-role-card">
-          <span class="admin-role-icon"><i class="fas fa-user-gear"></i></span>
-          <div>
-            <strong>Staff</strong>
-            <p>Can be assigned a substation.</p>
-          </div>
-        </div>
 
         <div class="admin-role-card">
-          <span class="admin-role-icon"><i class="fas fa-user"></i></span>
+
+          <span class="admin-role-icon">
+            <i class="fas fa-user-gear"></i>
+          </span>
+
           <div>
-            <strong>Client</strong>
-            <p>Standard client access.</p>
+
+            <strong>
+              Staff
+            </strong>
+
+            <p>
+              Can be assigned a substation.
+            </p>
+
           </div>
+
         </div>
 
+
         <div class="admin-role-card">
-          <span class="admin-role-icon"><i class="fas fa-shield-halved"></i></span>
+
+          <span class="admin-role-icon">
+            <i class="fas fa-user"></i>
+          </span>
+
           <div>
-            <strong>Admin</strong>
-            <p>Administrative access.</p>
+
+            <strong>
+              Client
+            </strong>
+
+            <p>
+              Standard client access.
+            </p>
+
           </div>
+
         </div>
+
+
+        <div class="admin-role-card">
+
+          <span class="admin-role-icon">
+            <i class="fas fa-shield-halved"></i>
+          </span>
+
+          <div>
+
+            <strong>
+              Admin
+            </strong>
+
+            <p>
+              Administrative access.
+            </p>
+
+          </div>
+
+        </div>
+
       </div>
+
+
+      <!-- ===================================================
+           FORM NOTE
+      ==================================================== -->
 
       <div class="admin-form-note">
+
         <i class="fas fa-circle-info"></i>
-        <span>The selected role will be reserved for the invited email.</span>
+
+        <span>
+          The selected role will be reserved for the invited email.
+        </span>
+
       </div>
 
-      <button class="admin-primary-button" type="submit">
+
+      <!-- ===================================================
+           SUBMIT
+      ==================================================== -->
+
+      <button
+        class="admin-primary-button"
+        type="submit"
+      >
+
         <i class="fas fa-paper-plane"></i>
+
         Save Invitation
+
       </button>
+
     </form>
+
   </section>
+
+
+  <!-- =======================================================
+       HOW IT WORKS
+  ======================================================== -->
 
   <section class="admin-panel admin-process-panel">
+
     <header class="admin-panel-heading">
+
       <div class="admin-heading-icon">
+
         <i class="fas fa-list-check"></i>
+
       </div>
+
       <div>
-        <span class="admin-eyebrow">SECTION 02</span>
-        <h2>How It Works</h2>
-        <p>The invitation process.</p>
+
+        <span class="admin-eyebrow">
+          SECTION 02
+        </span>
+
+        <h2>
+          How It Works
+        </h2>
+
+        <p>
+          The invitation process.
+        </p>
+
       </div>
+
     </header>
+
 
     <ol class="admin-steps">
-      <li class="admin-step">
-        <span class="admin-step-number">01</span>
-        <div>
-          <strong>Save the invitation</strong>
-          <p>Store the email with its intended role.</p>
-        </div>
-      </li>
 
       <li class="admin-step">
-        <span class="admin-step-number">02</span>
+
+        <span class="admin-step-number">
+          01
+        </span>
+
         <div>
-          <strong>User registers</strong>
-          <p>The person signs up using the invited email.</p>
+
+          <strong>
+            Save the invitation
+          </strong>
+
+          <p>
+            Store the email with its intended role.
+          </p>
+
         </div>
+
       </li>
 
+
       <li class="admin-step">
-        <span class="admin-step-number">03</span>
+
+        <span class="admin-step-number">
+          02
+        </span>
+
         <div>
-          <strong>Role is applied</strong>
-          <p>The saved invitation determines the account role.</p>
+
+          <strong>
+            User registers
+          </strong>
+
+          <p>
+            The person signs up using the invited email.
+          </p>
+
         </div>
+
       </li>
+
+
+      <li class="admin-step">
+
+        <span class="admin-step-number">
+          03
+        </span>
+
+        <div>
+
+          <strong>
+            Role is applied
+          </strong>
+
+          <p>
+            The saved invitation determines the account role.
+          </p>
+
+        </div>
+
+      </li>
+
     </ol>
 
+
     <div class="admin-info-note">
+
       <i class="fas fa-circle-info"></i>
-      A signup without an invitation becomes <strong>client</strong>.
+
+      A signup without an invitation becomes
+      <strong>client</strong>.
+
     </div>
+
   </section>
 
+
+  <!-- =======================================================
+       PENDING INVITATIONS
+  ======================================================== -->
+
   <section class="admin-panel admin-pending-panel">
+
     <header class="admin-panel-heading admin-pending-heading">
+
       <div>
-        <span class="admin-eyebrow">SECTION 03</span>
-        <h2>Pending Invitations</h2>
-        <p>Saved invitations waiting to be used.</p>
+
+        <span class="admin-eyebrow">
+          SECTION 03
+        </span>
+
+        <h2>
+          Pending Invitations
+        </h2>
+
+        <p>
+          Saved invitations waiting to be used.
+        </p>
+
       </div>
+
 
       <span class="admin-count-badge">
+
         <%= Array.isArray(invitations) ? invitations.length : 0 %>
+
       </span>
+
     </header>
 
+
     <% if (!Array.isArray(invitations) || !invitations.length) { %>
+
       <div class="admin-empty-state">
+
         <div class="admin-empty-icon">
+
           <i class="fas fa-inbox"></i>
+
         </div>
-        <h3>No pending invitations</h3>
-        <p>Saved invitations will appear here.</p>
+
+        <h3>
+          No pending invitations
+        </h3>
+
+        <p>
+          Saved invitations will appear here.
+        </p>
+
       </div>
+
     <% } else { %>
+
+
       <div class="admin-invitation-list">
+
         <% invitations.forEach(invitation => { %>
+
           <article class="admin-invitation-card">
+
             <span class="admin-invitation-icon">
+
               <i class="fas fa-envelope"></i>
+
             </span>
 
+
             <div class="admin-invitation-main">
-              <strong><%= invitation.email %></strong>
+
+              <strong>
+                <%= invitation.email %>
+              </strong>
+
               <small>
+
                 Added
+
                 <%= invitation.createdAt
                   ? new Date(invitation.createdAt).toLocaleDateString()
                   : "" %>
+
               </small>
+
             </div>
 
-            <em class="admin-role-pill role-<%= String(invitation.role || 'client').toLowerCase() %>">
+
+            <em
+              class="admin-role-pill role-<%= String(invitation.role || 'client').toLowerCase() %>"
+            >
+
               <%= invitation.role %>
+
             </em>
+
           </article>
+
         <% }) %>
+
       </div>
+
+
     <% } %>
+
   </section>
 
 </section>
+
+
+<!-- =========================================================
+     STAFF SUBSTATION TOGGLE
+========================================================= -->
+
+<script>
+
+(function () {
+
+  const roleSelect =
+    document.getElementById("invite-role");
+
+  const substationField =
+    document.getElementById("assigned-substation-field");
+
+  const substationSelect =
+    document.getElementById("invite-assigned-substation");
+
+
+  function updateSubstationField() {
+
+    const isStaff =
+      roleSelect.value === "staff";
+
+
+    if (isStaff) {
+
+      substationField.style.display = "block";
+
+      substationSelect.required = true;
+
+    } else {
+
+      substationField.style.display = "none";
+
+      substationSelect.required = false;
+
+      substationSelect.value = "";
+
+    }
+
+  }
+
+
+  roleSelect.addEventListener(
+    "change",
+    updateSubstationField
+  );
+
+
+  updateSubstationField();
+
+})();
+
+</script>
