@@ -3,6 +3,17 @@
      CART PAGE
 ========================================================== -->
 
+<%
+    const isStaff =
+        String(user?.role || "").toLowerCase() === "staff";
+
+    const staffBranchUrl =
+        isStaff && user?.assignedSubstation
+            ? `/branch/${user.assignedSubstation}`
+            : "/products";
+%>
+
+
 <section class="shop-page cart-page">
 
     <div class="cart-page-head">
@@ -18,14 +29,14 @@
             </h1>
 
             <p class="page-subtitle">
-                Products you have reserved for checkout.
+                Products in your cart.
             </p>
 
         </div>
 
 
         <a
-            href="/products"
+            href="<%= staffBranchUrl %>"
             class="secondary-btn"
         >
             <i class="fas fa-arrow-left"></i>
@@ -74,7 +85,7 @@
             </div>
 
             <h2>
-                Your cart is empty
+                Your Cart Is Empty
             </h2>
 
             <p>
@@ -83,7 +94,7 @@
 
             <a
                 class="primary-btn"
-                href="/products"
+                href="<%= staffBranchUrl %>"
             >
                 <i class="fas fa-store"></i>
                 Browse Products
@@ -307,11 +318,7 @@
                      STAFF SALE BUTTON
                 ================================================== -->
 
-                <% if (
-                    String(
-                        user?.role || ""
-                    ).toLowerCase() === "staff"
-                ) { %>
+                <% if (isStaff) { %>
 
                     <button
                         type="button"
@@ -350,12 +357,12 @@
 
                 <a
                     class="cart-summary-back"
-                    href="/products"
+                    href="<%= staffBranchUrl %>"
                 >
 
                     <i class="fas fa-arrow-left"></i>
 
-                    Continue shopping
+                    Continue Shopping
 
                 </a>
 
@@ -369,12 +376,7 @@
              STAFF SALE MODAL
         ===================================================== -->
 
-        <% if (
-            String(
-                user?.role || ""
-            ).toLowerCase() === "staff"
-        ) { %>
-
+        <% if (isStaff) { %>
 
             <div
                 id="staff-sale-modal"
@@ -382,20 +384,11 @@
                 aria-hidden="true"
             >
 
-
-                <!-- ==================================================
-                     OVERLAY
-                =================================================== -->
-
                 <div
                     id="staff-sale-modal-overlay"
                     class="staff-sale-modal-overlay"
                 ></div>
 
-
-                <!-- ==================================================
-                     MODAL CARD
-                =================================================== -->
 
                 <div
                     class="staff-sale-modal-card"
@@ -403,11 +396,6 @@
                     aria-modal="true"
                     aria-labelledby="staff-sale-modal-title"
                 >
-
-
-                    <!-- ==================================================
-                         HEADER
-                    =================================================== -->
 
                     <div class="staff-sale-modal-header">
 
@@ -438,10 +426,6 @@
                     </div>
 
 
-                    <!-- ==================================================
-                         BODY
-                    =================================================== -->
-
                     <div class="staff-sale-modal-body">
 
                         <p class="staff-sale-modal-description">
@@ -451,10 +435,6 @@
 
                         </p>
 
-
-                        <!-- ==================================================
-                             SALE PREVIEW
-                        =================================================== -->
 
                         <div class="staff-sale-preview">
 
@@ -491,10 +471,6 @@
 
                         </div>
 
-
-                        <!-- ==================================================
-                             SALE FORM
-                        =================================================== -->
 
                         <form
                             method="POST"
@@ -556,30 +532,31 @@
             <script>
                 (function () {
 
-                    const modal = document.getElementById(
-                        "staff-sale-modal"
-                    );
+                    const modal =
+                        document.getElementById(
+                            "staff-sale-modal"
+                        );
 
-                    const openButton = document.getElementById(
-                        "open-staff-sale-modal"
-                    );
+                    const openButton =
+                        document.getElementById(
+                            "open-staff-sale-modal"
+                        );
 
-                    const closeButton = document.getElementById(
-                        "close-staff-sale-modal"
-                    );
+                    const closeButton =
+                        document.getElementById(
+                            "close-staff-sale-modal"
+                        );
 
-                    const overlay = document.getElementById(
-                        "staff-sale-modal-overlay"
-                    );
+                    const overlay =
+                        document.getElementById(
+                            "staff-sale-modal-overlay"
+                        );
 
-                    const input = document.getElementById(
-                        "sales-name"
-                    );
+                    const input =
+                        document.getElementById(
+                            "sales-name"
+                        );
 
-
-                    /* ==================================================
-                       OPEN MODAL
-                    ================================================== */
 
                     function openModal(event) {
 
@@ -589,13 +566,12 @@
                         }
 
                         if (!modal) {
-                            console.error(
-                                "Staff sale modal element not found."
-                            );
                             return;
                         }
 
-                        modal.classList.add("is-open");
+                        modal.classList.add(
+                            "is-open"
+                        );
 
                         modal.setAttribute(
                             "aria-hidden",
@@ -608,20 +584,16 @@
 
                         if (input) {
 
-                            setTimeout(function () {
-
-                                input.focus();
-
-                            }, 50);
+                            setTimeout(
+                                function () {
+                                    input.focus();
+                                },
+                                50
+                            );
 
                         }
-
                     }
 
-
-                    /* ==================================================
-                       CLOSE MODAL
-                    ================================================== */
 
                     function closeModal(event) {
 
@@ -634,7 +606,9 @@
                             return;
                         }
 
-                        modal.classList.remove("is-open");
+                        modal.classList.remove(
+                            "is-open"
+                        );
 
                         modal.setAttribute(
                             "aria-hidden",
@@ -644,13 +618,8 @@
                         document.body.classList.remove(
                             "staff-sale-modal-open"
                         );
-
                     }
 
-
-                    /* ==================================================
-                       OPEN BUTTON
-                    ================================================== */
 
                     if (openButton) {
 
@@ -662,10 +631,6 @@
                     }
 
 
-                    /* ==================================================
-                       CLOSE BUTTON
-                    ================================================== */
-
                     if (closeButton) {
 
                         closeButton.addEventListener(
@@ -675,10 +640,6 @@
 
                     }
 
-
-                    /* ==================================================
-                       OVERLAY CLOSE
-                    ================================================== */
 
                     if (overlay) {
 
@@ -690,10 +651,6 @@
                     }
 
 
-                    /* ==================================================
-                       ESCAPE KEY
-                    ================================================== */
-
                     document.addEventListener(
                         "keydown",
                         function (event) {
@@ -701,7 +658,9 @@
                             if (
                                 event.key === "Escape" &&
                                 modal &&
-                                modal.classList.contains("is-open")
+                                modal.classList.contains(
+                                    "is-open"
+                                )
                             ) {
 
                                 closeModal();
@@ -712,18 +671,14 @@
                     );
 
 
-                    /* ==================================================
-                       EXPOSE FUNCTIONS
-                       Optional compatibility for other scripts.
-                    ================================================== */
+                    window.openStaffSaleModal =
+                        openModal;
 
-                    window.openStaffSaleModal = openModal;
-
-                    window.closeStaffSaleModal = closeModal;
+                    window.closeStaffSaleModal =
+                        closeModal;
 
                 })();
             </script>
-
 
         <% } %>
 
