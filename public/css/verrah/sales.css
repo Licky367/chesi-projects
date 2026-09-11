@@ -1,0 +1,339 @@
+/* ==========================================================
+   public/css/sales.css
+
+   VERRAH COSMETICS
+   SALES / ANALYTICS
+   BROWN THEME
+========================================================== */
+
+.sales-page {
+    --sales-brown: #7a4b2a;
+    --sales-brown-dark: #5d351d;
+    --sales-brown-light: #a66a3f;
+    --sales-cream: #fffaf5;
+    --sales-border: #eadbd0;
+    --sales-text: #2f211a;
+    --sales-muted: #7b6b61;
+
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px 50px;
+    box-sizing: border-box;
+    color: var(--sales-text);
+}
+
+.sales-header {
+    margin-bottom: 22px;
+}
+
+.sales-header h1 {
+    margin: 0 0 6px;
+    font-size: 30px;
+}
+
+.sales-header p,
+.sales-section-heading p {
+    margin: 0;
+    color: var(--sales-muted);
+}
+
+
+/* ==========================================================
+   TABS
+========================================================== */
+
+.sales-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--sales-border);
+    margin-bottom: 18px;
+    scrollbar-width: none;
+}
+
+.sales-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.sales-tab {
+    flex: 0 0 auto;
+    border: 0;
+    background: transparent;
+    color: var(--sales-muted);
+    text-decoration: none;
+    padding: 13px 18px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+}
+
+.sales-tab:hover {
+    color: var(--sales-brown);
+}
+
+.sales-tab.active {
+    color: var(--sales-brown);
+    border-bottom-color: var(--sales-brown);
+}
+
+
+/* ==========================================================
+   FILTER
+========================================================== */
+
+.sales-filter-wrapper {
+    margin-bottom: 24px;
+}
+
+.sales-filter {
+    display: flex;
+    align-items: end;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 16px;
+    background: var(--sales-cream);
+    border: 1px solid var(--sales-border);
+    border-radius: 12px;
+}
+
+.sales-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 170px;
+}
+
+.sales-filter-field label {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.sales-filter-field input,
+.sales-filter-field select {
+    width: 100%;
+    min-height: 42px;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    border: 1px solid #d8c7ba;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--sales-text);
+    font: inherit;
+    outline: none;
+}
+
+.sales-filter-field input:focus,
+.sales-filter-field select:focus {
+    border-color: var(--sales-brown);
+}
+
+.sales-filter-button,
+.sales-filter-clear {
+    min-height: 42px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.sales-filter-button {
+    border: 1px solid var(--sales-brown);
+    background: var(--sales-brown);
+    color: #fff;
+    cursor: pointer;
+}
+
+.sales-filter-button:hover {
+    background: var(--sales-brown-dark);
+}
+
+.sales-filter-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--sales-border);
+    color: var(--sales-brown);
+    background: #fff;
+}
+
+
+/* ==========================================================
+   SECTIONS
+========================================================== */
+
+.sales-panel[hidden] {
+    display: none;
+}
+
+.sales-section {
+    width: 100%;
+}
+
+.sales-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.sales-section-heading h2 {
+    margin: 0 0 5px;
+    font-size: 22px;
+}
+
+
+/* ==========================================================
+   SUMMARY CARDS
+========================================================== */
+
+.sales-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.sales-summary-card {
+    min-height: 145px;
+    padding: 22px;
+    box-sizing: border-box;
+    border: 1px solid var(--sales-border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 5px 18px rgba(74, 43, 25, 0.06);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.sales-summary-label {
+    color: var(--sales-muted);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.sales-summary-value {
+    color: var(--sales-brown);
+    font-size: 26px;
+    line-height: 1.2;
+}
+
+
+/* ==========================================================
+   TABLE
+========================================================== */
+
+.sales-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--sales-border);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.sales-table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+}
+
+.sales-table th,
+.sales-table td {
+    padding: 14px 15px;
+    text-align: left;
+    border-bottom: 1px solid #f0e5dd;
+}
+
+.sales-table th {
+    background: var(--sales-cream);
+    color: var(--sales-brown-dark);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.sales-table td {
+    font-size: 14px;
+}
+
+.sales-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.sales-table tbody tr:hover {
+    background: #fffdfb;
+}
+
+.sales-phone-link,
+.sales-package-link {
+    color: var(--sales-brown);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.sales-phone-link:hover,
+.sales-package-link:hover {
+    color: var(--sales-brown-dark);
+    text-decoration: underline;
+}
+
+.sales-arrears-value {
+    color: var(--sales-brown);
+}
+
+.sales-muted {
+    color: var(--sales-muted);
+}
+
+.sales-empty {
+    padding: 30px !important;
+    text-align: center !important;
+    color: var(--sales-muted);
+}
+
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width: 800px) {
+
+    .sales-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-filter {
+        align-items: stretch;
+    }
+
+    .sales-filter-field {
+        min-width: 100%;
+    }
+
+    .sales-filter-button,
+    .sales-filter-clear {
+        width: 100%;
+    }
+
+}
+
+@media (max-width: 520px) {
+
+    .sales-page {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .sales-header h1 {
+        font-size: 25px;
+    }
+
+    .sales-summary-value {
+        font-size: 23px;
+    }
+
+}
