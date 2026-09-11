@@ -1,5 +1,5 @@
 // =========================================================
-// services/cartService.js
+// verrah/services/cartService.js
 // VERRAH COSMETICS
 // CART SERVICE
 // =========================================================
@@ -41,6 +41,7 @@ async function getOrCreateCart(
     const sessionId =
         getSessionId(req);
 
+
     if (!sessionId) {
 
         throw new Error(
@@ -52,22 +53,23 @@ async function getOrCreateCart(
     let cart =
         await Cart.findOne({
             sessionId
-        }).session(
-            session
-        );
+        }).session(session);
 
 
     if (!cart) {
 
         cart =
             new Cart({
+
                 sessionId,
 
                 user:
                     getUserId(req),
 
                 items: []
+
             });
+
 
         await cart.save({
             session
@@ -80,6 +82,7 @@ async function getOrCreateCart(
 
         cart.user =
             getUserId(req);
+
 
         await cart.save({
             session
@@ -102,9 +105,7 @@ async function addToCart(
 ) {
 
     const qty =
-        Number(
-            requestedQty
-        );
+        Number(requestedQty);
 
 
     if (
@@ -130,8 +131,13 @@ async function addToCart(
         await dbSession.withTransaction(
             async () => {
 
+                // ---------------------------------------------
+                // RESERVE PRODUCT
+                // ---------------------------------------------
+
                 const product =
                     await Product.findOneAndUpdate(
+
                         {
                             _id:
                                 productId,
@@ -144,7 +150,6 @@ async function addToCart(
                                     {
                                         $subtract: [
                                             "$units",
-
                                             {
                                                 $ifNull: [
                                                     "$reservedUnits",
@@ -167,11 +172,13 @@ async function addToCart(
                         },
 
                         {
-                            new:
-                                true,
+                            new: true,
 
                             session:
-                                dbSession
+                                dbSession,
+
+                            strict:
+                                false
                         }
                     ).lean();
 
@@ -183,6 +190,10 @@ async function addToCart(
                     );
                 }
 
+
+                // ---------------------------------------------
+                // GET CART
+                // ---------------------------------------------
 
                 const cart =
                     await getOrCreateCart(
@@ -205,14 +216,16 @@ async function addToCart(
 
                 if (existing) {
 
-                    existing.qty +=
-                        qty;
+                    existing.qty += qty;
 
                     existing.name =
                         product.name;
 
                     existing.price =
-                        product.unitSellPrice;
+                        Number(
+                            product.unitSellPrice ||
+                            0
+                        );
 
                     existing.image =
                         product.image ||
@@ -234,13 +247,17 @@ async function addToCart(
                             product.name,
 
                         price:
-                            product.unitSellPrice,
+                            Number(
+                                product.unitSellPrice ||
+                                0
+                            ),
 
                         image:
                             product.image ||
                             "",
 
                         qty
+
                     });
                 }
 
@@ -292,7 +309,7 @@ async function getCart(req) {
 
 
 // =========================================================
-// REMOVE ITEM
+// REMOVE CART ITEM
 // =========================================================
 
 async function removeItem(
@@ -314,9 +331,9 @@ async function removeItem(
 
     const item =
         cart.items.find(
-            i =>
+            currentItem =>
                 String(
-                    i.productId
+                    currentItem.productId
                 ) ===
                 String(
                     productId
@@ -341,40 +358,74 @@ async function removeItem(
         await dbSession.withTransaction(
             async () => {
 
-                const product =
-                    await Product.findById(
-                        productId
-                    ).session(
-                        dbSession
-                    );
+                // ---------------------------------------------
+                // RELEASE RESERVED STOCK
+                // ---------------------------------------------
 
+                await Product.updateOne(
 
-                if (product) {
+                    {
+                        _id:
+                            productId
+                    },
 
-                    product.reservedUnits =
-                        Math.max(
-                            0,
+                    {
+                        $inc: {
+                            reservedUnits:
+                                -Number(
+                                    item.qty || 0
+                                )
+                        }
+                    },
 
-                            Number(
-                                product.reservedUnits ||
-                                0
-                            ) -
-
-                            Number(
-                                item.qty ||
-                                0
-                            )
-                        );
-
-
-                    await product.save({
+                    {
                         session:
-                            dbSession
-                    });
-                }
+                            dbSession,
 
+                        strict:
+                            false
+                    }
+                );
+
+
+                // ---------------------------------------------
+                // PREVENT NEGATIVE RESERVATION
+                // ---------------------------------------------
+
+                await Product.updateOne(
+
+                    {
+                        _id:
+                            productId,
+
+                        reservedUnits: {
+                            $lt: 0
+                        }
+                    },
+
+                    {
+                        $set: {
+                            reservedUnits:
+                                0
+                        }
+                    },
+
+                    {
+                        session:
+                            dbSession,
+
+                        strict:
+                            false
+                    }
+                );
+
+
+                // ---------------------------------------------
+                // REMOVE ITEM
+                // ---------------------------------------------
 
                 await Cart.updateOne(
+
                     {
                         _id:
                             cart._id
@@ -415,22 +466,21 @@ async function createStaffSale(
     salesName
 ) {
 
-    const staffId =
+    const userId =
         getUserId(req);
 
 
-    if (!staffId) {
+    if (!userId) {
 
         throw new Error(
-            "Login is required."
+            "You must be logged in to record a sale."
         );
     }
 
 
     const cleanSalesName =
         String(
-            salesName ||
-            ""
+            salesName || ""
         ).trim();
 
 
@@ -453,71 +503,67 @@ async function createStaffSale(
     }
 
 
-    const sessionId =
-        getSessionId(req);
-
-
-    if (!sessionId) {
-
-        throw new Error(
-            "Cart session is missing."
-        );
-    }
-
-
     const dbSession =
         await mongoose.startSession();
 
 
-    let result;
-
-
     try {
+
+        let sale;
+
 
         await dbSession.withTransaction(
             async () => {
 
-                // ==========================================
+                // =============================================
                 // STAFF
-                // ==========================================
+                // =============================================
 
                 const staff =
-                    await User.findOne({
-                        _id:
-                            staffId,
-
-                        role:
-                            "staff"
-                    })
-                        .select(
-                            "_id assignedSubstation"
-                        )
-                        .session(
-                            dbSession
-                        );
+                    await User.findById(
+                        userId
+                    ).session(
+                        dbSession
+                    );
 
 
                 if (!staff) {
 
                     throw new Error(
-                        "Staff account not found."
+                        "Staff user was not found."
                     );
                 }
 
+
+                const role =
+                    String(
+                        staff.role || ""
+                    ).toLowerCase();
+
+
+                if (
+                    role !== "staff"
+                ) {
+
+                    throw new Error(
+                        "Only staff members can record staff sales."
+                    );
+                }
+
+
+                // =============================================
+                // ASSIGNED SUBSTATION
+                // =============================================
 
                 if (
                     !staff.assignedSubstation
                 ) {
 
                     throw new Error(
-                        "You do not have an assigned substation."
+                        "You are not assigned to a substation."
                     );
                 }
 
-
-                // ==========================================
-                // ASSIGNED SUBSTATION
-                // ==========================================
 
                 const substation =
                     await Substation.findById(
@@ -530,21 +576,30 @@ async function createStaffSale(
                 if (!substation) {
 
                     throw new Error(
-                        "Your assigned substation was not found."
+                        "Your assigned substation could not be found."
                     );
                 }
 
 
-                // ==========================================
+                // =============================================
                 // CART
-                // ==========================================
+                // =============================================
+
+                const sessionId =
+                    getSessionId(req);
+
+
+                if (!sessionId) {
+
+                    throw new Error(
+                        "A session or logged-in user is required."
+                    );
+                }
+
 
                 const cart =
                     await Cart.findOne({
-                        sessionId,
-
-                        user:
-                            staff._id
+                        sessionId
                     }).session(
                         dbSession
                     );
@@ -562,22 +617,28 @@ async function createStaffSale(
                 }
 
 
-                // ==========================================
-                // BUILD STAFF SALE PRODUCTS
-                // ==========================================
+                // =============================================
+                // BUILD SALE SNAPSHOTS
+                // =============================================
 
-                const products = [];
+                const saleProducts = [];
 
                 let totalAmount = 0;
 
 
                 for (
-                    const cartItem of cart.items
+                    const cartItem
+                    of cart.items
                 ) {
 
                     const productId =
-                        cartItem.product ||
                         cartItem.productId;
+
+
+                    const qty =
+                        Number(
+                            cartItem.qty || 0
+                        );
 
 
                     if (!productId) {
@@ -588,29 +649,51 @@ async function createStaffSale(
                     }
 
 
-                    const qty =
-                        Number(
-                            cartItem.qty ||
-                            0
-                        );
-
-
-                    const price =
-                        Number(
-                            cartItem.price ||
-                            0
-                        );
-
-
                     if (
                         !Number.isInteger(qty) ||
                         qty < 1
                     ) {
 
                         throw new Error(
-                            `Invalid quantity for ${cartItem.name}.`
+                            `Invalid quantity for ${
+                                cartItem.name ||
+                                "a cart item"
+                            }.`
                         );
                     }
+
+
+                    // -----------------------------------------
+                    // GET CURRENT PRODUCT
+                    // -----------------------------------------
+
+                    const product =
+                        await Product.findById(
+                            productId
+                        )
+                            .populate(
+                                "category",
+                                "name"
+                            )
+                            .session(
+                                dbSession
+                            );
+
+
+                    if (!product) {
+
+                        throw new Error(
+                            `Product "${cartItem.name || productId}" no longer exists.`
+                        );
+                    }
+
+
+                    const price =
+                        Number(
+                            cartItem.price ??
+                            product.unitSellPrice ??
+                            0
+                        );
 
 
                     if (
@@ -619,55 +702,97 @@ async function createStaffSale(
                     ) {
 
                         throw new Error(
-                            `Invalid selling price for ${cartItem.name}.`
+                            `Invalid selling price for ${product.name}.`
                         );
                     }
 
 
-                    const itemTotal =
+                    const reservedUnits =
+                        Number(
+                            product.reservedUnits ||
+                            0
+                        );
+
+
+                    const physicalUnits =
+                        Number(
+                            product.units ||
+                            0
+                        );
+
+
+                    // -----------------------------------------
+                    // RESERVED STOCK CHECK
+                    // -----------------------------------------
+
+                    if (
+                        reservedUnits <
+                        qty
+                    ) {
+
+                        throw new Error(
+                            `Reserved quantity for "${product.name}" is insufficient.`
+                        );
+                    }
+
+
+                    // -----------------------------------------
+                    // PHYSICAL STOCK CHECK
+                    // -----------------------------------------
+
+                    if (
+                        physicalUnits <
+                        qty
+                    ) {
+
+                        throw new Error(
+                            `Physical stock for "${product.name}" is insufficient.`
+                        );
+                    }
+
+
+                    const lineTotal =
                         price * qty;
 
 
                     totalAmount +=
-                        itemTotal;
+                        lineTotal;
 
 
-                    // --------------------------------------
-                    // Get product for category information
-                    // --------------------------------------
-
-                    const product =
-                        await Product.findById(
-                            productId
-                        )
-                            .select(
-                                "name image category subcategory"
-                            )
-                            .session(
-                                dbSession )
-                            .lean();
+                    let category = "";
 
 
-                    products.push({
+                    if (
+                        product.category
+                    ) {
 
-                        productId,
+                        category =
+                            product.category.name ||
+                            String(
+                                product.category._id ||
+                                product.category
+                            );
+                    }
+
+
+                    saleProducts.push({
+
+                        productId:
+                            product._id,
 
                         name:
-                            cartItem.name ||
-                            product?.name ||
-                            "",
+                            product.name,
 
                         image:
+                            product.image ||
                             cartItem.image ||
-                            product?.image ||
                             "",
 
-                        category:
-                            product?.category ||
-                            "",
+                        category,
 
                         subcategory:
-                            product?.subcategory ||
+                            product.subcategory ||
+                            cartItem.subcategory ||
                             "",
 
                         qty,
@@ -675,89 +800,126 @@ async function createStaffSale(
                         price,
 
                         total:
-                            itemTotal
+                            lineTotal
+
                     });
                 }
 
 
-                // ==========================================
-                // CREATE STAFF SALE
-                // ==========================================
-
-                const createdSales =
-                    await StaffSale.create(
-                        [
-                            {
-                                salesName:
-                                    cleanSalesName,
-
-                                products,
-
-                                totalAmount,
-
-                                soldBy:
-                                    staff._id
-                            }
-                        ],
-                        {
-                            session:
-                                dbSession
-                        }
-                    );
-
-
-                const staffSale =
-                    createdSales[0];
-
-
-                // ==========================================
-                // UPDATE PRODUCT REDUCTIONS
-                // ==========================================
+                // =============================================
+                // COMPLETE PRODUCT SALES
+                //
+                // Physical stock decreases.
+                // Reservation decreases.
+                // =============================================
 
                 for (
-                    const item of products
+                    const saleItem
+                    of saleProducts
+                ) {
+
+                    const result =
+                        await Product.updateOne(
+
+                            {
+                                _id:
+                                    saleItem.productId,
+
+                                units: {
+                                    $gte:
+                                        saleItem.qty
+                                },
+
+                                reservedUnits: {
+                                    $gte:
+                                        saleItem.qty
+                                }
+                            },
+
+                            {
+                                $inc: {
+
+                                    units:
+                                        -saleItem.qty,
+
+                                    reservedUnits:
+                                        -saleItem.qty
+
+                                }
+                            },
+
+                            {
+                                session:
+                                    dbSession,
+
+                                strict:
+                                    false
+                            }
+                        );
+
+
+                    if (
+                        result.modifiedCount !==
+                        1
+                    ) {
+
+                        throw new Error(
+                            `Unable to update stock for "${saleItem.name}".`
+                        );
+                    }
+                }
+
+
+                // =============================================
+                // UPDATE SUBSTATION PRODUCT REDUCTIONS
+                // =============================================
+
+                for (
+                    const saleItem
+                    of saleProducts
                 ) {
 
                     let reduction =
                         substation.productReductions.find(
-                            reductionItem =>
-                                String(
-                                    reductionItem.productId
-                                ) ===
+                            item =>
                                 String(
                                     item.productId
+                                ) ===
+                                String(
+                                    saleItem.productId
                                 )
                         );
 
 
                     if (!reduction) {
 
-                        substation.productReductions.push(
-                            {
-                                productId:
-                                    item.productId,
+                        substation.productReductions.push({
 
-                                productName:
-                                    item.name,
+                            productId:
+                                saleItem.productId,
 
-                                category:
-                                    item.category,
+                            productName:
+                                saleItem.name,
 
-                                unitsReduced:
-                                    item.qty,
+                            category:
+                                saleItem.category ||
+                                "",
 
-                                lastReducedAt:
-                                    new Date()
-                            }
-                        );
+                            unitsReduced:
+                                saleItem.qty,
+
+                            lastReducedAt:
+                                new Date()
+
+                        });
 
                     } else {
 
                         reduction.productName =
-                            item.name;
+                            saleItem.name;
 
                         reduction.category =
-                            item.category ||
+                            saleItem.category ||
                             reduction.category ||
                             "";
 
@@ -766,7 +928,7 @@ async function createStaffSale(
                                 reduction.unitsReduced ||
                                 0
                             ) +
-                            item.qty;
+                            saleItem.qty;
 
                         reduction.lastReducedAt =
                             new Date();
@@ -780,88 +942,49 @@ async function createStaffSale(
                 });
 
 
-                // ==========================================
-                // RELEASE CART RESERVATIONS
-                // ==========================================
+                // =============================================
+                // CREATE STAFF SALE
+                // =============================================
 
-                for (
-                    const item of cart.items
-                ) {
+                sale =
+                    new StaffSale({
 
-                    const productId =
-                        item.product ||
-                        item.productId;
+                        salesName:
+                            cleanSalesName,
 
+                        products:
+                            saleProducts,
 
-                    const product =
-                        await Product.findById(
-                            productId
-                        ).session(
-                            dbSession
-                        );
+                        totalAmount,
 
+                        soldBy:
+                            staff._id
 
-                    if (product) {
-
-                        product.reservedUnits =
-                            Math.max(
-                                0,
-
-                                Number(
-                                    product.reservedUnits ||
-                                    0
-                                ) -
-
-                                Number(
-                                    item.qty ||
-                                    0
-                                )
-                            );
+                    });
 
 
-                        await product.save({
-                            session:
-                                dbSession
-                        });
-                    }
-                }
+                await sale.save({
+                    session:
+                        dbSession
+                });
 
 
-                // ==========================================
-                // REMOVE CART
-                // ==========================================
+                // =============================================
+                // CLEAR CART
+                // =============================================
 
-                await Cart.deleteOne(
-                    {
-                        _id:
-                            cart._id
-                    },
-                    {
-                        session:
-                            dbSession
-                    }
-                );
+                cart.items = [];
 
 
-                // ==========================================
-                // RETURN DATA TO CONTROLLER
-                // ==========================================
-
-                result = {
-
-                    sale:
-                        staffSale,
-
-                    substationId:
-                        String(
-                            staff.assignedSubstation
-                        )
-                };
+                await cart.save({
+                    session:
+                        dbSession
+                });
             }
         );
 
 
-        return result;
+        return sale;
 
     } finally {
 
@@ -874,31 +997,28 @@ async function createStaffSale(
 // CALCULATE TOTAL
 // =========================================================
 
-function calculateTotal(
-    cart
-) {
+function calculateTotal(cart) {
 
     return (
-        cart?.items ||
-        []
+        cart?.items || []
     ).reduce(
 
         (
             sum,
             item
-        ) =>
+        ) => {
 
-            sum +
+            return (
+                sum +
+                Number(
+                    item.price || 0
+                ) *
+                Number(
+                    item.qty || 0
+                )
+            );
 
-            Number(
-                item.price ||
-                0
-            ) *
-
-            Number(
-                item.qty ||
-                0
-            ),
+        },
 
         0
     );
@@ -906,7 +1026,7 @@ function calculateTotal(
 
 
 // =========================================================
-// EXPORT
+// EXPORTS
 // =========================================================
 
 module.exports = {
@@ -922,4 +1042,5 @@ module.exports = {
     calculateTotal,
 
     createStaffSale
+
 };
