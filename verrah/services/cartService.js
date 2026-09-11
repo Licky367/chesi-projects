@@ -96,6 +96,13 @@ async function getOrCreateCart(
 
 // =========================================================
 // ADD TO CART
+//
+// IMPORTANT:
+// Adding a Product to the cart DOES NOT change
+// Product.units.
+//
+// There is NO reserved quantity.
+// There is NO reservedUnits.
 // =========================================================
 
 async function addToCart(
@@ -132,61 +139,27 @@ async function addToCart(
             async () => {
 
                 // ---------------------------------------------
-                // RESERVE PRODUCT
+                // GET PRODUCT
                 // ---------------------------------------------
 
                 const product =
-                    await Product.findOneAndUpdate(
+                    await Product.findOne({
 
-                        {
-                            _id:
-                                productId,
+                        _id:
+                            productId,
 
-                            isActive:
-                                true,
+                        isActive:
+                            true
 
-                            $expr: {
-                                $gte: [
-                                    {
-                                        $subtract: [
-                                            "$units",
-                                            {
-                                                $ifNull: [
-                                                    "$reservedUnits",
-                                                    0
-                                                ]
-                                            }
-                                        ]
-                                    },
-
-                                    qty
-                                ]
-                            }
-                        },
-
-                        {
-                            $inc: {
-                                reservedUnits:
-                                    qty
-                            }
-                        },
-
-                        {
-                            new: true,
-
-                            session:
-                                dbSession,
-
-                            strict:
-                                false
-                        }
-                    ).lean();
+                    }).session(
+                        dbSession
+                    );
 
 
                 if (!product) {
 
                     throw new Error(
-                        "The requested quantity is not available."
+                        "The requested Product could not be found."
                     );
                 }
 
@@ -202,6 +175,15 @@ async function addToCart(
                     );
 
 
+                // ---------------------------------------------
+                // CHECK EXISTING CART QUANTITY
+                //
+                // We do not reserve anything.
+                //
+                // We simply prevent the cart from containing
+                // more units than the Product currently has.
+                // ---------------------------------------------
+
                 const existing =
                     cart.items.find(
                         item =>
@@ -214,9 +196,41 @@ async function addToCart(
                     );
 
 
+                const existingQty =
+                    existing
+                        ? Number(existing.qty || 0)
+                        : 0;
+
+
+                const newQty =
+                    existingQty + qty;
+
+
+                const availableUnits =
+                    Number(
+                        product.units || 0
+                    );
+
+
+                if (
+                    newQty >
+                    availableUnits
+                ) {
+
+                    throw new Error(
+                        `Only ${availableUnits} units of "${product.name}" are available.`
+                    );
+                }
+
+
+                // ---------------------------------------------
+                // UPDATE EXISTING CART ITEM
+                // ---------------------------------------------
+
                 if (existing) {
 
-                    existing.qty += qty;
+                    existing.qty =
+                        newQty;
 
                     existing.name =
                         product.name;
@@ -232,6 +246,10 @@ async function addToCart(
                         "";
 
                 } else {
+
+                    // -----------------------------------------
+                    // ADD NEW CART ITEM
+                    // -----------------------------------------
 
                     cart.items.push({
 
@@ -261,6 +279,12 @@ async function addToCart(
                     });
                 }
 
+
+                // ---------------------------------------------
+                // SAVE CART ONLY
+                //
+                // Product.units remains unchanged.
+                // ---------------------------------------------
 
                 await cart.save({
                     session:
@@ -294,6 +318,7 @@ async function getCart(req) {
 
 
     if (!sessionId) {
+
         return null;
     }
 
@@ -310,6 +335,12 @@ async function getCart(req) {
 
 // =========================================================
 // REMOVE CART ITEM
+//
+// IMPORTANT:
+// Removing a Product from the cart DOES NOT change
+// Product.units.
+//
+// There is nothing to release because nothing was reserved.
 // =========================================================
 
 async function removeItem(
@@ -359,69 +390,9 @@ async function removeItem(
             async () => {
 
                 // ---------------------------------------------
-                // RELEASE RESERVED STOCK
-                // ---------------------------------------------
-
-                await Product.updateOne(
-
-                    {
-                        _id:
-                            productId
-                    },
-
-                    {
-                        $inc: {
-                            reservedUnits:
-                                -Number(
-                                    item.qty || 0
-                                )
-                        }
-                    },
-
-                    {
-                        session:
-                            dbSession,
-
-                        strict:
-                            false
-                    }
-                );
-
-
-                // ---------------------------------------------
-                // PREVENT NEGATIVE RESERVATION
-                // ---------------------------------------------
-
-                await Product.updateOne(
-
-                    {
-                        _id:
-                            productId,
-
-                        reservedUnits: {
-                            $lt: 0
-                        }
-                    },
-
-                    {
-                        $set: {
-                            reservedUnits:
-                                0
-                        }
-                    },
-
-                    {
-                        session:
-                            dbSession,
-
-                        strict:
-                            false
-                    }
-                );
-
-
-                // ---------------------------------------------
-                // REMOVE ITEM
+                // REMOVE ITEM FROM CART
+                //
+                // Product.units is NOT changed.
                 // ---------------------------------------------
 
                 await Cart.updateOne(
@@ -433,12 +404,16 @@ async function removeItem(
 
                     {
                         $pull: {
+
                             items: {
+
                                 productId:
                                     String(
                                         productId
                                     )
+
                             }
+
                         }
                     },
 
@@ -459,6 +434,19 @@ async function removeItem(
 
 // =========================================================
 // CREATE STAFF SALE
+//
+// Staff sales use Product.units directly.
+//
+// Required:
+//
+// Product.units >= quantity being sold
+//
+// After successful sale:
+//
+// Product.units -= quantity
+//
+// There is NO reserved quantity.
+// There is NO reservedUnits.
 // =========================================================
 
 async function createStaffSale(
@@ -538,7 +526,9 @@ async function createStaffSale(
                 const role =
                     String(
                         staff.role || ""
-                    ).toLowerCase();
+                    )
+                        .trim()
+                        .toLowerCase();
 
 
                 if (
@@ -618,13 +608,17 @@ async function createStaffSale(
 
 
                 // =============================================
-                // BUILD SALE SNAPSHOTS
+                // SALE SNAPSHOTS
                 // =============================================
 
                 const saleProducts = [];
 
                 let totalAmount = 0;
 
+
+                // =============================================
+                // VERIFY EVERY PRODUCT
+                // =============================================
 
                 for (
                     const cartItem
@@ -644,7 +638,7 @@ async function createStaffSale(
                     if (!productId) {
 
                         throw new Error(
-                            "A cart item has no product ID."
+                            "A cart item has no Product ID."
                         );
                     }
 
@@ -688,6 +682,45 @@ async function createStaffSale(
                     }
 
 
+                    if (!product.isActive) {
+
+                        throw new Error(
+                            `Product "${product.name}" is no longer available.`
+                        );
+                    }
+
+
+                    // -----------------------------------------
+                    // CURRENT PRODUCT UNITS
+                    // -----------------------------------------
+
+                    const availableUnits =
+                        Number(
+                            product.units || 0
+                        );
+
+
+                    // -----------------------------------------
+                    // PRODUCT UNITS CHECK
+                    //
+                    // This is the ONLY quantity check.
+                    // -----------------------------------------
+
+                    if (
+                        availableUnits <
+                        qty
+                    ) {
+
+                        throw new Error(
+                            `Only ${availableUnits} units of "${product.name}" are available.`
+                        );
+                    }
+
+
+                    // -----------------------------------------
+                    // PRICE
+                    // -----------------------------------------
+
                     const price =
                         Number(
                             cartItem.price ??
@@ -702,51 +735,7 @@ async function createStaffSale(
                     ) {
 
                         throw new Error(
-                            `Invalid selling price for ${product.name}.`
-                        );
-                    }
-
-
-                    const reservedUnits =
-                        Number(
-                            product.reservedUnits ||
-                            0
-                        );
-
-
-                    const physicalUnits =
-                        Number(
-                            product.units ||
-                            0
-                        );
-
-
-                    // -----------------------------------------
-                    // RESERVED STOCK CHECK
-                    // -----------------------------------------
-
-                    if (
-                        reservedUnits <
-                        qty
-                    ) {
-
-                        throw new Error(
-                            `Reserved quantity for "${product.name}" is insufficient.`
-                        );
-                    }
-
-
-                    // -----------------------------------------
-                    // PHYSICAL STOCK CHECK
-                    // -----------------------------------------
-
-                    if (
-                        physicalUnits <
-                        qty
-                    ) {
-
-                        throw new Error(
-                            `Physical stock for "${product.name}" is insufficient.`
+                            `Invalid selling price for "${product.name}".`
                         );
                     }
 
@@ -758,6 +747,10 @@ async function createStaffSale(
                     totalAmount +=
                         lineTotal;
 
+
+                    // -----------------------------------------
+                    // CATEGORY
+                    // -----------------------------------------
 
                     let category = "";
 
@@ -774,6 +767,10 @@ async function createStaffSale(
                             );
                     }
 
+
+                    // -----------------------------------------
+                    // SALE SNAPSHOT
+                    // -----------------------------------------
 
                     saleProducts.push({
 
@@ -807,10 +804,10 @@ async function createStaffSale(
 
 
                 // =============================================
-                // COMPLETE PRODUCT SALES
+                // REDUCE PRODUCT.UNITS
                 //
-                // Physical stock decreases.
-                // Reservation decreases.
+                // This is where the Product quantity actually
+                // decreases for a staff sale.
                 // =============================================
 
                 for (
@@ -825,12 +822,10 @@ async function createStaffSale(
                                 _id:
                                     saleItem.productId,
 
-                                units: {
-                                    $gte:
-                                        saleItem.qty
-                                },
+                                isActive:
+                                    true,
 
-                                reservedUnits: {
+                                units: {
                                     $gte:
                                         saleItem.qty
                                 }
@@ -840,9 +835,6 @@ async function createStaffSale(
                                 $inc: {
 
                                     units:
-                                        -saleItem.qty,
-
-                                    reservedUnits:
                                         -saleItem.qty
 
                                 }
@@ -850,10 +842,7 @@ async function createStaffSale(
 
                             {
                                 session:
-                                    dbSession,
-
-                                strict:
-                                    false
+                                    dbSession
                             }
                         );
 
@@ -864,7 +853,7 @@ async function createStaffSale(
                     ) {
 
                         throw new Error(
-                            `Unable to update stock for "${saleItem.name}".`
+                            `The available units for "${saleItem.name}" changed before the sale could be completed.`
                         );
                     }
                 }
@@ -879,16 +868,26 @@ async function createStaffSale(
                     of saleProducts
                 ) {
 
-                    let reduction =
-                        substation.productReductions.find(
-                            item =>
-                                String(
-                                    item.productId
-                                ) ===
-                                String(
-                                    saleItem.productId
-                                )
-                        );
+                    let reduction;
+
+
+                    if (
+                        Array.isArray(
+                            substation.productReductions
+                        )
+                    ) {
+
+                        reduction =
+                            substation.productReductions.find(
+                                item =>
+                                    String(
+                                        item.productId
+                                    ) ===
+                                    String(
+                                        saleItem.productId
+                                    )
+                            );
+                    }
 
 
                     if (!reduction) {
