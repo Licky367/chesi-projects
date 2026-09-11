@@ -28,11 +28,8 @@
             href="/products"
             class="secondary-btn"
         >
-
             <i class="fas fa-arrow-left"></i>
-
             Continue Shopping
-
         </a>
 
     </div>
@@ -70,35 +67,26 @@
         !cart.items.length
     ) { %>
 
-
         <div class="cart-empty">
 
             <div class="cart-empty-icon">
-
                 <i class="fas fa-shopping-basket"></i>
-
             </div>
-
 
             <h2>
                 Your cart is empty
             </h2>
 
-
             <p>
                 You have not added any products to your cart yet.
             </p>
-
 
             <a
                 class="primary-btn"
                 href="/products"
             >
-
                 <i class="fas fa-store"></i>
-
                 Browse Products
-
             </a>
 
         </div>
@@ -264,7 +252,6 @@
 
             <aside class="cart-summary-card">
 
-
                 <div class="cart-summary-head">
 
                     <span class="cart-section-kicker">
@@ -326,12 +313,10 @@
                     ).toLowerCase() === "staff"
                 ) { %>
 
-
                     <button
                         type="button"
                         class="primary-btn cart-checkout-btn staff-sale-btn"
                         id="open-staff-sale-modal"
-                        onclick="window.openStaffSaleModal && window.openStaffSaleModal();"
                     >
 
                         <i class="fas fa-cash-register"></i>
@@ -374,7 +359,6 @@
 
                 </a>
 
-
             </aside>
 
 
@@ -393,16 +377,25 @@
 
 
             <div
-                class="staff-sale-modal"
                 id="staff-sale-modal"
+                class="staff-sale-modal"
                 aria-hidden="true"
             >
 
+
+                <!-- ==================================================
+                     OVERLAY
+                =================================================== -->
+
                 <div
-                    class="staff-sale-modal-overlay"
                     id="staff-sale-modal-overlay"
+                    class="staff-sale-modal-overlay"
                 ></div>
 
+
+                <!-- ==================================================
+                     MODAL CARD
+                =================================================== -->
 
                 <div
                     class="staff-sale-modal-card"
@@ -412,9 +405,9 @@
                 >
 
 
-                    <!-- ==============================================
+                    <!-- ==================================================
                          HEADER
-                    =============================================== -->
+                    =================================================== -->
 
                     <div class="staff-sale-modal-header">
 
@@ -424,9 +417,7 @@
                                 STAFF SALE
                             </span>
 
-                            <h2
-                                id="staff-sale-modal-title"
-                            >
+                            <h2 id="staff-sale-modal-title">
                                 Record Sale
                             </h2>
 
@@ -435,8 +426,8 @@
 
                         <button
                             type="button"
-                            class="staff-sale-modal-close"
                             id="close-staff-sale-modal"
+                            class="staff-sale-modal-close"
                             aria-label="Close"
                         >
 
@@ -447,12 +438,11 @@
                     </div>
 
 
-                    <!-- ==============================================
+                    <!-- ==================================================
                          BODY
-                    =============================================== -->
+                    =================================================== -->
 
                     <div class="staff-sale-modal-body">
-
 
                         <p class="staff-sale-modal-description">
 
@@ -462,9 +452,9 @@
                         </p>
 
 
-                        <!-- ============================================
+                        <!-- ==================================================
                              SALE PREVIEW
-                        ============================================= -->
+                        =================================================== -->
 
                         <div class="staff-sale-preview">
 
@@ -502,9 +492,9 @@
                         </div>
 
 
-                        <!-- ============================================
+                        <!-- ==================================================
                              SALE FORM
-                        ============================================= -->
+                        =================================================== -->
 
                         <form
                             method="POST"
@@ -513,12 +503,9 @@
                             class="staff-sale-form"
                         >
 
-
                             <div class="staff-sale-form-group">
 
-                                <label
-                                    for="sales-name"
-                                >
+                                <label for="sales-name">
                                     Sales Name
                                 </label>
 
@@ -553,7 +540,6 @@
 
                             </button>
 
-
                         </form>
 
                     </div>
@@ -568,198 +554,174 @@
             =================================================== -->
 
             <script>
-
                 (function () {
 
-                    function getElements() {
+                    const modal = document.getElementById(
+                        "staff-sale-modal"
+                    );
 
-                        return {
+                    const openButton = document.getElementById(
+                        "open-staff-sale-modal"
+                    );
 
-                            modal:
-                                document.getElementById(
-                                    "staff-sale-modal"
-                                ),
+                    const closeButton = document.getElementById(
+                        "close-staff-sale-modal"
+                    );
 
-                            openButton:
-                                document.getElementById(
-                                    "open-staff-sale-modal"
-                                ),
+                    const overlay = document.getElementById(
+                        "staff-sale-modal-overlay"
+                    );
 
-                            closeButton:
-                                document.getElementById(
-                                    "close-staff-sale-modal"
-                                ),
+                    const input = document.getElementById(
+                        "sales-name"
+                    );
 
-                            overlay:
-                                document.getElementById(
-                                    "staff-sale-modal-overlay"
-                                ),
 
-                            input:
-                                document.getElementById(
-                                    "sales-name"
-                                )
+                    /* ==================================================
+                       OPEN MODAL
+                    ================================================== */
 
-                        };
+                    function openModal(event) {
+
+                        if (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+
+                        if (!modal) {
+                            console.error(
+                                "Staff sale modal element not found."
+                            );
+                            return;
+                        }
+
+                        modal.classList.add("is-open");
+
+                        modal.setAttribute(
+                            "aria-hidden",
+                            "false"
+                        );
+
+                        document.body.classList.add(
+                            "staff-sale-modal-open"
+                        );
+
+                        if (input) {
+
+                            setTimeout(function () {
+
+                                input.focus();
+
+                            }, 50);
+
+                        }
 
                     }
 
 
-                    window.openStaffSaleModal =
-                        function () {
+                    /* ==================================================
+                       CLOSE MODAL
+                    ================================================== */
 
-                            const elements =
-                                getElements();
+                    function closeModal(event) {
 
-
-                            if (
-                                !elements.modal
-                            ) {
-
-                                console.error(
-                                    "Staff sale modal was not found."
-                                );
-
-                                return;
-                            }
-
-
-                            elements.modal.classList.add(
-                                "is-open"
-                            );
-
-
-                            elements.modal.setAttribute(
-                                "aria-hidden",
-                                "false"
-                            );
-
-
-                            document.body.classList.add(
-                                "staff-sale-modal-open"
-                            );
-
-
-                            if (
-                                elements.input
-                            ) {
-
-                                setTimeout(
-                                    function () {
-
-                                        elements.input.focus();
-
-                                    },
-                                    100
-                                );
-
-                            }
-
-                        };
-
-
-                    window.closeStaffSaleModal =
-                        function () {
-
-                            const elements =
-                                getElements();
-
-
-                            if (
-                                !elements.modal
-                            ) {
-                                return;
-                            }
-
-
-                            elements.modal.classList.remove(
-                                "is-open"
-                            );
-
-
-                            elements.modal.setAttribute(
-                                "aria-hidden",
-                                "true"
-                            );
-
-
-                            document.body.classList.remove(
-                                "staff-sale-modal-open"
-                            );
-
-                        };
-
-
-                    function initialise() {
-
-                        const elements =
-                            getElements();
-
-
-                        if (
-                            elements.closeButton
-                        ) {
-
-                            elements.closeButton.addEventListener(
-                                "click",
-                                window.closeStaffSaleModal
-                            );
-
+                        if (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
                         }
 
-
-                        if (
-                            elements.overlay
-                        ) {
-
-                            elements.overlay.addEventListener(
-                                "click",
-                                window.closeStaffSaleModal
-                            );
-
+                        if (!modal) {
+                            return;
                         }
 
+                        modal.classList.remove("is-open");
 
-                        document.addEventListener(
-                            "keydown",
-                            function (event) {
+                        modal.setAttribute(
+                            "aria-hidden",
+                            "true"
+                        );
 
-                                if (
-                                    event.key === "Escape" &&
-                                    elements.modal &&
-                                    elements.modal.classList.contains(
-                                        "is-open"
-                                    )
-                                ) {
-
-                                    window.closeStaffSaleModal();
-
-                                }
-
-                            }
+                        document.body.classList.remove(
+                            "staff-sale-modal-open"
                         );
 
                     }
 
 
-                    if (
-                        document.readyState ===
-                        "loading"
-                    ) {
+                    /* ==================================================
+                       OPEN BUTTON
+                    ================================================== */
 
-                        document.addEventListener(
-                            "DOMContentLoaded",
-                            initialise
+                    if (openButton) {
+
+                        openButton.addEventListener(
+                            "click",
+                            openModal
                         );
 
-                    } else {
+                    }
 
-                        initialise();
+
+                    /* ==================================================
+                       CLOSE BUTTON
+                    ================================================== */
+
+                    if (closeButton) {
+
+                        closeButton.addEventListener(
+                            "click",
+                            closeModal
+                        );
 
                     }
+
+
+                    /* ==================================================
+                       OVERLAY CLOSE
+                    ================================================== */
+
+                    if (overlay) {
+
+                        overlay.addEventListener(
+                            "click",
+                            closeModal
+                        );
+
+                    }
+
+
+                    /* ==================================================
+                       ESCAPE KEY
+                    ================================================== */
+
+                    document.addEventListener(
+                        "keydown",
+                        function (event) {
+
+                            if (
+                                event.key === "Escape" &&
+                                modal &&
+                                modal.classList.contains("is-open")
+                            ) {
+
+                                closeModal();
+
+                            }
+
+                        }
+                    );
+
+
+                    /* ==================================================
+                       EXPOSE FUNCTIONS
+                       Optional compatibility for other scripts.
+                    ================================================== */
+
+                    window.openStaffSaleModal = openModal;
+
+                    window.closeStaffSaleModal = closeModal;
 
                 })();
-
             </script>
 
 
