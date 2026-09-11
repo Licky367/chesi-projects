@@ -10,6 +10,9 @@ const User =
 const Invitation =
     require("../models/invitation");
 
+const Substation =
+    require("../models/substations");
+
 
 // ==========================================================
 // HELPERS
@@ -121,6 +124,10 @@ exports.register =
             );
 
 
+        // --------------------------------------------------
+        // REQUIRED FIELDS
+        // --------------------------------------------------
+
         if (!name) {
 
             throw new Error(
@@ -160,6 +167,10 @@ exports.register =
             );
         }
 
+
+        // --------------------------------------------------
+        // CHECK EXISTING USER
+        // --------------------------------------------------
 
         const existingUser =
             await User.findOne({
@@ -201,19 +212,61 @@ exports.register =
 
 
         // --------------------------------------------------
-        // ASSIGNED SUBSTATION
+        // GET ASSIGNED SUBSTATION
         // --------------------------------------------------
         //
-        // A substation is only carried over when the
-        // invitation is for a staff member.
+        // Only staff invitations may carry
+        // an assigned substation.
         //
         // --------------------------------------------------
 
-        const assignedSubstation =
+        let assignedSubstation =
+            null;
+
+
+        if (
             role === "staff" &&
             invitation?.assignedSubstation
-                ? invitation.assignedSubstation
-                : null;
+        ) {
+
+            const substation =
+                await Substation.findById(
+                    invitation.assignedSubstation
+                );
+
+
+            if (!substation) {
+
+                const err =
+                    new Error(
+                        "The substation assigned to this invitation no longer exists."
+                    );
+
+                err.status = 400;
+
+                throw err;
+            }
+
+
+            if (
+                substation.isActive ===
+                false
+            ) {
+
+                const err =
+                    new Error(
+                        "The substation assigned to this invitation is inactive."
+                    );
+
+                err.status = 400;
+
+                throw err;
+            }
+
+
+            assignedSubstation =
+                substation._id;
+        }
 
 
         // --------------------------------------------------
@@ -355,33 +408,35 @@ exports.getUserById =
 exports.createInvitation =
     async function(data) {
 
+        data =
+            data || {};
+
+
         const email =
             normalizeEmail(
-                data?.email
+                data.email
             );
 
 
         const role =
             cleanString(
-                data?.role
+                data.role
             ).toLowerCase();
 
 
         const invitedBy =
-            data?.invitedBy;
+            data.invitedBy;
+
+
+        const assignedSubstationId =
+            cleanString(
+                data.assignedSubstation
+            ) || null;
 
 
         // --------------------------------------------------
-        // ASSIGNED SUBSTATION
+        // EMAIL
         // --------------------------------------------------
-
-        const assignedSubstation =
-            role === "staff"
-                ? cleanString(
-                    data?.assignedSubstation
-                ) || null
-                : null;
-
 
         if (!email) {
 
@@ -395,6 +450,10 @@ exports.createInvitation =
             throw err;
         }
 
+
+        // --------------------------------------------------
+        // ROLE
+        // --------------------------------------------------
 
         if (
             !ALLOWED_ROLES.includes(
@@ -413,6 +472,10 @@ exports.createInvitation =
         }
 
 
+        // --------------------------------------------------
+        // INVITING ADMIN
+        // --------------------------------------------------
+
         if (!invitedBy) {
 
             const err =
@@ -425,6 +488,10 @@ exports.createInvitation =
             throw err;
         }
 
+
+        // --------------------------------------------------
+        // CHECK EXISTING USER
+        // --------------------------------------------------
 
         const existingUser =
             await User.findOne({
@@ -446,16 +513,26 @@ exports.createInvitation =
 
 
         // --------------------------------------------------
-        // IF STAFF, VALIDATE SUBSTATION
+        // SUBSTATION RULE
         // --------------------------------------------------
+        //
+        // Only staff can have an assigned substation.
+        //
+        // --------------------------------------------------
+
+        let assignedSubstation =
+            null;
+
 
         if (role === "staff") {
 
-            if (!assignedSubstation) {
+            if (
+                !assignedSubstationId
+            ) {
 
                 const err =
                     new Error(
-                        "A substation must be selected for staff."
+                        "A substation must be assigned to a staff invitation."
                     );
 
                 err.status = 400;
@@ -464,15 +541,9 @@ exports.createInvitation =
             }
 
 
-            const Substation =
-                require(
-                    "../models/substations"
-                );
-
-
             const substation =
                 await Substation.findById(
-                    assignedSubstation
+                    assignedSubstationId
                 );
 
 
@@ -503,6 +574,18 @@ exports.createInvitation =
 
                 throw err;
             }
+
+
+            assignedSubstation =
+                substation._id;
+
+        } else {
+
+            // Admin and client invitations
+            // cannot have a substation.
+
+            assignedSubstation =
+                null;
         }
 
 
@@ -512,7 +595,9 @@ exports.createInvitation =
 
         return Invitation.findOneAndUpdate(
 
-            { email },
+            {
+                email
+            },
 
             {
 
@@ -520,9 +605,9 @@ exports.createInvitation =
 
                 role,
 
-                assignedSubstation,
+                invitedBy,
 
-                invitedBy
+                assignedSubstation
 
             },
 
@@ -534,6 +619,7 @@ exports.createInvitation =
 
                 setDefaultsOnInsert:
                     true
+
             }
         );
     };
@@ -607,6 +693,10 @@ exports.updateUserRole =
             );
 
 
+        // --------------------------------------------------
+        // VALIDATION
+        // --------------------------------------------------
+
         if (!userId) {
 
             const err =
@@ -658,6 +748,10 @@ exports.updateUserRole =
         }
 
 
+        // --------------------------------------------------
+        // FIND USER
+        // --------------------------------------------------
+
         const user =
             await User.findById(
                 userId
@@ -677,15 +771,21 @@ exports.updateUserRole =
         }
 
 
+        // --------------------------------------------------
+        // UPDATE ROLE
+        // --------------------------------------------------
+
         user.role =
             role;
 
 
         // --------------------------------------------------
-        // SUBSTATION ONLY APPLIES TO STAFF
+        // SUBSTATION ONLY BELONGS TO STAFF
         // --------------------------------------------------
 
-        if (role !== "staff") {
+        if (
+            role !== "staff"
+        ) {
 
             user.assignedSubstation =
                 null;
@@ -716,6 +816,10 @@ exports.assignSubstation =
             ) || null;
 
 
+        // --------------------------------------------------
+        // USER ID
+        // --------------------------------------------------
+
         if (!userId) {
 
             const err =
@@ -728,6 +832,10 @@ exports.assignSubstation =
             throw err;
         }
 
+
+        // --------------------------------------------------
+        // FIND USER
+        // --------------------------------------------------
 
         const user =
             await User.findById(
@@ -748,6 +856,10 @@ exports.assignSubstation =
         }
 
 
+        // --------------------------------------------------
+        // STAFF ONLY
+        // --------------------------------------------------
+
         if (
             user.role !== "staff"
         ) {
@@ -763,6 +875,10 @@ exports.assignSubstation =
         }
 
 
+        // --------------------------------------------------
+        // REMOVE ASSIGNMENT
+        // --------------------------------------------------
+
         if (!substationId) {
 
             user.assignedSubstation =
@@ -770,11 +886,9 @@ exports.assignSubstation =
 
         } else {
 
-            const Substation =
-                require(
-                    "../models/substations"
-                );
-
+            // ------------------------------------------------
+            // FIND SUBSTATION
+            // ------------------------------------------------
 
             const substation =
                 await Substation.findById(
@@ -794,6 +908,10 @@ exports.assignSubstation =
                 throw err;
             }
 
+
+            // ------------------------------------------------
+            // ACTIVE CHECK
+            // ------------------------------------------------
 
             if (
                 substation.isActive ===
@@ -820,7 +938,9 @@ exports.assignSubstation =
 
 
         return User
-            .findById(user._id)
+            .findById(
+                user._id
+            )
             .populate(
                 "assignedSubstation"
             );
@@ -834,15 +954,11 @@ exports.assignSubstation =
 exports.getActiveSubstations =
     async function() {
 
-        const Substation =
-            require(
-                "../models/substations"
-            );
-
-
-        return Substation.find({
-            isActive: true
-        }).sort({
-            name: 1
-        });
+        return Substation
+            .find({
+                isActive: true
+            })
+            .sort({
+                name: 1
+            });
     };
