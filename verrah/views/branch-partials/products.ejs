@@ -3,42 +3,76 @@
 
    VERRAH COSMETICS
    SUBSTATION PRODUCTS / INVENTORY
+
+   ----------------------------------------------------------
+   BEHAVIOUR:
+
+   - Products grouped by category
+   - Each category has its own rows
+   - Maximum 6 products per row
+   - 7th product starts a new row
+   - Each row scrolls horizontally
+   - Product card: 112px × 155px
+   - Admin:
+       /substations/product/:id
+   - Other roles:
+       /products/:id
 ========================================================== -->
 
-<div class="substation-products-panel">
+
+<div class="branch-inventory">
+
 
   <!-- ========================================================
-       PANEL HEADER
+       INVENTORY HEADER
   ========================================================= -->
 
-  <div class="panel-heading">
+  <div class="branch-inventory-header">
 
-    <div>
-      <span class="section-kicker">INVENTORY</span>
+    <div class="branch-inventory-heading">
 
-      <h2>Products in this Substation</h2>
+      <span class="branch-inventory-label">
+        INVENTORY
+      </span>
+
+      <h2>
+        Products in this Substation
+      </h2>
+
     </div>
 
-    <span class="panel-count">
-      <%= substation.products ? substation.products.length : 0 %>
+
+    <span class="branch-inventory-count">
+
+      <%= substation.products
+        ? substation.products.length
+        : 0 %>
+
     </span>
 
   </div>
 
 
+
   <!-- ========================================================
-       EMPTY PRODUCTS STATE
-  ========================================================= -->
+       EMPTY INVENTORY
+  ======================================================== -->
 
-  <% if (!substation.products || !substation.products.length) { %>
+  <% if (
+    !substation.products ||
+    !substation.products.length
+  ) { %>
 
-    <div class="substations-empty compact-empty">
 
-      <div class="empty-icon">
+    <div class="branch-inventory-empty">
+
+      <div class="branch-inventory-empty-icon">
         <i class="fas fa-box-open"></i>
       </div>
 
-      <h3>No products allocated</h3>
+      <h3>
+        No products allocated
+      </h3>
 
       <p>
         No products have been allocated to this substation yet.
@@ -47,108 +81,321 @@
     </div>
 
 
-  <!-- ========================================================
-       PRODUCTS LIST
-  ======================================================== -->
-
   <% } else { %>
 
-    <div class="substation-product-list">
-
-      <% substation.products.forEach((product) => { %>
-
-        <a
-          href="/substations/product/<%= product._id %>"
-          class="substation-product-item"
-        >
-
-          <!-- ==================================================
-               PRODUCT IMAGE
-          ================================================== -->
-
-          <div class="list-thumb">
-
-            <% if (product.image) { %>
-
-              <img
-                src="<%= product.image %>"
-                alt="<%= product.name %>"
-                loading="lazy"
-              >
-
-            <% } else { %>
-
-              <span>
-                <i class="fas fa-box"></i>
-              </span>
-
-            <% } %>
-
-          </div>
 
 
-          <!-- ==================================================
-               PRODUCT INFORMATION
-          ================================================== -->
+    <!-- ======================================================
+         GROUP PRODUCTS BY CATEGORY
+    ====================================================== -->
 
-          <div class="list-main">
+    <%
+      const groupedProducts = {};
+
+      substation.products.forEach((product) => {
+
+        const categoryName =
+          product.categoryName ||
+          (
+            product.category &&
+            typeof product.category === "object"
+              ? product.category.name
+              : product.category
+          ) ||
+          "Other";
+
+
+        if (!groupedProducts[categoryName]) {
+
+          groupedProducts[categoryName] = [];
+
+        }
+
+
+        groupedProducts[categoryName].push(product);
+
+      });
+
+
+      const categoryGroups =
+        Object.entries(groupedProducts);
+    %>
+
+
+
+    <!-- ======================================================
+         CATEGORY GROUPS
+    ====================================================== -->
+
+    <div class="branch-inventory-categories">
+
+
+      <% categoryGroups.forEach(
+        ([categoryName, products]) => {
+      %>
+
+
+        <%
+          /*
+           * Divide products belonging to this category
+           * into rows of six.
+           */
+
+          const productRows = [];
+
+          for (
+            let i = 0;
+            i < products.length;
+            i += 6
+          ) {
+
+            productRows.push(
+              products.slice(i, i + 6)
+            );
+
+          }
+        %>
+
+
+
+        <!-- ==================================================
+             CATEGORY
+        ================================================== -->
+
+        <section class="branch-inventory-category">
+
+
+          <!-- ================================================
+               CATEGORY TITLE
+          ================================================= -->
+
+          <div class="branch-category-title">
 
             <h3>
-              <%= product.name %>
+              <%= categoryName %>
             </h3>
-
-
-            <div class="list-meta">
-
-              <span>
-                <%= product.category || "Other" %>
-              </span>
-
-              <span>•</span>
-
-              <span>
-                <%= product.subcategory || "Other" %>
-              </span>
-
-            </div>
-
-
-            <!-- ================================================
-                 SUBSTATION STOCK
-            ================================================= -->
-
-            <div class="list-price">
-
-              <strong>
-                <%= Number(
-                  product.substationUnits || 0
-                ).toLocaleString() %>
-              </strong>
-
-              units here
-
-            </div>
 
           </div>
 
 
-          <!-- ==================================================
-               ARROW
-          ================================================== -->
 
-          <span
-            class="substation-product-arrow"
-            aria-hidden="true"
-          >
-            <i class="fas fa-chevron-right"></i>
-          </span>
+          <!-- ================================================
+               CATEGORY PRODUCT ROWS
+          ================================================= -->
 
-        </a>
+          <div class="branch-product-rows">
+
+
+            <% productRows.forEach(
+              (rowProducts) => {
+            %>
+
+
+              <!-- ============================================
+                   HORIZONTAL PRODUCT ROW
+              ============================================= -->
+
+              <div class="branch-product-row">
+
+
+                <div class="branch-product-scroller">
+
+
+                  <% rowProducts.forEach((product) => { %>
+
+
+                    <%
+                      /*
+                       * Admin users remain inside the
+                       * substation inventory interface.
+                       *
+                       * Other users go to the normal
+                       * product page.
+                       */
+
+                      const productLink =
+                        currentUser &&
+                        currentUser.role === "admin"
+
+                          ? `/substations/product/${product._id}`
+
+                          : `/products/${product._id}`;
+
+
+                      /*
+                       * Resolve category name.
+                       */
+
+                      const productCategory =
+                        product.categoryName ||
+                        (
+                          product.category &&
+                          typeof product.category === "object"
+                            ? product.category.name
+                            : product.category
+                        ) ||
+                        categoryName ||
+                        "Other";
+
+
+                      /*
+                       * Resolve subcategory name.
+                       */
+
+                      const productSubcategory =
+                        product.subcategoryName ||
+                        (
+                          product.subcategory &&
+                          typeof product.subcategory === "object"
+                            ? product.subcategory.name
+                            : product.subcategory
+                        ) ||
+                        "Other";
+                    %>
+
+
+
+                    <!-- ======================================
+                         PRODUCT CARD
+                    ======================================= -->
+
+                    <a
+                      href="<%= productLink %>"
+                      class="branch-product-card"
+                    >
+
+
+                      <!-- ==================================
+                           PRODUCT IMAGE
+                      =================================== -->
+
+                      <div class="branch-product-photo">
+
+
+                        <% if (product.image) { %>
+
+                          <img
+                            src="<%= product.image %>"
+                            alt="<%= product.name %>"
+                            loading="lazy"
+                          >
+
+                        <% } else { %>
+
+                          <span class="branch-product-placeholder">
+
+                            <i class="fas fa-box"></i>
+
+                          </span>
+
+                        <% } %>
+
+
+                      </div>
+
+
+
+                      <!-- ==================================
+                           PRODUCT DETAILS
+                      =================================== -->
+
+                      <div class="branch-product-details">
+
+
+                        <!-- =================================
+                             PRODUCT NAME
+                        ================================== -->
+
+                        <h4 class="branch-product-name">
+
+                          <%= product.name %>
+
+                        </h4>
+
+
+
+                        <!-- =================================
+                             CATEGORY / SUBCATEGORY
+                        ================================== -->
+
+                        <div class="branch-product-meta">
+
+
+                          <span class="branch-product-category">
+
+                            <%= productCategory %>
+
+                          </span>
+
+
+                          <span class="branch-product-separator">
+                            •
+                          </span>
+
+
+                          <span class="branch-product-subcategory">
+
+                            <%= productSubcategory %>
+
+                          </span>
+
+
+                        </div>
+
+
+
+                        <!-- =================================
+                             STOCK
+                        ================================== -->
+
+                        <div class="branch-product-quantity">
+
+                          <strong>
+
+                            <%= Number(
+                              product.substationUnits || 0
+                            ).toLocaleString() %>
+
+                          </strong>
+
+                          <span>
+                            units
+                          </span>
+
+                        </div>
+
+
+                      </div>
+
+
+                    </a>
+
+
+                  <% }) %>
+
+
+                </div>
+
+
+              </div>
+
+
+            <% }) %>
+
+
+          </div>
+
+
+        </section>
+
 
       <% }) %>
 
+
     </div>
 
+
   <% } %>
+
 
 </div>
