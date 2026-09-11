@@ -318,6 +318,17 @@ const mpesaRoutes =
         "./verrah/routes/mpesa"
     );
 
+// ----------------------------------------------------------
+// ROUTES
+// ----------------------------------------------------------
+
+const salesRoutes =
+    safeLoad(
+        "salesRoutes",
+        "./verrah/routes/sales"
+    );
+
+
 
 // ----------------------------------------------------------
 // BRANCHES
@@ -933,6 +944,29 @@ if (branchRoutes) {
 
     console.error(
         "❌ /branch was not mounted"
+    );
+}
+
+
+// ==========================================================
+// SALES
+// ==========================================================
+
+if (salesRoutes) {
+
+    app.use(
+        "/sales",
+        salesRoutes
+    );
+
+    console.log(
+        "✅ Mounted /sales"
+    );
+
+} else {
+
+    console.error(
+        "❌ /sales was not mounted"
     );
 }
 
