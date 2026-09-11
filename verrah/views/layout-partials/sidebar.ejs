@@ -180,16 +180,16 @@
 
 
                 <!-- =========================================
-                   RECORD MILK SALES
+                   SALES
                 ========================================== -->
 
-                <!--
+                
                 <li class="sidebar-item">
 
                     <a
-                        href="/milk/sales"
+                        href="/sales"
                         class="sidebar-link"
-                        title="Record Milk Sales"
+                        title="Sales"
                     >
 
                         <span
@@ -206,7 +206,7 @@
                     </a>
 
                 </li>
-                -->
+                
 
 
                 <!-- =========================================
@@ -363,40 +363,6 @@
         </li>
 
         <% } %>
-
-
-        <% if (user && user.role === "admin") { %>
-
-        <!-- =================================================
-           FINANCIALS
-           ADMIN ONLY
-        ================================================== -->
-
-        <li class="sidebar-item">
-
-            <a
-                href="/sales"
-                class="sidebar-link"
-                title="Sales"
-            >
-
-                <span
-                    class="sidebar-icon"
-                    aria-hidden="true"
-                >
-                    💰
-                </span>
-
-                <span class="sidebar-label">
-                    Sales
-                </span>
-
-            </a>
-
-        </li>
-
-        <% } %>
-
 
     </ul>
 
