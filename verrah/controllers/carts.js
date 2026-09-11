@@ -14,6 +14,31 @@ const packageService =
 
 
 // =========================================================
+// ERROR MESSAGE
+// =========================================================
+
+function getCartErrorMessage(err, fallback) {
+
+    const message =
+        String(err?.message || "").trim();
+
+
+    // Never expose old reservation terminology
+    if (
+        /reserved\s*quantity|reservedquantity|reservation/i.test(
+            message
+        )
+    ) {
+
+        return "Insufficient stock for one or more products.";
+    }
+
+
+    return message || fallback;
+}
+
+
+// =========================================================
 // CART LIST
 // GET /carts
 // =========================================================
@@ -27,6 +52,7 @@ exports.list = async (req, res) => {
 
         const total =
             cartService.calculateTotal(cart);
+
 
         return res.render(
             "cart/carts",
@@ -52,6 +78,7 @@ exports.list = async (req, res) => {
             "Cart list error:",
             err
         );
+
 
         return res.status(500).render(
             "cart/carts",
@@ -85,6 +112,7 @@ exports.details = async (req, res) => {
 
         const cart =
             await cartService.getCart(req);
+
 
         if (
             !cart ||
@@ -148,6 +176,7 @@ exports.details = async (req, res) => {
             err
         );
 
+
         return res.redirect(
             "/carts"
         );
@@ -169,6 +198,7 @@ exports.remove = async (req, res) => {
             req.params.id
         );
 
+
         return res.redirect(
             "/carts"
         );
@@ -180,10 +210,17 @@ exports.remove = async (req, res) => {
             err
         );
 
+
+        const message =
+            getCartErrorMessage(
+                err,
+                "Unable to remove item."
+            );
+
+
         return res.redirect(
             `/carts/${req.params.id}?error=${encodeURIComponent(
-                err.message ||
-                "Unable to remove item."
+                message
             )}`
         );
     }
@@ -195,6 +232,9 @@ exports.remove = async (req, res) => {
 // POST /carts/checkout
 //
 // ADMIN / CLIENT FLOW
+//
+// Stock is handled when the package is formed.
+// The controller does not reserve stock.
 // =========================================================
 
 exports.checkout = async (req, res) => {
@@ -275,10 +315,17 @@ exports.checkout = async (req, res) => {
             err
         );
 
+
+        const message =
+            getCartErrorMessage(
+                err,
+                "Checkout failed."
+            );
+
+
         return res.redirect(
             `/carts?error=${encodeURIComponent(
-                err.message ||
-                "Checkout failed."
+                message
             )}`
         );
     }
@@ -288,6 +335,9 @@ exports.checkout = async (req, res) => {
 // =========================================================
 // STAFF SALE
 // POST /carts/staff-sale
+//
+// Staff sells directly from available Product.units.
+// No reservation logic.
 // =========================================================
 
 exports.staffSale = async (req, res) => {
@@ -374,7 +424,17 @@ exports.staffSale = async (req, res) => {
 
 
         // -----------------------------------------------------
-        // CREATE SALE
+        // CREATE STAFF SALE
+        //
+        // cartService is responsible for:
+        //
+        // Product.units >= quantity
+        //
+        // then:
+        //
+        // Product.units -= quantity
+        //
+        // No reserved quantity.
         // -----------------------------------------------------
 
         await cartService.createStaffSale(
@@ -385,9 +445,6 @@ exports.staffSale = async (req, res) => {
 
         // -----------------------------------------------------
         // SUCCESS
-        //
-        // IMPORTANT:
-        // Staff goes directly to assigned substation.
         // -----------------------------------------------------
 
         return res.redirect(
@@ -402,10 +459,16 @@ exports.staffSale = async (req, res) => {
         );
 
 
+        const message =
+            getCartErrorMessage(
+                err,
+                "Unable to record staff sale."
+            );
+
+
         return res.redirect(
             `/carts?error=${encodeURIComponent(
-                err.message ||
-                "Unable to record staff sale."
+                message
             )}`
         );
     }
@@ -457,6 +520,7 @@ exports.paymentPage = async (req, res) => {
             err
         );
 
+
         return res.redirect(
             "/carts"
         );
@@ -485,6 +549,7 @@ exports.paymentStatus = async (req, res) => {
 
             return res.status(404).json({
                 ok: false,
+
                 message:
                     "Payment not found."
             });
@@ -518,6 +583,7 @@ exports.paymentStatus = async (req, res) => {
             "Payment status error:",
             err
         );
+
 
         return res.status(500).json({
 
