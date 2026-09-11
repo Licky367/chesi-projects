@@ -8,6 +8,174 @@ const service =
 
 
 // ==========================================================
+// HELPERS
+// ==========================================================
+
+function getRole(req) {
+  return String(
+    req.user?.role || ""
+  ).toLowerCase();
+}
+
+
+// ----------------------------------------------------------
+// NORMALIZE PHONE NUMBER
+// ----------------------------------------------------------
+
+function normalizePhoneNumber(value) {
+
+  if (
+    value === undefined ||
+    value === null ||
+    String(value).trim() === ""
+  ) {
+    return null;
+  }
+
+  const cleaned =
+    String(value)
+      .trim()
+      .replace(/[^\d+]/g, "");
+
+  if (!cleaned) {
+    return null;
+  }
+
+  const number =
+    Number(cleaned);
+
+  return Number.isFinite(number)
+    ? number
+    : null;
+}
+
+
+// ----------------------------------------------------------
+// NORMALIZE GPS COORDINATE
+// ----------------------------------------------------------
+
+function normalizeCoordinate(
+  value,
+  min,
+  max
+) {
+
+  if (
+    value === undefined ||
+    value === null ||
+    String(value).trim() === ""
+  ) {
+    return null;
+  }
+
+  const number =
+    Number(value);
+
+  if (
+    !Number.isFinite(number) ||
+    number < min ||
+    number > max
+  ) {
+    throw new Error(
+      `Invalid GPS coordinate. Value must be between ${min} and ${max}.`
+    );
+  }
+
+  return number;
+}
+
+
+// ----------------------------------------------------------
+// BUILD SUBSTATION DATA
+// ----------------------------------------------------------
+
+function buildSubstationData(
+  req,
+  existingSubstation = null
+) {
+
+  const body =
+    req.body || {};
+
+  const data = {
+    name:
+      body.name,
+
+    location:
+      body.location || "",
+
+    phoneNumber:
+      normalizePhoneNumber(
+        body.phoneNumber
+      ),
+
+    directions:
+      body.directions || "",
+
+    description:
+      body.description || "",
+
+    gps: {
+      latitude:
+        normalizeCoordinate(
+          body.latitude,
+          -90,
+          90
+        ),
+
+      longitude:
+        normalizeCoordinate(
+          body.longitude,
+          -180,
+          180
+        )
+    }
+  };
+
+
+  // --------------------------------------------------------
+  // ICON
+  // --------------------------------------------------------
+
+  /*
+   * Uploaded image takes priority over URL.
+   *
+   * If editing and neither a new upload nor URL is supplied,
+   * keep the existing icon.
+   */
+
+  if (req.file) {
+
+    data.substationIcon =
+      `/uploads/substations/${req.file.filename}`;
+
+  } else if (
+    body.substationIconUrl &&
+    String(
+      body.substationIconUrl
+    ).trim()
+  ) {
+
+    data.substationIcon =
+      String(
+        body.substationIconUrl
+      ).trim();
+
+  } else if (
+    existingSubstation &&
+    existingSubstation.substationIcon
+  ) {
+
+    data.substationIcon =
+      existingSubstation.substationIcon;
+  }
+
+
+  return data;
+}
+
+
+// ==========================================================
 // LIST SUBSTATIONS
 // ==========================================================
 
@@ -21,7 +189,8 @@ exports.list = async (
     res.render(
       "substations/index",
       {
-        title: "Substations",
+        title:
+          "Substations",
 
         substations:
           await service.list(),
@@ -47,7 +216,8 @@ exports.list = async (
     res.status(500).render(
       "substations/index",
       {
-        title: "Substations",
+        title:
+          "Substations",
 
         substations: [],
 
@@ -79,7 +249,8 @@ exports.newForm = (
       title:
         "New Substation",
 
-      error: null,
+      error:
+        null,
 
       old: {},
 
@@ -101,11 +272,16 @@ exports.create = async (
 
   try {
 
+    const data =
+      buildSubstationData(req);
+
+
     await service.create(
-      req.body
+      data
     );
 
-    res.redirect(
+
+    return res.redirect(
       "/substations?saved=1"
     );
 
@@ -116,7 +292,24 @@ exports.create = async (
       e
     );
 
-    res.status(400).render(
+    /*
+     * Rebuild the form data so that fields such as GPS,
+     * phone number and directions are not lost after an error.
+     */
+
+    let old = {
+      ...(req.body || {})
+    };
+
+
+    if (req.file) {
+
+      old.substationIcon =
+        `/uploads/substations/${req.file.filename}`;
+    }
+
+
+    return res.status(400).render(
       "substations/new",
       {
         title:
@@ -125,8 +318,7 @@ exports.create = async (
         error:
           e.message,
 
-        old:
-          req.body,
+        old,
 
         user:
           req.user
@@ -152,12 +344,14 @@ exports.detail = async (
         req.params.id
       );
 
+
     if (!substation) {
 
       return res.redirect(
         "/substations?error=Substation+not+found"
       );
     }
+
 
     return res.render(
       "substations/detail",
@@ -205,12 +399,14 @@ async (
         req.params.id
       );
 
+
     if (!product) {
 
       return res.redirect(
         "/substations?error=Product+not+found"
       );
     }
+
 
     return res.render(
       "substations/product-detail",
@@ -221,9 +417,7 @@ async (
         product,
 
         role:
-          String(
-            req.user?.role || ""
-          ).toLowerCase(),
+          getRole(req),
 
         error:
           req.query.error || null,
@@ -265,9 +459,7 @@ async (
   try {
 
     if (
-      String(
-        req.user?.role || ""
-      ).toLowerCase() !== "admin"
+      getRole(req) !== "admin"
     ) {
 
       throw new Error(
@@ -275,10 +467,12 @@ async (
       );
     }
 
+
     await service.updateProductUnits(
       req.params.id,
       req.body
     );
+
 
     return res.redirect(
       `/substations/product/${req.params.id}?success=${encodeURIComponent(
@@ -292,6 +486,7 @@ async (
       "UPDATE PRODUCT UNITS ERROR:",
       e
     );
+
 
     return res.redirect(
       `/substations/product/${req.params.id}?error=${encodeURIComponent(
@@ -319,12 +514,14 @@ async (
         req.params.id
       );
 
+
     if (!substation) {
 
       return res.redirect(
         "/substations?error=Substation+not+found"
       );
     }
+
 
     return res.render(
       "substations/new",
@@ -351,6 +548,7 @@ async (
       e
     );
 
+
     return res.redirect(
       `/substations?error=${encodeURIComponent(
         e.message
@@ -372,10 +570,32 @@ async (
 
   try {
 
+    const existingSubstation =
+      await service.getById(
+        req.params.id
+      );
+
+
+    if (!existingSubstation) {
+
+      throw new Error(
+        "Substation not found."
+      );
+    }
+
+
+    const data =
+      buildSubstationData(
+        req,
+        existingSubstation
+      );
+
+
     await service.update(
       req.params.id,
-      req.body
+      data
     );
+
 
     return res.redirect(
       `/substations/branch/${req.params.id}/edit?saved=1`
@@ -388,24 +608,73 @@ async (
       e
     );
 
+
+    /*
+     * Preserve the user's submitted values when the update
+     * fails validation.
+     */
+
+    const substation = {
+      ...(req.body || {}),
+
+      _id:
+        req.params.id
+    };
+
+
+    /*
+     * Keep the existing icon available when no new icon
+     * was uploaded.
+     */
+
+    try {
+
+      const existing =
+        await service.getById(
+          req.params.id
+        );
+
+
+      if (
+        existing &&
+        existing.substationIcon &&
+        !req.file &&
+        !req.body?.substationIconUrl
+      ) {
+
+        substation.substationIcon =
+          existing.substationIcon;
+      }
+
+    } catch (iconError) {
+
+      console.error(
+        "LOAD EXISTING ICON ERROR:",
+        iconError
+      );
+    }
+
+
+    if (req.file) {
+
+      substation.substationIcon =
+        `/uploads/substations/${req.file.filename}`;
+    }
+
+
     return res.status(400).render(
       "substations/new",
       {
         title:
           "Edit Substation",
 
-        substation: {
-          _id:
-            req.params.id,
-
-          ...req.body
-        },
+        substation,
 
         error:
           e.message,
 
         old:
-          req.body,
+          req.body || {},
 
         user:
           req.user
@@ -432,12 +701,14 @@ async (
         req.params.id
       );
 
+
     if (!substation) {
 
       return res.redirect(
         "/substations?error=Substation+not+found"
       );
     }
+
 
     return res.render(
       "branch-partials/icon",
@@ -468,6 +739,7 @@ async (
       e
     );
 
+
     return res.redirect(
       `/substations?error=${encodeURIComponent(
         e.message
@@ -490,9 +762,7 @@ async (
   try {
 
     if (
-      String(
-        req.user?.role || ""
-      ).toLowerCase() !== "admin"
+      getRole(req) !== "admin"
     ) {
 
       throw new Error(
@@ -500,10 +770,12 @@ async (
       );
     }
 
+
     const substation =
       await service.getById(
         req.params.id
       );
+
 
     if (!substation) {
 
@@ -511,6 +783,12 @@ async (
         "Substation not found."
       );
     }
+
+
+    /*
+     * Dedicated icon management requires an uploaded
+     * image.
+     */
 
     if (!req.file) {
 
@@ -521,13 +799,16 @@ async (
       );
     }
 
+
     const imagePath =
       `/uploads/substations/${req.file.filename}`;
+
 
     await service.updateIcon(
       req.params.id,
       imagePath
     );
+
 
     return res.redirect(
       `/substations/branch/icon/${req.params.id}?success=${encodeURIComponent(
@@ -541,6 +822,7 @@ async (
       "UPDATE ICON ERROR:",
       e
     );
+
 
     return res.redirect(
       `/substations/branch/icon/${req.params.id}?error=${encodeURIComponent(
@@ -568,12 +850,14 @@ async (
         req.params.id
       );
 
+
     if (!substation) {
 
       return res.redirect(
         "/substations?error=Substation+not+found"
       );
     }
+
 
     return res.render(
       "branch-partials/images",
@@ -604,6 +888,7 @@ async (
       e
     );
 
+
     return res.redirect(
       `/substations?error=${encodeURIComponent(
         e.message
@@ -626,9 +911,7 @@ async (
   try {
 
     if (
-      String(
-        req.user?.role || ""
-      ).toLowerCase() !== "admin"
+      getRole(req) !== "admin"
     ) {
 
       throw new Error(
@@ -636,10 +919,12 @@ async (
       );
     }
 
+
     const substation =
       await service.getById(
         req.params.id
       );
+
 
     if (!substation) {
 
@@ -655,6 +940,7 @@ async (
 
     let keepImages =
       req.body.keepImages || [];
+
 
     if (
       !Array.isArray(
@@ -689,7 +975,9 @@ async (
     // ------------------------------------------------------
 
     const uploadedImages =
-      Array.isArray(req.files)
+      Array.isArray(
+        req.files
+      )
         ? req.files
             .map(
               file =>
@@ -708,7 +996,9 @@ async (
     ];
 
 
-    if (images.length > 20) {
+    if (
+      images.length > 20
+    ) {
 
       throw new Error(
         "A substation can have a maximum of 20 images."
@@ -738,6 +1028,7 @@ async (
       "UPDATE IMAGES ERROR:",
       e
     );
+
 
     return res.redirect(
       `/substations/branch/images/${req.params.id}?error=${encodeURIComponent(
