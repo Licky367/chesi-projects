@@ -5,12 +5,16 @@
 
     <meta charset="UTF-8">
 
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>VERAH COSMETICS</title>
+
+    <title>
+        VERAH COSMETICS
+    </title>
 
 
     <!-- =====================================================
@@ -131,6 +135,7 @@ const homeLink = "/";
 
 /* =========================================================
    ROLE FLAGS
+
    AVAILABLE ROLES:
    admin
    staff
@@ -204,6 +209,18 @@ const isClient =
 ========================================================= -->
 
 <%- include("layout-partials/footer") %>
+
+
+<!-- =========================================================
+   EXTRACTED PAGE SCRIPTS
+
+   express-ejs-layouts extracts page-level <script>
+   blocks from views such as carts.ejs.
+
+   They MUST be rendered here.
+========================================================= -->
+
+<%- script %>
 
 
 <% if(!isAuthPage){ %>
