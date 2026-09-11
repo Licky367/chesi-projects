@@ -1,6 +1,6 @@
 /* =========================================================
    VERAH COSMETICS — STAFF DELIVERY & SALES
-   BROWN THEME
+   BROWN CARD THEME
 ========================================================= */
 
 
@@ -9,11 +9,21 @@
 ========================================================= */
 
 .verah-delivery-tasks {
-    width: 100%;
+    width: calc(100% - 32px);
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 28px 16px;
+    margin: 30px auto;
+
+    padding: 26px 28px 30px;
+
     box-sizing: border-box;
+
+    background: #ffffff;
+
+    border-left: 8px solid #7a4b2a;
+    border-radius: 24px;
+
+    box-shadow:
+        0 8px 24px rgba(75, 46, 31, 0.10);
 }
 
 
@@ -27,24 +37,28 @@
 
 .verah-delivery-eyebrow {
     display: block;
-    margin-bottom: 6px;
 
-    font-size: 0.75rem;
+    margin-bottom: 7px;
+
+    font-size: 0.76rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+
+    letter-spacing: 0.18em;
 
     color: #8b5e3c;
+
     text-transform: uppercase;
 }
 
 .verah-delivery-header h2 {
     margin: 0;
 
-    font-size: 1.7rem;
-    line-height: 1.25;
-    font-weight: 700;
-
     color: #4b2e1f;
+
+    font-size: 1.75rem;
+    line-height: 1.25;
+
+    font-weight: 700;
 }
 
 
@@ -54,6 +68,10 @@
 
 .verah-delivery-content {
     width: 100%;
+
+    margin: 0;
+    padding: 0;
+
     box-sizing: border-box;
 }
 
@@ -64,17 +82,20 @@
 
 .verah-delivery-list {
     margin: 0;
-    padding-left: 24px;
+
+    padding-left: 25px;
 
     color: #4b2e1f;
 
-    font-size: 0.98rem;
+    font-size: 1rem;
+
     line-height: 1.7;
 }
 
 .verah-delivery-list li {
-    margin-bottom: 9px;
-    padding-left: 4px;
+    margin-bottom: 10px;
+
+    padding-left: 5px;
 }
 
 .verah-delivery-list li:last-child {
@@ -90,18 +111,22 @@
     display: inline-block;
 
     color: #7a4b2a;
+
     font-weight: 700;
 
     text-decoration: none;
 
     transition:
         color 0.2s ease,
-        opacity 0.2s ease;
+        transform 0.2s ease;
 }
 
 .verah-delivery-link:hover {
     color: #4b2e1f;
+
     text-decoration: none;
+
+    transform: translateX(2px);
 }
 
 
@@ -110,12 +135,21 @@
 ========================================================= */
 
 .verah-sales-activities {
-    width: 100%;
+    width: calc(100% - 32px);
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 28px 16px;
+    margin: 30px auto;
+
+    padding: 26px 28px 30px;
 
     box-sizing: border-box;
+
+    background: #ffffff;
+
+    border-left: 8px solid #7a4b2a;
+    border-radius: 24px;
+
+    box-shadow:
+        0 8px 24px rgba(75, 46, 31, 0.10);
 }
 
 
@@ -129,24 +163,28 @@
 
 .verah-sales-eyebrow {
     display: block;
-    margin-bottom: 6px;
 
-    font-size: 0.75rem;
+    margin-bottom: 7px;
+
+    font-size: 0.76rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+
+    letter-spacing: 0.18em;
 
     color: #8b5e3c;
+
     text-transform: uppercase;
 }
 
 .verah-sales-header h2 {
     margin: 0;
 
-    font-size: 1.7rem;
-    line-height: 1.25;
-    font-weight: 700;
-
     color: #4b2e1f;
+
+    font-size: 1.75rem;
+    line-height: 1.25;
+
+    font-weight: 700;
 }
 
 
@@ -156,6 +194,10 @@
 
 .verah-sales-content {
     width: 100%;
+
+    margin: 0;
+    padding: 0;
+
     box-sizing: border-box;
 }
 
@@ -165,11 +207,12 @@
 ========================================================= */
 
 .verah-sales-description {
-    margin: 0 0 14px;
+    margin: 0 0 15px;
 
     color: #5c4030;
 
-    font-size: 0.98rem;
+    font-size: 1rem;
+
     line-height: 1.65;
 }
 
@@ -180,17 +223,20 @@
 
 .verah-sales-list {
     margin: 0;
-    padding-left: 24px;
+
+    padding-left: 25px;
 
     color: #4b2e1f;
 
-    font-size: 0.98rem;
+    font-size: 1rem;
+
     line-height: 1.7;
 }
 
 .verah-sales-list li {
-    margin-bottom: 9px;
-    padding-left: 4px;
+    margin-bottom: 10px;
+
+    padding-left: 5px;
 }
 
 .verah-sales-list li:last-child {
@@ -206,18 +252,22 @@
     display: inline-block;
 
     color: #7a4b2a;
+
     font-weight: 700;
 
     text-decoration: none;
 
     transition:
         color 0.2s ease,
-        opacity 0.2s ease;
+        transform 0.2s ease;
 }
 
 .verah-sales-link:hover {
     color: #4b2e1f;
+
     text-decoration: none;
+
+    transform: translateX(2px);
 }
 
 
@@ -229,23 +279,56 @@
 
     .verah-delivery-tasks,
     .verah-sales-activities {
-        padding: 22px 14px;
+        width: calc(100% - 28px);
+
+        margin: 24px auto;
+
+        padding: 24px 20px 26px;
+
+        border-left-width: 7px;
+        border-radius: 22px;
+
+        box-shadow:
+            0 7px 20px rgba(75, 46, 31, 0.10);
     }
+
+
+    .verah-delivery-eyebrow,
+    .verah-sales-eyebrow {
+        font-size: 0.72rem;
+
+        letter-spacing: 0.16em;
+    }
+
 
     .verah-delivery-header h2,
     .verah-sales-header h2 {
-        font-size: 1.45rem;
+        font-size: 1.5rem;
     }
+
 
     .verah-delivery-list,
     .verah-sales-list {
         padding-left: 22px;
-        font-size: 0.94rem;
+
+        font-size: 0.95rem;
+
         line-height: 1.65;
     }
 
+
+    .verah-delivery-list li,
+    .verah-sales-list li {
+        margin-bottom: 9px;
+
+        padding-left: 3px;
+    }
+
+
     .verah-sales-description {
-        font-size: 0.94rem;
+        font-size: 0.95rem;
+
+        line-height: 1.6;
     }
 
 }
