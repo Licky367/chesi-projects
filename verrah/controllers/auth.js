@@ -14,26 +14,16 @@ const authService =
 
 function safeReturnTo(value) {
 
-    if (typeof value !== "string") {
-        return "/";
-    }
-
-    const trimmed =
-        value.trim();
-
-    if (!trimmed) {
-        return "/";
-    }
-
-    // Only allow local paths.
     if (
-        !trimmed.startsWith("/") ||
-        trimmed.startsWith("//")
+        typeof value !== "string" ||
+        !value.startsWith("/") ||
+        value.startsWith("//")
     ) {
         return "/";
     }
 
-    return trimmed;
+
+    return value;
 }
 
 
@@ -41,18 +31,26 @@ function safeReturnTo(value) {
 // LOGIN VIEW
 // ==========================================================
 
-function loginView(res, data = {}) {
+function loginView(
+    res,
+    data = {}
+) {
 
     return res.render(
         "auth/login",
         {
-            title: "Log In - COREVESTER",
 
-            error: null,
+            title:
+                "Log In - COREVESTER",
 
-            email: "",
+            error:
+                null,
 
-            returnTo: "/",
+            email:
+                "",
+
+            returnTo:
+                "/",
 
             ...data
         }
@@ -64,20 +62,29 @@ function loginView(res, data = {}) {
 // REGISTER VIEW
 // ==========================================================
 
-function registerView(res, data = {}) {
+function registerView(
+    res,
+    data = {}
+) {
 
     return res.render(
         "auth/register",
         {
-            title: "Create Account - COREVESTER",
 
-            error: null,
+            title:
+                "Create Account - COREVESTER",
 
-            name: "",
+            error:
+                null,
 
-            phone: "",
+            name:
+                "",
 
-            email: "",
+            phone:
+                "",
+
+            email:
+                "",
 
             ...data
         }
@@ -95,16 +102,15 @@ function regenerateSession(req) {
         (resolve, reject) => {
 
             req.session.regenerate(
-                (error) => {
+                err => {
 
-                    if (error) {
-                        return reject(error);
+                    if (err) {
+                        return reject(err);
                     }
 
                     resolve();
                 }
             );
-
         }
     );
 }
@@ -120,16 +126,15 @@ function saveSession(req) {
         (resolve, reject) => {
 
             req.session.save(
-                (error) => {
+                err => {
 
-                    if (error) {
-                        return reject(error);
+                    if (err) {
+                        return reject(err);
                     }
 
                     resolve();
                 }
             );
-
         }
     );
 }
@@ -140,7 +145,15 @@ function saveSession(req) {
 // ==========================================================
 
 exports.showLogin =
-    function (req, res) {
+    (req, res) => {
+
+        if (req.user) {
+
+            return res.redirect(
+                "/"
+            );
+        }
+
 
         return loginView(
             res,
@@ -159,49 +172,47 @@ exports.showLogin =
 // ==========================================================
 
 exports.login =
-    async function (req, res) {
-
-        const email =
-            String(
-                req.body?.email || ""
-            ).trim();
-
-        const password =
-            String(
-                req.body?.password || ""
-            );
-
-        const returnTo =
-            safeReturnTo(
-                req.body?.returnTo
-            );
-
+    async (
+        req,
+        res,
+        next
+    ) => {
 
         try {
 
-            if (!email) {
+            const email =
+                String(
+                    req.body?.email ||
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
 
-                return loginView(
-                    res,
-                    {
-                        error:
-                            "Email is required.",
 
-                        email,
-
-                        returnTo
-                    }
+            const password =
+                String(
+                    req.body?.password ||
+                    ""
                 );
-            }
 
 
-            if (!password) {
+            const returnTo =
+                safeReturnTo(
+                    req.body?.returnTo
+                );
+
+
+            if (
+                !email ||
+                !password
+            ) {
 
                 return loginView(
                     res,
                     {
+
                         error:
-                            "Password is required.",
+                            "Email and password are required.",
 
                         email,
 
@@ -212,46 +223,53 @@ exports.login =
 
 
             const user =
-                await authService.login(
+                await authService.login({
                     email,
+
                     password
+                });
+
+
+            if (!user) {
+
+                return loginView(
+                    res,
+                    {
+
+                        error:
+                            "Invalid email or password.",
+
+                        email,
+
+                        returnTo
+                    }
                 );
+            }
 
 
-            await regenerateSession(req);
+            await regenerateSession(
+                req
+            );
 
 
             req.session.user =
-                user;
+                authService.toSessionUser(
+                    user
+                );
 
 
-            await saveSession(req);
+            await saveSession(
+                req
+            );
 
 
             return res.redirect(
-                returnTo || "/"
+                returnTo
             );
 
-        } catch (error) {
+        } catch (err) {
 
-            console.error(
-                "Login error:",
-                error
-            );
-
-
-            return loginView(
-                res,
-                {
-                    error:
-                        error.message ||
-                        "Unable to log in.",
-
-                    email,
-
-                    returnTo
-                }
-            );
+            return next(err);
         }
     };
 
@@ -261,7 +279,15 @@ exports.login =
 // ==========================================================
 
 exports.showRegister =
-    function (req, res) {
+    (req, res) => {
+
+        if (req.user) {
+
+            return res.redirect(
+                "/"
+            );
+        }
+
 
         return registerView(
             res
@@ -274,101 +300,68 @@ exports.showRegister =
 // ==========================================================
 
 exports.register =
-    async function (req, res) {
-
-        const name =
-            String(
-                req.body?.name || ""
-            ).trim();
-
-        const phone =
-            String(
-                req.body?.phone || ""
-            ).trim();
-
-        const email =
-            String(
-                req.body?.email || ""
-            ).trim();
-
-        const password =
-            String(
-                req.body?.password || ""
-            );
-
-        const confirmPassword =
-            String(
-                req.body?.confirmPassword || ""
-            );
-
+    async (
+        req,
+        res,
+        next
+    ) => {
 
         try {
+
+            const name =
+                String(
+                    req.body?.name ||
+                    ""
+                ).trim();
+
+
+            const phone =
+                String(
+                    req.body?.phone ||
+                    ""
+                ).trim();
+
+
+            const email =
+                String(
+                    req.body?.email ||
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            const password =
+                String(
+                    req.body?.password ||
+                    ""
+                );
+
+
+            const confirmPassword =
+                String(
+                    req.body?.confirmPassword ||
+                    ""
+                );
+
 
             // ------------------------------------------------
             // REQUIRED FIELDS
             // ------------------------------------------------
 
-            if (!name) {
+            if (
+                !name ||
+                !phone ||
+                !email ||
+                !password
+            ) {
 
                 return registerView(
                     res,
                     {
+
                         error:
-                            "Name is required.",
-
-                        name,
-
-                        phone,
-
-                        email
-                    }
-                );
-            }
-
-
-            if (!phone) {
-
-                return registerView(
-                    res,
-                    {
-                        error:
-                            "Phone number is required.",
-
-                        name,
-
-                        phone,
-
-                        email
-                    }
-                );
-            }
-
-
-            if (!email) {
-
-                return registerView(
-                    res,
-                    {
-                        error:
-                            "Email is required.",
-
-                        name,
-
-                        phone,
-
-                        email
-                    }
-                );
-            }
-
-
-            if (!password) {
-
-                return registerView(
-                    res,
-                    {
-                        error:
-                            "Password is required.",
+                            "Name, phone, email and password are required.",
 
                         name,
 
@@ -384,13 +377,16 @@ exports.register =
             // PASSWORD LENGTH
             // ------------------------------------------------
 
-            if (password.length < 8) {
+            if (
+                password.length < 8
+            ) {
 
                 return registerView(
                     res,
                     {
+
                         error:
-                            "Password must be at least 8 characters.",
+                            "Password must contain at least 8 characters.",
 
                         name,
 
@@ -414,6 +410,7 @@ exports.register =
                 return registerView(
                     res,
                     {
+
                         error:
                             "Passwords do not match.",
 
@@ -428,11 +425,12 @@ exports.register =
 
 
             // ------------------------------------------------
-            // CREATE ACCOUNT
+            // CREATE USER
             // ------------------------------------------------
 
             const user =
                 await authService.register({
+
                     name,
 
                     phone,
@@ -444,43 +442,70 @@ exports.register =
 
 
             // ------------------------------------------------
-            // LOGIN NEW USER
+            // LOGIN AFTER REGISTRATION
             // ------------------------------------------------
 
-            await regenerateSession(req);
+            await regenerateSession(
+                req
+            );
 
 
             req.session.user =
-                user;
+                authService.toSessionUser(
+                    user
+                );
 
 
-            await saveSession(req);
-
-
-            return res.redirect("/");
-
-        } catch (error) {
-
-            console.error(
-                "Registration error:",
-                error
+            await saveSession(
+                req
             );
 
 
-            return registerView(
-                res,
-                {
-                    error:
-                        error.message ||
-                        "Unable to create account.",
-
-                    name,
-
-                    phone,
-
-                    email
-                }
+            return res.redirect(
+                "/"
             );
+
+        } catch (err) {
+
+            if (
+                err?.code === 11000 ||
+                err?.status === 400
+            ) {
+
+                return registerView(
+                    res,
+                    {
+
+                        error:
+                            err.code === 11000
+                                ? "An account with that email already exists."
+                                : err.message,
+
+                        name:
+                            String(
+                                req.body?.name ||
+                                ""
+                            ).trim(),
+
+                        phone:
+                            String(
+                                req.body?.phone ||
+                                ""
+                            ).trim(),
+
+                        email:
+                            String(
+                                req.body?.email ||
+                                ""
+                            )
+                                .trim()
+                                .toLowerCase()
+                    }
+                );
+            }
+
+
+            return next(err);
         }
     };
 
@@ -490,22 +515,36 @@ exports.register =
 // ==========================================================
 
 exports.logout =
-    function (req, res) {
+    (
+        req,
+        res,
+        next
+    ) => {
 
         req.session.destroy(
-            (error) => {
+            err => {
 
-                if (error) {
-
-                    console.error(
-                        "Logout error:",
-                        error
-                    );
+                if (err) {
+                    return next(err);
                 }
 
+
                 res.clearCookie(
-                    "connect.sid"
+                    "connect.sid",
+                    {
+
+                        httpOnly:
+                            true,
+
+                        sameSite:
+                            "lax",
+
+                        secure:
+                            process.env.NODE_ENV ===
+                            "production"
+                    }
                 );
+
 
                 return res.redirect(
                     "/"
@@ -516,7 +555,7 @@ exports.logout =
 
 
 // ==========================================================
-// REQUIRE ADMIN
+// ADMIN USER MANAGEMENT
 // ==========================================================
 
 function requireAdmin(
@@ -525,24 +564,35 @@ function requireAdmin(
     next
 ) {
 
-    if (
-        !req.session ||
-        !req.session.user
-    ) {
+    if (!req.user) {
 
         return res.redirect(
-            "/auth/login"
+            "/auth/login?returnTo=" +
+            encodeURIComponent(
+                "/auth/users"
+            )
         );
     }
 
 
     if (
-        req.session.user.role !==
+        req.user.role !==
         "admin"
     ) {
 
-        return res.status(403).send(
-            "Forbidden"
+        return res.status(403).render(
+            "error/403",
+            {
+
+                title:
+                    "Access Denied",
+
+                user:
+                    req.user,
+
+                error:
+                    "You do not have permission to access user management."
+            }
         );
     }
 
@@ -556,28 +606,58 @@ function requireAdmin(
 // ==========================================================
 
 exports.showUsers = [
+
     requireAdmin,
 
-    async function (req, res) {
+    async (
+        req,
+        res,
+        next
+    ) => {
 
         try {
 
             const users =
-                await authService.getAllUsers();
+                await authService
+                    .getAllUsers();
+
 
             const invitations =
-                await authService.getInvitations();
+                await authService
+                    .getInvitations();
+
 
             const substations =
                 await authService
                     .getActiveSubstations();
 
 
+            const allowedTabs = [
+                "all",
+                "admin",
+                "staff",
+                "client",
+                "invitations"
+            ];
+
+
+            const tab =
+                allowedTabs.includes(
+                    req.query.tab
+                )
+                    ? req.query.tab
+                    : "all";
+
+
             return res.render(
                 "admin/users",
                 {
+
                     title:
                         "User Management - COREVESTER",
+
+                    user:
+                        req.user,
 
                     users,
 
@@ -585,39 +665,19 @@ exports.showUsers = [
 
                     substations,
 
-                    error: null,
-
-                    success: null
-                }
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Show users error:",
-                error
-            );
-
-
-            return res.status(500).render(
-                "admin/users",
-                {
-                    title:
-                        "User Management - COREVESTER",
-
-                    users: [],
-
-                    invitations: [],
-
-                    substations: [],
+                    tab,
 
                     error:
-                        error.message ||
-                        "Unable to load users.",
+                        null,
 
-                    success: null
+                    success:
+                        null
                 }
             );
+
+        } catch (err) {
+
+            return next(err);
         }
     }
 ];
@@ -628,25 +688,46 @@ exports.showUsers = [
 // ==========================================================
 
 exports.showInvitation = [
+
     requireAdmin,
 
-    function (req, res) {
+    async (
+        req,
+        res,
+        next
+    ) => {
 
-        return res.render(
-            "admin/invite",
-            {
-                title:
-                    "Invite User - COREVESTER",
+        try {
 
-                error: null,
+            const invitations =
+                await authService
+                    .getInvitations();
 
-                success: null,
 
-                email: "",
+            return res.render(
+                "admin/invitation",
+                {
 
-                role: "staff"
-            }
-        );
+                    title:
+                        "Invite User - COREVESTER",
+
+                    user:
+                        req.user,
+
+                    invitations,
+
+                    error:
+                        null,
+
+                    success:
+                        null
+                }
+            );
+
+        } catch (err) {
+
+            return next(err);
+        }
     }
 ];
 
@@ -656,72 +737,41 @@ exports.showInvitation = [
 // ==========================================================
 
 exports.inviteUser = [
+
     requireAdmin,
 
-    async function (req, res) {
-
-        const email =
-            String(
-                req.body?.email || ""
-            ).trim();
-
-        const role =
-            String(
-                req.body?.role || ""
-            ).trim();
-
+    async (
+        req,
+        res,
+        next
+    ) => {
 
         try {
 
-            await authService.createInvitation({
-                email,
+            await authService
+                .createInvitation({
 
-                role
-            });
+                    email:
+                        req.body?.email,
+
+                    role:
+                        req.body?.role,
+
+                    invitedBy:
+                        req.user._id
+                });
 
 
-            return res.render(
-                "admin/invite",
-                {
-                    title:
-                        "Invite User - COREVESTER",
-
-                    error: null,
-
-                    success:
-                        "Invitation created successfully.",
-
-                    email: "",
-
-                    role: "staff"
-                }
+            return res.redirect(
+                "/auth/users/invitation?success=" +
+                encodeURIComponent(
+                    "Invitation role saved successfully."
+                )
             );
 
-        } catch (error) {
+        } catch (err) {
 
-            console.error(
-                "Invite user error:",
-                error
-            );
-
-
-            return res.status(400).render(
-                "admin/invite",
-                {
-                    title:
-                        "Invite User - COREVESTER",
-
-                    error:
-                        error.message ||
-                        "Unable to create invitation.",
-
-                    success: null,
-
-                    email,
-
-                    role
-                }
-            );
+            return next(err);
         }
     }
 ];
@@ -732,43 +782,63 @@ exports.inviteUser = [
 // ==========================================================
 
 exports.changeRole = [
+
     requireAdmin,
 
-    async function (req, res) {
-
-        const userId =
-            req.params.id;
-
-        const role =
-            String(
-                req.body?.role || ""
-            ).trim();
-
+    async (
+        req,
+        res,
+        next
+    ) => {
 
         try {
 
-            await authService.updateUserRole(
-                userId,
-                role
-            );
+            const updated =
+                await authService
+                    .updateUserRole({
+
+                        userId:
+                            req.params.id,
+
+                        role:
+                            req.body?.role,
+
+                        actingAdminId:
+                            req.user._id
+                    });
+
+
+            if (
+                String(updated._id) ===
+                String(req.user._id)
+            ) {
+
+                req.session.user =
+                    authService.toSessionUser(
+                        updated
+                    );
+
+
+                await saveSession(
+                    req
+                );
+            }
 
 
             return res.redirect(
-                "/auth/users"
+                "/auth/users?tab=" +
+                encodeURIComponent(
+                    updated.role
+                ) +
+                "&success=" +
+                encodeURIComponent(
+                    "User role updated successfully."
+                )
             );
 
-        } catch (error) {
+        } catch (err) {
 
-            console.error(
-                "Change role error:",
-                error
-            );
-
-
-            return res.status(400).send(
-                error.message ||
-                "Unable to change user role."
-            );
+            return next(err);
         }
     }
 ];
@@ -779,43 +849,56 @@ exports.changeRole = [
 // ==========================================================
 
 exports.assignSubstation = [
+
     requireAdmin,
 
-    async function (req, res) {
-
-        const userId =
-            req.params.id;
-
-        const substationId =
-            String(
-                req.body?.substationId || ""
-            ).trim();
-
+    async (
+        req,
+        res,
+        next
+    ) => {
 
         try {
 
-            await authService.assignSubstation(
-                userId,
-                substationId || null
-            );
+            const updated =
+                await authService
+                    .assignSubstation({
+
+                        userId:
+                            req.params.id,
+
+                        substationId:
+                            req.body?.assignedSubstation
+                    });
+
+
+            if (
+                String(updated._id) ===
+                String(req.user._id)
+            ) {
+
+                req.session.user =
+                    authService.toSessionUser(
+                        updated
+                    );
+
+
+                await saveSession(
+                    req
+                );
+            }
 
 
             return res.redirect(
-                "/auth/users"
+                "/auth/users?tab=staff&success=" +
+                encodeURIComponent(
+                    "Substation assignment updated successfully."
+                )
             );
 
-        } catch (error) {
+        } catch (err) {
 
-            console.error(
-                "Assign substation error:",
-                error
-            );
-
-
-            return res.status(400).send(
-                error.message ||
-                "Unable to assign substation."
-            );
+            return next(err);
         }
     }
 ];
