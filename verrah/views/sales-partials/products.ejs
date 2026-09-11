@@ -1,0 +1,66 @@
+<%
+function number(value) {
+    return Number(value || 0).toLocaleString("en-KE");
+}
+%>
+
+<div class="sales-section">
+
+    <div class="sales-section-heading">
+        <div>
+            <h2>Product Analytics</h2>
+            <p>
+                <%= filterLabel %>
+            </p>
+        </div>
+    </div>
+
+    <div class="sales-table-wrapper">
+
+        <table class="sales-table">
+
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Product Name</th>
+                    <th>Items Available in Stock</th>
+                    <th>Items Available in Market</th>
+                    <th>Number of Sales</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <% if (Array.isArray(productAnalytics) && productAnalytics.length) { %>
+
+                    <% productAnalytics.forEach(function(product, index) { %>
+
+                        <tr>
+                            <td><%= index + 1 %></td>
+                            <td>
+                                <strong><%= product.name %></strong>
+                            </td>
+                            <td><%= number(product.stockAvailable) %></td>
+                            <td><%= number(product.marketAvailable) %></td>
+                            <td><%= number(product.sales) %></td>
+                        </tr>
+
+                    <% }); %>
+
+                <% } else { %>
+
+                    <tr>
+                        <td colspan="5" class="sales-empty">
+                            No product analytics found for this period.
+                        </td>
+                    </tr>
+
+                <% } %>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>

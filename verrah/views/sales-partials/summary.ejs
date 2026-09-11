@@ -1,0 +1,46 @@
+<%
+function money(value) {
+    return Number(value || 0).toLocaleString("en-KE", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+%>
+
+<div class="sales-section">
+
+    <div class="sales-section-heading">
+        <div>
+            <h2>Sales Summary</h2>
+            <p>
+                <%= filterLabel %>
+            </p>
+        </div>
+    </div>
+
+    <div class="sales-summary-grid">
+
+        <article class="sales-summary-card">
+            <span class="sales-summary-label">Total Revenue Collected</span>
+            <strong class="sales-summary-value">
+                KSh <%= money(totalRevenue) %>
+            </strong>
+        </article>
+
+        <article class="sales-summary-card">
+            <span class="sales-summary-label">Customer Arrears</span>
+            <strong class="sales-summary-value">
+                KSh <%= money(customerArrears) %>
+            </strong>
+        </article>
+
+        <article class="sales-summary-card">
+            <span class="sales-summary-label">Profit</span>
+            <strong class="sales-summary-value">
+                KSh <%= money(profit) %>
+            </strong>
+        </article>
+
+    </div>
+
+</div>

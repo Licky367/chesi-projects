@@ -1,0 +1,100 @@
+<%
+function money(value) {
+    return Number(value || 0).toLocaleString("en-KE", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+%>
+
+<div class="sales-section">
+
+    <div class="sales-section-heading">
+        <div>
+            <h2>Customer Arrears</h2>
+            <p>
+                Delivered packages with outstanding balances.
+                <%= filterLabel %>
+            </p>
+        </div>
+    </div>
+
+    <div class="sales-table-wrapper">
+
+        <table class="sales-table">
+
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Client</th>
+                    <th>Phone Number</th>
+                    <th>Package</th>
+                    <th>Arrears</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <% if (Array.isArray(arrearsPackages) && arrearsPackages.length) { %>
+
+                    <% arrearsPackages.forEach(function(pkg, index) { %>
+
+                        <tr>
+
+                            <td><%= index + 1 %></td>
+
+                            <td>
+                                <strong>
+                                    <%= pkg.clientName || "Unknown Client" %>
+                                </strong>
+                            </td>
+
+                            <td>
+                                <% if (pkg.phoneNumber) { %>
+                                    <a
+                                        class="sales-phone-link"
+                                        href="tel:<%= pkg.phoneNumber %>"
+                                    >
+                                        <%= pkg.phoneNumber %>
+                                    </a>
+                                <% } else { %>
+                                    <span class="sales-muted">No phone number</span>
+                                <% } %>
+                            </td>
+
+                            <td>
+                                <a
+                                    class="sales-package-link"
+                                    href="/package/staff/<%= pkg._id %>"
+                                >
+                                    <%= pkg.packageName || String(pkg._id) %>
+                                </a>
+                            </td>
+
+                            <td>
+                                <strong class="sales-arrears-value">
+                                    KSh <%= money(pkg.arrears) %>
+                                </strong>
+                            </td>
+
+                        </tr>
+
+                    <% }); %>
+
+                <% } else { %>
+
+                    <tr>
+                        <td colspan="5" class="sales-empty">
+                            No customer arrears found for this period.
+                        </td>
+                    </tr>
+
+                <% } %>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
