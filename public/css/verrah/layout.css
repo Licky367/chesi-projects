@@ -99,7 +99,6 @@ body{
 
 /* =========================================================
    HEADER MENU BUTTON
-   FIRST — LEFT SIDE
 ========================================================= */
 
 .menu-btn{
@@ -136,12 +135,6 @@ body{
         background .2s ease,
         transform .15s ease;
 
-    /*
-       FORCE MENU TO BE FIRST
-    */
-
-    order:1;
-
 }
 
 
@@ -161,16 +154,10 @@ body{
 
 /* =========================================================
    HEADER LOGO
-   SECOND — BETWEEN MENU AND TITLE
+   LEAVE LOGO FUNCTIONALITY/IMAGE UNCHANGED
 ========================================================= */
 
 .header-logo-link{
-
-    width:48px;
-
-    height:var(--header-height);
-
-    flex:0 0 48px;
 
     display:flex;
 
@@ -178,99 +165,52 @@ body{
 
     justify-content:center;
 
-    margin-left:5px;
-
-    margin-right:8px;
+    flex:0 0 auto;
 
     text-decoration:none;
-
-    /*
-       FORCE LOGO AFTER MENU
-    */
-
-    order:2;
-
-    /*
-       Prevent the logo from disappearing
-       because of flex shrinking.
-    */
-
-    flex-shrink:0;
-
-    overflow:visible;
 
 }
 
 
-/* =========================================================
-   HEADER LOGO IMAGE
-========================================================= */
-
 .header-logo{
 
-    width:42px;
-
-    height:42px;
-
-    max-width:42px;
-
-    max-height:42px;
-
-    display:block !important;
+    display:block;
 
     object-fit:contain;
-
-    visibility:visible !important;
-
-    opacity:1 !important;
-
-    flex-shrink:0;
-
-    border:0;
 
 }
 
 
 /* =========================================================
    HEADER TITLE
-   THIRD — AFTER LOGO
+   ALWAYS CENTERED IN THE FULL HEADER
 ========================================================= */
 
 .header-title{
 
-    position:static !important;
+    position:absolute;
 
-    top:auto !important;
+    top:0;
 
-    left:auto !important;
+    left:50%;
 
-    transform:none !important;
+    transform:translateX(-50%);
 
-    width:auto !important;
+    width:auto;
 
     height:var(--header-height);
-
-    flex:1 1 auto;
-
-    min-width:0;
 
     display:flex;
 
     align-items:center;
 
-    justify-content:flex-start;
+    justify-content:center;
 
-    text-align:left;
+    text-align:center;
 
     pointer-events:none;
 
-    /*
-       FORCE TITLE AFTER LOGO
-    */
-
-    order:3;
-
-    overflow:hidden;
+    z-index:2;
 
 }
 
@@ -279,7 +219,11 @@ body{
 
     display:block;
 
-    width:100%;
+    width:auto;
+
+    max-width:calc(100vw - 160px);
+
+    color:#fff;
 
     font-size:18px;
 
@@ -287,11 +231,9 @@ body{
 
     letter-spacing:.3px;
 
-    color:#fff;
-
     line-height:21px;
 
-    text-align:left;
+    text-align:center;
 
     white-space:nowrap;
 
@@ -304,7 +246,6 @@ body{
 
 /* =========================================================
    PROFILE
-   FOURTH — RIGHT SIDE
 ========================================================= */
 
 .profile-box{
@@ -320,12 +261,6 @@ body{
     display:flex;
 
     align-items:center;
-
-    /*
-       FORCE PROFILE TO THE RIGHT
-    */
-
-    order:4;
 
 }
 
@@ -977,7 +912,6 @@ body{
 
 /* =========================================================
    MAIN
-   NORMAL PAGES
 ========================================================= */
 
 .main{
@@ -993,7 +927,6 @@ body{
 
 
 /* =========================================================
-   MAIN
    AUTHENTICATION PAGES
 ========================================================= */
 
@@ -1048,6 +981,13 @@ body{
 
 @media(max-width:600px){
 
+    :root{
+
+        --header-height:64px;
+
+    }
+
+
     /* -----------------------------------------------
        HEADER
     ----------------------------------------------- */
@@ -1075,70 +1015,27 @@ body{
 
         font-size:27px;
 
-        order:1;
-
-    }
-
-
-    /* -----------------------------------------------
-       LOGO
-    ----------------------------------------------- */
-
-    .header-logo-link{
-
-        width:42px;
-
-        height:var(--header-height);
-
-        flex:0 0 42px;
-
-        margin-left:4px;
-
-        margin-right:6px;
-
-        order:2;
-
-    }
-
-
-    .header-logo{
-
-        width:38px;
-
-        height:38px;
-
-        max-width:38px;
-
-        max-height:38px;
-
-        display:block !important;
-
-        visibility:visible !important;
-
-        opacity:1 !important;
-
     }
 
 
     /* -----------------------------------------------
        TITLE
+       REMAINS CENTERED IN FULL HEADER
     ----------------------------------------------- */
 
     .header-title{
 
-        position:static !important;
+        top:0;
 
-        transform:none !important;
+        left:50%;
 
-        width:auto !important;
+        transform:translateX(-50%);
 
-        flex:1 1 auto;
+        height:var(--header-height);
 
-        min-width:0;
+        width:auto;
 
-        justify-content:flex-start;
-
-        order:3;
+        max-width:100%;
 
     }
 
@@ -1148,6 +1045,10 @@ body{
         font-size:15px;
 
         line-height:18px;
+
+        max-width:calc(100vw - 130px);
+
+        text-align:center;
 
         white-space:nowrap;
 
@@ -1164,9 +1065,7 @@ body{
 
     .profile-box{
 
-        margin-left:6px;
-
-        order:4;
+        margin-left:auto;
 
     }
 
@@ -1239,20 +1138,12 @@ body{
 
 @media(max-width:380px){
 
-    /* -----------------------------------------------
-       HEADER
-    ----------------------------------------------- */
-
     .header{
 
         padding:0 6px;
 
     }
 
-
-    /* -----------------------------------------------
-       MENU
-    ----------------------------------------------- */
 
     .menu-btn{
 
@@ -1264,52 +1155,16 @@ body{
 
         font-size:25px;
 
-        order:1;
-
     }
 
-
-    /* -----------------------------------------------
-       LOGO
-    ----------------------------------------------- */
-
-    .header-logo-link{
-
-        width:36px;
-
-        height:var(--header-height);
-
-        flex:0 0 36px;
-
-        margin-left:3px;
-
-        margin-right:4px;
-
-        order:2;
-
-    }
-
-
-    .header-logo{
-
-        width:33px;
-
-        height:33px;
-
-        max-width:33px;
-
-        max-height:33px;
-
-    }
-
-
-    /* -----------------------------------------------
-       TITLE
-    ----------------------------------------------- */
 
     .header-title{
 
-        order:3;
+        top:0;
+
+        left:50%;
+
+        transform:translateX(-50%);
 
     }
 
@@ -1320,18 +1175,16 @@ body{
 
         line-height:17px;
 
+        max-width:calc(100vw - 110px);
+
+        text-align:center;
+
     }
 
 
-    /* -----------------------------------------------
-       PROFILE
-    ----------------------------------------------- */
-
     .profile-box{
 
-        margin-left:3px;
-
-        order:4;
+        margin-left:auto;
 
     }
 
@@ -1349,10 +1202,6 @@ body{
 
     }
 
-
-    /* -----------------------------------------------
-       SIDEBAR
-    ----------------------------------------------- */
 
     .sidebar{
 
