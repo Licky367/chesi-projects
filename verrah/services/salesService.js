@@ -10,30 +10,81 @@
 // Default for every tab:
 //   current Nairobi date + month
 //
-// Date filtering is based on Package.createdAt because the
-// Package model uses Mongoose timestamps.
+// Package filtering is based on Package.createdAt.
+// StaffSales filtering is based on StaffSale.createdAt.
+//
+// REVENUE
+// --------
+// Package revenue:
+//   summation of Package.paidAmount
+//
+// Staff sales revenue:
+//   summation of StaffSale.totalAmount
+//
+// TOTAL REVENUE
+// -------------
+// Package revenue + StaffSales revenue
+//
+// PROFIT
+// ------
+// Package profit:
+//   Package revenue - package product buying cost
+//
+// Staff-sales profit:
+//   StaffSale.totalAmount - sum(price * qty)
+//
+// TOTAL PROFIT
+// ------------
+// Package profit + Staff-sales profit
 // ==========================================================
 
-const Package = require("../models/package");
-const Product = require("../models/products");
-const Stock = require("../models/stock");
-const User = require("../models/user");
 
-const TIME_ZONE = "Africa/Nairobi";
+const Package =
+    require("../models/package");
+
+const StaffSale =
+    require("../models/staff-sales");
+
+const Product =
+    require("../models/products");
+
+const Stock =
+    require("../models/stock");
+
+const User =
+    require("../models/user");
+
+
+const TIME_ZONE =
+    "Africa/Nairobi";
+
 
 const TAB_CONFIG = {
+
     summary: {
-        dateKey: "summaryDate",
-        periodKey: "summaryPeriod"
+        dateKey:
+            "summaryDate",
+
+        periodKey:
+            "summaryPeriod"
     },
+
     products: {
-        dateKey: "productsDate",
-        periodKey: "productsPeriod"
+        dateKey:
+            "productsDate",
+
+        periodKey:
+            "productsPeriod"
     },
+
     arrears: {
-        dateKey: "arrearsDate",
-        periodKey: "arrearsPeriod"
+        dateKey:
+            "arrearsDate",
+
+        periodKey:
+            "arrearsPeriod"
     }
+
 };
 
 
@@ -42,12 +93,24 @@ const TAB_CONFIG = {
 // ==========================================================
 
 function getCurrentNairobiDate() {
-    return new Intl.DateTimeFormat("en-CA", {
-        timeZone: TIME_ZONE,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-    }).format(new Date());
+
+    return new Intl.DateTimeFormat(
+        "en-CA",
+        {
+            timeZone:
+                TIME_ZONE,
+
+            year:
+                "numeric",
+
+            month:
+                "2-digit",
+
+            day:
+                "2-digit"
+        }
+    ).format(new Date());
+
 }
 
 
@@ -56,34 +119,75 @@ function getCurrentNairobiDate() {
 // ==========================================================
 
 function isValidDateString(value) {
+
     return (
+
         typeof value === "string" &&
-        /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-        !Number.isNaN(Date.parse(`${value}T00:00:00+03:00`))
+
+        /^\d{4}-\d{2}-\d{2}$/.test(
+            value
+        ) &&
+
+        !Number.isNaN(
+            Date.parse(
+                `${value}T00:00:00+03:00`
+            )
+        )
+
     );
+
 }
+
 
 function normalizePeriod(value) {
-    return ["day", "month", "year"].includes(value)
+
+    return [
+
+        "day",
+
+        "month",
+
+        "year"
+
+    ].includes(value)
+
         ? value
+
         : "month";
+
 }
+
 
 function normalizeDate(value) {
+
     return isValidDateString(value)
+
         ? value
+
         : getCurrentNairobiDate();
+
 }
 
 
 // ==========================================================
-// CONVERT A KENYA LOCAL DATE TO A UTC DATE
+// CONVERT A KENYA LOCAL DATE TO UTC DATE
 // ==========================================================
 
-function kenyaDateToUtc(dateString, endOfDay = false) {
+function kenyaDateToUtc(
+    dateString,
+    endOfDay = false
+) {
+
     return new Date(
-        `${dateString}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}+03:00`
+
+        `${dateString}T${
+            endOfDay
+                ? "23:59:59.999"
+                : "00:00:00.000"
+        }+03:00`
+
     );
+
 }
 
 
@@ -91,63 +195,157 @@ function kenyaDateToUtc(dateString, endOfDay = false) {
 // DATE RANGE
 // ==========================================================
 
-function getDateRange(dateString, period) {
+function getDateRange(
+    dateString,
+    period
+) {
 
-    const date = normalizeDate(dateString);
-    const mode = normalizePeriod(period);
+    const date =
+        normalizeDate(
+            dateString
+        );
 
-    const [year, month, day] = date.split("-").map(Number);
+    const mode =
+        normalizePeriod(
+            period
+        );
+
+
+    const [
+        year,
+        month,
+        day
+    ] =
+        date
+            .split("-")
+            .map(Number);
+
 
     let startDate;
+
     let endDate;
+
+
+    // ------------------------------------------------------
+    // DAY
+    // ------------------------------------------------------
 
     if (mode === "day") {
 
-        startDate = kenyaDateToUtc(date);
+        startDate =
+            kenyaDateToUtc(
+                date
+            );
 
-        const nextDay = new Date(
-            Date.UTC(year, month - 1, day + 1)
-        );
+
+        const nextDay =
+            new Date(
+                Date.UTC(
+                    year,
+                    month - 1,
+                    day + 1
+                )
+            );
+
 
         const nextDate =
-            nextDay.toISOString().slice(0, 10);
+            nextDay
+                .toISOString()
+                .slice(0, 10);
 
-        endDate = kenyaDateToUtc(nextDate);
 
-    } else if (mode === "month") {
+        endDate =
+            kenyaDateToUtc(
+                nextDate
+            );
+
+
+    }
+
+    // ------------------------------------------------------
+    // MONTH
+    // ------------------------------------------------------
+
+    else if (mode === "month") {
 
         const monthStart =
             `${year}-${String(month).padStart(2, "0")}-01`;
 
-        let nextYear = year;
-        let nextMonth = month + 1;
+
+        let nextYear =
+            year;
+
+        let nextMonth =
+            month + 1;
+
 
         if (nextMonth === 13) {
-            nextMonth = 1;
-            nextYear += 1;
+
+            nextMonth =
+                1;
+
+            nextYear +=
+                1;
+
         }
+
 
         const nextMonthStart =
             `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
 
-        startDate = kenyaDateToUtc(monthStart);
-        endDate = kenyaDateToUtc(nextMonthStart);
 
-    } else {
+        startDate =
+            kenyaDateToUtc(
+                monthStart
+            );
 
-        const yearStart = `${year}-01-01`;
-        const nextYearStart = `${year + 1}-01-01`;
+        endDate =
+            kenyaDateToUtc(
+                nextMonthStart
+            );
 
-        startDate = kenyaDateToUtc(yearStart);
-        endDate = kenyaDateToUtc(nextYearStart);
+
     }
 
+    // ------------------------------------------------------
+    // YEAR
+    // ------------------------------------------------------
+
+    else {
+
+        const yearStart =
+            `${year}-01-01`;
+
+        const nextYearStart =
+            `${year + 1}-01-01`;
+
+
+        startDate =
+            kenyaDateToUtc(
+                yearStart
+            );
+
+        endDate =
+            kenyaDateToUtc(
+                nextYearStart
+            );
+
+    }
+
+
     return {
+
         startDate,
+
         endDate,
+
         date,
-        period: mode
+
+        period:
+            mode
+
     };
+
 }
 
 
@@ -155,26 +353,50 @@ function getDateRange(dateString, period) {
 // FILTER STATE
 // ==========================================================
 
-function getFilterState(query, tab) {
+function getFilterState(
+    query,
+    tab
+) {
 
-    const config = TAB_CONFIG[tab];
+    const config =
+        TAB_CONFIG[tab];
 
-    const date = normalizeDate(
-        query[config.dateKey]
-    );
 
-    const period = normalizePeriod(
-        query[config.periodKey]
-    );
+    const date =
+        normalizeDate(
+            query[config.dateKey]
+        );
 
-    const range = getDateRange(date, period);
+
+    const period =
+        normalizePeriod(
+            query[config.periodKey]
+        );
+
+
+    const range =
+        getDateRange(
+            date,
+            period
+        );
+
 
     return {
-        date: range.date,
-        period: range.period,
-        startDate: range.startDate,
-        endDate: range.endDate
+
+        date:
+            range.date,
+
+        period:
+            range.period,
+
+        startDate:
+            range.startDate,
+
+        endDate:
+            range.endDate
+
     };
+
 }
 
 
@@ -182,15 +404,26 @@ function getFilterState(query, tab) {
 // FILTER LABEL
 // ==========================================================
 
-function getFilterLabel(filter) {
+function getFilterLabel(
+    filter
+) {
 
     const periodName = {
-        day: "Day",
-        month: "Month",
-        year: "Year"
+
+        day:
+            "Day",
+
+        month:
+            "Month",
+
+        year:
+            "Year"
+
     }[filter.period];
 
+
     return `${periodName}: ${filter.date}`;
+
 }
 
 
@@ -198,102 +431,398 @@ function getFilterLabel(filter) {
 // SUMMARY
 // ==========================================================
 
-async function getSummary(filter) {
+async function getSummary(
+    filter
+) {
 
-    const packages = await Package.find({
-        createdAt: {
-            $gte: filter.startDate,
-            $lt: filter.endDate
-        }
-    })
-        .select(
-            "items totalAmount paidAmount status"
-        )
-        .lean();
+    // ======================================================
+    // PACKAGE SALES
+    // ======================================================
 
-    let totalRevenue = 0;
-    let customerArrears = 0;
-    let totalBuyingCost = 0;
+    const packages =
+        await Package.find({
 
-    const productIds = new Set();
+            createdAt: {
+
+                $gte:
+                    filter.startDate,
+
+                $lt:
+                    filter.endDate
+
+            }
+
+        })
+            .select(
+                "items totalAmount paidAmount status"
+            )
+            .lean();
+
+
+    // ======================================================
+    // STAFF SALES
+    // ======================================================
+
+    const staffSales =
+        await StaffSale.find({
+
+            createdAt: {
+
+                $gte:
+                    filter.startDate,
+
+                $lt:
+                    filter.endDate
+
+            }
+
+        })
+            .lean();
+
+
+    // ======================================================
+    // PACKAGE VARIABLES
+    // ======================================================
+
+    let packageRevenue =
+        0;
+
+    let customerArrears =
+        0;
+
+    let packageBuyingCost =
+        0;
+
+
+    // ======================================================
+    // STAFF SALES VARIABLES
+    // ======================================================
+
+    let staffSalesRevenue =
+        0;
+
+    let staffSalesProductSellingTotal =
+        0;
+
+
+    // ======================================================
+    // PRODUCT IDS FROM PACKAGES
+    // ======================================================
+
+    const productIds =
+        new Set();
+
+
+    // ======================================================
+    // PROCESS PACKAGES
+    // ======================================================
 
     for (const pkg of packages) {
 
         const paidAmount =
-            Number(pkg.paidAmount || 0);
+            Number(
+                pkg.paidAmount || 0
+            );
+
 
         const totalAmount =
-            Number(pkg.totalAmount || 0);
-
-        totalRevenue += paidAmount;
-
-        if (pkg.status === "delivered") {
-
-            customerArrears += Math.max(
-                0,
-                totalAmount - paidAmount
+            Number(
+                pkg.totalAmount || 0
             );
-        }
 
-        for (const item of pkg.items || []) {
 
-            if (item.productId) {
-                productIds.add(
-                    String(item.productId)
+        // --------------------------------------------------
+        // EXISTING PACKAGE REVENUE LOGIC
+        // --------------------------------------------------
+
+        packageRevenue +=
+            paidAmount;
+
+
+        // --------------------------------------------------
+        // CUSTOMER ARREARS
+        // --------------------------------------------------
+
+        if (
+            pkg.status ===
+            "delivered"
+        ) {
+
+            customerArrears +=
+                Math.max(
+                    0,
+                    totalAmount -
+                    paidAmount
                 );
-            }
+
         }
+
+
+        // --------------------------------------------------
+        // COLLECT PACKAGE PRODUCT IDS
+        // --------------------------------------------------
+
+        for (
+            const item
+            of pkg.items || []
+        ) {
+
+            if (
+                item.productId
+            ) {
+
+                productIds.add(
+                    String(
+                        item.productId
+                    )
+                );
+
+            }
+
+        }
+
     }
 
 
-    // ------------------------------------------------------
-    // BUYING COST
+    // ======================================================
+    // PROCESS STAFF SALES
     //
-    // Package stores productId + qty.
-    // Product stores the current buyPrice.
-    // ------------------------------------------------------
+    // Revenue:
+    //   summation of StaffSale.totalAmount
+    //
+    // Profit basis requested:
+    //   StaffSale.totalAmount
+    //   -
+    //   summation of item.price * item.qty
+    // ======================================================
 
-    if (productIds.size) {
+    for (
+        const sale
+        of staffSales
+    ) {
 
-        const products = await Product.find({
-            _id: {
-                $in: Array.from(productIds)
-            }
-        })
-            .select("_id buyPrice")
-            .lean();
+        const totalAmount =
+            Number(
+                sale.totalAmount || 0
+            );
 
-        const productMap = new Map(
-            products.map(product => [
-                String(product._id),
-                Number(product.buyPrice || 0)
-            ])
-        );
 
-        for (const pkg of packages) {
+        // --------------------------------------------------
+        // STAFF SALES REVENUE
+        // --------------------------------------------------
 
-            for (const item of pkg.items || []) {
+        staffSalesRevenue +=
+            totalAmount;
+
+
+        // --------------------------------------------------
+        // SUM SELLING PRICES OF
+        // ALL STAFF-SALE PRODUCTS
+        // --------------------------------------------------
+
+        for (
+            const item
+            of sale.products || []
+        ) {
+
+            const price =
+                Number(
+                    item.price || 0
+                );
+
+
+            const qty =
+                Number(
+                    item.qty || 0
+                );
+
+
+            staffSalesProductSellingTotal +=
+                price * qty;
+
+        }
+
+    }
+
+
+    // ======================================================
+    // PACKAGE BUYING COST
+    //
+    // Package stores:
+    //   productId + qty
+    //
+    // Product stores:
+    //   current buyPrice
+    // ======================================================
+
+    if (
+        productIds.size
+    ) {
+
+        const products =
+            await Product.find({
+
+                _id: {
+
+                    $in:
+                        Array.from(
+                            productIds
+                        )
+
+                }
+
+            })
+                .select(
+                    "_id buyPrice"
+                )
+                .lean();
+
+
+        const productMap =
+            new Map(
+
+                products.map(
+                    product => [
+
+                        String(
+                            product._id
+                        ),
+
+                        Number(
+                            product.buyPrice || 0
+                        )
+
+                    ]
+                )
+
+            );
+
+
+        for (
+            const pkg
+            of packages
+        ) {
+
+            for (
+                const item
+                of pkg.items || []
+            ) {
 
                 const buyPrice =
                     productMap.get(
-                        String(item.productId)
+                        String(
+                            item.productId
+                        )
                     ) || 0;
 
-                const qty =
-                    Number(item.qty || 0);
 
-                totalBuyingCost +=
+                const qty =
+                    Number(
+                        item.qty || 0
+                    );
+
+
+                packageBuyingCost +=
                     buyPrice * qty;
+
             }
+
         }
+
     }
 
 
+    // ======================================================
+    // STAFF SALES PROFIT
+    //
+    // Exact formula requested:
+    //
+    // totalAmount
+    // -
+    // sum of selling prices of products
+    // ======================================================
+
+    const staffSalesProfit =
+        staffSalesRevenue -
+        staffSalesProductSellingTotal;
+
+
+    // ======================================================
+    // TOTAL REVENUE
+    // ======================================================
+
+    const totalRevenue =
+        packageRevenue +
+        staffSalesRevenue;
+
+
+    // ======================================================
+    // PACKAGE PROFIT
+    // ======================================================
+
+    const packageProfit =
+        packageRevenue -
+        packageBuyingCost;
+
+
+    // ======================================================
+    // TOTAL PROFIT
+    // ======================================================
+
+    const profit =
+        packageProfit +
+        staffSalesProfit;
+
+
+    // ======================================================
+    // RETURN SUMMARY + STAFF SALES
+    // ======================================================
+
     return {
-        totalRevenue,
+
+        // --------------------------------------------------
+        // EXISTING / PACKAGE VALUES
+        // --------------------------------------------------
+
+        packageRevenue,
+
         customerArrears,
-        profit: totalRevenue - totalBuyingCost
+
+        packageBuyingCost,
+
+        packageProfit,
+
+
+        // --------------------------------------------------
+        // STAFF SALES VALUES
+        // --------------------------------------------------
+
+        staffSalesRevenue,
+
+        staffSalesProductSellingTotal,
+
+        staffSalesProfit,
+
+
+        // --------------------------------------------------
+        // COMBINED VALUES
+        // --------------------------------------------------
+
+        totalRevenue,
+
+        profit,
+
+
+        // --------------------------------------------------
+        // STAFF SALES DOCUMENTS
+        //
+        // These are sent directly to the frontend.
+        // --------------------------------------------------
+
+        staffSales
+
     };
+
 }
 
 
@@ -301,45 +830,77 @@ async function getSummary(filter) {
 // PRODUCT ANALYTICS
 // ==========================================================
 
-async function getProductAnalytics(filter) {
+async function getProductAnalytics(
+    filter
+) {
 
-    const products = await Product.find({
-        isActive: true
-    })
-        .select(
-            "_id name subcategory units buyPrice stock"
-        )
-        .lean();
+    const products =
+        await Product.find({
 
-    const stockRecords = await Stock.find({
-        isActive: true
-    })
-        .select("subcategory units")
-        .lean();
+            isActive:
+                true
+
+        })
+            .select(
+                "_id name subcategory units buyPrice stock"
+            )
+            .lean();
+
+
+    const stockRecords =
+        await Stock.find({
+
+            isActive:
+                true
+
+        })
+            .select(
+                "subcategory units"
+            )
+            .lean();
 
 
     // ------------------------------------------------------
     // STOCK IS MATCHED BY SUBCATEGORY
     // ------------------------------------------------------
 
-    const stockBySubcategory = new Map();
+    const stockBySubcategory =
+        new Map();
 
-    for (const stock of stockRecords) {
+
+    for (
+        const stock
+        of stockRecords
+    ) {
 
         const key =
-            String(stock.subcategory || "")
+            String(
+                stock.subcategory || ""
+            )
                 .trim()
                 .toLowerCase();
 
+
         if (!key) continue;
 
+
         const existing =
-            stockBySubcategory.get(key) || 0;
+            stockBySubcategory.get(
+                key
+            ) || 0;
+
 
         stockBySubcategory.set(
+
             key,
-            existing + Number(stock.units || 0)
+
+            existing +
+            Number(
+                stock.units || 0
+            )
+
         );
+
     }
 
 
@@ -347,61 +908,133 @@ async function getProductAnalytics(filter) {
     // DELIVERED PACKAGE SALES
     // ------------------------------------------------------
 
-    const deliveredPackages = await Package.find({
-        status: "delivered",
-        createdAt: {
-            $gte: filter.startDate,
-            $lt: filter.endDate
-        }
-    })
-        .select("items")
-        .lean();
+    const deliveredPackages =
+        await Package.find({
 
-    const salesByProduct = new Map();
+            status:
+                "delivered",
 
-    for (const pkg of deliveredPackages) {
+            createdAt: {
 
-        for (const item of pkg.items || []) {
+                $gte:
+                    filter.startDate,
 
-            if (!item.productId) continue;
+                $lt:
+                    filter.endDate
+
+            }
+
+        })
+            .select(
+                "items"
+            )
+            .lean();
+
+
+    const salesByProduct =
+        new Map();
+
+
+    for (
+        const pkg
+        of deliveredPackages
+    ) {
+
+        for (
+            const item
+            of pkg.items || []
+        ) {
+
+            if (
+                !item.productId
+            ) continue;
+
 
             const key =
-                String(item.productId);
+                String(
+                    item.productId
+                );
+
 
             salesByProduct.set(
+
                 key,
-                (salesByProduct.get(key) || 0) +
-                Number(item.qty || 0)
+
+                (
+                    salesByProduct.get(
+                        key
+                    ) || 0
+                ) +
+
+                Number(
+                    item.qty || 0
+                )
+
             );
+
         }
+
     }
 
 
-    return products.map(product => {
+    // ------------------------------------------------------
+    // RETURN PRODUCT ANALYTICS
+    // ------------------------------------------------------
 
-        const subcategory =
-            String(product.subcategory || "")
-                .trim()
-                .toLowerCase();
+    return products
 
-        return {
-            _id: product._id,
-            name: product.name,
-            stockAvailable:
-                stockBySubcategory.get(subcategory) || 0,
-            marketAvailable:
-                Number(product.units || 0),
-            sales:
-                salesByProduct.get(
-                    String(product._id)
-                ) || 0
-        };
+        .map(
+            product => {
 
-    }).sort((a, b) =>
-        String(a.name).localeCompare(
-            String(b.name)
+                const subcategory =
+                    String(
+                        product.subcategory || ""
+                    )
+                        .trim()
+                        .toLowerCase();
+
+
+                return {
+
+                    _id:
+                        product._id,
+
+                    name:
+                        product.name,
+
+                    stockAvailable:
+                        stockBySubcategory.get(
+                            subcategory
+                        ) || 0,
+
+                    marketAvailable:
+                        Number(
+                            product.units || 0
+                        ),
+
+                    sales:
+                        salesByProduct.get(
+                            String(
+                                product._id
+                            )
+                        ) || 0
+
+                };
+
+            }
         )
-    );
+
+        .sort(
+            (a, b) =>
+                String(
+                    a.name
+                ).localeCompare(
+                    String(
+                        b.name
+                    )
+                )
+        );
+
 }
 
 
@@ -409,88 +1042,177 @@ async function getProductAnalytics(filter) {
 // CUSTOMER ARREARS
 // ==========================================================
 
-async function getCustomerArrears(filter) {
+async function getCustomerArrears(
+    filter
+) {
 
-    const packages = await Package.find({
-        status: "delivered",
-        createdAt: {
-            $gte: filter.startDate,
-            $lt: filter.endDate
-        }
-    })
-        .select(
-            "_id clientId phoneNumber totalAmount paidAmount"
-        )
-        .lean();
+    const packages =
+        await Package.find({
 
-    const arrearsPackages = packages
-        .map(pkg => ({
-            ...pkg,
-            arrears:
-                Math.max(
-                    0,
-                    Number(pkg.totalAmount || 0) -
-                    Number(pkg.paidAmount || 0)
-                )
-        }))
-        .filter(pkg => pkg.arrears > 0);
+            status:
+                "delivered",
+
+            createdAt: {
+
+                $gte:
+                    filter.startDate,
+
+                $lt:
+                    filter.endDate
+
+            }
+
+        })
+            .select(
+                "_id clientId phoneNumber totalAmount paidAmount"
+            )
+            .lean();
 
 
-    if (!arrearsPackages.length) {
+    const arrearsPackages =
+        packages
+
+            .map(
+                pkg => ({
+
+                    ...pkg,
+
+                    arrears:
+                        Math.max(
+
+                            0,
+
+                            Number(
+                                pkg.totalAmount || 0
+                            ) -
+
+                            Number(
+                                pkg.paidAmount || 0
+                            )
+
+                        )
+
+                })
+            )
+
+            .filter(
+                pkg =>
+                    pkg.arrears > 0
+            );
+
+
+    if (
+        !arrearsPackages.length
+    ) {
+
         return [];
+
     }
 
 
     // ------------------------------------------------------
-    // Resolve client names.
+    // RESOLVE CLIENT NAMES
     //
     // Package.clientId is a String.
     // User._id is MongoDB ObjectId.
     // ------------------------------------------------------
 
     const clientIds = [
+
         ...new Set(
+
             arrearsPackages
-                .map(pkg => String(pkg.clientId || ""))
+
+                .map(
+                    pkg =>
+                        String(
+                            pkg.clientId || ""
+                        )
+                )
+
                 .filter(Boolean)
+
         )
+
     ];
 
-    const users = clientIds.length
-        ? await User.find({
-            _id: {
-                $in: clientIds
-            }
-        })
-            .select("_id name")
-            .lean()
-        : [];
 
-    const userMap = new Map(
-        users.map(user => [
-            String(user._id),
-            user.name
-        ])
-    );
+    const users =
+        clientIds.length
+
+            ? await User.find({
+
+                _id: {
+
+                    $in:
+                        clientIds
+
+                }
+
+            })
+                .select(
+                    "_id name"
+                )
+                .lean()
+
+            : [];
+
+
+    const userMap =
+        new Map(
+
+            users.map(
+                user => [
+
+                    String(
+                        user._id
+                    ),
+
+                    user.name
+
+                ]
+            )
+
+        );
 
 
     return arrearsPackages
-        .map(pkg => ({
-            _id: pkg._id,
-            clientName:
-                userMap.get(
-                    String(pkg.clientId)
-                ) || "Unknown Client",
-            phoneNumber:
-                pkg.phoneNumber || "",
-            packageName:
-                String(pkg._id),
-            arrears:
-                pkg.arrears
-        }))
+
+        .map(
+            pkg => ({
+
+                _id:
+                    pkg._id,
+
+                clientName:
+                    userMap.get(
+                        String(
+                            pkg.clientId
+                        )
+                    ) ||
+                    "Unknown Client",
+
+                phoneNumber:
+                    pkg.phoneNumber ||
+                    "",
+
+                packageName:
+                    String(
+                        pkg._id
+                    ),
+
+                arrears:
+                    pkg.arrears
+
+            })
+        )
+
         .sort(
-            (a, b) => b.arrears - a.arrears
+            (a, b) =>
+                b.arrears -
+                a.arrears
         );
+
 }
 
 
@@ -498,17 +1220,28 @@ async function getCustomerArrears(filter) {
 // FULL PAGE DATA
 // ==========================================================
 
-async function getSalesPageData(query = {}) {
+async function getSalesPageData(
+    query = {}
+) {
 
     const allowedTabs = [
+
         "summary",
+
         "products",
+
         "arrears"
+
     ];
 
+
     const activeTab =
-        allowedTabs.includes(query.tab)
+        allowedTabs.includes(
+            query.tab
+        )
+
             ? query.tab
+
             : "summary";
 
 
@@ -522,98 +1255,240 @@ async function getSalesPageData(query = {}) {
      */
 
     const summaryFilter =
-        getFilterState(query, "summary");
+        getFilterState(
+            query,
+            "summary"
+        );
+
 
     const productsFilter =
-        getFilterState(query, "products");
+        getFilterState(
+            query,
+            "products"
+        );
+
 
     const arrearsFilter =
-        getFilterState(query, "arrears");
+        getFilterState(
+            query,
+            "arrears"
+        );
 
 
     const [
+
         summary,
+
         productAnalytics,
+
         arrearsPackages
+
     ] = await Promise.all([
-        getSummary(summaryFilter),
-        getProductAnalytics(productsFilter),
-        getCustomerArrears(arrearsFilter)
+
+        getSummary(
+            summaryFilter
+        ),
+
+        getProductAnalytics(
+            productsFilter
+        ),
+
+        getCustomerArrears(
+            arrearsFilter
+        )
+
     ]);
 
 
     const activeFilter = {
-        summary: summaryFilter,
-        products: productsFilter,
-        arrears: arrearsFilter
+
+        summary:
+            summaryFilter,
+
+        products:
+            productsFilter,
+
+        arrears:
+            arrearsFilter
+
     }[activeTab];
 
 
-    /*
-     * Preserve all existing tab-specific filters when
-     * switching tabs.
-     */
+    // ======================================================
+    // PRESERVE TAB FILTERS
+    // ======================================================
 
-    const params = new URLSearchParams();
+    const params =
+        new URLSearchParams();
 
-    if (query.summaryDate) {
+
+    if (
+        query.summaryDate
+    ) {
+
         params.set(
+
             "summaryDate",
+
             summaryFilter.date
+
         );
+
     }
 
-    if (query.summaryPeriod) {
+
+    if (
+        query.summaryPeriod
+    ) {
+
         params.set(
+
             "summaryPeriod",
+
             summaryFilter.period
+
         );
+
     }
 
-    if (query.productsDate) {
+
+    if (
+        query.productsDate
+    ) {
+
         params.set(
+
             "productsDate",
+
             productsFilter.date
+
         );
+
     }
 
-    if (query.productsPeriod) {
+
+    if (
+        query.productsPeriod
+    ) {
+
         params.set(
+
             "productsPeriod",
+
             productsFilter.period
+
         );
+
     }
 
-    if (query.arrearsDate) {
+
+    if (
+        query.arrearsDate
+    ) {
+
         params.set(
+
             "arrearsDate",
+
             arrearsFilter.date
+
         );
+
     }
 
-    if (query.arrearsPeriod) {
+
+    if (
+        query.arrearsPeriod
+    ) {
+
         params.set(
+
             "arrearsPeriod",
+
             arrearsFilter.period
+
         );
+
     }
 
+
+    // ======================================================
+    // FRONTEND DATA
+    // ======================================================
 
     return {
+
         activeTab,
+
+
+        // --------------------------------------------------
+        // TOTAL REVENUE
+        // --------------------------------------------------
 
         totalRevenue:
             summary.totalRevenue,
 
+
+        // --------------------------------------------------
+        // REVENUE BREAKDOWN
+        // --------------------------------------------------
+
+        packageRevenue:
+            summary.packageRevenue,
+
+        staffSalesRevenue:
+            summary.staffSalesRevenue,
+
+
+        // --------------------------------------------------
+        // ARREARS
+        // --------------------------------------------------
+
         customerArrears:
             summary.customerArrears,
+
+
+        // --------------------------------------------------
+        // PROFIT
+        // --------------------------------------------------
 
         profit:
             summary.profit,
 
+        packageProfit:
+            summary.packageProfit,
+
+        staffSalesProfit:
+            summary.staffSalesProfit,
+
+
+        // --------------------------------------------------
+        // STAFF SALES
+        //
+        // FULL STAFFSALE DOCUMENTS REACH FRONTEND
+        // --------------------------------------------------
+
+        staffSales:
+            summary.staffSales,
+
+
+        // --------------------------------------------------
+        // PRODUCT ANALYTICS
+        // --------------------------------------------------
+
         productAnalytics,
 
+
+        // --------------------------------------------------
+        // CUSTOMER ARREARS
+        // --------------------------------------------------
+
         arrearsPackages,
+
+
+        // --------------------------------------------------
+        // ACTIVE FILTER
+        // --------------------------------------------------
 
         activeFilterDate:
             activeFilter.date,
@@ -622,18 +1497,38 @@ async function getSalesPageData(query = {}) {
             activeFilter.period,
 
         filterLabel:
-            getFilterLabel(activeFilter),
+            getFilterLabel(
+                activeFilter
+            ),
+
+
+        // --------------------------------------------------
+        // QUERY SUFFIX
+        // --------------------------------------------------
 
         salesQuerySuffix:
+
             params.toString()
+
                 ? `&${params.toString()}`
+
                 : ""
+
     };
+
 }
 
 
+// ==========================================================
+// EXPORTS
+// ==========================================================
+
 module.exports = {
+
     getSalesPageData,
+
     getDateRange,
+
     getCurrentNairobiDate
+
 };
