@@ -9,6 +9,10 @@ const salesService =
     require("../services/salesService");
 
 
+// ==========================================================
+// SALES PAGE
+// ==========================================================
+
 exports.index = async (req, res) => {
 
     try {
@@ -18,10 +22,17 @@ exports.index = async (req, res) => {
                 req.query || {}
             );
 
+
         return res.render("sales", {
-            title: "Sales | Verrah Cosmetics",
+
+            title:
+                "Sales | Verrah Cosmetics",
+
             ...data,
-            error: null
+
+            error:
+                null
+
         });
 
     } catch (err) {
@@ -31,35 +42,131 @@ exports.index = async (req, res) => {
             err
         );
 
-        return res.status(500).render("sales", {
 
-            title: "Sales | Verrah Cosmetics",
+        // --------------------------------------------------
+        // SAFE ACTIVE TAB
+        // --------------------------------------------------
 
-            activeTab:
-                ["summary", "products", "arrears"]
-                    .includes(req.query?.tab)
-                    ? req.query.tab
-                    : "summary",
+        const activeTab =
+            [
+                "summary",
+                "products",
+                "arrears"
+            ].includes(
+                req.query?.tab
+            )
+                ? req.query.tab
+                : "summary";
 
-            totalRevenue: 0,
-            customerArrears: 0,
-            profit: 0,
 
-            productAnalytics: [],
-            arrearsPackages: [],
+        // --------------------------------------------------
+        // ERROR FALLBACK
+        //
+        // Every value expected by the sales view is
+        // explicitly supplied so EJS does not encounter
+        // undefined variables.
+        // --------------------------------------------------
 
-            activeFilterDate:
-                salesService.getCurrentNairobiDate(),
+        return res.status(500).render(
+            "sales",
+            {
 
-            activeFilterPeriod: "month",
+                title:
+                    "Sales | Verrah Cosmetics",
 
-            filterLabel:
-                "Unable to load sales data.",
 
-            salesQuerySuffix: "",
+                activeTab,
 
-            error:
-                "Unable to load sales analytics."
-        });
+
+                // ==================================================
+                // REVENUE
+                // ==================================================
+
+                totalRevenue:
+                    0,
+
+                packageRevenue:
+                    0,
+
+                staffSalesRevenue:
+                    0,
+
+
+                // ==================================================
+                // ARREARS
+                // ==================================================
+
+                customerArrears:
+                    0,
+
+
+                // ==================================================
+                // PROFIT
+                // ==================================================
+
+                profit:
+                    0,
+
+                packageProfit:
+                    0,
+
+                staffSalesProfit:
+                    0,
+
+
+                // ==================================================
+                // STAFF SALES
+                //
+                // IMPORTANT:
+                // This is what allows the frontend to safely use:
+                //
+                //     staffSales
+                //
+                // even when loading the page fails.
+                // ==================================================
+
+                staffSales:
+                    [],
+
+
+                // ==================================================
+                // OTHER SALES DATA
+                // ==================================================
+
+                productAnalytics:
+                    [],
+
+                arrearsPackages:
+                    [],
+
+
+                // ==================================================
+                // FILTER
+                // ==================================================
+
+                activeFilterDate:
+                    salesService.getCurrentNairobiDate(),
+
+                activeFilterPeriod:
+                    "month",
+
+                filterLabel:
+                    "Unable to load sales data.",
+
+                salesQuerySuffix:
+                    "",
+
+
+                // ==================================================
+                // ERROR
+                // ==================================================
+
+                error:
+                    "Unable to load sales analytics."
+
+            }
+        );
+
     }
+
 };
