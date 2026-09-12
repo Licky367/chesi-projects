@@ -1,250 +1,201 @@
 /* =========================================================
    VERRAH COSMETICS
-   HORIZONTAL EJS CARDS
+   TABS NAVIGATION
    BROWN THEME
 ========================================================= */
 
 
 /* =========================================================
-   VARIABLES
+   TABS CONTAINER
 ========================================================= */
 
-:root {
-
-    --verrah-brown: #8b4513;
-
-    --verrah-brown-dark: #6f350f;
-
-    --verrah-brown-light: #a0522d;
-
-    --verrah-brown-soft: #f5ebe4;
-
-    --verrah-cream: #fffaf7;
-
-    --verrah-text: #2f211a;
-
-    --verrah-muted: #786960;
-
-    --verrah-border: #eadbd2;
-
-    --verrah-shadow:
-        0 6px 18px rgba(111, 53, 15, 0.10);
-
-}
-
-
-/* =========================================================
-   SECTION
-========================================================= */
-
-.verrah-card-section {
+.verrah-tabs-container {
 
     width: 100%;
 
     max-width: 100%;
 
-    padding: 18px 0 24px;
+    margin: 0;
 
-    overflow: hidden;
+    padding: 0;
 
 }
 
 
 /* =========================================================
-   HEADING
+   TABS
 ========================================================= */
 
-.verrah-card-heading {
+.verrah-tabs {
+
+    width: 100%;
 
     display: flex;
 
     align-items: center;
 
-    justify-content: space-between;
-
-    gap: 15px;
-
-    padding:
-
-        0 16px 12px;
-
-}
-
-
-.verrah-card-heading h2 {
-
-    margin: 0;
-
-    color: var(--verrah-brown-dark);
-
-    font-size: 21px;
-
-    font-weight: 700;
-
-}
-
-
-.verrah-card-heading span {
-
-    color: var(--verrah-muted);
-
-    font-size: 12px;
-
-    white-space: nowrap;
-
-}
-
-
-/* =========================================================
-   HORIZONTAL SCROLL AREA
-========================================================= */
-
-.verrah-horizontal-scroll {
-
-    width: 100%;
+    gap: 8px;
 
     overflow-x: auto;
 
     overflow-y: hidden;
 
+    padding: 10px 14px;
+
+    white-space: nowrap;
+
     -webkit-overflow-scrolling: touch;
 
-    overscroll-behavior-x: contain;
+    scrollbar-width: none;
 
-    scrollbar-width: thin;
+    background: #fffaf7;
 
-    scrollbar-color:
-        var(--verrah-brown-light)
-        var(--verrah-brown-soft);
+    border-bottom: 1px solid #eadbd2;
+
+}
+
+
+/* Hide scrollbar */
+
+.verrah-tabs::-webkit-scrollbar {
+
+    display: none;
 
 }
 
 
 /* =========================================================
-   CARD TRACK
+   TAB BUTTON
 ========================================================= */
 
-.verrah-card-track {
-
-    display: flex;
-
-    flex-direction: row;
-
-    align-items: stretch;
-
-    gap: 14px;
-
-    width: max-content;
-
-    padding:
-
-        4px 16px 16px;
-
-}
-
-
-/* =========================================================
-   INDIVIDUAL CARD
-========================================================= */
-
-.verrah-scroll-card {
+.verrah-tab {
 
     flex: 0 0 auto;
 
-    width: 280px;
+    appearance: none;
 
-    min-height: 180px;
+    border: 1px solid #eadbd2;
 
-    background: var(--verrah-cream);
+    background: #ffffff;
 
-    border:
+    color: #6f350f;
 
-        1px solid
-        var(--verrah-border);
+    padding: 9px 17px;
 
-    border-left:
+    min-height: 38px;
 
-        4px solid
-        var(--verrah-brown);
+    border-radius: 20px;
 
-    border-radius: 16px;
+    font-family: Arial, sans-serif;
 
-    overflow: hidden;
+    font-size: 13px;
 
-    box-shadow: var(--verrah-shadow);
+    font-weight: 600;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    white-space: nowrap;
 
     transition:
 
-        transform 0.2s ease,
+        background 0.2s ease,
 
-        box-shadow 0.2s ease;
+        color 0.2s ease,
 
-}
+        border-color 0.2s ease,
 
-
-/* =========================================================
-   HOVER
-========================================================= */
-
-.verrah-scroll-card:hover {
-
-    transform: translateY(-2px);
-
-    box-shadow:
-
-        0 9px 22px
-        rgba(111, 53, 15, 0.15);
+        transform 0.2s ease;
 
 }
 
 
 /* =========================================================
-   REMOVE UNNECESSARY OUTER SPACING
-   FROM INCLUDED EJS
+   TAB HOVER
 ========================================================= */
 
-.verrah-scroll-card > * {
+.verrah-tab:hover {
 
-    max-width: 100%;
+    border-color: #a0522d;
+
+    color: #8b4513;
 
 }
 
 
 /* =========================================================
-   SCROLLBAR
+   ACTIVE TAB
 ========================================================= */
 
-.verrah-horizontal-scroll::-webkit-scrollbar {
+.verrah-tab.active {
 
-    height: 6px;
+    background: #8b4513;
 
-}
+    border-color: #8b4513;
 
-
-.verrah-horizontal-scroll::-webkit-scrollbar-track {
-
-    background:
-        var(--verrah-brown-soft);
-
-    border-radius: 20px;
+    color: #ffffff;
 
 }
 
 
-.verrah-horizontal-scroll::-webkit-scrollbar-thumb {
+/* =========================================================
+   ACTIVE TAB HOVER
+========================================================= */
 
-    background:
-        var(--verrah-brown-light);
+.verrah-tab.active:hover {
 
-    border-radius: 20px;
+    background: #6f350f;
+
+    border-color: #6f350f;
+
+    color: #ffffff;
 
 }
 
 
-.verrah-horizontal-scroll::-webkit-scrollbar-thumb:hover {
+/* =========================================================
+   TAB FOCUS
+========================================================= */
 
-    background:
-        var(--verrah-brown-dark);
+.verrah-tab:focus-visible {
+
+    outline: 2px solid #a0522d;
+
+    outline-offset: 2px;
+
+}
+
+
+/* =========================================================
+   CONTENT AREA
+========================================================= */
+
+.verrah-tab-content {
+
+    width: 100%;
+
+}
+
+
+/* =========================================================
+   TAB PANELS
+========================================================= */
+
+.verrah-tab-panel {
+
+    width: 100%;
+
+}
+
+
+/* =========================================================
+   HIDDEN PANELS
+========================================================= */
+
+.verrah-tab-panel[hidden] {
+
+    display: none;
 
 }
 
@@ -255,71 +206,26 @@
 
 @media (max-width: 600px) {
 
-    .verrah-card-section {
+    .verrah-tabs {
 
-        padding-top: 14px;
+        gap: 7px;
 
-        padding-bottom: 18px;
+        padding:
 
-    }
-
-
-    .verrah-card-heading {
-
-        padding-left: 14px;
-
-        padding-right: 14px;
+            9px 12px;
 
     }
 
 
-    .verrah-card-heading h2 {
+    .verrah-tab {
 
-        font-size: 19px;
+        min-height: 36px;
 
-    }
+        padding:
 
+            8px 15px;
 
-    .verrah-card-heading span {
-
-        font-size: 11px;
-
-    }
-
-
-    .verrah-card-track {
-
-        gap: 12px;
-
-        padding-left: 14px;
-
-        padding-right: 14px;
-
-        padding-bottom: 14px;
-
-    }
-
-
-    .verrah-scroll-card {
-
-        width: 260px;
-
-        border-radius: 14px;
-
-    }
-
-}
-
-
-/* =========================================================
-   VERY SMALL SCREENS
-========================================================= */
-
-@media (max-width: 380px) {
-
-    .verrah-scroll-card {
-
-        width: 235px;
+        font-size: 12px;
 
     }
 
