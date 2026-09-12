@@ -1,230 +1,211 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
 
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
 
-    <title>
-        VERAH COSMETICS
-    </title>
+<title>
+    VERAH COSMETICS
+</title>
 
 
-    <!-- =====================================================
-       FAVICON
-    ====================================================== -->
+<!-- =====================================================
+   FAVICON / WEBSITE LOGO
+====================================================== -->
 
-    <link
-        rel="icon"
-        type="image/png"
-        href="/images/verrah.png"
-    >
+<link
+    rel="icon"
+    type="image/png"
+    href="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
+>
 
-
-    <!-- =====================================================
-       MAIN LAYOUT CSS
-    ====================================================== -->
-
-    <link
-        rel="stylesheet"
-        href="/css/verrah/index.css"
-    >
+<link
+    rel="apple-touch-icon"
+    href="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
+>
 
 
-    <!-- =====================================================
-       OPEN GRAPH
-    ====================================================== -->
+<!-- =====================================================
+   MAIN LAYOUT CSS
+====================================================== -->
 
-    <meta
-        property="og:title"
-        content="VERAH COSMETICS"
-    >
-
-    <meta
-        property="og:description"
-        content="VERAH COSMETICS"
-    >
-
-    <meta
-        property="og:image"
-        content="https://verrah.onrender.com/images/verrah.png"
-    >
-
-    <meta
-        property="og:url"
-        content="https://verrah.onrender.com<%= currentPath || "/" %>"
-    >
-
-    <meta
-        property="og:type"
-        content="website"
-    >
-
-    <meta
-        property="og:site_name"
-        content="VERAH COSMETICS"
-    >
+<link
+    rel="stylesheet"
+    href="/css/verrah/index.css"
+>
 
 
-    <!-- =====================================================
-       TWITTER / X
-    ====================================================== -->
+<!-- =====================================================
+   OPEN GRAPH
+   Used when the website link is shared.
+====================================================== -->
 
-    <meta
-        name="twitter:card"
-        content="summary_large_image"
-    >
+<meta
+    property="og:title"
+    content="VERAH COSMETICS"
+>
 
-    <meta
-        name="twitter:title"
-        content="VERAH COSMETICS"
-    >
+<meta
+    property="og:description"
+    content="VERAH COSMETICS"
+>
 
-    <meta
-        name="twitter:description"
-        content="VERAH COSMETICS"
-    >
+<meta
+    property="og:image"
+    content="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
+>
 
-    <meta
-        name="twitter:image"
-        content="https://verrah.onrender.com/images/verrah.png"
-    >
+<meta
+    property="og:image:secure_url"
+    content="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
+>
 
-</head>
+<meta
+    property="og:image:type"
+    content="image/png"
+>
+
+<meta
+    property="og:image:alt"
+    content="VERAH COSMETICS"
+>
+
+<meta
+    property="og:url"
+    content="https://verrah.onrender.com<%= currentPath || "/" %>"
+>
+
+<meta
+    property="og:type"
+    content="website"
+>
+
+<meta
+    property="og:site_name"
+    content="VERAH COSMETICS"
+>
 
 
-<%
+<!-- =====================================================
+   TWITTER / X
+====================================================== -->
+
+<meta
+    name="twitter:card"
+    content="summary_large_image"
+>
+
+<meta
+    name="twitter:title"
+    content="VERAH COSMETICS"
+>
+
+<meta
+    name="twitter:description"
+    content="VERAH COSMETICS"
+>
+
+<meta
+    name="twitter:image"
+    content="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
+>
+
+<meta
+    name="twitter:image:alt"
+    content="VERAH COSMETICS"
+>
+
+</head><%
 
 /* =========================================================
-   AUTHENTICATION PAGES
+AUTHENTICATION PAGES
 ========================================================= */
 
 const authPages = [
-    "/login",
-    "/signup",
-    "/forgot-password",
-    "/reset-password"
+"/login",
+"/signup",
+"/forgot-password",
+"/reset-password"
 ];
 
-
 const currentPagePath =
-    currentPath ||
-    (typeof req !== "undefined" && req.path) ||
-    "";
-
+currentPath ||
+(typeof req !== "undefined" && req.path) ||
+"";
 
 const isAuthPage =
-    authPages.includes(
-        currentPagePath
-    );
-
+authPages.includes(
+currentPagePath
+);
 
 /* =========================================================
-   HOME LINK
+HOME LINK
 ========================================================= */
 
 const homeLink = "/";
 
-
 /* =========================================================
-   ROLE FLAGS
+ROLE FLAGS
 
-   AVAILABLE ROLES:
-   admin
-   staff
-   client
+AVAILABLE ROLES:
+admin
+staff
+client
 ========================================================= */
 
 const isAdmin =
-    !!user &&
-    user.role === "admin";
-
+!!user &&
+user.role === "admin";
 
 const isStaff =
-    !!user &&
-    user.role === "staff";
-
+!!user &&
+user.role === "staff";
 
 const isClient =
-    !!user &&
-    user.role === "client";
+!!user &&
+user.role === "client";
 
 %>
 
-
 <body
     class="<%= isAuthPage ? 'auth-page' : 'app-page' %>"
->
-
-
-<% if(!isAuthPage){ %>
-
+><% if(!isAuthPage){ %>
 
 <!-- =========================================================
    HEADER
-========================================================= -->
-
-<%- include("layout-partials/header", {
-    homeLink: homeLink,
-    headerTitle: "VERAH COSMETICS"
+========================================================= --><%- include("layout-partials/header", {
+homeLink: homeLink,
+headerTitle: "VERAH COSMETICS"
 }) %>
-
 
 <!-- =========================================================
    SIDEBAR
    SAME SIDEBAR FOR EVERYONE
-========================================================= -->
-
-<%- include("layout-partials/sidebar", {
-    homeLink: homeLink,
-    isAdmin: isAdmin,
-    isStaff: isStaff,
-    isClient: isClient
+========================================================= --><%- include("layout-partials/sidebar", {
+homeLink: homeLink,
+isAdmin: isAdmin,
+isStaff: isStaff,
+isClient: isClient
 }) %>
-
 
 <% } %>
 
-
 <!-- =========================================================
    MAIN CONTENT
-========================================================= -->
+========================================================= --><div class="main"><%- body %>
 
-<div class="main">
-
-    <%- body %>
-
-</div>
-
-
-<!-- =========================================================
+</div><!-- =========================================================
    FOOTER
-========================================================= -->
-
-<%- include("layout-partials/footer") %>
-
+========================================================= --><%- include("layout-partials/footer") %>
 
 <!-- =========================================================
    EXTRACTED PAGE SCRIPTS
-
-   express-ejs-layouts extracts page-level <script>
-   blocks from views such as carts.ejs.
-
-   They MUST be rendered here.
-========================================================= -->
-
-<%- script %>
-
+========================================================= --><%- script %>
 
 <% if(!isAuthPage){ %>
-
 
 <script>
 
@@ -470,7 +451,6 @@ if(menuButton){
 
 /* =========================================================
    SIDEBAR MENU BUTTON
-   CLOSES SIDEBAR
 ========================================================= */
 
 if(sidebarMenuButton){
@@ -649,12 +629,6 @@ window.addEventListener(
     }
 );
 
-</script>
+</script><% } %>
 
-
-<% } %>
-
-
-</body>
-
-</html>
+</body></html>
