@@ -1,62 +1,133 @@
-const mongoose = require("mongoose");
-const Cart = require("../models/carts");
-const Package = require("../models/package");
-const Payment = require("../models/Payment");
-const Product = require("../models/products");
-const User = require("../models/user");
-const DeliveredPackage = require("../models/delivered");
-const Substation = require("../models/substations");
-const { getUserId, getSessionId } = require("./shopContext");
+// =========================================================
+// verrah/services/packageService.js
+//
+// VERRAH COSMETICS
+// PACKAGE SERVICE
+// =========================================================
 
-function getPaymentStatus(totalAmount, totalPaid) {
-  const total = Math.max(0, Number(totalAmount || 0));
-  const paid = Math.max(0, Number(totalPaid || 0));
+const mongoose =
+  require("mongoose");
 
-  if (paid <= 0) return "unpaid";
-  if (paid >= total) return "paid";
+const Cart =
+  require("../models/carts");
+
+const Package =
+  require("../models/package");
+
+const Payment =
+  require("../models/Payment");
+
+const Product =
+  require("../models/products");
+
+const User =
+  require("../models/user");
+
+const DeliveredPackage =
+  require("../models/delivered");
+
+const Substation =
+  require("../models/substations");
+
+const {
+  getUserId,
+  getSessionId
+} = require("./shopContext");
+
+
+// =========================================================
+// PAYMENT STATUS
+// =========================================================
+
+function getPaymentStatus(
+  totalAmount,
+  totalPaid
+) {
+  const total =
+    Math.max(
+      0,
+      Number(totalAmount || 0)
+    );
+
+  const paid =
+    Math.max(
+      0,
+      Number(totalPaid || 0)
+    );
+
+  if (paid <= 0) {
+    return "unpaid";
+  }
+
+  if (paid >= total) {
+    return "paid";
+  }
+
   return "partialPaid";
 }
+
+
+// =========================================================
+// CONFIRMED PAYMENT TOTAL
+// =========================================================
 
 async function getConfirmedPaymentTotal(
   packageId,
   dbSession = null
 ) {
-  const aggregate = Payment.aggregate([
-    {
-      $match: {
-        packageId,
-        status: "confirmed"
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        totalPaid: {
-          $sum: {
-            $ifNull: ["$paidAmount", 0]
+  const aggregate =
+    Payment.aggregate([
+      {
+        $match: {
+          packageId,
+          status: "confirmed"
+        }
+      },
+
+      {
+        $group: {
+          _id: null,
+
+          totalPaid: {
+            $sum: {
+              $ifNull: [
+                "$paidAmount",
+                0
+              ]
+            }
           }
         }
       }
-    }
-  ]);
+    ]);
 
   if (dbSession) {
-    aggregate.session(dbSession);
+    aggregate.session(
+      dbSession
+    );
   }
 
-  const result = await aggregate;
+  const result =
+    await aggregate;
 
   return Math.max(
     0,
-    Number(result[0]?.totalPaid || 0)
+    Number(
+      result[0]?.totalPaid || 0
+    )
   );
 }
+
+
+// =========================================================
+// ROLE HELPERS
+// =========================================================
 
 function roleOf(req) {
   return String(
     req.user?.role || ""
   ).toLowerCase();
 }
+
 
 function staffIdOf(req) {
   return String(
@@ -66,7 +137,14 @@ function staffIdOf(req) {
   );
 }
 
-function normalizeStatus(status) {
+
+// =========================================================
+// STATUS NORMALIZER
+// =========================================================
+
+function normalizeStatus(
+  status
+) {
   return [
     "all",
     "pending",
@@ -77,19 +155,31 @@ function normalizeStatus(status) {
     : "all";
 }
 
+
+// =========================================================
+// CREATE PACKAGE FROM CART
+// =========================================================
+
 async function createPackageFromCart(
   req,
   paymentData = {}
 ) {
-  const clientId = getUserId(req);
-  const sessionId = getSessionId(req);
+  const clientId =
+    getUserId(req);
+
+  const sessionId =
+    getSessionId(req);
 
   if (!clientId) {
-    throw new Error("Login is required.");
+    throw new Error(
+      "Login is required."
+    );
   }
 
   if (!sessionId) {
-    throw new Error("Cart session is missing.");
+    throw new Error(
+      "Cart session is missing."
+    );
   }
 
   const dbSession =
@@ -98,13 +188,18 @@ async function createPackageFromCart(
   let created;
 
   try {
+
     await dbSession.withTransaction(
       async () => {
+
         const cart =
           await Cart.findOne({
             sessionId,
             user: clientId
-          }).session(dbSession);
+          })
+            .session(
+              dbSession
+            );
 
         if (
           !cart ||
@@ -126,73 +221,110 @@ async function createPackageFromCart(
 
         const products =
           await Product.find({
-            _id: { $in: productIds }
+            _id: {
+              $in: productIds
+            }
           })
-            .session(dbSession)
+            .session(
+              dbSession
+            )
             .lean();
 
         const productMap =
           new Map(
-            products.map((p) => [
-              String(p._id),
-              p
-            ])
+            products.map(
+              (product) => [
+                String(
+                  product._id
+                ),
+                product
+              ]
+            )
           );
 
         const items =
-          cart.items.map((item) => {
-            const source =
-              productMap.get(
-                String(
-                  item.product ||
-                  item.productId
-                )
-              );
+          cart.items.map(
+            (item) => {
 
-            return {
-              productId:
-                item.product ||
-                item.productId,
-              name: item.name,
-              category:
-                source?.category || "",
-              subcategory:
-                source?.subcategory || "",
-              days:
-                Number(source?.days || 0),
-              price:
-                Number(item.price || 0),
-              qty:
-                Number(item.qty || 0),
-              image:
-                item.image || ""
-            };
-          });
+              const source =
+                productMap.get(
+                  String(
+                    item.product ||
+                    item.productId
+                  )
+                );
+
+              return {
+                productId:
+                  item.product ||
+                  item.productId,
+
+                name:
+                  item.name,
+
+                category:
+                  source?.category ||
+                  "",
+
+                subcategory:
+                  source?.subcategory ||
+                  "",
+
+                days:
+                  Number(
+                    source?.days || 0
+                  ),
+
+                price:
+                  Number(
+                    item.price || 0
+                  ),
+
+                qty:
+                  Number(
+                    item.qty || 0
+                  ),
+
+                image:
+                  item.image || ""
+              };
+            }
+          );
 
         const totalAmount =
           items.reduce(
-            (sum, item) =>
+            (
+              sum,
+              item
+            ) =>
               sum +
               item.price *
                 item.qty,
             0
           );
 
-        [created] =
+        [
+          created
+        ] =
           await Package.create(
             [
               {
                 clientId,
+
                 items,
+
                 totalAmount,
+
                 paymentMethod:
                   paymentData.paymentMethod ||
                   "pay_on_delivery",
+
                 paymentStatus:
                   paymentData.paymentStatus ===
                   "paid"
                     ? "paid"
                     : "unpaid",
+
                 paidAmount:
                   paymentData.paymentStatus ===
                   "paid"
@@ -201,31 +333,56 @@ async function createPackageFromCart(
                         0
                       )
                     : 0,
+
                 mpesaReceiptNumber:
                   paymentData.mpesaReceiptNumber ||
                   "",
+
                 phoneNumber:
                   paymentData.phoneNumber ||
                   "",
-                status: "pending"
+
+                status:
+                  "pending"
               }
             ],
-            { session: dbSession }
+            {
+              session:
+                dbSession
+            }
           );
 
-        // Product.units was already reduced by cartService.
+        /*
+         * Product inventory was already handled by the
+         * cart/payment process.
+         *
+         * No inventory reduction is performed here.
+         */
+
         await Cart.deleteOne(
-          { _id: cart._id },
-          { session: dbSession }
+          {
+            _id: cart._id
+          },
+          {
+            session:
+              dbSession
+          }
         );
       }
     );
 
     return created;
+
   } finally {
+
     await dbSession.endSession();
   }
 }
+
+
+// =========================================================
+// CREATE PACKAGE FROM PAYMENT
+// =========================================================
 
 async function createPackageFromPayment(
   paymentId
@@ -236,31 +393,51 @@ async function createPackageFromPayment(
   let packageDoc;
 
   try {
+
     await dbSession.withTransaction(
       async () => {
+
         const payment =
           await Payment.findOne({
             _id: paymentId,
             status: "confirmed"
-          }).session(dbSession);
+          })
+            .session(
+              dbSession
+            );
 
-        if (!payment) return;
+        if (!payment) {
+          return;
+        }
 
         const existing =
           await Package.findOne({
-            clientId: payment.clientId,
-            paymentMethod: "mpesa",
+            clientId:
+              payment.clientId,
+
+            paymentMethod:
+              "mpesa",
+
             mpesaReceiptNumber:
               payment.mpesaReceiptNumber
-          }).session(dbSession);
+          })
+            .session(
+              dbSession
+            );
 
         if (existing) {
-          packageDoc = existing;
+
+          packageDoc =
+            existing;
+
           return;
         }
 
         const productIds =
-          (payment.cartItems || [])
+          (
+            payment.cartItems ||
+            []
+          )
             .map(
               (item) =>
                 item.productId
@@ -269,161 +446,251 @@ async function createPackageFromPayment(
 
         const products =
           await Product.find({
-            _id: { $in: productIds }
+            _id: {
+              $in: productIds
+            }
           })
-            .session(dbSession)
+            .session(
+              dbSession
+            )
             .lean();
 
         const productMap =
           new Map(
-            products.map((p) => [
-              String(p._id),
-              p
-            ])
+            products.map(
+              (product) => [
+                String(
+                  product._id
+                ),
+                product
+              ]
+            )
           );
 
         const items =
           payment.cartItems.map(
             (item) => {
+
               const source =
                 productMap.get(
-                  String(item.productId)
+                  String(
+                    item.productId
+                  )
                 );
 
               return {
                 productId:
                   item.productId,
-                name: item.name,
+
+                name:
+                  item.name,
+
                 category:
-                  source?.category || "",
+                  source?.category ||
+                  "",
+
                 subcategory:
-                  source?.subcategory || "",
+                  source?.subcategory ||
+                  "",
+
                 days:
                   Number(
                     source?.days || 0
                   ),
+
                 price:
-                  Number(item.price || 0),
+                  Number(
+                    item.price || 0
+                  ),
+
                 qty:
-                  Number(item.qty || 0),
+                  Number(
+                    item.qty || 0
+                  ),
+
                 image:
                   item.image || ""
               };
             }
           );
 
-        [packageDoc] =
+        [
+          packageDoc
+        ] =
           await Package.create(
             [
               {
                 clientId:
                   payment.clientId,
+
                 items,
+
                 totalAmount:
                   payment.amount,
+
                 paymentMethod:
                   "mpesa",
+
                 paymentStatus:
                   "paid",
+
                 paidAmount:
                   Number(
                     payment.paidAmount ||
                     payment.amount ||
                     0
                   ),
+
                 mpesaReceiptNumber:
                   payment.mpesaReceiptNumber ||
                   "",
+
                 phoneNumber:
                   payment.phoneNumber ||
                   "",
-                status: "pending"
+
+                status:
+                  "pending"
               }
             ],
-            { session: dbSession }
+            {
+              session:
+                dbSession
+            }
           );
 
         const cart =
           await Cart.findOne({
             sessionId:
               payment.sessionId,
+
             user:
               payment.clientId
-          }).session(dbSession);
+          })
+            .session(
+              dbSession
+            );
 
-        if (cart) {
-          for (
-            const paidItem of
-            payment.cartItems
+        if (!cart) {
+          return;
+        }
+
+        for (
+          const paidItem of
+          payment.cartItems
+        ) {
+
+          const current =
+            cart.items.find(
+              (item) =>
+                String(
+                  item.productId
+                ) ===
+                String(
+                  paidItem.productId
+                )
+            );
+
+          if (!current) {
+            continue;
+          }
+
+          current.qty -=
+            Number(
+              paidItem.qty || 0
+            );
+
+          if (
+            current.qty <= 0
           ) {
-            const current =
-              cart.items.find(
+
+            cart.items =
+              cart.items.filter(
                 (item) =>
                   String(
                     item.productId
-                  ) ===
+                  ) !==
                   String(
                     paidItem.productId
                   )
               );
+          }
+        }
 
-            if (!current) continue;
+        if (
+          cart.items.length
+        ) {
 
-            current.qty -= Number(
-              paidItem.qty || 0
-            );
+          await cart.save({
+            session:
+              dbSession
+          });
 
-            if (current.qty <= 0) {
-              cart.items =
-                cart.items.filter(
-                  (item) =>
-                    String(
-                      item.productId
-                    ) !==
-                    String(
-                      paidItem.productId
-                    )
-                );
+        } else {
+
+          await Cart.deleteOne(
+            {
+              _id: cart._id
+            },
+            {
+              session:
+                dbSession
             }
-          }
-
-          if (cart.items.length) {
-            await cart.save({
-              session: dbSession
-            });
-          } else {
-            await Cart.deleteOne(
-              { _id: cart._id },
-              { session: dbSession }
-            );
-          }
+          );
         }
       }
     );
 
     return packageDoc;
+
   } finally {
+
     await dbSession.endSession();
   }
 }
 
-async function getUserPackages(req) {
-  const clientId = getUserId(req);
+
+// =========================================================
+// GET USER PACKAGES
+// =========================================================
+
+async function getUserPackages(
+  req
+) {
+  const clientId =
+    getUserId(req);
 
   if (!clientId) {
-    throw new Error("Login is required.");
+    throw new Error(
+      "Login is required."
+    );
   }
 
-  return Package.find({ clientId })
-    .sort({ createdAt: -1 })
+  return Package.find({
+    clientId
+  })
+    .sort({
+      createdAt: -1
+    })
     .lean();
 }
 
-async function getUserPackage(req, id) {
-  const clientId = getUserId(req);
+
+// =========================================================
+// GET USER PACKAGE
+// =========================================================
+
+async function getUserPackage(
+  req,
+  id
+) {
+  const clientId =
+    getUserId(req);
 
   if (!clientId) {
-    throw new Error("Login is required.");
+    throw new Error(
+      "Login is required."
+    );
   }
 
   return Package.findOne({
@@ -432,11 +699,17 @@ async function getUserPackage(req, id) {
   }).lean();
 }
 
+
+// =========================================================
+// GET STAFF PACKAGES
+// =========================================================
+
 async function getStaffPackages(
   req,
   status = "all"
 ) {
-  const role = roleOf(req);
+  const role =
+    roleOf(req);
 
   if (
     role !== "staff" &&
@@ -447,12 +720,19 @@ async function getStaffPackages(
     );
   }
 
-  status = normalizeStatus(status);
+  status =
+    normalizeStatus(
+      status
+    );
 
   let visibleQuery = {};
 
-  if (role === "staff") {
-    const id = staffIdOf(req);
+  if (
+    role === "staff"
+  ) {
+
+    const id =
+      staffIdOf(req);
 
     if (!id) {
       throw new Error(
@@ -462,8 +742,15 @@ async function getStaffPackages(
 
     visibleQuery = {
       $or: [
-        { status: "pending" },
-        { confirmedByStaffId: id }
+        {
+          status:
+            "pending"
+        },
+
+        {
+          confirmedByStaffId:
+            id
+        }
       ]
     };
   }
@@ -472,7 +759,9 @@ async function getStaffPackages(
     await Package.find(
       visibleQuery
     )
-      .sort({ createdAt: -1 })
+      .sort({
+        createdAt: -1
+      })
       .populate(
         "confirmedSubstationId",
         "name location"
@@ -484,18 +773,29 @@ async function getStaffPackages(
       .lean();
 
   const counts = {
-    all: allVisible.length,
+
+    all:
+      allVisible.length,
+
     pending:
       allVisible.filter(
-        (p) => p.status === "pending"
+        (p) =>
+          p.status ===
+          "pending"
       ).length,
+
     confirmed:
       allVisible.filter(
-        (p) => p.status === "confirmed"
+        (p) =>
+          p.status ===
+          "confirmed"
       ).length,
+
     delivered:
       allVisible.filter(
-        (p) => p.status === "delivered"
+        (p) =>
+          p.status ===
+          "delivered"
       ).length
   };
 
@@ -504,15 +804,19 @@ async function getStaffPackages(
       ? allVisible
       : allVisible.filter(
           (p) =>
-            p.status === status
+            p.status ===
+            status
         );
 
   const clientIds =
     [
       ...new Set(
         packages
-          .map((p) =>
-            String(p.clientId)
+          .map(
+            (p) =>
+              String(
+                p.clientId
+              )
           )
           .filter(Boolean)
       )
@@ -520,54 +824,81 @@ async function getStaffPackages(
 
   const clients =
     await User.find({
-      _id: { $in: clientIds }
+      _id: {
+        $in: clientIds
+      }
     })
-      .select("_id name email")
+      .select(
+        "_id name email"
+      )
       .lean();
 
   const clientMap =
     new Map(
-      clients.map((c) => [
-        String(c._id),
-        c
-      ])
+      clients.map(
+        (client) => [
+          String(
+            client._id
+          ),
+          client
+        ]
+      )
     );
 
   return {
+
     packages:
-      packages.map((pkg) => ({
-        ...pkg,
-        client:
-          clientMap.get(
-            String(pkg.clientId)
-          ) || null,
-        totalPaid:
-          Math.max(
-            0,
-            Number(
-              pkg.paidAmount || 0
+      packages.map(
+        (pkg) => ({
+
+          ...pkg,
+
+          client:
+            clientMap.get(
+              String(
+                pkg.clientId
+              )
+            ) || null,
+
+          totalPaid:
+            Math.max(
+              0,
+              Number(
+                pkg.paidAmount ||
+                0
+              )
+            ),
+
+          arrearsAmount:
+            Math.max(
+              0,
+              Number(
+                pkg.totalAmount ||
+                0
+              ) -
+              Number(
+                pkg.paidAmount ||
+                0
+              )
             )
-          ),
-        arrearsAmount:
-          Math.max(
-            0,
-            Number(
-              pkg.totalAmount || 0
-            ) -
-            Number(
-              pkg.paidAmount || 0
-            )
-          )
-      })),
+        })
+      ),
+
     counts
   };
 }
+
+
+// =========================================================
+// GET STAFF PACKAGE
+// =========================================================
 
 async function getStaffPackage(
   req,
   id
 ) {
-  const role = roleOf(req);
+  const role =
+    roleOf(req);
 
   if (
     role !== "staff" &&
@@ -579,7 +910,9 @@ async function getStaffPackage(
   }
 
   const pkg =
-    await Package.findById(id)
+    await Package.findById(
+      id
+    )
       .populate(
         "confirmedSubstationId",
         "name location"
@@ -590,16 +923,23 @@ async function getStaffPackage(
       )
       .lean();
 
-  if (!pkg) return null;
+  if (!pkg) {
+    return null;
+  }
 
-  if (role === "staff") {
+  if (
+    role === "staff"
+  ) {
+
     const staffId =
       staffIdOf(req);
 
     if (
-      pkg.status !== "pending" &&
+      pkg.status !==
+        "pending" &&
       String(
-        pkg.confirmedByStaffId || ""
+        pkg.confirmedByStaffId ||
+        ""
       ) !== staffId
     ) {
       return null;
@@ -610,37 +950,54 @@ async function getStaffPackage(
     await User.findById(
       pkg.clientId
     )
-      .select("_id name email")
+      .select(
+        "_id name email"
+      )
       .lean();
 
   return {
+
     ...pkg,
+
     client,
+
     totalPaid:
       Math.max(
         0,
         Number(
-          pkg.paidAmount || 0
+          pkg.paidAmount ||
+          0
         )
       ),
+
     arrearsAmount:
       Math.max(
         0,
         Number(
-          pkg.totalAmount || 0
+          pkg.totalAmount ||
+          0
         ) -
         Number(
-          pkg.paidAmount || 0
+          pkg.paidAmount ||
+          0
         )
       )
   };
 }
 
+
+// =========================================================
+// CONFIRM PACKAGE
+// =========================================================
+
 async function confirmPackage(
   req,
   id
 ) {
-  if (roleOf(req) !== "staff") {
+  if (
+    roleOf(req) !==
+    "staff"
+  ) {
     throw new Error(
       "Only staff can confirm packages."
     );
@@ -672,7 +1029,9 @@ async function confirmPackage(
     );
   }
 
-  if (!staff.assignedSubstation) {
+  if (
+    !staff.assignedSubstation
+  ) {
     throw new Error(
       "You must have an assigned substation before confirming packages."
     );
@@ -684,20 +1043,30 @@ async function confirmPackage(
         _id: id,
         status: "pending"
       },
+
       {
         $set: {
-          status: "confirmed",
+
+          status:
+            "confirmed",
+
           confirmedByStaffId:
             staffId,
+
           confirmedByStaffName:
             staffName,
+
           confirmedAt:
             new Date(),
+
           confirmedSubstationId:
             staff.assignedSubstation
         }
       },
-      { new: true }
+
+      {
+        new: true
+      }
     ).lean();
 
   if (!updated) {
@@ -709,18 +1078,42 @@ async function confirmPackage(
   return updated;
 }
 
-/*
- * Delivery rule:
- * - only the staff member who confirmed can deliver;
- * - use that staff member's assignedSubstation;
- * - do NOT decrement Product.units;
- * - decrement the physical productInventory at that substation.
- */
+
+// =========================================================
+// DELIVER PACKAGE
+// =========================================================
+//
+// When delivery occurs:
+//
+// Product.units
+//     -> REDUCE
+//
+// Product.substationUnits
+//     -> REDUCE when the field exists
+//
+// Substation.productInventory[].units
+//     -> REDUCE
+//
+// Substation.productReductions[].unitsReduced
+//     -> INCREASE / CREATE
+//
+// Package
+//     -> Mark delivered
+//
+// DeliveredPackage
+//     -> Create / update
+//
+// Everything runs inside ONE transaction.
+// =========================================================
+
 async function deliverPackage(
   req,
   id
 ) {
-  if (roleOf(req) !== "staff") {
+  if (
+    roleOf(req) !==
+    "staff"
+  ) {
     throw new Error(
       "Only staff can mark packages as delivered."
     );
@@ -742,8 +1135,14 @@ async function deliverPackage(
   let delivered;
 
   try {
+
     await dbSession.withTransaction(
       async () => {
+
+        // =================================================
+        // GET STAFF
+        // =================================================
+
         const staff =
           await User.findOne({
             _id: staffId,
@@ -752,7 +1151,9 @@ async function deliverPackage(
             .select(
               "_id assignedSubstation"
             )
-            .session(dbSession)
+            .session(
+              dbSession
+            )
             .lean();
 
         if (!staff) {
@@ -761,18 +1162,32 @@ async function deliverPackage(
           );
         }
 
-        if (!staff.assignedSubstation) {
+        if (
+          !staff.assignedSubstation
+        ) {
           throw new Error(
             "You must have an assigned substation before delivering packages."
           );
         }
 
+
+        // =================================================
+        // GET PACKAGE
+        // =================================================
+
         const pkg =
           await Package.findOne({
             _id: id,
-            status: "confirmed",
-            confirmedByStaffId: staffId
-          }).session(dbSession);
+
+            status:
+              "confirmed",
+
+            confirmedByStaffId:
+              staffId
+          })
+            .session(
+              dbSession
+            );
 
         if (!pkg) {
           throw new Error(
@@ -780,10 +1195,31 @@ async function deliverPackage(
           );
         }
 
+
+        // =================================================
+        // DUPLICATE DELIVERY PROTECTION
+        // =================================================
+
+        if (
+          pkg.substationReductionRecorded
+        ) {
+          throw new Error(
+            "Inventory for this package has already been reduced."
+          );
+        }
+
+
+        // =================================================
+        // GET SUBSTATION
+        // =================================================
+
         const substation =
           await Substation.findById(
             staff.assignedSubstation
-          ).session(dbSession);
+          )
+            .session(
+              dbSession
+            );
 
         if (!substation) {
           throw new Error(
@@ -791,12 +1227,24 @@ async function deliverPackage(
           );
         }
 
-        for (const item of pkg.items) {
+
+        // =================================================
+        // PROCESS PACKAGE ITEMS
+        // =================================================
+
+        for (
+          const item of pkg.items
+        ) {
+
           const qty =
-            Number(item.qty || 0);
+            Number(
+              item.qty || 0
+            );
 
           if (
-            !Number.isInteger(qty) ||
+            !Number.isInteger(
+              qty
+            ) ||
             qty < 1
           ) {
             throw new Error(
@@ -804,13 +1252,87 @@ async function deliverPackage(
             );
           }
 
-          /*
-           * Product.units has already been reduced when the customer
-           * reserved the item. Never mutate Product.units here.
-           *
-           * The physical inventory at the delivering staff member's
-           * assigned substation is reduced instead.
-           */
+
+          // ===============================================
+          // FIND PRODUCT
+          // ===============================================
+
+          const product =
+            await Product.findById(
+              item.productId
+            )
+              .session(
+                dbSession
+              );
+
+          if (!product) {
+            throw new Error(
+              `Product "${item.name}" no longer exists.`
+            );
+          }
+
+
+          // ===============================================
+          // PRODUCT.UNITS
+          // ===============================================
+          //
+          // Delivery MUST reduce Product.units.
+          // ===============================================
+
+          const productUnits =
+            Number(
+              product.units || 0
+            );
+
+          if (
+            productUnits <
+            qty
+          ) {
+            throw new Error(
+              `Product "${item.name}" has only ${productUnits} units, but this package requires ${qty}.`
+            );
+          }
+
+
+          // ===============================================
+          // PRODUCT.SUBSTATIONUNITS
+          // ===============================================
+
+          const hasSubstationUnits =
+            product.substationUnits !==
+              undefined &&
+            product.substationUnits !==
+              null;
+
+
+          let substationUnits =
+            null;
+
+          if (
+            hasSubstationUnits
+          ) {
+
+            substationUnits =
+              Number(
+                product.substationUnits ||
+                0
+              );
+
+            if (
+              substationUnits <
+              qty
+            ) {
+              throw new Error(
+                `Product "${item.name}" has only ${substationUnits} substation units, but this package requires ${qty}.`
+              );
+            }
+          }
+
+
+          // ===============================================
+          // FIND SUBSTATION INVENTORY
+          // ===============================================
+
           const inventory =
             substation.productInventory.find(
               (entry) =>
@@ -828,27 +1350,71 @@ async function deliverPackage(
             );
           }
 
-          if (
+
+          const inventoryUnits =
             Number(
               inventory.units || 0
-            ) < qty
+            );
+
+          if (
+            inventoryUnits <
+            qty
           ) {
             throw new Error(
-              `${substation.name} has only ${inventory.units} units of ${item.name}, but this package requires ${qty}.`
+              `${substation.name} has only ${inventoryUnits} units of ${item.name}, but this package requires ${qty}.`
             );
           }
 
+
+          // ===============================================
+          // UPDATE PRODUCT.UNITS
+          // ===============================================
+
+          product.units =
+            productUnits -
+            qty;
+
+
+          // ===============================================
+          // UPDATE PRODUCT.SUBSTATIONUNITS
+          // ===============================================
+
+          if (
+            hasSubstationUnits
+          ) {
+
+            product.substationUnits =
+              substationUnits -
+              qty;
+          }
+
+
+          // ===============================================
+          // SAVE PRODUCT
+          // ===============================================
+
+          await product.save({
+            session:
+              dbSession
+          });
+
+
+          // ===============================================
+          // UPDATE SUBSTATION INVENTORY
+          // ===============================================
+
           inventory.units =
-            Number(
-              inventory.units || 0
-            ) - qty;
+            inventoryUnits -
+            qty;
 
           inventory.updatedAt =
             new Date();
 
-          /*
-           * Keep the historical reduction ledger as well.
-           */
+
+          // ===============================================
+          // UPDATE SUBSTATION PRODUCT REDUCTIONS
+          // ===============================================
+
           const reduction =
             substation.productReductions.find(
               (entry) =>
@@ -860,10 +1426,13 @@ async function deliverPackage(
                 )
             );
 
+
           if (reduction) {
+
             reduction.unitsReduced =
               Number(
-                reduction.unitsReduced || 0
+                reduction.unitsReduced ||
+                0
               ) + qty;
 
             reduction.productName =
@@ -876,17 +1445,24 @@ async function deliverPackage(
 
             reduction.lastReducedAt =
               new Date();
+
           } else {
+
             substation.productReductions.push(
               {
                 productId:
                   item.productId,
+
                 productName:
                   item.name,
+
                 category:
-                  item.category || "",
+                  item.category ||
+                  "",
+
                 unitsReduced:
                   qty,
+
                 lastReducedAt:
                   new Date()
               }
@@ -894,9 +1470,20 @@ async function deliverPackage(
           }
         }
 
+
+        // =================================================
+        // SAVE SUBSTATION
+        // =================================================
+
         await substation.save({
-          session: dbSession
+          session:
+            dbSession
         });
+
+
+        // =================================================
+        // MARK PACKAGE DELIVERED
+        // =================================================
 
         pkg.status =
           "delivered";
@@ -916,39 +1503,69 @@ async function deliverPackage(
         pkg.substationReductionRecorded =
           true;
 
+
         await pkg.save({
-          session: dbSession
+          session:
+            dbSession
         });
+
+
+        // =================================================
+        // GET CLIENT
+        // =================================================
 
         const client =
           await User.findById(
             pkg.clientId
           )
-            .select("name")
-            .session(dbSession)
+            .select(
+              "name"
+            )
+            .session(
+              dbSession
+            )
             .lean();
+
+
+        // =================================================
+        // CREATE / UPDATE DELIVERED PACKAGE
+        // =================================================
 
         delivered =
           await DeliveredPackage.findOneAndUpdate(
-            { packageId: pkg._id },
             {
-              packageId: pkg._id,
+              packageId:
+                pkg._id
+            },
+
+            {
+              packageId:
+                pkg._id,
 
               products:
                 pkg.items.map(
                   (item) => ({
+
                     productId:
                       item.productId,
+
                     name:
                       item.name,
+
                     category:
-                      item.category || "",
+                      item.category ||
+                      "",
+
                     price:
                       item.price,
+
                     qty:
                       item.qty,
+
                     image:
-                      item.image || "",
+                      item.image ||
+                      "",
+
                     substationId:
                       staff.assignedSubstation
                   })
@@ -967,7 +1584,8 @@ async function deliverPackage(
 
               amountPaid:
                 Number(
-                  pkg.paidAmount || 0
+                  pkg.paidAmount ||
+                  0
                 ),
 
               arrearsAmount:
@@ -983,29 +1601,42 @@ async function deliverPackage(
                   )
                 )
             },
+
             {
               new: true,
+
               upsert: true,
+
               setDefaultsOnInsert:
                 true,
-              session: dbSession
+
+              session:
+                dbSession
             }
           );
       }
     );
 
     return delivered;
+
   } finally {
+
     await dbSession.endSession();
   }
 }
+
+
+// =========================================================
+// RECORD PAYMENT
+// =========================================================
 
 async function recordPayment(
   req,
   id,
   amount
 ) {
-  const role = roleOf(req);
+  const role =
+    roleOf(req);
 
   if (
     role !== "staff" &&
@@ -1031,7 +1662,9 @@ async function recordPayment(
   }
 
   const pkg =
-    await Package.findById(id);
+    await Package.findById(
+      id
+    );
 
   if (!pkg) {
     throw new Error(
@@ -1040,7 +1673,8 @@ async function recordPayment(
   }
 
   if (
-    pkg.status !== "delivered"
+    pkg.status !==
+    "delivered"
   ) {
     throw new Error(
       "Amount paid can only be entered after delivery."
@@ -1050,8 +1684,10 @@ async function recordPayment(
   if (
     role === "staff" &&
     String(
-      pkg.deliveredByStaffId || ""
-    ) !== staffIdOf(req)
+      pkg.deliveredByStaffId ||
+      ""
+    ) !==
+      staffIdOf(req)
   ) {
     throw new Error(
       "Only the staff member who delivered this package can record its payment."
@@ -1060,7 +1696,9 @@ async function recordPayment(
 
   if (
     numericAmount >
-    Number(pkg.totalAmount || 0)
+    Number(
+      pkg.totalAmount || 0
+    )
   ) {
     throw new Error(
       "Amount paid cannot exceed the package total."
@@ -1072,7 +1710,9 @@ async function recordPayment(
 
   pkg.paymentStatus =
     numericAmount >=
-    Number(pkg.totalAmount || 0)
+    Number(
+      pkg.totalAmount || 0
+    )
       ? "paid"
       : numericAmount > 0
         ? "partialPaid"
@@ -1081,10 +1721,15 @@ async function recordPayment(
   await pkg.save();
 
   await DeliveredPackage.findOneAndUpdate(
-    { packageId: pkg._id },
+    {
+      packageId:
+        pkg._id
+    },
+
     {
       amountPaid:
         numericAmount,
+
       arrearsAmount:
         Math.max(
           0,
@@ -1094,11 +1739,19 @@ async function recordPayment(
           numericAmount
         )
     },
-    { new: true }
+
+    {
+      new: true
+    }
   );
 
   return pkg;
 }
+
+
+// =========================================================
+// CONFIRM PACKAGE PAYMENT
+// =========================================================
 
 async function confirmPackagePayment(
   paymentId
@@ -1109,28 +1762,40 @@ async function confirmPackagePayment(
   let packageDoc;
 
   try {
+
     await dbSession.withTransaction(
       async () => {
+
         const payment =
           await Payment.findOne({
             _id: paymentId,
-            status: "confirmed",
+
+            status:
+              "confirmed",
+
             packageId: {
               $ne: null
             }
-          }).session(
-            dbSession
-          );
+          })
+            .session(
+              dbSession
+            );
 
-        if (!payment) return;
+        if (!payment) {
+          return;
+        }
 
         const packageDocQuery =
           await Package.findOne({
-            _id: payment.packageId,
-            clientId: payment.clientId
-          }).session(
-            dbSession
-          );
+            _id:
+              payment.packageId,
+
+            clientId:
+              payment.clientId
+          })
+            .session(
+              dbSession
+            );
 
         if (!packageDocQuery) {
           throw new Error(
@@ -1182,7 +1847,8 @@ async function confirmPackagePayment(
           "";
 
         await packageDocQuery.save({
-          session: dbSession
+          session:
+            dbSession
         });
 
         packageDoc =
@@ -1191,10 +1857,17 @@ async function confirmPackagePayment(
     );
 
     return packageDoc;
+
   } finally {
+
     await dbSession.endSession();
   }
 }
+
+
+// =========================================================
+// RELEASE PAYMENT RESERVATION
+// =========================================================
 
 async function releasePaymentReservation(
   payment
@@ -1203,14 +1876,18 @@ async function releasePaymentReservation(
     await mongoose.startSession();
 
   try {
+
     await dbSession.withTransaction(
       async () => {
+
         for (
           const item of
           payment.cartItems || []
         ) {
+
           await Product.findByIdAndUpdate(
             item.productId,
+
             {
               $inc: {
                 units:
@@ -1219,6 +1896,7 @@ async function releasePaymentReservation(
                   )
               }
             },
+
             {
               session:
                 dbSession
@@ -1226,22 +1904,29 @@ async function releasePaymentReservation(
           );
         }
 
+
         const cart =
           await Cart.findOne({
             sessionId:
               payment.sessionId,
+
             user:
               payment.clientId
-          }).session(
-            dbSession
-          );
+          })
+            .session(
+              dbSession
+            );
 
-        if (!cart) return;
+        if (!cart) {
+          return;
+        }
+
 
         for (
           const failedItem of
           payment.cartItems || []
         ) {
+
           const current =
             cart.items.find(
               (item) =>
@@ -1253,13 +1938,19 @@ async function releasePaymentReservation(
                 )
             );
 
-          if (!current) continue;
+          if (!current) {
+            continue;
+          }
 
-          current.qty -= Number(
-            failedItem.qty || 0
-          );
+          current.qty -=
+            Number(
+              failedItem.qty || 0
+            );
 
-          if (current.qty <= 0) {
+          if (
+            current.qty <= 0
+          ) {
+
             cart.items =
               cart.items.filter(
                 (item) =>
@@ -1273,14 +1964,22 @@ async function releasePaymentReservation(
           }
         }
 
-        if (cart.items.length) {
+
+        if (
+          cart.items.length
+        ) {
+
           await cart.save({
             session:
               dbSession
           });
+
         } else {
+
           await Cart.deleteOne(
-            { _id: cart._id },
+            {
+              _id: cart._id
+            },
             {
               session:
                 dbSession
@@ -1289,23 +1988,43 @@ async function releasePaymentReservation(
         }
       }
     );
+
   } finally {
+
     await dbSession.endSession();
   }
 }
 
+
+// =========================================================
+// EXPORTS
+// =========================================================
+
 module.exports = {
+
   getPaymentStatus,
+
   getConfirmedPaymentTotal,
+
   createPackageFromCart,
+
   createPackageFromPayment,
+
   getUserPackages,
+
   getUserPackage,
+
   getStaffPackages,
+
   getStaffPackage,
+
   confirmPackage,
+
   deliverPackage,
+
   recordPayment,
+
   confirmPackagePayment,
+
   releasePaymentReservation
 };
