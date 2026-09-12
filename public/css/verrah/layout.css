@@ -154,10 +154,23 @@ body{
 
 /* =========================================================
    HEADER LOGO
-   LEAVE LOGO FUNCTIONALITY/IMAGE UNCHANGED
+   LOGO IS THE HEADER TITLE
+   ALWAYS CENTERED IN THE FULL HEADER
 ========================================================= */
 
 .header-logo-link{
+
+    position:absolute;
+
+    top:50%;
+
+    left:50%;
+
+    transform:translate(-50%,-50%);
+
+    width:auto;
+
+    height:auto;
 
     display:flex;
 
@@ -165,9 +178,9 @@ body{
 
     justify-content:center;
 
-    flex:0 0 auto;
-
     text-decoration:none;
+
+    z-index:2;
 
 }
 
@@ -176,70 +189,11 @@ body{
 
     display:block;
 
+    width:50px;
+
+    height:50px;
+
     object-fit:contain;
-
-}
-
-
-/* =========================================================
-   HEADER TITLE
-   ALWAYS CENTERED IN THE FULL HEADER
-========================================================= */
-
-.header-title{
-
-    position:absolute;
-
-    top:0;
-
-    left:50%;
-
-    transform:translateX(-50%);
-
-    width:auto;
-
-    height:var(--header-height);
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    text-align:center;
-
-    pointer-events:none;
-
-    z-index:2;
-
-}
-
-
-.header-title-text{
-
-    display:block;
-
-    width:auto;
-
-    max-width:calc(100vw - 160px);
-
-    color:#fff;
-
-    font-size:18px;
-
-    font-weight:700;
-
-    letter-spacing:.3px;
-
-    line-height:21px;
-
-    text-align:center;
-
-    white-space:nowrap;
-
-    overflow:hidden;
-
-    text-overflow:ellipsis;
 
 }
 
@@ -261,6 +215,8 @@ body{
     display:flex;
 
     align-items:center;
+
+    z-index:3;
 
 }
 
@@ -1019,42 +975,30 @@ body{
 
 
     /* -----------------------------------------------
-       TITLE
-       REMAINS CENTERED IN FULL HEADER
+       LOGO
+       STILL CENTERED IN THE FULL HEADER
     ----------------------------------------------- */
 
-    .header-title{
+    .header-logo-link{
 
-        top:0;
+        position:absolute;
+
+        top:50%;
 
         left:50%;
 
-        transform:translateX(-50%);
-
-        height:var(--header-height);
-
-        width:auto;
-
-        max-width:100%;
+        transform:translate(-50%,-50%);
 
     }
 
 
-    .header-title-text{
+    .header-logo{
 
-        font-size:15px;
+        width:44px;
 
-        line-height:18px;
+        height:44px;
 
-        max-width:calc(100vw - 130px);
-
-        text-align:center;
-
-        white-space:nowrap;
-
-        overflow:hidden;
-
-        text-overflow:ellipsis;
+        object-fit:contain;
 
     }
 
@@ -1158,29 +1102,36 @@ body{
     }
 
 
-    .header-title{
+    /* -----------------------------------------------
+       LOGO
+       TRUE CENTER OF THE ENTIRE HEADER
+    ----------------------------------------------- */
 
-        top:0;
+    .header-logo-link{
+
+        position:absolute;
+
+        top:50%;
 
         left:50%;
 
-        transform:translateX(-50%);
+        transform:translate(-50%,-50%);
 
     }
 
 
-    .header-title-text{
+    .header-logo{
 
-        font-size:14px;
+        width:40px;
 
-        line-height:17px;
-
-        max-width:calc(100vw - 110px);
-
-        text-align:center;
+        height:40px;
 
     }
 
+
+    /* -----------------------------------------------
+       PROFILE
+    ----------------------------------------------- */
 
     .profile-box{
 
@@ -1202,6 +1153,10 @@ body{
 
     }
 
+
+    /* -----------------------------------------------
+       SIDEBAR
+    ----------------------------------------------- */
 
     .sidebar{
 
