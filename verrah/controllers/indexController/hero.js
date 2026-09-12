@@ -16,22 +16,67 @@ const Substation =
 //
 // GET /
 //
-// Loads all data required by:
+// STAFF REDIRECT:
 //
-//     views/index.ejs
+// If the logged-in user is:
 //
-// Data:
-//     - services
-//     - categories
-//     - substations
-//     - currentUser
-//     - substation (assigned substation for staff)
+//     role === "staff"
+//     AND
+//     assignedSubstation exists
+//
+// then:
+//
+//     /
+//
+// is ALWAYS redirected to:
+//
+//     /branch/:assignedSubstation
+//
+// Example:
+//
+//     assignedSubstation = 66f123abc456...
+//
+//     /  →  /branch/66f123abc456...
+//
+// Other users continue to receive the normal home page.
 //
 // ==========================================================
 
 exports.getHome = async function (req, res) {
 
     try {
+
+        // ------------------------------------------------------
+        // CURRENT USER
+        // ------------------------------------------------------
+
+        const currentUser =
+            req.session?.user || null;
+
+
+        // ------------------------------------------------------
+        // STAFF ASSIGNED TO A SUBSTATION
+        // ------------------------------------------------------
+        //
+        // Do this BEFORE loading home-page data.
+        //
+        // assignedSubstation is expected to contain the
+        // MongoDB _id of the assigned substation.
+        //
+        // ------------------------------------------------------
+
+        if (
+            currentUser &&
+            currentUser.role === "staff" &&
+            currentUser.assignedSubstation
+        ) {
+
+            return res.redirect(
+                `/branch/${currentUser.assignedSubstation}`
+            );
+
+        }
+
 
         // ------------------------------------------------------
         // GET ACTIVE SERVICES
@@ -61,38 +106,15 @@ exports.getHome = async function (req, res) {
 
 
         // ------------------------------------------------------
-        // CURRENT USER
-        // ------------------------------------------------------
-
-        const currentUser =
-            req.session?.user || null;
-
-
-        // ------------------------------------------------------
-        // GET ASSIGNED SUBSTATION
+        // NO ASSIGNED SUBSTATION
         // ------------------------------------------------------
         //
-        // Only staff users with an assignedSubstation need
-        // the actual Substation document.
-        //
-        // assignedSubstation may contain the Substation ID.
+        // For non-staff users, or staff without an assigned
+        // substation, no assigned substation document is needed.
         //
         // ------------------------------------------------------
 
         let substation = null;
-
-        if (
-            currentUser &&
-            currentUser.role === "staff" &&
-            currentUser.assignedSubstation
-        ) {
-
-            substation =
-                await Substation.findById(
-                    currentUser.assignedSubstation
-                );
-
-        }
 
 
         // ------------------------------------------------------
@@ -114,7 +136,6 @@ exports.getHome = async function (req, res) {
 
                 currentUser,
 
-                // Assigned Substation document
                 substation,
 
                 error:
