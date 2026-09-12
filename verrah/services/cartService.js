@@ -1,26 +1,61 @@
 // =========================================================
 // verrah/services/cartService.js
+//
 // VERRAH COSMETICS
 // CART SERVICE
+//
+// RESPONSIBILITIES
+// ---------------------------------------------------------
+// This service handles:
+//
+// - Cart creation
+// - Adding products to cart
+// - Reading cart
+// - Removing cart items
+// - Creating staff sales
+// - Updating Substation.productReductions
+// - Calculating cart totals
+//
+// INVENTORY RESPONSIBILITY
+// ---------------------------------------------------------
+// This service DOES NOT directly update:
+//
+//     Product.units
+//     Substation.productInventory.units
+//
+// Those inventory quantities are handled by the Substation
+// model according to the increase in productReductions.
+//
+// THIS SERVICE DOES UPDATE:
+//
+//     Substation.productReductions
+//
 // =========================================================
+
 
 const mongoose =
     require("mongoose");
 
+
 const Product =
     require("../models/products");
+
 
 const Cart =
     require("../models/carts");
 
+
 const StaffSale =
     require("../models/staff-sales");
+
 
 const Substation =
     require("../models/substations");
 
+
 const User =
     require("../models/user");
+
 
 const {
     getUserId,
@@ -97,12 +132,11 @@ async function getOrCreateCart(
 // =========================================================
 // ADD TO CART
 //
-// IMPORTANT:
-// Adding a Product to the cart DOES NOT change
-// Product.units.
+// Adding a product to cart DOES NOT reduce inventory.
 //
-// There is NO reserved quantity.
-// There is NO reservedUnits.
+// Product.units remains unchanged.
+// Substation inventory remains unchanged.
+// productReductions remains unchanged.
 // =========================================================
 
 async function addToCart(
@@ -176,12 +210,7 @@ async function addToCart(
 
 
                 // ---------------------------------------------
-                // CHECK EXISTING CART QUANTITY
-                //
-                // We do not reserve anything.
-                //
-                // We simply prevent the cart from containing
-                // more units than the Product currently has.
+                // FIND EXISTING CART ITEM
                 // ---------------------------------------------
 
                 const existing =
@@ -198,13 +227,23 @@ async function addToCart(
 
                 const existingQty =
                     existing
-                        ? Number(existing.qty || 0)
+                        ? Number(
+                            existing.qty || 0
+                        )
                         : 0;
 
 
                 const newQty =
-                    existingQty + qty;
+                    existingQty +
+                    qty;
 
+
+                // ---------------------------------------------
+                // CHECK AVAILABLE PRODUCT UNITS
+                //
+                // Validation only.
+                // No inventory is deducted here.
+                // ---------------------------------------------
 
                 const availableUnits =
                     Number(
@@ -280,12 +319,6 @@ async function addToCart(
                 }
 
 
-                // ---------------------------------------------
-                // SAVE CART ONLY
-                //
-                // Product.units remains unchanged.
-                // ---------------------------------------------
-
                 await cart.save({
                     session:
                         dbSession
@@ -336,11 +369,9 @@ async function getCart(req) {
 // =========================================================
 // REMOVE CART ITEM
 //
-// IMPORTANT:
-// Removing a Product from the cart DOES NOT change
-// Product.units.
+// Removing an item from cart DOES NOT modify inventory.
 //
-// There is nothing to release because nothing was reserved.
+// Nothing was reserved when the item was added.
 // =========================================================
 
 async function removeItem(
@@ -389,12 +420,6 @@ async function removeItem(
         await dbSession.withTransaction(
             async () => {
 
-                // ---------------------------------------------
-                // REMOVE ITEM FROM CART
-                //
-                // Product.units is NOT changed.
-                // ---------------------------------------------
-
                 await Cart.updateOne(
 
                     {
@@ -435,18 +460,20 @@ async function removeItem(
 // =========================================================
 // CREATE STAFF SALE
 //
-// Staff sales use Product.units directly.
+// IMPORTANT
+// ---------------------------------------------------------
+// This service owns the update of:
 //
-// Required:
+//     Substation.productReductions
 //
-// Product.units >= quantity being sold
+// It does NOT directly update:
 //
-// After successful sale:
+//     Product.units
+//     Substation.productInventory.units
 //
-// Product.units -= quantity
+// The inventory quantities are updated by the model based
+// on the increase in productReductions.
 //
-// There is NO reserved quantity.
-// There is NO reservedUnits.
 // =========================================================
 
 async function createStaffSale(
@@ -597,7 +624,7 @@ async function createStaffSale(
 
                 if (
                     !cart ||
-                    !cart.items ||
+                    !Array.isArray(cart.items) ||
                     !cart.items.length
                 ) {
 
@@ -617,7 +644,7 @@ async function createStaffSale(
 
 
                 // =============================================
-                // VERIFY EVERY PRODUCT
+                // VERIFY PRODUCTS
                 // =============================================
 
                 for (
@@ -658,7 +685,7 @@ async function createStaffSale(
 
 
                     // -----------------------------------------
-                    // GET CURRENT PRODUCT
+                    // CURRENT PRODUCT
                     // -----------------------------------------
 
                     const product =
@@ -691,7 +718,12 @@ async function createStaffSale(
 
 
                     // -----------------------------------------
-                    // CURRENT PRODUCT UNITS
+                    // PRODUCT STOCK VALIDATION
+                    //
+                    // Validation only.
+                    //
+                    // The actual Product.units reduction is
+                    // handled by the Substation model.
                     // -----------------------------------------
 
                     const availableUnits =
@@ -699,12 +731,6 @@ async function createStaffSale(
                             product.units || 0
                         );
 
-
-                    // -----------------------------------------
-                    // PRODUCT UNITS CHECK
-                    //
-                    // This is the ONLY quantity check.
-                    // -----------------------------------------
 
                     if (
                         availableUnits <
@@ -741,7 +767,8 @@ async function createStaffSale(
 
 
                     const lineTotal =
-                        price * qty;
+                        price *
+                        qty;
 
 
                     totalAmount +=
@@ -804,10 +831,26 @@ async function createStaffSale(
 
 
                 // =============================================
-                // REDUCE PRODUCT.UNITS
+                // UPDATE PRODUCT REDUCTIONS
+                // =============================================
                 //
-                // This is where the Product quantity actually
-                // decreases for a staff sale.
+                // THIS SERVICE OWNS THIS PART.
+                //
+                // For every product sold:
+                //
+                //     unitsReduced += sale quantity
+                //
+                // The model is responsible for using the
+                // resulting increase to update:
+                //
+                //     Product.units
+                //
+                // and:
+                //
+                //     productInventory.units
+                //
+                // There is NO direct inventory decrement here.
+                //
                 // =============================================
 
                 for (
@@ -815,70 +858,9 @@ async function createStaffSale(
                     of saleProducts
                 ) {
 
-                    const result =
-                        await Product.updateOne(
-
-                            {
-                                _id:
-                                    saleItem.productId,
-
-                                isActive:
-                                    true,
-
-                                units: {
-                                    $gte:
-                                        saleItem.qty
-                                }
-                            },
-
-                            {
-                                $inc: {
-
-                                    units:
-                                        -saleItem.qty
-
-                                }
-                            },
-
-                            {
-                                session:
-                                    dbSession
-                            }
-                        );
-
-
-                    if (
-                        result.modifiedCount !==
-                        1
-                    ) {
-
-                        throw new Error(
-                            `The available units for "${saleItem.name}" changed before the sale could be completed.`
-                        );
-                    }
-                }
-
-
-                // =============================================
-                // UPDATE SUBSTATION PRODUCT REDUCTIONS
-                // =============================================
-
-                for (
-                    const saleItem
-                    of saleProducts
-                ) {
-
-                    let reduction;
-
-
-                    if (
-                        Array.isArray(
-                            substation.productReductions
-                        )
-                    ) {
-
-                        reduction =
-                            substation.productReductions.find(
+                    const reduction =
+                        substation.productReductions
+                            .find(
                                 item =>
                                     String(
                                         item.productId
@@ -887,10 +869,13 @@ async function createStaffSale(
                                         saleItem.productId
                                     )
                             );
-                    }
 
 
                     if (!reduction) {
+
+                        // -------------------------------------
+                        // FIRST REDUCTION FOR THIS PRODUCT
+                        // -------------------------------------
 
                         substation.productReductions.push({
 
@@ -914,6 +899,25 @@ async function createStaffSale(
 
                     } else {
 
+                        // -------------------------------------
+                        // INCREASE EXISTING REDUCTION
+                        // -------------------------------------
+                        //
+                        // Example:
+                        //
+                        // Existing:
+                        //     10
+                        //
+                        // New sale:
+                        //     3
+                        //
+                        // New total:
+                        //     13
+                        //
+                        // The model sees the increase of 3
+                        // and reduces inventory by 3.
+                        // -------------------------------------
+
                         reduction.productName =
                             saleItem.name;
 
@@ -934,6 +938,20 @@ async function createStaffSale(
                     }
                 }
 
+
+                // =============================================
+                // SAVE SUBSTATION
+                // =============================================
+                //
+                // Saving the Substation allows the model's
+                // inventory logic to handle the increase in
+                // productReductions.
+                //
+                // No Product.updateOne() is performed here.
+                // No productInventory.units decrement is
+                // performed here.
+                //
+                // =============================================
 
                 await substation.save({
                     session:
