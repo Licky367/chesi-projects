@@ -1,83 +1,284 @@
 <!-- =========================================================
      VERRAH COSMETICS
-     HORIZONTAL EJS CARDS
+     SCROLLABLE TABS + CARD PANELS
 ========================================================= -->
 
-<section class="verrah-card-section">
+<div class="verrah-tabs-container">
 
-    <div class="verrah-card-heading">
+    <!-- =====================================================
+         SCROLLABLE TABS
+    ====================================================== -->
 
-        <h2>
-            Verrah Cosmetics 
-        </h2>
+    <div class="verrah-tabs" role="tablist">
 
-        <span>
-            Swipe to explore
-        </span>
+        <!-- DEFAULT TAB -->
+
+        <button
+            type="button"
+            class="verrah-tab active"
+            role="tab"
+            aria-selected="true"
+            data-tab="welcome"
+        >
+            Welcome
+        </button>
+
+
+        <!-- BRANCH -->
+
+        <button
+            type="button"
+            class="verrah-tab"
+            role="tab"
+            aria-selected="false"
+            data-tab="branch"
+        >
+            Branch
+        </button>
+
+
+        <!-- CATEGORY -->
+
+        <button
+            type="button"
+            class="verrah-tab"
+            role="tab"
+            aria-selected="false"
+            data-tab="category"
+        >
+            Categories
+        </button>
+
+
+        <!-- STOCK -->
+
+        <button
+            type="button"
+            class="verrah-tab"
+            role="tab"
+            aria-selected="false"
+            data-tab="stock"
+        >
+            Stock
+        </button>
+
+
+        <!-- PRODUCTS -->
+
+        <button
+            type="button"
+            class="verrah-tab"
+            role="tab"
+            aria-selected="false"
+            data-tab="products"
+        >
+            Products
+        </button>
+
+
+        <!-- DELIVERIES -->
+
+        <button
+            type="button"
+            class="verrah-tab"
+            role="tab"
+            aria-selected="false"
+            data-tab="deliveries"
+        >
+            Deliveries
+        </button>
+
+
+        <!-- SALES -->
+
+        <button
+            type="button"
+            class="verrah-tab"
+            role="tab"
+            aria-selected="false"
+            data-tab="sales"
+        >
+            Sales
+        </button>
 
     </div>
 
 
     <!-- =====================================================
-         HORIZONTAL SCROLL CONTAINER
+         TAB CONTENT
     ====================================================== -->
 
-    <div class="verrah-horizontal-scroll">
-
-        <div class="verrah-card-track">
+    <div class="verrah-tab-content">
 
 
-            <!-- HERO -->
+        <!-- WELCOME / HERO
+             DEFAULT
+        -->
 
-            <div class="verrah-scroll-card">
-                <%- include("hero") %>
-            </div>
-
-
-            <!-- BRANCH -->
-
-            <div class="verrah-scroll-card">
-                <%- include("branch") %>
-            </div>
-
-
-            <!-- CATEGORY -->
-
-            <div class="verrah-scroll-card">
-                <%- include("category") %>
-            </div>
+        <div
+            class="verrah-tab-panel active"
+            id="welcome"
+            role="tabpanel"
+        >
+            <%- include("hero") %>
+        </div>
 
 
-            <!-- STOCK -->
+        <!-- BRANCH -->
 
-            <div class="verrah-scroll-card">
-                <%- include("stock") %>
-            </div>
-
-
-            <!-- PRODUCTS -->
-
-            <div class="verrah-scroll-card">
-                <%- include("products") %>
-            </div>
+        <div
+            class="verrah-tab-panel"
+            id="branch"
+            role="tabpanel"
+            hidden
+        >
+            <%- include("branch") %>
+        </div>
 
 
-            <!-- DELIVERIES -->
+        <!-- CATEGORY -->
 
-            <div class="verrah-scroll-card">
-                <%- include("deliveries") %>
-            </div>
-
-
-            <!-- SALES-->
-
-            <div class="verrah-scroll-card">
-                <%- include("sales") %>
-            </div>
+        <div
+            class="verrah-tab-panel"
+            id="category"
+            role="tabpanel"
+            hidden
+        >
+            <%- include("category") %>
+        </div>
 
 
+        <!-- STOCK -->
+
+        <div
+            class="verrah-tab-panel"
+            id="stock"
+            role="tabpanel"
+            hidden
+        >
+            <%- include("stock") %>
+        </div>
+
+
+        <!-- PRODUCTS -->
+
+        <div
+            class="verrah-tab-panel"
+            id="products"
+            role="tabpanel"
+            hidden
+        >
+            <%- include("products") %>
+        </div>
+
+
+        <!-- DELIVERIES -->
+
+        <div
+            class="verrah-tab-panel"
+            id="deliveries"
+            role="tabpanel"
+            hidden
+        >
+            <%- include("deliveries") %>
+        </div>
+
+
+        <!-- SALES -->
+
+        <div
+            class="verrah-tab-panel"
+            id="sales"
+            role="tabpanel"
+            hidden
+        >
+            <%- include("sales") %>
         </div>
 
     </div>
 
-</section>
+</div>
+
+
+<!-- =========================================================
+     TAB SWITCHING
+========================================================= -->
+
+<script>
+
+(function () {
+
+    const tabs =
+        document.querySelectorAll(".verrah-tab");
+
+    const panels =
+        document.querySelectorAll(".verrah-tab-panel");
+
+
+    tabs.forEach(function (tab) {
+
+        tab.addEventListener("click", function () {
+
+            const target =
+                this.dataset.tab;
+
+
+            /* -----------------------------------------------
+               UPDATE TAB BUTTONS
+            ----------------------------------------------- */
+
+            tabs.forEach(function (item) {
+
+                const isActive =
+                    item === tab;
+
+                item.classList.toggle(
+                    "active",
+                    isActive
+                );
+
+                item.setAttribute(
+                    "aria-selected",
+                    isActive ? "true" : "false"
+                );
+
+            });
+
+
+            /* -----------------------------------------------
+               UPDATE CONTENT
+            ----------------------------------------------- */
+
+            panels.forEach(function (panel) {
+
+                const isActive =
+                    panel.id === target;
+
+                panel.classList.toggle(
+                    "active",
+                    isActive
+                );
+
+                panel.hidden =
+                    !isActive;
+
+            });
+
+
+            /* -----------------------------------------------
+               KEEP ACTIVE TAB VISIBLE
+            ----------------------------------------------- */
+
+            tab.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+                inline: "center"
+            });
+
+        });
+
+    });
+
+})();
+
+</script>
