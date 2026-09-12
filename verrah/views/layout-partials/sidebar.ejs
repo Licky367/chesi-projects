@@ -63,7 +63,7 @@
                     class="sidebar-icon"
                     aria-hidden="true"
                 >
-                    ⌂
+                    🏠
                 </span>
 
                 <span class="sidebar-label">
@@ -139,7 +139,7 @@
                             class="sidebar-icon"
                             aria-hidden="true"
                         >
-                            📈
+                            📦
                         </span>
 
                         <span class="sidebar-label">
@@ -167,7 +167,7 @@
                             class="sidebar-icon"
                             aria-hidden="true"
                         >
-                            🛃
+                            🏢
                         </span>
 
                         <span class="sidebar-label">
@@ -244,40 +244,70 @@
 
 
         <!-- =================================================
-           PRODUCTS
+           PRODUCTS / USER GUIDE
         ================================================== -->
 
         <%
             const isStaff =
                 user &&
                 user.role === "staff";
-
-            const productsLink =
-                isStaff && user.assignedSubstation
-                    ? `/branch/${user.assignedSubstation}`
-                    : "/products";
         %>
 
         <li class="sidebar-item">
 
-            <a
-                href="<%= productsLink %>"
-                class="sidebar-link"
-                title="View Products"
-            >
+            <% if (isStaff) { %>
 
-                <span
-                    class="sidebar-icon"
-                    aria-hidden="true"
+                <!-- =========================================
+                   USER GUIDE
+                   STAFF ONLY
+                ========================================== -->
+
+                <a
+                    href="/guide"
+                    class="sidebar-link"
+                    title="User Guide"
                 >
-                    🛍️
-                </span>
 
-                <span class="sidebar-label">
-                    Products
-                </span>
+                    <span
+                        class="sidebar-icon"
+                        aria-hidden="true"
+                    >
+                        📖
+                    </span>
 
-            </a>
+                    <span class="sidebar-label">
+                        User Guide
+                    </span>
+
+                </a>
+
+            <% } else { %>
+
+                <!-- =========================================
+                   PRODUCTS
+                   NON-STAFF
+                ========================================== -->
+
+                <a
+                    href="/products"
+                    class="sidebar-link"
+                    title="View Products"
+                >
+
+                    <span
+                        class="sidebar-icon"
+                        aria-hidden="true"
+                    >
+                        🛍️
+                    </span>
+
+                    <span class="sidebar-label">
+                        Products
+                    </span>
+
+                </a>
+
+            <% } %>
 
         </li>
 
