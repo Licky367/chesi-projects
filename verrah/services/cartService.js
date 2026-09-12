@@ -1,72 +1,29 @@
-// =========================================================
+// ==========================================================
 // verrah/services/cartService.js
-//
 // VERRAH COSMETICS
 // CART SERVICE
-//
-// RESPONSIBILITIES
-// ---------------------------------------------------------
-// This service handles:
-//
-// - Cart creation
-// - Adding products to cart
-// - Reading cart
-// - Removing cart items
-// - Creating staff sales
-// - Updating Substation.productReductions
-// - Calculating cart totals
-//
-// INVENTORY RESPONSIBILITY
-// ---------------------------------------------------------
-// This service DOES NOT directly update:
-//
-//     Product.units
-//     Substation.productInventory.units
-//
-// Those inventory quantities are handled by the Substation
-// model according to the increase in productReductions.
-//
-// THIS SERVICE DOES UPDATE:
-//
-//     Substation.productReductions
-//
-// =========================================================
+// ==========================================================
 
+const mongoose = require("mongoose");
 
-const mongoose =
-    require("mongoose");
+const Product = require("../models/products");
 
+const Cart = require("../models/carts");
 
-const Product =
-    require("../models/products");
+const StaffSale = require("../models/staff-sales");
 
+const Substation = require("../models/substations");
 
-const Cart =
-    require("../models/carts");
-
-
-const StaffSale =
-    require("../models/staff-sales");
-
-
-const Substation =
-    require("../models/substations");
-
-
-const User =
-    require("../models/user");
-
+const User = require("../models/user");
 
 const {
     getUserId,
     getSessionId
-} =
-    require("./shopContext");
+} = require("./shopContext");
 
-
-// =========================================================
+// ==========================================================
 // GET OR CREATE CART
-// =========================================================
+// ==========================================================
 
 async function getOrCreateCart(
     req,
@@ -76,35 +33,28 @@ async function getOrCreateCart(
     const sessionId =
         getSessionId(req);
 
-
     if (!sessionId) {
 
         throw new Error(
             "A session or logged-in user is required."
         );
-    }
 
+    }
 
     let cart =
         await Cart.findOne({
             sessionId
         }).session(session);
 
-
     if (!cart) {
 
         cart =
             new Cart({
-
                 sessionId,
-
                 user:
                     getUserId(req),
-
                 items: []
-
             });
-
 
         await cart.save({
             session
@@ -118,26 +68,25 @@ async function getOrCreateCart(
         cart.user =
             getUserId(req);
 
-
         await cart.save({
             session
         });
-    }
 
+    }
 
     return cart;
 }
 
-
-// =========================================================
+// ==========================================================
 // ADD TO CART
 //
-// Adding a product to cart DOES NOT reduce inventory.
+// Adding a Product to the cart DOES NOT reduce inventory.
 //
-// Product.units remains unchanged.
-// Substation inventory remains unchanged.
-// productReductions remains unchanged.
-// =========================================================
+// There is NO reserved quantity.
+// There is NO reservedUnits.
+//
+// Inventory is reduced only when the sale is completed.
+// ==========================================================
 
 async function addToCart(
     req,
@@ -148,7 +97,6 @@ async function addToCart(
     const qty =
         Number(requestedQty);
 
-
     if (
         !Number.isInteger(qty) ||
         qty < 1
@@ -157,17 +105,15 @@ async function addToCart(
         throw new Error(
             "Quantity must be a whole number greater than zero."
         );
-    }
 
+    }
 
     const dbSession =
         await mongoose.startSession();
 
-
     try {
 
         let result;
-
 
         await dbSession.withTransaction(
             async () => {
@@ -178,25 +124,22 @@ async function addToCart(
 
                 const product =
                     await Product.findOne({
-
                         _id:
                             productId,
 
                         isActive:
                             true
-
                     }).session(
                         dbSession
                     );
-
 
                 if (!product) {
 
                     throw new Error(
                         "The requested Product could not be found."
                     );
-                }
 
+                }
 
                 // ---------------------------------------------
                 // GET CART
@@ -208,9 +151,8 @@ async function addToCart(
                         dbSession
                     );
 
-
                 // ---------------------------------------------
-                // FIND EXISTING CART ITEM
+                // CHECK EXISTING CART QUANTITY
                 // ---------------------------------------------
 
                 const existing =
@@ -224,7 +166,6 @@ async function addToCart(
                             )
                     );
 
-
                 const existingQty =
                     existing
                         ? Number(
@@ -232,24 +173,13 @@ async function addToCart(
                         )
                         : 0;
 
-
                 const newQty =
-                    existingQty +
-                    qty;
-
-
-                // ---------------------------------------------
-                // CHECK AVAILABLE PRODUCT UNITS
-                //
-                // Validation only.
-                // No inventory is deducted here.
-                // ---------------------------------------------
+                    existingQty + qty;
 
                 const availableUnits =
                     Number(
                         product.units || 0
                     );
-
 
                 if (
                     newQty >
@@ -259,8 +189,8 @@ async function addToCart(
                     throw new Error(
                         `Only ${availableUnits} units of "${product.name}" are available.`
                     );
-                }
 
+                }
 
                 // ---------------------------------------------
                 // UPDATE EXISTING CART ITEM
@@ -316,45 +246,49 @@ async function addToCart(
                         qty
 
                     });
+
                 }
 
+                // ---------------------------------------------
+                // SAVE CART
+                //
+                // Inventory remains unchanged.
+                // ---------------------------------------------
 
                 await cart.save({
                     session:
                         dbSession
                 });
 
-
                 result =
                     cart;
+
             }
         );
-
 
         return result;
 
     } finally {
 
         await dbSession.endSession();
+
     }
 }
 
-
-// =========================================================
+// ==========================================================
 // GET CART
-// =========================================================
+// ==========================================================
 
 async function getCart(req) {
 
     const sessionId =
         getSessionId(req);
 
-
     if (!sessionId) {
 
         return null;
-    }
 
+    }
 
     return Cart.findOne({
         sessionId
@@ -365,14 +299,13 @@ async function getCart(req) {
         .lean();
 }
 
-
-// =========================================================
+// ==========================================================
 // REMOVE CART ITEM
 //
-// Removing an item from cart DOES NOT modify inventory.
+// Removing an item from the cart DOES NOT reduce inventory.
 //
-// Nothing was reserved when the item was added.
-// =========================================================
+// Nothing is released because nothing was reserved.
+// ==========================================================
 
 async function removeItem(
     req,
@@ -382,14 +315,13 @@ async function removeItem(
     const cart =
         await getCart(req);
 
-
     if (!cart) {
 
         throw new Error(
             "Cart not found."
         );
-    }
 
+    }
 
     const item =
         cart.items.find(
@@ -402,31 +334,31 @@ async function removeItem(
                 )
         );
 
-
     if (!item) {
 
         throw new Error(
             "Item is not in the cart."
         );
-    }
 
+    }
 
     const dbSession =
         await mongoose.startSession();
-
 
     try {
 
         await dbSession.withTransaction(
             async () => {
 
-                await Cart.updateOne(
+                // ---------------------------------------------
+                // REMOVE ITEM FROM CART
+                // ---------------------------------------------
 
+                await Cart.updateOne(
                     {
                         _id:
                             cart._id
                     },
-
                     {
                         $pull: {
 
@@ -441,40 +373,43 @@ async function removeItem(
 
                         }
                     },
-
                     {
                         session:
                             dbSession
                     }
                 );
+
             }
         );
 
     } finally {
 
         await dbSession.endSession();
+
     }
 }
 
-
-// =========================================================
+// ==========================================================
 // CREATE STAFF SALE
 //
-// IMPORTANT
-// ---------------------------------------------------------
-// This service owns the update of:
+// INVENTORY RULES
 //
-//     Substation.productReductions
+// 1. Product.units is reduced for every staff sale.
 //
-// It does NOT directly update:
+// 2. If the Product has substationUnits, its
+//    substationUnits is also reduced.
 //
-//     Product.units
-//     Substation.productInventory.units
+// 3. The assigned Substation's productInventory.units
+//    is reduced by the same quantity.
 //
-// The inventory quantities are updated by the model based
-// on the increase in productReductions.
+// 4. Substation.productReductions records the reduction.
 //
-// =========================================================
+// 5. All inventory changes happen inside the SAME
+//    MongoDB transaction.
+//
+// There is NO reserved quantity.
+// There is NO reservedUnits.
+// ==========================================================
 
 async function createStaffSale(
     req,
@@ -484,28 +419,26 @@ async function createStaffSale(
     const userId =
         getUserId(req);
 
-
     if (!userId) {
 
         throw new Error(
             "You must be logged in to record a sale."
         );
-    }
 
+    }
 
     const cleanSalesName =
         String(
             salesName || ""
         ).trim();
 
-
     if (!cleanSalesName) {
 
         throw new Error(
             "Sales name is required."
         );
-    }
 
+    }
 
     if (
         cleanSalesName.length >
@@ -515,17 +448,15 @@ async function createStaffSale(
         throw new Error(
             "Sales name cannot exceed 150 characters."
         );
-    }
 
+    }
 
     const dbSession =
         await mongoose.startSession();
 
-
     try {
 
         let sale;
-
 
         await dbSession.withTransaction(
             async () => {
@@ -541,14 +472,13 @@ async function createStaffSale(
                         dbSession
                     );
 
-
                 if (!staff) {
 
                     throw new Error(
                         "Staff user was not found."
                     );
-                }
 
+                }
 
                 const role =
                     String(
@@ -557,7 +487,6 @@ async function createStaffSale(
                         .trim()
                         .toLowerCase();
 
-
                 if (
                     role !== "staff"
                 ) {
@@ -565,8 +494,8 @@ async function createStaffSale(
                     throw new Error(
                         "Only staff members can record staff sales."
                     );
-                }
 
+                }
 
                 // =============================================
                 // ASSIGNED SUBSTATION
@@ -579,8 +508,8 @@ async function createStaffSale(
                     throw new Error(
                         "You are not assigned to a substation."
                     );
-                }
 
+                }
 
                 const substation =
                     await Substation.findById(
@@ -589,14 +518,13 @@ async function createStaffSale(
                         dbSession
                     );
 
-
                 if (!substation) {
 
                     throw new Error(
                         "Your assigned substation could not be found."
                     );
-                }
 
+                }
 
                 // =============================================
                 // CART
@@ -605,14 +533,13 @@ async function createStaffSale(
                 const sessionId =
                     getSessionId(req);
 
-
                 if (!sessionId) {
 
                     throw new Error(
                         "A session or logged-in user is required."
                     );
-                }
 
+                }
 
                 const cart =
                     await Cart.findOne({
@@ -621,18 +548,17 @@ async function createStaffSale(
                         dbSession
                     );
 
-
                 if (
                     !cart ||
-                    !Array.isArray(cart.items) ||
+                    !cart.items ||
                     !cart.items.length
                 ) {
 
                     throw new Error(
                         "Your cart is empty."
                     );
-                }
 
+                }
 
                 // =============================================
                 // SALE SNAPSHOTS
@@ -642,9 +568,8 @@ async function createStaffSale(
 
                 let totalAmount = 0;
 
-
                 // =============================================
-                // VERIFY PRODUCTS
+                // VERIFY EVERY CART PRODUCT
                 // =============================================
 
                 for (
@@ -655,20 +580,18 @@ async function createStaffSale(
                     const productId =
                         cartItem.productId;
 
-
                     const qty =
                         Number(
                             cartItem.qty || 0
                         );
-
 
                     if (!productId) {
 
                         throw new Error(
                             "A cart item has no Product ID."
                         );
-                    }
 
+                    }
 
                     if (
                         !Number.isInteger(qty) ||
@@ -681,11 +604,11 @@ async function createStaffSale(
                                 "a cart item"
                             }.`
                         );
+
                     }
 
-
                     // -----------------------------------------
-                    // CURRENT PRODUCT
+                    // GET CURRENT PRODUCT
                     // -----------------------------------------
 
                     const product =
@@ -700,37 +623,33 @@ async function createStaffSale(
                                 dbSession
                             );
 
-
                     if (!product) {
 
                         throw new Error(
-                            `Product "${cartItem.name || productId}" no longer exists.`
+                            `Product "${
+                                cartItem.name ||
+                                productId
+                            }" no longer exists.`
                         );
-                    }
 
+                    }
 
                     if (!product.isActive) {
 
                         throw new Error(
                             `Product "${product.name}" is no longer available.`
                         );
+
                     }
 
-
                     // -----------------------------------------
-                    // PRODUCT STOCK VALIDATION
-                    //
-                    // Validation only.
-                    //
-                    // The actual Product.units reduction is
-                    // handled by the Substation model.
+                    // PRODUCT.UNITS
                     // -----------------------------------------
 
                     const availableUnits =
                         Number(
                             product.units || 0
                         );
-
 
                     if (
                         availableUnits <
@@ -740,8 +659,42 @@ async function createStaffSale(
                         throw new Error(
                             `Only ${availableUnits} units of "${product.name}" are available.`
                         );
+
                     }
 
+                    // -----------------------------------------
+                    // PRODUCT.SUBSTATIONUNITS
+                    //
+                    // Some products have substationUnits.
+                    //
+                    // When present, the staff sale must also
+                    // reduce this quantity.
+                    // -----------------------------------------
+
+                    const hasSubstationUnits =
+                        product.substationUnits !==
+                        undefined &&
+                        product.substationUnits !==
+                        null;
+
+                    const availableSubstationUnits =
+                        hasSubstationUnits
+                            ? Number(
+                                product.substationUnits || 0
+                            )
+                            : null;
+
+                    if (
+                        hasSubstationUnits &&
+                        availableSubstationUnits <
+                        qty
+                    ) {
+
+                        throw new Error(
+                            `Only ${availableSubstationUnits} substation units of "${product.name}" are available.`
+                        );
+
+                    }
 
                     // -----------------------------------------
                     // PRICE
@@ -754,7 +707,6 @@ async function createStaffSale(
                             0
                         );
 
-
                     if (
                         !Number.isFinite(price) ||
                         price < 0
@@ -763,24 +715,20 @@ async function createStaffSale(
                         throw new Error(
                             `Invalid selling price for "${product.name}".`
                         );
+
                     }
 
-
                     const lineTotal =
-                        price *
-                        qty;
-
+                        price * qty;
 
                     totalAmount +=
                         lineTotal;
-
 
                     // -----------------------------------------
                     // CATEGORY
                     // -----------------------------------------
 
                     let category = "";
-
 
                     if (
                         product.category
@@ -792,8 +740,8 @@ async function createStaffSale(
                                 product.category._id ||
                                 product.category
                             );
-                    }
 
+                    }
 
                     // -----------------------------------------
                     // SALE SNAPSHOT
@@ -824,33 +772,23 @@ async function createStaffSale(
                         price,
 
                         total:
-                            lineTotal
+                            lineTotal,
+
+                        hasSubstationUnits,
+
+                        availableSubstationUnits
 
                     });
+
                 }
 
-
                 // =============================================
-                // UPDATE PRODUCT REDUCTIONS
-                // =============================================
+                // UPDATE PRODUCT INVENTORY
                 //
-                // THIS SERVICE OWNS THIS PART.
+                // Product.units ALWAYS decreases.
                 //
-                // For every product sold:
-                //
-                //     unitsReduced += sale quantity
-                //
-                // The model is responsible for using the
-                // resulting increase to update:
-                //
-                //     Product.units
-                //
-                // and:
-                //
-                //     productInventory.units
-                //
-                // There is NO direct inventory decrement here.
-                //
+                // Product.substationUnits decreases only when
+                // the field exists on that Product.
                 // =============================================
 
                 for (
@@ -858,9 +796,194 @@ async function createStaffSale(
                     of saleProducts
                 ) {
 
-                    const reduction =
-                        substation.productReductions
-                            .find(
+                    const product =
+                        await Product.findById(
+                            saleItem.productId
+                        ).session(
+                            dbSession
+                        );
+
+                    if (!product) {
+
+                        throw new Error(
+                            `Product "${saleItem.name}" could not be found while updating inventory.`
+                        );
+
+                    }
+
+                    // -----------------------------------------
+                    // REDUCE PRODUCT.UNITS
+                    // -----------------------------------------
+
+                    const productUpdate = {
+
+                        $inc: {
+
+                            units:
+                                -saleItem.qty
+
+                        }
+
+                    };
+
+                    // -----------------------------------------
+                    // REDUCE PRODUCT.SUBSTATIONUNITS
+                    // WHEN THE FIELD EXISTS
+                    // -----------------------------------------
+
+                    if (
+                        saleItem.hasSubstationUnits
+                    ) {
+
+                        productUpdate.$inc.substationUnits =
+                            -saleItem.qty;
+
+                    }
+
+                    const productResult =
+                        await Product.updateOne(
+                            {
+                                _id:
+                                    saleItem.productId,
+
+                                isActive:
+                                    true,
+
+                                units: {
+                                    $gte:
+                                        saleItem.qty
+                                },
+
+                                ...(saleItem.hasSubstationUnits
+                                    ? {
+                                        substationUnits: {
+                                            $gte:
+                                                saleItem.qty
+                                        }
+                                    }
+                                    : {})
+
+                            },
+                            productUpdate,
+                            {
+                                session:
+                                    dbSession
+                            }
+                        );
+
+                    if (
+                        productResult.modifiedCount !==
+                        1
+                    ) {
+
+                        throw new Error(
+                            `The available inventory for "${saleItem.name}" changed before the sale could be completed.`
+                        );
+
+                    }
+
+                }
+
+                // =============================================
+                // UPDATE SUBSTATION PRODUCT INVENTORY
+                //
+                // The assigned substation must also lose the
+                // quantity sold.
+                //
+                // Substation.productInventory[].units
+                // decreases by the same sale quantity.
+                // =============================================
+
+                for (
+                    const saleItem
+                    of saleProducts
+                ) {
+
+                    if (
+                        !Array.isArray(
+                            substation.productInventory
+                        )
+                    ) {
+
+                        throw new Error(
+                            "The assigned substation has no product inventory."
+                        );
+
+                    }
+
+                    const inventoryItem =
+                        substation.productInventory.find(
+                            item =>
+                                String(
+                                    item.productId
+                                ) ===
+                                String(
+                                    saleItem.productId
+                                )
+                        );
+
+                    if (!inventoryItem) {
+
+                        throw new Error(
+                            `Product "${saleItem.name}" is not available in the assigned substation inventory.`
+                        );
+
+                    }
+
+                    const substationAvailableUnits =
+                        Number(
+                            inventoryItem.units || 0
+                        );
+
+                    if (
+                        substationAvailableUnits <
+                        saleItem.qty
+                    ) {
+
+                        throw new Error(
+                            `Only ${substationAvailableUnits} units of "${saleItem.name}" are available at your assigned substation.`
+                        );
+
+                    }
+
+                    // -----------------------------------------
+                    // REDUCE SUBSTATION UNITS
+                    // -----------------------------------------
+
+                    inventoryItem.units =
+                        substationAvailableUnits -
+                        saleItem.qty;
+
+                    inventoryItem.productName =
+                        saleItem.name;
+
+                    inventoryItem.updatedAt =
+                        new Date();
+
+                }
+
+                // =============================================
+                // UPDATE SUBSTATION PRODUCT REDUCTIONS
+                //
+                // This records how many units have been sold
+                // from this particular substation.
+                // =============================================
+
+                for (
+                    const saleItem
+                    of saleProducts
+                ) {
+
+                    let reduction = null;
+
+                    if (
+                        Array.isArray(
+                            substation.productReductions
+                        )
+                    ) {
+
+                        reduction =
+                            substation.productReductions.find(
                                 item =>
                                     String(
                                         item.productId
@@ -870,12 +993,13 @@ async function createStaffSale(
                                     )
                             );
 
+                    }
+
+                    // -----------------------------------------
+                    // CREATE REDUCTION RECORD
+                    // -----------------------------------------
 
                     if (!reduction) {
-
-                        // -------------------------------------
-                        // FIRST REDUCTION FOR THIS PRODUCT
-                        // -------------------------------------
 
                         substation.productReductions.push({
 
@@ -897,26 +1021,13 @@ async function createStaffSale(
 
                         });
 
-                    } else {
+                    }
 
-                        // -------------------------------------
-                        // INCREASE EXISTING REDUCTION
-                        // -------------------------------------
-                        //
-                        // Example:
-                        //
-                        // Existing:
-                        //     10
-                        //
-                        // New sale:
-                        //     3
-                        //
-                        // New total:
-                        //     13
-                        //
-                        // The model sees the increase of 3
-                        // and reduces inventory by 3.
-                        // -------------------------------------
+                    // -----------------------------------------
+                    // UPDATE EXISTING REDUCTION RECORD
+                    // -----------------------------------------
+
+                    else {
 
                         reduction.productName =
                             saleItem.name;
@@ -935,29 +1046,27 @@ async function createStaffSale(
 
                         reduction.lastReducedAt =
                             new Date();
-                    }
-                }
 
+                    }
+
+                }
 
                 // =============================================
                 // SAVE SUBSTATION
-                // =============================================
                 //
-                // Saving the Substation allows the model's
-                // inventory logic to handle the increase in
-                // productReductions.
+                // This saves BOTH:
                 //
-                // No Product.updateOne() is performed here.
-                // No productInventory.units decrement is
-                // performed here.
+                // 1. productInventory.units
+                // 2. productReductions.unitsReduced
                 //
+                // Product changes are already part of the same
+                // MongoDB transaction.
                 // =============================================
 
                 await substation.save({
                     session:
                         dbSession
                 });
-
 
                 // =============================================
                 // CREATE STAFF SALE
@@ -979,12 +1088,10 @@ async function createStaffSale(
 
                     });
 
-
                 await sale.save({
                     session:
                         dbSession
                 });
-
 
                 // =============================================
                 // CLEAR CART
@@ -992,34 +1099,32 @@ async function createStaffSale(
 
                 cart.items = [];
 
-
                 await cart.save({
                     session:
                         dbSession
                 });
+
             }
         );
-
 
         return sale;
 
     } finally {
 
         await dbSession.endSession();
+
     }
 }
 
-
-// =========================================================
+// ==========================================================
 // CALCULATE TOTAL
-// =========================================================
+// ==========================================================
 
 function calculateTotal(cart) {
 
     return (
         cart?.items || []
     ).reduce(
-
         (
             sum,
             item
@@ -1036,15 +1141,14 @@ function calculateTotal(cart) {
             );
 
         },
-
         0
     );
+
 }
 
-
-// =========================================================
+// ==========================================================
 // EXPORTS
-// =========================================================
+// ==========================================================
 
 module.exports = {
 
