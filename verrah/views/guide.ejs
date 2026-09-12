@@ -1,0 +1,31 @@
+
+<% if (
+    user &&
+    user.role === "staff"
+) { %>
+
+    <%- include("home-partials/staff/hero") %>
+
+    <%- include("home-partials/staff/delivery") %>
+
+    <%- include("home-partials/staff/sales") %>
+
+
+<% } 
+
+
+
+
+<% if (
+    user &&
+    user.role === "admin"
+) { %>
+
+    <%- include("home-partials/admin/hero") %>
+
+    <%- include("home-partials/admin/delivery") %>
+
+    <%- include("home-partials/admin/sales") %>
+
+
+<% }
