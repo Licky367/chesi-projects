@@ -156,6 +156,9 @@ body{
    HEADER LOGO
    LOGO IS THE HEADER TITLE
    ALWAYS CENTERED IN THE FULL HEADER
+
+   IMPORTANT:
+   The Verrah logo is a horizontal logo, NOT a square icon.
 ========================================================= */
 
 .header-logo-link{
@@ -168,9 +171,9 @@ body{
 
     transform:translate(-50%,-50%);
 
-    width:auto;
+    width:190px;
 
-    height:auto;
+    height:62px;
 
     display:flex;
 
@@ -182,18 +185,30 @@ body{
 
     z-index:2;
 
+    overflow:visible;
+
 }
 
+
+/* =========================================================
+   HEADER LOGO IMAGE
+========================================================= */
 
 .header-logo{
 
     display:block;
 
-    width:50px;
+    width:185px;
 
-    height:50px;
+    height:58px;
+
+    max-width:185px;
+
+    max-height:58px;
 
     object-fit:contain;
+
+    object-position:center;
 
 }
 
@@ -976,7 +991,8 @@ body{
 
     /* -----------------------------------------------
        LOGO
-       STILL CENTERED IN THE FULL HEADER
+       LARGE HORIZONTAL VERRAH LOGO
+       CENTERED IN THE FULL HEADER
     ----------------------------------------------- */
 
     .header-logo-link{
@@ -989,16 +1005,32 @@ body{
 
         transform:translate(-50%,-50%);
 
+        width:180px;
+
+        height:58px;
+
+        display:flex;
+
+        align-items:center;
+
+        justify-content:center;
+
     }
 
 
     .header-logo{
 
-        width:44px;
+        width:175px;
 
-        height:44px;
+        height:54px;
+
+        max-width:175px;
+
+        max-height:54px;
 
         object-fit:contain;
+
+        object-position:center;
 
     }
 
@@ -1104,27 +1136,28 @@ body{
 
     /* -----------------------------------------------
        LOGO
-       TRUE CENTER OF THE ENTIRE HEADER
+       WIDE ENOUGH TO CLEARLY SHOW:
+       LOTUS + VERRAH + COSMETICS
     ----------------------------------------------- */
 
     .header-logo-link{
 
-        position:absolute;
+        width:165px;
 
-        top:50%;
-
-        left:50%;
-
-        transform:translate(-50%,-50%);
+        height:54px;
 
     }
 
 
     .header-logo{
 
-        width:40px;
+        width:160px;
 
-        height:40px;
+        height:50px;
+
+        max-width:160px;
+
+        max-height:50px;
 
     }
 
