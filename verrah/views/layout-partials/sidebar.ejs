@@ -154,7 +154,7 @@
                 <!-- =========================================
                    SUBSTATIONS / BRANCHES
                 ========================================== -->
-
+<!--
                 <li class="sidebar-item">
 
                     <a
@@ -178,7 +178,7 @@
 
                 </li>
 
-
+-->
                 <!-- =========================================
                    SALES
                 ========================================== -->
@@ -400,6 +400,40 @@
 
                 <span class="sidebar-label">
                     Deliveries
+                </span>
+
+            </a>
+
+        </li>
+
+        <% } %>
+
+        <% if (
+            user &&
+            (user.role === "admin")
+        ) { %>
+
+        <!-- =================================================
+           ADMIN USER GUIDE
+        ================================================== -->
+
+        <li class="sidebar-item">
+
+            <a
+                href="/guide"
+                class="sidebar-link"
+                title="Admin Guidelines"
+            >
+
+                <span
+                    class="sidebar-icon"
+                    aria-hidden="true"
+                >
+                    📝
+                </span>
+
+                <span class="sidebar-label">
+                    Admin User Guide
                 </span>
 
             </a>
