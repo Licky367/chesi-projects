@@ -10,32 +10,32 @@
 // Default for every tab:
 //   current Nairobi date + month
 //
-// Package filtering is based on Package.createdAt.
-// StaffSales filtering is based on StaffSale.createdAt.
+// PACKAGE REVENUE
+// ----------------
+// Sum of Package.paidAmount
 //
-// REVENUE
-// --------
-// Package revenue:
-//   summation of Package.paidAmount
-//
-// Staff sales revenue:
-//   summation of StaffSale.totalAmount
+// STAFF SALES REVENUE
+// -------------------
+// Sum of StaffSale.totalAmount
 //
 // TOTAL REVENUE
 // -------------
 // Package revenue + StaffSales revenue
 //
-// PROFIT
-// ------
-// Package profit:
-//   Package revenue - package product buying cost
+// PACKAGE PROFIT
+// --------------
+// Package revenue - package product buying cost
 //
-// Staff-sales profit:
-//   StaffSale.totalAmount - sum(price * qty)
+// STAFF SALES PROFIT
+// ------------------
+// StaffSales revenue - StaffSales product buying cost
 //
-// TOTAL PROFIT
-// ------------
-// Package profit + Staff-sales profit
+// StaffSales product buying cost is calculated from:
+//   Product.buyPrice × StaffSale.products[].qty
+//
+// StaffSale.products[].price is the SELLING PRICE.
+// It must NOT be used as the buying cost.
+//
 // ==========================================================
 
 
@@ -170,7 +170,7 @@ function normalizeDate(value) {
 
 
 // ==========================================================
-// CONVERT A KENYA LOCAL DATE TO UTC DATE
+// CONVERT KENYA LOCAL DATE TO UTC
 // ==========================================================
 
 function kenyaDateToUtc(
@@ -259,8 +259,8 @@ function getDateRange(
                 nextDate
             );
 
-
     }
+
 
     // ------------------------------------------------------
     // MONTH
@@ -304,8 +304,8 @@ function getDateRange(
                 nextMonthStart
             );
 
-
     }
+
 
     // ------------------------------------------------------
     // YEAR
@@ -436,7 +436,7 @@ async function getSummary(
 ) {
 
     // ======================================================
-    // PACKAGE SALES
+    // LOAD PACKAGES
     // ======================================================
 
     const packages =
@@ -460,7 +460,7 @@ async function getSummary(
 
 
     // ======================================================
-    // STAFF SALES
+    // LOAD STAFF SALES
     // ======================================================
 
     const staffSales =
@@ -501,12 +501,17 @@ async function getSummary(
     let staffSalesRevenue =
         0;
 
-    let staffSalesProductSellingTotal =
+    let staffSalesBuyingCost =
         0;
 
 
     // ======================================================
-    // PRODUCT IDS FROM PACKAGES
+    // PRODUCT IDS
+    //
+    // We need Product.buyPrice for BOTH:
+    //
+    // 1. Package products
+    // 2. Staff-sale products
     // ======================================================
 
     const productIds =
@@ -517,7 +522,10 @@ async function getSummary(
     // PROCESS PACKAGES
     // ======================================================
 
-    for (const pkg of packages) {
+    for (
+        const pkg
+        of packages
+    ) {
 
         const paidAmount =
             Number(
@@ -532,7 +540,7 @@ async function getSummary(
 
 
         // --------------------------------------------------
-        // EXISTING PACKAGE REVENUE LOGIC
+        // PACKAGE REVENUE
         // --------------------------------------------------
 
         packageRevenue +=
@@ -550,9 +558,12 @@ async function getSummary(
 
             customerArrears +=
                 Math.max(
+
                     0,
+
                     totalAmount -
                     paidAmount
+
                 );
 
         }
@@ -587,13 +598,17 @@ async function getSummary(
     // ======================================================
     // PROCESS STAFF SALES
     //
-    // Revenue:
-    //   summation of StaffSale.totalAmount
+    // Revenue comes from:
     //
-    // Profit basis requested:
-    //   StaffSale.totalAmount
-    //   -
-    //   summation of item.price * item.qty
+    //     StaffSale.totalAmount
+    //
+    // Cost DOES NOT come from:
+    //
+    //     StaffSale.products[].price
+    //
+    // because price is the SELLING PRICE.
+    //
+    // The actual cost is retrieved from Product.buyPrice.
     // ======================================================
 
     for (
@@ -616,8 +631,7 @@ async function getSummary(
 
 
         // --------------------------------------------------
-        // SUM SELLING PRICES OF
-        // ALL STAFF-SALE PRODUCTS
+        // COLLECT STAFF-SALE PRODUCT IDS
         // --------------------------------------------------
 
         for (
@@ -625,20 +639,17 @@ async function getSummary(
             of sale.products || []
         ) {
 
-            const price =
-                Number(
-                    item.price || 0
+            if (
+                item.productId
+            ) {
+
+                productIds.add(
+                    String(
+                        item.productId
+                    )
                 );
 
-
-            const qty =
-                Number(
-                    item.qty || 0
-                );
-
-
-            staffSalesProductSellingTotal +=
-                price * qty;
+            }
 
         }
 
@@ -646,14 +657,14 @@ async function getSummary(
 
 
     // ======================================================
-    // PACKAGE BUYING COST
+    // LOAD PRODUCT BUYING PRICES
     //
-    // Package stores:
-    //   productId + qty
-    //
-    // Product stores:
-    //   current buyPrice
+    // Product.buyPrice is the cost of acquiring the product.
     // ======================================================
+
+    const productMap =
+        new Map();
+
 
     if (
         productIds.size
@@ -678,54 +689,22 @@ async function getSummary(
                 .lean();
 
 
-        const productMap =
-            new Map(
+        for (
+            const product
+            of products
+        ) {
 
-                products.map(
-                    product => [
+            productMap.set(
 
-                        String(
-                            product._id
-                        ),
+                String(
+                    product._id
+                ),
 
-                        Number(
-                            product.buyPrice || 0
-                        )
-
-                    ]
+                Number(
+                    product.buyPrice || 0
                 )
 
             );
-
-
-        for (
-            const pkg
-            of packages
-        ) {
-
-            for (
-                const item
-                of pkg.items || []
-            ) {
-
-                const buyPrice =
-                    productMap.get(
-                        String(
-                            item.productId
-                        )
-                    ) || 0;
-
-
-                const qty =
-                    Number(
-                        item.qty || 0
-                    );
-
-
-                packageBuyingCost +=
-                    buyPrice * qty;
-
-            }
 
         }
 
@@ -733,27 +712,99 @@ async function getSummary(
 
 
     // ======================================================
-    // STAFF SALES PROFIT
+    // CALCULATE PACKAGE BUYING COST
+    // ======================================================
+
+    for (
+        const pkg
+        of packages
+    ) {
+
+        for (
+            const item
+            of pkg.items || []
+        ) {
+
+            if (
+                !item.productId
+            ) continue;
+
+
+            const buyPrice =
+                productMap.get(
+                    String(
+                        item.productId
+                    )
+                ) || 0;
+
+
+            const qty =
+                Number(
+                    item.qty || 0
+                );
+
+
+            packageBuyingCost +=
+                buyPrice * qty;
+
+        }
+
+    }
+
+
+    // ======================================================
+    // CALCULATE STAFF SALES BUYING COST
     //
-    // Exact formula requested:
+    // IMPORTANT:
     //
-    // totalAmount
-    // -
-    // sum of selling prices of products
+    // StaffSale.products[].price
+    // = SELLING PRICE
+    //
+    // Product.buyPrice
+    // = BUYING/COST PRICE
+    //
+    // Therefore:
+    //
+    // Staff Sales Cost
+    // =
+    // Σ(Product.buyPrice × StaffSale.products[].qty)
     // ======================================================
 
-    const staffSalesProfit =
-        staffSalesRevenue -
-        staffSalesProductSellingTotal;
+    for (
+        const sale
+        of staffSales
+    ) {
+
+        for (
+            const item
+            of sale.products || []
+        ) {
+
+            if (
+                !item.productId
+            ) continue;
 
 
-    // ======================================================
-    // TOTAL REVENUE
-    // ======================================================
+            const buyPrice =
+                productMap.get(
+                    String(
+                        item.productId
+                    )
+                ) || 0;
 
-    const totalRevenue =
-        packageRevenue +
-        staffSalesRevenue;
+
+            const qty =
+                Number(
+                    item.qty || 0
+                );
+
+
+            staffSalesBuyingCost +=
+                buyPrice * qty;
+
+        }
+
+    }
 
 
     // ======================================================
@@ -766,6 +817,30 @@ async function getSummary(
 
 
     // ======================================================
+    // STAFF SALES PROFIT
+    //
+    // CORRECT:
+    //
+    // StaffSales revenue
+    // -
+    // Product buying cost
+    // ======================================================
+
+    const staffSalesProfit =
+        staffSalesRevenue -
+        staffSalesBuyingCost;
+
+
+    // ======================================================
+    // TOTAL REVENUE
+    // ======================================================
+
+    const totalRevenue =
+        packageRevenue +
+        staffSalesRevenue;
+
+
+    // ======================================================
     // TOTAL PROFIT
     // ======================================================
 
@@ -775,18 +850,16 @@ async function getSummary(
 
 
     // ======================================================
-    // RETURN SUMMARY + STAFF SALES
+    // RETURN SUMMARY
     // ======================================================
 
     return {
 
         // --------------------------------------------------
-        // EXISTING / PACKAGE VALUES
+        // PACKAGE
         // --------------------------------------------------
 
         packageRevenue,
-
-        customerArrears,
 
         packageBuyingCost,
 
@@ -794,18 +867,20 @@ async function getSummary(
 
 
         // --------------------------------------------------
-        // STAFF SALES VALUES
+        // STAFF SALES
         // --------------------------------------------------
 
         staffSalesRevenue,
 
-        staffSalesProductSellingTotal,
+        staffSalesBuyingCost,
 
         staffSalesProfit,
 
+        staffSales,
+
 
         // --------------------------------------------------
-        // COMBINED VALUES
+        // COMBINED
         // --------------------------------------------------
 
         totalRevenue,
@@ -814,12 +889,10 @@ async function getSummary(
 
 
         // --------------------------------------------------
-        // STAFF SALES DOCUMENTS
-        //
-        // These are sent directly to the frontend.
+        // ARREARS
         // --------------------------------------------------
 
-        staffSales
+        customerArrears
 
     };
 
@@ -1112,9 +1185,6 @@ async function getCustomerArrears(
 
     // ------------------------------------------------------
     // RESOLVE CLIENT NAMES
-    //
-    // Package.clientId is a String.
-    // User._id is MongoDB ObjectId.
     // ------------------------------------------------------
 
     const clientIds = [
@@ -1315,7 +1385,7 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // PRESERVE TAB FILTERS
+    // PRESERVE TAB-SPECIFIC FILTERS
     // ======================================================
 
     const params =
@@ -1413,7 +1483,7 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // FRONTEND DATA
+    // RETURN DATA TO CONTROLLER / VIEW
     // ======================================================
 
     return {
@@ -1441,11 +1511,14 @@ async function getSalesPageData(
 
 
         // --------------------------------------------------
-        // ARREARS
+        // BUYING COST BREAKDOWN
         // --------------------------------------------------
 
-        customerArrears:
-            summary.customerArrears,
+        packageBuyingCost:
+            summary.packageBuyingCost,
+
+        staffSalesBuyingCost:
+            summary.staffSalesBuyingCost,
 
 
         // --------------------------------------------------
@@ -1463,13 +1536,21 @@ async function getSalesPageData(
 
 
         // --------------------------------------------------
-        // STAFF SALES
+        // STAFF SALES DOCUMENTS
         //
-        // FULL STAFFSALE DOCUMENTS REACH FRONTEND
+        // Full StaffSale documents are passed to the view.
         // --------------------------------------------------
 
         staffSales:
             summary.staffSales,
+
+
+        // --------------------------------------------------
+        // CUSTOMER ARREARS
+        // --------------------------------------------------
+
+        customerArrears:
+            summary.customerArrears,
 
 
         // --------------------------------------------------
@@ -1480,7 +1561,7 @@ async function getSalesPageData(
 
 
         // --------------------------------------------------
-        // CUSTOMER ARREARS
+        // ARREARS PACKAGES
         // --------------------------------------------------
 
         arrearsPackages,
