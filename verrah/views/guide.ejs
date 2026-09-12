@@ -16,7 +16,7 @@
 
 
 
-<% if (
+<% else if (
     user &&
     user.role === "admin"
 ) { %>
@@ -28,4 +28,4 @@
     <%- include("home-partials/admin/sales") %>
 
 
-<% }
+<% }%>
