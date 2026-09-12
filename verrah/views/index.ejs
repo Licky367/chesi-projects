@@ -26,8 +26,6 @@
 
     <%- include("home-partials/hero") %>
 
-    <%- include("home-partials/branches") %>
-
     <%- include("home-partials/categories", {
         categories: categories,
         currentUser: currentUser
@@ -37,6 +35,8 @@
         services: services,
         user: user
     }) %>
+
+    <%- include("home-partials/branches") %>
 
 
 <% } %>
