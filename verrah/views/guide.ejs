@@ -1,4 +1,3 @@
-
 <% if (
     user &&
     user.role === "staff"
@@ -11,12 +10,7 @@
     <%- include("home-partials/staff/sales") %>
 
 
-<% } 
-
-
-
-
-<% else if (
+<% } else if (
     user &&
     user.role === "admin"
 ) { %>
@@ -27,5 +21,4 @@
 
     <%- include("home-partials/admin/sales") %>
 
-
-<% }%>
+<% } %>
