@@ -1,4 +1,9 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
 
 
 <meta
@@ -22,6 +27,7 @@
     href="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
 >
 
+
 <link
     rel="apple-touch-icon"
     href="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
@@ -40,7 +46,7 @@
 
 <!-- =====================================================
    OPEN GRAPH
-   Used when the website link is shared.
+   USED WHEN THE WEBSITE LINK IS SHARED
 ====================================================== -->
 
 <meta
@@ -48,40 +54,60 @@
     content="VERAH COSMETICS"
 >
 
+
 <meta
     property="og:description"
     content="VERAH COSMETICS"
 >
+
 
 <meta
     property="og:image"
     content="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
 >
 
+
 <meta
     property="og:image:secure_url"
     content="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
 >
+
 
 <meta
     property="og:image:type"
     content="image/png"
 >
 
+
 <meta
     property="og:image:alt"
     content="VERAH COSMETICS"
 >
+
+
+<meta
+    property="og:image:width"
+    content="1200"
+>
+
+
+<meta
+    property="og:image:height"
+    content="630"
+>
+
 
 <meta
     property="og:url"
     content="https://verrah.onrender.com<%= currentPath || "/" %>"
 >
 
+
 <meta
     property="og:type"
     content="website"
 >
+
 
 <meta
     property="og:site_name"
@@ -98,114 +124,153 @@
     content="summary_large_image"
 >
 
+
 <meta
     name="twitter:title"
     content="VERAH COSMETICS"
 >
+
 
 <meta
     name="twitter:description"
     content="VERAH COSMETICS"
 >
 
+
 <meta
     name="twitter:image"
     content="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
 >
+
 
 <meta
     name="twitter:image:alt"
     content="VERAH COSMETICS"
 >
 
-</head><%
+
+</head>
+
+
+<%
 
 /* =========================================================
-AUTHENTICATION PAGES
+   AUTHENTICATION PAGES
 ========================================================= */
 
 const authPages = [
-"/login",
-"/signup",
-"/forgot-password",
-"/reset-password"
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password"
 ];
 
+
 const currentPagePath =
-currentPath ||
-(typeof req !== "undefined" && req.path) ||
-"";
+    currentPath ||
+    (typeof req !== "undefined" && req.path) ||
+    "";
+
 
 const isAuthPage =
-authPages.includes(
-currentPagePath
-);
+    authPages.includes(
+        currentPagePath
+    );
+
 
 /* =========================================================
-HOME LINK
+   HOME LINK
 ========================================================= */
 
 const homeLink = "/";
 
-/* =========================================================
-ROLE FLAGS
 
-AVAILABLE ROLES:
-admin
-staff
-client
+/* =========================================================
+   ROLE FLAGS
+
+   AVAILABLE ROLES:
+   admin
+   staff
+   client
 ========================================================= */
 
 const isAdmin =
-!!user &&
-user.role === "admin";
+    !!user &&
+    user.role === "admin";
+
 
 const isStaff =
-!!user &&
-user.role === "staff";
+    !!user &&
+    user.role === "staff";
+
 
 const isClient =
-!!user &&
-user.role === "client";
+    !!user &&
+    user.role === "client";
 
 %>
 
+
 <body
     class="<%= isAuthPage ? 'auth-page' : 'app-page' %>"
-><% if(!isAuthPage){ %>
+>
+
+
+<% if(!isAuthPage){ %>
+
 
 <!-- =========================================================
    HEADER
-========================================================= --><%- include("layout-partials/header", {
-homeLink: homeLink,
-headerTitle: "VERAH COSMETICS"
+========================================================= -->
+
+<%- include("layout-partials/header", {
+    homeLink: homeLink
 }) %>
+
 
 <!-- =========================================================
    SIDEBAR
    SAME SIDEBAR FOR EVERYONE
-========================================================= --><%- include("layout-partials/sidebar", {
-homeLink: homeLink,
-isAdmin: isAdmin,
-isStaff: isStaff,
-isClient: isClient
+========================================================= -->
+
+<%- include("layout-partials/sidebar", {
+    homeLink: homeLink,
+    isAdmin: isAdmin,
+    isStaff: isStaff,
+    isClient: isClient
 }) %>
+
 
 <% } %>
 
+
 <!-- =========================================================
    MAIN CONTENT
-========================================================= --><div class="main"><%- body %>
+========================================================= -->
 
-</div><!-- =========================================================
+<div class="main">
+
+    <%- body %>
+
+</div>
+
+
+<!-- =========================================================
    FOOTER
-========================================================= --><%- include("layout-partials/footer") %>
+========================================================= -->
+
+<%- include("layout-partials/footer") %>
+
 
 <!-- =========================================================
    EXTRACTED PAGE SCRIPTS
-========================================================= --><%- script %>
+========================================================= -->
+
+<%- script %>
+
 
 <% if(!isAuthPage){ %>
+
 
 <script>
 
@@ -629,6 +694,12 @@ window.addEventListener(
     }
 );
 
-</script><% } %>
+</script>
 
-</body></html>
+
+<% } %>
+
+
+</body>
+
+</html>
