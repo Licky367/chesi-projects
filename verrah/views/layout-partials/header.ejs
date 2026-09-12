@@ -1,38 +1,50 @@
 <!-- =========================================================
      HEADER
-========================================================= --><header class="header"><!-- =====================================================
-     MENU BUTTON — LEFT
-====================================================== -->
+========================================================= -->
 
-<button
-    type="button"
-    id="menuButton"
-    class="menu-btn"
-    aria-label="Open navigation menu"
-    aria-expanded="false"
->
-    ☰
-</button>
+<header class="header">
 
 
-<!-- =====================================================
-     HEADER TITLE — CENTER
-====================================================== -->
+    <!-- =====================================================
+         MENU BUTTON — LEFT
+    ====================================================== -->
 
-<div class="header-title">
+    <button
+        type="button"
+        id="menuButton"
+        class="menu-btn"
+        aria-label="Open navigation menu"
+        aria-expanded="false"
+    >
+        ☰
+    </button>
 
-    <span class="header-title-text">
-        <%= headerTitle %>
-    </span>
 
-</div>
+    <!-- =====================================================
+         VERAH COSMETICS LOGO — CENTER
+    ====================================================== -->
+
+    <a
+        href="<%= homeLink %>"
+        class="header-logo-link"
+        aria-label="Home"
+    >
+
+        <img
+            src="https://res.cloudinary.com/qmv1jbjy/image/upload/v1789182626/verrah.png"
+            alt="VERAH COSMETICS"
+            class="header-logo"
+        >
+
+    </a>
 
 
-<!-- =====================================================
-     PROFILE — RIGHT
-     Profile UI is handled by profile.ejs
-====================================================== -->
+    <!-- =====================================================
+         PROFILE — RIGHT
+         Profile UI is handled by profile.ejs
+    ====================================================== -->
 
-<%- include("profile") %>
+    <%- include("profile") %>
+
 
 </header>
