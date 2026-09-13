@@ -1,95 +1,229 @@
-const mongoose = require('mongoose');
+// ==========================================================
+// verrah/models/carts.js
+//
+// VERRAH COSMETICS
+// CART MODEL
+// ==========================================================
 
-const cartItemSchema = new mongoose.Schema(
-  {
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-      required: true,
-    },
+const mongoose = require("mongoose");
 
-    quantity: {
-      type: Number,
-      required: true,
-      min: [1, 'Quantity cannot be less than 1.'],
-      default: 1,
-    },
 
-    price: {
-      type: Number,
-      required: true,
-    },
-  },
-  { _id: true }
-);
+// ==========================================================
+// CART ITEM SCHEMA
+// ==========================================================
 
-const cartSchema = new mongoose.Schema(
-  {
-    // Logged-in user's cart.
-    // A user can have only one cart.
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      default: null,
-      unique: true,
-      sparse: true,
-    },
+const cartItemSchema =
+    new mongoose.Schema(
+        {
 
-    // Used for carts belonging to visitors who are not logged in.
-    // Once the visitor logs in, the cart can be associated with the user.
-    sessionId: {
-      type: String,
-      default: null,
-      index: true,
-    },
+            // ------------------------------------------------
+            // Product reference
+            // ------------------------------------------------
 
-    items: {
-      type: [cartItemSchema],
-      default: [],
-    },
+            product: {
+                type:
+                    mongoose.Schema.Types.ObjectId,
 
-    totalPrice: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
+                ref:
+                    "Product"
+            },
+
+
+            // ------------------------------------------------
+            // Product ID snapshot
+            //
+            // cartService uses this value when identifying
+            // cart items and processing sales.
+            // ------------------------------------------------
+
+            productId: {
+                type:
+                    String,
+
+                required:
+                    true
+            },
+
+
+            // ------------------------------------------------
+            // Product name snapshot
+            // ------------------------------------------------
+
+            name: {
+                type:
+                    String,
+
+                required:
+                    true,
+
+                trim:
+                    true
+            },
+
+
+            // ------------------------------------------------
+            // Selling price snapshot
+            // ------------------------------------------------
+
+            price: {
+                type:
+                    Number,
+
+                required:
+                    true,
+
+                min:
+                    0
+            },
+
+
+            // ------------------------------------------------
+            // Product image snapshot
+            // ------------------------------------------------
+
+            image: {
+                type:
+                    String,
+
+                default:
+                    ""
+            },
+
+
+            // ------------------------------------------------
+            // Quantity
+            // ------------------------------------------------
+
+            qty: {
+                type:
+                    Number,
+
+                required:
+                    true,
+
+                min:
+                    1,
+
+                validate: {
+                    validator:
+                        Number.isInteger,
+
+                    message:
+                        "Cart quantity must be a whole number."
+                }
+            }
+
+        },
+        {
+            _id:
+                true
+        }
+    );
+
+
+// ==========================================================
+// CART SCHEMA
+// ==========================================================
+
+const cartSchema =
+    new mongoose.Schema(
+        {
+
+            // ------------------------------------------------
+            // SESSION ID
+            //
+            // Used for guest/session carts.
+            //
+            // A logged-in user's permanent cart is identified
+            // by the user field.
+            // ------------------------------------------------
+
+            sessionId: {
+                type:
+                    String,
+
+                default:
+                    null,
+
+                index:
+                    true
+            },
+
+
+            // ------------------------------------------------
+            // USER
+            //
+            // The customer's persistent cart owner.
+            //
+            // This allows the cart to survive logout/login.
+            // ------------------------------------------------
+
+            user: {
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref:
+                    "User",
+
+                default:
+                    null,
+
+                index:
+                    true
+            },
+
+
+            // ------------------------------------------------
+            // CART ITEMS
+            // ------------------------------------------------
+
+            items: {
+                type:
+                    [cartItemSchema],
+
+                default:
+                    []
+            }
+
+        },
+        {
+            timestamps:
+                true
+        }
+    );
+
 
 // ==========================================================
 // INDEXES
 // ==========================================================
-
-// One cart per logged-in user.
-// `sparse: true` on the user field allows multiple guest
-// carts where user is null.
-cartSchema.index(
-  { user: 1 },
-  {
-    unique: true,
-    sparse: true,
-  }
-);
-
-cartSchema.index({ sessionId: 1 });
-
-
-// ==========================================================
-// CALCULATE TOTAL PRICE BEFORE SAVING
+//
+// Do NOT make sessionId unique.
+//
+// A session can be associated with a cart and later the cart
+// can become a user's persistent cart.
+//
+// The user index is intentionally not unique here because
+// existing database records may contain duplicate/legacy
+// carts from the previous session-based implementation.
 // ==========================================================
 
-cartSchema.pre('save', function (next) {
-  this.totalPrice = this.items.reduce((total, item) => {
-    return total + item.price * item.quantity;
-  }, 0);
+cartSchema.index({
+    user:
+        1
+});
 
-  next();
+cartSchema.index({
+    sessionId:
+        1
 });
 
 
-const Cart = mongoose.model('Cart', cartSchema);
+// ==========================================================
+// MODEL
+// ==========================================================
 
-module.exports = Cart;
+module.exports =
+    mongoose.model(
+        "Cart",
+        cartSchema
+    );
