@@ -1,63 +1,95 @@
 <%
-// ==========================================================
-// views/sales.ejs
-// VERRAH COSMETICS - SALES MOTHER PAGE
-// ==========================================================
+/*
+==========================================================
+ views/sales.ejs
+ VERRAH COSMETICS - SALES MOTHER PAGE
+==========================================================
+*/
 %>
 
-<link rel="stylesheet" href="/css/sales.css">
+<link
+    rel="stylesheet"
+    href="/css/sales.css"
+>
+
 
 <div class="sales-page">
 
+
     <div class="sales-header">
+
         <div>
-            <h1>Sales</h1>
-            <p>Monitor revenue, products and customer arrears.</p>
+
+            <h1>
+                Sales
+            </h1>
+
+            <p>
+                Monitor revenue, products and customer arrears.
+            </p>
+
         </div>
+
     </div>
 
+
     <!-- ======================================================
-         TABS COME BEFORE THE FILTER
+         SALES TABS
     ======================================================= -->
 
-    <div class="sales-tabs" role="tablist">
+    <div
+        class="sales-navigation"
+        role="tablist"
+    >
+
+
+        <!-- SALES SUMMARY -->
 
         <a
-            class="sales-tab <%= activeTab === 'summary' ? 'active' : '' %>"
             href="/sales?tab=summary<%= salesQuerySuffix %>"
+            class="sales-navigation-tab <%= activeTab === 'summary' ? 'active' : '' %>"
             role="tab"
             aria-selected="<%= activeTab === 'summary' ? 'true' : 'false' %>"
         >
             Sales Summary
         </a>
 
+
+        <!-- PRODUCT ANALYTICS -->
+
         <a
-            class="sales-tab <%= activeTab === 'products' ? 'active' : '' %>"
             href="/sales?tab=products<%= salesQuerySuffix %>"
+            class="sales-navigation-tab <%= activeTab === 'products' ? 'active' : '' %>"
             role="tab"
             aria-selected="<%= activeTab === 'products' ? 'true' : 'false' %>"
         >
             Product Analytics
         </a>
 
+
+        <!-- CUSTOMER ARREARS -->
+
         <a
-            class="sales-tab <%= activeTab === 'arrears' ? 'active' : '' %>"
             href="/sales?tab=arrears<%= salesQuerySuffix %>"
+            class="sales-navigation-tab <%= activeTab === 'arrears' ? 'active' : '' %>"
             role="tab"
             aria-selected="<%= activeTab === 'arrears' ? 'true' : 'false' %>"
         >
             Customer Arrears
         </a>
 
+
     </div>
 
 
     <!-- ======================================================
-         FILTER FOR THE CURRENT TAB ONLY
+         FILTER FOR CURRENT TAB
     ======================================================= -->
 
     <div class="sales-filter-wrapper">
+
         <%- include("sales-partials/filter.js") %>
+
     </div>
 
 
@@ -67,27 +99,50 @@
 
     <div class="sales-content">
 
+
+        <!-- ==================================================
+             SALES SUMMARY
+        =================================================== -->
+
         <section
             class="sales-panel <%= activeTab === 'summary' ? 'active' : '' %>"
             <%= activeTab === 'summary' ? '' : 'hidden' %>
         >
+
             <%- include("sales-partials/summary") %>
+
         </section>
+
+
+        <!-- ==================================================
+             PRODUCT ANALYTICS
+        =================================================== -->
 
         <section
             class="sales-panel <%= activeTab === 'products' ? 'active' : '' %>"
             <%= activeTab === 'products' ? '' : 'hidden' %>
         >
+
             <%- include("sales-partials/products") %>
+
         </section>
+
+
+        <!-- ==================================================
+             CUSTOMER ARREARS
+        =================================================== -->
 
         <section
             class="sales-panel <%= activeTab === 'arrears' ? 'active' : '' %>"
             <%= activeTab === 'arrears' ? '' : 'hidden' %>
         >
+
             <%- include("sales-partials/arrears") %>
+
         </section>
 
+
     </div>
+
 
 </div>
