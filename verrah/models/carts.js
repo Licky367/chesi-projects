@@ -1,229 +1,158 @@
-// ==========================================================
-// verrah/models/carts.js
-//
-// VERRAH COSMETICS
-// CART MODEL
-// ==========================================================
-
 const mongoose = require("mongoose");
 
 
-// ==========================================================
-// CART ITEM SCHEMA
-// ==========================================================
+/* ==========================================================
+   CART ITEM SCHEMA
+========================================================== */
 
-const cartItemSchema =
-    new mongoose.Schema(
-        {
-
-            // ------------------------------------------------
-            // Product reference
-            // ------------------------------------------------
-
-            product: {
-                type:
-                    mongoose.Schema.Types.ObjectId,
-
-                ref:
-                    "Product"
-            },
-
-
-            // ------------------------------------------------
-            // Product ID snapshot
-            //
-            // cartService uses this value when identifying
-            // cart items and processing sales.
-            // ------------------------------------------------
-
-            productId: {
-                type:
-                    String,
-
-                required:
-                    true
-            },
-
-
-            // ------------------------------------------------
-            // Product name snapshot
-            // ------------------------------------------------
-
-            name: {
-                type:
-                    String,
-
-                required:
-                    true,
-
-                trim:
-                    true
-            },
-
-
-            // ------------------------------------------------
-            // Selling price snapshot
-            // ------------------------------------------------
-
-            price: {
-                type:
-                    Number,
-
-                required:
-                    true,
-
-                min:
-                    0
-            },
-
-
-            // ------------------------------------------------
-            // Product image snapshot
-            // ------------------------------------------------
-
-            image: {
-                type:
-                    String,
-
-                default:
-                    ""
-            },
-
-
-            // ------------------------------------------------
-            // Quantity
-            // ------------------------------------------------
-
-            qty: {
-                type:
-                    Number,
-
-                required:
-                    true,
-
-                min:
-                    1,
-
-                validate: {
-                    validator:
-                        Number.isInteger,
-
-                    message:
-                        "Cart quantity must be a whole number."
-                }
-            }
-
+const cartItemSchema = new mongoose.Schema(
+    {
+        product: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true
         },
-        {
-            _id:
-                true
-        }
-    );
 
-
-// ==========================================================
-// CART SCHEMA
-// ==========================================================
-
-const cartSchema =
-    new mongoose.Schema(
-        {
-
-            // ------------------------------------------------
-            // SESSION ID
-            //
-            // Used for guest/session carts.
-            //
-            // A logged-in user's permanent cart is identified
-            // by the user field.
-            // ------------------------------------------------
-
-            sessionId: {
-                type:
-                    String,
-
-                default:
-                    null,
-
-                index:
-                    true
-            },
-
-
-            // ------------------------------------------------
-            // USER
-            //
-            // The customer's persistent cart owner.
-            //
-            // This allows the cart to survive logout/login.
-            // ------------------------------------------------
-
-            user: {
-                type:
-                    mongoose.Schema.Types.ObjectId,
-
-                ref:
-                    "User",
-
-                default:
-                    null,
-
-                index:
-                    true
-            },
-
-
-            // ------------------------------------------------
-            // CART ITEMS
-            // ------------------------------------------------
-
-            items: {
-                type:
-                    [cartItemSchema],
-
-                default:
-                    []
-            }
-
+        productId: {
+            type: String,
+            required: true
         },
-        {
-            timestamps:
-                true
+
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
+
+        price: {
+            type: Number,
+            required: true,
+            min: 0
+        },
+
+        image: {
+            type: String,
+            default: ""
+        },
+
+        qty: {
+            type: Number,
+            required: true,
+            min: 1,
+            default: 1
         }
-    );
+    },
+    {
+        _id: true
+    }
+);
 
 
-// ==========================================================
-// INDEXES
-// ==========================================================
-//
-// Do NOT make sessionId unique.
-//
-// A session can be associated with a cart and later the cart
-// can become a user's persistent cart.
-//
-// The user index is intentionally not unique here because
-// existing database records may contain duplicate/legacy
-// carts from the previous session-based implementation.
-// ==========================================================
+/* ==========================================================
+   CART SCHEMA
+========================================================== */
 
-cartSchema.index({
-    user:
-        1
-});
+const cartSchema = new mongoose.Schema(
+    {
+        /*
+         * Logged-in user's permanent cart identity.
+         *
+         * The current cart service searches:
+         *
+         *     Cart.findOne({ user: userId })
+         *
+         * so this field must exist in the model.
+         */
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        },
 
-cartSchema.index({
-    sessionId:
-        1
+
+        /*
+         * Session identity used by the current cart service
+         * for guest carts and legacy/session fallback.
+         */
+        sessionId: {
+            type: String,
+            default: null,
+            index: true
+        },
+
+
+        /*
+         * Products currently inside the cart.
+         */
+        items: {
+            type: [cartItemSchema],
+            default: []
+        },
+
+
+        /*
+         * Calculated cart total.
+         */
+        totalPrice: {
+            type: Number,
+            required: true,
+            default: 0,
+            min: 0
+        }
+    },
+    {
+        timestamps: true
+    }
+);
+
+
+/* ==========================================================
+   USER CART INDEX
+========================================================== */
+
+/*
+ * A logged-in user should have only one persistent cart.
+ *
+ * sparse allows guest carts where user is null.
+ */
+cartSchema.index(
+    { user: 1 },
+    {
+        unique: true,
+        sparse: true
+    }
+);
+
+
+/* ==========================================================
+   CALCULATE CART TOTAL
+========================================================== */
+
+cartSchema.pre("save", function (next) {
+    this.totalPrice =
+        this.items.reduce(
+            (total, item) => {
+                return (
+                    total +
+                    Number(item.price || 0) *
+                    Number(item.qty || 0)
+                );
+            },
+            0
+        );
+
+    next();
 });
 
 
-// ==========================================================
-// MODEL
-// ==========================================================
+/* ==========================================================
+   MODEL
+========================================================== */
 
-module.exports =
-    mongoose.model(
-        "Cart",
-        cartSchema
-    );
+const Cart = mongoose.model(
+    "Cart",
+    cartSchema
+);
+
+
+module.exports = Cart;
