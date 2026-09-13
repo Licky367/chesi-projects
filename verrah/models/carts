@@ -1,20 +1,184 @@
-// =========================================================
-// models/corevester/carts.js
-// =========================================================
 const mongoose = require("mongoose");
 
-const CartItemSchema = new mongoose.Schema({
-  product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-  productId: { type: String, required: true },
-  name: String,
-  price: { type: Number, default: 0 },
-  qty: { type: Number, default: 1, min: 1 }
-}, { _id: false });
+/* ==========================================================
+   CART ITEM
+========================================================== */
 
-const CartSchema = new mongoose.Schema({
-  sessionId: { type: String, required: true, unique: true, index: true },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-  items: { type: [CartItemSchema], default: [] }
-}, { timestamps: true });
+const cartItemSchema = new mongoose.Schema(
+  {
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
 
-module.exports = mongoose.model("Cart", CartSchema);
+    quantity: {
+      type: Number,
+      required: true,
+      min: [1, "Quantity cannot be less than 1."],
+      default: 1,
+    },
+
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+
+    /*
+     * Legacy compatibility.
+     *
+     * Older cart documents and the package/payment system may
+     * still contain these fields. They are kept temporarily so
+     * existing carts do not break.
+     */
+    productId: {
+      type: String,
+      default: null,
+    },
+
+    qty: {
+      type: Number,
+      default: null,
+    },
+
+    name: {
+      type: String,
+      default: "",
+    },
+
+    image: {
+      type: String,
+      default: "",
+    },
+  },
+  {
+    _id: true,
+  }
+);
+
+
+/* ==========================================================
+   CART
+========================================================== */
+
+const cartSchema = new mongoose.Schema(
+  {
+    /*
+     * Permanent cart identity for logged-in users.
+     *
+     * One user = one cart.
+     */
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    /*
+     * Session identity is retained for guest carts and
+     * migration compatibility.
+     */
+    sessionId: {
+      type: String,
+      default: null,
+      index: true,
+    },
+
+    items: {
+      type: [cartItemSchema],
+      default: [],
+    },
+
+    totalPrice: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+
+/* ==========================================================
+   INDEXES
+========================================================== */
+
+cartSchema.index(
+  { user: 1 },
+  {
+    unique: true,
+    sparse: true,
+  }
+);
+
+cartSchema.index({
+  sessionId: 1,
+});
+
+
+/* ==========================================================
+   NORMALIZE CART ITEMS BEFORE SAVE
+========================================================== */
+
+cartSchema.pre("save", function (next) {
+  this.items.forEach((item) => {
+    /*
+     * Keep the canonical fields synchronized with the
+     * compatibility fields.
+     */
+
+    if (!item.product && item.productId) {
+      item.product = item.productId;
+    }
+
+    if (!item.productId && item.product) {
+      item.productId = String(item.product);
+    }
+
+    if (
+      (!Number.isInteger(item.quantity) ||
+        item.quantity < 1) &&
+      Number.isInteger(item.qty) &&
+      item.qty > 0
+    ) {
+      item.quantity = item.qty;
+    }
+
+    item.qty = item.quantity;
+  });
+
+
+  /*
+   * Always calculate the total from the canonical quantity.
+   */
+
+  this.totalPrice = this.items.reduce(
+    (total, item) => {
+      return (
+        total +
+        Number(item.price || 0) *
+          Number(item.quantity || 0)
+      );
+    },
+    0
+  );
+
+  next();
+});
+
+
+/* ==========================================================
+   MODEL
+========================================================== */
+
+const Cart = mongoose.model(
+  "Cart",
+  cartSchema
+);
+
+module.exports = Cart;
