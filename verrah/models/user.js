@@ -16,7 +16,6 @@ const KEY_LENGTH = 64;
 // ==========================================================
 
 function hashPassword(password) {
-
     return new Promise((resolve, reject) => {
 
         const salt =
@@ -40,7 +39,6 @@ function hashPassword(password) {
     });
 }
 
-
 // ==========================================================
 // VERIFY PASSWORD
 // ==========================================================
@@ -49,7 +47,6 @@ function verifyPassword(
     password,
     storedPassword
 ) {
-
     return new Promise((resolve, reject) => {
 
         if (
@@ -59,31 +56,24 @@ function verifyPassword(
             return resolve(false);
         }
 
-
         const parts =
             storedPassword.split(":");
-
 
         if (parts.length !== 2) {
             return resolve(false);
         }
 
-
         const [saltHex, hashHex] =
             parts;
-
 
         if (!saltHex || !hashHex) {
             return resolve(false);
         }
 
-
         let salt;
         let originalHash;
 
-
         try {
-
             salt =
                 Buffer.from(
                     saltHex,
@@ -97,10 +87,8 @@ function verifyPassword(
                 );
 
         } catch (err) {
-
             return resolve(false);
         }
-
 
         if (
             !salt.length ||
@@ -108,7 +96,6 @@ function verifyPassword(
         ) {
             return resolve(false);
         }
-
 
         crypto.scrypt(
             password,
@@ -120,14 +107,12 @@ function verifyPassword(
                     return reject(err);
                 }
 
-
                 if (
                     derivedKey.length !==
                     originalHash.length
                 ) {
                     return resolve(false);
                 }
-
 
                 return resolve(
                     crypto.timingSafeEqual(
@@ -140,7 +125,6 @@ function verifyPassword(
     });
 }
 
-
 // ==========================================================
 // PASSWORD HASH CHECK
 // ==========================================================
@@ -151,21 +135,17 @@ function isPasswordHash(password) {
         return false;
     }
 
-
     const parts =
         password.split(":");
-
 
     if (parts.length !== 2) {
         return false;
     }
 
-
     const [
         saltHex,
         hashHex
     ] = parts;
-
 
     return (
         /^[a-f0-9]+$/i.test(saltHex) &&
@@ -185,7 +165,6 @@ const userSchema =
             // --------------------------------------------------
             // NAME
             // --------------------------------------------------
-
             name: {
                 type: String,
                 required: true,
@@ -193,11 +172,9 @@ const userSchema =
                 maxlength: 200
             },
 
-
             // --------------------------------------------------
             // PHONE
             // --------------------------------------------------
-
             phone: {
                 type: String,
                 required: true,
@@ -205,11 +182,9 @@ const userSchema =
                 maxlength: 30
             },
 
-
             // --------------------------------------------------
             // EMAIL
             // --------------------------------------------------
-
             email: {
                 type: String,
                 required: true,
@@ -219,22 +194,18 @@ const userSchema =
                 index: true
             },
 
-
             // --------------------------------------------------
             // PASSWORD
             // --------------------------------------------------
-
             password: {
                 type: String,
                 required: true,
                 select: false
             },
 
-
             // --------------------------------------------------
             // ROLE
             // --------------------------------------------------
-
             role: {
                 type: String,
                 enum: [
@@ -246,11 +217,9 @@ const userSchema =
                 required: true
             },
 
-
             // --------------------------------------------------
             // ASSIGNED SUBSTATION
             // --------------------------------------------------
-
             assignedSubstation: {
                 type:
                     mongoose.Schema.Types.ObjectId,
@@ -258,6 +227,23 @@ const userSchema =
                 ref: "Substation",
 
                 default: null
+            },
+
+            // --------------------------------------------------
+            // PICKUP STATION
+            //
+            // The user's most recently selected package
+            // pickup/substation. This is also used as the
+            // default selection on the next checkout.
+            // --------------------------------------------------
+            pickupStation: {
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref: "Substation",
+
+                default: null,
+                index: true
             }
 
         },
@@ -276,23 +262,19 @@ userSchema.pre(
     function(next) {
 
         if (this.email) {
-
             this.email =
                 String(this.email)
                     .trim()
                     .toLowerCase();
         }
 
-
         if (
             typeof this.phone ===
             "string"
         ) {
-
             this.phone =
                 this.phone.trim();
         }
-
 
         next();
     }
@@ -313,11 +295,9 @@ userSchema.pre(
                 return next();
             }
 
-
             if (!this.password) {
                 return next();
             }
-
 
             if (
                 isPasswordHash(
@@ -327,17 +307,14 @@ userSchema.pre(
                 return next();
             }
 
-
             this.password =
                 await hashPassword(
                     this.password
                 );
 
-
             next();
 
         } catch (err) {
-
             next(err);
         }
     }
@@ -357,7 +334,6 @@ userSchema.methods.comparePassword =
         ) {
             return false;
         }
-
 
         return verifyPassword(
             String(password),

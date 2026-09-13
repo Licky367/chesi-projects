@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const User = require("./user");
 
 const packageItemSchema = new mongoose.Schema(
   {
@@ -37,6 +38,16 @@ const packageSchema = new mongoose.Schema(
     clientId: {
       type: String,
       required: true,
+      index: true
+    },
+
+    // --------------------------------------------------------
+    // CUSTOMER-SELECTED PICKUP SUBSTATION
+    // --------------------------------------------------------
+    packageSubstation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Substation",
+      default: null,
       index: true
     },
 
@@ -137,9 +148,6 @@ const packageSchema = new mongoose.Schema(
       index: true
     },
 
-    // Delivery records the physical fulfilment against the
-    // staff member's assigned substation. It does NOT reduce
-    // Product.units a second time.
     substationReductionRecorded: {
       type: Boolean,
       default: false,
@@ -153,18 +161,40 @@ const packageSchema = new mongoose.Schema(
   }
 );
 
+
+// ------------------------------------------------------------
+// DEFAULT PACKAGE SUBSTATION FROM USER PICKUP STATION
+//
+// Checkout updates User.pickupStation first. This hook makes
+// every newly created package carry a snapshot of that choice.
+//
+// If packageSubstation was explicitly supplied, never overwrite
+// it.
+// ------------------------------------------------------------
+
+packageSchema.pre("validate", async function(next) {
+  try {
+    if (!this.packageSubstation && this.clientId) {
+      const user = await User.findById(this.clientId)
+        .select("pickupStation")
+        .lean();
+
+      if (user?.pickupStation) {
+        this.packageSubstation = user.pickupStation;
+      }
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+
 // ------------------------------------------------------------
 // LEGACY PAYMENT COMPATIBILITY
 // ------------------------------------------------------------
-//
-// Older packages may still contain:
-//
-//     paymentStatus: "not_required"
-//
-// That value is no longer part of the application's payment
-// state machine. Normalize it BEFORE Mongoose enum validation
-// so an old package can still be opened/updated safely.
-//
+
 packageSchema.pre("validate", function(next) {
   if (this.paymentStatus === "not_required") {
     const total = Math.max(
@@ -200,7 +230,7 @@ packageSchema.virtual("arrearsAmount").get(function () {
   return Math.max(
     0,
     Number(this.totalAmount || 0) -
-    Number(this.paidAmount || 0)
+      Number(this.paidAmount || 0)
   );
 });
 
