@@ -31,32 +31,8 @@ router.get(
 
 
 // =========================================================
-// CHECKOUT PAGE
-// GET /carts/:id/checkout
-//
-// Renders:
-// cart/cart-checkout.ejs
-//
-// The selected cart item is identified by :id.
-// The controller loads the cart, item, total,
-// substations and previous pickup station.
-// =========================================================
-
-router.get(
-    "/:id/checkout",
-    requireLogin,
-    checkoutSubstation.load,
-    controller.checkout
-);
-
-
-// =========================================================
-// CHECKOUT
+// CHECKOUT SUBMISSION
 // POST /carts/checkout
-//
-// The customer must select a pickup substation first.
-// The selection is saved to User.pickupStation before
-// either payment path is executed.
 // =========================================================
 
 router.post(
@@ -104,6 +80,40 @@ router.get(
 
 
 // =========================================================
+// CART DETAILS
+// GET /carts/:id/details
+//
+// Renders:
+// cart/cart-details.ejs
+// =========================================================
+
+router.get(
+    "/:id/details",
+    requireLogin,
+    checkoutSubstation.load,
+    controller.details
+);
+
+
+// =========================================================
+// CHECKOUT PAGE
+// GET /carts/:id
+//
+// Renders:
+// cart/cart-checkout.ejs
+//
+// This must come AFTER the more specific routes above.
+// =========================================================
+
+router.get(
+    "/:id",
+    requireLogin,
+    checkoutSubstation.load,
+    controller.checkoutPage
+);
+
+
+// =========================================================
 // REMOVE CART ITEM
 // POST /carts/:id/remove
 // =========================================================
@@ -112,22 +122,6 @@ router.post(
     "/:id/remove",
     requireLogin,
     controller.remove
-);
-
-
-// =========================================================
-// CART DETAILS
-// GET /carts/:id
-//
-// Renders:
-// cart/cart-details.ejs
-// =========================================================
-
-router.get(
-    "/:id",
-    requireLogin,
-    checkoutSubstation.load,
-    controller.details
 );
 
 
