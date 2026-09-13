@@ -152,33 +152,32 @@
 
 
                 <!-- =========================================
-                   SUBSTATIONS / BRANCHES
+                   PACKAGES
                 ========================================== -->
-<!--
+
                 <li class="sidebar-item">
 
                     <a
-                        href="/substations"
+                        href="/packages/staff"
                         class="sidebar-link"
-                        title="Substations"
+                        title="Packages"
                     >
 
                         <span
                             class="sidebar-icon"
                             aria-hidden="true"
                         >
-                            🏢
+                            🎁
                         </span>
 
                         <span class="sidebar-label">
-                            Substations
+                            Packages
                         </span>
 
                     </a>
 
                 </li>
 
--->
                 <!-- =========================================
                    SALES
                 ========================================== -->
@@ -195,11 +194,11 @@
                             class="sidebar-icon"
                             aria-hidden="true"
                         >
-                            💰
+                            💱
                         </span>
 
                         <span class="sidebar-label">
-                            Sales
+                            Financials
                         </span>
 
                     </a>
@@ -375,12 +374,12 @@
 
         <% if (
             user &&
-            (user.role === "admin" || user.role === "staff")
+            (user.role === "staff")
         ) { %>
 
         <!-- =================================================
            STAFF DELIVERIES
-           ADMIN + STAFF
+        
         ================================================== -->
 
         <li class="sidebar-item">
