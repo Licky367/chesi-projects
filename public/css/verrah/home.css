@@ -5,6 +5,7 @@
 .verah-hero {
     width: 100%;
     padding: 30px 20px 45px;
+
     background: #f5f1ee;
 }
 
@@ -16,12 +17,15 @@
 .verah-card {
     width: 100%;
     max-width: 1100px;
+
     margin: 0 auto;
+
     padding: 35px 40px;
 
     background: #ffffff;
 
     border-radius: 16px;
+
     border-left: 6px solid #70412f;
 
     box-shadow:
@@ -30,7 +34,7 @@
 
 
 /* =========================================================
-   BRAND LABEL
+   BRAND
 ========================================================= */
 
 .verah-brand {
@@ -42,49 +46,48 @@
     font-weight: 700;
 
     letter-spacing: 3px;
+
     text-transform: uppercase;
 }
 
 
 /* =========================================================
-   MAIN H2 TITLE
+   HERO H2
 ========================================================= */
 
-.verah-heading {
-    position: relative;
-
+.verah-card h2 {
     margin: 0;
 
-    color: #2f2521;
+    color: #4b2e1f;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size: clamp(42px, 6vw, 68px);
+    font-size: 1.75rem;
 
-    font-weight: 400;
+    line-height: 1.25;
 
-    line-height: 1.05;
+    font-weight: 700;
 
-    letter-spacing: -2px;
+    letter-spacing: 0;
 }
 
 
 /* =========================================================
-   ELEGANT TITLE ACCENT
+   H2 ACCENT
 ========================================================= */
 
-.verah-heading::after {
+.verah-card h2::after {
     content: "";
 
     display: block;
 
-    width: 58px;
+    width: 50px;
     height: 2px;
 
-    margin-top: 16px;
+    margin-top: 12px;
 
     background: #8b5542;
 
@@ -99,7 +102,7 @@
 .verah-description {
     max-width: 650px;
 
-    margin: 22px 0 0;
+    margin: 20px 0 0;
 
     color: #625650;
 
@@ -125,6 +128,7 @@
     color: #80685e;
 
     font-size: 10px;
+
     font-weight: 700;
 
     letter-spacing: 2px;
@@ -155,12 +159,14 @@
         padding: 25px 15px 35px;
     }
 
+
     .verah-card {
         padding: 30px 32px;
     }
 
-    .verah-heading {
-        font-size: 48px;
+
+    .verah-card h2 {
+        font-size: 1.65rem;
     }
 
 }
@@ -175,6 +181,7 @@
     .verah-hero {
         padding: 20px 12px 30px;
     }
+
 
     .verah-card {
         padding: 28px 22px 30px 25px;
@@ -202,18 +209,17 @@
        H2
     ----------------------------------------- */
 
-    .verah-heading {
-        font-size: 42px;
+    .verah-card h2 {
+        font-size: 1.5rem;
 
-        letter-spacing: -1.5px;
-
-        line-height: 1.08;
+        line-height: 1.3;
     }
 
-    .verah-heading::after {
-        width: 44px;
 
-        margin-top: 13px;
+    .verah-card h2::after {
+        width: 42px;
+
+        margin-top: 10px;
     }
 
 
@@ -222,7 +228,7 @@
     ----------------------------------------- */
 
     .verah-description {
-        margin-top: 19px;
+        margin-top: 17px;
 
         font-size: 14px;
 
@@ -243,6 +249,7 @@
 
         letter-spacing: 1.4px;
     }
+
 
     .signature-line {
         width: 32px;
