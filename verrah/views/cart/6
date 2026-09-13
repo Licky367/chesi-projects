@@ -1,1 +1,405 @@
-g
+<!-- ==========================================================
+     verrah/views/cart/carts.ejs
+     VERRAH COSMETICS
+     CART PAGE
+========================================================== -->
+
+<%
+    const isStaff =
+        String(user?.role || "").toLowerCase() === "staff";
+
+    const staffBranchUrl =
+        isStaff && user?.assignedSubstation
+            ? `/branch/${user.assignedSubstation}`
+            : "/products";
+
+    const cartItems =
+        Array.isArray(cart?.items)
+            ? cart.items
+            : [];
+
+    const hasItems =
+        cartItems.length > 0;
+
+    const cartTotal =
+        Number(
+            total ??
+            cart?.totalPrice ??
+            0
+        );
+%>
+
+
+<section class="shop-page cart-page">
+
+    <!-- ======================================================
+         HEADER
+    ======================================================= -->
+
+    <div class="cart-page-head">
+
+        <div>
+
+            <span class="cart-kicker">
+                VERRAH COSMETICS
+            </span>
+
+            <h1 class="page-title">
+                Your Cart
+            </h1>
+
+            <p class="page-subtitle">
+                Products in your cart.
+            </p>
+
+        </div>
+
+
+        <a
+            href="<%= staffBranchUrl %>"
+            class="secondary-btn"
+        >
+            <i class="fas fa-arrow-left"></i>
+            Continue Shopping
+        </a>
+
+    </div>
+
+
+    <!-- ======================================================
+         ERROR
+    ======================================================= -->
+
+    <% if (error) { %>
+
+        <div class="cart-alert cart-alert-error">
+
+            <i class="fas fa-circle-exclamation"></i>
+
+            <span>
+                <%= error %>
+            </span>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- ======================================================
+         EMPTY CART
+    ======================================================= -->
+
+    <% if (!hasItems) { %>
+
+        <div class="cart-empty">
+
+            <div class="cart-empty-icon">
+                <i class="fas fa-shopping-basket"></i>
+            </div>
+
+            <h2>
+                Your Cart Is Empty
+            </h2>
+
+            <p>
+                You have not added any products to your cart yet.
+            </p>
+
+            <a
+                class="primary-btn"
+                href="<%= staffBranchUrl %>"
+            >
+                <i class="fas fa-store"></i>
+                Browse Products
+            </a>
+
+        </div>
+
+
+    <% } else { %>
+
+
+        <!-- ==================================================
+             CART LAYOUT
+        =================================================== -->
+
+        <div class="cart-layout">
+
+
+            <!-- ==================================================
+                 CART ITEMS
+            =================================================== -->
+
+            <div class="cart-items-section">
+
+                <div class="cart-section-heading">
+
+                    <div>
+
+                        <span class="cart-section-kicker">
+                            YOUR SELECTION
+                        </span>
+
+                        <h2>
+                            Cart Items
+                        </h2>
+
+                    </div>
+
+
+                    <span class="cart-item-count">
+
+                        <%= cartItems.length %>
+
+                        <%= cartItems.length === 1
+                            ? "item"
+                            : "items"
+                        %>
+
+                    </span>
+
+                </div>
+
+
+                <div class="cart-list">
+
+                    <% cartItems.forEach(item => { %>
+
+                        <%
+                            const productId =
+                                String(
+                                    item.product?._id ||
+                                    item.product ||
+                                    item.productId ||
+                                    ""
+                                );
+
+                            const quantity =
+                                Number(
+                                    item.quantity ||
+                                    item.qty ||
+                                    0
+                                );
+
+                            const price =
+                                Number(
+                                    item.price || 0
+                                );
+
+                            const itemTotal =
+                                price *
+                                quantity;
+
+                            const productName =
+                                item.name ||
+                                item.product?.name ||
+                                "Product";
+
+                            const image =
+                                item.image ||
+                                item.product?.image ||
+                                "";
+                        %>
+
+
+                        <div class="cart-item-card">
+
+                            <!-- ==================================================
+                                 CLICKABLE ITEM AREA
+                            =================================================== -->
+
+                            <a
+                                href="/carts/<%= productId %>/details"
+                                class="cart-item-link"
+                            >
+
+                                <div class="cart-item-image">
+
+                                    <% if (image) { %>
+
+                                        <img
+                                            src="<%= image %>"
+                                            alt="<%= productName %>"
+                                        >
+
+                                    <% } else { %>
+
+                                        <div class="cart-item-placeholder">
+                                            <i class="fas fa-box"></i>
+                                        </div>
+
+                                    <% } %>
+
+                                </div>
+
+
+                                <div class="cart-item-main">
+
+                                    <div class="cart-item-topline">
+
+                                        <span class="cart-item-label">
+                                            Product
+                                        </span>
+
+                                        <i
+                                            class="fas fa-chevron-right cart-item-arrow"
+                                        ></i>
+
+                                    </div>
+
+
+                                    <h3>
+                                        <%= productName %>
+                                    </h3>
+
+
+                                    <div class="cart-item-meta">
+
+                                        <span>
+
+                                            <i class="fas fa-layer-group"></i>
+
+                                            Quantity:
+
+                                            <strong>
+                                                <%= quantity %>
+                                            </strong>
+
+                                        </span>
+
+
+                                        <span>
+
+                                            <i class="fas fa-tag"></i>
+
+                                            Unit price:
+
+                                            <strong>
+                                                KSh
+                                                <%= price.toLocaleString() %>
+                                            </strong>
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="cart-item-total">
+
+                                        KSh
+                                        <%= itemTotal.toLocaleString() %>
+
+                                    </div>
+
+                                </div>
+
+                            </a>
+
+
+                            <!-- ==================================================
+                                 REMOVE
+                            =================================================== -->
+
+                            <form
+                                action="/carts/<%= productId %>/remove"
+                                method="POST"
+                                class="cart-remove-form"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="cart-remove-btn"
+                                    aria-label="Remove <%= productName %>"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
+
+                            </form>
+
+                        </div>
+
+
+                    <% }) %>
+
+                </div>
+
+            </div>
+
+
+            <!-- ==================================================
+                 ORDER SUMMARY
+            =================================================== -->
+
+            <aside class="cart-summary-card">
+
+                <div class="cart-summary-head">
+
+                    <span class="cart-section-kicker">
+                        ORDER SUMMARY
+                    </span>
+
+                    <i class="fas fa-receipt"></i>
+
+                </div>
+
+
+                <div class="cart-summary-row">
+
+                    <span>
+                        Items
+                    </span>
+
+                    <strong>
+                        <%= cartItems.length %>
+                    </strong>
+
+                </div>
+
+
+                <div class="cart-summary-row cart-summary-total">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong>
+                        KSh
+                        <%= cartTotal.toLocaleString() %>
+                    </strong>
+
+                </div>
+
+
+                <!-- ==================================================
+                     CHECKOUT
+                =================================================== -->
+
+                <a
+                    class="primary-btn cart-checkout-btn"
+                    href="/carts/<%= String(
+                        cartItems[0].product?._id ||
+                        cartItems[0].product ||
+                        cartItems[0].productId ||
+                        ""
+                    ) %>"
+                >
+                    <i class="fas fa-credit-card"></i>
+                    Checkout
+                </a>
+
+
+                <a
+                    class="secondary-btn cart-continue-btn"
+                    href="<%= staffBranchUrl %>"
+                >
+                    <i class="fas fa-store"></i>
+                    Continue Shopping
+                </a>
+
+            </aside>
+
+        </div>
+
+    <% } %>
+
+</section>
