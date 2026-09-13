@@ -1171,69 +1171,49 @@ async function getSalesPageData(query = {}) {
        RETURN DATA TO sales.ejs
     -------------------------------------------------------- */
 
-    return {
+ return {
 
-        activeTab,
+    activeTab,
 
-        activeFilter,
+    activeFilter,
 
-        /* REQUIRED BY filter.js */
+    activeFilterDate,
+    activeFilterPeriod,
 
-        activeFilterDate,
+    filterLabel:
+        getFilterLabel(activeFilter),
 
-        activeFilterPeriod,
+    summaryFilter,
 
+    staffSalesFilter,
 
-        /* INDEPENDENT FILTERS */
+    productsFilter,
 
-        summaryFilter,
+    arrearsFilter,
 
-        staffSalesFilter,
+    summary,
 
-        productsFilter,
+    staffSales,
 
-        arrearsFilter,
+    productAnalytics,
 
+    arrearsPackages,
 
-        /* TAB DATA */
+    salesQuerySuffix,
 
-        summary,
+    summaryFilterLabel:
+        getFilterLabel(summaryFilter),
 
-        staffSales,
+    staffSalesFilterLabel:
+        getFilterLabel(staffSalesFilter),
 
-        productAnalytics,
+    productsFilterLabel:
+        getFilterLabel(productsFilter),
 
-        arrearsPackages,
+    arrearsFilterLabel:
+        getFilterLabel(arrearsFilter)
 
-
-        /* NAVIGATION */
-
-        salesQuerySuffix,
-
-
-        /* LABELS */
-
-        summaryFilterLabel:
-            getFilterLabel(
-                summaryFilter
-            ),
-
-        staffSalesFilterLabel:
-            getFilterLabel(
-                staffSalesFilter
-            ),
-
-        productsFilterLabel:
-            getFilterLabel(
-                productsFilter
-            ),
-
-        arrearsFilterLabel:
-            getFilterLabel(
-                arrearsFilter
-            )
-
-    };
+};
 
 }
 
