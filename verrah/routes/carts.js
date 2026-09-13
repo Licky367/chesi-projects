@@ -17,6 +17,7 @@ const requireLogin =
 const checkoutSubstation =
     require("../middleware/checkoutSubstation");
 
+
 // =========================================================
 // CART LIST
 // GET /carts
@@ -27,6 +28,27 @@ router.get(
     requireLogin,
     controller.list
 );
+
+
+// =========================================================
+// CHECKOUT PAGE
+// GET /carts/:id/checkout
+//
+// Renders:
+// cart/cart-checkout.ejs
+//
+// The selected cart item is identified by :id.
+// The controller loads the cart, item, total,
+// substations and previous pickup station.
+// =========================================================
+
+router.get(
+    "/:id/checkout",
+    requireLogin,
+    checkoutSubstation.load,
+    controller.checkout
+);
+
 
 // =========================================================
 // CHECKOUT
@@ -44,6 +66,7 @@ router.post(
     controller.checkout
 );
 
+
 // =========================================================
 // STAFF SALE
 // POST /carts/staff-sale
@@ -54,6 +77,7 @@ router.post(
     requireLogin,
     controller.staffSale
 );
+
 
 // =========================================================
 // PAYMENT PAGE
@@ -66,6 +90,7 @@ router.get(
     controller.paymentPage
 );
 
+
 // =========================================================
 // PAYMENT STATUS
 // GET /carts/payment/:id/status
@@ -76,6 +101,7 @@ router.get(
     requireLogin,
     controller.paymentStatus
 );
+
 
 // =========================================================
 // REMOVE CART ITEM
@@ -88,9 +114,13 @@ router.post(
     controller.remove
 );
 
+
 // =========================================================
-// CART DETAILS / CHECKOUT
+// CART DETAILS
 // GET /carts/:id
+//
+// Renders:
+// cart/cart-details.ejs
 // =========================================================
 
 router.get(
@@ -99,5 +129,6 @@ router.get(
     checkoutSubstation.load,
     controller.details
 );
+
 
 module.exports = router;
