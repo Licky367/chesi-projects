@@ -8,19 +8,36 @@
     Package management
   </a>
 
+
   <% if (typeof error !== "undefined" && error) { %>
+
     <div class="staff-alert staff-alert-error">
+
       <i class="fas fa-circle-exclamation"></i>
-      <span><%= error %></span>
+
+      <span>
+        <%= error %>
+      </span>
+
     </div>
+
   <% } %>
 
+
   <% if (typeof success !== "undefined" && success) { %>
+
     <div class="staff-alert staff-alert-success">
+
       <i class="fas fa-circle-check"></i>
-      <span><%= success %></span>
+
+      <span>
+        <%= success %>
+      </span>
+
     </div>
+
   <% } %>
+
 
   <% if (packageDoc) { %>
 
@@ -62,6 +79,11 @@
         "";
     %>
 
+
+    <!-- ======================================================
+         PACKAGE HEADER
+    ======================================================= -->
+
     <div class="staff-detail-header-card">
 
       <div>
@@ -80,19 +102,25 @@
 
       </div>
 
+
       <div class="staff-detail-status-group">
 
-        <span class="package-status status-<%= packageDoc.status %>">
+        <span
+          class="package-status status-<%= packageDoc.status %>"
+        >
           <%= packageDoc.status %>
         </span>
 
+
         <% if (hasArrears) { %>
+
           <span
             class="staff-arrears-label staff-arrears-label-large"
             title="Outstanding arrears"
           >
             N
           </span>
+
         <% } %>
 
       </div>
@@ -100,53 +128,79 @@
     </div>
 
 
+    <!-- ======================================================
+         OVERVIEW
+    ======================================================= -->
+
     <div class="staff-overview-card">
 
       <div class="staff-section-label">
         OVERVIEW
       </div>
 
+
       <div class="staff-detail-overview-grid">
+
+
+        <!-- CLIENT -->
 
         <div class="staff-info-card">
 
-          <small>CLIENT</small>
+          <small>
+            CLIENT
+          </small>
 
           <strong>
-            <%= packageDoc.client?.name || packageDoc.clientId %>
+            <%= packageDoc.client?.name || packageDoc.clientId || "—" %>
           </strong>
 
         </div>
 
 
+        <!-- PHONE -->
+
         <div class="staff-info-card">
 
-          <small>PHONE</small>
+          <small>
+            PHONE
+          </small>
+
 
           <% if (clientPhone) { %>
 
             <strong>
+
               <a
                 href="tel:<%= clientPhone %>"
                 class="staff-phone-link"
               >
+
                 <i class="fas fa-phone"></i>
+
                 <%= clientPhone %>
+
               </a>
+
             </strong>
 
           <% } else { %>
 
-            <strong>—</strong>
+            <strong>
+              —
+            </strong>
 
           <% } %>
 
         </div>
 
 
+        <!-- EMAIL -->
+
         <div class="staff-info-card">
 
-          <small>EMAIL</small>
+          <small>
+            EMAIL
+          </small>
 
           <strong>
             <%= packageDoc.client?.email || "—" %>
@@ -155,9 +209,13 @@
         </div>
 
 
+        <!-- CONFIRMED BY -->
+
         <div class="staff-info-card">
 
-          <small>CONFIRMED BY</small>
+          <small>
+            CONFIRMED BY
+          </small>
 
           <strong>
             <%= packageDoc.confirmedByStaffName || "Not yet" %>
@@ -166,28 +224,43 @@
         </div>
 
 
+        <!-- SUBSTATION -->
+
         <div class="staff-info-card">
 
-          <small>SUBSTATION</small>
+          <small>
+            SUBSTATION
+          </small>
 
           <strong>
+
             <%= packageSubstation?.name ||
                 packageDoc.packageSubstationName ||
                 "Not assigned" %>
+
           </strong>
 
+
           <% if (packageSubstation?.location) { %>
+
             <span class="staff-info-secondary">
+
               <%= packageSubstation.location %>
+
             </span>
+
           <% } %>
 
         </div>
 
 
+        <!-- PAID -->
+
         <div class="staff-info-card">
 
-          <small>PAID</small>
+          <small>
+            PAID
+          </small>
 
           <strong>
             KSh <%= totalPaid.toLocaleString() %>
@@ -196,24 +269,35 @@
         </div>
 
 
+        <!-- ARREARS -->
+
         <div class="staff-info-card">
 
-          <small>ARREARS</small>
+          <small>
+            ARREARS
+          </small>
 
           <strong
             class="<%= arrears > 0
               ? "staff-arrears-amount"
               : "staff-cleared-amount" %>"
           >
+
             KSh <%= arrears.toLocaleString() %>
+
           </strong>
 
         </div>
+
 
       </div>
 
     </div>
 
+
+    <!-- ======================================================
+         ITEMS
+    ======================================================= -->
 
     <div class="staff-items-card">
 
@@ -221,9 +305,13 @@
         ITEMS
       </div>
 
+
       <% (packageDoc.items || []).forEach(function (item) { %>
 
         <div class="staff-item-row">
+
+
+          <!-- IMAGE -->
 
           <div class="staff-item-image">
 
@@ -231,7 +319,7 @@
 
               <img
                 src="<%= item.image %>"
-                alt="<%= item.name %>"
+                alt="<%= item.name || "Product" %>"
               >
 
             <% } else { %>
@@ -242,42 +330,61 @@
 
           </div>
 
+
+          <!-- ITEM DETAILS -->
+
           <div class="staff-item-main">
 
             <div class="staff-item-name">
-              <%= item.name %>
+              <%= item.name || "Unnamed product" %>
             </div>
+
 
             <div class="staff-item-meta">
 
-              Qty <%= item.qty %>
+              Qty
+              <%= Number(item.qty || 0) %>
 
-              · KSh
+              ·
+
+              KSh
               <%= Number(
                 item.price || 0
               ).toLocaleString() %>
+
               each
 
             </div>
 
           </div>
 
+
+          <!-- ITEM TOTAL -->
+
           <strong class="staff-item-total">
+
             KSh
+
             <%= Number(
               (item.price || 0) *
               (item.qty || 0)
             ).toLocaleString() %>
+
           </strong>
+
 
         </div>
 
       <% }); %>
 
 
+      <!-- TOTAL -->
+
       <div class="staff-total-line">
 
-        <span>Total</span>
+        <span>
+          Total
+        </span>
 
         <strong>
           KSh <%= totalAmount.toLocaleString() %>
@@ -285,6 +392,10 @@
 
       </div>
 
+
+      <!-- ====================================================
+           CONFIRM PACKAGE
+      ===================================================== -->
 
       <% if (
         role === "staff" &&
@@ -297,12 +408,14 @@
             Confirm package
           </div>
 
+
           <% if (canConfirm) { %>
 
             <p>
-              All package quantities are available at your assigned
-              substation.
+              All package quantities are available at your
+              assigned substation.
             </p>
+
 
             <form
               method="POST"
@@ -313,17 +426,23 @@
                 type="submit"
                 class="staff-action-btn"
               >
+
                 <i class="fas fa-circle-check"></i>
+
                 Confirm package
+
               </button>
 
             </form>
 
+
           <% } else { %>
 
             <div class="staff-action-error">
+
               <%= confirmationError ||
                 "This package cannot be confirmed because one or more products exceed the assigned substation balance." %>
+
             </div>
 
           <% } %>
@@ -332,6 +451,10 @@
 
       <% } %>
 
+
+      <!-- ====================================================
+           MARK DELIVERED
+      ===================================================== -->
 
       <% if (
         role === "staff" &&
@@ -345,6 +468,7 @@
           <div class="staff-action-title">
             Ready for delivery
           </div>
+
 
           <form
             method="POST"
@@ -369,6 +493,10 @@
       <% } %>
 
 
+      <!-- ====================================================
+           RECORD PAYMENT
+      ===================================================== -->
+
       <% if (
         isDelivered &&
         !cleared &&
@@ -386,6 +514,7 @@
             Record amount actually paid
           </div>
 
+
           <form
             method="POST"
             action="/packages/staff/<%= packageDoc._id %>/payment"
@@ -395,6 +524,7 @@
             <label for="amountPaid">
               Amount paid (KSh)
             </label>
+
 
             <input
               id="amountPaid"
@@ -406,6 +536,7 @@
               value="<%= totalPaid %>"
               required
             >
+
 
             <button
               type="submit"
@@ -425,13 +556,20 @@
       <% } %>
 
 
+      <!-- ====================================================
+           CLEAR PACKAGE
+      ===================================================== -->
+
       <% if (canClear) { %>
 
         <div class="staff-clear-card">
 
           <div class="staff-clear-icon">
+
             <i class="fas fa-circle-check"></i>
+
           </div>
+
 
           <div class="staff-clear-content">
 
@@ -439,10 +577,13 @@
               Package ready to be cleared
             </div>
 
+
             <p>
-              This package has been delivered and has no outstanding
-              arrears. Mark it as cleared to close its payment handling.
+              This package has been delivered and has no
+              outstanding arrears. Mark it as cleared to
+              close its payment handling.
             </p>
+
 
             <form
               method="POST"
@@ -469,13 +610,20 @@
       <% } %>
 
 
+      <!-- ====================================================
+           ALREADY CLEARED
+      ===================================================== -->
+
       <% if (cleared) { %>
 
         <div class="staff-cleared-card">
 
           <div class="staff-cleared-icon">
+
             <i class="fas fa-check-double"></i>
+
           </div>
+
 
           <div>
 
@@ -483,15 +631,26 @@
               Package cleared
             </strong>
 
+
             <p>
+
               Cleared
 
               <% if (clearedAt) { %>
-                on <%= new Date(clearedAt).toLocaleString() %>
+
+                on
+                <%= new Date(
+                  clearedAt
+                ).toLocaleString() %>
+
               <% } %>
 
+
               <% if (clearedByStaffName) { %>
-                by <%= clearedByStaffName %>
+
+                by
+                <%= clearedByStaffName %>
+
               <% } %>
 
             </p>
@@ -502,9 +661,16 @@
 
       <% } %>
 
+
     </div>
 
-  <% } else %>
+
+  <% } else { %>
+
+
+    <!-- ======================================================
+         PACKAGE NOT FOUND
+    ======================================================= -->
 
     <div class="staff-empty staff-empty-large">
 
@@ -516,6 +682,8 @@
 
     </div>
 
+
   <% } %>
+
 
 </section>
