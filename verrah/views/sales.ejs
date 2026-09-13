@@ -54,6 +54,17 @@
             Sales Summary
         </a>
 
+        <!-- SALES REPORT -->
+
+        <a
+            href="/sales?tab=summary<%= salesQuerySuffix %>"
+            class="sales-navigation-tab <%= activeTab === 'staff-sales' ? 'active' : '' %>"
+            role="tab"
+            aria-selected="<%= activeTab === 'staff-sales' ? 'true' : 'false' %>"
+        >
+            Sales Report
+        </a>
+
 
         <!-- PRODUCT ANALYTICS -->
 
