@@ -927,6 +927,10 @@ async function getSalesPageData(query = {}) {
         activeTab,
 
         activeFilter,
+        
+        activeFilterDate: activeFilter.date,
+       
+        activeFilterPeriod: activeFilter.period,
 
         summaryFilter,
 
