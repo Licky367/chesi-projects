@@ -72,20 +72,19 @@
 
     <!-- =======================================================
          PRODUCT ID
-         
-         Cart items use:
-         
-             item.product
-         
-         rather than:
-         
-             item.productId
+
+         The cart model stores both:
+         - product
+         - productId
+
+         productId is the explicit identifier used by the
+         current cart/checkout services.
     ======================================================== -->
 
     <input
       type="hidden"
       name="productId"
-      value="<%= item.product?._id || item.product || '' %>"
+      value="<%= item.productId || item.product?._id || item.product || '' %>"
     >
 
 
@@ -128,7 +127,10 @@
           </option>
 
 
-          <% if (Array.isArray(substations) && substations.length > 0) { %>
+          <% if (
+            Array.isArray(substations) &&
+            substations.length > 0
+          ) { %>
 
             <% substations.forEach(function (substation) { %>
 
@@ -187,7 +189,6 @@
     </fieldset>
 
 
-
     <!-- =======================================================
          PAYMENT METHOD
     ======================================================== -->
@@ -239,7 +240,6 @@
       </label>
 
 
-
       <!-- =====================================================
            M-PESA PHONE NUMBER
       ====================================================== -->
@@ -250,9 +250,7 @@
       >
 
         <label for="phoneNumber">
-
           M-Pesa phone number
-
         </label>
 
 
@@ -266,7 +264,6 @@
         >
 
       </div>
-
 
 
       <!-- =====================================================
@@ -310,7 +307,6 @@
     </fieldset>
 
 
-
     <!-- =======================================================
          CONTINUE CHECKOUT
     ======================================================== -->
@@ -329,7 +325,6 @@
   </form>
 
 </div>
-
 
 
 <!-- ===========================================================
@@ -355,8 +350,8 @@
 
 
   /*
-   * Stop safely if this partial is reused
-   * somewhere without the checkout elements.
+   * Stop safely if the checkout elements
+   * are not present.
    */
 
   if (
@@ -370,7 +365,7 @@
 
 
   /*
-   * Show M-Pesa phone field only when
+   * Show the M-Pesa phone field only when
    * M-Pesa is selected.
    */
 
@@ -389,18 +384,17 @@
 
     phoneField.classList.toggle(
       "show",
-      !!mpesaSelected
+      Boolean(mpesaSelected)
     );
 
 
     phoneInput.required =
-      !!mpesaSelected;
+      Boolean(mpesaSelected);
 
 
     /*
-     * Disable the phone input when it is
-     * not required so it is not submitted
-     * accidentally with another payment method.
+     * Do not submit the phone number when
+     * Pay on Delivery is selected.
      */
 
     phoneInput.disabled =
@@ -415,38 +409,30 @@
 
 
   /*
-   * Listen for payment-method changes.
+   * Payment method changes.
    */
 
-  paymentRadios.forEach(
-    function (radio) {
+  paymentRadios.forEach(function (radio) {
 
-      radio.addEventListener(
-        "change",
-        updatePhoneField
-      );
+    radio.addEventListener(
+      "change",
+      updatePhoneField
+    );
 
-    }
-  );
+  });
 
 
   /*
-   * Validate the checkout form before submission.
+   * Validate checkout before submission.
    */
 
   form.addEventListener(
     "submit",
     function (event) {
 
-      const selected =
-        document.querySelector(
-          'input[name="paymentMethod"]:checked'
-        );
-
-
-      /*
-       * A pickup substation is mandatory.
-       */
+      /* -----------------------------------------------
+         PICKUP SUBSTATION
+      ------------------------------------------------ */
 
       const substation =
         document.getElementById(
@@ -469,9 +455,15 @@
       }
 
 
-      /*
-       * A payment method is mandatory.
-       */
+      /* -----------------------------------------------
+         PAYMENT METHOD
+      ------------------------------------------------ */
+
+      const selected =
+        document.querySelector(
+          'input[name="paymentMethod"]:checked'
+        );
+
 
       if (!selected) {
 
@@ -481,9 +473,9 @@
       }
 
 
-      /*
-       * M-Pesa requires a phone number.
-       */
+      /* -----------------------------------------------
+         M-PESA PHONE NUMBER
+      ------------------------------------------------ */
 
       if (
         selected.value === "mpesa"
