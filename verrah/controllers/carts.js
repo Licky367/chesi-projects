@@ -1,8 +1,8 @@
-// =========================================================
+// ==========================================================
 // verrah/controllers/carts.js
 //
 // CART CONTROLLER
-// =========================================================
+// ==========================================================
 
 const cartService =
     require("../services/cartService");
@@ -14,49 +14,40 @@ const packageService =
     require("../services/packageService");
 
 
-// =========================================================
-// ERROR MESSAGE
-// =========================================================
+// ==========================================================
+// CART ERROR HELPER
+// ==========================================================
 
 function getCartErrorMessage(err, fallback) {
-
     const message =
-        String(err?.message || "").trim();
+        String(
+            err?.message || ""
+        ).trim();
 
-
-    // Never expose old reservation terminology
     if (
         /reserved\s*quantity|reservedquantity|reservation/i.test(
             message
         )
     ) {
-
         return "Insufficient stock for one or more products.";
     }
-
 
     return message || fallback;
 }
 
 
-// =========================================================
+// ==========================================================
 // CART LIST
 // GET /carts
-// =========================================================
+// ==========================================================
 
 exports.list = async (req, res) => {
-
     try {
-
         const cart =
             await cartService.getCart(req);
 
-
         const total =
-            cartService.calculateTotal(
-                cart
-            );
-
+            cartService.calculateTotal(cart);
 
         return res.render(
             "cart/carts",
@@ -69,7 +60,8 @@ exports.list = async (req, res) => {
                 total,
 
                 error:
-                    req.query.error || null,
+                    req.query.error ||
+                    null,
 
                 user:
                     req.user
@@ -83,16 +75,17 @@ exports.list = async (req, res) => {
             err
         );
 
-
         return res.status(500).render(
             "cart/carts",
             {
                 title:
                     "Your Cart | Verrah Cosmetics",
 
-                cart: null,
+                cart:
+                    null,
 
-                total: 0,
+                total:
+                    0,
 
                 error:
                     "Unable to load your cart.",
@@ -105,42 +98,47 @@ exports.list = async (req, res) => {
 };
 
 
-// =========================================================
+// ==========================================================
 // CHECKOUT PAGE
 // GET /carts/:id
 //
-// Renders:
-// cart/cart-checkout.ejs
+// IMPORTANT:
 //
-// :id = product ID / cart item productId
-// =========================================================
+// This route renders:
+//
+//     cart/cart-checkout.ejs
+//
+// The checkoutSubstation middleware runs BEFORE this
+// controller and places:
+//
+//     res.locals.substations
+//     res.locals.pickupStation
+//
+// into the request.
+//
+// We explicitly pass those values to the checkout view.
+// ==========================================================
 
-exports.checkoutPage = async (
-    req,
-    res
-) => {
-
+exports.checkoutPage = async (req, res) => {
     try {
 
         const cart =
             await cartService.getCart(req);
 
-
         if (
             !cart ||
-            !cart.items ||
-            !cart.items.length
+            !Array.isArray(cart.items) ||
+            cart.items.length === 0
         ) {
-
             return res.redirect(
                 "/carts"
             );
         }
 
 
-        // -----------------------------------------------------
-        // FIND SELECTED CART ITEM
-        // -----------------------------------------------------
+        // --------------------------------------------------
+        // Find the cart item being checked out.
+        // --------------------------------------------------
 
         const item =
             cart.items.find(
@@ -155,44 +153,49 @@ exports.checkoutPage = async (
 
 
         if (!item) {
-
             return res.redirect(
                 "/carts"
             );
         }
 
 
-        // -----------------------------------------------------
-        // GET SUBSTATIONS
-        // -----------------------------------------------------
+        // --------------------------------------------------
+        // IMPORTANT:
+        //
+        // checkoutSubstation.load has already loaded
+        // these values into res.locals.
+        //
+        // Do NOT load them through the details controller.
+        // --------------------------------------------------
 
-        let substations = [];
+        const substations =
+            Array.isArray(
+                res.locals.substations
+            )
+                ? res.locals.substations
+                : [];
 
-
-        if (
-            typeof cartService.getSubstations ===
-            "function"
-        ) {
-
-            substations =
-                await cartService.getSubstations();
-        }
-
-
-        // -----------------------------------------------------
-        // PREVIOUS PICKUP STATION
-        // -----------------------------------------------------
 
         const pickupStation =
-            req.user &&
-            req.user.pickupStation
-                ? req.user.pickupStation
-                : null;
+            res.locals.pickupStation ||
+            (
+                req.user?.pickupStation
+                    ? String(
+                        req.user.pickupStation
+                    )
+                    : ""
+            );
 
 
-        // -----------------------------------------------------
-        // RENDER CHECKOUT
-        // -----------------------------------------------------
+        const total =
+            cartService.calculateTotal(
+                cart
+            );
+
+
+        // --------------------------------------------------
+        // CHECKOUT VIEW
+        // --------------------------------------------------
 
         return res.render(
             "cart/cart-checkout",
@@ -204,18 +207,15 @@ exports.checkoutPage = async (
 
                 item,
 
-                total:
-                    cartService.calculateTotal(
-                        cart
-                    ),
+                total,
 
-                substations:
-                    substations || [],
+                substations,
 
                 pickupStation,
 
                 error:
-                    req.query.error || null,
+                    req.query.error ||
+                    null,
 
                 user:
                     req.user
@@ -225,56 +225,58 @@ exports.checkoutPage = async (
     } catch (err) {
 
         console.error(
-            "Cart checkout page error:",
+            "Checkout page error:",
             err
         );
 
+        const message =
+            getCartErrorMessage(
+                err,
+                "Unable to load checkout."
+            );
+
 
         return res.redirect(
-            `/carts/${req.params.id}?error=${encodeURIComponent(
-                "Unable to open checkout."
+            `/carts/${encodeURIComponent(
+                req.params.id
+            )}?error=${encodeURIComponent(
+                message
             )}`
         );
     }
 };
 
 
-// =========================================================
-// CART DETAILS
+// ==========================================================
+// CART ITEM DETAILS
 // GET /carts/:id/details
 //
-// Renders:
-// cart/cart-details.ejs
+// IMPORTANT:
 //
-// :id = product ID / cart item productId
-// =========================================================
+// This route renders ONLY:
+//
+//     cart/cart-details.ejs
+//
+// It does NOT render checkout.
+// It does NOT own the checkout substation data.
+// ==========================================================
 
-exports.details = async (
-    req,
-    res
-) => {
-
+exports.details = async (req, res) => {
     try {
 
         const cart =
             await cartService.getCart(req);
 
-
         if (
             !cart ||
-            !cart.items ||
-            !cart.items.length
+            !Array.isArray(cart.items) ||
+            cart.items.length === 0
         ) {
-
             return res.redirect(
                 "/carts"
             );
         }
 
-
-        // -----------------------------------------------------
-        // FIND SELECTED CART ITEM
-        // -----------------------------------------------------
 
         const item =
             cart.items.find(
@@ -289,16 +291,21 @@ exports.details = async (
 
 
         if (!item) {
-
             return res.redirect(
                 "/carts"
             );
         }
 
 
-        // -----------------------------------------------------
-        // RENDER DETAILS
-        // -----------------------------------------------------
+        const total =
+            cartService.calculateTotal(
+                cart
+            );
+
+
+        // --------------------------------------------------
+        // DETAILS VIEW ONLY
+        // --------------------------------------------------
 
         return res.render(
             "cart/cart-details",
@@ -310,13 +317,11 @@ exports.details = async (
 
                 item,
 
-                total:
-                    cartService.calculateTotal(
-                        cart
-                    ),
+                total,
 
                 error:
-                    req.query.error || null,
+                    req.query.error ||
+                    null,
 
                 user:
                     req.user
@@ -330,31 +335,32 @@ exports.details = async (
             err
         );
 
-
         return res.redirect(
-            "/carts"
+            `/carts/${encodeURIComponent(
+                req.params.id
+            )}/details?error=${encodeURIComponent(
+                getCartErrorMessage(
+                    err,
+                    "Unable to load cart item."
+                )
+            )}`
         );
     }
 };
 
 
-// =========================================================
+// ==========================================================
 // REMOVE CART ITEM
 // POST /carts/:id/remove
-// =========================================================
+// ==========================================================
 
-exports.remove = async (
-    req,
-    res
-) => {
-
+exports.remove = async (req, res) => {
     try {
 
         await cartService.removeItem(
             req,
             req.params.id
         );
-
 
         return res.redirect(
             "/carts"
@@ -363,10 +369,9 @@ exports.remove = async (
     } catch (err) {
 
         console.error(
-            "Remove cart item error:",
+            "Cart remove error:",
             err
         );
-
 
         const message =
             getCartErrorMessage(
@@ -376,7 +381,9 @@ exports.remove = async (
 
 
         return res.redirect(
-            `/carts/${req.params.id}/details?error=${encodeURIComponent(
+            `/carts/${encodeURIComponent(
+                req.params.id
+            )}/details?error=${encodeURIComponent(
                 message
             )}`
         );
@@ -384,55 +391,63 @@ exports.remove = async (
 };
 
 
-// =========================================================
-// NORMAL CHECKOUT
+// ==========================================================
+// CHECKOUT PROCESS
 // POST /carts/checkout
 //
-// ADMIN / CLIENT FLOW
+// checkoutSubstation.saveSelection runs BEFORE this
+// controller.
 //
-// Stock is handled when the package is formed.
-// The controller does not reserve stock.
-// =========================================================
+// Therefore, by the time this function runs:
+//
+//     req.user.pickupStation
+//
+// has already been updated.
+// ==========================================================
 
-exports.checkout = async (
-    req,
-    res
-) => {
+exports.checkout = async (req, res) => {
 
     const method =
         String(
-            req.body.paymentMethod || ""
+            req.body.paymentMethod ||
+            ""
+        ).trim();
+
+
+    const productId =
+        String(
+            req.body.productId ||
+            ""
         ).trim();
 
 
     try {
 
-        // -----------------------------------------------------
-        // PAY ON DELIVERY
-        // -----------------------------------------------------
+        // --------------------------------------------------
+        // PAY UPON DELIVERY
+        // --------------------------------------------------
 
         if (
             method ===
             "pay_on_delivery"
         ) {
 
-            await packageService
-                .createPackageFromCart(
-                    req,
-                    {
-                        paymentMethod:
-                            "pay_on_delivery",
+            await packageService.createPackageFromCart(
+                req,
+                {
+                    paymentMethod:
+                        "pay_on_delivery",
 
-                        paymentStatus:
-                            "unpaid",
+                    paymentStatus:
+                        "unpaid",
 
-                        paidAmount:
-                            0,
+                    paidAmount:
+                        0,
 
-                        phoneNumber:
-                            ""
-                    }
-                );
+                    phoneNumber:
+                        ""
+                }
+            );
 
 
             return res.redirect(
@@ -441,9 +456,9 @@ exports.checkout = async (
         }
 
 
-        // -----------------------------------------------------
-        // MPESA
-        // -----------------------------------------------------
+        // --------------------------------------------------
+        // M-PESA
+        // --------------------------------------------------
 
         if (
             method ===
@@ -451,11 +466,10 @@ exports.checkout = async (
         ) {
 
             const result =
-                await paymentService
-                    .initiateStkPush(
-                        req,
-                        req.body.phoneNumber
-                    );
+                await paymentService.initiateStkPush(
+                    req,
+                    req.body.phoneNumber
+                );
 
 
             return res.redirect(
@@ -464,14 +478,22 @@ exports.checkout = async (
         }
 
 
-        // -----------------------------------------------------
-        // INVALID PAYMENT METHOD
-        // -----------------------------------------------------
+        // --------------------------------------------------
+        // NO PAYMENT METHOD
+        // --------------------------------------------------
+
+        const error =
+            encodeURIComponent(
+                "Choose a checkout method."
+            );
+
 
         return res.redirect(
-            `/carts/${req.body.productId || ""}?error=${encodeURIComponent(
-                "Choose a checkout method."
-            )}`
+            productId
+                ? `/carts/${encodeURIComponent(
+                    productId
+                )}?error=${error}`
+                : `/carts?error=${error}`
         );
 
     } catch (err) {
@@ -490,131 +512,92 @@ exports.checkout = async (
 
 
         return res.redirect(
-            `/carts/${req.body.productId || ""}?error=${encodeURIComponent(
-                message
-            )}`
+            productId
+                ? `/carts/${encodeURIComponent(
+                    productId
+                )}?error=${encodeURIComponent(
+                    message
+                )}`
+                : `/carts?error=${encodeURIComponent(
+                    message
+                )}`
         );
     }
 };
 
 
-// =========================================================
+// ==========================================================
 // STAFF SALE
 // POST /carts/staff-sale
-//
-// Staff sells directly from available Product.units.
-// No reservation logic.
-// =========================================================
+// ==========================================================
 
-exports.staffSale = async (
-    req,
-    res
-) => {
-
+exports.staffSale = async (req, res) => {
     try {
 
-        // -----------------------------------------------------
-        // VERIFY USER
-        // -----------------------------------------------------
-
         if (!req.user) {
-
             return res.redirect(
                 "/login"
             );
         }
 
 
-        // -----------------------------------------------------
-        // VERIFY STAFF ROLE
-        // -----------------------------------------------------
-
         const role =
             String(
-                req.user.role || ""
-            ).trim().toLowerCase();
+                req.user.role ||
+                ""
+            )
+                .trim()
+                .toLowerCase();
 
 
         if (
             role !== "staff"
         ) {
-
-            return res.redirect(
-                "/carts?error=Only staff members can record sales."
+            return res.status(403).send(
+                "Only staff can complete staff sales."
             );
         }
 
-
-        // -----------------------------------------------------
-        // VERIFY ASSIGNED SUBSTATION
-        // -----------------------------------------------------
 
         const assignedSubstation =
             req.user.assignedSubstation;
 
 
-        if (
-            !assignedSubstation
-        ) {
-
-            return res.redirect(
-                "/carts?error=You are not assigned to a substation."
+        if (!assignedSubstation) {
+            return res.status(400).send(
+                "You are not assigned to a substation."
             );
         }
 
 
-        // -----------------------------------------------------
-        // SALES NAME
-        // -----------------------------------------------------
-
         const salesName =
             String(
-                req.body.salesName || ""
+                req.body.salesName ||
+                ""
             ).trim();
 
 
         if (!salesName) {
-
-            return res.redirect(
-                "/carts?error=Sales name is required."
+            return res.status(400).send(
+                "Sales name is required."
             );
         }
 
 
         if (
-            salesName.length >
-            150
+            salesName.length > 150
         ) {
-
-            return res.redirect(
-                "/carts?error=Sales name cannot exceed 150 characters."
+            return res.status(400).send(
+                "Sales name is too long."
             );
         }
 
-
-        // -----------------------------------------------------
-        // CREATE STAFF SALE
-        //
-        // cartService is responsible for:
-        //
-        // Product.units >= quantity
-        //
-        // then:
-        //
-        // Product.units -= quantity
-        //
-        // No reserved quantity.
-        // -----------------------------------------------------
 
         await cartService.createStaffSale(
             req,
             salesName
         );
 
-
-        // -----------------------------------------------------
-        // SUCCESS
-        // -----------------------------------------------------
 
         return res.redirect(
             `/branch/${assignedSubstation}`
@@ -631,41 +614,33 @@ exports.staffSale = async (
         const message =
             getCartErrorMessage(
                 err,
-                "Unable to record staff sale."
+                "Unable to complete staff sale."
             );
 
 
-        return res.redirect(
-            `/carts?error=${encodeURIComponent(
-                message
-            )}`
+        return res.status(400).send(
+            message
         );
     }
 };
 
 
-// =========================================================
+// ==========================================================
 // PAYMENT PAGE
 // GET /carts/payment/:id
-// =========================================================
+// ==========================================================
 
-exports.paymentPage = async (
-    req,
-    res
-) => {
-
+exports.paymentPage = async (req, res) => {
     try {
 
         const payment =
-            await paymentService
-                .getPaymentForUser(
-                    req,
-                    req.params.id
-                );
+            await paymentService.getPaymentForUser(
+                req,
+                req.params.id
+            );
 
 
         if (!payment) {
-
             return res.redirect(
                 "/carts"
             );
@@ -676,7 +651,7 @@ exports.paymentPage = async (
             "cart/payment-status",
             {
                 title:
-                    "M-Pesa Payment | Verrah Cosmetics",
+                    "Payment Status | Verrah Cosmetics",
 
                 payment,
 
@@ -692,7 +667,6 @@ exports.paymentPage = async (
             err
         );
 
-
         return res.redirect(
             "/carts"
         );
@@ -700,57 +674,55 @@ exports.paymentPage = async (
 };
 
 
-// =========================================================
+// ==========================================================
 // PAYMENT STATUS
 // GET /carts/payment/:id/status
-// =========================================================
+// ==========================================================
 
-exports.paymentStatus = async (
-    req,
-    res
-) => {
-
+exports.paymentStatus = async (req, res) => {
     try {
 
         const payment =
-            await paymentService
-                .getPaymentForUser(
-                    req,
-                    req.params.id
-                );
+            await paymentService.getPaymentForUser(
+                req,
+                req.params.id
+            );
 
 
         if (!payment) {
+            return res.status(404).json(
+                {
+                    ok:
+                        false,
 
-            return res.status(404).json({
-                ok: false,
-
-                message:
-                    "Payment not found."
-            });
+                    error:
+                        "Payment not found."
+                }
+            );
         }
 
 
-        return res.json({
+        return res.json(
+            {
+                ok:
+                    true,
 
-            ok: true,
+                status:
+                    payment.status,
 
-            status:
-                payment.status,
+                receipt:
+                    payment.receipt ||
+                    "",
 
-            receipt:
-                payment.mpesaReceiptNumber ||
-                "",
+                description:
+                    payment.description ||
+                    "",
 
-            description:
-                payment.resultDescription ||
-                "",
-
-            packageId:
-                payment.packageId ||
-                null
-
-        });
+                packageId:
+                    payment.packageId ||
+                    null
+            }
+        );
 
     } catch (err) {
 
@@ -759,34 +731,33 @@ exports.paymentStatus = async (
             err
         );
 
+        return res.status(500).json(
+            {
+                ok:
+                    false,
 
-        return res.status(500).json({
-
-            ok: false,
-
-            message:
-                "Unable to check payment status."
-
-        });
+                error:
+                    "Unable to check payment status."
+            }
+        );
     }
 };
 
 
-// =========================================================
+// ==========================================================
 // M-PESA CALLBACK
-// =========================================================
+// POST /carts/payment/callback
+// ==========================================================
 
 exports.mpesaCallback = async (
     req,
     res
 ) => {
-
     try {
 
-        await paymentService
-            .handleCallback(
-                req.body
-            );
+        await paymentService.handleCallback(
+            req.body
+        );
 
     } catch (err) {
 
@@ -797,13 +768,13 @@ exports.mpesaCallback = async (
     }
 
 
-    return res.json({
+    return res.json(
+        {
+            ResultCode:
+                0,
 
-        ResultCode:
-            0,
-
-        ResultDesc:
-            "Accepted"
-
-    });
+            ResultDesc:
+                "Accepted"
+        }
+    );
 };
