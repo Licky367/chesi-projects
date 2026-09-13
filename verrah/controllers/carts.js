@@ -184,6 +184,165 @@ exports.details = async (req, res) => {
 };
 
 
+
+// =========================================================
+// CART CHECKOUT
+// GET /carts/:id/checkout
+// =========================================================
+
+exports.checkout = async (req, res) => {
+
+    try {
+
+        const cart =
+            await cartService.getCart(req);
+
+
+        if (
+            !cart ||
+            !cart.items ||
+            !cart.items.length
+        ) {
+
+            return res.redirect(
+                "/carts"
+            );
+        }
+
+
+        const item =
+            cart.items.find(
+                currentItem =>
+                    String(
+                        currentItem.productId
+                    ) ===
+                    String(
+                        req.params.id
+                    )
+            );
+
+
+        if (!item) {
+
+            return res.redirect(
+                "/carts"
+            );
+        }
+
+
+        /*
+         * Get available substations for pickup.
+         *
+         * This expects cartService to expose the substation
+         * retrieval method. If your project already retrieves
+         * substations through another service, use that service
+         * here instead.
+         */
+
+        const substations =
+            await cartService.getSubstations();
+
+
+        /*
+         * User's previously selected pickup station.
+         */
+
+        const pickupStation =
+            req.user &&
+            req.user.pickupStation
+                ? req.user.pickupStation
+                : null;
+
+
+        return res.render(
+            "cart/cart-checkout",
+            {
+                title:
+                    `Checkout | ${item.name} | Verrah Cosmetics`,
+
+                cart,
+
+                item,
+
+                total:
+                    cartService.calculateTotal(
+                        cart
+                    ),
+
+                substations:
+                    substations || [],
+
+                pickupStation,
+
+                error:
+                    req.query.error || null,
+
+                user:
+                    req.user
+            }
+        );
+
+    } catch (err) {
+
+        console.error(
+            "Cart checkout page error:",
+            err
+        );
+
+
+        return res.redirect(
+            `/carts/${req.params.id}?error=${encodeURIComponent(
+                "Unable to open checkout."
+            )}`
+        );
+    }
+};
+
+
+
+// =========================================================
+// REMOVE CART ITEM
+// POST /carts/:id/remove
+// =========================================================
+
+exports.remove = async (req, res) => {
+
+    try {
+
+        await cartService.removeItem(
+            req,
+            req.params.id
+        );
+
+
+        return res.redirect(
+            "/carts"
+        );
+
+    } catch (err) {
+
+        console.error(
+            "Remove cart item error:",
+            err
+        );
+
+
+        const message =
+            getCartErrorMessage(
+                err,
+                "Unable to remove item."
+            );
+
+
+        return res.redirect(
+            `/carts/${req.params.id}?error=${encodeURIComponent(
+                message
+            )}`
+        );
+    }
+};
+
+
 // =========================================================
 // REMOVE CART ITEM
 // POST /carts/:id/remove
