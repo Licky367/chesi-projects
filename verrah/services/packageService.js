@@ -30,8 +30,7 @@ const Substation =
   require("../models/substations");
 
 const {
-  getUserId,
-  getSessionId
+  getUserId
 } = require("./shopContext");
 
 
@@ -159,6 +158,20 @@ function normalizeStatus(
 // =========================================================
 // CREATE PACKAGE FROM CART
 // =========================================================
+//
+// Cart identity:
+// ONLY { user: clientId }
+//
+// No sessionId.
+//
+// Inventory is NOT reduced here.
+// Inventory is reduced when the sale/delivery process
+// actually completes according to the application's
+// inventory workflow.
+//
+// After the package is successfully created, the cart
+// is cleared.
+// =========================================================
 
 async function createPackageFromCart(
   req,
@@ -167,18 +180,9 @@ async function createPackageFromCart(
   const clientId =
     getUserId(req);
 
-  const sessionId =
-    getSessionId(req);
-
   if (!clientId) {
     throw new Error(
       "Login is required."
-    );
-  }
-
-  if (!sessionId) {
-    throw new Error(
-      "Cart session is missing."
     );
   }
 
@@ -192,9 +196,12 @@ async function createPackageFromCart(
     await dbSession.withTransaction(
       async () => {
 
+        // -------------------------------------------------
+        // FIND USER CART
+        // -------------------------------------------------
+
         const cart =
           await Cart.findOne({
-            sessionId,
             user: clientId
           })
             .session(
@@ -203,6 +210,9 @@ async function createPackageFromCart(
 
         if (
           !cart ||
+          !Array.isArray(
+            cart.items
+          ) ||
           !cart.items.length
         ) {
           throw new Error(
@@ -210,14 +220,24 @@ async function createPackageFromCart(
           );
         }
 
+
+        // -------------------------------------------------
+        // GET PRODUCT IDS
+        // -------------------------------------------------
+
         const productIds =
           cart.items
             .map(
               (item) =>
-                item.product ||
-                item.productId
+                item.productId ||
+                item.product
             )
             .filter(Boolean);
+
+
+        // -------------------------------------------------
+        // GET PRODUCTS
+        // -------------------------------------------------
 
         const products =
           await Product.find({
@@ -229,6 +249,7 @@ async function createPackageFromCart(
               dbSession
             )
             .lean();
+
 
         const productMap =
           new Map(
@@ -242,22 +263,28 @@ async function createPackageFromCart(
             )
           );
 
+
+        // -------------------------------------------------
+        // BUILD PACKAGE ITEMS
+        // -------------------------------------------------
+
         const items =
           cart.items.map(
             (item) => {
 
+              const productId =
+                item.productId ||
+                item.product;
+
               const source =
                 productMap.get(
                   String(
-                    item.product ||
-                    item.productId
+                    productId
                   )
                 );
 
               return {
-                productId:
-                  item.product ||
-                  item.productId,
+                productId,
 
                 name:
                   item.name,
@@ -291,6 +318,50 @@ async function createPackageFromCart(
             }
           );
 
+
+        // -------------------------------------------------
+        // VALIDATE PACKAGE ITEMS
+        // -------------------------------------------------
+
+        for (
+          const item of items
+        ) {
+          if (
+            !item.productId
+          ) {
+            throw new Error(
+              `Product information is missing for ${item.name || "an item"}.`
+            );
+          }
+
+          if (
+            !Number.isInteger(
+              item.qty
+            ) ||
+            item.qty < 1
+          ) {
+            throw new Error(
+              `Invalid quantity for ${item.name}.`
+            );
+          }
+
+          if (
+            !Number.isFinite(
+              item.price
+            ) ||
+            item.price < 0
+          ) {
+            throw new Error(
+              `Invalid price for ${item.name}.`
+            );
+          }
+        }
+
+
+        // -------------------------------------------------
+        // CALCULATE TOTAL
+        // -------------------------------------------------
+
         const totalAmount =
           items.reduce(
             (
@@ -302,6 +373,11 @@ async function createPackageFromCart(
                 item.qty,
             0
           );
+
+
+        // -------------------------------------------------
+        // CREATE PACKAGE
+        // -------------------------------------------------
 
         [
           created
@@ -352,16 +428,21 @@ async function createPackageFromCart(
             }
           );
 
-        /*
-         * Product inventory was already handled by the
-         * cart/payment process.
-         *
-         * No inventory reduction is performed here.
-         */
+
+        // -------------------------------------------------
+        // CLEAR CART
+        //
+        // Package creation succeeded, so clear the
+        // user's cart.
+        // -------------------------------------------------
 
         await Cart.deleteOne(
           {
-            _id: cart._id
+            _id:
+              cart._id,
+
+            user:
+              clientId
           },
           {
             session:
@@ -383,6 +464,15 @@ async function createPackageFromCart(
 // =========================================================
 // CREATE PACKAGE FROM PAYMENT
 // =========================================================
+//
+// This is called after M-Pesa confirms a cart payment.
+//
+// The payment contains its own snapshot of cartItems.
+// After package creation, the user's cart is found ONLY
+// through payment.clientId.
+//
+// No sessionId.
+// =========================================================
 
 async function createPackageFromPayment(
   paymentId
@@ -397,6 +487,10 @@ async function createPackageFromPayment(
     await dbSession.withTransaction(
       async () => {
 
+        // -------------------------------------------------
+        // GET CONFIRMED PAYMENT
+        // -------------------------------------------------
+
         const payment =
           await Payment.findOne({
             _id: paymentId,
@@ -409,6 +503,11 @@ async function createPackageFromPayment(
         if (!payment) {
           return;
         }
+
+
+        // -------------------------------------------------
+        // PROTECT AGAINST DUPLICATE PACKAGE CREATION
+        // -------------------------------------------------
 
         const existing =
           await Package.findOne({
@@ -433,6 +532,11 @@ async function createPackageFromPayment(
           return;
         }
 
+
+        // -------------------------------------------------
+        // GET PRODUCT IDS FROM PAYMENT SNAPSHOT
+        // -------------------------------------------------
+
         const productIds =
           (
             payment.cartItems ||
@@ -444,6 +548,11 @@ async function createPackageFromPayment(
             )
             .filter(Boolean);
 
+
+        // -------------------------------------------------
+        // GET CURRENT PRODUCT INFORMATION
+        // -------------------------------------------------
+
         const products =
           await Product.find({
             _id: {
@@ -454,6 +563,7 @@ async function createPackageFromPayment(
               dbSession
             )
             .lean();
+
 
         const productMap =
           new Map(
@@ -467,8 +577,16 @@ async function createPackageFromPayment(
             )
           );
 
+
+        // -------------------------------------------------
+        // BUILD PACKAGE ITEMS
+        // -------------------------------------------------
+
         const items =
-          payment.cartItems.map(
+          (
+            payment.cartItems ||
+            []
+          ).map(
             (item) => {
 
               const source =
@@ -514,6 +632,49 @@ async function createPackageFromPayment(
             }
           );
 
+
+        // -------------------------------------------------
+        // VALIDATE PAYMENT ITEMS
+        // -------------------------------------------------
+
+        if (
+          !items.length
+        ) {
+          throw new Error(
+            "The confirmed payment contains no cart items."
+          );
+        }
+
+
+        for (
+          const item of items
+        ) {
+
+          if (
+            !item.productId
+          ) {
+            throw new Error(
+              `Product information is missing for ${item.name || "a paid item"}.`
+            );
+          }
+
+          if (
+            !Number.isInteger(
+              item.qty
+            ) ||
+            item.qty < 1
+          ) {
+            throw new Error(
+              `Invalid quantity for ${item.name}.`
+            );
+          }
+        }
+
+
+        // -------------------------------------------------
+        // CREATE PAID PACKAGE
+        // -------------------------------------------------
+
         [
           packageDoc
         ] =
@@ -526,7 +687,9 @@ async function createPackageFromPayment(
                 items,
 
                 totalAmount:
-                  payment.amount,
+                  Number(
+                    payment.amount || 0
+                  ),
 
                 paymentMethod:
                   "mpesa",
@@ -559,11 +722,16 @@ async function createPackageFromPayment(
             }
           );
 
+
+        // -------------------------------------------------
+        // FIND USER CART
+        //
+        // IMPORTANT:
+        // Cart identity is ONLY user.
+        // -------------------------------------------------
+
         const cart =
           await Cart.findOne({
-            sessionId:
-              payment.sessionId,
-
             user:
               payment.clientId
           })
@@ -575,16 +743,26 @@ async function createPackageFromPayment(
           return;
         }
 
+
+        // -------------------------------------------------
+        // REMOVE ONLY THE QUANTITIES THAT WERE PAID FOR
+        //
+        // This is safer than deleting the entire cart,
+        // because the customer could have added another
+        // item while the M-Pesa request was pending.
+        // -------------------------------------------------
+
         for (
           const paidItem of
-          payment.cartItems
+          payment.cartItems || []
         ) {
 
           const current =
             cart.items.find(
               (item) =>
                 String(
-                  item.productId
+                  item.productId ||
+                  item.product
                 ) ===
                 String(
                   paidItem.productId
@@ -595,10 +773,12 @@ async function createPackageFromPayment(
             continue;
           }
 
+
           current.qty -=
             Number(
               paidItem.qty || 0
             );
+
 
           if (
             current.qty <= 0
@@ -608,7 +788,8 @@ async function createPackageFromPayment(
               cart.items.filter(
                 (item) =>
                   String(
-                    item.productId
+                    item.productId ||
+                    item.product
                   ) !==
                   String(
                     paidItem.productId
@@ -616,6 +797,11 @@ async function createPackageFromPayment(
               );
           }
         }
+
+
+        // -------------------------------------------------
+        // SAVE REMAINING CART OR DELETE EMPTY CART
+        // -------------------------------------------------
 
         if (
           cart.items.length
@@ -630,7 +816,11 @@ async function createPackageFromPayment(
 
           await Cart.deleteOne(
             {
-              _id: cart._id
+              _id:
+                cart._id,
+
+              user:
+                payment.clientId
             },
             {
               session:
@@ -1275,9 +1465,6 @@ async function deliverPackage(
           // ===============================================
           // PRODUCT.UNITS
           // ===============================================
-          //
-          // Delivery MUST reduce Product.units.
-          // ===============================================
 
           const productUnits =
             Number(
@@ -1303,7 +1490,6 @@ async function deliverPackage(
               undefined &&
             product.substationUnits !==
               null;
-
 
           let substationUnits =
             null;
@@ -1426,7 +1612,6 @@ async function deliverPackage(
                 )
             );
 
-
           if (reduction) {
 
             reduction.unitsReduced =
@@ -1502,7 +1687,6 @@ async function deliverPackage(
 
         pkg.substationReductionRecorded =
           true;
-
 
         await pkg.save({
           session:
@@ -1868,131 +2052,31 @@ async function confirmPackagePayment(
 // =========================================================
 // RELEASE PAYMENT RESERVATION
 // =========================================================
+//
+// IMPORTANT:
+//
+// There is NO inventory reservation anymore.
+//
+// Starting an M-Pesa payment does not reduce Product.units.
+// Therefore, when payment fails/cancels:
+//
+// - Product.units are NOT restored.
+// - Cart is NOT changed.
+// - Cart remains available to the customer.
+//
+// This function remains exported because the existing
+// payment callback calls it for failed cart payments.
+// =========================================================
 
 async function releasePaymentReservation(
   payment
 ) {
-  const dbSession =
-    await mongoose.startSession();
+  // No inventory was reserved.
+  // Do not modify the cart.
+  // A failed/cancelled M-Pesa payment leaves the
+  // customer's cart exactly as it was.
 
-  try {
-
-    await dbSession.withTransaction(
-      async () => {
-
-        for (
-          const item of
-          payment.cartItems || []
-        ) {
-
-          await Product.findByIdAndUpdate(
-            item.productId,
-
-            {
-              $inc: {
-                units:
-                  Number(
-                    item.qty || 0
-                  )
-              }
-            },
-
-            {
-              session:
-                dbSession
-            }
-          );
-        }
-
-
-        const cart =
-          await Cart.findOne({
-            sessionId:
-              payment.sessionId,
-
-            user:
-              payment.clientId
-          })
-            .session(
-              dbSession
-            );
-
-        if (!cart) {
-          return;
-        }
-
-
-        for (
-          const failedItem of
-          payment.cartItems || []
-        ) {
-
-          const current =
-            cart.items.find(
-              (item) =>
-                String(
-                  item.productId
-                ) ===
-                String(
-                  failedItem.productId
-                )
-            );
-
-          if (!current) {
-            continue;
-          }
-
-          current.qty -=
-            Number(
-              failedItem.qty || 0
-            );
-
-          if (
-            current.qty <= 0
-          ) {
-
-            cart.items =
-              cart.items.filter(
-                (item) =>
-                  String(
-                    item.productId
-                  ) !==
-                  String(
-                    failedItem.productId
-                  )
-              );
-          }
-        }
-
-
-        if (
-          cart.items.length
-        ) {
-
-          await cart.save({
-            session:
-              dbSession
-          });
-
-        } else {
-
-          await Cart.deleteOne(
-            {
-              _id: cart._id
-            },
-            {
-              session:
-                dbSession
-            }
-          );
-        }
-      }
-    );
-
-  } finally {
-
-    await dbSession.endSession();
-  }
+  return;
 }
 
 
