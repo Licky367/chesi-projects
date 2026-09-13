@@ -1,603 +1,518 @@
-<!-- ==========================================================
-     verrah/views/cart/cart-checkout.ejs
-     VERRAH COSMETICS
-     CHECKOUT
-========================================================== -->
-
-<%
-    const productId =
-        String(
-            item?.product?._id ||
-            item?.product ||
-            item?.productId ||
-            ""
-        );
-
-    const quantity =
-        Number(
-            item?.quantity ||
-            item?.qty ||
-            0
-        );
-
-    const price =
-        Number(
-            item?.price ||
-            0
-        );
-
-    const itemTotal =
-        quantity * price;
-
-    const productName =
-        item?.name ||
-        item?.product?.name ||
-        "Product";
-
-    const image =
-        item?.image ||
-        item?.product?.image ||
-        "";
-%>
-
-
 <div class="cart-checkout-card">
 
-    <!-- ======================================================
-         HEADER
-    ======================================================= -->
+  <!-- =========================================================
+       CHECKOUT HEADER
+  ========================================================== -->
 
-    <div class="cart-checkout-heading">
+  <div class="cart-checkout-heading">
 
-        <div>
+    <div>
 
-            <span class="cart-section-kicker">
-                CHECKOUT
-            </span>
+      <span class="cart-section-kicker">
+        CHECKOUT
+      </span>
 
-            <h2>
-                Complete your order
-            </h2>
-
-        </div>
-
-        <i class="fas fa-bag-shopping"></i>
+      <h2>
+        Complete your order
+      </h2>
 
     </div>
 
+    <i class="fas fa-bag-shopping"></i>
 
-    <!-- ======================================================
-         ERROR
-    ======================================================= -->
+  </div>
 
-    <% if (error) { %>
 
-        <div class="checkout-error">
+  <!-- =========================================================
+       ERROR MESSAGE
+  ========================================================== -->
+
+  <% if (error) { %>
+
+    <div class="checkout-error">
+
+      <i class="fas fa-circle-exclamation"></i>
+
+      <span>
+        <%= error %>
+      </span>
+
+    </div>
+
+  <% } %>
+
+
+  <!-- =========================================================
+       CART TOTAL
+  ========================================================== -->
+
+  <div class="cart-total-line">
+
+    <span>
+      Cart total
+    </span>
+
+    <strong>
+      KSh <%= Number(total || 0).toLocaleString() %>
+    </strong>
+
+  </div>
+
+
+  <!-- =========================================================
+       CHECKOUT FORM
+  ========================================================== -->
+
+  <form
+    action="/carts/checkout"
+    method="POST"
+    class="checkout-form"
+    id="checkoutForm"
+  >
+
+    <!-- =======================================================
+         PRODUCT ID
+         
+         Cart items use:
+         
+             item.product
+         
+         rather than:
+         
+             item.productId
+    ======================================================== -->
+
+    <input
+      type="hidden"
+      name="productId"
+      value="<%= item.product?._id || item.product || '' %>"
+    >
+
+
+    <!-- =======================================================
+         PICKUP SUBSTATION
+    ======================================================== -->
+
+    <fieldset
+      class="payment-methods checkout-substation-fieldset"
+    >
+
+      <legend>
+        Pickup substation
+      </legend>
+
+
+      <div class="checkout-substation-wrap">
+
+        <label
+          for="packageSubstation"
+          class="checkout-substation-label"
+        >
+
+          <i class="fas fa-location-dot"></i>
+
+          Select where you want to collect your package
+
+        </label>
+
+
+        <select
+          id="packageSubstation"
+          name="packageSubstation"
+          class="checkout-substation-select"
+          required
+        >
+
+          <option value="">
+            Select a substation
+          </option>
+
+
+          <% if (Array.isArray(substations) && substations.length > 0) { %>
+
+            <% substations.forEach(function (substation) { %>
+
+              <option
+                value="<%= substation._id %>"
+                <%= String(pickupStation || "") === String(substation._id)
+                  ? "selected"
+                  : "" %>
+              >
+
+                <%= substation.name %>
+
+                <% if (substation.location) { %>
+                  — <%= substation.location %>
+                <% } %>
+
+              </option>
+
+            <% }); %>
+
+          <% } %>
+
+        </select>
+
+
+        <% if (
+          Array.isArray(substations) &&
+          substations.length === 0
+        ) { %>
+
+          <small class="checkout-substation-empty">
 
             <i class="fas fa-circle-exclamation"></i>
 
-            <span>
-                <%= error %>
-            </span>
+            No pickup substations are currently available.
 
-        </div>
+          </small>
 
-    <% } %>
+        <% } %>
 
 
-    <!-- ======================================================
-         PRODUCT SUMMARY
-    ======================================================= -->
+        <% if (pickupStation) { %>
 
-    <div class="checkout-product-summary">
+          <small class="checkout-substation-default">
 
-        <div class="checkout-product-image">
+            <i class="fas fa-circle-check"></i>
 
-            <% if (image) { %>
+            Your previous pickup station is selected by default.
 
-                <img
-                    src="<%= image %>"
-                    alt="<%= productName %>"
-                >
+          </small>
 
-            <% } else { %>
+        <% } %>
 
-                <div class="checkout-product-placeholder">
-                    <i class="fas fa-box"></i>
-                </div>
+      </div>
 
-            <% } %>
-
-        </div>
+    </fieldset>
 
 
-        <div class="checkout-product-info">
 
-            <span>
-                Product
-            </span>
+    <!-- =======================================================
+         PAYMENT METHOD
+    ======================================================== -->
 
-            <h3>
-                <%= productName %>
-            </h3>
+    <fieldset class="payment-methods">
 
-            <p>
-                Quantity:
-                <strong>
-                    <%= quantity %>
-                </strong>
-            </p>
-
-            <p>
-                Unit price:
-                <strong>
-                    KSh
-                    <%= price.toLocaleString() %>
-                </strong>
-            </p>
-
-        </div>
+      <legend>
+        Payment method
+      </legend>
 
 
-        <div class="checkout-product-total">
+      <!-- =====================================================
+           M-PESA
+      ====================================================== -->
 
-            KSh
-            <%= itemTotal.toLocaleString() %>
-
-        </div>
-
-    </div>
-
-
-    <!-- ======================================================
-         CART TOTAL
-    ======================================================= -->
-
-    <div class="cart-total-line">
-
-        <span>
-            Cart total
-        </span>
-
-        <strong>
-            KSh
-            <%= Number(
-                total || 0
-            ).toLocaleString() %>
-        </strong>
-
-    </div>
-
-
-    <!-- ======================================================
-         CHECKOUT FORM
-    ======================================================= -->
-
-    <form
-        action="/carts/checkout"
-        method="POST"
-        class="checkout-form"
-        id="checkoutForm"
-    >
+      <label
+        class="payment-choice"
+        for="paymentMpesa"
+      >
 
         <input
-            type="hidden"
-            name="productId"
-            value="<%= productId %>"
+          type="radio"
+          name="paymentMethod"
+          id="paymentMpesa"
+          value="mpesa"
+          required
         >
 
 
-        <!-- ==================================================
-             PICKUP SUBSTATION
-        =================================================== -->
+        <span class="payment-choice-icon">
 
-        <fieldset
-            class="payment-methods checkout-substation-fieldset"
+          <i class="fas fa-mobile-screen-button"></i>
+
+        </span>
+
+
+        <span class="payment-choice-copy">
+
+          <strong>
+            Pay now with M-Pesa
+          </strong>
+
+          <small>
+            An STK Push will be sent to your phone.
+          </small>
+
+        </span>
+
+      </label>
+
+
+
+      <!-- =====================================================
+           M-PESA PHONE NUMBER
+      ====================================================== -->
+
+      <div
+        id="phoneField"
+        class="phone-field"
+      >
+
+        <label for="phoneNumber">
+
+          M-Pesa phone number
+
+        </label>
+
+
+        <input
+          type="tel"
+          name="phoneNumber"
+          id="phoneNumber"
+          placeholder="0712345678"
+          inputmode="numeric"
+          autocomplete="tel"
         >
 
-            <legend>
-                Pickup substation
-            </legend>
+      </div>
 
 
-            <div class="checkout-substation-wrap">
 
-                <label
-                    for="packageSubstation"
-                    class="checkout-substation-label"
-                >
-                    <i class="fas fa-location-dot"></i>
+      <!-- =====================================================
+           PAY ON DELIVERY
+      ====================================================== -->
 
-                    Select where you want to collect
-                    your package
-                </label>
+      <label
+        class="payment-choice"
+        for="paymentDelivery"
+      >
 
-
-                <select
-                    id="packageSubstation"
-                    name="packageSubstation"
-                    class="checkout-substation-select"
-                    required
-                >
-
-                    <option value="">
-                        Select a substation
-                    </option>
-
-
-                    <% if (
-                        Array.isArray(substations) &&
-                        substations.length
-                    ) { %>
-
-                        <% substations.forEach(
-                            function(substation)
-                        { %>
-
-                            <option
-                                value="<%= substation._id %>"
-                                <%= String(
-                                    pickupStation || ""
-                                ) === String(
-                                    substation._id
-                                )
-                                    ? "selected"
-                                    : ""
-                                %>
-                            >
-
-                                <%= substation.name %>
-
-                                <% if (
-                                    substation.location
-                                ) { %>
-
-                                    —
-                                    <%= substation.location %>
-
-                                <% } %>
-
-                            </option>
-
-                        <% }); %>
-
-                    <% } %>
-
-                </select>
-
-
-                <% if (
-                    !Array.isArray(substations) ||
-                    !substations.length
-                ) { %>
-
-                    <small class="checkout-substation-empty">
-
-                        <i class="fas fa-circle-exclamation"></i>
-
-                        No pickup substations are
-                        currently available.
-
-                    </small>
-
-                <% } %>
-
-
-                <% if (pickupStation) { %>
-
-                    <small class="checkout-substation-default">
-
-                        <i class="fas fa-circle-check"></i>
-
-                        Your previous pickup station
-                        is selected by default.
-
-                    </small>
-
-                <% } %>
-
-            </div>
-
-        </fieldset>
-
-
-        <!-- ==================================================
-             PAYMENT METHOD
-        =================================================== -->
-
-        <fieldset class="payment-methods">
-
-            <legend>
-                Payment method
-            </legend>
-
-
-            <!-- ==================================================
-                 M-PESA
-            =================================================== -->
-
-            <label
-                class="payment-choice"
-                for="paymentMpesa"
-            >
-
-                <input
-                    type="radio"
-                    name="paymentMethod"
-                    id="paymentMpesa"
-                    value="mpesa"
-                    required
-                >
-
-                <span class="payment-choice-icon">
-                    <i class="fas fa-mobile-screen-button"></i>
-                </span>
-
-                <span class="payment-choice-copy">
-
-                    <strong>
-                        Pay now with M-Pesa
-                    </strong>
-
-                    <small>
-                        An STK Push will be sent
-                        to your phone.
-                    </small>
-
-                </span>
-
-            </label>
-
-
-            <!-- ==================================================
-                 M-PESA PHONE
-            =================================================== -->
-
-            <div
-                id="phoneField"
-                class="phone-field"
-            >
-
-                <label
-                    for="phoneNumber"
-                >
-                    M-Pesa phone number
-                </label>
-
-                <input
-                    type="tel"
-                    id="phoneNumber"
-                    name="phoneNumber"
-                    inputmode="tel"
-                    autocomplete="tel"
-                    placeholder="0712345678"
-                >
-
-            </div>
-
-
-            <!-- ==================================================
-                 PAY ON DELIVERY
-            =================================================== -->
-
-            <label
-                class="payment-choice"
-                for="paymentDelivery"
-            >
-
-                <input
-                    type="radio"
-                    name="paymentMethod"
-                    id="paymentDelivery"
-                    value="pay_on_delivery"
-                >
-
-                <span class="payment-choice-icon">
-                    <i class="fas fa-truck"></i>
-                </span>
-
-                <span class="payment-choice-copy">
-
-                    <strong>
-                        Pay on delivery
-                    </strong>
-
-                    <small>
-                        Pay when your package is delivered.
-                    </small>
-
-                </span>
-
-            </label>
-
-        </fieldset>
-
-
-        <!-- ==================================================
-             SUBMIT
-        =================================================== -->
-
-        <button
-            type="submit"
-            class="primary-btn checkout-submit-btn"
+        <input
+          type="radio"
+          name="paymentMethod"
+          id="paymentDelivery"
+          value="pay_on_delivery"
         >
 
-            <i class="fas fa-check"></i>
 
-            Complete Checkout
+        <span class="payment-choice-icon">
 
-        </button>
+          <i class="fas fa-truck"></i>
+
+        </span>
 
 
-        <a
-            href="/carts"
-            class="secondary-btn checkout-back-btn"
-        >
+        <span class="payment-choice-copy">
 
-            <i class="fas fa-arrow-left"></i>
+          <strong>
+            Pay upon delivery
+          </strong>
 
-            Back to Cart
+          <small>
+            Your package will be created immediately.
+          </small>
 
-        </a>
+        </span>
 
-    </form>
+      </label>
+
+    </fieldset>
+
+
+
+    <!-- =======================================================
+         CONTINUE CHECKOUT
+    ======================================================== -->
+
+    <button
+      class="primary-btn cart-continue-btn"
+      type="submit"
+    >
+
+      <i class="fas fa-check-circle"></i>
+
+      Continue Checkout
+
+    </button>
+
+  </form>
 
 </div>
 
 
-<script>
 
+<!-- ===========================================================
+     CHECKOUT JAVASCRIPT
+============================================================ -->
+
+<script>
 (function () {
 
-    const mpesa =
-        document.getElementById(
-            "paymentMpesa"
+  const form =
+    document.getElementById("checkoutForm");
+
+  const phoneField =
+    document.getElementById("phoneField");
+
+  const phoneInput =
+    document.getElementById("phoneNumber");
+
+  const paymentRadios =
+    document.querySelectorAll(
+      'input[name="paymentMethod"]'
+    );
+
+
+  /*
+   * Stop safely if this partial is reused
+   * somewhere without the checkout elements.
+   */
+
+  if (
+    !form ||
+    !phoneField ||
+    !phoneInput ||
+    !paymentRadios.length
+  ) {
+    return;
+  }
+
+
+  /*
+   * Show M-Pesa phone field only when
+   * M-Pesa is selected.
+   */
+
+  function updatePhoneField() {
+
+    const selected =
+      document.querySelector(
+        'input[name="paymentMethod"]:checked'
+      );
+
+
+    const mpesaSelected =
+      selected &&
+      selected.value === "mpesa";
+
+
+    phoneField.classList.toggle(
+      "show",
+      !!mpesaSelected
+    );
+
+
+    phoneInput.required =
+      !!mpesaSelected;
+
+
+    /*
+     * Disable the phone input when it is
+     * not required so it is not submitted
+     * accidentally with another payment method.
+     */
+
+    phoneInput.disabled =
+      !mpesaSelected;
+
+
+    if (!mpesaSelected) {
+      phoneInput.value = "";
+    }
+
+  }
+
+
+  /*
+   * Listen for payment-method changes.
+   */
+
+  paymentRadios.forEach(
+    function (radio) {
+
+      radio.addEventListener(
+        "change",
+        updatePhoneField
+      );
+
+    }
+  );
+
+
+  /*
+   * Validate the checkout form before submission.
+   */
+
+  form.addEventListener(
+    "submit",
+    function (event) {
+
+      const selected =
+        document.querySelector(
+          'input[name="paymentMethod"]:checked'
         );
 
-    const delivery =
-        document.getElementById(
-            "paymentDelivery"
-        );
 
-    const phoneField =
-        document.getElementById(
-            "phoneField"
-        );
+      /*
+       * A pickup substation is mandatory.
+       */
 
-    const phone =
+      const substation =
         document.getElementById(
-            "phoneNumber"
-        );
-
-    const form =
-        document.getElementById(
-            "checkoutForm"
+          "packageSubstation"
         );
 
 
-    function updatePhoneField() {
+      if (
+        !substation ||
+        !substation.value
+      ) {
 
-        const isMpesa =
-            mpesa &&
-            mpesa.checked;
+        event.preventDefault();
 
-
-        if (!phoneField || !phone) {
-            return;
+        if (substation) {
+          substation.focus();
         }
 
-
-        phoneField.style.display =
-            isMpesa
-                ? ""
-                : "none";
+        return;
+      }
 
 
-        phone.required =
-            isMpesa;
+      /*
+       * A payment method is mandatory.
+       */
+
+      if (!selected) {
+
+        event.preventDefault();
+
+        return;
+      }
 
 
-        phone.disabled =
-            !isMpesa;
+      /*
+       * M-Pesa requires a phone number.
+       */
 
-    }
+      if (
+        selected.value === "mpesa"
+      ) {
 
-
-    if (mpesa) {
-        mpesa.addEventListener(
-            "change",
-            updatePhoneField
-        );
-    }
+        const phone =
+          phoneInput.value.trim();
 
 
-    if (delivery) {
-        delivery.addEventListener(
-            "change",
-            updatePhoneField
-        );
-    }
+        if (!phone) {
 
+          event.preventDefault();
 
-    if (form) {
+          phoneInput.focus();
 
-        form.addEventListener(
-            "submit",
-            function (event) {
+          return;
+        }
 
-                const method =
-                    document.querySelector(
-                        'input[name="paymentMethod"]:checked'
-                    );
-
-
-                const station =
-                    document.getElementById(
-                        "packageSubstation"
-                    );
-
-
-                if (
-                    !station ||
-                    !station.value
-                ) {
-                    event.preventDefault();
-
-                    alert(
-                        "Please select a pickup substation."
-                    );
-
-                    return;
-                }
-
-
-                if (
-                    !method
-                ) {
-                    event.preventDefault();
-
-                    alert(
-                        "Please select a payment method."
-                    );
-
-                    return;
-                }
-
-
-                if (
-                    method.value ===
-                    "mpesa"
-                ) {
-
-                    const value =
-                        String(
-                            phone?.value ||
-                            ""
-                        ).trim();
-
-
-                    if (!value) {
-                        event.preventDefault();
-
-                        alert(
-                            "Please enter your M-Pesa phone number."
-                        );
-
-                        phone?.focus();
-
-                        return;
-                    }
-
-                }
-
-            }
-        );
+      }
 
     }
+  );
 
 
-    updatePhoneField();
+  /*
+   * Set the correct initial state.
+   */
+
+  updatePhoneField();
 
 })();
-
 </script>
