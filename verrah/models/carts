@@ -1,61 +1,59 @@
 const mongoose = require("mongoose");
 
+
 /* ==========================================================
    CART ITEM
 ========================================================== */
 
 const cartItemSchema = new mongoose.Schema(
-  {
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
-    },
+    {
+        product: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true
+        },
 
-    quantity: {
-      type: Number,
-      required: true,
-      min: [1, "Quantity cannot be less than 1."],
-      default: 1,
-    },
+        productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true
+        },
 
-    price: {
-      type: Number,
-      required: true,
-      min: 0,
-      default: 0,
-    },
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
 
-    /*
-     * Legacy compatibility.
-     *
-     * Older cart documents and the package/payment system may
-     * still contain these fields. They are kept temporarily so
-     * existing carts do not break.
-     */
-    productId: {
-      type: String,
-      default: null,
-    },
+        image: {
+            type: String,
+            default: ""
+        },
 
-    qty: {
-      type: Number,
-      default: null,
-    },
+        price: {
+            type: Number,
+            required: true,
+            min: 0
+        },
 
-    name: {
-      type: String,
-      default: "",
+        /*
+         * CANONICAL CART QUANTITY
+         *
+         * This is the ONLY quantity field.
+         */
+        qty: {
+            type: Number,
+            required: true,
+            min: [
+                1,
+                "Quantity cannot be less than 1."
+            ],
+            default: 1
+        }
     },
-
-    image: {
-      type: String,
-      default: "",
-    },
-  },
-  {
-    _id: true,
-  }
+    {
+        _id: true
+    }
 );
 
 
@@ -64,111 +62,66 @@ const cartItemSchema = new mongoose.Schema(
 ========================================================== */
 
 const cartSchema = new mongoose.Schema(
-  {
-    /*
-     * Permanent cart identity for logged-in users.
-     *
-     * One user = one cart.
-     */
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
+    {
+        /*
+         * One logged-in user = one cart.
+         *
+         * Cart.user is the ONLY cart identity.
+         */
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            unique: true
+        },
 
-    /*
-     * Session identity is retained for guest carts and
-     * migration compatibility.
-     */
-    sessionId: {
-      type: String,
-      default: null,
-      index: true,
-    },
+        items: {
+            type: [cartItemSchema],
+            default: []
+        },
 
-    items: {
-      type: [cartItemSchema],
-      default: [],
+        totalPrice: {
+            type: Number,
+            required: true,
+            min: 0,
+            default: 0
+        }
     },
-
-    totalPrice: {
-      type: Number,
-      required: true,
-      default: 0,
-      min: 0,
-    },
-  },
-  {
-    timestamps: true,
-  }
+    {
+        timestamps: true
+    }
 );
 
 
 /* ==========================================================
-   INDEXES
-========================================================== */
-
-cartSchema.index(
-  { user: 1 },
-  {
-    unique: true,
-    sparse: true,
-  }
-);
-
-cartSchema.index({
-  sessionId: 1,
-});
-
-
-/* ==========================================================
-   NORMALIZE CART ITEMS BEFORE SAVE
+   CALCULATE CART TOTAL
 ========================================================== */
 
 cartSchema.pre("save", function (next) {
-  this.items.forEach((item) => {
-    /*
-     * Keep the canonical fields synchronized with the
-     * compatibility fields.
-     */
 
-    if (!item.product && item.productId) {
-      item.product = item.productId;
-    }
+    this.totalPrice =
+        this.items.reduce(
+            (total, item) => {
 
-    if (!item.productId && item.product) {
-      item.productId = String(item.product);
-    }
+                const price =
+                    Number(
+                        item.price || 0
+                    );
 
-    if (
-      (!Number.isInteger(item.quantity) ||
-        item.quantity < 1) &&
-      Number.isInteger(item.qty) &&
-      item.qty > 0
-    ) {
-      item.quantity = item.qty;
-    }
+                const qty =
+                    Number(
+                        item.qty || 0
+                    );
 
-    item.qty = item.quantity;
-  });
+                return (
+                    total +
+                    price * qty
+                );
+            },
+            0
+        );
 
-
-  /*
-   * Always calculate the total from the canonical quantity.
-   */
-
-  this.totalPrice = this.items.reduce(
-    (total, item) => {
-      return (
-        total +
-        Number(item.price || 0) *
-          Number(item.quantity || 0)
-      );
-    },
-    0
-  );
-
-  next();
+    next();
 });
 
 
@@ -176,9 +129,11 @@ cartSchema.pre("save", function (next) {
    MODEL
 ========================================================== */
 
-const Cart = mongoose.model(
-  "Cart",
-  cartSchema
-);
+const Cart =
+    mongoose.model(
+        "Cart",
+        cartSchema
+    );
+
 
 module.exports = Cart;
