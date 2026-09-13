@@ -199,7 +199,7 @@ exports.addToCart = async (req, res) => {
 
 
         return res.redirect(
-            `/products/${req.params.id}?added=1`
+            `/carts`
         );
 
     } catch (err) {
