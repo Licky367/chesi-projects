@@ -5,16 +5,10 @@
 
 module.exports = {
 
-    ...require("./page"),
+    ...require("./category"),
 
-    ...require("./filter"),
+    ...require("./branches"),
 
-    ...require("./summary"),
-
-    ...require("./staffSales"),
-
-    ...require("./products"),
-
-    ...require("./arrears")
+    ...require("./servicesService")
 
 };
