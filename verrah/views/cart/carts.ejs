@@ -27,6 +27,21 @@
             cart?.totalPrice ??
             0
         );
+
+    /*
+     * The cart itself belongs to the logged-in user.
+     * The first product ID is only used for the normal
+     * checkout route /carts/:id.
+     */
+    const checkoutProductId =
+        hasItems
+            ? String(
+                cartItems[0]?.product?._id ||
+                cartItems[0]?.product ||
+                cartItems[0]?.productId ||
+                ""
+            )
+            : "";
 %>
 
 
@@ -174,10 +189,15 @@
                                     ""
                                 );
 
+                            /*
+                             * qty is the canonical cart quantity.
+                             * quantity is kept only as a fallback for
+                             * older documents that may still contain it.
+                             */
                             const quantity =
                                 Number(
-                                    item.quantity ||
-                                    item.qty ||
+                                    item.qty ??
+                                    item.quantity ??
                                     0
                                 );
 
@@ -187,8 +207,7 @@
                                 );
 
                             const itemTotal =
-                                price *
-                                quantity;
+                                price * quantity;
 
                             const productName =
                                 item.name ||
@@ -225,7 +244,9 @@
                                     <% } else { %>
 
                                         <div class="cart-item-placeholder">
+
                                             <i class="fas fa-box"></i>
+
                                         </div>
 
                                     <% } %>
@@ -311,7 +332,9 @@
                                     class="cart-remove-btn"
                                     aria-label="Remove <%= productName %>"
                                 >
+
                                     <i class="fas fa-trash"></i>
+
                                 </button>
 
                             </form>
@@ -371,35 +394,371 @@
 
 
                 <!-- ==================================================
-                     CHECKOUT
+                     CHECKOUT ACTION
                 =================================================== -->
 
-                <a
-                    class="primary-btn cart-checkout-btn"
-                    href="/carts/<%= String(
-                        cartItems[0].product?._id ||
-                        cartItems[0].product ||
-                        cartItems[0].productId ||
-                        ""
-                    ) %>"
-                >
-                    <i class="fas fa-credit-card"></i>
-                    Checkout
-                </a>
+                <% if (isStaff) { %>
+
+                    <!--
+                        STAFF SALES
+
+                        Staff do NOT use the normal checkout page.
+
+                        Clicking this button opens the sales-name
+                        modal. The modal submits:
+
+                            POST /carts/staff-sale
+
+                        with:
+
+                            salesName
+                    -->
+
+                    <button
+                        type="button"
+                        class="primary-btn cart-checkout-btn staff-sale-trigger"
+                        id="openStaffSaleModal"
+                    >
+
+                        <i class="fas fa-cash-register"></i>
+
+                        Record Sale
+
+                    </button>
+
+
+                <% } else { %>
+
+                    <!--
+                        NORMAL USERS
+
+                        Normal checkout continues through:
+
+                            /carts/:productId
+                    -->
+
+                    <a
+                        class="primary-btn cart-checkout-btn"
+                        href="/carts/<%= checkoutProductId %>"
+                    >
+
+                        <i class="fas fa-credit-card"></i>
+
+                        Checkout
+
+                    </a>
+
+                <% } %>
 
 
                 <a
                     class="secondary-btn cart-continue-btn"
                     href="<%= staffBranchUrl %>"
                 >
+
                     <i class="fas fa-store"></i>
+
                     Continue Shopping
+
                 </a>
 
             </aside>
 
         </div>
 
+
     <% } %>
 
 </section>
+
+
+<!-- ==========================================================
+     STAFF SALE MODAL
+     
+     Only rendered for staff.
+
+     The modal collects the sales/customer name before the
+     staff-sale request is submitted.
+========================================================== -->
+
+<% if (isStaff && hasItems) { %>
+
+    <div
+        class="staff-sale-modal"
+        id="staffSaleModal"
+        aria-hidden="true"
+    >
+
+        <div
+            class="staff-sale-modal-overlay"
+            data-close-staff-sale-modal
+        ></div>
+
+
+        <div
+            class="staff-sale-modal-content"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="staffSaleModalTitle"
+        >
+
+            <!-- ==================================================
+                 MODAL HEADER
+            =================================================== -->
+
+            <div class="staff-sale-modal-header">
+
+                <div class="staff-sale-modal-icon">
+
+                    <i class="fas fa-user-tag"></i>
+
+                </div>
+
+
+                <div>
+
+                    <span class="staff-sale-modal-kicker">
+                        STAFF SALE
+                    </span>
+
+                    <h2 id="staffSaleModalTitle">
+                        Record Sale
+                    </h2>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="staff-sale-modal-close"
+                    data-close-staff-sale-modal
+                    aria-label="Close"
+                >
+
+                    <i class="fas fa-times"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- ==================================================
+                 MODAL BODY
+            =================================================== -->
+
+            <div class="staff-sale-modal-body">
+
+                <p class="staff-sale-modal-description">
+
+                    Enter the name of the customer for this sale.
+
+                </p>
+
+
+                <form
+                    action="/carts/staff-sale"
+                    method="POST"
+                    id="staffSaleForm"
+                    class="staff-sale-form"
+                >
+
+                    <div class="staff-sale-field">
+
+                        <label
+                            for="salesName"
+                        >
+                            Customer / Sales Name
+                        </label>
+
+
+                        <div class="staff-sale-input-wrap">
+
+                            <i class="fas fa-user"></i>
+
+                            <input
+                                type="text"
+                                id="salesName"
+                                name="salesName"
+                                maxlength="150"
+                                autocomplete="name"
+                                placeholder="Enter sales name"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="staff-sale-summary">
+
+                        <span>
+                            Sale total
+                        </span>
+
+                        <strong>
+                            KSh
+                            <%= cartTotal.toLocaleString() %>
+                        </strong>
+
+                    </div>
+
+
+                    <!-- ==================================================
+                         MODAL ACTIONS
+                    =================================================== -->
+
+                    <div class="staff-sale-modal-actions">
+
+                        <button
+                            type="button"
+                            class="secondary-btn staff-sale-cancel"
+                            data-close-staff-sale-modal
+                        >
+
+                            Cancel
+
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            class="primary-btn staff-sale-submit"
+                        >
+
+                            <i class="fas fa-check"></i>
+
+                            Complete Sale
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================================
+         STAFF SALE MODAL JAVASCRIPT
+    =========================================================== -->
+
+    <script>
+        (function () {
+
+            const modal =
+                document.getElementById(
+                    "staffSaleModal"
+                );
+
+            const openButton =
+                document.getElementById(
+                    "openStaffSaleModal"
+                );
+
+            const nameInput =
+                document.getElementById(
+                    "salesName"
+                );
+
+            if (!modal || !openButton) {
+                return;
+            }
+
+
+            const closeModal = function () {
+
+                modal.classList.remove(
+                    "is-open"
+                );
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+                document.body.classList.remove(
+                    "staff-sale-modal-open"
+                );
+
+            };
+
+
+            const openModal = function () {
+
+                modal.classList.add(
+                    "is-open"
+                );
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+                document.body.classList.add(
+                    "staff-sale-modal-open"
+                );
+
+
+                window.setTimeout(
+                    function () {
+
+                        if (nameInput) {
+                            nameInput.focus();
+                        }
+
+                    },
+                    100
+                );
+
+            };
+
+
+            openButton.addEventListener(
+                "click",
+                openModal
+            );
+
+
+            modal
+                .querySelectorAll(
+                    "[data-close-staff-sale-modal]"
+                )
+                .forEach(
+                    function (element) {
+
+                        element.addEventListener(
+                            "click",
+                            closeModal
+                        );
+
+                    }
+                );
+
+
+            document.addEventListener(
+                "keydown",
+                function (event) {
+
+                    if (
+                        event.key === "Escape" &&
+                        modal.classList.contains(
+                            "is-open"
+                        )
+                    ) {
+
+                        closeModal();
+
+                    }
+
+                }
+            );
+
+        })();
+    </script>
+
+<% } %>
