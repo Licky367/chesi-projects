@@ -7,16 +7,34 @@ const mongoose = require("mongoose");
 
 const cartItemSchema = new mongoose.Schema(
     {
+        /* --------------------------------------------------
+           PRODUCT
+        -------------------------------------------------- */
+
         product: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Product",
             required: true
         },
 
+
+        /* --------------------------------------------------
+           PRODUCT ID
+
+           Kept because the current cart/package/payment
+           services use item.productId.
+        -------------------------------------------------- */
+
         productId: {
-            type: String,
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
             required: true
         },
+
+
+        /* --------------------------------------------------
+           PRODUCT NAME
+        -------------------------------------------------- */
 
         name: {
             type: String,
@@ -24,21 +42,59 @@ const cartItemSchema = new mongoose.Schema(
             trim: true
         },
 
-        price: {
-            type: Number,
-            required: true,
-            min: 0
-        },
+
+        /* --------------------------------------------------
+           PRODUCT IMAGE
+        -------------------------------------------------- */
 
         image: {
             type: String,
             default: ""
         },
 
+
+        /* --------------------------------------------------
+           PRICE AT TIME OF ADDING TO CART
+        -------------------------------------------------- */
+
+        price: {
+            type: Number,
+            required: true,
+            min: 0
+        },
+
+
+        /* --------------------------------------------------
+           QUANTITY
+
+           qty is the field used by the current cart,
+           package and payment services.
+        -------------------------------------------------- */
+
         qty: {
             type: Number,
             required: true,
-            min: 1,
+            min: [
+                1,
+                "Quantity cannot be less than 1."
+            ],
+            default: 1
+        },
+
+
+        /* --------------------------------------------------
+           QUANTITY COMPATIBILITY FIELD
+
+           Kept so existing/new code that expects
+           item.quantity can still work.
+        -------------------------------------------------- */
+
+        quantity: {
+            type: Number,
+            min: [
+                1,
+                "Quantity cannot be less than 1."
+            ],
             default: 1
         }
     },
@@ -54,15 +110,12 @@ const cartItemSchema = new mongoose.Schema(
 
 const cartSchema = new mongoose.Schema(
     {
-        /*
-         * Logged-in user's permanent cart identity.
-         *
-         * The current cart service searches:
-         *
-         *     Cart.findOne({ user: userId })
-         *
-         * so this field must exist in the model.
-         */
+        /* --------------------------------------------------
+           LOGGED-IN USER
+
+           One user can have one cart.
+        -------------------------------------------------- */
+
         user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
@@ -70,10 +123,21 @@ const cartSchema = new mongoose.Schema(
         },
 
 
-        /*
-         * Session identity used by the current cart service
-         * for guest carts and legacy/session fallback.
-         */
+        /* --------------------------------------------------
+           SESSION ID
+
+           Used for identifying the cart during the current
+           browser/session.
+
+           IMPORTANT:
+           index: true is used here.
+
+           Do NOT also call:
+           cartSchema.index({ sessionId: 1 })
+
+           because that creates a duplicate index warning.
+        -------------------------------------------------- */
+
         sessionId: {
             type: String,
             default: null,
@@ -81,23 +145,25 @@ const cartSchema = new mongoose.Schema(
         },
 
 
-        /*
-         * Products currently inside the cart.
-         */
+        /* --------------------------------------------------
+           CART ITEMS
+        -------------------------------------------------- */
+
         items: {
             type: [cartItemSchema],
             default: []
         },
 
 
-        /*
-         * Calculated cart total.
-         */
+        /* --------------------------------------------------
+           TOTAL CART VALUE
+        -------------------------------------------------- */
+
         totalPrice: {
             type: Number,
             required: true,
-            default: 0,
-            min: 0
+            min: 0,
+            default: 0
         }
     },
     {
@@ -111,12 +177,16 @@ const cartSchema = new mongoose.Schema(
 ========================================================== */
 
 /*
- * A logged-in user should have only one persistent cart.
+ * A logged-in user can have only one cart.
  *
- * sparse allows guest carts where user is null.
+ * sparse: true is important because guest carts have
+ * user = null and should not violate the unique index.
  */
+
 cartSchema.index(
-    { user: 1 },
+    {
+        user: 1
+    },
     {
         unique: true,
         sparse: true
@@ -125,21 +195,40 @@ cartSchema.index(
 
 
 /* ==========================================================
-   CALCULATE CART TOTAL
+   CALCULATE TOTAL BEFORE SAVE
 ========================================================== */
 
 cartSchema.pre("save", function (next) {
+
     this.totalPrice =
         this.items.reduce(
             (total, item) => {
+
+                const price =
+                    Number(
+                        item.price || 0
+                    );
+
+                /*
+                 * Current services use qty.
+                 * quantity is retained for compatibility.
+                 */
+
+                const quantity =
+                    Number(
+                        item.qty ||
+                        item.quantity ||
+                        0
+                    );
+
                 return (
                     total +
-                    Number(item.price || 0) *
-                    Number(item.qty || 0)
+                    price * quantity
                 );
             },
             0
         );
+
 
     next();
 });
@@ -149,10 +238,15 @@ cartSchema.pre("save", function (next) {
    MODEL
 ========================================================== */
 
-const Cart = mongoose.model(
-    "Cart",
-    cartSchema
-);
+const Cart =
+    mongoose.model(
+        "Cart",
+        cartSchema
+    );
 
+
+/* ==========================================================
+   EXPORT
+========================================================== */
 
 module.exports = Cart;
