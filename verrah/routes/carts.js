@@ -1,5 +1,6 @@
 // =========================================================
 // verrah/routes/carts.js
+//
 // CART ROUTES
 // =========================================================
 
@@ -13,6 +14,8 @@ const controller =
 const requireLogin =
     require("../middleware/requireLogin");
 
+const checkoutSubstation =
+    require("../middleware/checkoutSubstation");
 
 // =========================================================
 // CART LIST
@@ -25,26 +28,25 @@ router.get(
     controller.list
 );
 
-
 // =========================================================
 // CHECKOUT
 // POST /carts/checkout
 //
-// NORMAL ADMIN / CLIENT CHECKOUT
+// The customer must select a pickup substation first.
+// The selection is saved to User.pickupStation before
+// either payment path is executed.
 // =========================================================
 
 router.post(
     "/checkout",
     requireLogin,
+    checkoutSubstation.saveSelection,
     controller.checkout
 );
-
 
 // =========================================================
 // STAFF SALE
 // POST /carts/staff-sale
-//
-// STAFF ONLY
 // =========================================================
 
 router.post(
@@ -52,7 +54,6 @@ router.post(
     requireLogin,
     controller.staffSale
 );
-
 
 // =========================================================
 // PAYMENT PAGE
@@ -65,7 +66,6 @@ router.get(
     controller.paymentPage
 );
 
-
 // =========================================================
 // PAYMENT STATUS
 // GET /carts/payment/:id/status
@@ -76,7 +76,6 @@ router.get(
     requireLogin,
     controller.paymentStatus
 );
-
 
 // =========================================================
 // REMOVE CART ITEM
@@ -89,21 +88,16 @@ router.post(
     controller.remove
 );
 
-
 // =========================================================
-// CART DETAILS
+// CART DETAILS / CHECKOUT
 // GET /carts/:id
 // =========================================================
 
 router.get(
     "/:id",
     requireLogin,
+    checkoutSubstation.load,
     controller.details
 );
-
-
-// =========================================================
-// EXPORT
-// =========================================================
 
 module.exports = router;
