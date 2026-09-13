@@ -1,0 +1,267 @@
+<!-- ==========================================================
+     VERRAH COSMETICS
+     STAFF SALES
+========================================================== -->
+
+<section class="sales-page">
+
+    <!-- ======================================================
+         PAGE HEADER
+    ======================================================= -->
+
+    <div class="sales-header">
+
+        <h1>Staff Sales</h1>
+
+        <p>
+            View sales recorded by staff members.
+        </p>
+
+    </div>
+
+
+    <!-- ======================================================
+         SALES CONTENT
+    ======================================================= -->
+
+    <div class="sales-content">
+
+        <section class="sales-panel">
+
+            <div class="sales-section">
+
+                <!-- ==================================================
+                     SECTION HEADING
+                =================================================== -->
+
+                <div class="sales-section-heading">
+
+                    <div>
+
+                        <h2>
+                            Staff Sales
+                        </h2>
+
+                        <p>
+                            Sales recorded through staff checkout.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==================================================
+                     SALES TABLE
+                =================================================== -->
+
+                <% if (staffSales && staffSales.length > 0) { %>
+
+                    <div class="sales-table-wrapper">
+
+                        <table class="sales-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Staff
+                                    </th>
+
+                                    <th>
+                                        Items
+                                    </th>
+
+                                    <th>
+                                        Total Amount
+                                    </th>
+
+                                    <th>
+                                        Date
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                                <% staffSales.forEach(function(sale) { %>
+
+                                    <tr>
+
+                                        <!-- =================================
+                                             STAFF WHO MADE THE SALE
+                                        ================================== -->
+
+                                        <td>
+
+                                            <strong>
+
+                                                <%= sale.soldBy
+                                                    ? (
+                                                        sale.soldBy.name ||
+                                                        sale.soldBy.fullName ||
+                                                        sale.soldBy.username ||
+                                                        "Unknown Staff"
+                                                    )
+                                                    : "Unknown Staff"
+                                                %>
+
+                                            </strong>
+
+                                        </td>
+
+
+                                        <!-- =================================
+                                             PRODUCTS SOLD
+                                        ================================== -->
+
+                                        <td>
+
+                                            <% if (
+                                                sale.products &&
+                                                sale.products.length
+                                            ) { %>
+
+                                                <div>
+
+                                                    <% sale.products.forEach(
+                                                        function(product, index)
+                                                    { %>
+
+                                                        <span>
+
+                                                            <%= product.name || "Product" %>
+
+                                                            ×
+
+                                                            <%= product.qty || 0 %>
+
+                                                        </span>
+
+
+                                                        <% if (
+                                                            index <
+                                                            sale.products.length - 1
+                                                        ) { %>
+
+                                                            <span>, </span>
+
+                                                        <% } %>
+
+                                                    <% }); %>
+
+                                                </div>
+
+                                            <% } else { %>
+
+                                                <span class="sales-muted">
+                                                    No products
+                                                </span>
+
+                                            <% } %>
+
+                                        </td>
+
+
+                                        <!-- =================================
+                                             TOTAL AMOUNT
+                                        ================================== -->
+
+                                        <td>
+
+                                            <strong class="sales-arrears-value">
+
+                                                KSh
+                                                <%= Number(
+                                                    sale.totalAmount || 0
+                                                ).toLocaleString("en-KE") %>
+
+                                            </strong>
+
+                                        </td>
+
+
+                                        <!-- =================================
+                                             SALE DATE
+                                        ================================== -->
+
+                                        <td>
+
+                                            <% if (sale.createdAt) { %>
+
+                                                <%= new Date(
+                                                    sale.createdAt
+                                                ).toLocaleDateString(
+                                                    "en-KE",
+                                                    {
+                                                        day: "2-digit",
+                                                        month: "short",
+                                                        year: "numeric"
+                                                    }
+                                                ) %>
+
+                                            <% } else { %>
+
+                                                <span class="sales-muted">
+                                                    —
+                                                </span>
+
+                                            <% } %>
+
+                                        </td>
+
+                                    </tr>
+
+                                <% }); %>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                <% } else { %>
+
+
+                    <!-- ==================================================
+                         EMPTY STATE
+                    =================================================== -->
+
+                    <div class="sales-table-wrapper">
+
+                        <table class="sales-table">
+
+                            <tbody>
+
+                                <tr>
+
+                                    <td
+                                        colspan="4"
+                                        class="sales-empty"
+                                    >
+
+                                        No staff sales have been recorded yet.
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                <% } %>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</section>
