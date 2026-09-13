@@ -124,6 +124,21 @@
 
         </section>
 
+        <!-- ==================================================
+             SALES REPORT
+        =================================================== -->
+
+        <section
+            class="sales-panel <%= activeTab === 'staff-sales' ? 'active' : '' %>"
+            <%= activeTab === 'staff-sales' ? '' : 'hidden' %>
+        >
+
+            <%- include("sales-partials/staff-sales") %>
+
+        </section>
+
+
+
 
         <!-- ==================================================
              PRODUCT ANALYTICS
