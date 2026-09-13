@@ -461,6 +461,17 @@ async function getSummary(
 
     // ======================================================
     // LOAD STAFF SALES
+    //
+    // IMPORTANT:
+    //
+    // Staff sales are filtered using the SAME date range
+    // supplied to this summary.
+    //
+    // Therefore:
+    //
+    // summaryDate + summaryPeriod
+    //
+    // directly control which StaffSale documents appear.
     // ======================================================
 
     const staffSales =
@@ -477,6 +488,21 @@ async function getSummary(
             }
 
         })
+            .populate({
+
+                path:
+                    "soldBy",
+
+                select:
+                    "name"
+
+            })
+            .sort({
+
+                createdAt:
+                    -1
+
+            })
             .lean();
 
 
@@ -598,17 +624,13 @@ async function getSummary(
     // ======================================================
     // PROCESS STAFF SALES
     //
-    // Revenue comes from:
-    //
+    // Revenue:
     //     StaffSale.totalAmount
     //
-    // Cost DOES NOT come from:
+    // Cost:
+    //     Product.buyPrice × StaffSale.products[].qty
     //
-    //     StaffSale.products[].price
-    //
-    // because price is the SELLING PRICE.
-    //
-    // The actual cost is retrieved from Product.buyPrice.
+    // StaffSale.products[].price is NEVER used as cost.
     // ======================================================
 
     for (
@@ -658,8 +680,6 @@ async function getSummary(
 
     // ======================================================
     // LOAD PRODUCT BUYING PRICES
-    //
-    // Product.buyPrice is the cost of acquiring the product.
     // ======================================================
 
     const productMap =
@@ -754,20 +774,6 @@ async function getSummary(
 
     // ======================================================
     // CALCULATE STAFF SALES BUYING COST
-    //
-    // IMPORTANT:
-    //
-    // StaffSale.products[].price
-    // = SELLING PRICE
-    //
-    // Product.buyPrice
-    // = BUYING/COST PRICE
-    //
-    // Therefore:
-    //
-    // Staff Sales Cost
-    // =
-    // Σ(Product.buyPrice × StaffSale.products[].qty)
     // ======================================================
 
     for (
@@ -818,12 +824,6 @@ async function getSummary(
 
     // ======================================================
     // STAFF SALES PROFIT
-    //
-    // CORRECT:
-    //
-    // StaffSales revenue
-    // -
-    // Product buying cost
     // ======================================================
 
     const staffSalesProfit =
@@ -1315,14 +1315,9 @@ async function getSalesPageData(
             : "summary";
 
 
-    /*
-     * IMPORTANT:
-     *
-     * Every tab gets its OWN filter state.
-     *
-     * We deliberately do NOT reuse one date/period
-     * across all three tabs.
-     */
+    // ======================================================
+    // EACH TAB HAS ITS OWN FILTER
+    // ======================================================
 
     const summaryFilter =
         getFilterState(
@@ -1344,6 +1339,10 @@ async function getSalesPageData(
             "arrears"
         );
 
+
+    // ======================================================
+    // LOAD ALL THREE TAB DATA
+    // ======================================================
 
     const [
 
@@ -1536,9 +1535,12 @@ async function getSalesPageData(
 
 
         // --------------------------------------------------
-        // STAFF SALES DOCUMENTS
+        // FILTERED STAFF SALES
         //
-        // Full StaffSale documents are passed to the view.
+        // These StaffSale documents are already filtered
+        // by summaryDate + summaryPeriod.
+        //
+        // soldBy is populated with the staff member's name.
         // --------------------------------------------------
 
         staffSales:
