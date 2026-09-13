@@ -1,235 +1,396 @@
-const Package = require("../models/package");
-const StaffSale = require("../models/staff-sales");
-const Product = require("../models/products");
+// ==========================================================
+// verrah/services/salesService.js
+//
+// VERRAH COSMETICS
+// SALES / ANALYTICS SERVICE
+//
+// TABS:
+//   1. summary
+//   2. staff-sales
+//   3. products
+//   4. arrears
+//
+// EACH TAB HAS ITS OWN DATE + PERIOD FILTER.
+//
+// Default:
+//   Current Nairobi date + month
+//
+// IMPORTANT:
+// Existing EJS partials expect top-level variables such as:
+//   totalRevenue
+//   packageRevenue
+//   staffSalesRevenue
+//   profit
+//   packageProfit
+//   staffSalesProfit
+//   customerArrears
+//   staffSales
+//   productAnalytics
+//   arrearsPackages
+//   filterLabel
+//   activeFilterDate
+//   activeFilterPeriod
+//
+// ==========================================================
 
 
-/* ==========================================================
-   SALES SERVICE
-   VERRAH COSMETICS
+const Package =
+    require("../models/package");
 
-   TABS
-   1. summary
-   2. staff-sales
-   3. products
-   4. arrears
+const StaffSale =
+    require("../models/staff-sales");
 
-   EACH TAB HAS ITS OWN:
-   - date
-   - period
+const Product =
+    require("../models/products");
 
-   The filter partial receives:
-   - activeFilterDate
-   - activeFilterPeriod
-   - activeFilter
-========================================================== */
+const Stock =
+    require("../models/stock");
+
+const User =
+    require("../models/user");
 
 
-/* ==========================================================
-   TIME ZONE
-========================================================== */
-
-const TIME_ZONE = "Africa/Nairobi";
+const TIME_ZONE =
+    "Africa/Nairobi";
 
 
-/* ==========================================================
-   TAB CONFIGURATION
-========================================================== */
+// ==========================================================
+// TAB CONFIGURATION
+// ==========================================================
 
 const TAB_CONFIG = {
 
     summary: {
-        dateKey: "summaryDate",
-        periodKey: "summaryPeriod"
+
+        dateKey:
+            "summaryDate",
+
+        periodKey:
+            "summaryPeriod"
+
     },
+
 
     "staff-sales": {
-        dateKey: "staffSalesDate",
-        periodKey: "staffSalesPeriod"
+
+        dateKey:
+            "staffSalesDate",
+
+        periodKey:
+            "staffSalesPeriod"
+
     },
+
 
     products: {
-        dateKey: "productsDate",
-        periodKey: "productsPeriod"
+
+        dateKey:
+            "productsDate",
+
+        periodKey:
+            "productsPeriod"
+
     },
 
+
     arrears: {
-        dateKey: "arrearsDate",
-        periodKey: "arrearsPeriod"
+
+        dateKey:
+            "arrearsDate",
+
+        periodKey:
+            "arrearsPeriod"
+
     }
 
 };
 
 
-/* ==========================================================
-   CURRENT NAIROBI DATE
-========================================================== */
+// ==========================================================
+// CURRENT DATE IN KENYA
+// ==========================================================
 
 function getCurrentNairobiDate() {
 
-    const formatter = new Intl.DateTimeFormat("en-CA", {
-        timeZone: TIME_ZONE,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-    });
+    return new Intl.DateTimeFormat(
+        "en-CA",
+        {
+            timeZone:
+                TIME_ZONE,
 
-    return formatter.format(new Date());
+            year:
+                "numeric",
+
+            month:
+                "2-digit",
+
+            day:
+                "2-digit"
+        }
+    ).format(new Date());
 
 }
 
 
-/* ==========================================================
-   VALIDATE DATE
-========================================================== */
+// ==========================================================
+// DATE VALIDATION
+// ==========================================================
 
 function isValidDateString(value) {
 
-    if (typeof value !== "string") {
-        return false;
-    }
-
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return false;
-    }
-
-    const date = new Date(`${value}T00:00:00Z`);
-
     return (
-        !Number.isNaN(date.getTime()) &&
-        date.toISOString().slice(0, 10) === value
+
+        typeof value === "string" &&
+
+        /^\d{4}-\d{2}-\d{2}$/.test(
+            value
+        ) &&
+
+        !Number.isNaN(
+            Date.parse(
+                `${value}T00:00:00+03:00`
+            )
+        )
+
     );
 
 }
 
 
-/* ==========================================================
-   NORMALIZE PERIOD
-========================================================== */
+// ==========================================================
+// PERIOD NORMALIZATION
+// ==========================================================
 
-function normalizePeriod(period) {
+function normalizePeriod(value) {
 
-    const allowedPeriods = [
+    return [
+
         "day",
-        "week",
-        "month",
-        "year"
-    ];
 
-    return allowedPeriods.includes(period)
-        ? period
+        "month",
+
+        "year"
+
+    ].includes(value)
+
+        ? value
+
         : "month";
 
 }
 
 
-/* ==========================================================
-   NORMALIZE DATE
-========================================================== */
+// ==========================================================
+// DATE NORMALIZATION
+// ==========================================================
 
-function normalizeDate(date) {
+function normalizeDate(value) {
 
-    if (isValidDateString(date)) {
-        return date;
-    }
+    return isValidDateString(value)
 
-    return getCurrentNairobiDate();
+        ? value
+
+        : getCurrentNairobiDate();
 
 }
 
 
-/* ==========================================================
-   KENYA DATE -> UTC
-========================================================== */
+// ==========================================================
+// CONVERT KENYA LOCAL DATE TO UTC
+// ==========================================================
 
-function kenyaDateToUtc(dateString) {
+function kenyaDateToUtc(
+    dateString,
+    endOfDay = false
+) {
 
     return new Date(
-        `${dateString}T00:00:00+03:00`
+
+        `${dateString}T${
+            endOfDay
+                ? "23:59:59.999"
+                : "00:00:00.000"
+        }+03:00`
+
     );
 
 }
 
 
-/* ==========================================================
-   GET DATE RANGE
-========================================================== */
+// ==========================================================
+// DATE RANGE
+// ==========================================================
 
-function getDateRange(dateString, period) {
+function getDateRange(
+    dateString,
+    period
+) {
 
-    const date = normalizeDate(dateString);
-
-    const normalizedPeriod =
-        normalizePeriod(period);
-
-    const start =
-        kenyaDateToUtc(date);
-
-    let end;
-
-
-    if (normalizedPeriod === "day") {
-
-        end = new Date(start);
-
-        end.setUTCDate(
-            end.getUTCDate() + 1
+    const date =
+        normalizeDate(
+            dateString
         );
+
+
+    const mode =
+        normalizePeriod(
+            period
+        );
+
+
+    const [
+        year,
+        month,
+        day
+    ] =
+        date
+            .split("-")
+            .map(Number);
+
+
+    let startDate;
+
+    let endDate;
+
+
+    // ------------------------------------------------------
+    // DAY
+    // ------------------------------------------------------
+
+    if (mode === "day") {
+
+        startDate =
+            kenyaDateToUtc(
+                date
+            );
+
+
+        const nextDay =
+            new Date(
+                Date.UTC(
+                    year,
+                    month - 1,
+                    day + 1
+                )
+            );
+
+
+        const nextDate =
+            nextDay
+                .toISOString()
+                .slice(0, 10);
+
+
+        endDate =
+            kenyaDateToUtc(
+                nextDate
+            );
 
     }
 
 
-    else if (normalizedPeriod === "week") {
+    // ------------------------------------------------------
+    // MONTH
+    // ------------------------------------------------------
 
-        end = new Date(start);
+    else if (mode === "month") {
 
-        end.setUTCDate(
-            end.getUTCDate() + 7
-        );
+        const monthStart =
+            `${year}-${String(month).padStart(2, "0")}-01`;
+
+
+        let nextYear =
+            year;
+
+
+        let nextMonth =
+            month + 1;
+
+
+        if (nextMonth === 13) {
+
+            nextMonth =
+                1;
+
+            nextYear +=
+                1;
+
+        }
+
+
+        const nextMonthStart =
+            `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+
+
+        startDate =
+            kenyaDateToUtc(
+                monthStart
+            );
+
+
+        endDate =
+            kenyaDateToUtc(
+                nextMonthStart
+            );
 
     }
 
 
-    else if (normalizedPeriod === "year") {
-
-        end = new Date(start);
-
-        end.setUTCFullYear(
-            end.getUTCFullYear() + 1
-        );
-
-    }
-
+    // ------------------------------------------------------
+    // YEAR
+    // ------------------------------------------------------
 
     else {
 
-        // month
+        const yearStart =
+            `${year}-01-01`;
 
-        end = new Date(start);
 
-        end.setUTCMonth(
-            end.getUTCMonth() + 1
-        );
+        const nextYearStart =
+            `${year + 1}-01-01`;
+
+
+        startDate =
+            kenyaDateToUtc(
+                yearStart
+            );
+
+
+        endDate =
+            kenyaDateToUtc(
+                nextYearStart
+            );
 
     }
 
 
     return {
-        startDate: start,
-        endDate: end
+
+        startDate,
+
+        endDate,
+
+        date,
+
+        period:
+            mode
+
     };
 
 }
 
 
-/* ==========================================================
-   GET FILTER STATE
-========================================================== */
+// ==========================================================
+// FILTER STATE
+// ==========================================================
 
-function getFilterState(query = {}, tab) {
+function getFilterState(
+    query = {},
+    tab
+) {
 
     const config =
-        TAB_CONFIG[tab] ||
-        TAB_CONFIG.summary;
+        TAB_CONFIG[tab];
 
 
     const date =
@@ -253,296 +414,221 @@ function getFilterState(query = {}, tab) {
 
     return {
 
-        tab,
+        date:
+            range.date,
 
-        date,
+        period:
+            range.period,
 
-        period,
+        startDate:
+            range.startDate,
 
-        dateKey: config.dateKey,
-
-        periodKey: config.periodKey,
-
-        startDate: range.startDate,
-
-        endDate: range.endDate
+        endDate:
+            range.endDate
 
     };
 
 }
 
 
-/* ==========================================================
-   FILTER LABEL
-========================================================== */
+// ==========================================================
+// FILTER LABEL
+// ==========================================================
 
-function getFilterLabel(filter) {
+function getFilterLabel(
+    filter
+) {
 
-    if (!filter) {
-        return "";
-    }
+    const periodName = {
 
+        day:
+            "Day",
 
-    if (filter.period === "day") {
+        month:
+            "Month",
 
-        return `Day: ${filter.date}`;
+        year:
+            "Year"
 
-    }
-
-
-    if (filter.period === "week") {
-
-        return `Week starting: ${filter.date}`;
-
-    }
+    }[filter.period];
 
 
-    if (filter.period === "year") {
-
-        return `Year starting: ${filter.date}`;
-
-    }
-
-
-    return `Month: ${filter.date}`;
+    return `${periodName}: ${filter.date}`;
 
 }
 
 
-/* ==========================================================
-   SAFE NUMBER
-========================================================== */
+// ==========================================================
+// SUMMARY
+// ==========================================================
 
-function numberValue(value) {
+async function getSummary(
+    filter
+) {
 
-    const number = Number(value);
+    // ======================================================
+    // LOAD PACKAGES
+    // ======================================================
 
-    return Number.isFinite(number)
-        ? number
-        : 0;
+    const packages =
+        await Package.find({
 
-}
+            createdAt: {
 
+                $gte:
+                    filter.startDate,
 
-/* ==========================================================
-   PRODUCT MAP
-========================================================== */
+                $lt:
+                    filter.endDate
 
-async function getProductMap(productIds) {
-
-    if (
-        !Array.isArray(productIds) ||
-        productIds.length === 0
-    ) {
-        return new Map();
-    }
-
-
-    const uniqueIds = [
-        ...new Set(
-            productIds
-                .filter(Boolean)
-                .map(id => id.toString())
-        )
-    ];
-
-
-    if (uniqueIds.length === 0) {
-        return new Map();
-    }
-
-
-    const products =
-        await Product.find({
-            _id: {
-                $in: uniqueIds
             }
+
         })
-        .select(
-            "_id name buyPrice sellingPrice"
-        )
-        .lean();
+
+            .select(
+                "items totalAmount paidAmount status"
+            )
+
+            .lean();
 
 
-    return new Map(
-        products.map(product => [
-            product._id.toString(),
-            product
-        ])
-    );
+    // ======================================================
+    // LOAD STAFF SALES
+    //
+    // SUMMARY STAFF SALES USE SUMMARY FILTER.
+    // ======================================================
 
-}
-
-
-/* ==========================================================
-   GET STAFF SALES
-   ----------------------------------------------------------
-   ONLY USES THE STAFF-SALES FILTER.
-========================================================== */
-
-async function getStaffSales(filter) {
-
-    const sales =
+    const staffSales =
         await StaffSale.find({
 
             createdAt: {
-                $gte: filter.startDate,
-                $lt: filter.endDate
+
+                $gte:
+                    filter.startDate,
+
+                $lt:
+                    filter.endDate
+
             }
 
         })
 
-        .populate({
-            path: "soldBy",
-            select: "name"
-        })
+            .populate({
 
-        .sort({
-            createdAt: -1
-        })
+                path:
+                    "soldBy",
 
-        .lean();
+                select:
+                    "name"
 
+            })
 
-    return sales;
+            .sort({
 
-}
+                createdAt:
+                    -1
 
+            })
 
-/* ==========================================================
-   GET SUMMARY
-   ----------------------------------------------------------
-   ONLY USES THE SUMMARY FILTER.
-========================================================== */
-
-async function getSummary(filter) {
-
-    const packageFilter = {
-
-        createdAt: {
-            $gte: filter.startDate,
-            $lt: filter.endDate
-        }
-
-    };
+            .lean();
 
 
-    const staffSaleFilter = {
+    // ======================================================
+    // VARIABLES
+    // ======================================================
 
-        createdAt: {
-            $gte: filter.startDate,
-            $lt: filter.endDate
-        }
-
-    };
+    let packageRevenue =
+        0;
 
 
-    /* --------------------------------------------------------
-       PACKAGES
-    -------------------------------------------------------- */
-
-    const packages =
-        await Package.find(packageFilter)
-
-        .select(
-            "items totalAmount paidAmount status"
-        )
-
-        .lean();
+    let customerArrears =
+        0;
 
 
-    /* --------------------------------------------------------
-       STAFF SALES
-    -------------------------------------------------------- */
-
-    const staffSales =
-        await StaffSale.find(staffSaleFilter)
-
-        .populate({
-            path: "soldBy",
-            select: "name"
-        })
-
-        .sort({
-            createdAt: -1
-        })
-
-        .lean();
+    let packageBuyingCost =
+        0;
 
 
-    /* --------------------------------------------------------
-       PACKAGE REVENUE + ARREARS
-    -------------------------------------------------------- */
-
-    let packageRevenue = 0;
-
-    let customerArrears = 0;
+    let staffSalesRevenue =
+        0;
 
 
-    for (const packageItem of packages) {
+    let staffSalesBuyingCost =
+        0;
+
+
+    const productIds =
+        new Set();
+
+
+    // ======================================================
+    // PROCESS PACKAGES
+    // ======================================================
+
+    for (
+        const pkg
+        of packages
+    ) {
+
+        const paidAmount =
+            Number(
+                pkg.paidAmount || 0
+            );
+
+
+        const totalAmount =
+            Number(
+                pkg.totalAmount || 0
+            );
+
+
+        // --------------------------------------------------
+        // PACKAGE REVENUE
+        // --------------------------------------------------
 
         packageRevenue +=
-            numberValue(
-                packageItem.paidAmount
-            );
+            paidAmount;
 
+
+        // --------------------------------------------------
+        // CUSTOMER ARREARS
+        // --------------------------------------------------
 
         if (
-            String(
-                packageItem.status || ""
-            ).toLowerCase() === "delivered"
+            pkg.status ===
+            "delivered"
         ) {
 
-            const totalAmount =
-                numberValue(
-                    packageItem.totalAmount
+            customerArrears +=
+                Math.max(
+
+                    0,
+
+                    totalAmount -
+                    paidAmount
+
                 );
-
-
-            const paidAmount =
-                numberValue(
-                    packageItem.paidAmount
-                );
-
-
-            customerArrears += Math.max(
-                totalAmount - paidAmount,
-                0
-            );
 
         }
 
-    }
 
+        // --------------------------------------------------
+        // PACKAGE PRODUCT IDS
+        // --------------------------------------------------
 
-    /* --------------------------------------------------------
-       COLLECT PRODUCT IDS
-    -------------------------------------------------------- */
+        for (
+            const item
+            of pkg.items || []
+        ) {
 
-    const productIds = [];
+            if (
+                item.productId
+            ) {
 
-
-    for (const packageItem of packages) {
-
-        if (!Array.isArray(packageItem.items)) {
-            continue;
-        }
-
-
-        for (const item of packageItem.items) {
-
-            if (item.productId) {
-
-                productIds.push(
-                    item.productId
-                );
-
-            }
-
-            else if (item.product) {
-
-                productIds.push(
-                    item.product
+                productIds.add(
+                    String(
+                        item.productId
+                    )
                 );
 
             }
@@ -552,142 +638,43 @@ async function getSummary(filter) {
     }
 
 
-    for (const sale of staffSales) {
+    // ======================================================
+    // PROCESS STAFF SALES
+    // ======================================================
 
-        if (!Array.isArray(sale.products)) {
-            continue;
-        }
+    for (
+        const sale
+        of staffSales
+    ) {
 
-
-        for (const item of sale.products) {
-
-            if (item.productId) {
-
-                productIds.push(
-                    item.productId
-                );
-
-            }
-
-        }
-
-    }
-
-
-    /* --------------------------------------------------------
-       PRODUCT MAP
-    -------------------------------------------------------- */
-
-    const productMap =
-        await getProductMap(productIds);
-
-
-    /* --------------------------------------------------------
-       PACKAGE BUYING COST
-    -------------------------------------------------------- */
-
-    let packageBuyingCost = 0;
-
-
-    for (const packageItem of packages) {
-
-        if (!Array.isArray(packageItem.items)) {
-            continue;
-        }
-
-
-        for (const item of packageItem.items) {
-
-            const productId =
-                item.productId ||
-                item.product;
-
-
-            if (!productId) {
-                continue;
-            }
-
-
-            const product =
-                productMap.get(
-                    productId.toString()
-                );
-
-
-            const quantity =
-                numberValue(
-                    item.qty ??
-                    item.quantity ??
-                    item.units ??
-                    0
-                );
-
-
-            if (product) {
-
-                packageBuyingCost +=
-                    numberValue(
-                        product.buyPrice
-                    ) * quantity;
-
-            }
-
-        }
-
-    }
-
-
-    /* --------------------------------------------------------
-       STAFF SALES REVENUE + BUYING COST
-    -------------------------------------------------------- */
-
-    let staffSalesRevenue = 0;
-
-    let staffSalesBuyingCost = 0;
-
-
-    for (const sale of staffSales) {
+        // --------------------------------------------------
+        // REVENUE
+        // --------------------------------------------------
 
         staffSalesRevenue +=
-            numberValue(
-                sale.totalAmount
+            Number(
+                sale.totalAmount || 0
             );
 
 
-        if (!Array.isArray(sale.products)) {
-            continue;
-        }
+        // --------------------------------------------------
+        // PRODUCT IDS
+        // --------------------------------------------------
 
+        for (
+            const item
+            of sale.products || []
+        ) {
 
-        for (const item of sale.products) {
+            if (
+                item.productId
+            ) {
 
-            const productId =
-                item.productId;
-
-
-            if (!productId) {
-                continue;
-            }
-
-
-            const product =
-                productMap.get(
-                    productId.toString()
+                productIds.add(
+                    String(
+                        item.productId
+                    )
                 );
-
-
-            const quantity =
-                numberValue(
-                    item.qty
-                );
-
-
-            if (product) {
-
-                staffSalesBuyingCost +=
-                    numberValue(
-                        product.buyPrice
-                    ) * quantity;
 
             }
 
@@ -696,9 +683,154 @@ async function getSummary(filter) {
     }
 
 
-    /* --------------------------------------------------------
-       PROFITS
-    -------------------------------------------------------- */
+    // ======================================================
+    // LOAD BUYING PRICES
+    // ======================================================
+
+    const productMap =
+        new Map();
+
+
+    if (
+        productIds.size
+    ) {
+
+        const products =
+            await Product.find({
+
+                _id: {
+
+                    $in:
+                        Array.from(
+                            productIds
+                        )
+
+                }
+
+            })
+
+                .select(
+                    "_id buyPrice"
+                )
+
+                .lean();
+
+
+        for (
+            const product
+            of products
+        ) {
+
+            productMap.set(
+
+                String(
+                    product._id
+                ),
+
+                Number(
+                    product.buyPrice || 0
+                )
+
+            );
+
+        }
+
+    }
+
+
+    // ======================================================
+    // PACKAGE BUYING COST
+    // ======================================================
+
+    for (
+        const pkg
+        of packages
+    ) {
+
+        for (
+            const item
+            of pkg.items || []
+        ) {
+
+            if (
+                !item.productId
+            ) {
+
+                continue;
+
+            }
+
+
+            const buyPrice =
+                productMap.get(
+                    String(
+                        item.productId
+                    )
+                ) || 0;
+
+
+            const qty =
+                Number(
+                    item.qty || 0
+                );
+
+
+            packageBuyingCost +=
+                buyPrice * qty;
+
+        }
+
+    }
+
+
+    // ======================================================
+    // STAFF SALES BUYING COST
+    // ======================================================
+
+    for (
+        const sale
+        of staffSales
+    ) {
+
+        for (
+            const item
+            of sale.products || []
+        ) {
+
+            if (
+                !item.productId
+            ) {
+
+                continue;
+
+            }
+
+
+            const buyPrice =
+                productMap.get(
+                    String(
+                        item.productId
+                    )
+                ) || 0;
+
+
+            const qty =
+                Number(
+                    item.qty || 0
+                );
+
+
+            staffSalesBuyingCost +=
+                buyPrice * qty;
+
+        }
+
+    }
+
+
+    // ======================================================
+    // PROFITS
+    // ======================================================
 
     const packageProfit =
         packageRevenue -
@@ -715,298 +847,572 @@ async function getSummary(filter) {
         staffSalesRevenue;
 
 
-    const totalBuyingCost =
-        packageBuyingCost +
-        staffSalesBuyingCost;
-
-
     const profit =
-        totalRevenue -
-        totalBuyingCost;
+        packageProfit +
+        staffSalesProfit;
 
 
-    /* --------------------------------------------------------
-       RETURN
-    -------------------------------------------------------- */
+    // ======================================================
+    // RETURN
+    // ======================================================
 
     return {
 
-        packages,
-
-        staffSales,
-
         packageRevenue,
-
-        staffSalesRevenue,
-
-        totalRevenue,
 
         packageBuyingCost,
 
-        staffSalesBuyingCost,
-
-        totalBuyingCost,
-
         packageProfit,
+
+
+        staffSalesRevenue,
+
+        staffSalesBuyingCost,
 
         staffSalesProfit,
 
+
+        totalRevenue,
+
         profit,
 
-        customerArrears
+
+        customerArrears,
+
+
+        staffSales
 
     };
 
 }
 
 
-/* ==========================================================
-   PRODUCT ANALYTICS
-   ----------------------------------------------------------
-   ONLY USES THE PRODUCTS FILTER.
-========================================================== */
+// ==========================================================
+// STAFF SALES
+//
+// THIS IS FOR THE STAFF SALES / SALES REPORT TAB.
+//
+// IMPORTANT:
+//
+// It DOES NOT use summaryFilter.
+//
+// It uses:
+//   staffSalesDate
+//   staffSalesPeriod
+//
+// Therefore changing the Staff Sales filter does not
+// change Summary, Products or Arrears.
+// ==========================================================
 
-async function getProductAnalytics(filter) {
+async function getStaffSales(
+    filter
+) {
 
-    const packageFilter = {
+    return StaffSale.find({
 
         createdAt: {
-            $gte: filter.startDate,
-            $lt: filter.endDate
-        },
 
-        status: "delivered"
+            $gte:
+                filter.startDate,
 
-    };
+            $lt:
+                filter.endDate
 
+        }
 
-    const packages =
-        await Package.find(packageFilter)
+    })
 
-        .select(
-            "items totalAmount paidAmount status"
-        )
+        .populate({
+
+            path:
+                "soldBy",
+
+            select:
+                "name"
+
+        })
+
+        .sort({
+
+            createdAt:
+                -1
+
+        })
 
         .lean();
 
+}
+
+
+// ==========================================================
+// PRODUCT ANALYTICS
+// ==========================================================
+
+async function getProductAnalytics(
+    filter
+) {
 
     const products =
-        await Product.find({})
+        await Product.find({
 
-        .select(
-            "_id name image category subcategory buyPrice sellingPrice units"
-        )
+            isActive:
+                true
 
-        .lean();
+        })
+
+            .select(
+                "_id name subcategory units buyPrice stock"
+            )
+
+            .lean();
+
+
+    const stockRecords =
+        await Stock.find({
+
+            isActive:
+                true
+
+        })
+
+            .select(
+                "subcategory units"
+            )
+
+            .lean();
+
+
+    // ------------------------------------------------------
+    // STOCK BY SUBCATEGORY
+    // ------------------------------------------------------
+
+    const stockBySubcategory =
+        new Map();
+
+
+    for (
+        const stock
+        of stockRecords
+    ) {
+
+        const key =
+            String(
+                stock.subcategory || ""
+            )
+                .trim()
+                .toLowerCase();
+
+
+        if (!key) {
+
+            continue;
+
+        }
+
+
+        const existing =
+            stockBySubcategory.get(
+                key
+            ) || 0;
+
+
+        stockBySubcategory.set(
+
+            key,
+
+            existing +
+            Number(
+                stock.units || 0
+            )
+
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // DELIVERED PACKAGES IN PRODUCT FILTER RANGE
+    // ------------------------------------------------------
+
+    const deliveredPackages =
+        await Package.find({
+
+            status:
+                "delivered",
+
+            createdAt: {
+
+                $gte:
+                    filter.startDate,
+
+                $lt:
+                    filter.endDate
+
+            }
+
+        })
+
+            .select(
+                "items"
+            )
+
+            .lean();
 
 
     const salesByProduct =
         new Map();
 
 
-    for (const packageItem of packages) {
+    for (
+        const pkg
+        of deliveredPackages
+    ) {
 
-        if (!Array.isArray(packageItem.items)) {
-            continue;
-        }
+        for (
+            const item
+            of pkg.items || []
+        ) {
 
+            if (
+                !item.productId
+            ) {
 
-        for (const item of packageItem.items) {
-
-            const productId =
-                item.productId ||
-                item.product;
-
-
-            if (!productId) {
                 continue;
+
             }
 
 
             const key =
-                productId.toString();
-
-
-            if (!salesByProduct.has(key)) {
-
-                salesByProduct.set(
-                    key,
-                    {
-                        quantity: 0,
-                        revenue: 0
-                    }
-                );
-
-            }
-
-
-            const record =
-                salesByProduct.get(key);
-
-
-            const quantity =
-                numberValue(
-                    item.qty ??
-                    item.quantity ??
-                    item.units ??
-                    0
+                String(
+                    item.productId
                 );
 
 
-            const itemTotal =
-                numberValue(
-                    item.total ??
-                    item.amount ??
-                    (
-                        numberValue(
-                            item.price
-                        ) * quantity
-                    )
-                );
+            salesByProduct.set(
 
+                key,
 
-            record.quantity +=
-                quantity;
+                (
+                    salesByProduct.get(
+                        key
+                    ) || 0
+                ) +
 
+                Number(
+                    item.qty || 0
+                )
 
-            record.revenue +=
-                itemTotal;
+            );
 
         }
 
     }
 
 
-    const analytics =
-        products.map(product => {
+    // ------------------------------------------------------
+    // RESULT
+    // ------------------------------------------------------
 
-            const record =
-                salesByProduct.get(
-                    product._id.toString()
-                ) || {
-                    quantity: 0,
-                    revenue: 0
+    return products
+
+        .map(
+            product => {
+
+                const subcategory =
+                    String(
+                        product.subcategory || ""
+                    )
+                        .trim()
+                        .toLowerCase();
+
+
+                return {
+
+                    _id:
+                        product._id,
+
+                    name:
+                        product.name,
+
+                    stockAvailable:
+                        stockBySubcategory.get(
+                            subcategory
+                        ) || 0,
+
+                    marketAvailable:
+                        Number(
+                            product.units || 0
+                        ),
+
+                    sales:
+                        salesByProduct.get(
+                            String(
+                                product._id
+                            )
+                        ) || 0
+
                 };
 
+            }
+        )
 
-            const buyPrice =
-                numberValue(
-                    product.buyPrice
-                );
-
-
-            const buyingCost =
-                buyPrice *
-                record.quantity;
-
-
-            const profit =
-                record.revenue -
-                buyingCost;
-
-
-            return {
-
-                ...product,
-
-                quantitySold:
-                    record.quantity,
-
-                revenue:
-                    record.revenue,
-
-                buyingCost,
-
-                profit
-
-            };
-
-        });
-
-
-    return analytics;
+        .sort(
+            (a, b) =>
+                String(
+                    a.name
+                ).localeCompare(
+                    String(
+                        b.name
+                    )
+                )
+        );
 
 }
 
 
-/* ==========================================================
-   CUSTOMER ARREARS
-   ----------------------------------------------------------
-   ONLY USES THE ARREARS FILTER.
-========================================================== */
+// ==========================================================
+// CUSTOMER ARREARS
+// ==========================================================
 
-async function getCustomerArrears(filter) {
+async function getCustomerArrears(
+    filter
+) {
 
     const packages =
         await Package.find({
 
-            createdAt: {
-                $gte: filter.startDate,
-                $lt: filter.endDate
-            },
+            status:
+                "delivered",
 
-            status: "delivered"
+            createdAt: {
+
+                $gte:
+                    filter.startDate,
+
+                $lt:
+                    filter.endDate
+
+            }
 
         })
 
-        .lean();
+            .select(
+                "_id clientId phoneNumber totalAmount paidAmount"
+            )
+
+            .lean();
 
 
-    return packages.filter(
-        packageItem => {
+    const arrearsPackages =
+        packages
 
-            const totalAmount =
-                numberValue(
-                    packageItem.totalAmount
-                );
+            .map(
+                pkg => ({
+
+                    ...pkg,
+
+                    arrears:
+                        Math.max(
+
+                            0,
+
+                            Number(
+                                pkg.totalAmount || 0
+                            ) -
+
+                            Number(
+                                pkg.paidAmount || 0
+                            )
+
+                        )
+
+                })
+            )
+
+            .filter(
+                pkg =>
+                    pkg.arrears > 0
+            );
 
 
-            const paidAmount =
-                numberValue(
-                    packageItem.paidAmount
-                );
+    if (
+        !arrearsPackages.length
+    ) {
+
+        return [];
+
+    }
 
 
-            return (
-                totalAmount -
-                paidAmount
-            ) > 0;
+    // ------------------------------------------------------
+    // CLIENT IDS
+    // ------------------------------------------------------
 
-        }
-    );
+    const clientIds = [
+
+        ...new Set(
+
+            arrearsPackages
+
+                .map(
+                    pkg =>
+                        String(
+                            pkg.clientId || ""
+                        )
+                )
+
+                .filter(Boolean)
+
+        )
+
+    ];
+
+
+    // ------------------------------------------------------
+    // CLIENTS
+    // ------------------------------------------------------
+
+    const users =
+        clientIds.length
+
+            ? await User.find({
+
+                _id: {
+
+                    $in:
+                        clientIds
+
+                }
+
+            })
+
+                .select(
+                    "_id name"
+                )
+
+                .lean()
+
+            : [];
+
+
+    const userMap =
+        new Map(
+
+            users.map(
+                user => [
+
+                    String(
+                        user._id
+                    ),
+
+                    user.name
+
+                ]
+            )
+
+        );
+
+
+    // ------------------------------------------------------
+    // RESULT
+    // ------------------------------------------------------
+
+    return arrearsPackages
+
+        .map(
+            pkg => ({
+
+                _id:
+                    pkg._id,
+
+                clientName:
+                    userMap.get(
+                        String(
+                            pkg.clientId
+                        )
+                    ) ||
+                    "Unknown Client",
+
+                phoneNumber:
+                    pkg.phoneNumber ||
+                    "",
+
+                packageName:
+                    String(
+                        pkg._id
+                    ),
+
+                arrears:
+                    pkg.arrears
+
+            })
+        )
+
+        .sort(
+            (a, b) =>
+                b.arrears -
+                a.arrears
+        );
 
 }
 
 
-/* ==========================================================
-   SALES PAGE DATA
-   ----------------------------------------------------------
-   FOUR COMPLETELY INDEPENDENT FILTERS.
-========================================================== */
+// ==========================================================
+// SALES PAGE DATA
+//
+// FOUR INDEPENDENT FILTERS:
+//
+// summary:
+//   summaryDate
+//   summaryPeriod
+//
+// staff-sales:
+//   staffSalesDate
+//   staffSalesPeriod
+//
+// products:
+//   productsDate
+//   productsPeriod
+//
+// arrears:
+//   arrearsDate
+//   arrearsPeriod
+// ==========================================================
 
-async function getSalesPageData(query = {}) {
+async function getSalesPageData(
+    query = {}
+) {
 
     const allowedTabs = [
+
         "summary",
+
         "staff-sales",
+
         "products",
+
         "arrears"
+
     ];
 
 
-    /* --------------------------------------------------------
-       ACTIVE TAB
-    -------------------------------------------------------- */
+    // ======================================================
+    // ACTIVE TAB
+    // ======================================================
 
     const activeTab =
-        allowedTabs.includes(query.tab)
+        allowedTabs.includes(
+            query.tab
+        )
+
             ? query.tab
+
             : "summary";
 
 
-    /* --------------------------------------------------------
-       INDEPENDENT FILTERS
-    -------------------------------------------------------- */
+    // ======================================================
+    // FILTERS
+    // ======================================================
 
     const summaryFilter =
         getFilterState(
@@ -1036,28 +1442,58 @@ async function getSalesPageData(query = {}) {
         );
 
 
-    /* --------------------------------------------------------
-       LOAD EACH TAB USING ITS OWN FILTER
-    -------------------------------------------------------- */
+    // ======================================================
+    // LOAD TAB DATA
+    // ======================================================
 
     const [
+
         summary,
+
         staffSales,
+
         productAnalytics,
+
         arrearsPackages
+
     ] = await Promise.all([
+
+        // --------------------------------------------------
+        // SUMMARY
+        // --------------------------------------------------
 
         getSummary(
             summaryFilter
         ),
 
+
+        // --------------------------------------------------
+        // STAFF SALES
+        //
+        // USES STAFF SALES FILTER ONLY
+        // --------------------------------------------------
+
         getStaffSales(
             staffSalesFilter
         ),
 
+
+        // --------------------------------------------------
+        // PRODUCTS
+        //
+        // USES PRODUCTS FILTER ONLY
+        // --------------------------------------------------
+
         getProductAnalytics(
             productsFilter
         ),
+
+
+        // --------------------------------------------------
+        // ARREARS
+        //
+        // USES ARREARS FILTER ONLY
+        // --------------------------------------------------
 
         getCustomerArrears(
             arrearsFilter
@@ -1066,48 +1502,57 @@ async function getSalesPageData(query = {}) {
     ]);
 
 
-    /* --------------------------------------------------------
-       ACTIVE FILTER
-    -------------------------------------------------------- */
+    // ======================================================
+    // ACTIVE FILTER
+    // ======================================================
 
-    const activeFilter =
+    let activeFilter;
+
+
+    if (
         activeTab === "summary"
-            ? summaryFilter
+    ) {
 
-            : activeTab === "staff-sales"
-                ? staffSalesFilter
+        activeFilter =
+            summaryFilter;
 
-                : activeTab === "products"
-                    ? productsFilter
+    }
 
-                    : arrearsFilter;
+    else if (
+        activeTab === "staff-sales"
+    ) {
+
+        activeFilter =
+            staffSalesFilter;
+
+    }
+
+    else if (
+        activeTab === "products"
+    ) {
+
+        activeFilter =
+            productsFilter;
+
+    }
+
+    else {
+
+        activeFilter =
+            arrearsFilter;
+
+    }
 
 
-    /* --------------------------------------------------------
-       ACTIVE FILTER VALUES
-       --------------------------------------------------------
-       THESE ARE REQUIRED BY filter.js
-    -------------------------------------------------------- */
-
-    const activeFilterDate =
-        activeFilter.date;
-
-
-    const activeFilterPeriod =
-        activeFilter.period;
-
-
-    /* --------------------------------------------------------
-       QUERY PARAMETERS
-       --------------------------------------------------------
-       Preserve every tab's filter independently.
-    -------------------------------------------------------- */
+    // ======================================================
+    // QUERY PARAMETERS
+    //
+    // Every tab retains its own filter.
+    // ======================================================
 
     const params =
         new URLSearchParams();
 
-
-    /* SUMMARY */
 
     params.set(
         "summaryDate",
@@ -1121,8 +1566,6 @@ async function getSalesPageData(query = {}) {
     );
 
 
-    /* STAFF SALES */
-
     params.set(
         "staffSalesDate",
         staffSalesFilter.date
@@ -1135,8 +1578,6 @@ async function getSalesPageData(query = {}) {
     );
 
 
-    /* PRODUCTS */
-
     params.set(
         "productsDate",
         productsFilter.date
@@ -1148,8 +1589,6 @@ async function getSalesPageData(query = {}) {
         productsFilter.period
     );
 
-
-    /* ARREARS */
 
     params.set(
         "arrearsDate",
@@ -1167,87 +1606,160 @@ async function getSalesPageData(query = {}) {
         `&${params.toString()}`;
 
 
-    /* --------------------------------------------------------
-       RETURN DATA TO sales.ejs
-    -------------------------------------------------------- */
+    // ======================================================
+    // RETURN
+    //
+    // THESE NAMES MUST MATCH THE EXISTING EJS PARTIALS.
+    // ======================================================
 
- return {
+    return {
 
-    activeTab,
+        // --------------------------------------------------
+        // TAB
+        // --------------------------------------------------
 
-    activeFilter,
+        activeTab,
 
-    activeFilterDate,
-    activeFilterPeriod,
 
-    filterLabel:
-        getFilterLabel(activeFilter),
+        // --------------------------------------------------
+        // ACTIVE FILTER
+        // --------------------------------------------------
 
-    summaryFilter,
+        activeFilter,
 
-    staffSalesFilter,
+        activeFilterDate:
+            activeFilter.date,
 
-    productsFilter,
+        activeFilterPeriod:
+            activeFilter.period,
 
-    arrearsFilter,
+        filterLabel:
+            getFilterLabel(
+                activeFilter
+            ),
 
-    summary,
 
-    staffSales,
+        // --------------------------------------------------
+        // SUMMARY VALUES
+        // --------------------------------------------------
 
-    productAnalytics,
+        totalRevenue:
+            summary.totalRevenue,
 
-    arrearsPackages,
+        packageRevenue:
+            summary.packageRevenue,
 
-    salesQuerySuffix,
+        staffSalesRevenue:
+            summary.staffSalesRevenue,
 
-    summaryFilterLabel:
-        getFilterLabel(summaryFilter),
 
-    staffSalesFilterLabel:
-        getFilterLabel(staffSalesFilter),
+        packageBuyingCost:
+            summary.packageBuyingCost,
 
-    productsFilterLabel:
-        getFilterLabel(productsFilter),
+        staffSalesBuyingCost:
+            summary.staffSalesBuyingCost,
 
-    arrearsFilterLabel:
-        getFilterLabel(arrearsFilter)
 
-};
+        profit:
+            summary.profit,
+
+        packageProfit:
+            summary.packageProfit,
+
+        staffSalesProfit:
+            summary.staffSalesProfit,
+
+
+        customerArrears:
+            summary.customerArrears,
+
+
+        // --------------------------------------------------
+        // STAFF SALES
+        //
+        // IMPORTANT:
+        // This is now from staffSalesFilter, NOT
+        // summaryFilter.
+        // --------------------------------------------------
+
+        staffSales,
+
+
+        // --------------------------------------------------
+        // PRODUCT ANALYTICS
+        // --------------------------------------------------
+
+        productAnalytics,
+
+
+        // --------------------------------------------------
+        // ARREARS
+        // --------------------------------------------------
+
+        arrearsPackages,
+
+
+        // --------------------------------------------------
+        // FILTER OBJECTS
+        //
+        // Kept available for any existing partials.
+        // --------------------------------------------------
+
+        summaryFilter,
+
+        staffSalesFilter,
+
+        productsFilter,
+
+        arrearsFilter,
+
+
+        // --------------------------------------------------
+        // FILTER LABELS
+        // --------------------------------------------------
+
+        summaryFilterLabel:
+            getFilterLabel(
+                summaryFilter
+            ),
+
+        staffSalesFilterLabel:
+            getFilterLabel(
+                staffSalesFilter
+            ),
+
+        productsFilterLabel:
+            getFilterLabel(
+                productsFilter
+            ),
+
+        arrearsFilterLabel:
+            getFilterLabel(
+                arrearsFilter
+            ),
+
+
+        // --------------------------------------------------
+        // NAVIGATION QUERY
+        // --------------------------------------------------
+
+        salesQuerySuffix
+
+    };
 
 }
 
 
-/* ==========================================================
-   EXPORTS
-========================================================== */
+// ==========================================================
+// EXPORTS
+// ==========================================================
 
 module.exports = {
 
-    getCurrentNairobiDate,
-
-    isValidDateString,
-
-    normalizePeriod,
-
-    normalizeDate,
-
-    kenyaDateToUtc,
+    getSalesPageData,
 
     getDateRange,
 
-    getFilterState,
-
-    getFilterLabel,
-
-    getStaffSales,
-
-    getSummary,
-
-    getProductAnalytics,
-
-    getCustomerArrears,
-
-    getSalesPageData
+    getCurrentNairobiDate
 
 };
