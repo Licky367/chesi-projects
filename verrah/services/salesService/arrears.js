@@ -40,9 +40,7 @@ async function getCustomerArrears(
         })
 
             .select(
-
                 "_id clientId phoneNumber totalAmount paidAmount"
-
             )
 
             .lean();
@@ -125,6 +123,8 @@ async function getCustomerArrears(
 
     // ======================================================
     // LOAD CLIENTS
+    //
+    // phone is the phone field in User.
     // ======================================================
 
     const users =
@@ -142,7 +142,7 @@ async function getCustomerArrears(
             })
 
                 .select(
-                    "_id name"
+                    "_id name phone"
                 )
 
                 .lean()
@@ -165,7 +165,15 @@ async function getCustomerArrears(
                         user._id
                     ),
 
-                    user.name
+                    {
+
+                        name:
+                            user.name,
+
+                        phone:
+                            user.phone || ""
+
+                    }
 
                 ]
 
@@ -182,34 +190,46 @@ async function getCustomerArrears(
 
         .map(
 
-            pkg => ({
+            pkg => {
 
-                _id:
-                    pkg._id,
-
-                clientName:
+                const user =
                     userMap.get(
-
                         String(
                             pkg.clientId
                         )
+                    );
 
-                    ) ||
-                    "Unknown Client",
 
-                phoneNumber:
-                    pkg.phoneNumber ||
-                    "",
+                return {
 
-                packageName:
-                    String(
-                        pkg._id
-                    ),
+                    _id:
+                        pkg._id,
 
-                arrears:
-                    pkg.arrears
+                    clientName:
+                        user?.name ||
+                        "Unknown Client",
 
-            })
+                    // ------------------------------------------------
+                    // USE PACKAGE PHONE FIRST.
+                    // IF EMPTY, USE USER PHONE.
+                    // ------------------------------------------------
+
+                    phoneNumber:
+                        pkg.phoneNumber ||
+                        user?.phone ||
+                        "",
+
+                    packageName:
+                        String(
+                            pkg._id
+                        ),
+
+                    arrears:
+                        pkg.arrears
+
+                };
+
+            }
 
         )
 
