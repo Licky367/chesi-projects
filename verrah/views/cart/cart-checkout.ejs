@@ -7,6 +7,7 @@
   <div class="cart-checkout-heading">
 
     <div>
+
       <span class="cart-section-kicker">
         CHECKOUT
       </span>
@@ -14,11 +15,31 @@
       <h2>
         Complete your order
       </h2>
+
     </div>
 
     <i class="fas fa-bag-shopping"></i>
 
   </div>
+
+
+  <!-- =========================================================
+       ERROR MESSAGE
+  ========================================================== -->
+
+  <% if (error) { %>
+
+    <div class="checkout-error">
+
+      <i class="fas fa-circle-exclamation"></i>
+
+      <span>
+        <%= error %>
+      </span>
+
+    </div>
+
+  <% } %>
 
 
   <!-- =========================================================
@@ -49,16 +70,22 @@
     id="checkoutForm"
   >
 
-    <!--
-      Used by the checkout route to know which cart item
-      initiated the checkout and to redirect back if
-      validation fails.
-    -->
+    <!-- =======================================================
+         PRODUCT ID
+         
+         Cart items use:
+         
+             item.product
+         
+         rather than:
+         
+             item.productId
+    ======================================================== -->
 
     <input
       type="hidden"
       name="productId"
-      value="<%= item.productId %>"
+      value="<%= item.product?._id || item.product || '' %>"
     >
 
 
@@ -81,9 +108,11 @@
           for="packageSubstation"
           class="checkout-substation-label"
         >
+
           <i class="fas fa-location-dot"></i>
 
           Select where you want to collect your package
+
         </label>
 
 
@@ -99,26 +128,46 @@
           </option>
 
 
-          <% (substations || []).forEach(function (substation) { %>
+          <% if (Array.isArray(substations) && substations.length > 0) { %>
 
-            <option
-              value="<%= substation._id %>"
-              <%= String(pickupStation || "") === String(substation._id)
-                ? "selected"
-                : "" %>
-            >
+            <% substations.forEach(function (substation) { %>
 
-              <%= substation.name %>
+              <option
+                value="<%= substation._id %>"
+                <%= String(pickupStation || "") === String(substation._id)
+                  ? "selected"
+                  : "" %>
+              >
 
-              <% if (substation.location) { %>
-                — <%= substation.location %>
-              <% } %>
+                <%= substation.name %>
 
-            </option>
+                <% if (substation.location) { %>
+                  — <%= substation.location %>
+                <% } %>
 
-          <% }); %>
+              </option>
+
+            <% }); %>
+
+          <% } %>
 
         </select>
+
+
+        <% if (
+          Array.isArray(substations) &&
+          substations.length === 0
+        ) { %>
+
+          <small class="checkout-substation-empty">
+
+            <i class="fas fa-circle-exclamation"></i>
+
+            No pickup substations are currently available.
+
+          </small>
+
+        <% } %>
 
 
         <% if (pickupStation) { %>
@@ -154,11 +203,15 @@
            M-PESA
       ====================================================== -->
 
-      <label class="payment-choice">
+      <label
+        class="payment-choice"
+        for="paymentMpesa"
+      >
 
         <input
           type="radio"
           name="paymentMethod"
+          id="paymentMpesa"
           value="mpesa"
           required
         >
@@ -197,7 +250,9 @@
       >
 
         <label for="phoneNumber">
+
           M-Pesa phone number
+
         </label>
 
 
@@ -218,13 +273,16 @@
            PAY ON DELIVERY
       ====================================================== -->
 
-      <label class="payment-choice">
+      <label
+        class="payment-choice"
+        for="paymentDelivery"
+      >
 
         <input
           type="radio"
           name="paymentMethod"
+          id="paymentDelivery"
           value="pay_on_delivery"
-          required
         >
 
 
@@ -281,6 +339,9 @@
 <script>
 (function () {
 
+  const form =
+    document.getElementById("checkoutForm");
+
   const phoneField =
     document.getElementById("phoneField");
 
@@ -294,11 +355,12 @@
 
 
   /*
-   * Stop if the checkout elements do not exist.
-   * This makes the script safe if the partial is reused.
+   * Stop safely if this partial is reused
+   * somewhere without the checkout elements.
    */
 
   if (
+    !form ||
     !phoneField ||
     !phoneInput ||
     !paymentRadios.length
@@ -308,7 +370,7 @@
 
 
   /*
-   * Show the phone number field only when
+   * Show M-Pesa phone field only when
    * M-Pesa is selected.
    */
 
@@ -327,16 +389,27 @@
 
     phoneField.classList.toggle(
       "show",
-      mpesaSelected
+      !!mpesaSelected
     );
 
 
-    /*
-     * Phone number is required only for M-Pesa.
-     */
-
     phoneInput.required =
       !!mpesaSelected;
+
+
+    /*
+     * Disable the phone input when it is
+     * not required so it is not submitted
+     * accidentally with another payment method.
+     */
+
+    phoneInput.disabled =
+      !mpesaSelected;
+
+
+    if (!mpesaSelected) {
+      phoneInput.value = "";
+    }
 
   }
 
@@ -352,6 +425,84 @@
         "change",
         updatePhoneField
       );
+
+    }
+  );
+
+
+  /*
+   * Validate the checkout form before submission.
+   */
+
+  form.addEventListener(
+    "submit",
+    function (event) {
+
+      const selected =
+        document.querySelector(
+          'input[name="paymentMethod"]:checked'
+        );
+
+
+      /*
+       * A pickup substation is mandatory.
+       */
+
+      const substation =
+        document.getElementById(
+          "packageSubstation"
+        );
+
+
+      if (
+        !substation ||
+        !substation.value
+      ) {
+
+        event.preventDefault();
+
+        if (substation) {
+          substation.focus();
+        }
+
+        return;
+      }
+
+
+      /*
+       * A payment method is mandatory.
+       */
+
+      if (!selected) {
+
+        event.preventDefault();
+
+        return;
+      }
+
+
+      /*
+       * M-Pesa requires a phone number.
+       */
+
+      if (
+        selected.value === "mpesa"
+      ) {
+
+        const phone =
+          phoneInput.value.trim();
+
+
+        if (!phone) {
+
+          event.preventDefault();
+
+          phoneInput.focus();
+
+          return;
+        }
+
+      }
 
     }
   );
