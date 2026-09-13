@@ -1,279 +1,244 @@
-// ==========================================================
-// verrah/services/cartService.js
-// VERRAH COSMETICS
-// CART SERVICE
-//
-// CART IDENTITY RULE
-//
-// Logged-in user:
-//     Cart.user is the permanent cart identity.
-//
-// Guest:
-//     Cart.sessionId is the cart identity.
-//
-// This means a logged-in customer's cart survives logout
-// and the creation of a new login session.
-//
-// INVENTORY RULE
-//
-// Adding to cart DOES NOT reduce inventory.
-//
-// There is NO reserved quantity.
-// There is NO reservedUnits.
-//
-// Inventory is reduced only when a sale is completed.
-// ==========================================================
-
 const mongoose = require("mongoose");
 
-const Product =
-    require("../models/products");
-
-const Cart =
-    require("../models/carts");
-
-const StaffSale =
-    require("../models/staff-sales");
-
-const Substation =
-    require("../models/substations");
-
-const User =
-    require("../models/user");
+const Product = require("../models/products");
+const Cart = require("../models/carts");
+const StaffSale = require("../models/staffSale");
+const Substation = require("../models/substations");
+const User = require("../models/users");
 
 const {
     getUserId,
     getSessionId
-} = require("./shopContext");
+} = require("../utils/requestIdentity");
 
 
-// ==========================================================
-// CART IDENTITY HELPERS
-// ==========================================================
+/* ==========================================================
+   HELPERS
+========================================================== */
 
-function getLoggedInUserId(req) {
-    return getUserId(req);
+function getQuantity(item) {
+    if (!item) return 0;
+
+    const value =
+        item.qty !== undefined && item.qty !== null
+            ? item.qty
+            : item.quantity;
+
+    const quantity = Number(value);
+
+    return Number.isFinite(quantity) && quantity > 0
+        ? quantity
+        : 0;
 }
 
 
-function getCurrentSessionId(req) {
-    return getSessionId(req);
+function getProductId(item) {
+    if (!item) return null;
+
+    return (
+        item.productId ||
+        item.product ||
+        null
+    );
 }
 
 
-// ==========================================================
-// GET OR CREATE CART
-//
-// LOGGED-IN USER
-// ----------------
-//
-// The user's ID is the permanent identity of the cart.
-//
-// We first look for:
-//
-//     { user: userId }
-//
-// If that does not exist, we look for the current session's
-// cart and, if it belongs to nobody, claim it for the user.
-//
-// This allows an existing guest/session cart to become the
-// user's persistent cart when the user logs in.
-//
-// GUEST
-// -----
-//
-// The session ID remains the identity of the cart.
-// ==========================================================
+function getRequestedQuantity(req, requestedQty) {
+    let value = requestedQty;
 
-async function getOrCreateCart(
-    req,
-    session = null
-) {
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+        value = req.body?.quantity;
+    }
 
-    const userId =
-        getLoggedInUserId(req);
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+        value = req.body?.qty;
+    }
 
-    const sessionId =
-        getCurrentSessionId(req);
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+        value = 1;
+    }
+
+    const quantity = Number(value);
+
+    if (
+        !Number.isInteger(quantity) ||
+        quantity < 1
+    ) {
+        throw new Error("Quantity must be at least 1.");
+    }
+
+    return quantity;
+}
 
 
-    // ======================================================
-    // LOGGED-IN USER
-    // ======================================================
+function getItemTotal(item) {
+    const price = Number(item?.price || 0);
+    const quantity = getQuantity(item);
+
+    return price * quantity;
+}
+
+
+/* ==========================================================
+   GET / CREATE CART
+========================================================== */
+
+async function getOrCreateCart(req, session) {
+    const userId = getUserId(req);
+    const sessionId = getSessionId(req);
+
+    let cart = null;
+
+
+    /* ------------------------------------------------------
+       LOGGED-IN USER
+    ------------------------------------------------------ */
 
     if (userId) {
+        cart = await Cart.findOne({
+            user: userId
+        });
 
-        // --------------------------------------------------
-        // FIRST: FIND THE USER'S PERMANENT CART
-        // --------------------------------------------------
-
-        let cart =
-            await Cart.findOne({
-                user: userId
-            }).session(session);
-
-
+        /*
+         * If the user's cart already exists, make sure its
+         * current session ID is available for checkout and
+         * payment services.
+         */
         if (cart) {
-
-            // ------------------------------------------------
-            // Keep the current session associated with the
-            // persistent cart as well.
-            //
-            // The USER remains the primary identity.
-            // ------------------------------------------------
+            let changed = false;
 
             if (
                 sessionId &&
                 cart.sessionId !== sessionId
             ) {
+                cart.sessionId = sessionId;
+                changed = true;
+            }
 
-                cart.sessionId =
-                    sessionId;
+            if (changed) {
+                await cart.save();
+            }
 
-                await cart.save({
-                    session
-                });
+            if (session) {
+                session.cartId = cart._id.toString();
             }
 
             return cart;
         }
 
 
-        // --------------------------------------------------
-        // SECOND: LOOK FOR A SESSION CART
-        //
-        // This is important when a guest added products
-        // before logging in.
-        //
-        // Only claim a cart that has no user.
-        // --------------------------------------------------
+        /* --------------------------------------------------
+           CLAIM EXISTING GUEST CART
+        -------------------------------------------------- */
 
         if (sessionId) {
-
-            cart =
-                await Cart.findOne({
-                    sessionId,
-                    $or: [
-                        {
-                            user:
-                                null
-                        },
-                        {
-                            user: {
-                                $exists:
-                                    false
-                            }
-                        }
-                    ]
-                }).session(session);
-
+            cart = await Cart.findOne({
+                sessionId,
+                $or: [
+                    { user: null },
+                    { user: { $exists: false } }
+                ]
+            });
 
             if (cart) {
+                cart.user = userId;
+                cart.sessionId = sessionId;
 
-                cart.user =
-                    userId;
+                await cart.save();
+
+                if (session) {
+                    session.cartId = cart._id.toString();
+                }
 
                 return cart;
             }
         }
 
 
-        // --------------------------------------------------
-        // NO EXISTING USER CART
-        //
-        // Create a new persistent cart.
-        // --------------------------------------------------
+        /* --------------------------------------------------
+           CREATE USER CART
+        -------------------------------------------------- */
 
-        cart =
-            new Cart({
-                sessionId:
-                    sessionId || undefined,
-
-                user:
-                    userId,
-
-                items:
-                    []
-            });
-
-
-        await cart.save({
-            session
+        cart = new Cart({
+            user: userId,
+            sessionId: sessionId || null,
+            items: [],
+            totalPrice: 0
         });
 
+        await cart.save();
+
+        if (session) {
+            session.cartId = cart._id.toString();
+        }
 
         return cart;
     }
 
 
-    // ======================================================
-    // GUEST
-    // ======================================================
+    /* ======================================================
+       GUEST CART
+    ====================================================== */
 
     if (!sessionId) {
-
         throw new Error(
-            "A session or logged-in user is required."
+            "Unable to identify the shopping session."
         );
     }
 
-
-    let cart =
-        await Cart.findOne({
-            sessionId
-        }).session(session);
-
+    cart = await Cart.findOne({
+        sessionId
+    });
 
     if (!cart) {
-
-        cart =
-            new Cart({
-                sessionId,
-
-                items:
-                    []
-            });
-
-
-        await cart.save({
-            session
+        cart = new Cart({
+            sessionId,
+            user: null,
+            items: [],
+            totalPrice: 0
         });
+
+        await cart.save();
     }
 
+    if (session) {
+        session.cartId = cart._id.toString();
+    }
 
     return cart;
 }
 
 
-// ==========================================================
-// ADD TO CART
-//
-// Adding a Product to the cart DOES NOT reduce inventory.
-//
-// There is NO reserved quantity.
-// There is NO reservedUnits.
-//
-// Inventory is reduced only when the sale is completed.
-// ==========================================================
+/* ==========================================================
+   ADD TO CART
+========================================================== */
 
 async function addToCart(
     req,
     productId,
     requestedQty
 ) {
-
-    const qty =
-        Number(requestedQty);
-
-
-    if (
-        !Number.isInteger(qty) ||
-        qty < 1
-    ) {
-
-        throw new Error(
-            "Quantity must be a whole number greater than zero."
+    const quantityToAdd =
+        getRequestedQuantity(
+            req,
+            requestedQty
         );
+
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+        throw new Error("Invalid product.");
     }
 
 
@@ -282,212 +247,260 @@ async function addToCart(
 
 
     try {
-
         let result;
 
 
         await dbSession.withTransaction(
             async () => {
 
-                // ==========================================
-                // GET PRODUCT
-                // ==========================================
+                /* ------------------------------------------
+                   FIND PRODUCT
+                ------------------------------------------ */
 
                 const product =
                     await Product.findOne({
-                        _id:
-                            productId,
-
-                        isActive:
-                            true
-                    }).session(
-                        dbSession
-                    );
+                        _id: productId,
+                        active: {
+                            $ne: false
+                        }
+                    }).session(dbSession);
 
 
                 if (!product) {
-
                     throw new Error(
-                        "The requested Product could not be found."
+                        "Product not found."
                     );
                 }
 
 
-                // ==========================================
-                // GET PERSISTENT CART
-                //
-                // For logged-in users this now uses
-                // Cart.user instead of Cart.sessionId.
-                // ==========================================
+                const availableUnits =
+                    Number(product.units || 0);
+
+
+                if (availableUnits < 1) {
+                    throw new Error(
+                        "This product is out of stock."
+                    );
+                }
+
+
+                /* ------------------------------------------
+                   GET CART
+                ------------------------------------------ */
 
                 const cart =
                     await getOrCreateCart(
                         req,
-                        dbSession
+                        req.session
                     );
 
 
-                // ==========================================
-                // CHECK EXISTING CART QUANTITY
-                // ==========================================
+                /*
+                 * Re-fetch the cart inside the transaction so
+                 * all modifications participate in the same
+                 * transaction.
+                 */
 
-                const existing =
-                    cart.items.find(
-                        item =>
-                            String(
-                                item.productId
-                            ) ===
-                            String(
-                                product._id
-                            )
+                const transactionalCart =
+                    await Cart.findById(
+                        cart._id
+                    ).session(dbSession);
+
+
+                if (!transactionalCart) {
+                    throw new Error(
+                        "Unable to access your cart."
+                    );
+                }
+
+
+                /* ------------------------------------------
+                   FIND EXISTING PRODUCT
+                ------------------------------------------ */
+
+                const existingItem =
+                    transactionalCart.items.find(
+                        item => {
+
+                            const existingProductId =
+                                getProductId(item);
+
+                            return (
+                                existingProductId &&
+                                String(existingProductId) ===
+                                    String(product._id)
+                            );
+                        }
                     );
 
 
-                const existingQty =
-                    existing
-                        ? Number(
-                            existing.qty || 0
-                        )
+                /* ------------------------------------------
+                   EXISTING QUANTITY
+                ------------------------------------------ */
+
+                const existingQuantity =
+                    existingItem
+                        ? getQuantity(existingItem)
                         : 0;
 
 
-                const newQty =
-                    existingQty +
-                    qty;
+                const newQuantity =
+                    existingQuantity +
+                    quantityToAdd;
 
 
-                const availableUnits =
-                    Number(
-                        product.units || 0
-                    );
-
+                /* ------------------------------------------
+                   INVENTORY CHECK
+                ------------------------------------------ */
 
                 if (
-                    newQty >
+                    newQuantity >
                     availableUnits
                 ) {
-
                     throw new Error(
-                        `Only ${availableUnits} units of "${product.name}" are available.`
+                        `Only ${availableUnits} unit${
+                            availableUnits === 1
+                                ? ""
+                                : "s"
+                        } of ${
+                            product.name
+                        } ${
+                            availableUnits === 1
+                                ? "is"
+                                : "are"
+                        } available.`
                     );
                 }
 
 
-                // ==========================================
-                // UPDATE EXISTING CART ITEM
-                // ==========================================
+                /* ------------------------------------------
+                   UPDATE EXISTING ITEM
+                ------------------------------------------ */
 
-                if (existing) {
+                if (existingItem) {
 
-                    existing.qty =
-                        newQty;
+                    /*
+                     * qty is the canonical field used by the
+                     * current cart/package/payment services.
+                     */
 
-                    existing.name =
+                    existingItem.qty =
+                        newQuantity;
+
+
+                    /*
+                     * Keep quantity synchronized for cart
+                     * records that use the newer model field.
+                     */
+
+                    if (
+                        Object.prototype.hasOwnProperty.call(
+                            existingItem.toObject
+                                ? existingItem.toObject()
+                                : existingItem,
+                            "quantity"
+                        )
+                    ) {
+                        existingItem.quantity =
+                            newQuantity;
+                    }
+
+
+                    existingItem.product =
+                        product._id;
+
+                    existingItem.productId =
+                        product._id;
+
+                    existingItem.name =
                         product.name;
 
-                    existing.price =
-                        Number(
-                            product.unitSellPrice ||
-                            0
-                        );
+                    existingItem.price =
+                        Number(product.price || 0);
 
-                    existing.image =
-                        product.image ||
-                        "";
-
+                    existingItem.image =
+                        product.image || "";
                 }
 
 
-                // ==========================================
-                // ADD NEW CART ITEM
-                // ==========================================
+                /* ------------------------------------------
+                   ADD NEW ITEM
+                ------------------------------------------ */
 
                 else {
 
-                    cart.items.push({
-
-                        product:
-                            product._id,
+                    transactionalCart.items.push({
+                        product: product._id,
 
                         productId:
-                            String(
-                                product._id
-                            ),
+                            product._id,
 
                         name:
                             product.name,
 
                         price:
-                            Number(
-                                product.unitSellPrice ||
-                                0
-                            ),
+                            Number(product.price || 0),
 
                         image:
-                            product.image ||
-                            "",
+                            product.image || "",
 
-                        qty
+                        qty:
+                            quantityToAdd,
 
+                        quantity:
+                            quantityToAdd
                     });
                 }
 
 
-                // ==========================================
-                // SAVE CART
-                //
-                // Inventory remains unchanged.
-                // ==========================================
+                /* ------------------------------------------
+                   SAVE CART
+                ------------------------------------------ */
 
-                await cart.save({
-                    session:
-                        dbSession
+                transactionalCart.totalPrice =
+                    transactionalCart.items.reduce(
+                        (total, item) => {
+                            return (
+                                total +
+                                getItemTotal(item)
+                            );
+                        },
+                        0
+                    );
+
+
+                await transactionalCart.save({
+                    session: dbSession
                 });
 
 
                 result =
-                    cart;
+                    transactionalCart;
             }
         );
 
 
         return result;
+    }
 
-    } finally {
-
+    finally {
         await dbSession.endSession();
     }
 }
 
 
-// ==========================================================
-// GET CART
-//
-// LOGGED-IN USER
-// ----------------
-//
-// Find the cart by User ID.
-//
-// This is what makes the cart survive logout/login.
-//
-// GUEST
-// -----
-//
-// Find the cart by Session ID.
-// ==========================================================
+/* ==========================================================
+   GET CART
+========================================================== */
 
 async function getCart(req) {
-
-    const userId =
-        getLoggedInUserId(req);
-
-    const sessionId =
-        getCurrentSessionId(req);
+    const userId = getUserId(req);
+    const sessionId = getSessionId(req);
 
 
-    // ======================================================
-    // LOGGED-IN USER
-    // ======================================================
+    /* ------------------------------------------------------
+       LOGGED-IN USER
+    ------------------------------------------------------ */
 
     if (userId) {
 
@@ -495,64 +508,46 @@ async function getCart(req) {
             await Cart.findOne({
                 user: userId
             })
-                .populate(
-                    "items.product"
-                )
-                .lean();
+            .populate("items.product");
 
 
-        if (cart) {
-            return cart;
-        }
+        /*
+         * Fallback to the session cart if the user cart is
+         * not yet associated correctly.
+         */
 
-
-        // --------------------------------------------------
-        // LEGACY / GUEST SESSION CART
-        //
-        // If the user has no persistent cart yet, allow the
-        // current session cart to be picked up.
-        //
-        // This is especially useful during the transition
-        // from the old session-only cart system.
-        // --------------------------------------------------
-
-        if (sessionId) {
-
+        if (
+            !cart &&
+            sessionId
+        ) {
             cart =
                 await Cart.findOne({
                     sessionId,
                     $or: [
-                        {
-                            user:
-                                null
-                        },
-                        {
-                            user: {
-                                $exists:
-                                    false
-                            }
-                        }
+                        { user: userId },
+                        { user: null },
+                        { user: { $exists: false } }
                     ]
                 })
-                    .populate(
-                        "items.product"
-                    )
-                    .lean();
+                .populate("items.product");
 
 
             if (cart) {
-                return cart;
+                cart.user = userId;
+                cart.sessionId = sessionId;
+
+                await cart.save();
             }
         }
 
 
-        return null;
+        return cart;
     }
 
 
-    // ======================================================
-    // GUEST
-    // ======================================================
+    /* ------------------------------------------------------
+       GUEST
+    ------------------------------------------------------ */
 
     if (!sessionId) {
         return null;
@@ -562,165 +557,205 @@ async function getCart(req) {
     return Cart.findOne({
         sessionId
     })
-        .populate(
-            "items.product"
-        )
-        .lean();
+    .populate("items.product");
 }
 
 
-// ==========================================================
-// REMOVE CART ITEM
-//
-// Removing an item from the cart DOES NOT reduce inventory.
-//
-// Nothing is released because nothing was reserved.
-// ==========================================================
+/* ==========================================================
+   REMOVE ITEM
+========================================================== */
 
 async function removeItem(
     req,
     productId
 ) {
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            productId
+        )
+    ) {
+        throw new Error(
+            "Invalid product."
+        );
+    }
+
 
     const cart =
         await getCart(req);
 
 
-    if (!cart) {
-
+    if (
+        !cart ||
+        !cart.items ||
+        cart.items.length === 0
+    ) {
         throw new Error(
-            "Cart not found."
+            "Your cart is empty."
         );
     }
 
 
-    const item =
-        cart.items.find(
-            currentItem =>
-                String(
-                    currentItem.productId
-                ) ===
-                String(
-                    productId
-                )
-        );
+    const itemExists =
+        cart.items.some(item => {
+
+            const currentProductId =
+                getProductId(item);
+
+            return (
+                currentProductId &&
+                String(currentProductId) ===
+                    String(productId)
+            );
+        });
 
 
-    if (!item) {
-
+    if (!itemExists) {
         throw new Error(
-            "Item is not in the cart."
+            "Product not found in your cart."
         );
     }
 
 
-    const dbSession =
-        await mongoose.startSession();
+    cart.items =
+        cart.items.filter(item => {
+
+            const currentProductId =
+                getProductId(item);
+
+            return !(
+                currentProductId &&
+                String(currentProductId) ===
+                    String(productId)
+            );
+        });
 
 
-    try {
-
-        await dbSession.withTransaction(
-            async () => {
-
-                // ==========================================
-                // REMOVE ITEM FROM CART
-                // ==========================================
-
-                await Cart.updateOne(
-                    {
-                        _id:
-                            cart._id
-                    },
-                    {
-                        $pull: {
-
-                            items: {
-
-                                productId:
-                                    String(
-                                        productId
-                                    )
-
-                            }
-
-                        }
-                    },
-                    {
-                        session:
-                            dbSession
-                    }
+    cart.totalPrice =
+        cart.items.reduce(
+            (total, item) => {
+                return (
+                    total +
+                    getItemTotal(item)
                 );
-            }
+            },
+            0
         );
 
-    } finally {
 
-        await dbSession.endSession();
-    }
+    await cart.save();
+
+    return cart;
 }
 
 
-// ==========================================================
-// CREATE STAFF SALE
-//
-// INVENTORY RULES
-//
-// 1. Product.units is reduced for every staff sale.
-//
-// 2. If the Product has substationUnits, its
-//    substationUnits is also reduced.
-//
-// 3. The assigned Substation's productInventory.units
-//    is reduced by the same quantity.
-//
-// 4. Substation.productReductions records the reduction.
-//
-// 5. All inventory changes happen inside the SAME
-//    MongoDB transaction.
-//
-// There is NO reserved quantity.
-// There is NO reservedUnits.
-// ==========================================================
+/* ==========================================================
+   CLEAR CART
+========================================================== */
 
-async function createStaffSale(
-    req,
-    salesName
-) {
-
-    const userId =
-        getUserId(req);
+async function clearCart(req) {
+    const cart =
+        await getCart(req);
 
 
-    if (!userId) {
-
-        throw new Error(
-            "You must be logged in to record a sale."
-        );
+    if (!cart) {
+        return null;
     }
 
 
-    const cleanSalesName =
-        String(
-            salesName || ""
-        ).trim();
+    cart.items = [];
+    cart.totalPrice = 0;
+
+    await cart.save();
 
 
-    if (!cleanSalesName) {
+    return cart;
+}
 
+
+/* ==========================================================
+   CALCULATE TOTAL
+========================================================== */
+
+function calculateTotal(cart) {
+    if (
+        !cart ||
+        !Array.isArray(cart.items)
+    ) {
+        return 0;
+    }
+
+
+    return cart.items.reduce(
+        (total, item) => {
+            return (
+                total +
+                getItemTotal(item)
+            );
+        },
+        0
+    );
+}
+
+
+/* ==========================================================
+   CREATE STAFF SALE
+========================================================== */
+
+async function createStaffSale(
+    req,
+    data = {}
+) {
+    const staff =
+        req.user;
+
+
+    if (!staff) {
         throw new Error(
-            "Sales name is required."
+            "You must be logged in."
         );
     }
 
 
     if (
-        cleanSalesName.length >
-        150
+        staff.role !== "staff" &&
+        staff.role !== "admin"
     ) {
-
         throw new Error(
-            "Sales name cannot exceed 150 characters."
+            "You are not authorized to make a staff sale."
+        );
+    }
+
+
+    const staffId =
+        staff._id;
+
+
+    /* ------------------------------------------------------
+       DETERMINE SUBSTATION
+    ------------------------------------------------------ */
+
+    const substationId =
+        data.substationId ||
+        data.packageSubstation ||
+        req.body?.substationId ||
+        req.body?.packageSubstation ||
+        staff.substation;
+
+
+    if (!substationId) {
+        throw new Error(
+            "Please select a substation."
+        );
+    }
+
+
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            substationId
+        )
+    ) {
+        throw new Error(
+            "Invalid substation."
         );
     }
 
@@ -731,126 +766,108 @@ async function createStaffSale(
 
     try {
 
-        let sale;
+        let createdSale = null;
 
 
         await dbSession.withTransaction(
             async () => {
 
-                // ==========================================
-                // STAFF
-                // ==========================================
+                /* ------------------------------------------
+                   USER
+                ------------------------------------------ */
 
-                const staff =
+                const currentStaff =
                     await User.findById(
-                        userId
-                    ).session(
-                        dbSession
-                    );
+                        staffId
+                    ).session(dbSession);
 
 
-                if (!staff) {
-
+                if (!currentStaff) {
                     throw new Error(
-                        "Staff user was not found."
+                        "Staff account not found."
                     );
                 }
-
-
-                const role =
-                    String(
-                        staff.role || ""
-                    )
-                        .trim()
-                        .toLowerCase();
 
 
                 if (
-                    role !== "staff"
+                    currentStaff.role !== "staff" &&
+                    currentStaff.role !== "admin"
                 ) {
-
                     throw new Error(
-                        "Only staff members can record staff sales."
+                        "You are not authorized to make a staff sale."
                     );
                 }
 
 
-                // ==========================================
-                // ASSIGNED SUBSTATION
-                // ==========================================
-
-                if (
-                    !staff.assignedSubstation
-                ) {
-
-                    throw new Error(
-                        "You are not assigned to a substation."
-                    );
-                }
-
+                /* ------------------------------------------
+                   SUBSTATION
+                ------------------------------------------ */
 
                 const substation =
                     await Substation.findById(
-                        staff.assignedSubstation
-                    ).session(
-                        dbSession
-                    );
+                        substationId
+                    ).session(dbSession);
 
 
                 if (!substation) {
-
                     throw new Error(
-                        "Your assigned substation could not be found."
+                        "Substation not found."
                     );
                 }
 
 
-                // ==========================================
-                // CART
-                //
-                // IMPORTANT:
-                //
-                // Do NOT search by sessionId only.
-                //
-                // A staff member may have logged in again
-                // and therefore have a different session ID.
-                //
-                // Find the persistent cart through User ID.
-                // ==========================================
+                /* ------------------------------------------
+                   STAFF CART
+                ------------------------------------------ */
 
-                const cart =
+                let cart =
                     await Cart.findOne({
-                        user:
-                            staff._id
-                    }).session(
-                        dbSession
-                    );
+                        user: staffId
+                    })
+                    .session(dbSession);
+
+
+                /*
+                 * Fallback to session cart where necessary.
+                 */
+
+                if (
+                    !cart &&
+                    getSessionId(req)
+                ) {
+                    cart =
+                        await Cart.findOne({
+                            sessionId:
+                                getSessionId(req),
+                            user: staffId
+                        })
+                        .session(dbSession);
+                }
 
 
                 if (
                     !cart ||
-                    !cart.items ||
-                    !cart.items.length
+                    !Array.isArray(
+                        cart.items
+                    ) ||
+                    cart.items.length === 0
                 ) {
-
                     throw new Error(
                         "Your cart is empty."
                     );
                 }
 
 
-                // ==========================================
-                // SALE SNAPSHOTS
-                // ==========================================
+                /* ------------------------------------------
+                   SALE PRODUCTS
+                ------------------------------------------ */
 
                 const saleProducts = [];
 
-                let totalAmount = 0;
 
-
-                // ==========================================
-                // VERIFY EVERY CART PRODUCT
-                // ==========================================
+                /* ------------------------------------------
+                   PROCESS EACH ITEM
+                ------------------------------------------ */
 
                 for (
                     const cartItem
@@ -858,76 +875,50 @@ async function createStaffSale(
                 ) {
 
                     const productId =
-                        cartItem.productId;
+                        getProductId(
+                            cartItem
+                        );
 
 
-                    const qty =
-                        Number(
-                            cartItem.qty || 0
+                    const quantity =
+                        getQuantity(
+                            cartItem
                         );
 
 
                     if (!productId) {
-
                         throw new Error(
-                            "A cart item has no Product ID."
+                            "A cart item has no product."
                         );
                     }
 
 
                     if (
-                        !Number.isInteger(qty) ||
-                        qty < 1
+                        quantity < 1
                     ) {
-
                         throw new Error(
-                            `Invalid quantity for ${
-                                cartItem.name ||
-                                "a cart item"
-                            }.`
+                            "Invalid product quantity in cart."
                         );
                     }
 
-
-                    // ======================================
-                    // GET CURRENT PRODUCT
-                    // ======================================
 
                     const product =
                         await Product.findById(
                             productId
                         )
-                            .populate(
-                                "category",
-                                "name"
-                            )
-                            .session(
-                                dbSession
-                            );
+                        .session(dbSession);
 
 
                     if (!product) {
-
                         throw new Error(
-                            `Product "${
-                                cartItem.name ||
-                                productId
-                            }" no longer exists.`
+                            "A product in your cart no longer exists."
                         );
                     }
 
 
-                    if (!product.isActive) {
-
-                        throw new Error(
-                            `Product "${product.name}" is no longer available.`
-                        );
-                    }
-
-
-                    // ======================================
-                    // PRODUCT.UNITS
-                    // ======================================
+                    /* --------------------------------------
+                       PRODUCT INVENTORY
+                    -------------------------------------- */
 
                     const availableUnits =
                         Number(
@@ -937,520 +928,260 @@ async function createStaffSale(
 
                     if (
                         availableUnits <
-                        qty
+                        quantity
                     ) {
-
                         throw new Error(
-                            `Only ${availableUnits} units of "${product.name}" are available.`
+                            `Insufficient stock for ${product.name}.`
                         );
                     }
 
 
-                    // ======================================
-                    // PRODUCT.SUBSTATIONUNITS
-                    //
-                    // Some products have substationUnits.
-                    //
-                    // When present, the staff sale must
-                    // also reduce this quantity.
-                    // ======================================
-
-                    const hasSubstationUnits =
-                        product.substationUnits !==
-                            undefined &&
-                        product.substationUnits !==
-                            null;
-
-
-                    const availableSubstationUnits =
-                        hasSubstationUnits
-                            ? Number(
-                                product.substationUnits ||
-                                0
-                            )
-                            : null;
-
-
-                    if (
-                        hasSubstationUnits &&
-                        availableSubstationUnits <
-                            qty
-                    ) {
-
-                        throw new Error(
-                            `Only ${availableSubstationUnits} substation units of "${product.name}" are available.`
-                        );
-                    }
-
-
-                    // ======================================
-                    // PRICE
-                    // ======================================
-
-                    const price =
-                        Number(
-                            cartItem.price ??
-                            product.unitSellPrice ??
-                            0
-                        );
-
-
-                    if (
-                        !Number.isFinite(price) ||
-                        price < 0
-                    ) {
-
-                        throw new Error(
-                            `Invalid selling price for "${product.name}".`
-                        );
-                    }
-
-
-                    const lineTotal =
-                        price * qty;
-
-
-                    totalAmount +=
-                        lineTotal;
-
-
-                    // ======================================
-                    // CATEGORY
-                    // ======================================
-
-                    let category = "";
-
-
-                    if (
-                        product.category
-                    ) {
-
-                        category =
-                            product.category.name ||
-                            String(
-                                product.category._id ||
-                                product.category
-                            );
-                    }
-
-
-                    // ======================================
-                    // SALE SNAPSHOT
-                    // ======================================
-
-                    saleProducts.push({
-
-                        productId:
-                            product._id,
-
-                        name:
-                            product.name,
-
-                        image:
-                            product.image ||
-                            cartItem.image ||
-                            "",
-
-                        category,
-
-                        subcategory:
-                            product.subcategory ||
-                            cartItem.subcategory ||
-                            "",
-
-                        qty,
-
-                        price,
-
-                        total:
-                            lineTotal,
-
-                        hasSubstationUnits,
-
-                        availableSubstationUnits
-
-                    });
-                }
-
-
-                // ==========================================
-                // UPDATE PRODUCT INVENTORY
-                //
-                // Product.units ALWAYS decreases.
-                //
-                // Product.substationUnits decreases only
-                // when the field exists on that Product.
-                // ==========================================
-
-                for (
-                    const saleItem
-                    of saleProducts
-                ) {
-
-                    const product =
-                        await Product.findById(
-                            saleItem.productId
-                        ).session(
-                            dbSession
-                        );
-
-
-                    if (!product) {
-
-                        throw new Error(
-                            `Product "${saleItem.name}" could not be found while updating inventory.`
-                        );
-                    }
-
-
-                    const productUpdate = {
-
-                        $inc: {
-
-                            units:
-                                -saleItem.qty
-
-                        }
-
-                    };
-
-
-                    // --------------------------------------
-                    // REDUCE PRODUCT.SUBSTATIONUNITS
-                    // --------------------------------------
-
-                    if (
-                        saleItem.hasSubstationUnits
-                    ) {
-
-                        productUpdate.$inc.substationUnits =
-                            -saleItem.qty;
-                    }
-
-
-                    const productResult =
-                        await Product.updateOne(
-                            {
-                                _id:
-                                    saleItem.productId,
-
-                                isActive:
-                                    true,
-
-                                units: {
-                                    $gte:
-                                        saleItem.qty
-                                },
-
-                                ...(saleItem.hasSubstationUnits
-                                    ? {
-                                        substationUnits: {
-                                            $gte:
-                                                saleItem.qty
-                                        }
-                                    }
-                                    : {})
-
-                            },
-                            productUpdate,
-                            {
-                                session:
-                                    dbSession
-                            }
-                        );
-
-
-                    if (
-                        productResult.modifiedCount !==
-                        1
-                    ) {
-
-                        throw new Error(
-                            `The available inventory for "${saleItem.name}" changed before the sale could be completed.`
-                        );
-                    }
-                }
-
-
-                // ==========================================
-                // UPDATE SUBSTATION PRODUCT INVENTORY
-                //
-                // Substation.productInventory[].units
-                // decreases by the same quantity.
-                // ==========================================
-
-                for (
-                    const saleItem
-                    of saleProducts
-                ) {
-
-                    if (
-                        !Array.isArray(
-                            substation.productInventory
-                        )
-                    ) {
-
-                        throw new Error(
-                            "The assigned substation has no product inventory."
-                        );
-                    }
-
-
-                    const inventoryItem =
-                        substation.productInventory.find(
-                            item =>
-                                String(
-                                    item.productId
-                                ) ===
-                                String(
-                                    saleItem.productId
-                                )
-                        );
-
-
-                    if (!inventoryItem) {
-
-                        throw new Error(
-                            `Product "${saleItem.name}" is not available in the assigned substation inventory.`
-                        );
-                    }
-
-
-                    const substationAvailableUnits =
-                        Number(
-                            inventoryItem.units || 0
-                        );
-
-
-                    if (
-                        substationAvailableUnits <
-                        saleItem.qty
-                    ) {
-
-                        throw new Error(
-                            `Only ${substationAvailableUnits} units of "${saleItem.name}" are available at your assigned substation.`
-                        );
-                    }
-
-
-                    // --------------------------------------
-                    // REDUCE SUBSTATION UNITS
-                    // --------------------------------------
-
-                    inventoryItem.units =
-                        substationAvailableUnits -
-                        saleItem.qty;
-
-
-                    inventoryItem.productName =
-                        saleItem.name;
-
-
-                    inventoryItem.updatedAt =
-                        new Date();
-                }
-
-
-                // ==========================================
-                // UPDATE SUBSTATION PRODUCT REDUCTIONS
-                // ==========================================
-
-                for (
-                    const saleItem
-                    of saleProducts
-                ) {
-
-                    let reduction =
+                    /* --------------------------------------
+                       SUBSTATION INVENTORY
+                    -------------------------------------- */
+
+                    let substationInventoryItem =
                         null;
 
 
                     if (
                         Array.isArray(
-                            substation.productReductions
+                            substation.productInventory
                         )
                     ) {
 
-                        reduction =
-                            substation.productReductions.find(
-                                item =>
-                                    String(
-                                        item.productId
-                                    ) ===
-                                    String(
-                                        saleItem.productId
-                                    )
+                        substationInventoryItem =
+                            substation.productInventory.find(
+                                inventoryItem => {
+
+                                    const inventoryProductId =
+                                        inventoryItem.productId ||
+                                        inventoryItem.product;
+
+                                    return (
+                                        inventoryProductId &&
+                                        String(
+                                            inventoryProductId
+                                        ) ===
+                                            String(
+                                                product._id
+                                            )
+                                    );
+                                }
                             );
                     }
 
 
-                    // --------------------------------------
-                    // CREATE REDUCTION RECORD
-                    // --------------------------------------
+                    if (
+                        substationInventoryItem
+                    ) {
 
-                    if (!reduction) {
-
-                        substation.productReductions.push({
-
-                            productId:
-                                saleItem.productId,
-
-                            productName:
-                                saleItem.name,
-
-                            category:
-                                saleItem.category ||
-                                "",
-
-                            unitsReduced:
-                                saleItem.qty,
-
-                            lastReducedAt:
-                                new Date()
-
-                        });
-                    }
-
-
-                    // --------------------------------------
-                    // UPDATE EXISTING REDUCTION RECORD
-                    // --------------------------------------
-
-                    else {
-
-                        reduction.productName =
-                            saleItem.name;
-
-
-                        reduction.category =
-                            saleItem.category ||
-                            reduction.category ||
-                            "";
-
-
-                        reduction.unitsReduced =
+                        const substationUnits =
                             Number(
-                                reduction.unitsReduced ||
+                                substationInventoryItem.units ||
                                 0
-                            ) +
-                            saleItem.qty;
+                            );
 
 
-                        reduction.lastReducedAt =
-                            new Date();
+                        if (
+                            substationUnits <
+                            quantity
+                        ) {
+                            throw new Error(
+                                `Insufficient ${product.name} stock at this substation.`
+                            );
+                        }
+
+
+                        substationInventoryItem.units =
+                            substationUnits -
+                            quantity;
                     }
-                }
 
 
-                // ==========================================
-                // SAVE SUBSTATION
-                // ==========================================
+                    /* --------------------------------------
+                       REDUCE MAIN PRODUCT STOCK
+                    -------------------------------------- */
 
-                await substation.save({
-                    session:
-                        dbSession
-                });
+                    product.units =
+                        availableUnits -
+                        quantity;
 
 
-                // ==========================================
-                // CREATE STAFF SALE
-                // ==========================================
-
-                sale =
-                    new StaffSale({
-
-                        salesName:
-                            cleanSalesName,
-
-                        products:
-                            saleProducts,
-
-                        totalAmount,
-
-                        soldBy:
-                            staff._id
-
+                    await product.save({
+                        session: dbSession
                     });
 
 
-                await sale.save({
-                    session:
-                        dbSession
+                    /* --------------------------------------
+                       SALE ITEM
+                    -------------------------------------- */
+
+                    const unitPrice =
+                        Number(
+                            cartItem.price ??
+                            product.price ??
+                            0
+                        );
+
+
+                    const itemTotal =
+                        unitPrice *
+                        quantity;
+
+
+                    saleProducts.push({
+                        productId:
+                            product._id,
+
+                        name:
+                            cartItem.name ||
+                            product.name,
+
+                        image:
+                            cartItem.image ||
+                            product.image ||
+                            "",
+
+                        category:
+                            product.category,
+
+                        subcategory:
+                            product.subcategory,
+
+                        qty:
+                            quantity,
+
+                        price:
+                            unitPrice,
+
+                        total:
+                            itemTotal
+                    });
+                }
+
+
+                /* ------------------------------------------
+                   SAVE SUBSTATION
+                ------------------------------------------ */
+
+                await substation.save({
+                    session: dbSession
                 });
 
 
-                // ==========================================
-                // CLEAR CART
-                //
-                // Only reached after all inventory changes
-                // and the StaffSale have succeeded.
-                // ==========================================
+                /* ------------------------------------------
+                   TOTAL
+                ------------------------------------------ */
+
+                const total =
+                    saleProducts.reduce(
+                        (sum, item) => {
+                            return (
+                                sum +
+                                Number(
+                                    item.total || 0
+                                );
+                        },
+                        0
+                    );
+
+
+                /* ------------------------------------------
+                   CREATE STAFF SALE
+                ------------------------------------------ */
+
+                const saleData = {
+                    staff:
+                        staffId,
+
+                    substation:
+                        substation._id,
+
+                    products:
+                        saleProducts,
+
+                    total,
+
+                    totalAmount:
+                        total
+                };
+
+
+                /*
+                 * Preserve any fields supplied by the
+                 * existing controller if StaffSale supports
+                 * them.
+                 */
+
+                if (data.paymentMethod) {
+                    saleData.paymentMethod =
+                        data.paymentMethod;
+                }
+
+                if (data.customer) {
+                    saleData.customer =
+                        data.customer;
+                }
+
+
+                const sales =
+                    await StaffSale.create(
+                        [saleData],
+                        {
+                            session:
+                                dbSession
+                        }
+                    );
+
+
+                createdSale =
+                    sales[0];
+
+
+                /* ------------------------------------------
+                   CLEAR STAFF CART
+                   
+                   Only happens after the sale has been
+                   successfully created.
+                ------------------------------------------ */
 
                 cart.items = [];
+                cart.totalPrice = 0;
 
 
                 await cart.save({
-                    session:
-                        dbSession
+                    session: dbSession
                 });
             }
         );
 
 
-        return sale;
+        return createdSale;
 
     } finally {
-
         await dbSession.endSession();
     }
 }
 
 
-// ==========================================================
-// CALCULATE TOTAL
-// ==========================================================
-
-function calculateTotal(cart) {
-
-    return (
-        cart?.items || []
-    ).reduce(
-        (
-            sum,
-            item
-        ) => {
-
-            return (
-                sum +
-                Number(
-                    item.price || 0
-                ) *
-                Number(
-                    item.qty || 0
-                )
-            );
-
-        },
-        0
-    );
-}
-
-
-// ==========================================================
-// EXPORTS
-// ==========================================================
+/* ==========================================================
+   EXPORTS
+========================================================== */
 
 module.exports = {
-
     getOrCreateCart,
-
     addToCart,
-
     getCart,
-
     removeItem,
-
+    clearCart,
     calculateTotal,
+    createStaffSale,
 
-    createStaffSale
-
+    /*
+     * Kept available for controllers/services that need
+     * compatibility with the current cart structure.
+     */
+    getQuantity,
+    getProductId
 };
