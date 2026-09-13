@@ -15,9 +15,7 @@
 
       <i class="fas fa-circle-exclamation"></i>
 
-      <span>
-        <%= error %>
-      </span>
+      <span><%= error %></span>
 
     </div>
 
@@ -30,9 +28,7 @@
 
       <i class="fas fa-circle-check"></i>
 
-      <span>
-        <%= success %>
-      </span>
+      <span><%= success %></span>
 
     </div>
 
@@ -69,20 +65,42 @@
         arrears === 0 &&
         !cleared;
 
-      const packageSubstation =
+      /*
+       * IMPORTANT:
+       *
+       * packageSubstation is the customer's
+       * selected pickup station.
+       *
+       * confirmedSubstationId is the station
+       * recorded when staff confirms the package.
+       *
+       * The overview must therefore use
+       * packageSubstation first.
+       */
+
+      const selectedSubstation =
         packageDoc.packageSubstationInfo ||
         null;
+
+      const confirmedSubstation =
+        packageDoc.confirmedSubstationId ||
+        null;
+
+      const clientName =
+        packageDoc.client?.name ||
+        packageDoc.clientId ||
+        "—";
+
+      const clientEmail =
+        packageDoc.client?.email ||
+        "—";
 
       const clientPhone =
         packageDoc.client?.phone ||
         packageDoc.phoneNumber ||
-        "";
+        "—";
     %>
 
-
-    <!-- ======================================================
-         PACKAGE HEADER
-    ======================================================= -->
 
     <div class="staff-detail-header-card">
 
@@ -97,7 +115,9 @@
         </h1>
 
         <p>
-          <%= new Date(packageDoc.createdAt).toLocaleString() %>
+          <%= new Date(
+            packageDoc.createdAt
+          ).toLocaleString() %>
         </p>
 
       </div>
@@ -128,9 +148,9 @@
     </div>
 
 
-    <!-- ======================================================
+    <!-- =====================================================
          OVERVIEW
-    ======================================================= -->
+    ====================================================== -->
 
     <div class="staff-overview-card">
 
@@ -151,7 +171,7 @@
           </small>
 
           <strong>
-            <%= packageDoc.client?.name || packageDoc.clientId || "—" %>
+            <%= clientName %>
           </strong>
 
         </div>
@@ -165,31 +185,24 @@
             PHONE
           </small>
 
+          <strong>
 
-          <% if (clientPhone) { %>
-
-            <strong>
+            <% if (clientPhone !== "—") { %>
 
               <a
                 href="tel:<%= clientPhone %>"
                 class="staff-phone-link"
               >
-
-                <i class="fas fa-phone"></i>
-
                 <%= clientPhone %>
-
               </a>
 
-            </strong>
+            <% } else { %>
 
-          <% } else { %>
-
-            <strong>
               —
-            </strong>
 
-          <% } %>
+            <% } %>
+
+          </strong>
 
         </div>
 
@@ -203,7 +216,7 @@
           </small>
 
           <strong>
-            <%= packageDoc.client?.email || "—" %>
+            <%= clientEmail %>
           </strong>
 
         </div>
@@ -224,7 +237,17 @@
         </div>
 
 
-        <!-- SUBSTATION -->
+        <!-- =================================================
+             CUSTOMER PICKUP SUBSTATION
+
+             THIS IS THE IMPORTANT FIX.
+
+             Do NOT use:
+                 confirmedSubstationId
+
+             Use:
+                 packageSubstation
+             ================================================= -->
 
         <div class="staff-info-card">
 
@@ -234,24 +257,68 @@
 
           <strong>
 
-            <%= packageSubstation?.name ||
-                packageDoc.packageSubstationName ||
-                "Not assigned" %>
+            <% if (selectedSubstation) { %>
+
+              <%= selectedSubstation.name %>
+
+              <% if (selectedSubstation.location) { %>
+
+                <span
+                  style="
+                    display:block;
+                    margin-top:4px;
+                    font-size:12px;
+                    font-weight:500;
+                    opacity:.7;
+                  "
+                >
+                  <%= selectedSubstation.location %>
+                </span>
+
+              <% } %>
+
+            <% } else if (packageDoc.packageSubstation) { %>
+
+              <!--
+                The package contains a station ID,
+                but the station record could not be
+                resolved. Never falsely say "Not assigned".
+              -->
+
+              <%= String(
+                packageDoc.packageSubstation
+              ) %>
+
+            <% } else { %>
+
+              Not assigned
+
+            <% } %>
 
           </strong>
 
-
-          <% if (packageSubstation?.location) { %>
-
-            <span class="staff-info-secondary">
-
-              <%= packageSubstation.location %>
-
-            </span>
-
-          <% } %>
-
         </div>
+
+
+        <!-- CONFIRMED SUBSTATION -->
+
+        <% if (confirmedSubstation) { %>
+
+          <div class="staff-info-card">
+
+            <small>
+              CONFIRMED AT
+            </small>
+
+            <strong>
+
+              <%= confirmedSubstation.name || "—" %>
+
+            </strong>
+
+          </div>
+
+        <% } %>
 
 
         <!-- PAID -->
@@ -263,7 +330,8 @@
           </small>
 
           <strong>
-            KSh <%= totalPaid.toLocaleString() %>
+            KSh
+            <%= totalPaid.toLocaleString() %>
           </strong>
 
         </div>
@@ -279,12 +347,12 @@
 
           <strong
             class="<%= arrears > 0
-              ? "staff-arrears-amount"
-              : "staff-cleared-amount" %>"
+              ? 'staff-arrears-amount'
+              : 'staff-cleared-amount'
+            %>"
           >
-
-            KSh <%= arrears.toLocaleString() %>
-
+            KSh
+            <%= arrears.toLocaleString() %>
           </strong>
 
         </div>
@@ -295,9 +363,9 @@
     </div>
 
 
-    <!-- ======================================================
+    <!-- =====================================================
          ITEMS
-    ======================================================= -->
+    ====================================================== -->
 
     <div class="staff-items-card">
 
@@ -306,12 +374,9 @@
       </div>
 
 
-      <% (packageDoc.items || []).forEach(function (item) { %>
+      <% (packageDoc.items || []).forEach(function(item) { %>
 
         <div class="staff-item-row">
-
-
-          <!-- IMAGE -->
 
           <div class="staff-item-image">
 
@@ -319,7 +384,7 @@
 
               <img
                 src="<%= item.image %>"
-                alt="<%= item.name || "Product" %>"
+                alt="<%= item.name %>"
               >
 
             <% } else { %>
@@ -331,23 +396,19 @@
           </div>
 
 
-          <!-- ITEM DETAILS -->
-
           <div class="staff-item-main">
 
             <div class="staff-item-name">
-              <%= item.name || "Unnamed product" %>
+              <%= item.name %>
             </div>
-
 
             <div class="staff-item-meta">
 
               Qty
-              <%= Number(item.qty || 0) %>
+              <%= item.qty %>
 
-              ·
+              · KSh
 
-              KSh
               <%= Number(
                 item.price || 0
               ).toLocaleString() %>
@@ -358,8 +419,6 @@
 
           </div>
 
-
-          <!-- ITEM TOTAL -->
 
           <strong class="staff-item-total">
 
@@ -372,13 +431,10 @@
 
           </strong>
 
-
         </div>
 
       <% }); %>
 
-
-      <!-- TOTAL -->
 
       <div class="staff-total-line">
 
@@ -387,15 +443,18 @@
         </span>
 
         <strong>
-          KSh <%= totalAmount.toLocaleString() %>
+
+          KSh
+          <%= totalAmount.toLocaleString() %>
+
         </strong>
 
       </div>
 
 
-      <!-- ====================================================
+      <!-- ===================================================
            CONFIRM PACKAGE
-      ===================================================== -->
+      ==================================================== -->
 
       <% if (
         role === "staff" &&
@@ -441,7 +500,8 @@
             <div class="staff-action-error">
 
               <%= confirmationError ||
-                "This package cannot be confirmed because one or more products exceed the assigned substation balance." %>
+                "This package cannot be confirmed because one or more products exceed the assigned substation balance."
+              %>
 
             </div>
 
@@ -452,9 +512,9 @@
       <% } %>
 
 
-      <!-- ====================================================
-           MARK DELIVERED
-      ===================================================== -->
+      <!-- ===================================================
+           DELIVER PACKAGE
+      ==================================================== -->
 
       <% if (
         role === "staff" &&
@@ -493,9 +553,9 @@
       <% } %>
 
 
-      <!-- ====================================================
-           RECORD PAYMENT
-      ===================================================== -->
+      <!-- ===================================================
+           PAYMENT
+      ==================================================== -->
 
       <% if (
         isDelivered &&
@@ -524,7 +584,6 @@
             <label for="amountPaid">
               Amount paid (KSh)
             </label>
-
 
             <input
               id="amountPaid"
@@ -556,9 +615,9 @@
       <% } %>
 
 
-      <!-- ====================================================
+      <!-- ===================================================
            CLEAR PACKAGE
-      ===================================================== -->
+      ==================================================== -->
 
       <% if (canClear) { %>
 
@@ -577,11 +636,10 @@
               Package ready to be cleared
             </div>
 
-
             <p>
               This package has been delivered and has no
-              outstanding arrears. Mark it as cleared to
-              close its payment handling.
+              outstanding arrears. Mark it as cleared to close
+              its payment handling.
             </p>
 
 
@@ -610,9 +668,9 @@
       <% } %>
 
 
-      <!-- ====================================================
+      <!-- ===================================================
            ALREADY CLEARED
-      ===================================================== -->
+      ==================================================== -->
 
       <% if (cleared) { %>
 
@@ -630,7 +688,6 @@
             <strong>
               Package cleared
             </strong>
-
 
             <p>
 
@@ -667,11 +724,6 @@
 
   <% } else { %>
 
-
-    <!-- ======================================================
-         PACKAGE NOT FOUND
-    ======================================================= -->
-
     <div class="staff-empty staff-empty-large">
 
       <i class="fas fa-box-open"></i>
@@ -682,8 +734,6 @@
 
     </div>
 
-
   <% } %>
-
 
 </section>
