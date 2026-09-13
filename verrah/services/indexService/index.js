@@ -1,14 +1,20 @@
 // ==========================================================
-// verrah/services/indexService/index.js
-// INDEX SERVICE EXPORTS
+// verrah/services/salesService/index.js
+// SALES SERVICE EXPORTS
 // ==========================================================
 
 module.exports = {
 
-    ...require("./servicesService"),
+    ...require("./page"),
 
-    ...require("./branches"),
+    ...require("./filter"),
 
-    ...require("./category")
+    ...require("./summary"),
+
+    ...require("./staffSales"),
+
+    ...require("./products"),
+
+    ...require("./arrears")
 
 };
