@@ -1,5 +1,6 @@
 // =========================================================
 // verrah/controllers/carts.js
+//
 // CART CONTROLLER
 // =========================================================
 
@@ -50,8 +51,11 @@ exports.list = async (req, res) => {
         const cart =
             await cartService.getCart(req);
 
+
         const total =
-            cartService.calculateTotal(cart);
+            cartService.calculateTotal(
+                cart
+            );
 
 
         return res.render(
@@ -102,11 +106,19 @@ exports.list = async (req, res) => {
 
 
 // =========================================================
-// CART DETAILS
+// CHECKOUT PAGE
 // GET /carts/:id
+//
+// Renders:
+// cart/cart-checkout.ejs
+//
+// :id = product ID / cart item productId
 // =========================================================
 
-exports.details = async (req, res) => {
+exports.checkoutPage = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -125,6 +137,10 @@ exports.details = async (req, res) => {
             );
         }
 
+
+        // -----------------------------------------------------
+        // FIND SELECTED CART ITEM
+        // -----------------------------------------------------
 
         const item =
             cart.items.find(
@@ -146,106 +162,26 @@ exports.details = async (req, res) => {
         }
 
 
-        return res.render(
-            "cart/cart-details",
-            {
-                title:
-                    `${item.name} | Cart | Verrah Cosmetics`,
+        // -----------------------------------------------------
+        // GET SUBSTATIONS
+        // -----------------------------------------------------
 
-                cart,
-
-                item,
-
-                total:
-                    cartService.calculateTotal(
-                        cart
-                    ),
-
-                error:
-                    req.query.error || null,
-
-                user:
-                    req.user
-            }
-        );
-
-    } catch (err) {
-
-        console.error(
-            "Cart details error:",
-            err
-        );
-
-
-        return res.redirect(
-            "/carts"
-        );
-    }
-};
-
-
-
-// =========================================================
-// CART CHECKOUT
-// GET /carts/:id/checkout
-// =========================================================
-
-exports.checkout = async (req, res) => {
-
-    try {
-
-        const cart =
-            await cartService.getCart(req);
+        let substations = [];
 
 
         if (
-            !cart ||
-            !cart.items ||
-            !cart.items.length
+            typeof cartService.getSubstations ===
+            "function"
         ) {
 
-            return res.redirect(
-                "/carts"
-            );
+            substations =
+                await cartService.getSubstations();
         }
 
 
-        const item =
-            cart.items.find(
-                currentItem =>
-                    String(
-                        currentItem.productId
-                    ) ===
-                    String(
-                        req.params.id
-                    )
-            );
-
-
-        if (!item) {
-
-            return res.redirect(
-                "/carts"
-            );
-        }
-
-
-        /*
-         * Get available substations for pickup.
-         *
-         * This expects cartService to expose the substation
-         * retrieval method. If your project already retrieves
-         * substations through another service, use that service
-         * here instead.
-         */
-
-        const substations =
-            await cartService.getSubstations();
-
-
-        /*
-         * User's previously selected pickup station.
-         */
+        // -----------------------------------------------------
+        // PREVIOUS PICKUP STATION
+        // -----------------------------------------------------
 
         const pickupStation =
             req.user &&
@@ -253,6 +189,10 @@ exports.checkout = async (req, res) => {
                 ? req.user.pickupStation
                 : null;
 
+
+        // -----------------------------------------------------
+        // RENDER CHECKOUT
+        // -----------------------------------------------------
 
         return res.render(
             "cart/cart-checkout",
@@ -299,45 +239,100 @@ exports.checkout = async (req, res) => {
 };
 
 
-
 // =========================================================
-// REMOVE CART ITEM
-// POST /carts/:id/remove
+// CART DETAILS
+// GET /carts/:id/details
+//
+// Renders:
+// cart/cart-details.ejs
+//
+// :id = product ID / cart item productId
 // =========================================================
 
-exports.remove = async (req, res) => {
+exports.details = async (
+    req,
+    res
+) => {
 
     try {
 
-        await cartService.removeItem(
-            req,
-            req.params.id
-        );
+        const cart =
+            await cartService.getCart(req);
 
 
-        return res.redirect(
-            "/carts"
+        if (
+            !cart ||
+            !cart.items ||
+            !cart.items.length
+        ) {
+
+            return res.redirect(
+                "/carts"
+            );
+        }
+
+
+        // -----------------------------------------------------
+        // FIND SELECTED CART ITEM
+        // -----------------------------------------------------
+
+        const item =
+            cart.items.find(
+                currentItem =>
+                    String(
+                        currentItem.productId
+                    ) ===
+                    String(
+                        req.params.id
+                    )
+            );
+
+
+        if (!item) {
+
+            return res.redirect(
+                "/carts"
+            );
+        }
+
+
+        // -----------------------------------------------------
+        // RENDER DETAILS
+        // -----------------------------------------------------
+
+        return res.render(
+            "cart/cart-details",
+            {
+                title:
+                    `${item.name} | Cart | Verrah Cosmetics`,
+
+                cart,
+
+                item,
+
+                total:
+                    cartService.calculateTotal(
+                        cart
+                    ),
+
+                error:
+                    req.query.error || null,
+
+                user:
+                    req.user
+            }
         );
 
     } catch (err) {
 
         console.error(
-            "Remove cart item error:",
+            "Cart details error:",
             err
         );
 
 
-        const message =
-            getCartErrorMessage(
-                err,
-                "Unable to remove item."
-            );
-
-
         return res.redirect(
-            `/carts/${req.params.id}?error=${encodeURIComponent(
-                message
-            )}`
+            "/carts"
         );
     }
 };
@@ -348,7 +343,10 @@ exports.remove = async (req, res) => {
 // POST /carts/:id/remove
 // =========================================================
 
-exports.remove = async (req, res) => {
+exports.remove = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -378,7 +376,7 @@ exports.remove = async (req, res) => {
 
 
         return res.redirect(
-            `/carts/${req.params.id}?error=${encodeURIComponent(
+            `/carts/${req.params.id}/details?error=${encodeURIComponent(
                 message
             )}`
         );
@@ -396,7 +394,10 @@ exports.remove = async (req, res) => {
 // The controller does not reserve stock.
 // =========================================================
 
-exports.checkout = async (req, res) => {
+exports.checkout = async (
+    req,
+    res
+) => {
 
     const method =
         String(
@@ -463,8 +464,14 @@ exports.checkout = async (req, res) => {
         }
 
 
+        // -----------------------------------------------------
+        // INVALID PAYMENT METHOD
+        // -----------------------------------------------------
+
         return res.redirect(
-            "/carts?error=Choose a checkout method."
+            `/carts/${req.body.productId || ""}?error=${encodeURIComponent(
+                "Choose a checkout method."
+            )}`
         );
 
     } catch (err) {
@@ -483,7 +490,7 @@ exports.checkout = async (req, res) => {
 
 
         return res.redirect(
-            `/carts?error=${encodeURIComponent(
+            `/carts/${req.body.productId || ""}?error=${encodeURIComponent(
                 message
             )}`
         );
@@ -499,7 +506,10 @@ exports.checkout = async (req, res) => {
 // No reservation logic.
 // =========================================================
 
-exports.staffSale = async (req, res) => {
+exports.staffSale = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -639,7 +649,10 @@ exports.staffSale = async (req, res) => {
 // GET /carts/payment/:id
 // =========================================================
 
-exports.paymentPage = async (req, res) => {
+exports.paymentPage = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -692,7 +705,10 @@ exports.paymentPage = async (req, res) => {
 // GET /carts/payment/:id/status
 // =========================================================
 
-exports.paymentStatus = async (req, res) => {
+exports.paymentStatus = async (
+    req,
+    res
+) => {
 
     try {
 
