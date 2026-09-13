@@ -31,8 +31,12 @@ router.get(
 
 
 // =========================================================
-// CHECKOUT SUBMISSION
+// CHECKOUT
 // POST /carts/checkout
+//
+// The customer must select a pickup substation first.
+// The selection is saved to User.pickupStation before
+// either payment path is executed.
 // =========================================================
 
 router.post(
@@ -85,6 +89,9 @@ router.get(
 //
 // Renders:
 // cart/cart-details.ejs
+//
+// The substation middleware loads the user's
+// previously selected pickup station.
 // =========================================================
 
 router.get(
@@ -92,24 +99,6 @@ router.get(
     requireLogin,
     checkoutSubstation.load,
     controller.details
-);
-
-
-// =========================================================
-// CHECKOUT PAGE
-// GET /carts/:id
-//
-// Renders:
-// cart/cart-checkout.ejs
-//
-// This must come AFTER the more specific routes above.
-// =========================================================
-
-router.get(
-    "/:id",
-    requireLogin,
-    checkoutSubstation.load,
-    controller.checkoutPage
 );
 
 
@@ -125,4 +114,21 @@ router.post(
 );
 
 
-module.exports = router;
+// =========================================================
+// CHECKOUT PAGE
+// GET /carts/:id
+//
+// Renders:
+// cart/cart-checkout.ejs
+//
+// The substation middleware loads the user's
+// previously selected pickup station and makes
+// the checkout page ready for selection.
+// =========================================================
+
+router.get(
+    "/:id",
+    requireLogin,
+    checkoutSubstation.load,
+    controller.checkoutPage
+);
