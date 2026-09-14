@@ -15,6 +15,9 @@ const StaffSale =
 const Product =
     require("../../models/products");
 
+const Stock =
+    require("../../models/stock");
+
 
 // ==========================================================
 // GET SUMMARY
@@ -110,6 +113,32 @@ async function getSummary(
 
 
     let staffSalesBuyingCost =
+        0;
+
+
+    // ======================================================
+    // ASSET COST
+    // ======================================================
+    //
+    // Product asset cost:
+    //
+    //     buyPrice × units
+    //
+    // Stock asset cost:
+    //
+    //     buyPrice × units
+    //
+    // Total:
+    //
+    //     Product asset cost + Stock asset cost
+    //
+    // ======================================================
+
+    let productAssetCost =
+        0;
+
+
+    let stockAssetCost =
         0;
 
 
@@ -224,7 +253,7 @@ async function getSummary(
 
 
     // ======================================================
-    // LOAD BUYING PRICES
+    // LOAD BUYING PRICES FOR SOLD PRODUCTS
     // ======================================================
 
     const productMap =
@@ -373,6 +402,119 @@ async function getSummary(
 
 
     // ======================================================
+    // LOAD ALL PRODUCTS FOR ASSET COST
+    // ======================================================
+    //
+    // Every Product contributes:
+    //
+    //     buyPrice × units
+    //
+    // ======================================================
+
+    const allProducts =
+        await Product.find({
+
+            isActive:
+                true
+
+        })
+
+            .select(
+                "buyPrice units"
+            )
+
+            .lean();
+
+
+    // ======================================================
+    // CALCULATE PRODUCT ASSET COST
+    // ======================================================
+
+    for (
+        const product
+        of allProducts
+    ) {
+
+        const buyPrice =
+            Number(
+                product.buyPrice || 0
+            );
+
+
+        const units =
+            Number(
+                product.units || 0
+            );
+
+
+        productAssetCost +=
+            buyPrice * units;
+
+    }
+
+
+    // ======================================================
+    // LOAD ALL STOCK FOR ASSET COST
+    // ======================================================
+    //
+    // Every Stock record contributes:
+    //
+    //     buyPrice × units
+    //
+    // ======================================================
+
+    const allStock =
+        await Stock.find({
+
+            isActive:
+                true
+
+        })
+
+            .select(
+                "buyPrice units"
+            )
+
+            .lean();
+
+
+    // ======================================================
+    // CALCULATE STOCK ASSET COST
+    // ======================================================
+
+    for (
+        const stock
+        of allStock
+    ) {
+
+        const buyPrice =
+            Number(
+                stock.buyPrice || 0
+            );
+
+
+        const units =
+            Number(
+                stock.units || 0
+            );
+
+
+        stockAssetCost +=
+            buyPrice * units;
+
+    }
+
+
+    // ======================================================
+    // TOTAL ASSET COST
+    // ======================================================
+
+    const assetCost =
+        productAssetCost +
+        stockAssetCost;
+
+
+    // ======================================================
     // PROFITS
     // ======================================================
 
@@ -422,6 +564,18 @@ async function getSummary(
 
 
         customerArrears,
+
+
+        // ==================================================
+        // ASSET COST
+        // ==================================================
+
+        assetCost,
+
+        productAssetCost,
+
+        stockAssetCost,
+
 
         staffSales
 
