@@ -757,3 +757,38 @@
     }
 
 }
+
+
+.sales-filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+    margin: 0 0 1rem;
+    border: 1px solid #8b4513;
+    border-radius: 8px;
+    background: #8b4513;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.sales-filter-toggle:hover {
+    background: #6f350f;
+    border-color: #6f350f;
+}
+
+.sales-filter-toggle:active {
+    transform: translateY(1px);
+}
+
+.sales-filter-toggle:focus-visible {
+    outline: 2px solid #8b4513;
+    outline-offset: 3px;
+}
+
+.sales-filter[hidden] {
+    display: none !important;
+}
