@@ -1,167 +1,210 @@
-<section class="sales-page">
+<section class="sales-page"><!-- =====================================================
+     SALES HEADER
+====================================================== -->
 
-    <!-- =====================================================
-         SALES HEADER
-    ====================================================== -->
+<header class="sales-header">
 
-    <header class="sales-header">
-
-        <div class="sales-header-icon">
-            <i class="fas fa-chart-line"></i>
-        </div>
-
-        <div>
-            <span class="sales-kicker">
-                VERAH COSMETICS
-            </span>
-
-            <h1 class="sales-title">
-                Sales
-            </h1>
-
-            <p class="sales-subtitle">
-                Monitor sales, products, staff sales and customer arrears.
-            </p>
-        </div>
-
-    </header>
-
-
-    <!-- =====================================================
-         SALES NAVIGATION
-    ====================================================== -->
-
-    <nav class="sales-navigation">
-
-        <!-- SUMMARY -->
-
-        <a
-            href="/sales?tab=summary<%= salesQuerySuffix %>"
-            class="sales-navigation-tab <%= activeTab === 'summary' ? 'active' : '' %>"
-        >
-            <i class="fas fa-chart-pie"></i>
-            <span>Sales Summary</span>
-        </a>
-
-
-        <!-- STAFF SALES / SALES REPORT -->
-
-        <a
-            href="/sales?tab=staff-sales<%= salesQuerySuffix %>"
-            class="sales-navigation-tab <%= activeTab === 'staff-sales' ? 'active' : '' %>"
-        >
-            <i class="fas fa-user-tie"></i>
-            <span>Sales Report</span>
-        </a>
-
-
-        <!-- PRODUCTS -->
-
-        <a
-            href="/sales?tab=products<%= salesQuerySuffix %>"
-            class="sales-navigation-tab <%= activeTab === 'products' ? 'active' : '' %>"
-        >
-            <i class="fas fa-boxes-stacked"></i>
-            <span>Products</span>
-        </a>
-
-
-        <!-- ARREARS -->
-
-        <a
-            href="/sales?tab=arrears<%= salesQuerySuffix %>"
-            class="sales-navigation-tab <%= activeTab === 'arrears' ? 'active' : '' %>"
-        >
-            <i class="fas fa-hand-holding-dollar"></i>
-            <span>Customer Arrears</span>
-        </a>
-
-    </nav>
-
-
-    <!-- =====================================================
-         FILTER
-         
-         The service supplies activeFilter according to the
-         currently selected tab.
-
-         Therefore:
-         summary      -> summaryFilter
-         staff-sales  -> staffSalesFilter
-         products     -> productsFilter
-         arrears      -> arrearsFilter
-    ====================================================== -->
-
-    <div class="sales-filter-wrapper">
-
-        <%- include("sales-partials/filter") %>
-
+    <div class="sales-header-icon">
+        <i class="fas fa-chart-line"></i>
     </div>
 
+    <div>
+        <span class="sales-kicker">
+            VERAH COSMETICS
+        </span>
 
-    <!-- =====================================================
-         SALES CONTENT
-    ====================================================== -->
+        <h1 class="sales-title">
+            Sales
+        </h1>
 
-    <main class="sales-content">
+        <p class="sales-subtitle">
+            Monitor sales, products, staff sales and customer arrears.
+        </p>
+    </div>
 
-
-        <!-- =================================================
-             SALES SUMMARY
-        ================================================== -->
-
-        <section
-            class="sales-panel <%= activeTab === 'summary' ? 'active' : '' %>"
-            <%= activeTab === 'summary' ? '' : 'hidden' %>
-        >
-
-            <%- include("sales-partials/summary") %>
-
-        </section>
+</header>
 
 
-        <!-- =================================================
-             STAFF SALES / SALES REPORT
-        ================================================== -->
+<!-- =====================================================
+     SALES NAVIGATION
+====================================================== -->
 
-        <section
-            class="sales-panel <%= activeTab === 'staff-sales' ? 'active' : '' %>"
-            <%= activeTab === 'staff-sales' ? '' : 'hidden' %>
-        >
+<nav
+    class="sales-navigation"
+    id="sales-navigation"
+>
 
-            <%- include("sales-partials/staff-sales") %>
-
-        </section>
-
-
-        <!-- =================================================
-             PRODUCTS
-        ================================================== -->
-
-        <section
-            class="sales-panel <%= activeTab === 'products' ? 'active' : '' %>"
-            <%= activeTab === 'products' ? '' : 'hidden' %>
-        >
-
-            <%- include("sales-partials/products") %>
-
-        </section>
+    <a
+        href="/sales?tab=summary<%= salesQuerySuffix %>"
+        class="sales-navigation-tab <%= activeTab === 'summary' ? 'active' : '' %>"
+    >
+        <i class="fas fa-chart-pie"></i>
+        <span>Sales Summary</span>
+    </a>
 
 
-        <!-- =================================================
-             CUSTOMER ARREARS
-        ================================================== -->
-
-        <section
-            class="sales-panel <%= activeTab === 'arrears' ? 'active' : '' %>"
-            <%= activeTab === 'arrears' ? '' : 'hidden' %>
-        >
-
-            <%- include("sales-partials/arrears") %>
-
-        </section>
+    <a
+        href="/sales?tab=staff-sales<%= salesQuerySuffix %>"
+        class="sales-navigation-tab <%= activeTab === 'staff-sales' ? 'active' : '' %>"
+    >
+        <i class="fas fa-user-tie"></i>
+        <span>Sales Report</span>
+    </a>
 
 
-    </main>
+    <a
+        href="/sales?tab=products<%= salesQuerySuffix %>"
+        class="sales-navigation-tab <%= activeTab === 'products' ? 'active' : '' %>"
+    >
+        <i class="fas fa-boxes-stacked"></i>
+        <span>Products</span>
+    </a>
 
-</section>
+
+    <a
+        href="/sales?tab=arrears<%= salesQuerySuffix %>"
+        class="sales-navigation-tab <%= activeTab === 'arrears' ? 'active' : '' %>"
+    >
+        <i class="fas fa-hand-holding-dollar"></i>
+        <span>Customer Arrears</span>
+    </a>
+
+</nav>
+
+
+<!-- =====================================================
+     FILTER
+====================================================== -->
+
+<div class="sales-filter-wrapper">
+
+    <%- include("sales-partials/filter") %>
+
+</div>
+
+
+<!-- =====================================================
+     SALES CONTENT
+====================================================== -->
+
+<main class="sales-content">
+
+
+    <!-- =================================================
+         SALES SUMMARY
+    ================================================== -->
+
+    <section
+        class="sales-panel <%= activeTab === 'summary' ? 'active' : '' %>"
+        <%= activeTab === 'summary' ? '' : 'hidden' %>
+    >
+
+        <%- include("sales-partials/summary") %>
+
+    </section>
+
+
+    <!-- =================================================
+         STAFF SALES / SALES REPORT
+    ================================================== -->
+
+    <section
+        class="sales-panel <%= activeTab === 'staff-sales' ? 'active' : '' %>"
+        <%= activeTab === 'staff-sales' ? '' : 'hidden' %>
+    >
+
+        <%- include("sales-partials/staff-sales") %>
+
+    </section>
+
+
+    <!-- =================================================
+         PRODUCTS
+    ================================================== -->
+
+    <section
+        class="sales-panel <%= activeTab === 'products' ? 'active' : '' %>"
+        <%= activeTab === 'products' ? '' : 'hidden' %>
+    >
+
+        <%- include("sales-partials/products") %>
+
+    </section>
+
+
+    <!-- =================================================
+         CUSTOMER ARREARS
+    ================================================== -->
+
+    <section
+        class="sales-panel <%= activeTab === 'arrears' ? 'active' : '' %>"
+        <%= activeTab === 'arrears' ? '' : 'hidden' %>
+    >
+
+        <%- include("sales-partials/arrears") %>
+
+    </section>
+
+
+</main>
+
+</section><script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const navigation = document.getElementById("sales-navigation");
+
+    if (!navigation) {
+        return;
+    }
+
+
+    /*
+     * Restore the navigation's horizontal position
+     * after changing tabs.
+     *
+     * The active tab is NOT scrolled into view.
+     * This prevents the navigation from jumping back
+     * toward the first tab.
+     */
+
+    const savedScrollLeft =
+        sessionStorage.getItem("salesNavigationScrollLeft");
+
+    if (savedScrollLeft !== null) {
+
+        requestAnimationFrame(function () {
+
+            navigation.scrollLeft = Number(savedScrollLeft);
+
+        });
+
+        sessionStorage.removeItem(
+            "salesNavigationScrollLeft"
+        );
+    }
+
+
+    /*
+     * Save the exact horizontal position before
+     * navigating to another sales tab.
+     */
+
+    const tabs = navigation.querySelectorAll(
+        ".sales-navigation-tab"
+    );
+
+    tabs.forEach(function (tab) {
+
+        tab.addEventListener("click", function () {
+
+            sessionStorage.setItem(
+                "salesNavigationScrollLeft",
+                String(navigation.scrollLeft)
+            );
+
+        });
+
+    });
+
+});
+</script>
