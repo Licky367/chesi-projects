@@ -1,0 +1,47 @@
+<!-- =================================================
+   CART
+================================================== -->
+
+<%
+    const cartItemCount =
+        userCart &&
+        Array.isArray(userCart.items)
+            ? userCart.items.reduce(
+                (total, item) =>
+                    total + Number(item.qty || 0),
+                0
+            )
+            : 0;
+%>
+
+
+<li class="sidebar-item">
+
+    <a
+        href="/carts"
+        class="sidebar-link"
+        title="Carts"
+    >
+
+        <span
+            class="sidebar-icon"
+            aria-hidden="true"
+        >
+            🛒
+        </span>
+
+        <span class="sidebar-label">
+
+            Cart
+
+            <% if (cartItemCount > 0) { %>
+
+                (<%= cartItemCount %>)
+
+            <% } %>
+
+        </span>
+
+    </a>
+
+</li>
