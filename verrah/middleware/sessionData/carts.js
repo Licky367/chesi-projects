@@ -43,21 +43,23 @@ const sessionData = async (req, res, next) => {
         // SAVE TO SESSION
         // ==================================================
 
-        req.session.userCart = userCart;
-        req.session.allCarts = allCarts;
+        req.session.userCart =
+            userCart;
+
+        req.session.allCarts =
+            allCarts;
 
 
         // ==================================================
         // MAKE AVAILABLE TO EJS
         // ==================================================
 
-        res.locals.userCart = userCart;
-        res.locals.allCarts = allCarts;
+        res.locals.userCart =
+            userCart;
 
+        res.locals.allCarts =
+            allCarts;
 
-        // ==================================================
-        // CONTINUE
-        // ==================================================
 
         return next();
 
@@ -77,4 +79,5 @@ const sessionData = async (req, res, next) => {
 // EXPORT
 // ==========================================================
 
-module.exports = sessionData;
+module.exports =
+    sessionData;
