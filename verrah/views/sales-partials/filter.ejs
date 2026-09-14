@@ -1,102 +1,141 @@
 <%
 /*
- * This partial filters ONLY the currently selected tab.
- *
- * The controller supplies:
- *   activeTab
- *   activeFilterDate
- *   activeFilterPeriod
- *   filterLabel
- *
- * Query names are tab-specific:
- *   summaryDate / summaryPeriod
- *   productsDate / productsPeriod
- *   arrearsDate / arrearsPeriod
- *
- * Therefore filtering Product Analytics cannot modify
- * Sales Summary or Customer Arrears.
- */
-%>
 
-<form
+* This partial filters ONLY the currently selected tab.
+* 
+* The controller supplies:
+* activeTab
+* activeFilterDate
+* activeFilterPeriod
+* filterLabel
+* 
+* Query names are tab-specific:
+* summaryDate / summaryPeriod
+* productsDate / productsPeriod
+* arrearsDate / arrearsPeriod
+* 
+* Therefore filtering Product Analytics cannot modify
+* Sales Summary or Customer Arrears.
+  */
+  %>
+
+<div class="sales-filter-toggle-wrapper"><button
+    type="button"
+    id="sales-filter-toggle"
+    class="sales-filter-toggle"
+    aria-expanded="false"
+    aria-controls="sales-filter-form"
+>
+    filter date?
+</button>
+
+</div><form
+    id="sales-filter-form"
     class="sales-filter"
     method="GET"
     action="/sales"
+    hidden
+><input
+    type="hidden"
+    name="tab"
+    value="<%= activeTab %>"
 >
 
+<div class="sales-filter-field">
+
+    <label for="sales-filter-date">
+        Date
+    </label>
+
     <input
-        type="hidden"
-        name="tab"
-        value="<%= activeTab %>"
+        id="sales-filter-date"
+        type="date"
+        name="<%= activeTab %>Date"
+        value="<%= activeFilterDate %>"
+        required
     >
 
-    <div class="sales-filter-field">
+</div>
 
-        <label for="sales-filter-date">
-            Date
-        </label>
 
-        <input
-            id="sales-filter-date"
-            type="date"
-            name="<%= activeTab %>Date"
-            value="<%= activeFilterDate %>"
-            required
+<div class="sales-filter-field">
+
+    <label for="sales-filter-period">
+        Period
+    </label>
+
+    <select
+        id="sales-filter-period"
+        name="<%= activeTab %>Period"
+    >
+
+        <option
+            value="day"
+            <%= activeFilterPeriod === "day" ? "selected" : "" %>
         >
+            Day
+        </option>
 
-    </div>
-
-
-    <div class="sales-filter-field">
-
-        <label for="sales-filter-period">
-            Period
-        </label>
-
-        <select
-            id="sales-filter-period"
-            name="<%= activeTab %>Period"
+        <option
+            value="month"
+            <%= activeFilterPeriod === "month" ? "selected" : "" %>
         >
+            Month
+        </option>
 
-            <option
-                value="day"
-                <%= activeFilterPeriod === "day" ? "selected" : "" %>
-            >
-                Day
-            </option>
+        <option
+            value="year"
+            <%= activeFilterPeriod === "year" ? "selected" : "" %>
+        >
+            Year
+        </option>
 
-            <option
-                value="month"
-                <%= activeFilterPeriod === "month" ? "selected" : "" %>
-            >
-                Month
-            </option>
+    </select>
 
-            <option
-                value="year"
-                <%= activeFilterPeriod === "year" ? "selected" : "" %>
-            >
-                Year
-            </option>
-
-        </select>
-
-    </div>
+</div>
 
 
-    <button
-        type="submit"
-        class="sales-filter-button"
-    >
-        Apply Filter
-    </button>
+<button
+    type="submit"
+    class="sales-filter-button"
+>
+    Apply Filter
+</button>
 
 
-    <a
-        href="/sales?tab=<%= activeTab %>"
-        class="sales-filter-clear"
-    >
-        Reset
-    </a>
+<a
+    href="/sales?tab=<%= activeTab %>"
+    class="sales-filter-clear"
+>
+    Reset
+</a>
 
-</form>
+</form><script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const toggle = document.getElementById("sales-filter-toggle");
+    const filter = document.getElementById("sales-filter-form");
+
+    if (!toggle || !filter) {
+        return;
+    }
+
+    toggle.addEventListener("click", function () {
+
+        const isHidden = filter.hidden;
+
+        filter.hidden = !isHidden;
+
+        toggle.textContent = isHidden
+            ? "hide filter"
+            : "filter date?";
+
+        toggle.setAttribute(
+            "aria-expanded",
+            isHidden ? "true" : "false"
+        );
+
+    });
+
+});
+</script>
