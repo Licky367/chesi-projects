@@ -1,20 +1,21 @@
-const Cart = require("../../models/carts");
+const Cart = require("../models/carts");
 
 
 // ==========================================================
 // GET SESSION CART DATA
 //
-// RETURNS TWO SEPARATE DATASETS:
+// Returns TWO separate datasets:
 //
-// 1. userCart
-//    The cart belonging to the currently logged-in user.
+// userCart
+// --------
+// The cart belonging to the currently logged-in user.
 //
-// 2. allCarts
-//    Every cart belonging to every user.
+// allCarts
+// --------
+// All carts belonging to all users.
 //
-// Cart.user is the cart identity.
 // There is NO sessionId.
-// There are NO guest carts.
+// Cart.user is the only cart identity.
 // ==========================================================
 
 const getSessionCartData = async (user) => {
@@ -33,7 +34,7 @@ const getSessionCartData = async (user) => {
 
 
     // ======================================================
-    // USER'S OWN CART
+    // LOGGED-IN USER'S CART
     // ======================================================
 
     const userCart = await Cart
@@ -48,7 +49,7 @@ const getSessionCartData = async (user) => {
 
 
     // ======================================================
-    // ALL CARTS
+    // ALL USERS' CARTS
     // ======================================================
 
     const allCarts = await Cart
