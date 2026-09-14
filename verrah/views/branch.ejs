@@ -11,7 +11,7 @@
 
     <% if (user && user.role === "admin") { %>
     <%- include("branch-partials/branch-edit") %>
-<% } else { %>
+<% } else if (user && user.role === "client"){ %>
     <%- include("branch-partials/branch-back") %>
 <% } %>
 
