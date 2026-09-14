@@ -1,10 +1,7 @@
 // ==========================================================
 // verrah/middleware/sessionData/index.js
-// SESSION DATA CONTROLLER EXPORTS
+// SESSION DATA MIDDLEWARE
 // ==========================================================
 
-module.exports = {
-
-    ...require("./carts")
-
-};
+module.exports =
+    require("./carts");
