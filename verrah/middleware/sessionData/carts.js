@@ -1,20 +1,9 @@
 const sessionDataService =
-    require("../../services/session data");
+    require("../services/sessionDataService");
 
 
 // ==========================================================
 // SESSION DATA MIDDLEWARE
-//
-// Loads cart data for the logged-in user and places it
-// into the current session.
-//
-// req.session.userCart
-// --------------------
-// Current user's cart.
-//
-// req.session.allCarts
-// --------------------
-// All carts belonging to all users.
 // ==========================================================
 
 const sessionData = async (req, res, next) => {
@@ -29,6 +18,9 @@ const sessionData = async (req, res, next) => {
 
             req.session.userCart = null;
             req.session.allCarts = [];
+
+            res.locals.userCart = null;
+            res.locals.allCarts = [];
 
             return next();
         }
@@ -48,21 +40,23 @@ const sessionData = async (req, res, next) => {
 
 
         // ==================================================
-        // STORE USER'S CART
+        // SAVE TO SESSION
         // ==================================================
 
         req.session.userCart = userCart;
-
-
-        // ==================================================
-        // STORE ALL CARTS
-        // ==================================================
-
         req.session.allCarts = allCarts;
 
 
         // ==================================================
-        // CONTINUE TO NEXT MIDDLEWARE / ROUTE
+        // MAKE AVAILABLE TO EJS
+        // ==================================================
+
+        res.locals.userCart = userCart;
+        res.locals.allCarts = allCarts;
+
+
+        // ==================================================
+        // CONTINUE
         // ==================================================
 
         return next();
