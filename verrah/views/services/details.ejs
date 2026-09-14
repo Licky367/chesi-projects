@@ -1,5 +1,22 @@
 <section class="verah-service-page"><div class="verah-service-detail-card">
 
+if (user && user.role === "admin") {%>
+        <!-- =============================================
+             ADMIN EDIT BUTTON
+        ============================================== -->
+
+        <div class="verah-detail-actions">
+
+            <a
+                href="/services/add/<%= service._id %>"
+                class="verah-secondary-button"
+            >
+                Edit Service Details?
+            </a>
+
+        </div>
+<%}%>
+
 
     <!-- =================================================
          SERVICE IMAGE
