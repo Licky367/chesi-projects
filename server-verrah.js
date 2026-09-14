@@ -1,6 +1,6 @@
 // ==========================================================
-// server-cov1.js - COREVESTER
-// ========================================================
+// server-cov1.js - VERRAH COSMETICS
+// ==========================================================
 
 const express = require("express");
 const http = require("http");
@@ -24,13 +24,25 @@ require("dotenv").config();
 // ==========================================================
 
 process.on("uncaughtException", (err) => {
-    console.error("❌ UNCAUGHT EXCEPTION:", err.message);
-    console.error(err.stack);
 
-    setTimeout(() => process.exit(1), 1000);
+    console.error(
+        "❌ UNCAUGHT EXCEPTION:",
+        err.message
+    );
+
+    console.error(
+        err.stack
+    );
+
+    setTimeout(
+        () => process.exit(1),
+        1000
+    );
 });
 
+
 process.on("unhandledRejection", (reason) => {
+
     console.error(
         "❌ UNHANDLED REJECTION:",
         reason?.message || reason
@@ -41,9 +53,18 @@ process.on("unhandledRejection", (reason) => {
     );
 });
 
-console.log("==========================================================");
-console.log("🚀 Starting VERRAH server");
-console.log("==========================================================");
+
+console.log(
+    "=========================================================="
+);
+
+console.log(
+    "🚀 Starting VERRAH server"
+);
+
+console.log(
+    "=========================================================="
+);
 
 
 // ==========================================================
@@ -53,8 +74,12 @@ console.log("==========================================================");
 const isProduction =
     process.env.NODE_ENV === "production";
 
+
 const PORT =
-    Number(process.env.PORT || 3000);
+    Number(
+        process.env.PORT || 3000
+    );
+
 
 const SESSION_MAX_AGE =
     10 *
@@ -64,8 +89,11 @@ const SESSION_MAX_AGE =
     60 *
     1000;
 
+
 const SESSION_TTL =
-    Math.floor(SESSION_MAX_AGE / 1000);
+    Math.floor(
+        SESSION_MAX_AGE / 1000
+    );
 
 
 // ==========================================================
@@ -80,10 +108,12 @@ if (isProduction) {
         "FRONTEND_URL"
     ];
 
+
     const missingEnvironment =
         requiredEnvironment.filter(
             (key) => !process.env[key]
         );
+
 
     if (missingEnvironment.length) {
 
@@ -102,11 +132,15 @@ if (isProduction) {
 
 let MongoStore = null;
 
+
 try {
 
-    MongoStore = require("connect-mongo");
+    MongoStore =
+        require("connect-mongo");
 
-    console.log("✅ connect-mongo loaded");
+    console.log(
+        "✅ connect-mongo loaded"
+    );
 
 } catch (error) {
 
@@ -114,6 +148,7 @@ try {
         "⚠️ connect-mongo unavailable:",
         error.message
     );
+
 
     if (isProduction) {
 
@@ -133,24 +168,42 @@ try {
 const connectDB =
     require("./db");
 
+
 const seedUser =
     require("./verrah/utils/seeder");
+
+
+// ==========================================================
+// SESSION DATA MIDDLEWARE
+// ==========================================================
+//
+// Loads:
+//
+//     req.session.userCart
+//     req.session.allCarts
+//
+// and:
+//
+//     res.locals.userCart
+//     res.locals.allCarts
+//
+// IMPORTANT:
+// This middleware is mounted AFTER the middleware that creates
+// req.user, so it can correctly identify the logged-in user.
+// ==========================================================
+
+const sessionData =
+    require("./verrah/middleware/sessionData");
 
 
 // ==========================================================
 // ROUTE LOADER
 // ==========================================================
 
-/**
- * Loads a route module without allowing a single broken route
- * to crash the entire application during startup.
- *
- * @param {string} name
- * @param {string} routePath
- * @returns {object|null}
- */
-
-function safeLoad(name, routePath) {
+function safeLoad(
+    name,
+    routePath
+) {
 
     try {
 
@@ -158,12 +211,15 @@ function safeLoad(name, routePath) {
             `... Loading ${name}: ${routePath}`
         );
 
+
         const route =
             require(routePath);
+
 
         console.log(
             `✅ Loaded ${name}`
         );
+
 
         return route;
 
@@ -173,8 +229,14 @@ function safeLoad(name, routePath) {
             `❌ Failed to load ${name}: ${routePath}`
         );
 
-        console.error(error.message);
-        console.error(error.stack);
+        console.error(
+            error.message
+        );
+
+        console.error(
+            error.stack
+        );
+
 
         return null;
     }
@@ -185,10 +247,10 @@ function safeLoad(name, routePath) {
 // ROUTES
 // ==========================================================
 
+
 // ----------------------------------------------------------
 // AUTH
 // ----------------------------------------------------------
-
 
 const authRoutes =
     safeLoad(
@@ -197,9 +259,8 @@ const authRoutes =
     );
 
 
-
 // ----------------------------------------------------------
-// VERRAH ROUTES
+// VERRAH
 // ----------------------------------------------------------
 
 const verrahRoutes =
@@ -213,13 +274,11 @@ const verrahRoutes =
 // PRODUCTS
 // ----------------------------------------------------------
 
-
 const productsRoutes =
     safeLoad(
         "productsRoutes",
         "./verrah/routes/products"
     );
-
 
 
 // ----------------------------------------------------------
@@ -258,48 +317,6 @@ const substationsRoutes =
 // ----------------------------------------------------------
 // PACKAGES
 // ----------------------------------------------------------
-//
-// Package workflow:
-//
-// CLIENT
-//     /packages
-//
-// STAFF / ADMIN
-//     /packages/staff
-//
-// STAFF / ADMIN PACKAGE DETAILS
-//     /packages/staff/:id
-//
-// Staff:
-//
-//     pending
-//        ↓
-//     confirmed
-//        ↓
-//     delivered
-//
-// Only the staff member who confirmed a package may deliver it.
-//
-// Admin:
-//
-//     • may view all packages
-//     • may view all staff confirmations/deliveries
-//     • may update payment on delivered packages
-//     • may NOT confirm packages
-//     • may NOT deliver packages
-//
-// Inventory:
-//
-//     Product.units is reduced during the existing cart/order
-//     reservation flow.
-//
-//     Delivery MUST NOT reduce Product.units again.
-//
-//     Instead, delivery records the reduction against the
-//     delivering staff member's assigned substation using the
-//     dedicated substation product-reduction field.
-//
-// ----------------------------------------------------------
 
 const packageRoutes =
     safeLoad(
@@ -318,8 +335,9 @@ const mpesaRoutes =
         "./verrah/routes/mpesa"
     );
 
+
 // ----------------------------------------------------------
-// SALESROUTES
+// SALES
 // ----------------------------------------------------------
 
 const salesRoutes =
@@ -327,7 +345,6 @@ const salesRoutes =
         "salesRoutes",
         "./verrah/routes/sales"
     );
-
 
 
 // ----------------------------------------------------------
@@ -342,17 +359,14 @@ const branchRoutes =
 
 
 // ----------------------------------------------------------
-// PROFILE 
+// PROFILE
 // ----------------------------------------------------------
-
 
 const profileRoutes =
     safeLoad(
         "profileRoutes",
         "./verrah/routes/profile"
     );
-
-
 
 
 // ==========================================================
@@ -370,10 +384,16 @@ const socketHandler =
 const app =
     express();
 
-const server =
-    http.createServer(app);
 
-app.disable("x-powered-by");
+const server =
+    http.createServer(
+        app
+    );
+
+
+app.disable(
+    "x-powered-by"
+);
 
 
 // ==========================================================
@@ -385,7 +405,9 @@ if (
     process.env.TRUST_PROXY === "1"
 ) {
 
-    app.enable("trust proxy");
+    app.enable(
+        "trust proxy"
+    );
 }
 
 
@@ -395,8 +417,12 @@ if (
 
 app.use(
     helmet({
-        contentSecurityPolicy: false,
-        crossOriginEmbedderPolicy: false
+
+        contentSecurityPolicy:
+            false,
+
+        crossOriginEmbedderPolicy:
+            false
     })
 );
 
@@ -423,6 +449,7 @@ app.use(
             false,
 
         message: {
+
             success:
                 false,
 
@@ -440,6 +467,7 @@ app.use(
 app.use(
     compression()
 );
+
 
 app.use(
     morgan(
@@ -461,22 +489,36 @@ const allowedOrigin =
             : "*"
     );
 
+
 const io =
-    new Server(server, {
+    new Server(
+        server,
+        {
 
-        cors: {
+            cors: {
 
-            origin:
-                allowedOrigin,
+                origin:
+                    allowedOrigin,
 
-            methods:
-                ["GET", "POST"]
+                methods:
+                    [
+                        "GET",
+                        "POST"
+                    ]
+            }
         }
-    });
+    );
 
-app.set("io", io);
 
-socketHandler(io);
+app.set(
+    "io",
+    io
+);
+
+
+socketHandler(
+    io
+);
 
 
 // ==========================================================
@@ -485,14 +527,21 @@ socketHandler(io);
 
 app.use(
     express.urlencoded({
-        extended: true,
-        limit: "10mb"
+
+        extended:
+            true,
+
+        limit:
+            "10mb"
     })
 );
 
+
 app.use(
     express.json({
-        limit: "10mb"
+
+        limit:
+            "10mb"
     })
 );
 
@@ -500,19 +549,11 @@ app.use(
 // ==========================================================
 // METHOD OVERRIDE
 // ==========================================================
-//
-// Allows forms to perform PUT/PATCH/DELETE using:
-//
-//     ?_method=PUT
-//
-// or:
-//
-//     <input name="_method" value="PUT">
-//
-// ==========================================================
 
 app.use(
-    methodOverride("_method")
+    methodOverride(
+        "_method"
+    )
 );
 
 
@@ -520,17 +561,11 @@ app.use(
 // SESSION
 // ==========================================================
 
-/**
- * In production sessions are stored in MongoDB.
- *
- * In development, if connect-mongo/MONGO_URI is unavailable,
- * express-session's default MemoryStore is used.
- */
-
 const sessionStore =
     isProduction &&
     process.env.MONGO_URI &&
     MongoStore
+
         ? MongoStore.create({
 
             mongoUrl:
@@ -542,6 +577,7 @@ const sessionStore =
             touchAfter:
                 60 * 60
         })
+
         : undefined;
 
 
@@ -586,36 +622,86 @@ app.use(
 // REQUEST / USER CONTEXT
 // ==========================================================
 //
-// Makes the logged-in user available to:
+// Creates:
 //
 //     req.user
 //
-// and EJS:
-//
 //     res.locals.user
+//
+//     res.locals.req
+//
+//     res.locals.currentPath
+//
+// This MUST happen before sessionData middleware.
+// ==========================================================
+
+app.use(
+    (req, res, next) => {
+
+        const currentUser =
+            req.session?.user ||
+            null;
+
+
+        res.locals.user =
+            currentUser;
+
+
+        res.locals.req =
+            req;
+
+
+        res.locals.currentPath =
+            req.path;
+
+
+        req.user =
+            currentUser;
+
+
+        next();
+    }
+);
+
+
+// ==========================================================
+// SESSION DATA
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This is intentionally AFTER:
+//
+//     express-session
+//             ↓
+//     user context
+//
+// and BEFORE:
+//
+//     routes
+//
+// Therefore every route/view can access:
+//
+//     req.session.userCart
+//     req.session.allCarts
+//
+//     res.locals.userCart
+//     res.locals.allCarts
+//
+// The sidebar can therefore safely use:
+//
+//     userCart
 //
 // ==========================================================
 
-app.use((req, res, next) => {
+app.use(
+    sessionData
+);
 
-    const currentUser =
-        req.session?.user ||
-        null;
 
-    res.locals.user =
-        currentUser;
-
-    res.locals.req =
-        req;
-
-    res.locals.currentPath =
-        req.path;
-
-    req.user =
-        currentUser;
-
-    next();
-});
+console.log(
+    "✅ Session data middleware mounted"
+);
 
 
 // ==========================================================
@@ -651,6 +737,7 @@ app.use(
     )
 );
 
+
 app.use(
     "/uploads",
     express.static(
@@ -674,10 +761,12 @@ const viewsPath =
         "views"
     );
 
+
 app.set(
     "view engine",
     "ejs"
 );
+
 
 app.set(
     "views",
@@ -693,25 +782,30 @@ app.use(
     expressLayouts
 );
 
+
 app.set(
     "layout",
     "layout"
 );
+
 
 app.set(
     "layout extractScripts",
     true
 );
 
+
 app.set(
     "layout extractStyles",
     true
 );
 
+
 console.log(
     "✅ Views:",
     viewsPath
 );
+
 
 console.log(
     "✅ Layout: layout"
@@ -722,9 +816,19 @@ console.log(
 // ROUTE MOUNTING
 // ==========================================================
 
-console.log("==========================================================");
-console.log("📡 Mounting COREVESTER routes");
-console.log("==========================================================");
+console.log(
+    "=========================================================="
+);
+
+
+console.log(
+    "📡 Mounting VERRAH routes"
+);
+
+
+console.log(
+    "=========================================================="
+);
 
 
 // ==========================================================
@@ -737,6 +841,7 @@ if (authRoutes) {
         "/auth",
         authRoutes
     );
+
 
     console.log(
         "✅ Mounted /auth"
@@ -761,6 +866,7 @@ if (productsRoutes) {
         productsRoutes
     );
 
+
     console.log(
         "✅ Mounted /products"
     );
@@ -783,6 +889,7 @@ if (cartsRoutes) {
         "/carts",
         cartsRoutes
     );
+
 
     console.log(
         "✅ Mounted /carts"
@@ -807,6 +914,7 @@ if (stockRoutes) {
         stockRoutes
     );
 
+
     console.log(
         "✅ Mounted /stock"
     );
@@ -830,6 +938,7 @@ if (substationsRoutes) {
         substationsRoutes
     );
 
+
     console.log(
         "✅ Mounted /substations"
     );
@@ -845,24 +954,6 @@ if (substationsRoutes) {
 // ==========================================================
 // PACKAGES
 // ==========================================================
-//
-// IMPORTANT:
-//
-// Both client and staff/admin package endpoints are mounted
-// through the SAME package router.
-//
-// The router itself determines:
-//
-//     client
-//         → /packages
-//
-//     staff/admin
-//         → /packages/staff
-//
-// Authorization belongs inside the package routes/services,
-// NOT inside this server bootstrap file.
-//
-// ==========================================================
 
 if (packageRoutes) {
 
@@ -870,6 +961,7 @@ if (packageRoutes) {
         "/packages",
         packageRoutes
     );
+
 
     console.log(
         "✅ Mounted /packages"
@@ -894,6 +986,7 @@ if (mpesaRoutes) {
         mpesaRoutes
     );
 
+
     console.log(
         "✅ Mounted /mpesa"
     );
@@ -907,17 +1000,7 @@ if (mpesaRoutes) {
 
 
 // ==========================================================
-// VERRAH MAIN / 
-// ==========================================================
-//
-// Existing application structure is preserved:
-//
-//     ./verrah/routes/index.js
-//
-// is mounted at:
-//
-//     /
-//
+// VERRAH MAIN
 // ==========================================================
 
 if (verrahRoutes) {
@@ -926,6 +1009,7 @@ if (verrahRoutes) {
         "/",
         verrahRoutes
     );
+
 
     console.log(
         "✅ Mounted /"
@@ -950,6 +1034,7 @@ if (branchRoutes) {
         branchRoutes
     );
 
+
     console.log(
         "✅ Mounted /branch"
     );
@@ -973,6 +1058,7 @@ if (salesRoutes) {
         salesRoutes
     );
 
+
     console.log(
         "✅ Mounted /sales"
     );
@@ -985,19 +1071,8 @@ if (salesRoutes) {
 }
 
 
-
 // ==========================================================
-// profile MAIN / 
-// ==========================================================
-//
-// Existing application structure is preserved:
-//
-//     ./verrah/routes/profile.js
-//
-// is mounted at:
-//
-//     /profile
-//
+// PROFILE
 // ==========================================================
 
 if (profileRoutes) {
@@ -1006,6 +1081,7 @@ if (profileRoutes) {
         "/profile",
         profileRoutes
     );
+
 
     console.log(
         "✅ Mounted /profile"
@@ -1020,33 +1096,6 @@ if (profileRoutes) {
 
 
 // ==========================================================
-// ROOT
-// ==========================================================
-//
-// The actual product/home page is:
-//
-//     /products
-//
-// Therefore:
-//
-//     /
-//       ↓
-//     /products
-//
-// ==========================================================
-/*
-app.get(
-    "/",
-    (req, res) => {
-
-        return res.redirect(
-            "/products"
-        );
-    }
-);
-
-*/
-// ==========================================================
 // 404 HANDLER
 // ==========================================================
 
@@ -1056,6 +1105,7 @@ app.use(
         const wantsJson =
             req.accepts("json") &&
             !req.accepts("html");
+
 
         if (wantsJson) {
 
@@ -1070,6 +1120,7 @@ app.use(
                         "Route not found"
                 });
         }
+
 
         return res
             .status(404)
@@ -1104,6 +1155,7 @@ app.use(
             err.message
         );
 
+
         console.error(
             err.stack
         );
@@ -1118,7 +1170,7 @@ app.use(
 
 
         // ------------------------------------------------------
-        // Multer file-size error
+        // MULTER FILE-SIZE ERROR
         // ------------------------------------------------------
 
         if (
@@ -1129,13 +1181,14 @@ app.use(
             statusCode =
                 400;
 
+
             err.message =
                 "The uploaded image is too large. Maximum size is 5MB.";
         }
 
 
         // ------------------------------------------------------
-        // Normalize invalid status codes
+        // NORMALIZE INVALID STATUS CODES
         // ------------------------------------------------------
 
         if (
@@ -1149,7 +1202,7 @@ app.use(
 
 
         // ------------------------------------------------------
-        // JSON/API response
+        // JSON / API RESPONSE
         // ------------------------------------------------------
 
         if (
@@ -1180,7 +1233,7 @@ app.use(
 
 
         // ------------------------------------------------------
-        // HTML error views
+        // HTML ERROR VIEWS
         // ------------------------------------------------------
 
         const errorViews = {
@@ -1260,9 +1313,11 @@ server.on(
             error.message
         );
 
+
         console.error(
             error.stack
         );
+
 
         process.exit(1);
     }
@@ -1279,10 +1334,24 @@ function startServer(port) {
         port,
         () => {
 
-            console.log("==========================================================");
-            console.log(`🚀 VERRAH COSMETICS running on port ${port}`);
-            console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
-            console.log("==========================================================");
+            console.log(
+                "=========================================================="
+            );
+
+
+            console.log(
+                `🚀 VERRAH COSMETICS running on port ${port}`
+            );
+
+
+            console.log(
+                `🌍 Environment: ${process.env.NODE_ENV || "development"}`
+            );
+
+
+            console.log(
+                "=========================================================="
+            );
         }
     );
 }
@@ -1296,9 +1365,19 @@ async function bootstrap() {
 
     try {
 
-        console.log("==========================================================");
-        console.log("🔌 Connecting to MongoDB");
-        console.log("==========================================================");
+        console.log(
+            "=========================================================="
+        );
+
+
+        console.log(
+            "🔌 Connecting to MongoDB"
+        );
+
+
+        console.log(
+            "=========================================================="
+        );
 
 
         const dbConnected =
@@ -1327,7 +1406,9 @@ async function bootstrap() {
         }
 
 
-        startServer(PORT);
+        startServer(
+            PORT
+        );
 
     } catch (error) {
 
@@ -1335,6 +1416,7 @@ async function bootstrap() {
             "❌ Bootstrap failed:",
             error.message
         );
+
 
         console.error(
             error.stack
@@ -1347,6 +1429,7 @@ async function bootstrap() {
                 "❌ Production server will not start."
             );
 
+
             process.exit(1);
         }
 
@@ -1355,7 +1438,10 @@ async function bootstrap() {
             "⚠️ Development mode: starting server without confirmed DB connection."
         );
 
-        startServer(PORT);
+
+        startServer(
+            PORT
+        );
     }
 }
 
