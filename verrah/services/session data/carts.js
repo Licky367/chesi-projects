@@ -1,4 +1,4 @@
-const Cart = require("../models/carts");
+const Cart = require("../../models/carts");
 
 
 // ==========================================================
