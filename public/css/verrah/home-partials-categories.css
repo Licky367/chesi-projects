@@ -2,6 +2,7 @@
    VERRAH COSMETICS
    HOME CATEGORY CARDS
    BROWN THEME
+   CARD SIZE: 112px × 160px
 ========================================================== */
 
 
@@ -11,44 +12,26 @@
 
 :root {
 
-    --category-brown:
-        #8b4513;
+    --category-brown: #8b4513;
+    --category-brown-dark: #6f350f;
+    --category-brown-deep: #5f2f13;
+    --category-brown-light: #a0522d;
 
-    --category-brown-dark:
-        #6f350f;
+    --category-brown-soft: #f5ebe4;
+    --category-cream: #fffaf7;
+    --category-white: #ffffff;
 
-    --category-brown-deep:
-        #5f2f13;
+    --category-text: #2f211a;
+    --category-muted: #786960;
 
-    --category-brown-light:
-        #a0522d;
-
-    --category-brown-soft:
-        #f5ebe4;
-
-    --category-cream:
-        #fffaf7;
-
-    --category-white:
-        #ffffff;
-
-    --category-text:
-        #2f211a;
-
-    --category-muted:
-        #786960;
-
-    --category-border:
-        #eadbd2;
-
-    --category-border-dark:
-        #cda88f;
+    --category-border: #eadbd2;
+    --category-border-dark: #cda88f;
 
     --category-shadow:
         0 4px 12px rgba(91, 48, 24, 0.08);
 
     --category-shadow-hover:
-        0 10px 24px rgba(91, 48, 24, 0.16);
+        0 8px 18px rgba(91, 48, 24, 0.16);
 }
 
 
@@ -137,9 +120,9 @@
 
     display: flex;
 
-    align-items: stretch;
+    align-items: flex-start;
 
-    gap: 16px;
+    gap: 12px;
 
     overflow-x: auto;
 
@@ -198,21 +181,25 @@
 
 /* ==========================================================
    CATEGORY CARD
-   SIZE: 175px × 232px
+   EXACT SIZE: 112px × 160px
 ========================================================== */
 
 .home-category-card {
 
-    width: 175px;
+    width: 112px;
 
-    min-width: 175px;
+    min-width: 112px;
 
-    height: 232px;
+    max-width: 112px;
 
-    min-height: 232px;
+    height: 160px;
+
+    min-height: 160px;
+
+    max-height: 160px;
 
     flex:
-        0 0 175px;
+        0 0 112px;
 
     display: flex;
 
@@ -231,7 +218,7 @@
         1px solid
         var(--category-border);
 
-    border-radius: 16px;
+    border-radius: 12px;
 
     box-shadow:
         var(--category-shadow);
@@ -256,7 +243,7 @@
 .home-category-card:hover {
 
     transform:
-        translateY(-4px);
+        translateY(-3px);
 
     border-color:
         var(--category-brown);
@@ -294,15 +281,18 @@
 
 /* ==========================================================
    CATEGORY IMAGE / ICON AREA
+   HEIGHT: 92px
 ========================================================== */
 
 .home-category-icon {
 
     width: 100%;
 
-    height: 144px;
+    height: 92px;
 
-    min-height: 144px;
+    min-height: 92px;
+
+    max-height: 92px;
 
     display: flex;
 
@@ -354,7 +344,7 @@
     color:
         var(--category-brown);
 
-    font-size: 52px;
+    font-size: 32px;
 }
 
 
@@ -372,12 +362,14 @@
 
     flex-direction: column;
 
+    justify-content: center;
+
     box-sizing: border-box;
 
     padding:
-        16px
-        14px
-        14px;
+        7px
+        6px
+        7px;
 }
 
 
@@ -387,31 +379,28 @@
 
 .home-category-name {
 
-    margin:
-        0
-        0
-        10px;
+    margin: 0;
 
     padding:
         0
         0
-        8px;
+        4px;
 
     color:
         var(--category-brown-deep);
 
-    font-size: 22px;
+    font-size: 12px;
 
     font-weight: 800;
 
-    line-height: 1.2;
+    line-height: 1.15;
 
     text-align: center;
 
     text-transform: capitalize;
 
     border-bottom:
-        2px solid
+        1px solid
         var(--category-border);
 
     overflow: hidden;
@@ -444,18 +433,21 @@
 
 .home-category-description {
 
-    margin: 0;
+    margin:
+        4px
+        0
+        0;
 
     padding: 0;
 
     color:
         var(--category-muted);
 
-    font-size: 15px;
+    font-size: 9px;
 
     font-weight: 400;
 
-    line-height: 1.4;
+    line-height: 1.25;
 
     text-align: center;
 
@@ -465,7 +457,7 @@
 
     -webkit-box-orient: vertical;
 
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 2;
 }
 
 
@@ -480,7 +472,7 @@
     justify-content: center;
 
     padding:
-        20px;
+        8px;
 
     text-align: center;
 
@@ -513,13 +505,13 @@
 
 .home-category-add-icon {
 
-    width: 88px;
+    width: 42px;
 
-    height: 88px;
+    height: 42px;
 
-    min-width: 88px;
+    min-width: 42px;
 
-    min-height: 88px;
+    min-height: 42px;
 
     display: flex;
 
@@ -527,7 +519,7 @@
 
     justify-content: center;
 
-    margin-bottom: 16px;
+    margin-bottom: 7px;
 
     border-radius: 50%;
 
@@ -537,7 +529,7 @@
     color:
         var(--category-brown);
 
-    font-size: 38px;
+    font-size: 20px;
 
     transition:
         background 0.2s ease,
@@ -573,7 +565,7 @@
     color:
         var(--category-brown-dark);
 
-    font-size: 22px;
+    font-size: 12px;
 
     font-weight: 800;
 
@@ -590,7 +582,7 @@
 .home-category-add-description {
 
     margin:
-        8px
+        4px
         0
         0;
 
@@ -599,9 +591,9 @@
     color:
         var(--category-muted);
 
-    font-size: 14px;
+    font-size: 8px;
 
-    line-height: 1.4;
+    line-height: 1.25;
 
     text-align: center;
 }
@@ -685,7 +677,7 @@
 
     .home-category-scroller {
 
-        gap: 14px;
+        gap: 12px;
 
         padding-left: 3px;
 
@@ -694,11 +686,30 @@
         padding-bottom: 16px;
     }
 
+
+    .home-category-card {
+
+        width: 112px;
+
+        min-width: 112px;
+
+        max-width: 112px;
+
+        height: 160px;
+
+        min-height: 160px;
+
+        max-height: 160px;
+
+        flex-basis: 112px;
+    }
+
 }
 
 
 /* ==========================================================
    MOBILE
+   KEEP EXACTLY 112px × 160px
 ========================================================== */
 
 @media (max-width: 480px) {
@@ -724,7 +735,7 @@
 
     .home-category-scroller {
 
-        gap: 12px;
+        gap: 10px;
 
         padding:
             4px
@@ -735,15 +746,19 @@
 
     .home-category-card {
 
-        width: 232px;
+        width: 112px;
 
-        min-width: 232px;
+        min-width: 112px;
 
-        height: 310px;
+        max-width: 112px;
 
-        min-height: 310px;
+        height: 160px;
 
-        flex-basis: 232px;
+        min-height: 160px;
+
+        max-height: 160px;
+
+        flex-basis: 112px;
     }
 
 
