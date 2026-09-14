@@ -30,6 +30,9 @@ exports.index = async (req, res) => {
 
             ...data,
 
+            assetCost:
+                Number(data.assetCost || 0),
+
             error:
                 null
 
@@ -61,10 +64,6 @@ exports.index = async (req, res) => {
 
         // --------------------------------------------------
         // ERROR FALLBACK
-        //
-        // Every value expected by the sales view is
-        // explicitly supplied so EJS does not encounter
-        // undefined variables.
         // --------------------------------------------------
 
         return res.status(500).render(
@@ -73,7 +72,6 @@ exports.index = async (req, res) => {
 
                 title:
                     "Sales | Verrah Cosmetics",
-
 
                 activeTab,
 
@@ -89,6 +87,20 @@ exports.index = async (req, res) => {
                     0,
 
                 staffSalesRevenue:
+                    0,
+
+
+                // ==================================================
+                // ASSET COST
+                // ==================================================
+
+                assetCost:
+                    0,
+
+                productAssetCost:
+                    0,
+
+                stockAssetCost:
                     0,
 
 
@@ -116,13 +128,6 @@ exports.index = async (req, res) => {
 
                 // ==================================================
                 // STAFF SALES
-                //
-                // IMPORTANT:
-                // This is what allows the frontend to safely use:
-                //
-                //     staffSales
-                //
-                // even when loading the page fails.
                 // ==================================================
 
                 staffSales:
