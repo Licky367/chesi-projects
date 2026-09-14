@@ -35,14 +35,30 @@ function number(value) {
 
                     <% productAnalytics.forEach(function(product, index) { %>
 
-                        <tr>
+                        <tr
+                            class="sales-product-row"
+                            onclick="window.location.href='/substations/products/<%= product._id %>'"
+                            onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='/substations/product/<%= product._id %>'; }"
+                            tabindex="0"
+                            role="link"
+                        >
                             <td><%= index + 1 %></td>
+
                             <td>
                                 <strong><%= product.name %></strong>
                             </td>
-                            <td><%= number(product.stockAvailable) %></td>
-                            <td><%= number(product.marketAvailable) %></td>
-                            <td><%= number(product.sales) %></td>
+
+                            <td>
+                                <%= number(product.stockAvailable) %>
+                            </td>
+
+                            <td>
+                                <%= number(product.marketAvailable) %>
+                            </td>
+
+                            <td>
+                                <%= number(product.sales) %>
+                            </td>
                         </tr>
 
                     <% }); %>
