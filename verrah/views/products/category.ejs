@@ -149,7 +149,7 @@
 
 
     <!-- ======================================================
-         ADMIN CATEGORY ICON CONTROL
+         ADMIN CATEGORY EDIT
     ======================================================= -->
 
     <% if (isAdmin) { %>
@@ -157,14 +157,14 @@
       <div class="category-admin-actions">
 
         <a
-          href="/categories/<%= categoryId %>/icon/edit"
+          href="/products/category/add/<%= categoryId %>"
           class="secondary-btn"
         >
 
           <i class="fas fa-image"></i>
 
           <span>
-            Edit Category Icon
+            Edit Category
           </span>
 
         </a>
