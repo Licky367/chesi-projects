@@ -2713,3 +2713,330 @@ body.staff-sale-modal-open {
   }
 
 }
+
+/* ==========================================================
+   CHECKOUT MESSAGE POPUP MODAL
+   ========================================================== */
+
+.checkout-message-modal {
+  position: fixed;
+  inset: 0;
+
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  opacity: 0;
+  visibility: hidden;
+
+  pointer-events: none;
+
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease;
+}
+
+
+/* ==========================================================
+   SHOW MODAL
+   ========================================================== */
+
+.checkout-message-modal.show {
+  opacity: 1;
+  visibility: visible;
+
+  pointer-events: auto;
+}
+
+
+/* ==========================================================
+   BACKDROP
+   ========================================================== */
+
+.checkout-message-overlay {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.62);
+
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+
+/* ==========================================================
+   MODAL BOX
+   ========================================================== */
+
+.checkout-message-box {
+  position: relative;
+
+  z-index: 2;
+
+  width: 100%;
+  max-width: 430px;
+
+  padding: 30px 25px 25px;
+
+  background: #ffffff;
+
+  border-radius: 18px;
+
+  text-align: center;
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.28);
+
+  transform:
+    translateY(20px)
+    scale(0.96);
+
+  transition:
+    transform 0.25s ease;
+}
+
+
+.checkout-message-modal.show
+.checkout-message-box {
+
+  transform:
+    translateY(0)
+    scale(1);
+
+}
+
+
+/* ==========================================================
+   CLOSE BUTTON
+   ========================================================== */
+
+.checkout-message-close {
+  position: absolute;
+
+  top: 10px;
+  right: 10px;
+
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+
+  color: #6b625d;
+
+  font-size: 19px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.checkout-message-close:hover {
+  background: #f3ece8;
+  color: #3d2418;
+}
+
+
+/* ==========================================================
+   MESSAGE ICON
+   ========================================================== */
+
+.checkout-message-icon {
+  width: 68px;
+  height: 68px;
+
+  margin: 0 auto 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  font-size: 31px;
+
+  background: #f9e4e0;
+  color: #b42318;
+}
+
+
+/* ==========================================================
+   SUCCESS ICON
+   ========================================================== */
+
+.checkout-message-modal.checkout-message-success
+.checkout-message-icon {
+
+  background: #f1e5dc;
+  color: #8b4513;
+
+}
+
+
+/* ==========================================================
+   ERROR ICON
+   ========================================================== */
+
+.checkout-message-modal.checkout-message-error
+.checkout-message-icon {
+
+  background: #f9e4e0;
+  color: #b42318;
+
+}
+
+
+/* ==========================================================
+   TITLE
+   ========================================================== */
+
+.checkout-message-box h3 {
+
+  margin: 0 0 10px;
+
+  font-size: 21px;
+  font-weight: 700;
+
+  color: #3d2418;
+}
+
+
+/* ==========================================================
+   MESSAGE
+   ========================================================== */
+
+.checkout-message-box p {
+
+  margin: 0 auto;
+
+  max-width: 350px;
+
+  font-size: 15px;
+  line-height: 1.6;
+
+  color: #66564d;
+}
+
+
+/* ==========================================================
+   OK BUTTON
+   ========================================================== */
+
+.checkout-message-button {
+
+  width: 100%;
+
+  min-height: 46px;
+
+  margin-top: 24px;
+
+  padding: 11px 20px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #8b4513;
+  color: #ffffff;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+.checkout-message-button:hover {
+
+  background: #6f350f;
+
+}
+
+
+.checkout-message-button:active {
+
+  transform: scale(0.98);
+
+}
+
+
+/* ==========================================================
+   PREVENT PAGE SCROLLING WHILE MODAL IS OPEN
+   ========================================================== */
+
+body.checkout-message-modal-open {
+  overflow: hidden;
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 480px) {
+
+  .checkout-message-modal {
+    padding: 15px;
+  }
+
+
+  .checkout-message-box {
+    max-width: 100%;
+
+    padding:
+      28px
+      20px
+      20px;
+
+    border-radius: 16px;
+  }
+
+
+  .checkout-message-icon {
+
+    width: 60px;
+    height: 60px;
+
+    margin-bottom: 15px;
+
+    font-size: 27px;
+  }
+
+
+  .checkout-message-box h3 {
+
+    font-size: 19px;
+
+  }
+
+
+  .checkout-message-box p {
+
+    font-size: 14px;
+
+  }
+
+
+  .checkout-message-button {
+
+    min-height: 44px;
+
+  }
+
+}
