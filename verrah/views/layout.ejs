@@ -237,8 +237,8 @@ const isClient =
     homeLink: homeLink,
     isAdmin: isAdmin,
     isStaff: isStaff,
-    userCart: userCart,
-    allCarts: allCarts
+    userCart: locals.userCart || null,
+    allCarts: locals.allCarts || []
 }) %>
 
 
