@@ -9,7 +9,11 @@
 
 <section class="branch-page">
 
+    <% if (user && user.role === "admin") { %>
+    <%- include("branch-partials/branch-edit") %>
+<% } else { %>
     <%- include("branch-partials/branch-back") %>
+<% } %>
 
     <%- include("branch-partials/branch-header") %>
 
