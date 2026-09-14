@@ -1,5 +1,5 @@
 const sessionDataService =
-    require("../services/session data");
+    require("../../services/session data");
 
 
 // ==========================================================
