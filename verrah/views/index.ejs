@@ -1,30 +1,6 @@
-<!-- =========================================================
-     VERAH COSMETICS — HOME PAGE
-========================================================= -->
-
-<% if (
-    user &&
-    user.role === "staff" &&
-    user.assignedSubstation
-) { %>
-
-    <%- include("home-partials/staff/hero") %>
-
-    <%- include("home-partials/staff/delivery", {
-        categories: categories,
-        currentUser: currentUser
-    }) %>
-
-    <%- include("home-partials/staff/sales", {
-        services: services,
-        user: user
-    }) %>
-
-
-<% } else { %>
-
-
-    <%- include("home-partials/hero") %>
+   <!--
+ <%- include("home-partials/hero") %>
+   -->
 
     <%- include("home-partials/categories", {
         categories: categories,
@@ -37,6 +13,3 @@
     }) %>
 
     <%- include("home-partials/branches") %>
-
-
-<% } %>
