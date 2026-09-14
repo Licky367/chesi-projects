@@ -197,6 +197,15 @@ async function getSalesPageData(query = {}) {
         customerArrears:
             summary.customerArrears,
 
+        assetCost:
+            summary.assetCost,
+
+        productAssetCost:
+            summary.productAssetCost,
+
+        stockAssetCost:
+            summary.stockAssetCost,
+
 
         // ==================================================
         // OTHER TABS
