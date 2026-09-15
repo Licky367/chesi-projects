@@ -1,17 +1,25 @@
 <%
 /* =========================================================
    VERRAH COSMETICS
-   CARTS / CHECKOUT
+   CART PAGE
 ========================================================= */
 
-const isStaff =
-    req?.user &&
-    String(req.user.role || "").toLowerCase() === "staff";
+const currentUser =
+    typeof user !== "undefined"
+        ? user
+        : (
+            typeof currentUser !== "undefined"
+                ? currentUser
+                : (
+                    typeof req !== "undefined"
+                        ? req.user
+                        : null
+                )
+        );
 
-const staffBranchUrl =
-    req?.user?.assignedSubstation
-        ? `/substations/${req.user.assignedSubstation}`
-        : "/substations";
+const isStaff =
+    currentUser &&
+    String(currentUser.role || "").toLowerCase() === "staff";
 
 const cartItems =
     Array.isArray(cart?.items)
@@ -22,41 +30,71 @@ const hasItems =
     cartItems.length > 0;
 
 const cartTotal =
-    Number(cart?.total || cart?.cartTotal || 0);
+    Number(
+        cart?.total ||
+        cart?.cartTotal ||
+        0
+    );
 
 const isMobile =
     cart?.isMobile !== false;
 
+
+/* =========================================================
+   FIRST PRODUCT ID
+   Used by /cash/:id for M-PESA
+========================================================= */
+
 const checkoutProductId =
-    cartItems?.[0]?.product?._id ||
-    cartItems?.[0]?.product ||
-    "";
+    cartItems.length > 0
+        ? (
+            cartItems[0]?.product?._id ||
+            cartItems[0]?.product?.id ||
+            cartItems[0]?.product ||
+            ""
+        )
+        : "";
+
+
+/* =========================================================
+   STAFF ASSIGNED SUBSTATION
+========================================================= */
+
+const assignedSubstation =
+    currentUser?.assignedSubstation || null;
+
+const staffBranchUrl =
+    assignedSubstation
+        ? `/substations/${assignedSubstation}`
+        : "/substations";
 %>
 
 
 <section class="shop-page cart-page">
 
+
     <!-- =====================================================
-         CART HEADER
+         PAGE HEADER
     ====================================================== -->
 
-    <div class="cart-page-header">
+    <div class="cart-page-head">
 
         <div>
 
-            <span class="cart-section-kicker">
-                YOUR CART
+            <span class="cart-kicker">
+                SHOPPING CART
             </span>
 
-            <h1>
-                Shopping Cart
+            <h1 class="page-title">
+                Your Cart
             </h1>
 
-            <p>
-                Review your items before completing your order.
+            <p class="page-subtitle">
+                Review your selected products before checkout.
             </p>
 
         </div>
+
 
         <% if (isStaff) { %>
 
@@ -73,46 +111,70 @@ const checkoutProductId =
     </div>
 
 
+
     <!-- =====================================================
-         ERROR / SUCCESS MESSAGE
+         ERROR
     ====================================================== -->
 
     <% if (typeof error !== "undefined" && error) { %>
 
-        <div class="cart-message cart-error">
+        <div class="cart-alert cart-alert-error">
+
             <i class="fas fa-exclamation-circle"></i>
-            <span><%= error %></span>
+
+            <span>
+                <%= error %>
+            </span>
+
         </div>
 
     <% } %>
 
+
+
+    <!-- =====================================================
+         SUCCESS
+    ====================================================== -->
 
     <% if (typeof success !== "undefined" && success) { %>
 
-        <div class="cart-message cart-success">
+        <div class="cart-alert cart-alert-success">
+
             <i class="fas fa-check-circle"></i>
-            <span><%= success %></span>
+
+            <span>
+                <%= success %>
+            </span>
+
         </div>
 
     <% } %>
+
 
 
     <% if (hasItems) { %>
 
+
+        <!-- =================================================
+             CART LAYOUT
+        ================================================== -->
+
         <div class="cart-layout">
 
-            <!-- =================================================
-                 CART ITEMS
-            ================================================== -->
 
-            <div class="cart-items-section">
+            <!-- =============================================
+                 CART ITEMS
+            ============================================== -->
+
+            <section class="cart-items-section">
+
 
                 <div class="cart-section-heading">
 
                     <div>
 
                         <span class="cart-section-kicker">
-                            ITEMS
+                            CART ITEMS
                         </span>
 
                         <h2>
@@ -121,15 +183,24 @@ const checkoutProductId =
 
                     </div>
 
+
                     <span class="cart-item-count">
+
                         <%= cartItems.length %>
-                        <%= cartItems.length === 1 ? "item" : "items" %>
+
+                        <%= cartItems.length === 1
+                            ? "item"
+                            : "items"
+                        %>
+
                     </span>
 
                 </div>
 
 
-                <div class="cart-items-list">
+
+                <div class="cart-list">
+
 
                     <% cartItems.forEach((item) => { %>
 
@@ -137,13 +208,21 @@ const checkoutProductId =
                         const product =
                             item.product || {};
 
+                        const productId =
+                            product._id ||
+                            product.id ||
+                            item.product ||
+                            "";
+
                         const productName =
                             product.name ||
                             item.name ||
                             "Product";
 
                         const quantity =
-                            Number(item.quantity || 1);
+                            Number(
+                                item.quantity || 1
+                            );
 
                         const price =
                             Number(
@@ -158,81 +237,158 @@ const checkoutProductId =
                         const image =
                             product.image ||
                             item.image ||
-                            "/images/product-placeholder.png";
+                            "";
                         %>
 
 
                         <article class="cart-item-card">
 
-                            <div class="cart-item-image">
 
-                                <img
-                                    src="<%= image %>"
-                                    alt="<%= productName %>"
-                                >
+                            <!-- =================================
+                                 PRODUCT
+                            ================================== -->
 
-                            </div>
+                            <a
+                                href="/carts/<%= productId %>"
+                                class="cart-item-link"
+                            >
 
 
-                            <div class="cart-item-details">
+                                <div class="cart-item-image">
 
-                                <h3>
-                                    <%= productName %>
-                                </h3>
+                                    <% if (image) { %>
 
-                                <p class="cart-item-price">
-                                    KSh
-                                    <%= price.toLocaleString() %>
-                                </p>
+                                        <img
+                                            src="<%= image %>"
+                                            alt="<%= productName %>"
+                                        >
 
-                                <div class="cart-item-quantity">
+                                    <% } else { %>
 
-                                    <span>
-                                        Quantity:
-                                    </span>
+                                        <i
+                                            class="fas fa-box-open cart-item-placeholder"
+                                        ></i>
 
-                                    <strong>
-                                        <%= quantity %>
-                                    </strong>
+                                    <% } %>
 
                                 </div>
 
-                            </div>
 
 
-                            <div class="cart-item-total">
+                                <div class="cart-item-main">
 
-                                <span>
-                                    Subtotal
-                                </span>
 
-                                <strong>
-                                    KSh
-                                    <%= subtotal.toLocaleString() %>
-                                </strong>
+                                    <div class="cart-item-topline">
 
-                            </div>
+                                        <span class="cart-item-label">
+                                            PRODUCT
+                                        </span>
+
+                                        <i
+                                            class="fas fa-chevron-right cart-item-arrow"
+                                        ></i>
+
+                                    </div>
+
+
+                                    <h3>
+                                        <%= productName %>
+                                    </h3>
+
+
+                                    <div class="cart-item-meta">
+
+                                        <span>
+
+                                            <i class="fas fa-tag"></i>
+
+                                            Price:
+
+                                            <strong>
+                                                KSh
+                                                <%= price.toLocaleString() %>
+                                            </strong>
+
+                                        </span>
+
+
+                                        <span>
+
+                                            <i class="fas fa-layer-group"></i>
+
+                                            Quantity:
+
+                                            <strong>
+                                                <%= quantity %>
+                                            </strong>
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="cart-item-total">
+
+                                        KSh
+                                        <%= subtotal.toLocaleString() %>
+
+                                    </div>
+
+                                </div>
+
+
+                            </a>
+
+
+
+                            <!-- =================================
+                                 REMOVE
+                            ================================== -->
+
+                            <% if (!isStaff) { %>
+
+                                <form
+                                    action="/carts/<%= productId %>/remove"
+                                    method="POST"
+                                    class="cart-remove-form"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="cart-remove-btn"
+                                        title="Remove item"
+                                    >
+
+                                        <i class="fas fa-trash"></i>
+
+                                    </button>
+
+                                </form>
+
+                            <% } %>
+
 
                         </article>
 
+
                     <% }) %>
+
 
                 </div>
 
-            </div>
+
+            </section>
+
 
 
             <!-- =================================================
-                 CHECKOUT CARD
+                 CHECKOUT SUMMARY
             ================================================== -->
 
-            <aside class="cart-checkout-card">
+            <aside class="cart-summary-card">
 
-                <!-- =============================================
-                     CHECKOUT HEADER
-                ============================================== -->
 
-                <div class="cart-checkout-heading">
+                <div class="cart-summary-head">
 
                     <div>
 
@@ -241,22 +397,39 @@ const checkoutProductId =
                         </span>
 
                         <h2>
-                            Complete your order
+                            Order Summary
                         </h2>
 
                     </div>
 
+
+                    <i class="fas fa-shopping-bag"></i>
+
                 </div>
+
 
 
                 <!-- =============================================
                      TOTAL
                 ============================================== -->
 
-                <div class="cart-total-row">
+                <div class="cart-summary-row">
 
                     <span>
-                        Cart Total
+                        Items
+                    </span>
+
+                    <strong>
+                        <%= cartItems.length %>
+                    </strong>
+
+                </div>
+
+
+                <div class="cart-summary-row cart-summary-total">
+
+                    <span>
+                        Total
                     </span>
 
                     <strong>
@@ -267,134 +440,191 @@ const checkoutProductId =
                 </div>
 
 
+                <p class="cart-summary-note">
+                    Review your order carefully before completing
+                    checkout.
+                </p>
+
+
+
                 <% if (isStaff) { %>
+
 
                     <!-- =========================================
                          STAFF PAYMENT MODE
                     ========================================== -->
 
-                    <div class="cart-payment-mode">
+                    <div class="staff-sale-field">
 
-                        <label
-                            for="staffPaymentMode"
-                            class="cart-payment-mode-label"
-                        >
+                        <label for="staffPaymentMode">
                             Payment Method
                         </label>
 
-                        <select
-                            id="staffPaymentMode"
-                            class="cart-payment-mode-select"
-                        >
 
-                            <option
-                                value="cash"
-                                <%= !isMobile ? "selected" : "" %>
+                        <div class="staff-sale-input-wrap">
+
+                            <i
+                                id="staffPaymentModeIcon"
+                                class="<%= isMobile
+                                    ? 'fas fa-mobile-alt'
+                                    : 'fas fa-money-bill-wave'
+                                %>"
+                            ></i>
+
+
+                            <select
+                                id="staffPaymentMode"
+                                class="checkout-substation-select"
                             >
-                                Cash Payment
-                            </option>
 
-                            <option
-                                value="mpesa"
-                                <%= isMobile ? "selected" : "" %>
-                            >
-                                M-PESA
-                            </option>
+                                <option
+                                    value="cash"
+                                    <%= !isMobile
+                                        ? "selected"
+                                        : "" %>
+                                >
+                                    Cash Payment
+                                </option>
 
-                        </select>
+
+                                <option
+                                    value="mpesa"
+                                    <%= isMobile
+                                        ? "selected"
+                                        : "" %>
+                                >
+                                    M-PESA
+                                </option>
+
+                            </select>
+
+                        </div>
 
                     </div>
 
 
-                    <!-- =========================================
-                         STAFF CHECKOUT BUTTON
 
-                         Popup is used for BOTH:
-                         - Cash
-                         - M-PESA
+                    <!-- =========================================
+                         STAFF SALE TRIGGER
+
+                         IMPORTANT:
+                         Same popup opens for BOTH payment modes.
                     ========================================== -->
 
                     <button
                         type="button"
                         id="openStaffSaleModal"
-                        class="primary-btn cart-checkout-btn"
+                        class="staff-sale-trigger primary-btn"
                     >
-                        <i class="fas fa-shopping-cart"></i>
 
-                        <span id="staffCheckoutButtonText">
+                        <i
+                            id="staffSaleTriggerIcon"
+                            class="<%= isMobile
+                                ? 'fas fa-mobile-alt'
+                                : 'fas fa-cash-register'
+                            %>"
+                        ></i>
+
+
+                        <span id="staffSaleTriggerText">
+
                             <%= isMobile
                                 ? "Continue with M-PESA"
                                 : "Complete Cash Sale"
                             %>
+
                         </span>
 
                     </button>
 
+
                 <% } else { %>
 
+
                     <!-- =========================================
-                         NORMAL USER CHECKOUT
+                         NORMAL CUSTOMER CHECKOUT
                     ========================================== -->
 
                     <a
                         href="/carts/<%= checkoutProductId %>"
                         class="primary-btn cart-checkout-btn"
                     >
+
                         <i class="fas fa-credit-card"></i>
+
                         Checkout
+
                     </a>
+
 
                 <% } %>
 
 
+
                 <!-- =============================================
-                     CONTINUE SHOPPING
+                     BACK TO PRODUCTS
                 ============================================== -->
 
                 <a
                     href="/products"
-                    class="secondary-btn cart-continue-btn"
+                    class="cart-summary-back"
                 >
+
                     <i class="fas fa-arrow-left"></i>
+
                     Continue Shopping
+
                 </a>
 
+
             </aside>
+
 
         </div>
 
 
     <% } else { %>
 
+
         <!-- =================================================
              EMPTY CART
         ================================================== -->
 
-        <div class="cart-empty-state">
+        <div class="cart-empty">
 
             <div class="cart-empty-icon">
+
                 <i class="fas fa-shopping-cart"></i>
+
             </div>
+
 
             <h2>
                 Your cart is empty
             </h2>
 
+
             <p>
-                Add some products to your cart before checking out.
+                You haven't added any products to your cart yet.
             </p>
+
 
             <a
                 href="/products"
                 class="primary-btn"
             >
+
                 <i class="fas fa-store"></i>
+
                 Browse Products
+
             </a>
 
         </div>
 
+
     <% } %>
+
 
 </section>
 
@@ -402,211 +632,358 @@ const checkoutProductId =
 
 <% if (isStaff && hasItems) { %>
 
+
 <!-- =========================================================
-     STAFF CHECKOUT POPUP MODAL
-     
-     The same popup is used for:
-       CASH  -> /carts/staff-sales
-       M-PESA -> /cash/:id
+     STAFF SALE POPUP MODAL
+
+     CSS CLASSES MATCH THE PROVIDED CART CSS EXACTLY.
+
+     CASH:
+       /carts/staff-sales
+
+     M-PESA:
+       /cash/:id
 ========================================================== -->
 
 <div
     id="staffSaleModal"
-    class="cart-modal-overlay"
+    class="staff-sale-modal"
     aria-hidden="true"
 >
 
+
+    <!-- =====================================================
+         MODAL OVERLAY
+    ====================================================== -->
+
     <div
-        class="cart-modal"
+        class="staff-sale-modal-overlay"
+        id="staffSaleModalOverlay"
+    ></div>
+
+
+
+    <!-- =====================================================
+         MODAL CONTENT
+    ====================================================== -->
+
+    <div
+        class="staff-sale-modal-content"
         role="dialog"
         aria-modal="true"
         aria-labelledby="staffSaleModalTitle"
     >
 
-        <!-- =============================================
+
+        <!-- =================================================
              MODAL HEADER
-        ============================================== -->
+        ================================================== -->
 
-        <div class="cart-modal-header">
+        <div class="staff-sale-modal-header">
 
-            <div>
 
-                <span class="cart-section-kicker">
+            <div class="staff-sale-modal-icon">
+
+                <i
+                    id="staffSaleModalIcon"
+                    class="<%= isMobile
+                        ? 'fas fa-mobile-alt'
+                        : 'fas fa-cash-register'
+                    %>"
+                ></i>
+
+            </div>
+
+
+            <div class="staff-sale-modal-header-content">
+
+                <span class="staff-sale-modal-kicker">
                     STAFF CHECKOUT
                 </span>
 
-                <h2 id="staffSaleModalTitle">
+
+                <h2
+                    id="staffSaleModalTitle"
+                    class="staff-sale-modal-title"
+                >
                     Confirm Sale
                 </h2>
 
             </div>
 
+
             <button
                 type="button"
                 id="closeStaffSaleModal"
-                class="cart-modal-close"
+                class="staff-sale-modal-close"
                 aria-label="Close"
             >
+
                 <i class="fas fa-times"></i>
+
             </button>
 
-        </div>
-
-
-        <!-- =============================================
-             PAYMENT SUMMARY
-        ============================================== -->
-
-        <div class="cart-modal-summary">
-
-            <div class="cart-modal-summary-row">
-
-                <span>
-                    Payment Method
-                </span>
-
-                <strong id="paymentModeLabel">
-                    <%= isMobile ? "M-PESA" : "Cash" %>
-                </strong>
-
-            </div>
-
-
-            <div class="cart-modal-summary-row">
-
-                <span>
-                    Total Amount
-                </span>
-
-                <strong>
-                    KSh
-                    <%= cartTotal.toLocaleString() %>
-                </strong>
-
-            </div>
 
         </div>
 
 
-        <!-- =============================================
-             STAFF SALE FORM
 
-             IMPORTANT:
-             JavaScript changes the action according
-             to the selected payment method.
-        ============================================== -->
+        <!-- =================================================
+             MODAL BODY
+        ================================================== -->
 
-        <form
-            action="<%= isMobile
-                ? `/cash/${checkoutProductId}`
-                : `/carts/staff-sales`
-            %>"
-            method="POST"
-            id="staffSaleForm"
-            class="staff-sale-form"
-        >
+        <div class="staff-sale-modal-body">
 
-            <input
-                type="hidden"
-                name="isMobile"
-                id="staffSaleIsMobile"
-                value="<%= isMobile ? 'true' : 'false' %>"
+
+            <p class="staff-sale-modal-description">
+
+                Confirm the customer details and payment method
+                before proceeding with this sale.
+
+            </p>
+
+
+
+            <!-- =============================================
+                 SALE PREVIEW
+            ============================================== -->
+
+            <div class="staff-sale-preview">
+
+
+                <div class="staff-sale-preview-card">
+
+                    <span class="staff-sale-preview-label">
+                        Payment Method
+                    </span>
+
+
+                    <strong
+                        id="staffSalePaymentPreview"
+                        class="staff-sale-preview-value"
+                    >
+
+                        <%= isMobile
+                            ? "M-PESA"
+                            : "Cash"
+                        %>
+
+                    </strong>
+
+                </div>
+
+
+                <div class="staff-sale-preview-card">
+
+                    <span class="staff-sale-preview-label">
+                        Total
+                    </span>
+
+
+                    <strong
+                        class="staff-sale-preview-value sale-total"
+                    >
+
+                        KSh
+                        <%= cartTotal.toLocaleString() %>
+
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- =================================================
+                 STAFF SALE FORM
+            ================================================== -->
+
+            <form
+                action="<%= isMobile
+                    ? `/cash/${checkoutProductId}`
+                    : `/carts/staff-sales`
+                %>"
+                method="POST"
+                id="staffSaleForm"
+                class="staff-sale-form"
             >
 
 
-            <!-- =========================================
-                 CUSTOMER NAME
-            ========================================== -->
-
-            <div class="cart-form-group">
-
-                <label for="salesName">
-                    Customer Name
-                </label>
+                <!-- =============================================
+                     PAYMENT MODE
+                ============================================== -->
 
                 <input
-                    type="text"
-                    id="salesName"
-                    name="salesName"
-                    placeholder="Enter customer name"
-                    autocomplete="name"
-                    required
+                    type="hidden"
+                    name="isMobile"
+                    id="staffSaleIsMobile"
+                    value="<%= isMobile
+                        ? 'true'
+                        : 'false'
+                    %>"
                 >
 
-            </div>
 
 
-            <!-- =========================================
-                 CONFIRMATION
-            ========================================== -->
+                <!-- =============================================
+                     CUSTOMER NAME
+                ============================================== -->
 
-            <div class="cart-modal-notice">
+                <div class="staff-sale-field">
+
+
+                    <label for="salesName">
+                        Customer Name
+                    </label>
+
+
+                    <div class="staff-sale-input-wrap">
+
+                        <i class="fas fa-user"></i>
+
+
+                        <input
+                            type="text"
+                            id="salesName"
+                            name="salesName"
+                            placeholder="Enter customer name"
+                            autocomplete="name"
+                            required
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =============================================
+                     SALE PREVIEW ROWS
+                ============================================== -->
+
+                <div class="staff-sale-preview-row">
+
+                    <span>
+                        Number of Items
+                    </span>
+
+
+                    <strong>
+                        <%= cartItems.length %>
+                    </strong>
+
+                </div>
+
+
+                <div class="staff-sale-preview-row">
+
+                    <span>
+                        Order Total
+                    </span>
+
+
+                    <strong>
+                        KSh
+                        <%= cartTotal.toLocaleString() %>
+                    </strong>
+
+                </div>
+
+
+
+                <!-- =============================================
+                     MODAL ACTIONS
+                ============================================== -->
+
+                <div class="staff-sale-modal-actions">
+
+
+                    <button
+                        type="button"
+                        id="cancelStaffSale"
+                        class="secondary-btn"
+                    >
+
+                        <i class="fas fa-times"></i>
+
+                        Cancel
+
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        id="confirmStaffSale"
+                        class="primary-btn staff-sale-submit"
+                    >
+
+                        <i
+                            id="confirmStaffSaleIcon"
+                            class="<%= isMobile
+                                ? 'fas fa-mobile-alt'
+                                : 'fas fa-check'
+                            %>"
+                        ></i>
+
+
+                        <span id="confirmStaffSaleText">
+
+                            <%= isMobile
+                                ? "Continue to M-PESA"
+                                : "Complete Cash Sale"
+                            %>
+
+                        </span>
+
+                    </button>
+
+
+                </div>
+
+
+            </form>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             MODAL FOOTER
+        ================================================== -->
+
+        <div class="staff-sale-modal-footer">
+
+            <p class="staff-sale-modal-note">
 
                 <i class="fas fa-info-circle"></i>
 
-                <span>
-                    <span id="paymentConfirmationText">
-                        <%= isMobile
-                            ? "Continue to M-PESA checkout."
-                            : "This will record the sale as a cash payment."
-                        %>
-                    </span>
+                <span id="staffSaleModalNote">
+
+                    <%= isMobile
+                        ? "You will continue to the M-PESA payment process."
+                        : "This sale will be recorded as a cash payment."
+                    %>
+
                 </span>
 
-            </div>
+            </p>
 
+        </div>
 
-            <!-- =========================================
-                 MODAL ACTIONS
-            ========================================== -->
-
-            <div class="cart-modal-actions">
-
-                <button
-                    type="button"
-                    id="cancelStaffSale"
-                    class="secondary-btn"
-                >
-                    Cancel
-                </button>
-
-
-                <button
-                    type="submit"
-                    id="confirmStaffSale"
-                    class="primary-btn"
-                >
-
-                    <i
-                        id="confirmStaffSaleIcon"
-                        class="<%= isMobile
-                            ? 'fas fa-mobile-alt'
-                            : 'fas fa-check'
-                        %>"
-                    ></i>
-
-                    <span id="confirmStaffSaleText">
-                        <%= isMobile
-                            ? "Continue to M-PESA"
-                            : "Complete Cash Sale"
-                        %>
-                    </span>
-
-                </button>
-
-            </div>
-
-        </form>
 
     </div>
 
 </div>
 
-<% } %>
 
 
-
-<% if (isStaff && hasItems) { %>
+<!-- =========================================================
+     STAFF CART JAVASCRIPT
+========================================================== -->
 
 <script>
 (function () {
@@ -623,22 +1000,32 @@ const checkoutProductId =
             "staffPaymentMode"
         );
 
+    const paymentModeIcon =
+        document.getElementById(
+            "staffPaymentModeIcon"
+        );
+
     const staffSaleModal =
         document.getElementById(
             "staffSaleModal"
         );
 
-    const openStaffSaleModal =
+    const modalOverlay =
+        document.getElementById(
+            "staffSaleModalOverlay"
+        );
+
+    const openButton =
         document.getElementById(
             "openStaffSaleModal"
         );
 
-    const closeStaffSaleModal =
+    const closeButton =
         document.getElementById(
             "closeStaffSaleModal"
         );
 
-    const cancelStaffSale =
+    const cancelButton =
         document.getElementById(
             "cancelStaffSale"
         );
@@ -653,40 +1040,44 @@ const checkoutProductId =
             "staffSaleIsMobile"
         );
 
-    const paymentModeLabel =
+    const modalIcon =
         document.getElementById(
-            "paymentModeLabel"
+            "staffSaleModalIcon"
         );
 
-    const paymentConfirmationText =
+    const paymentPreview =
         document.getElementById(
-            "paymentConfirmationText"
+            "staffSalePaymentPreview"
         );
 
-    const confirmStaffSaleText =
+    const modalNote =
         document.getElementById(
-            "confirmStaffSaleText"
+            "staffSaleModalNote"
         );
 
-    const confirmStaffSaleIcon =
+    const triggerIcon =
+        document.getElementById(
+            "staffSaleTriggerIcon"
+        );
+
+    const triggerText =
+        document.getElementById(
+            "staffSaleTriggerText"
+        );
+
+    const confirmIcon =
         document.getElementById(
             "confirmStaffSaleIcon"
         );
 
-    const staffCheckoutButtonText =
+    const confirmText =
         document.getElementById(
-            "staffCheckoutButtonText"
+            "confirmStaffSaleText"
         );
 
 
     /* =====================================================
        ROUTES
-
-       CASH:
-         /carts/staff-sales
-
-       M-PESA:
-         /cash/:id
     ====================================================== */
 
     const CASH_ACTION =
@@ -697,75 +1088,155 @@ const checkoutProductId =
 
 
     /* =====================================================
-       PAYMENT MODE UI
+       CURRENT PAYMENT MODE
     ====================================================== */
 
-    function syncPaymentUI(isMobile) {
+    let currentIsMobile =
+        <%= isMobile ? "true" : "false" %>;
+
+
+    /* =====================================================
+       UPDATE UI
+    ====================================================== */
+
+    function updatePaymentUI(
+        mobile
+    ) {
+
+        /* -----------------------------------------------
+           FORM ACTION
+        ----------------------------------------------- */
 
         if (staffSaleForm) {
 
             staffSaleForm.action =
-                isMobile
+                mobile
                     ? MPESA_ACTION
                     : CASH_ACTION;
 
         }
 
 
+        /* -----------------------------------------------
+           HIDDEN PAYMENT VALUE
+        ----------------------------------------------- */
+
         if (staffSaleIsMobile) {
 
             staffSaleIsMobile.value =
-                String(isMobile);
+                String(mobile);
 
         }
 
 
-        if (paymentModeLabel) {
+        /* -----------------------------------------------
+           PAYMENT PREVIEW
+        ----------------------------------------------- */
 
-            paymentModeLabel.textContent =
-                isMobile
+        if (paymentPreview) {
+
+            paymentPreview.textContent =
+                mobile
                     ? "M-PESA"
                     : "Cash";
 
         }
 
 
-        if (paymentConfirmationText) {
+        /* -----------------------------------------------
+           MODAL ICON
+        ----------------------------------------------- */
 
-            paymentConfirmationText.textContent =
-                isMobile
-                    ? "Continue to M-PESA checkout."
-                    : "This will record the sale as a cash payment.";
+        if (modalIcon) {
+
+            modalIcon.className =
+                mobile
+                    ? "fas fa-mobile-alt"
+                    : "fas fa-cash-register";
 
         }
 
 
-        if (confirmStaffSaleText) {
+        /* -----------------------------------------------
+           PAYMENT SELECT ICON
+        ----------------------------------------------- */
 
-            confirmStaffSaleText.textContent =
-                isMobile
-                    ? "Continue to M-PESA"
+        if (paymentModeIcon) {
+
+            paymentModeIcon.className =
+                mobile
+                    ? "fas fa-mobile-alt"
+                    : "fas fa-money-bill-wave";
+
+        }
+
+
+        /* -----------------------------------------------
+           TRIGGER ICON
+        ----------------------------------------------- */
+
+        if (triggerIcon) {
+
+            triggerIcon.className =
+                mobile
+                    ? "fas fa-mobile-alt"
+                    : "fas fa-cash-register";
+
+        }
+
+
+        /* -----------------------------------------------
+           TRIGGER TEXT
+        ----------------------------------------------- */
+
+        if (triggerText) {
+
+            triggerText.textContent =
+                mobile
+                    ? "Continue with M-PESA"
                     : "Complete Cash Sale";
 
         }
 
 
-        if (confirmStaffSaleIcon) {
+        /* -----------------------------------------------
+           CONFIRM BUTTON ICON
+        ----------------------------------------------- */
 
-            confirmStaffSaleIcon.className =
-                isMobile
+        if (confirmIcon) {
+
+            confirmIcon.className =
+                mobile
                     ? "fas fa-mobile-alt"
                     : "fas fa-check";
 
         }
 
 
-        if (staffCheckoutButtonText) {
+        /* -----------------------------------------------
+           CONFIRM BUTTON TEXT
+        ----------------------------------------------- */
 
-            staffCheckoutButtonText.textContent =
-                isMobile
-                    ? "Continue with M-PESA"
+        if (confirmText) {
+
+            confirmText.textContent =
+                mobile
+                    ? "Continue to M-PESA"
                     : "Complete Cash Sale";
+
+        }
+
+
+        /* -----------------------------------------------
+           FOOTER NOTE
+        ----------------------------------------------- */
+
+        if (modalNote) {
+
+            modalNote.textContent =
+                mobile
+                    ? "You will continue to the M-PESA payment process."
+                    : "This sale will be recorded as a cash payment.";
 
         }
 
@@ -773,25 +1244,23 @@ const checkoutProductId =
 
 
     /* =====================================================
-       INITIAL PAYMENT MODE
+       INITIAL UI
     ====================================================== */
 
-    let currentIsMobile =
-        <%= isMobile ? "true" : "false" %>;
-
-    syncPaymentUI(
+    updatePaymentUI(
         currentIsMobile
     );
 
 
     /* =====================================================
-       CHANGE PAYMENT MODE
-
+       PAYMENT MODE CHANGE
+       
        IMPORTANT:
-       /carts/payment-mode returns JSON.
+       The browser must NOT navigate to
+       /carts/payment-mode because that endpoint
+       returns JSON.
 
-       We therefore use fetch() instead of allowing the
-       browser to navigate to that endpoint.
+       Instead, update it using fetch().
     ====================================================== */
 
     if (paymentMode) {
@@ -800,11 +1269,11 @@ const checkoutProductId =
             "change",
             async function () {
 
-                const newIsMobile =
-                    paymentMode.value === "mpesa";
-
-                const oldIsMobile =
+                const previousMode =
                     currentIsMobile;
+
+                const newMode =
+                    paymentMode.value === "mpesa";
 
 
                 paymentMode.disabled =
@@ -830,15 +1299,13 @@ const checkoutProductId =
                                 body:
                                     new URLSearchParams({
                                         isMobile:
-                                            String(
-                                                newIsMobile
-                                            )
+                                            String(newMode)
                                     })
                             }
                         );
 
 
-                    let result = null;
+                    let result;
 
 
                     try {
@@ -846,7 +1313,7 @@ const checkoutProductId =
                         result =
                             await response.json();
 
-                    } catch (jsonError) {
+                    } catch (error) {
 
                         result = null;
 
@@ -861,7 +1328,7 @@ const checkoutProductId =
 
                         throw new Error(
                             result?.error ||
-                            "Unable to update payment mode."
+                            "Unable to update payment method."
                         );
 
                     }
@@ -879,7 +1346,7 @@ const checkoutProductId =
                             : "cash";
 
 
-                    syncPaymentUI(
+                    updatePaymentUI(
                         currentIsMobile
                     );
 
@@ -887,23 +1354,23 @@ const checkoutProductId =
                 } catch (error) {
 
                     currentIsMobile =
-                        oldIsMobile;
+                        previousMode;
 
 
                     paymentMode.value =
-                        oldIsMobile
+                        previousMode
                             ? "mpesa"
                             : "cash";
 
 
-                    syncPaymentUI(
-                        oldIsMobile
+                    updatePaymentUI(
+                        previousMode
                     );
 
 
                     alert(
                         error?.message ||
-                        "Unable to change payment mode."
+                        "Unable to update payment method."
                     );
 
                 } finally {
@@ -923,20 +1390,20 @@ const checkoutProductId =
        OPEN MODAL
     ====================================================== */
 
-    function openModal() {
+    function openStaffModal() {
 
         if (!staffSaleModal) {
             return;
         }
 
 
-        syncPaymentUI(
+        updatePaymentUI(
             currentIsMobile
         );
 
 
         staffSaleModal.classList.add(
-            "active"
+            "is-open"
         );
 
 
@@ -947,7 +1414,7 @@ const checkoutProductId =
 
 
         document.body.classList.add(
-            "cart-modal-open"
+            "staff-sale-modal-open"
         );
 
 
@@ -977,7 +1444,7 @@ const checkoutProductId =
        CLOSE MODAL
     ====================================================== */
 
-    function closeModal() {
+    function closeStaffModal() {
 
         if (!staffSaleModal) {
             return;
@@ -985,7 +1452,7 @@ const checkoutProductId =
 
 
         staffSaleModal.classList.remove(
-            "active"
+            "is-open"
         );
 
 
@@ -996,7 +1463,7 @@ const checkoutProductId =
 
 
         document.body.classList.remove(
-            "cart-modal-open"
+            "staff-sale-modal-open"
         );
 
     }
@@ -1006,67 +1473,60 @@ const checkoutProductId =
        OPEN BUTTON
     ====================================================== */
 
-    if (openStaffSaleModal) {
+    if (openButton) {
 
-        openStaffSaleModal.addEventListener(
+        openButton.addEventListener(
             "click",
-            openModal
+            openStaffModal
         );
 
     }
 
 
     /* =====================================================
-       CLOSE BUTTONS
+       CLOSE BUTTON
     ====================================================== */
 
-    if (closeStaffSaleModal) {
+    if (closeButton) {
 
-        closeStaffSaleModal.addEventListener(
+        closeButton.addEventListener(
             "click",
-            closeModal
-        );
-
-    }
-
-
-    if (cancelStaffSale) {
-
-        cancelStaffSale.addEventListener(
-            "click",
-            closeModal
+            closeStaffModal
         );
 
     }
 
 
     /* =====================================================
-       CLICK OUTSIDE MODAL
+       CANCEL BUTTON
     ====================================================== */
 
-    if (staffSaleModal) {
+    if (cancelButton) {
 
-        staffSaleModal.addEventListener(
+        cancelButton.addEventListener(
             "click",
-            function (event) {
-
-                if (
-                    event.target ===
-                    staffSaleModal
-                ) {
-
-                    closeModal();
-
-                }
-
-            }
+            closeStaffModal
         );
 
     }
 
 
     /* =====================================================
-       ESC KEY
+       CLICK BACKDROP TO CLOSE
+    ====================================================== */
+
+    if (modalOverlay) {
+
+        modalOverlay.addEventListener(
+            "click",
+            closeStaffModal
+        );
+
+    }
+
+
+    /* =====================================================
+       ESCAPE KEY
     ====================================================== */
 
     document.addEventListener(
@@ -1077,11 +1537,11 @@ const checkoutProductId =
                 event.key === "Escape" &&
                 staffSaleModal &&
                 staffSaleModal.classList.contains(
-                    "active"
+                    "is-open"
                 )
             ) {
 
-                closeModal();
+                closeStaffModal();
 
             }
 
@@ -1090,11 +1550,13 @@ const checkoutProductId =
 
 
     /* =====================================================
-       FINAL FORM ACTION CHECK
+       FINAL SUBMIT ROUTE CHECK
+       
+       CASH:
+         /carts/staff-sales
 
-       Ensures the correct route is used even if the
-       payment selector was changed immediately before
-       submitting the popup.
+       M-PESA:
+         /cash/:id
     ====================================================== */
 
     if (staffSaleForm) {
@@ -1108,9 +1570,16 @@ const checkoutProductId =
                     paymentMode.value === "mpesa";
 
 
-                syncPaymentUI(
+                staffSaleForm.action =
                     selectedIsMobile
-                );
+                        ? MPESA_ACTION
+                        : CASH_ACTION;
+
+
+                staffSaleIsMobile.value =
+                    String(
+                        selectedIsMobile
+                    );
 
             }
         );
