@@ -403,7 +403,7 @@
 
                 <!-- ==================================================
                      STAFF PAYMENT MODE
-                     
+
                      ONLY STAFF SEE THIS.
                 =================================================== -->
 
@@ -425,8 +425,16 @@
                         >
 
                             <option
+                                value=""
+                                selected
+                                disabled
+                            >
+                                Select payment mode
+                            </option>
+
+
+                            <option
                                 value="cash"
-                                <%= !isMobile ? "selected" : "" %>
                             >
                                 Cash Payment
                             </option>
@@ -434,7 +442,6 @@
 
                             <option
                                 value="mpesa"
-                                <%= isMobile ? "selected" : "" %>
                             >
                                 Mpesa Payment
                             </option>
