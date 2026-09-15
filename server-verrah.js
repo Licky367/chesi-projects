@@ -1106,6 +1106,29 @@ if (profileRoutes) {
     );
 }
 
+// ==========================================================
+// LIABILITIES 
+// ==========================================================
+
+if (liabilityRoutes) {
+
+    app.use(
+        "/profile",
+        liabilityRoutes
+    );
+
+
+    console.log(
+        "✅ Mounted /liability"
+    );
+
+} else {
+
+    console.error(
+        "❌ /liability was not mounted"
+    );
+}
+
 
 // ==========================================================
 // 404 HANDLER
