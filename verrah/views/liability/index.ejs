@@ -1,0 +1,151 @@
+<section class="sales-liability-entry">
+
+    <div class="sales-section-heading">
+
+        <div>
+
+            <h2>
+                Record Liability
+            </h2>
+
+            <p>
+                Enter the liability details below.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <form
+        class="sales-liability-form"
+        method="POST"
+        action="/sales/liability"
+    >
+
+        <!-- ==================================================
+             LIABILITY NAME
+        =================================================== -->
+
+        <div class="sales-liability-field">
+
+            <label for="liability-name">
+                Liability Name
+            </label>
+
+            <input
+                id="liability-name"
+                type="text"
+                name="name"
+                placeholder="Enter liability name"
+                required
+                maxlength="150"
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <!-- ==================================================
+             LIABILITY AMOUNT
+        =================================================== -->
+
+        <div class="sales-liability-field">
+
+            <label for="liability-amount">
+                Amount
+            </label>
+
+            <input
+                id="liability-amount"
+                type="number"
+                name="amount"
+                placeholder="Enter amount"
+                min="0"
+                step="0.01"
+                required
+            >
+
+        </div>
+
+
+        <!-- ==================================================
+             SUBSTATION
+        =================================================== -->
+
+        <% if (user && user.role === "staff") { %>
+
+            <div class="sales-liability-field">
+
+                <label>
+                    Substation
+                </label>
+
+                <div class="sales-liability-assigned">
+
+                    <%= user.assignedSubstationName || user.assignedSubstation %>
+
+                </div>
+
+                <input
+                    type="hidden"
+                    name="substation"
+                    value="<%= user.assignedSubstation %>"
+                >
+
+            </div>
+
+
+        <% } else if (user && user.role === "admin") { %>
+
+            <div class="sales-liability-field">
+
+                <label for="liability-substation">
+                    Substation
+                </label>
+
+                <select
+                    id="liability-substation"
+                    name="substation"
+                    required
+                >
+
+                    <option value="">
+                        Select Substation
+                    </option>
+
+                    <% if (substations && substations.length) { %>
+
+                        <% substations.forEach(function(substation) { %>
+
+                            <option
+                                value="<%= substation._id %>"
+                            >
+                                <%= substation.name %>
+                            </option>
+
+                        <% }); %>
+
+                    <% } %>
+
+                </select>
+
+            </div>
+
+        <% } %>
+
+
+        <!-- ==================================================
+             SUBMIT
+        =================================================== -->
+
+        <button
+            type="submit"
+            class="sales-liability-submit"
+        >
+            Record Liability
+        </button>
+
+    </form>
+
+</section>
