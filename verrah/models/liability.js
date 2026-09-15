@@ -20,7 +20,7 @@ const liabilitySchema = new mongoose.Schema(
 
         recordedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
+            ref: "VerrahUser",
             required: true
         },
 
