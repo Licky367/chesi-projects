@@ -1,0 +1,33 @@
+<% if (substation && substation.phoneNumber) { %>
+
+  <div class="substation-contact-float">
+
+    <!-- CALL BUTTON -->
+    <a
+      href="tel:<%= substation.phoneNumber %>"
+      class="substation-contact-button substation-call-button"
+      aria-label="Call <%= substation.name %>"
+      title="Call <%= substation.name %>"
+    >
+      <span class="substation-contact-icon">
+        ☎
+      </span>
+    </a>
+
+    <!-- WHATSAPP BUTTON -->
+    <a
+      href="https://wa.me/<%= String(substation.phoneNumber).replace(/\D/g, '') %>"
+      class="substation-contact-button substation-whatsapp-button"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="WhatsApp <%= substation.name %>"
+      title="WhatsApp <%= substation.name %>"
+    >
+      <span class="substation-contact-icon">
+        💬
+      </span>
+    </a>
+
+  </div>
+
+<% } %>
