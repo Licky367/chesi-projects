@@ -4,6 +4,7 @@
    CARTS PAGE
 ========================================================= */
 
+
 /* =========================================================
    USER
 ========================================================= */
@@ -27,7 +28,7 @@ const isStaff =
 
 
 /* =========================================================
-   CART DATA
+   CART
 ========================================================= */
 
 const cartItems =
@@ -47,8 +48,7 @@ const isMobile =
 
 /* =========================================================
    PRODUCT ID
-   Used for:
-   /carts/:id
+   Used by /carts/:id
 ========================================================= */
 
 let checkoutProductId = null;
@@ -283,6 +283,7 @@ if (cartItems.length > 0) {
 
         <aside class="cart-summary-card">
 
+
             <div class="cart-summary-head">
 
                 <span class="cart-kicker">
@@ -316,7 +317,12 @@ if (cartItems.length > 0) {
                 </span>
 
                 <strong id="cart-payment-mode-label">
-                    <%= isMobile ? "M-PESA" : "Cash" %>
+
+                    <%= isMobile
+                        ? "M-PESA"
+                        : "Cash"
+                    %>
+
                 </strong>
 
             </div>
@@ -329,8 +335,10 @@ if (cartItems.length > 0) {
                 </span>
 
                 <strong>
+
                     KSh
                     <%= cartTotal.toLocaleString() %>
+
                 </strong>
 
             </div>
@@ -340,9 +348,8 @@ if (cartItems.length > 0) {
 
                 <% if (isStaff) { %>
 
-                    Select your payment method,
-                    then continue with the appropriate
-                    staff checkout.
+                    Enter the sales name before
+                    completing this sale.
 
                 <% } else { %>
 
@@ -360,6 +367,10 @@ if (cartItems.length > 0) {
 
             <% if (isStaff) { %>
 
+
+                <!-- =============================================
+                     PAYMENT METHOD
+                ============================================== -->
 
                 <div class="staff-sale-form-group">
 
@@ -379,14 +390,18 @@ if (cartItems.length > 0) {
 
                             <option
                                 value="true"
-                                <%= isMobile ? "selected" : "" %>
+                                <%= isMobile
+                                    ? "selected"
+                                    : "" %>
                             >
                                 M-PESA
                             </option>
 
                             <option
                                 value="false"
-                                <%= !isMobile ? "selected" : "" %>
+                                <%= !isMobile
+                                    ? "selected"
+                                    : "" %>
                             >
                                 Cash
                             </option>
@@ -399,7 +414,7 @@ if (cartItems.length > 0) {
 
 
                 <!-- =============================================
-                     STAFF MODAL TRIGGER
+                     OPEN SALES MODAL
                 ============================================== -->
 
                 <button
@@ -460,7 +475,7 @@ if (cartItems.length > 0) {
 
 
         <!-- =====================================================
-             STAFF SALE MODAL
+             STAFF SALES MODAL
         ====================================================== -->
 
         <% if (isStaff) { %>
@@ -472,9 +487,9 @@ if (cartItems.length > 0) {
             >
 
 
-                <!-- =================================================
-                     MODAL OVERLAY
-                ================================================== -->
+                <!-- =============================================
+                     OVERLAY
+                ============================================== -->
 
                 <div
                     class="staff-sale-modal-overlay"
@@ -482,9 +497,9 @@ if (cartItems.length > 0) {
                 ></div>
 
 
-                <!-- =================================================
-                     MODAL CONTENT
-                ================================================== -->
+                <!-- =============================================
+                     MODAL
+                ============================================== -->
 
                 <div
                     class="staff-sale-modal-content"
@@ -494,11 +509,12 @@ if (cartItems.length > 0) {
                 >
 
 
-                    <!-- =============================================
-                         MODAL HEADER
-                    ============================================== -->
+                    <!-- =========================================
+                         HEADER
+                    ========================================== -->
 
                     <div class="staff-sale-modal-header">
+
 
                         <div class="staff-sale-modal-icon">
 
@@ -510,14 +526,14 @@ if (cartItems.length > 0) {
                         <div>
 
                             <span class="staff-sale-modal-kicker">
-                                STAFF CHECKOUT
+                                STAFF SALE
                             </span>
 
                             <h2
                                 id="staff-sale-modal-title"
                                 class="staff-sale-modal-title"
                             >
-                                Complete Sale
+                                Record Sale
                             </h2>
 
                         </div>
@@ -537,20 +553,24 @@ if (cartItems.length > 0) {
                     </div>
 
 
-                    <!-- =============================================
-                         MODAL BODY
-                    ============================================== -->
+                    <!-- =========================================
+                         BODY
+                    ========================================== -->
 
                     <div class="staff-sale-modal-body">
 
 
                         <p class="staff-sale-modal-description">
 
-                            Confirm the sale details before
-                            continuing to checkout.
+                            Enter the name of the person
+                            associated with this sale.
 
                         </p>
 
+
+                        <!-- =====================================
+                             STAFF SALE FORM
+                        ====================================== -->
 
                         <form
                             id="staff-sale-form"
@@ -560,16 +580,46 @@ if (cartItems.length > 0) {
                         >
 
 
-                            <!-- =====================================
+                            <!-- =================================
+                                 SALES NAME
+                            ================================== -->
+
+                            <div class="staff-sale-form-group">
+
+                                <label for="salesName">
+                                    Sales Name
+                                </label>
+
+
+                                <div class="staff-sale-input-wrap">
+
+                                    <i class="fas fa-user"></i>
+
+                                    <input
+                                        type="text"
+                                        id="salesName"
+                                        name="salesName"
+                                        placeholder="Enter sales name"
+                                        autocomplete="name"
+                                        required
+                                    >
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- =================================
                                  SALE SUMMARY
-                            ====================================== -->
+                            ================================== -->
 
                             <div class="staff-sale-summary">
+
 
                                 <div class="staff-sale-preview">
 
 
-                                    <!-- PAYMENT -->
+                                    <!-- PAYMENT METHOD -->
 
                                     <div class="staff-sale-preview-card">
 
@@ -581,7 +631,12 @@ if (cartItems.length > 0) {
                                             id="staff-payment-preview"
                                             class="staff-sale-preview-value"
                                         >
-                                            <%= isMobile ? "M-PESA" : "Cash" %>
+
+                                            <%= isMobile
+                                                ? "M-PESA"
+                                                : "Cash"
+                                            %>
+
                                         </strong>
 
                                     </div>
@@ -598,14 +653,18 @@ if (cartItems.length > 0) {
                                         <strong
                                             class="staff-sale-preview-value sale-total"
                                         >
+
                                             KSh
                                             <%= cartTotal.toLocaleString() %>
+
                                         </strong>
 
                                     </div>
 
                                 </div>
 
+
+                                <!-- ITEMS -->
 
                                 <div class="staff-sale-preview-row">
 
@@ -619,12 +678,13 @@ if (cartItems.length > 0) {
 
                                 </div>
 
+
                             </div>
 
 
-                            <!-- =====================================
-                                 MODAL ACTIONS
-                            ====================================== -->
+                            <!-- =================================
+                                 ACTIONS
+                            ================================== -->
 
                             <div class="staff-sale-modal-actions">
 
@@ -647,7 +707,7 @@ if (cartItems.length > 0) {
 
                                     <i class="fas fa-check"></i>
 
-                                    Continue
+                                    Record Sale
 
                                 </button>
 
@@ -660,16 +720,16 @@ if (cartItems.length > 0) {
                     </div>
 
 
-                    <!-- =============================================
-                         MODAL FOOTER
-                    ============================================== -->
+                    <!-- =========================================
+                         FOOTER
+                    ========================================== -->
 
                     <div class="staff-sale-modal-footer">
 
                         <p class="staff-sale-modal-note">
 
-                            Your selected payment method will
-                            determine the checkout process.
+                            The sales name is required before
+                            the sale can be completed.
 
                         </p>
 
@@ -691,6 +751,7 @@ if (cartItems.length > 0) {
         ====================================================== -->
 
         <div class="cart-empty">
+
 
             <div class="cart-empty-icon">
 
@@ -719,6 +780,7 @@ if (cartItems.length > 0) {
                 Browse Products
 
             </a>
+
 
         </div>
 
@@ -755,6 +817,11 @@ if (cartItems.length > 0) {
             "staff-sale-form"
         );
 
+    const salesNameInput =
+        document.getElementById(
+            "salesName"
+        );
+
     const paymentSelect =
         document.getElementById(
             "staff-payment-mode"
@@ -776,7 +843,8 @@ if (cartItems.length > 0) {
     ====================================================== */
 
     /*
-     * M-PESA:
+     * M-PESA
+     *
      * /carts/:id
      */
 
@@ -785,7 +853,8 @@ if (cartItems.length > 0) {
 
 
     /*
-     * CASH:
+     * CASH
+     *
      * /carts/staff-sale
      */
 
@@ -820,29 +889,24 @@ if (cartItems.length > 0) {
         }
 
 
-        /*
-         * M-PESA
-         * Goes to:
-         *
-         * /carts/:id
-         */
-
         if (currentIsMobile) {
+
+            /*
+             * M-PESA
+             *
+             * /carts/:id
+             */
 
             form.action =
                 CART_CHECKOUT_ACTION;
 
-        }
+        } else {
 
-
-        /*
-         * CASH
-         * Goes to:
-         *
-         * /carts/staff-sale
-         */
-
-        else {
+            /*
+             * CASH
+             *
+             * /carts/staff-sale
+             */
 
             form.action =
                 STAFF_CASH_ACTION;
@@ -858,7 +922,7 @@ if (cartItems.length > 0) {
 
     function updatePaymentDisplay() {
 
-        const text =
+        const paymentText =
             currentIsMobile
                 ? "M-PESA"
                 : "Cash";
@@ -867,7 +931,7 @@ if (cartItems.length > 0) {
         if (paymentPreview) {
 
             paymentPreview.textContent =
-                text;
+                paymentText;
 
         }
 
@@ -875,7 +939,7 @@ if (cartItems.length > 0) {
         if (paymentLabel) {
 
             paymentLabel.textContent =
-                text;
+                paymentText;
 
         }
 
@@ -934,11 +998,6 @@ if (cartItems.length > 0) {
             }
 
 
-            /*
-             * Use the value returned
-             * by the server.
-             */
-
             currentIsMobile =
                 Boolean(
                     data.isMobile
@@ -949,7 +1008,6 @@ if (cartItems.length > 0) {
 
             updateFormAction();
 
-
         } catch (error) {
 
             console.error(
@@ -959,8 +1017,7 @@ if (cartItems.length > 0) {
 
 
             /*
-             * Restore the saved value
-             * if the request fails.
+             * Revert the UI.
              */
 
             currentIsMobile =
@@ -1006,20 +1063,14 @@ if (cartItems.length > 0) {
                     this.value === "true";
 
 
-                /*
-                 * Update the interface immediately.
-                 */
-
                 currentIsMobile =
                     newIsMobile;
 
+
                 updatePaymentDisplay();
+
                 updateFormAction();
 
-
-                /*
-                 * Save the change in the cart.
-                 */
 
                 await savePaymentMode(
                     newIsMobile
@@ -1062,6 +1113,25 @@ if (cartItems.length > 0) {
             "staff-sale-modal-open"
         );
 
+
+        /*
+         * Put cursor directly into
+         * Sales Name.
+         */
+
+        setTimeout(
+            function () {
+
+                if (salesNameInput) {
+
+                    salesNameInput.focus();
+
+                }
+
+            },
+            100
+        );
+
     }
 
 
@@ -1095,7 +1165,7 @@ if (cartItems.length > 0) {
 
 
     /* =====================================================
-       OPEN STAFF SALE MODAL
+       OPEN BUTTON
     ====================================================== */
 
     if (trigger) {
@@ -1113,7 +1183,7 @@ if (cartItems.length > 0) {
 
 
     /* =====================================================
-       CLOSE MODAL
+       CLOSE BUTTONS
     ====================================================== */
 
     document
@@ -1161,34 +1231,57 @@ if (cartItems.length > 0) {
 
 
     /* =====================================================
-       FINAL FORM ACTION
+       FINAL SUBMISSION
     ====================================================== */
 
     if (form) {
 
         form.addEventListener(
             "submit",
-            function () {
+            function (event) {
 
                 /*
-                 * M-PESA:
-                 * /carts/:id
+                 * salesName is the main required
+                 * field of this modal.
                  */
 
-                if (currentIsMobile) {
+                if (
+                    salesNameInput &&
+                    !salesNameInput.value.trim()
+                ) {
 
-                    form.action =
-                        CART_CHECKOUT_ACTION;
+                    event.preventDefault();
+
+                    salesNameInput.focus();
+
+                    return;
 
                 }
 
 
                 /*
-                 * CASH:
-                 * /carts/staff-sale
+                 * Make absolutely sure the
+                 * correct route is used.
                  */
 
-                else {
+                if (currentIsMobile) {
+
+                    /*
+                     * M-PESA
+                     *
+                     * /carts/:id
+                     */
+
+                    form.action =
+                        CART_CHECKOUT_ACTION;
+
+                } else {
+
+                    /*
+                     * CASH
+                     *
+                     * /carts/staff-sale
+                     */
 
                     form.action =
                         STAFF_CASH_ACTION;
