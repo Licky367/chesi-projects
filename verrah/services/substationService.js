@@ -96,7 +96,16 @@ const normalizeCoordinate = (
 
 const buildGPS = (body) => {
 
-    const source =
+    /*
+     * The controller sends GPS as:
+     *
+     * body.gps.latitude
+     * body.gps.longitude
+     *
+     * This also supports flat coordinates for compatibility.
+     */
+
+    const gpsSource =
         body &&
         body.gps &&
         typeof body.gps === "object"
@@ -106,7 +115,7 @@ const buildGPS = (body) => {
 
     const latitude =
         normalizeCoordinate(
-            source.latitude,
+            gpsSource.latitude,
             -90,
             90,
             "Latitude"
@@ -115,7 +124,7 @@ const buildGPS = (body) => {
 
     const longitude =
         normalizeCoordinate(
-            source.longitude,
+            gpsSource.longitude,
             -180,
             180,
             "Longitude"
@@ -274,6 +283,9 @@ exports.getWithProducts = async (
     const substation =
         await Substation
             .findById(id)
+            .select(
+                "name location phoneNumber substationIcon description directions gps isActive productInventory images"
+            )
             .lean();
 
 
@@ -563,9 +575,6 @@ exports.update = async (
     /*
      * Only change the icon when the controller actually
      * supplies a new icon.
-     *
-     * This prevents an edit of name/location/GPS/etc.
-     * from deleting the existing icon.
      */
 
     if (
