@@ -162,8 +162,6 @@ function normalizeStatus(
 // User.phone is the authoritative customer phone.
 //
 // "_" and empty values are treated as missing.
-// This also prevents "_" from being displayed as a
-// customer's phone number in the staff package page.
 // =========================================================
 
 function normalizePhone(
@@ -192,6 +190,56 @@ function normalizePhone(
 
 
 // =========================================================
+// SALES NAME NORMALIZER
+// =========================================================
+//
+// salesName is used by staff when a staff member performs
+// the normal checkout/M-Pesa package flow.
+//
+// IMPORTANT:
+//
+// Staff cash:
+//
+//     isMobile = false
+//     -> StaffSale.salesName
+//
+// Staff M-Pesa:
+//
+//     isMobile = true
+//     -> Package.salesName
+//
+// This helper only cleans the value. The controller decides
+// when salesName should be supplied.
+// =========================================================
+
+function normalizeSalesName(
+  salesName
+) {
+  if (
+    salesName === undefined ||
+    salesName === null
+  ) {
+    return "";
+  }
+
+  const value =
+    String(salesName).trim();
+
+  if (!value) {
+    return "";
+  }
+
+  if (value.length > 150) {
+    throw new Error(
+      "Sales name cannot exceed 150 characters."
+    );
+  }
+
+  return value;
+}
+
+
+// =========================================================
 // GET CLIENT
 // =========================================================
 //
@@ -199,8 +247,8 @@ function normalizePhone(
 //
 // phone
 //
-// This helper makes sure every package-related operation
-// uses the same customer information.
+// This helper makes sure package-related operations use
+// the same customer information.
 // =========================================================
 
 async function getClient(
@@ -231,15 +279,24 @@ async function getClient(
 // =========================================================
 //
 // Cart identity:
-// ONLY { user: clientId }
+//
+//     { user: clientId }
 //
 // No sessionId.
 //
 // Inventory is NOT reduced here.
 // Inventory is reduced when delivery occurs.
 //
-// The customer's phone is read directly from User.phone
-// and saved into Package.phoneNumber.
+// Customer phone:
+//     User.phone
+//
+// Staff M-Pesa package:
+//
+//     paymentData.salesName
+//
+// is saved directly into:
+//
+//     Package.salesName
 // =========================================================
 
 async function createPackageFromCart(
@@ -284,6 +341,23 @@ async function createPackageFromCart(
         const clientPhone =
           normalizePhone(
             client.phone
+          );
+
+
+        // -------------------------------------------------
+        // SALES NAME
+        // -------------------------------------------------
+        //
+        // This value is supplied by the controller for the
+        // staff + isMobile=true package checkout.
+        //
+        // Cash staff sales do NOT come through here.
+        // Cash staff sales use StaffSale.salesName.
+        // -------------------------------------------------
+
+        const salesName =
+          normalizeSalesName(
+            paymentData.salesName
           );
 
 
@@ -470,6 +544,24 @@ async function createPackageFromCart(
         // -------------------------------------------------
         // CREATE PACKAGE
         // -------------------------------------------------
+        //
+        // salesName is deliberately saved here.
+        //
+        // For staff + isMobile=true:
+        //
+        //     Package.salesName
+        //
+        // receives the name supplied by the controller.
+        //
+        // For normal customers:
+        //
+        //     salesName = ""
+        //
+        // For staff cash:
+        //
+        //     This function is not used by the cash
+        //     StaffSale flow.
+        // -------------------------------------------------
 
         [
           created
@@ -482,6 +574,8 @@ async function createPackageFromCart(
                 items,
 
                 totalAmount,
+
+                salesName,
 
                 paymentMethod:
                   paymentData.paymentMethod ||
@@ -507,7 +601,7 @@ async function createPackageFromCart(
                   "",
 
                 // IMPORTANT:
-                // Always take the phone from User.phone.
+                // Always take phone from User.phone.
                 phoneNumber:
                   clientPhone,
 
@@ -559,6 +653,9 @@ async function createPackageFromCart(
 //
 // The customer's phone is read from User.phone.
 // Payment.phoneNumber is only used as a fallback.
+//
+// If salesName was stored on the Payment document, it is
+// also carried into the Package.
 // =========================================================
 
 async function createPackageFromPayment(
@@ -581,7 +678,9 @@ async function createPackageFromPayment(
         const payment =
           await Payment.findOne({
             _id: paymentId,
-            status: "confirmed"
+
+            status:
+              "confirmed"
           })
             .session(
               dbSession
@@ -642,6 +741,22 @@ async function createPackageFromPayment(
           ) ||
           normalizePhone(
             payment.phoneNumber
+          );
+
+
+        // -------------------------------------------------
+        // SALES NAME
+        // -------------------------------------------------
+        //
+        // If the Payment model carries salesName, preserve
+        // it when creating the package.
+        //
+        // If not present, Package.salesName becomes "".
+        // -------------------------------------------------
+
+        const salesName =
+          normalizeSalesName(
+            payment.salesName
           );
 
 
@@ -802,6 +917,11 @@ async function createPackageFromPayment(
                   Number(
                     payment.amount || 0
                   ),
+
+                // IMPORTANT:
+                // Preserve staff sales name on the package
+                // when it exists.
+                salesName,
 
                 paymentMethod:
                   "mpesa",
@@ -2307,6 +2427,34 @@ async function confirmPackagePayment(
         }
 
 
+        // -------------------------------------------------
+        // SALES NAME
+        //
+        // Preserve the package salesName. If the payment
+        // has a salesName, use it when the package does not
+        // already have one.
+        // -------------------------------------------------
+
+        const paymentSalesName =
+          normalizeSalesName(
+            payment.salesName
+          );
+
+
+        if (
+          paymentSalesName
+        ) {
+          packageDocQuery.salesName =
+            paymentSalesName;
+        } else {
+
+          packageDocQuery.salesName =
+            normalizeSalesName(
+              packageDocQuery.salesName
+            );
+        }
+
+
         await packageDocQuery.save({
           session:
             dbSession
@@ -2335,6 +2483,7 @@ async function confirmPackagePayment(
 // There is NO inventory reservation anymore.
 //
 // Starting an M-Pesa payment does not reduce Product.units.
+//
 // Therefore, when payment fails/cancels:
 //
 // - Product.units are NOT restored.
