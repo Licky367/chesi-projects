@@ -34,14 +34,10 @@
      * isMobile === false
      *     = Cash Payment
      *     = Record Sale
-     *     = Existing staff-sale popup
      *
      * isMobile === true
      *     = Mpesa Payment
      *     = Checkout
-     *     = /carts/:productId
-     *
-     * Cart model defaults isMobile to true.
      */
     const isMobile =
         cart?.isMobile !== false;
@@ -403,7 +399,7 @@
 
                 <!-- ==================================================
                      STAFF PAYMENT MODE
-
+                     
                      ONLY STAFF SEE THIS.
                 =================================================== -->
 
@@ -426,23 +422,19 @@
 
                             <option
                                 value=""
-                                selected
                                 disabled
+                                selected
                             >
                                 Select payment mode
                             </option>
 
 
-                            <option
-                                value="cash"
-                            >
+                            <option value="cash">
                                 Cash Payment
                             </option>
 
 
-                            <option
-                                value="mpesa"
-                            >
+                            <option value="mpesa">
                                 Mpesa Payment
                             </option>
 
@@ -481,7 +473,6 @@
 
 
                     <% } else { %>
-
 
                         <!-- ==========================================
                              STAFF + MPESA
@@ -547,14 +538,6 @@
 
 <!-- ==========================================================
      STAFF CASH SALE MODAL
-
-     ONLY USED WHEN:
-
-         role = staff
-         isMobile = false
-
-     Mpesa does NOT use this modal.
-     Mpesa goes directly to /carts/:productId.
 ========================================================== -->
 
 <% if (isStaff && hasItems && !isMobile) { %>
@@ -696,9 +679,7 @@
                             class="secondary-btn staff-sale-cancel"
                             data-close-staff-sale-modal
                         >
-
                             Cancel
-
                         </button>
 
 
@@ -752,10 +733,6 @@
             }
 
 
-            // ==================================================
-            // CLOSE MODAL
-            // ==================================================
-
             const closeModal =
                 function () {
 
@@ -774,10 +751,6 @@
 
                 };
 
-
-            // ==================================================
-            // OPEN MODAL
-            // ==================================================
 
             const openModal =
                 function () {
@@ -800,9 +773,7 @@
                         function () {
 
                             if (nameInput) {
-
                                 nameInput.focus();
-
                             }
 
                         },
@@ -812,19 +783,11 @@
                 };
 
 
-            // ==================================================
-            // OPEN BUTTON
-            // ==================================================
-
             openButton.addEventListener(
                 "click",
                 openModal
             );
 
-
-            // ==================================================
-            // CLOSE BUTTONS / OVERLAY
-            // ==================================================
 
             modal
                 .querySelectorAll(
@@ -841,10 +804,6 @@
                     }
                 );
 
-
-            // ==================================================
-            // ESCAPE KEY
-            // ==================================================
 
             document.addEventListener(
                 "keydown",
@@ -872,26 +831,6 @@
 
 <!-- ==========================================================
      STAFF PAYMENT MODE JAVASCRIPT
-
-     IMPORTANT:
-
-     The payment-mode endpoint is an API endpoint.
-
-     It MUST NOT be opened by normal form submission because
-     that would make the browser display its JSON response.
-
-     Instead:
-
-         1. Send the request using fetch().
-         2. Wait for the server response.
-         3. If successful, reload the cart page.
-         4. The server then renders the correct UI.
-
-     CASH:
-         isMobile = false
-
-     MPESA:
-         isMobile = true
 ========================================================== -->
 
 <% if (isStaff && hasItems) { %>
@@ -914,42 +853,44 @@
                 "change",
                 async function () {
 
+                    /*
+                     * Save the value selected by the staff.
+                     */
                     const selectedMode =
                         paymentMode.value;
 
 
-                    const isMobile =
+                    /*
+                     * Ignore the placeholder.
+                     */
+                    if (
+                        selectedMode !== "cash" &&
+                        selectedMode !== "mpesa"
+                    ) {
+                        return;
+                    }
+
+
+                    /*
+                     * Convert the selected payment mode
+                     * into the existing cart field.
+                     *
+                     * CASH  = false
+                     * MPESA = true
+                     */
+                    const newIsMobile =
                         selectedMode === "mpesa";
 
 
                     /*
-                     * Prevent another selection while the
-                     * server is updating the cart.
+                     * Disable the selector while the request
+                     * is being processed.
                      */
                     paymentMode.disabled = true;
 
 
-                    /*
-                     * Keep the previous value available in case
-                     * the request fails.
-                     */
-                    const previousMode =
-                        isMobile
-                            ? "cash"
-                            : "mpesa";
-
-
                     try {
 
-                        /*
-                         * IMPORTANT:
-                         *
-                         * fetch() sends the request in the
-                         * background.
-                         *
-                         * The browser therefore DOES NOT
-                         * navigate to /carts/payment-mode.
-                         */
                         const response =
                             await fetch(
                                 "/carts/payment-mode",
@@ -959,15 +900,16 @@
                                     headers: {
                                         "Content-Type":
                                             "application/x-www-form-urlencoded",
+
                                         "Accept":
-                                            "application/json"
+                                            "application/json, text/plain, */*"
                                     },
 
                                     body:
                                         new URLSearchParams({
                                             isMobile:
                                                 String(
-                                                    isMobile
+                                                    newIsMobile
                                                 )
                                         })
                                 }
@@ -975,34 +917,15 @@
 
 
                         /*
-                         * Try to read the JSON response.
+                         * We only require a successful HTTP
+                         * response from the endpoint.
+                         *
+                         * We do NOT require the response to
+                         * contain { ok: true }.
                          */
-                        let result = null;
-
-                        try {
-
-                            result =
-                                await response.json();
-
-                        } catch (jsonError) {
-
-                            result = null;
-
-                        }
-
-
-                        /*
-                         * The backend must confirm that the
-                         * payment mode was actually updated.
-                         */
-                        if (
-                            !response.ok ||
-                            !result ||
-                            result.ok !== true
-                        ) {
+                        if (!response.ok) {
 
                             throw new Error(
-                                result?.error ||
                                 "Unable to update payment mode."
                             );
 
@@ -1010,20 +933,14 @@
 
 
                         /*
-                         * SUCCESS
+                         * The server successfully saved the
+                         * selected mode.
                          *
-                         * The server has saved the new mode.
+                         * Reload the page so EJS renders the
+                         * correct action:
                          *
-                         * Now reload the cart page.
-                         *
-                         * The server will render:
-                         *
-                         * CASH:
-                         *     Record Sale
-                         *     + staff-sale modal
-                         *
-                         * MPESA:
-                         *     Checkout
+                         * CASH  -> Record Sale
+                         * MPESA -> Checkout
                          */
                         window.location.reload();
 
@@ -1036,24 +953,19 @@
 
 
                         /*
-                         * Restore the previous selection.
+                         * Restore the selection that represents
+                         * the current cart state.
                          */
                         paymentMode.value =
-                            previousMode;
+                            isMobile
+                                ? "mpesa"
+                                : "cash";
 
 
-                        /*
-                         * Re-enable the selector.
-                         */
                         paymentMode.disabled =
                             false;
 
 
-                        /*
-                         * Keep the error user-friendly.
-                         *
-                         * Do NOT navigate to the API endpoint.
-                         */
                         alert(
                             error?.message ||
                             "Unable to update payment mode."
