@@ -75,6 +75,122 @@ if (cartItems.length > 0) {
 
     }
 }
+
+
+/* =========================================================
+   PICKUP SUBSTATIONS
+========================================================= */
+
+const availableSubstations =
+    Array.isArray(substations)
+        ? substations
+        : [];
+
+
+/* =========================================================
+   STAFF ASSIGNED SUBSTATION
+========================================================= */
+
+let assignedSubstation =
+    null;
+
+let assignedSubstationId =
+    "";
+
+let assignedSubstationName =
+    "";
+
+let assignedSubstationLocation =
+    "";
+
+
+if (isStaff) {
+
+    assignedSubstation =
+        pageUser?.assignedSubstation || null;
+
+
+    /*
+     * assignedSubstation may be:
+     *
+     * 1. Object
+     * 2. ObjectId
+     * 3. String ID
+     */
+
+    if (
+        assignedSubstation &&
+        typeof assignedSubstation === "object"
+    ) {
+
+        assignedSubstationId =
+            String(
+                assignedSubstation._id ||
+                assignedSubstation.id ||
+                ""
+            );
+
+
+        assignedSubstationName =
+            assignedSubstation.name ||
+            assignedSubstation.location ||
+            assignedSubstationId;
+
+
+        assignedSubstationLocation =
+            assignedSubstation.location ||
+            "";
+
+    } else {
+
+        assignedSubstationId =
+            String(
+                assignedSubstation || ""
+            );
+
+
+        /*
+         * If only the ID is stored on the user,
+         * resolve the name and location from
+         * the available substations.
+         */
+
+        const matchedSubstation =
+            availableSubstations.find(
+                function (substation) {
+
+                    return String(
+                        substation?._id || ""
+                    ) === String(
+                        assignedSubstationId
+                    );
+
+                }
+            );
+
+
+        if (matchedSubstation) {
+
+            assignedSubstationName =
+                matchedSubstation.name ||
+                matchedSubstation.location ||
+                assignedSubstationId;
+
+
+            assignedSubstationLocation =
+                matchedSubstation.location ||
+                "";
+
+        } else {
+
+            assignedSubstationName =
+                assignedSubstationId;
+
+        }
+
+    }
+
+}
 %>
 
 
@@ -212,7 +328,9 @@ if (cartItems.length > 0) {
                                 </span>
 
                                 <span class="cart-item-arrow">
+
                                     <i class="fas fa-chevron-right"></i>
+
                                 </span>
 
                             </div>
@@ -226,10 +344,13 @@ if (cartItems.length > 0) {
                             <div class="cart-item-meta">
 
                                 <span>
+
                                     Quantity:
+
                                     <strong>
                                         <%= quantity %>
                                     </strong>
+
                                 </span>
 
                             </div>
@@ -348,7 +469,8 @@ if (cartItems.length > 0) {
 
                 <% if (isStaff) { %>
 
-                    Enter the sales name before
+                    Enter the sales name and confirm
+                    the pickup substation before
                     completing this sale.
 
                 <% } else { %>
@@ -375,7 +497,9 @@ if (cartItems.length > 0) {
                 <div class="staff-sale-form-group">
 
                     <label for="staff-payment-mode">
+
                         Payment Method
+
                     </label>
 
 
@@ -394,8 +518,11 @@ if (cartItems.length > 0) {
                                     ? "selected"
                                     : "" %>
                             >
+
                                 M-PESA
+
                             </option>
+
 
                             <option
                                 value="false"
@@ -403,7 +530,9 @@ if (cartItems.length > 0) {
                                     ? "selected"
                                     : "" %>
                             >
+
                                 Cash
+
                             </option>
 
                         </select>
@@ -526,14 +655,19 @@ if (cartItems.length > 0) {
                         <div>
 
                             <span class="staff-sale-modal-kicker">
+
                                 STAFF SALE
+
                             </span>
+
 
                             <h2
                                 id="staff-sale-modal-title"
                                 class="staff-sale-modal-title"
                             >
+
                                 Record Sale
+
                             </h2>
 
                         </div>
@@ -562,8 +696,8 @@ if (cartItems.length > 0) {
 
                         <p class="staff-sale-modal-description">
 
-                            Enter the name of the person
-                            associated with this sale.
+                            Enter the sales name and confirm
+                            the pickup substation for this sale.
 
                         </p>
 
@@ -587,7 +721,9 @@ if (cartItems.length > 0) {
                             <div class="staff-sale-form-group">
 
                                 <label for="salesName">
+
                                     Sales Name
+
                                 </label>
 
 
@@ -610,6 +746,115 @@ if (cartItems.length > 0) {
 
 
                             <!-- =================================
+                                 PICKUP SUBSTATION
+                            ================================== -->
+
+                            <div class="staff-sale-form-group">
+
+                                <label for="staffPickupSubstation">
+
+                                    <i class="fas fa-location-dot"></i>
+
+                                    Assigned Pickup Substation
+
+                                </label>
+
+
+                                <% if (assignedSubstationId) { %>
+
+
+                                    <!--
+                                      Disabled select is purely
+                                      visual.
+
+                                      The hidden input is the
+                                      actual submitted value.
+                                    -->
+
+                                    <input
+                                        type="hidden"
+                                        name="packageSubstation"
+                                        value="<%= assignedSubstationId %>"
+                                    >
+
+
+                                    <div class="staff-sale-input-wrap">
+
+                                        <i class="fas fa-lock"></i>
+
+                                        <select
+                                            id="staffPickupSubstation"
+                                            class="checkout-substation-select"
+                                            disabled
+                                        >
+
+                                            <option
+                                                value="<%= assignedSubstationId %>"
+                                                selected
+                                            >
+
+                                                <%= assignedSubstationName %>
+
+                                                <% if (
+                                                    assignedSubstationLocation
+                                                ) { %>
+
+                                                    —
+                                                    <%= assignedSubstationLocation %>
+
+                                                <% } %>
+
+                                            </option>
+
+                                        </select>
+
+                                    </div>
+
+
+                                    <small class="checkout-substation-default">
+
+                                        <i class="fas fa-lock"></i>
+
+                                        Pickup is restricted to your
+                                        assigned substation.
+
+                                    </small>
+
+
+                                <% } else { %>
+
+
+                                    <!-- =================================
+                                         NO ASSIGNED SUBSTATION
+                                    ================================== -->
+
+                                    <div class="checkout-substation-empty">
+
+                                        <i class="fas fa-circle-exclamation"></i>
+
+                                        You have not been assigned
+                                        a pickup substation.
+
+                                    </div>
+
+
+                                    <!--
+                                      Empty hidden value makes the
+                                      server-side validation explicit.
+                                    -->
+
+                                    <input
+                                        type="hidden"
+                                        name="packageSubstation"
+                                        value=""
+                                    >
+
+                                <% } %>
+
+                            </div>
+
+
+                            <!-- =================================
                                  SALE SUMMARY
                             ================================== -->
 
@@ -624,8 +869,11 @@ if (cartItems.length > 0) {
                                     <div class="staff-sale-preview-card">
 
                                         <span class="staff-sale-preview-label">
+
                                             PAYMENT METHOD
+
                                         </span>
+
 
                                         <strong
                                             id="staff-payment-preview"
@@ -647,8 +895,11 @@ if (cartItems.length > 0) {
                                     <div class="staff-sale-preview-card">
 
                                         <span class="staff-sale-preview-label">
+
                                             TOTAL
+
                                         </span>
+
 
                                         <strong
                                             class="staff-sale-preview-value sale-total"
@@ -679,6 +930,25 @@ if (cartItems.length > 0) {
                                 </div>
 
 
+                                <!-- PICKUP -->
+
+                                <div class="staff-sale-preview-row">
+
+                                    <span>
+                                        Pickup
+                                    </span>
+
+                                    <strong>
+
+                                        <%= assignedSubstationId
+                                            ? assignedSubstationName
+                                            : "Not assigned" %>
+
+                                    </strong>
+
+                                </div>
+
+
                             </div>
 
 
@@ -703,6 +973,9 @@ if (cartItems.length > 0) {
                                 <button
                                     type="submit"
                                     class="staff-sale-submit-btn"
+                                    <%= !assignedSubstationId
+                                        ? "disabled"
+                                        : "" %>
                                 >
 
                                     <i class="fas fa-check"></i>
@@ -728,8 +1001,9 @@ if (cartItems.length > 0) {
 
                         <p class="staff-sale-modal-note">
 
-                            The sales name is required before
-                            the sale can be completed.
+                            The sales name and your assigned
+                            pickup substation are required
+                            before the sale can be completed.
 
                         </p>
 
@@ -807,35 +1081,59 @@ if (cartItems.length > 0) {
             "staff-sale-modal"
         );
 
+
     const trigger =
         document.getElementById(
             "staff-sale-trigger"
         );
+
 
     const form =
         document.getElementById(
             "staff-sale-form"
         );
 
+
     const salesNameInput =
         document.getElementById(
             "salesName"
         );
+
 
     const paymentSelect =
         document.getElementById(
             "staff-payment-mode"
         );
 
+
     const paymentPreview =
         document.getElementById(
             "staff-payment-preview"
         );
 
+
     const paymentLabel =
         document.getElementById(
             "cart-payment-mode-label"
         );
+
+
+    const packageSubstationInput =
+        form
+            ? form.querySelector(
+                'input[name="packageSubstation"]'
+            )
+            : null;
+
+
+    /* =====================================================
+       STAFF ASSIGNED SUBSTATION
+    ====================================================== */
+
+    const assignedSubstationId =
+        <%- JSON.stringify(
+            assignedSubstationId || ""
+        ) %>;
 
 
     /* =====================================================
@@ -845,7 +1143,7 @@ if (cartItems.length > 0) {
     /*
      * M-PESA
      *
-     * /carts/:id
+     * POST /carts/:id
      */
 
     const CART_CHECKOUT_ACTION =
@@ -855,7 +1153,7 @@ if (cartItems.length > 0) {
     /*
      * CASH
      *
-     * /carts/staff-sale
+     * POST /carts/staff-sale
      */
 
     const STAFF_CASH_ACTION =
@@ -894,7 +1192,7 @@ if (cartItems.length > 0) {
             /*
              * M-PESA
              *
-             * /carts/:id
+             * POST /carts/:id
              */
 
             form.action =
@@ -905,7 +1203,7 @@ if (cartItems.length > 0) {
             /*
              * CASH
              *
-             * /carts/staff-sale
+             * POST /carts/staff-sale
              */
 
             form.action =
@@ -1038,6 +1336,11 @@ if (cartItems.length > 0) {
 
             updateFormAction();
 
+
+            /*
+             * Use the existing checkout-style
+             * message if available.
+             */
 
             alert(
                 error?.message ||
@@ -1240,10 +1543,9 @@ if (cartItems.length > 0) {
             "submit",
             function (event) {
 
-                /*
-                 * salesName is the main required
-                 * field of this modal.
-                 */
+                /* -----------------------------------------
+                   SALES NAME
+                ------------------------------------------ */
 
                 if (
                     salesNameInput &&
@@ -1259,17 +1561,50 @@ if (cartItems.length > 0) {
                 }
 
 
+                /* -----------------------------------------
+                   PICKUP SUBSTATION
+                ------------------------------------------ */
+
+                if (
+                    !packageSubstationInput ||
+                    !String(
+                        packageSubstationInput.value || ""
+                    ).trim()
+                ) {
+
+                    event.preventDefault();
+
+
+                    alert(
+                        "You do not have an assigned pickup substation."
+                    );
+
+
+                    return;
+
+                }
+
+
                 /*
-                 * Make absolutely sure the
-                 * correct route is used.
+                 * Make absolutely sure the submitted
+                 * pickup station is the staff member's
+                 * assigned station.
                  */
+
+                packageSubstationInput.value =
+                    assignedSubstationId;
+
+
+                /* -----------------------------------------
+                   PAYMENT ROUTE
+                ------------------------------------------ */
 
                 if (currentIsMobile) {
 
                     /*
                      * M-PESA
                      *
-                     * /carts/:id
+                     * POST /carts/:id
                      */
 
                     form.action =
@@ -1280,7 +1615,7 @@ if (cartItems.length > 0) {
                     /*
                      * CASH
                      *
-                     * /carts/staff-sale
+                     * POST /carts/staff-sale
                      */
 
                     form.action =
