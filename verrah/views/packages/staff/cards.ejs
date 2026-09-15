@@ -1,92 +1,90 @@
 <!-- =========================================================
      VERRAH COSMETICS
      SCROLLABLE TABS + CARD PANELS
-========================================================= -->
+========================================================= --><div class="verrah-tabs-container"><!-- =====================================================
+     SCROLLABLE TABS
+====================================================== -->
 
-<div class="verrah-tabs-container">
+<div
+    class="verrah-tabs"
+    role="tablist"
+>
 
 
-    <!-- =====================================================
-         SCROLLABLE TABS
-    ====================================================== -->
+    <!-- ITEMS -->
+
+    <button
+        type="button"
+        class="verrah-tab active"
+        role="tab"
+        aria-selected="true"
+        aria-controls="items"
+        data-tab="items"
+    >
+        Items Bought
+    </button>
+
+
+    <!-- OVERVIEW -->
+
+    <button
+        type="button"
+        class="verrah-tab"
+        role="tab"
+        aria-selected="false"
+        aria-controls="overview"
+        data-tab="overview"
+    >
+        Overview
+    </button>
+
+</div>
+
+
+<!-- =====================================================
+     TAB CONTENT
+====================================================== -->
+
+<div class="verrah-tab-content">
+
+
+    <!-- =================================================
+         ITEMS PANEL
+    ================================================== -->
 
     <div
-        class="verrah-tabs"
-        role="tablist"
+        class="verrah-tab-panel active"
+        id="items"
+        role="tabpanel"
+        aria-labelledby="items-tab"
     >
 
-
-        <!-- ITEMS -->
-
-        <button
-            type="button"
-            class="verrah-tab active"
-            role="tab"
-            aria-selected="true"
-            data-tab="welcome"
-        >
-            Items Bought
-        </button>
-
-
-        <!-- OVERVIEW -->
-
-        <button
-            type="button"
-            class="verrah-tab"
-            role="tab"
-            aria-selected="false"
-            data-tab="deliveries"
-        >
-            Overview
-        </button>
+        <%- include("items") %>
 
     </div>
 
 
-    <!-- =====================================================
-         TAB CONTENT
-    ====================================================== -->
+    <!-- =================================================
+         OVERVIEW PANEL
+    ================================================== -->
 
-    <div class="verrah-tab-content">
+    <div
+        class="verrah-tab-panel"
+        id="overview"
+        role="tabpanel"
+        aria-labelledby="overview-tab"
+        hidden
+    >
 
-
-        <!-- ITEMS -->
-
-        <div
-            class="verrah-tab-panel active"
-            id="overview"
-            role="tabpanel"
-        >
-
-            <%- include("items") %>
-
-        </div>
-
-
-        <!-- OVERVIEW -->
-
-        <div
-            class="verrah-tab-panel"
-            id="overview"
-            role="tabpanel"
-            hidden
-        >
-
-            <%- include("overview") %>
-
-        </div>
+        <%- include("overview") %>
 
     </div>
 
 </div>
 
-
-<!-- =========================================================
+</div><!-- =========================================================
      TAB SWITCHING
-========================================================= -->
-
-<script>
+========================================================= --><script>
 
 (function () {
 
@@ -136,7 +134,7 @@
 
 
                 /* ---------------------------------------------
-                   UPDATE VISIBLE CARD
+                   UPDATE VISIBLE PANEL
                 --------------------------------------------- */
 
                 panels.forEach(function (panel) {
