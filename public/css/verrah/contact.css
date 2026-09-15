@@ -1,0 +1,115 @@
+/* ==========================================================
+   SUBSTATION FLOATING CONTACT BUTTONS
+   ========================================================== */
+
+.substation-contact-float {
+    position: fixed;
+    right: 18px;
+    bottom: 20px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+
+    z-index: 9999;
+}
+
+
+/* ==========================================================
+   SHARED BUTTON
+   ========================================================== */
+
+.substation-contact-button {
+    width: 54px;
+    height: 54px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    text-decoration: none;
+
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.22);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+/* ==========================================================
+   ICON
+   ========================================================== */
+
+.substation-contact-icon {
+    font-size: 25px;
+    line-height: 1;
+}
+
+
+/* ==========================================================
+   CALL BUTTON
+   ========================================================== */
+
+.substation-call-button {
+    background: #166534;
+    color: #ffffff;
+}
+
+
+/* ==========================================================
+   WHATSAPP BUTTON
+   ========================================================== */
+
+.substation-whatsapp-button {
+    background: #25D366;
+    color: #ffffff;
+}
+
+
+/* ==========================================================
+   HOVER
+   ========================================================== */
+
+.substation-contact-button:hover {
+    transform: scale(1.08);
+
+    box-shadow:
+        0 6px 16px rgba(0, 0, 0, 0.28);
+}
+
+
+/* ==========================================================
+   ACTIVE / TAP
+   ========================================================== */
+
+.substation-contact-button:active {
+    transform: scale(0.94);
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 600px) {
+
+    .substation-contact-float {
+        right: 14px;
+        bottom: 16px;
+        gap: 10px;
+    }
+
+    .substation-contact-button {
+        width: 50px;
+        height: 50px;
+    }
+
+    .substation-contact-icon {
+        font-size: 23px;
+    }
+}
