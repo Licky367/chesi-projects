@@ -1,0 +1,200 @@
+<section class="sales-page">
+
+    <!-- =====================================================
+         LIABILITY HEADER
+    ====================================================== -->
+
+    <header class="sales-header">
+
+        <div class="sales-header-icon">
+            <i class="fas fa-file-invoice-dollar"></i>
+        </div>
+
+        <div>
+
+            <span class="sales-kicker">
+                VERAH COSMETICS
+            </span>
+
+            <h1 class="sales-title">
+                Liabilities
+            </h1>
+
+            <p class="sales-subtitle">
+                Record and monitor business liabilities by substation.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         LIABILITY NAVIGATION
+    ====================================================== -->
+
+    <nav
+        class="sales-navigation"
+        id="liability-navigation"
+    >
+
+        <a
+            href="/liability?tab=entry"
+            class="sales-navigation-tab <%= activeTab === 'entry' ? 'active' : '' %>"
+        >
+
+            <i class="fas fa-plus-circle"></i>
+
+            <span>
+                Record Liability
+            </span>
+
+        </a>
+
+
+        <a
+            href="/liability?tab=records"
+            class="sales-navigation-tab <%= activeTab === 'records' ? 'active' : '' %>"
+        >
+
+            <i class="fas fa-list"></i>
+
+            <span>
+                Liability Records
+            </span>
+
+        </a>
+
+    </nav>
+
+
+    <!-- =====================================================
+         FILTER
+         ONLY DISPLAYED ON LIABILITY RECORDS TAB
+    ====================================================== -->
+
+    <% if (activeTab === 'records') { %>
+
+        <div class="sales-filter-wrapper">
+
+            <%- include("sales-partials/filter") %>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- =====================================================
+         LIABILITY CONTENT
+    ====================================================== -->
+
+    <main class="sales-content">
+
+
+        <!-- =================================================
+             RECORD LIABILITY
+        ================================================== -->
+
+        <section
+            class="sales-panel <%= activeTab === 'entry' ? 'active' : '' %>"
+            <%= activeTab === 'entry' ? '' : 'hidden' %>
+        >
+
+            <%- include("sales-partials/liability-entry") %>
+
+        </section>
+
+
+        <!-- =================================================
+             LIABILITY RECORDS
+        ================================================== -->
+
+        <section
+            class="sales-panel <%= activeTab === 'records' ? 'active' : '' %>"
+            <%= activeTab === 'records' ? '' : 'hidden' %>
+        >
+
+            <%- include("sales-partials/liability-records") %>
+
+        </section>
+
+
+    </main>
+
+</section>
+
+
+<!-- ==========================================================
+     LIABILITY TAB SCROLL POSITION
+========================================================== -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const navigation =
+        document.getElementById("liability-navigation");
+
+    if (!navigation) {
+        return;
+    }
+
+
+    /*
+     * Restore the navigation's horizontal position
+     * after changing tabs.
+     */
+
+    const savedScrollLeft =
+        sessionStorage.getItem(
+            "liabilityNavigationScrollLeft"
+        );
+
+
+    if (savedScrollLeft !== null) {
+
+        requestAnimationFrame(function () {
+
+            navigation.scrollLeft =
+                Number(savedScrollLeft);
+
+        });
+
+
+        sessionStorage.removeItem(
+            "liabilityNavigationScrollLeft"
+        );
+
+    }
+
+
+    /*
+     * Save the exact horizontal position before
+     * navigating to another liability tab.
+     */
+
+    const tabs =
+        navigation.querySelectorAll(
+            ".sales-navigation-tab"
+        );
+
+
+    tabs.forEach(function (tab) {
+
+        tab.addEventListener(
+            "click",
+            function () {
+
+                sessionStorage.setItem(
+                    "liabilityNavigationScrollLeft",
+                    String(navigation.scrollLeft)
+                );
+
+            }
+        );
+
+    });
+
+});
+
+</script>
