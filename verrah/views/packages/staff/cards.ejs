@@ -1,0 +1,179 @@
+<!-- =========================================================
+     VERRAH COSMETICS
+     SCROLLABLE TABS + CARD PANELS
+========================================================= -->
+
+<div class="verrah-tabs-container">
+
+
+    <!-- =====================================================
+         SCROLLABLE TABS
+    ====================================================== -->
+
+    <div
+        class="verrah-tabs"
+        role="tablist"
+    >
+
+
+        <!-- ITEMS -->
+
+        <button
+            type="button"
+            class="verrah-tab active"
+            role="tab"
+            aria-selected="true"
+            data-tab="welcome"
+        >
+            Items Bought
+        </button>
+
+
+        <!-- OVERVIEW -->
+
+        <button
+            type="button"
+            class="verrah-tab"
+            role="tab"
+            aria-selected="false"
+            data-tab="deliveries"
+        >
+            Overview
+        </button>
+
+    </div>
+
+
+    <!-- =====================================================
+         TAB CONTENT
+    ====================================================== -->
+
+    <div class="verrah-tab-content">
+
+
+        <!-- ITEMS -->
+
+        <div
+            class="verrah-tab-panel active"
+            id="overview"
+            role="tabpanel"
+        >
+
+            <%- include("items") %>
+
+        </div>
+
+
+        <!-- OVERVIEW -->
+
+        <div
+            class="verrah-tab-panel"
+            id="overview"
+            role="tabpanel"
+            hidden
+        >
+
+            <%- include("overview") %>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     TAB SWITCHING
+========================================================= -->
+
+<script>
+
+(function () {
+
+    const tabs =
+        document.querySelectorAll(
+            ".verrah-tab"
+        );
+
+    const panels =
+        document.querySelectorAll(
+            ".verrah-tab-panel"
+        );
+
+
+    tabs.forEach(function (tab) {
+
+        tab.addEventListener(
+            "click",
+            function () {
+
+                const target =
+                    this.dataset.tab;
+
+
+                /* ---------------------------------------------
+                   UPDATE ACTIVE TAB
+                --------------------------------------------- */
+
+                tabs.forEach(function (item) {
+
+                    const active =
+                        item === tab;
+
+                    item.classList.toggle(
+                        "active",
+                        active
+                    );
+
+                    item.setAttribute(
+                        "aria-selected",
+                        active
+                            ? "true"
+                            : "false"
+                    );
+
+                });
+
+
+                /* ---------------------------------------------
+                   UPDATE VISIBLE CARD
+                --------------------------------------------- */
+
+                panels.forEach(function (panel) {
+
+                    const active =
+                        panel.id === target;
+
+                    panel.classList.toggle(
+                        "active",
+                        active
+                    );
+
+                    panel.hidden =
+                        !active;
+
+                });
+
+
+                /* ---------------------------------------------
+                   KEEP SELECTED TAB VISIBLE
+                --------------------------------------------- */
+
+                tab.scrollIntoView({
+
+                    behavior: "smooth",
+
+                    block: "nearest",
+
+                    inline: "center"
+
+                });
+
+            }
+        );
+
+    });
+
+})();
+
+</script>
