@@ -29,18 +29,13 @@
         );
 
     /*
-     * PAYMENT MODE
+     * Existing saved payment mode.
      *
-     * isMobile === false
-     *     = Cash Payment
-     *     = Record Sale
-     *
-     * isMobile === true
-     *     = Mpesa Payment
-     *     = Checkout
+     * true  = Mpesa
+     * false = Cash
      */
     const isMobile =
-        cart?.isMobile !== false;
+        cart?.isMobile === true;
 
     const checkoutProductId =
         hasItems
@@ -227,10 +222,6 @@
 
                         <div class="cart-item-card">
 
-                            <!-- ==================================================
-                                 CLICKABLE ITEM AREA
-                            =================================================== -->
-
                             <a
                                 href="/carts/<%= productId %>/details"
                                 class="cart-item-link"
@@ -321,10 +312,6 @@
                             </a>
 
 
-                            <!-- ==================================================
-                                 REMOVE
-                            =================================================== -->
-
                             <form
                                 action="/carts/<%= productId %>/remove"
                                 method="POST"
@@ -399,8 +386,6 @@
 
                 <!-- ==================================================
                      STAFF PAYMENT MODE
-                     
-                     ONLY STAFF SEE THIS.
                 =================================================== -->
 
                 <% if (isStaff) { %>
@@ -423,18 +408,23 @@
                             <option
                                 value=""
                                 disabled
-                                selected
                             >
                                 Select payment mode
                             </option>
 
 
-                            <option value="cash">
+                            <option
+                                value="cash"
+                                <%= !isMobile ? "selected" : "" %>
+                            >
                                 Cash Payment
                             </option>
 
 
-                            <option value="mpesa">
+                            <option
+                                value="mpesa"
+                                <%= isMobile ? "selected" : "" %>
+                            >
                                 Mpesa Payment
                             </option>
 
@@ -453,10 +443,6 @@
 
                     <% if (!isMobile) { %>
 
-                        <!-- ==========================================
-                             STAFF + CASH
-                             ========================================== -->
-
                         <button
                             type="button"
                             class="primary-btn cart-checkout-btn staff-sale-trigger"
@@ -473,10 +459,6 @@
 
 
                     <% } else { %>
-
-                        <!-- ==========================================
-                             STAFF + MPESA
-                             ========================================== -->
 
                         <a
                             class="primary-btn cart-checkout-btn"
@@ -496,10 +478,6 @@
 
 
                 <% } else { %>
-
-                    <!-- ==============================================
-                         NORMAL USERS
-                    =============================================== -->
 
                     <a
                         class="primary-btn cart-checkout-btn"
@@ -561,10 +539,6 @@
             aria-labelledby="staffSaleModalTitle"
         >
 
-            <!-- ==================================================
-                 MODAL HEADER
-            =================================================== -->
-
             <div class="staff-sale-modal-header">
 
                 <div class="staff-sale-modal-icon">
@@ -600,10 +574,6 @@
 
             </div>
 
-
-            <!-- ==================================================
-                 MODAL BODY
-            =================================================== -->
 
             <div class="staff-sale-modal-body">
 
@@ -668,10 +638,6 @@
                     </div>
 
 
-                    <!-- ==================================================
-                         MODAL ACTIONS
-                    =================================================== -->
-
                     <div class="staff-sale-modal-actions">
 
                         <button
@@ -733,54 +699,52 @@
             }
 
 
-            const closeModal =
-                function () {
+            function closeModal() {
 
-                    modal.classList.remove(
-                        "is-open"
-                    );
+                modal.classList.remove(
+                    "is-open"
+                );
 
-                    modal.setAttribute(
-                        "aria-hidden",
-                        "true"
-                    );
+                modal.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
 
-                    document.body.classList.remove(
-                        "staff-sale-modal-open"
-                    );
+                document.body.classList.remove(
+                    "staff-sale-modal-open"
+                );
 
-                };
-
-
-            const openModal =
-                function () {
-
-                    modal.classList.add(
-                        "is-open"
-                    );
-
-                    modal.setAttribute(
-                        "aria-hidden",
-                        "false"
-                    );
-
-                    document.body.classList.add(
-                        "staff-sale-modal-open"
-                    );
+            }
 
 
-                    window.setTimeout(
-                        function () {
+            function openModal() {
 
-                            if (nameInput) {
-                                nameInput.focus();
-                            }
+                modal.classList.add(
+                    "is-open"
+                );
 
-                        },
-                        100
-                    );
+                modal.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
 
-                };
+                document.body.classList.add(
+                    "staff-sale-modal-open"
+                );
+
+
+                window.setTimeout(
+                    function () {
+
+                        if (nameInput) {
+                            nameInput.focus();
+                        }
+
+                    },
+                    100
+                );
+
+            }
 
 
             openButton.addEventListener(
@@ -853,15 +817,12 @@
                 "change",
                 async function () {
 
-                    /*
-                     * Save the value selected by the staff.
-                     */
                     const selectedMode =
                         paymentMode.value;
 
 
                     /*
-                     * Ignore the placeholder.
+                     * Only process actual payment options.
                      */
                     if (
                         selectedMode !== "cash" &&
@@ -872,21 +833,22 @@
 
 
                     /*
-                     * Convert the selected payment mode
-                     * into the existing cart field.
-                     *
-                     * CASH  = false
-                     * MPESA = true
+                     * Remember what the staff selected.
                      */
                     const newIsMobile =
                         selectedMode === "mpesa";
 
 
                     /*
-                     * Disable the selector while the request
-                     * is being processed.
+                     * Do NOT disable the select before the
+                     * browser has registered the selection.
+                     *
+                     * This avoids the selector appearing stuck.
                      */
-                    paymentMode.disabled = true;
+                    paymentMode.setAttribute(
+                        "aria-busy",
+                        "true"
+                    );
 
 
                     try {
@@ -916,13 +878,6 @@
                             );
 
 
-                        /*
-                         * We only require a successful HTTP
-                         * response from the endpoint.
-                         *
-                         * We do NOT require the response to
-                         * contain { ok: true }.
-                         */
                         if (!response.ok) {
 
                             throw new Error(
@@ -933,14 +888,8 @@
 
 
                         /*
-                         * The server successfully saved the
-                         * selected mode.
-                         *
-                         * Reload the page so EJS renders the
-                         * correct action:
-                         *
-                         * CASH  -> Record Sale
-                         * MPESA -> Checkout
+                         * Give the browser a moment to keep the
+                         * selected option visible before reload.
                          */
                         window.location.reload();
 
@@ -953,17 +902,16 @@
 
 
                         /*
-                         * Restore the selection that represents
-                         * the current cart state.
+                         * Keep the selected value instead of
+                         * forcing it back to the placeholder.
                          */
                         paymentMode.value =
-                            isMobile
-                                ? "mpesa"
-                                : "cash";
+                            selectedMode;
 
 
-                        paymentMode.disabled =
-                            false;
+                        paymentMode.removeAttribute(
+                            "aria-busy"
+                        );
 
 
                         alert(
