@@ -99,6 +99,160 @@ exports.list = async (req, res) => {
 
 
 // ==========================================================
+// UPDATE PAYMENT MODE
+// POST /carts/payment-mode
+//
+// STAFF ONLY
+//
+// Cash Payment:
+//     isMobile = false
+//
+// Mpesa Payment:
+//     isMobile = true
+// ==========================================================
+
+exports.updatePaymentMode = async (
+    req,
+    res
+) => {
+    try {
+
+        // --------------------------------------------------
+        // User must be logged in.
+        // --------------------------------------------------
+
+        if (!req.user) {
+            return res.status(401).json(
+                {
+                    ok:
+                        false,
+
+                    error:
+                        "Please log in."
+                }
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Only staff can change the payment mode.
+        // --------------------------------------------------
+
+        const role =
+            String(
+                req.user.role ||
+                ""
+            )
+                .trim()
+                .toLowerCase();
+
+
+        if (
+            role !== "staff"
+        ) {
+            return res.status(403).json(
+                {
+                    ok:
+                        false,
+
+                    error:
+                        "Only staff can change payment mode."
+                }
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Convert the submitted value safely to boolean.
+        //
+        // true  = Mpesa Payment
+        // false = Cash Payment
+        // --------------------------------------------------
+
+        const submittedValue =
+            req.body.isMobile;
+
+
+        const isMobile =
+            submittedValue === true ||
+            String(
+                submittedValue
+            )
+                .trim()
+                .toLowerCase() === "true";
+
+
+        // --------------------------------------------------
+        // Get the logged-in user's cart.
+        // --------------------------------------------------
+
+        const cart =
+            await cartService.getCart(req);
+
+
+        if (!cart) {
+            return res.status(404).json(
+                {
+                    ok:
+                        false,
+
+                    error:
+                        "Cart not found."
+                }
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Save payment mode.
+        //
+        // Cash  -> false
+        // Mpesa -> true
+        // --------------------------------------------------
+
+        cart.isMobile =
+            isMobile;
+
+
+        await cart.save();
+
+
+        // --------------------------------------------------
+        // Return JSON because the carts.ejs payment-mode
+        // selector changes this value through fetch().
+        // --------------------------------------------------
+
+        return res.json(
+            {
+                ok:
+                    true,
+
+                isMobile:
+                    cart.isMobile
+            }
+        );
+
+    } catch (err) {
+
+        console.error(
+            "Update payment mode error:",
+            err
+        );
+
+        return res.status(500).json(
+            {
+                ok:
+                    false,
+
+                error:
+                    "Unable to update payment mode."
+            }
+        );
+    }
+};
+
+
+// ==========================================================
 // CHECKOUT PAGE
 // GET /carts/:id
 //
@@ -728,7 +882,7 @@ exports.paymentStatus = async (req, res) => {
 
         console.error(
             "Payment status error:",
-            err
+        err
         );
 
         return res.status(500).json(
