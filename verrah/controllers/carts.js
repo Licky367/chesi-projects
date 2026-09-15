@@ -19,6 +19,7 @@ const packageService =
 // ==========================================================
 
 function getCartErrorMessage(err, fallback) {
+
     const message =
         String(
             err?.message || ""
@@ -42,7 +43,9 @@ function getCartErrorMessage(err, fallback) {
 // ==========================================================
 
 exports.list = async (req, res) => {
+
     try {
+
         const cart =
             await cartService.getCart(req);
 
@@ -104,10 +107,10 @@ exports.list = async (req, res) => {
 //
 // STAFF ONLY
 //
-// Cash Payment:
+// Cash:
 //     isMobile = false
 //
-// Mpesa Payment:
+// M-PESA:
 //     isMobile = true
 // ==========================================================
 
@@ -115,27 +118,27 @@ exports.updatePaymentMode = async (
     req,
     res
 ) => {
+
     try {
 
         // --------------------------------------------------
-        // User must be logged in.
+        // USER MUST BE LOGGED IN
         // --------------------------------------------------
 
         if (!req.user) {
-            return res.status(401).json(
-                {
-                    ok:
-                        false,
 
-                    error:
-                        "Please log in."
-                }
-            );
+            return res.status(401).json({
+                ok:
+                    false,
+
+                error:
+                    "Please log in."
+            });
         }
 
 
         // --------------------------------------------------
-        // Only staff can change payment mode.
+        // STAFF ONLY
         // --------------------------------------------------
 
         const role =
@@ -150,79 +153,99 @@ exports.updatePaymentMode = async (
         if (
             role !== "staff"
         ) {
-            return res.status(403).json(
-                {
-                    ok:
-                        false,
 
-                    error:
-                        "Only staff can change payment mode."
-                }
-            );
+            return res.status(403).json({
+                ok:
+                    false,
+
+                error:
+                    "Only staff can change payment mode."
+            });
         }
 
 
         // --------------------------------------------------
-        // Convert submitted value to boolean.
+        // READ SUBMITTED VALUE
         //
-        // true  = Mpesa
-        // false = Cash
+        // true  = M-PESA
+        // false = CASH
         // --------------------------------------------------
 
         const submittedValue =
-            req.body.isMobile;
+            req.body?.isMobile;
 
 
-        const isMobile =
+        let isMobile;
+
+
+        if (
             submittedValue === true ||
             String(
-                submittedValue
+                submittedValue ?? ""
             )
                 .trim()
-                .toLowerCase() === "true";
+                .toLowerCase() === "true"
+        ) {
 
+            isMobile = true;
 
-        // --------------------------------------------------
-        // Get current user's cart.
-        // --------------------------------------------------
+        } else if (
+            submittedValue === false ||
+            String(
+                submittedValue ?? ""
+            )
+                .trim()
+                .toLowerCase() === "false"
+        ) {
 
-        const cart =
-            await cartService.getCart(req);
+            isMobile = false;
 
+        } else {
 
-        if (!cart) {
-            return res.status(404).json(
-                {
-                    ok:
-                        false,
+            return res.status(400).json({
+                ok:
+                    false,
 
-                    error:
-                        "Cart not found."
-                }
-            );
+                error:
+                    "Invalid payment mode."
+            });
         }
 
 
         // --------------------------------------------------
-        // Save payment mode.
+        // UPDATE THROUGH THE SERVICE
+        //
+        // IMPORTANT:
+        //
+        // cartService.getCart() returns a LEAN object.
+        // A lean object cannot use .save().
+        //
+        // updatePaymentMode() retrieves a real Mongoose
+        // document and saves it.
         // --------------------------------------------------
 
-        cart.isMobile =
-            isMobile;
+        const cart =
+            await cartService.updatePaymentMode(
+                req,
+                isMobile
+            );
 
 
-        await cart.save();
+        // --------------------------------------------------
+        // SUCCESS
+        // --------------------------------------------------
 
+        return res.json({
 
-        return res.json(
-            {
-                ok:
-                    true,
+            ok:
+                true,
 
-                isMobile:
+            isMobile:
+                Boolean(
                     cart.isMobile
-            }
-        );
+                )
+
+        });
 
     } catch (err) {
 
@@ -231,15 +254,18 @@ exports.updatePaymentMode = async (
             err
         );
 
-        return res.status(500).json(
-            {
-                ok:
-                    false,
+        return res.status(
+            err.statusCode || 500
+        ).json({
 
-                error:
-                    "Unable to update payment mode."
-            }
-        );
+            ok:
+                false,
+
+            error:
+                err?.message ||
+                "Unable to update payment mode."
+
+        });
     }
 };
 
@@ -249,26 +275,28 @@ exports.updatePaymentMode = async (
 // GET /carts/:id
 // ==========================================================
 
-exports.checkoutPage = async (req, res) => {
+exports.checkoutPage = async (
+    req,
+    res
+) => {
+
     try {
 
         const cart =
             await cartService.getCart(req);
+
 
         if (
             !cart ||
             !Array.isArray(cart.items) ||
             cart.items.length === 0
         ) {
+
             return res.redirect(
                 "/carts"
             );
         }
 
-
-        // --------------------------------------------------
-        // Find cart item.
-        // --------------------------------------------------
 
         const item =
             cart.items.find(
@@ -283,15 +311,12 @@ exports.checkoutPage = async (req, res) => {
 
 
         if (!item) {
+
             return res.redirect(
                 "/carts"
             );
         }
 
-
-        // --------------------------------------------------
-        // Checkout substation data.
-        // --------------------------------------------------
 
         const substations =
             Array.isArray(
@@ -317,10 +342,6 @@ exports.checkoutPage = async (req, res) => {
                 cart
             );
 
-
-        // --------------------------------------------------
-        // CHECKOUT VIEW
-        // --------------------------------------------------
 
         return res.render(
             "cart/cart-checkout",
@@ -354,18 +375,15 @@ exports.checkoutPage = async (req, res) => {
             err
         );
 
-        const message =
-            getCartErrorMessage(
-                err,
-                "Unable to load checkout."
-            );
-
 
         return res.redirect(
             `/carts/${encodeURIComponent(
                 req.params.id
             )}?error=${encodeURIComponent(
-                message
+                getCartErrorMessage(
+                    err,
+                    "Unable to load checkout."
+                )
             )}`
         );
     }
@@ -377,17 +395,23 @@ exports.checkoutPage = async (req, res) => {
 // GET /carts/:id/details
 // ==========================================================
 
-exports.details = async (req, res) => {
+exports.details = async (
+    req,
+    res
+) => {
+
     try {
 
         const cart =
             await cartService.getCart(req);
+
 
         if (
             !cart ||
             !Array.isArray(cart.items) ||
             cart.items.length === 0
         ) {
+
             return res.redirect(
                 "/carts"
             );
@@ -407,6 +431,7 @@ exports.details = async (req, res) => {
 
 
         if (!item) {
+
             return res.redirect(
                 "/carts"
             );
@@ -447,6 +472,7 @@ exports.details = async (req, res) => {
             err
         );
 
+
         return res.redirect(
             `/carts/${encodeURIComponent(
                 req.params.id
@@ -466,13 +492,18 @@ exports.details = async (req, res) => {
 // POST /carts/:id/remove
 // ==========================================================
 
-exports.remove = async (req, res) => {
+exports.remove = async (
+    req,
+    res
+) => {
+
     try {
 
         await cartService.removeItem(
             req,
             req.params.id
         );
+
 
         return res.redirect(
             "/carts"
@@ -485,18 +516,15 @@ exports.remove = async (req, res) => {
             err
         );
 
-        const message =
-            getCartErrorMessage(
-                err,
-                "Unable to remove item."
-            );
-
 
         return res.redirect(
             `/carts/${encodeURIComponent(
                 req.params.id
             )}/details?error=${encodeURIComponent(
-                message
+                getCartErrorMessage(
+                    err,
+                    "Unable to remove item."
+                )
             )}`
         );
     }
@@ -507,55 +535,45 @@ exports.remove = async (req, res) => {
 // CHECKOUT PROCESS
 // POST /carts/checkout
 //
-// checkoutSubstation.saveSelection runs BEFORE this
+// checkoutSubstation.saveSelection runs before this
 // controller.
 //
-// PAYMENT / SALES LOGIC:
+// Staff cash:
+//     isMobile = false
+//     handled by /carts/staff-sale
 //
-//     Staff + isMobile=false
-//         -> Cash
-//         -> handled through /carts/staff-sale
-//         -> StaffSale.salesName
+// Staff M-PESA:
+//     isMobile = true
+//     normal M-PESA/package flow
 //
-//     Staff + isMobile=true
-//         -> Mpesa / normal checkout
-//         -> Package.salesName
-//
-// Normal clients continue using the existing package flow.
+// Clients:
+//     existing checkout flow
 // ==========================================================
 
-exports.checkout = async (req, res) => {
+exports.checkout = async (
+    req,
+    res
+) => {
 
     const method =
         String(
-            req.body.paymentMethod ||
+            req.body?.paymentMethod ||
             ""
         ).trim();
 
 
     const productId =
         String(
-            req.body.productId ||
+            req.body?.productId ||
             ""
         ).trim();
 
 
     try {
 
-        // --------------------------------------------------
-        // GET CURRENT CART
-        //
-        // We need the cart here specifically so we can
-        // determine whether this isMobile payment mode.
-        // --------------------------------------------------
-
         const cart =
             await cartService.getCart(req);
 
-
-        // --------------------------------------------------
-        // DETERMINE ROLE
-        // --------------------------------------------------
 
         const role =
             String(
@@ -570,36 +588,14 @@ exports.checkout = async (req, res) => {
             role === "staff";
 
 
-        // --------------------------------------------------
-        // STAFF MOBILE PAYMENT MODE
-        //
-        // true = Mpesa
-        // false = Cash
-        //
-        // Default to false if no cart exists so that we do
-        // not accidentally treat a missing cart as Mpesa.
-        // --------------------------------------------------
-
         const isMobile =
             isStaff &&
             cart &&
             cart.isMobile === true;
 
 
-        // --------------------------------------------------
-        // SALES NAME
-        //
-        // For STAFF + M-PESA:
-        //
-        //     salesName belongs to the Package.
-        //
-        // For STAFF + CASH:
-        //
-        //     salesName belongs to StaffSale and is handled
-        //     separately by staffSale().
-        // --------------------------------------------------
-
-        let salesName = "";
+        let salesName =
+            "";
 
 
         if (
@@ -609,7 +605,7 @@ exports.checkout = async (req, res) => {
 
             salesName =
                 String(
-                    req.body.salesName ||
+                    req.body?.salesName ||
                     ""
                 ).trim();
 
@@ -651,12 +647,6 @@ exports.checkout = async (req, res) => {
             };
 
 
-            // ------------------------------------------------
-            // STAFF + isMobile=true
-            //
-            // Save salesName on the Package.
-            // ------------------------------------------------
-
             if (
                 isStaff &&
                 isMobile
@@ -691,7 +681,7 @@ exports.checkout = async (req, res) => {
             const result =
                 await paymentService.initiateStkPush(
                     req,
-                    req.body.phoneNumber
+                    req.body?.phoneNumber
                 );
 
 
@@ -753,19 +743,18 @@ exports.checkout = async (req, res) => {
 // STAFF SALE
 // POST /carts/staff-sale
 //
-// CASH PAYMENT ONLY
-//
-// salesName is saved in:
-//
-//     StaffSale.salesName
-//
-// This is completely separate from Package.salesName.
+// CASH PAYMENT
 // ==========================================================
 
-exports.staffSale = async (req, res) => {
+exports.staffSale = async (
+    req,
+    res
+) => {
+
     try {
 
         if (!req.user) {
+
             return res.redirect(
                 "/login"
             );
@@ -784,6 +773,7 @@ exports.staffSale = async (req, res) => {
         if (
             role !== "staff"
         ) {
+
             return res.status(403).send(
                 "Only staff can complete staff sales."
             );
@@ -794,7 +784,10 @@ exports.staffSale = async (req, res) => {
             req.user.assignedSubstation;
 
 
-        if (!assignedSubstation) {
+        if (
+            !assignedSubstation
+        ) {
+
             return res.status(400).send(
                 "You are not assigned to a substation."
             );
@@ -803,12 +796,13 @@ exports.staffSale = async (req, res) => {
 
         const salesName =
             String(
-                req.body.salesName ||
+                req.body?.salesName ||
                 ""
             ).trim();
 
 
         if (!salesName) {
+
             return res.status(400).send(
                 "Sales name is required."
             );
@@ -819,6 +813,7 @@ exports.staffSale = async (req, res) => {
             salesName.length >
             150
         ) {
+
             return res.status(400).send(
                 "Sales name is too long."
             );
@@ -843,15 +838,11 @@ exports.staffSale = async (req, res) => {
         );
 
 
-        const message =
+        return res.status(400).send(
             getCartErrorMessage(
                 err,
                 "Unable to complete staff sale."
-            );
-
-
-        return res.status(400).send(
-            message
+            )
         );
     }
 };
@@ -862,7 +853,11 @@ exports.staffSale = async (req, res) => {
 // GET /carts/payment/:id
 // ==========================================================
 
-exports.paymentPage = async (req, res) => {
+exports.paymentPage = async (
+    req,
+    res
+) => {
+
     try {
 
         const payment =
@@ -873,6 +868,7 @@ exports.paymentPage = async (req, res) => {
 
 
         if (!payment) {
+
             return res.redirect(
                 "/carts"
             );
@@ -899,6 +895,7 @@ exports.paymentPage = async (req, res) => {
             err
         );
 
+
         return res.redirect(
             "/carts"
         );
@@ -911,7 +908,11 @@ exports.paymentPage = async (req, res) => {
 // GET /carts/payment/:id/status
 // ==========================================================
 
-exports.paymentStatus = async (req, res) => {
+exports.paymentStatus = async (
+    req,
+    res
+) => {
+
     try {
 
         const payment =
@@ -922,39 +923,38 @@ exports.paymentStatus = async (req, res) => {
 
 
         if (!payment) {
-            return res.status(404).json(
-                {
-                    ok:
-                        false,
 
-                    error:
-                        "Payment not found."
-                }
-            );
+            return res.status(404).json({
+
+                ok:
+                    false,
+
+                error:
+                    "Payment not found."
+            });
         }
 
 
-        return res.json(
-            {
-                ok:
-                    true,
+        return res.json({
 
-                status:
-                    payment.status,
+            ok:
+                true,
 
-                receipt:
-                    payment.receipt ||
-                    "",
+            status:
+                payment.status,
 
-                description:
-                    payment.description ||
-                    "",
+            receipt:
+                payment.receipt ||
+                "",
 
-                packageId:
-                    payment.packageId ||
-                    null
-            }
-        );
+            description:
+                payment.description ||
+                "",
+
+            packageId:
+                payment.packageId ||
+                null
+        });
 
     } catch (err) {
 
@@ -963,15 +963,15 @@ exports.paymentStatus = async (req, res) => {
             err
         );
 
-        return res.status(500).json(
-            {
-                ok:
-                    false,
 
-                error:
-                    "Unable to check payment status."
-            }
-        );
+        return res.status(500).json({
+
+            ok:
+                false,
+
+            error:
+                "Unable to check payment status."
+        });
     }
 };
 
@@ -985,6 +985,7 @@ exports.mpesaCallback = async (
     req,
     res
 ) => {
+
     try {
 
         await paymentService.handleCallback(
@@ -1000,13 +1001,12 @@ exports.mpesaCallback = async (
     }
 
 
-    return res.json(
-        {
-            ResultCode:
-                0,
+    return res.json({
 
-            ResultDesc:
-                "Accepted"
-        }
-    );
+        ResultCode:
+            0,
+
+        ResultDesc:
+            "Accepted"
+    });
 };
