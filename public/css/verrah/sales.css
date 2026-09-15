@@ -1,325 +1,946 @@
 /* ==========================================================
-   public/css/sales.css
+public/css/sales.css
 
-   VERRAH COSMETICS
-   SALES / ANALYTICS
-   BROWN THEME
+VERRAH COSMETICS
+SALES / ANALYTICS
+BROWN THEME
 ========================================================== */
 
-
 /* ==========================================================
-   SALES PAGE
+SALES PAGE
 ========================================================== */
 
 .sales-page {
 
-    --sales-brown: #7a4b2a;
+--sales-brown: #7a4b2a;
 
-    --sales-brown-dark: #5d351d;
+--sales-brown-dark: #5d351d;
 
-    --sales-brown-light: #a66a3f;
+--sales-brown-light: #a66a3f;
 
-    --sales-cream: #fffaf5;
+--sales-cream: #fffaf5;
 
-    --sales-border: #eadbd0;
+--sales-border: #eadbd0;
 
-    --sales-text: #2f211a;
+--sales-text: #2f211a;
 
-    --sales-muted: #7b6b61;
+--sales-muted: #7b6b61;
 
 
-    width: 100%;
+width: 100%;
 
-    max-width: 1200px;
+max-width: 1200px;
 
-    margin: 0 auto;
+margin: 0 auto;
 
-    padding: 24px 16px 50px;
+padding: 24px 16px 50px;
 
-    box-sizing: border-box;
+box-sizing: border-box;
 
-    color: var(--sales-text);
+color: var(--sales-text);
 
 }
 
-
 /* ==========================================================
-   SALES HEADER
+SALES HEADER
 ========================================================== */
 
 .sales-header {
 
-    margin-bottom: 22px;
+margin-bottom: 22px;
 
 }
-
 
 .sales-header h1 {
 
-    margin: 0 0 6px;
+margin: 0 0 6px;
 
-    font-size: 30px;
+font-size: 30px;
 
 }
-
 
 .sales-header p,
 .sales-section-heading p {
 
-    margin: 0;
+margin: 0;
 
-    color: var(--sales-muted);
+color: var(--sales-muted);
 
 }
 
-
 /* ==========================================================
-   SALES NAVIGATION TABS
+SALES NAVIGATION TABS
 ========================================================== */
 
 .sales-navigation {
 
-    width: 100%;
+width: 100%;
 
-    display: flex;
+display: flex;
 
-    align-items: center;
+align-items: center;
 
-    gap: 8px;
+gap: 8px;
 
-    overflow-x: auto;
+overflow-x: auto;
 
-    overflow-y: hidden;
+overflow-y: hidden;
 
-    margin-bottom: 18px;
+margin-bottom: 18px;
 
-    padding: 9px 12px;
+padding: 9px 12px;
 
-    box-sizing: border-box;
+box-sizing: border-box;
 
-    background: var(--sales-cream);
+background: var(--sales-cream);
 
-    border: 1px solid var(--sales-border);
+border: 1px solid var(--sales-border);
 
-    border-radius: 12px;
+border-radius: 12px;
 
-    white-space: nowrap;
+white-space: nowrap;
 
-    -webkit-overflow-scrolling: touch;
+-webkit-overflow-scrolling: touch;
 
-    scrollbar-width: none;
+scrollbar-width: none;
 
 }
 
-
 /* ==========================================================
-   HIDE SCROLLBAR
+HIDE SCROLLBAR
 ========================================================== */
 
 .sales-navigation::-webkit-scrollbar {
 
-    display: none;
+display: none;
 
 }
 
-
 /* ==========================================================
-   SALES TAB
+SALES TAB
 ========================================================== */
 
 .sales-navigation-tab {
 
-    flex: 0 0 auto;
+flex: 0 0 auto;
 
-    display: inline-flex;
+display: inline-flex;
 
-    align-items: center;
+align-items: center;
 
-    justify-content: center;
+justify-content: center;
 
-    min-height: 38px;
+min-height: 38px;
 
-    padding: 8px 16px;
+padding: 8px 16px;
 
-    box-sizing: border-box;
+box-sizing: border-box;
 
-    border: 1px solid var(--sales-border);
+border: 1px solid var(--sales-border);
 
-    border-radius: 20px;
+border-radius: 20px;
 
-    background: #fff;
+background: #fff;
 
-    color: var(--sales-brown-dark);
+color: var(--sales-brown-dark);
 
-    text-decoration: none;
+text-decoration: none;
 
-    font: inherit;
+font: inherit;
 
-    font-size: 13px;
+font-size: 13px;
 
-    font-weight: 700;
+font-weight: 700;
 
-    line-height: 1;
+line-height: 1;
 
-    white-space: nowrap;
+white-space: nowrap;
 
-    cursor: pointer;
+cursor: pointer;
 
-    transition:
+transition:
 
-        background 0.2s ease,
+    background 0.2s ease,
 
-        color 0.2s ease,
+    color 0.2s ease,
 
-        border-color 0.2s ease,
+    border-color 0.2s ease,
 
-        transform 0.2s ease;
+    transform 0.2s ease;
 
 }
 
-
 /* ==========================================================
-   TAB HOVER
+TAB HOVER
 ========================================================== */
 
 .sales-navigation-tab:hover {
 
-    color: var(--sales-brown);
+color: var(--sales-brown);
 
-    border-color: var(--sales-brown-light);
+border-color: var(--sales-brown-light);
 
-    background: #fff;
+background: #fff;
 
 }
 
-
 /* ==========================================================
-   ACTIVE TAB
+ACTIVE TAB
 ========================================================== */
 
 .sales-navigation-tab.active {
 
-    background: var(--sales-brown);
+background: var(--sales-brown);
 
-    border-color: var(--sales-brown);
+border-color: var(--sales-brown);
 
-    color: #fff;
+color: #fff;
 
 }
 
-
 /* ==========================================================
-   ACTIVE TAB HOVER
+ACTIVE TAB HOVER
 ========================================================== */
 
 .sales-navigation-tab.active:hover {
 
-    background: var(--sales-brown-dark);
+background: var(--sales-brown-dark);
 
-    border-color: var(--sales-brown-dark);
+border-color: var(--sales-brown-dark);
 
-    color: #fff;
+color: #fff;
 
 }
 
-
 /* ==========================================================
-   TAB FOCUS
+TAB FOCUS
 ========================================================== */
 
 .sales-navigation-tab:focus-visible {
 
-    outline: 2px solid var(--sales-brown-light);
+outline: 2px solid var(--sales-brown-light);
 
-    outline-offset: 2px;
+outline-offset: 2px;
 
 }
 
-
 /* ==========================================================
-   FILTER
+FILTER
 ========================================================== */
 
 .sales-filter-wrapper {
 
-    margin-bottom: 24px;
+margin-bottom: 24px;
+
+}
+
+.sales-filter {
+
+display: flex;
+
+align-items: end;
+
+gap: 12px;
+
+flex-wrap: wrap;
+
+padding: 16px;
+
+background: var(--sales-cream);
+
+border: 1px solid var(--sales-border);
+
+border-radius: 12px;
+
+}
+
+.sales-filter-field {
+
+display: flex;
+
+flex-direction: column;
+
+gap: 6px;
+
+min-width: 170px;
+
+}
+
+.sales-filter-field label {
+
+font-size: 13px;
+
+font-weight: 700;
+
+}
+
+.sales-filter-field input,
+.sales-filter-field select {
+
+width: 100%;
+
+min-height: 42px;
+
+box-sizing: border-box;
+
+padding: 9px 11px;
+
+border: 1px solid #d8c7ba;
+
+border-radius: 8px;
+
+background: #fff;
+
+color: var(--sales-text);
+
+font: inherit;
+
+outline: none;
+
+}
+
+.sales-filter-field input:focus,
+.sales-filter-field select:focus {
+
+border-color: var(--sales-brown);
+
+}
+
+.sales-filter-button,
+.sales-filter-clear {
+
+min-height: 42px;
+
+padding: 9px 16px;
+
+border-radius: 8px;
+
+font: inherit;
+
+font-weight: 700;
+
+text-decoration: none;
+
+box-sizing: border-box;
+
+}
+
+.sales-filter-button {
+
+border: 1px solid var(--sales-brown);
+
+background: var(--sales-brown);
+
+color: #fff;
+
+cursor: pointer;
+
+}
+
+.sales-filter-button:hover {
+
+background: var(--sales-brown-dark);
+
+}
+
+.sales-filter-clear {
+
+display: inline-flex;
+
+align-items: center;
+
+justify-content: center;
+
+border: 1px solid var(--sales-border);
+
+color: var(--sales-brown);
+
+background: #fff;
+
+}
+
+/* ==========================================================
+FILTER HIDE / UNHIDE
+========================================================== */
+
+.sales-filter-toggle-wrapper {
+
+width: 100%;
+
+margin-bottom: 1rem;
+
+}
+
+.sales-filter-toggle {
+
+display: inline-flex;
+
+align-items: center;
+
+justify-content: center;
+
+padding: 0.65rem 1rem;
+
+border: 1px solid #8b4513;
+
+border-radius: 8px;
+
+background: #8b4513;
+
+color: #fff;
+
+font-size: 0.9rem;
+
+font-weight: 600;
+
+line-height: 1;
+
+cursor: pointer;
+
+}
+
+.sales-filter-toggle:hover {
+
+background: #6f350f;
+
+border-color: #6f350f;
+
+}
+
+.sales-filter-toggle:active {
+
+transform: translateY(1px);
+
+}
+
+.sales-filter-toggle:focus-visible {
+
+outline: 2px solid #8b4513;
+
+outline-offset: 3px;
+
+}
+
+.sales-filter[hidden] {
+
+display: none !important;
+
+}
+
+/* ==========================================================
+SALES CONTENT
+========================================================== */
+
+.sales-content {
+
+width: 100%;
+
+}
+
+/* ==========================================================
+SALES PANELS
+========================================================== */
+
+.sales-panel {
+
+width: 100%;
+
+}
+
+.sales-panel[hidden] {
+
+display: none;
+
+}
+
+/* ==========================================================
+SALES SECTIONS
+========================================================== */
+
+.sales-section {
+
+width: 100%;
+
+}
+
+.sales-section-heading {
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+margin-bottom: 18px;
+
+}
+
+.sales-section-heading h2 {
+
+margin: 0 0 5px;
+
+font-size: 22px;
+
+}
+
+/* ==========================================================
+SUMMARY CARDS
+========================================================== */
+
+.sales-summary-grid {
+
+display: grid;
+
+grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+gap: 16px;
+
+}
+
+.sales-summary-card {
+
+min-height: 145px;
+
+padding: 22px;
+
+box-sizing: border-box;
+
+border: 1px solid var(--sales-border);
+
+border-radius: 14px;
+
+background: #fff;
+
+box-shadow:
+    0 5px 18px
+    rgba(74, 43, 25, 0.06);
+
+display: flex;
+
+flex-direction: column;
+
+justify-content: center;
+
+}
+
+.sales-summary-label {
+
+color: var(--sales-muted);
+
+font-size: 14px;
+
+font-weight: 700;
+
+margin-bottom: 10px;
+
+}
+
+.sales-summary-value {
+
+color: var(--sales-brown);
+
+font-size: 26px;
+
+line-height: 1.2;
+
+}
+
+/* ==========================================================
+TABLE WRAPPER
+========================================================== */
+
+.sales-table-wrapper {
+
+width: 100%;
+
+overflow-x: auto;
+
+border: 1px solid var(--sales-border);
+
+border-radius: 12px;
+
+background: #fff;
+
+}
+
+/* ==========================================================
+SALES TABLE
+========================================================== */
+
+.sales-table {
+
+width: 100%;
+
+min-width: 720px;
+
+border-collapse: collapse;
+
+}
+
+.sales-table th,
+.sales-table td {
+
+padding: 14px 15px;
+
+text-align: left;
+
+border-bottom:
+    1px solid #f0e5dd;
+
+}
+
+.sales-table th {
+
+background: var(--sales-cream);
+
+color: var(--sales-brown-dark);
+
+font-size: 13px;
+
+white-space: nowrap;
+
+}
+
+.sales-table td {
+
+font-size: 14px;
+
+}
+
+.sales-table tbody tr:last-child td {
+
+border-bottom: 0;
+
+}
+
+.sales-table tbody tr:hover {
+
+background: #fffdfb;
+
+}
+
+.sales-product-row {
+
+cursor: pointer;
+
+}
+
+.sales-product-row:hover {
+
+background: rgba(139, 69, 19, 0.08);
+
+}
+
+.sales-product-row:focus {
+
+outline: 2px solid #8b4513;
+
+outline-offset: -2px;
+
+}
+
+/* ==========================================================
+SALES LINKS
+========================================================== */
+
+.sales-phone-link,
+.sales-package-link {
+
+color: var(--sales-brown);
+
+text-decoration: none;
+
+font-weight: 700;
+
+}
+
+.sales-phone-link:hover,
+.sales-package-link:hover {
+
+color: var(--sales-brown-dark);
+
+text-decoration: underline;
+
+}
+
+/* ==========================================================
+ARREARS
+========================================================== */
+
+.sales-arrears-value {
+
+color: var(--sales-brown);
+
+}
+
+.sales-muted {
+
+color: var(--sales-muted);
+
+}
+
+/* ==========================================================
+EMPTY STATE
+========================================================== */
+
+.sales-empty {
+
+padding: 30px !important;
+
+text-align: center !important;
+
+color: var(--sales-muted);
+
+}
+
+/* ==========================================================
+LIABILITY ENTRY
+========================================================== */
+
+.sales-liability-entry {
+
+width: 100%;
+
+padding: 20px;
+
+box-sizing: border-box;
+
+margin-bottom: 24px;
+
+border: 1px solid var(--sales-border);
+
+border-radius: 14px;
+
+background: #fff;
+
+box-shadow:
+    0 5px 18px
+    rgba(74, 43, 25, 0.06);
+
+}
+
+.sales-liability-form {
+
+display: grid;
+
+grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+gap: 16px;
+
+}
+
+.sales-liability-field {
+
+display: flex;
+
+flex-direction: column;
+
+gap: 6px;
+
+}
+
+.sales-liability-field label {
+
+font-size: 13px;
+
+font-weight: 700;
+
+color: var(--sales-text);
+
+}
+
+.sales-liability-field input,
+.sales-liability-field select {
+
+width: 100%;
+
+min-height: 42px;
+
+padding: 9px 11px;
+
+box-sizing: border-box;
+
+border: 1px solid #d8c7ba;
+
+border-radius: 8px;
+
+background: #fff;
+
+color: var(--sales-text);
+
+font: inherit;
+
+outline: none;
+
+}
+
+.sales-liability-field input:focus,
+.sales-liability-field select:focus {
+
+border-color: var(--sales-brown);
+
+}
+
+.sales-liability-assigned {
+
+min-height: 42px;
+
+padding: 9px 11px;
+
+box-sizing: border-box;
+
+border: 1px solid var(--sales-border);
+
+border-radius: 8px;
+
+background: var(--sales-cream);
+
+display: flex;
+
+flex-direction: column;
+
+justify-content: center;
+
+gap: 3px;
+
+}
+
+.sales-liability-assigned-label {
+
+font-size: 12px;
+
+color: var(--sales-muted);
+
+font-weight: 700;
+
+}
+
+.sales-liability-assigned strong {
+
+font-size: 14px;
+
+color: var(--sales-brown-dark);
+
+}
+
+.sales-liability-form-actions {
+
+grid-column: 1 / -1;
+
+display: flex;
+
+justify-content: flex-start;
+
+margin-top: 2px;
+
+}
+
+.sales-liability-submit {
+
+min-height: 42px;
+
+padding: 9px 18px;
+
+border: 1px solid var(--sales-brown);
+
+border-radius: 8px;
+
+background: var(--sales-brown);
+
+color: #fff;
+
+font: inherit;
+
+font-weight: 700;
+
+cursor: pointer;
+
+}
+
+.sales-liability-submit:hover {
+
+background: var(--sales-brown-dark);
+
+border-color: var(--sales-brown-dark);
+
+}
+
+/* ==========================================================
+LIABILITY RECORDS
+========================================================== */
+
+.sales-liability-records {
+
+width: 100%;
+
+}
+
+.sales-liability-table-wrapper {
+
+margin-top: 4px;
+
+}
+
+.sales-liability-table {
+
+min-width: 850px;
+
+}
+
+.sales-liability-table th,
+.sales-liability-table td {
+
+vertical-align: middle;
+
+}
+
+.sales-liability-amount {
+
+color: var(--sales-brown);
+
+font-weight: 700;
+
+white-space: nowrap;
+
+}
+
+.sales-liability-empty {
+
+margin-top: 10px;
+
+border: 1px solid var(--sales-border);
+
+border-radius: 12px;
+
+background: #fff;
+
+}
+
+/* ==========================================================
+MOBILE — FILTER / LIABILITY ENTRY
+========================================================== */
+
+@media (max-width: 800px) {
+
+.sales-summary-grid {
+
+    grid-template-columns: 1fr;
 
 }
 
 
 .sales-filter {
 
-    display: flex;
-
-    align-items: end;
-
-    gap: 12px;
-
-    flex-wrap: wrap;
-
-    padding: 16px;
-
-    background: var(--sales-cream);
-
-    border: 1px solid var(--sales-border);
-
-    border-radius: 12px;
+    align-items: stretch;
 
 }
 
 
 .sales-filter-field {
 
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 6px;
-
-    min-width: 170px;
-
-}
-
-
-.sales-filter-field label {
-
-    font-size: 13px;
-
-    font-weight: 700;
-
-}
-
-
-.sales-filter-field input,
-.sales-filter-field select {
-
-    width: 100%;
-
-    min-height: 42px;
-
-    box-sizing: border-box;
-
-    padding: 9px 11px;
-
-    border: 1px solid #d8c7ba;
-
-    border-radius: 8px;
-
-    background: #fff;
-
-    color: var(--sales-text);
-
-    font: inherit;
-
-    outline: none;
-
-}
-
-
-.sales-filter-field input:focus,
-.sales-filter-field select:focus {
-
-    border-color: var(--sales-brown);
+    min-width: 100%;
 
 }
 
@@ -327,468 +948,97 @@
 .sales-filter-button,
 .sales-filter-clear {
 
-    min-height: 42px;
-
-    padding: 9px 16px;
-
-    border-radius: 8px;
-
-    font: inherit;
-
-    font-weight: 700;
-
-    text-decoration: none;
-
-    box-sizing: border-box;
-
-}
-
-
-.sales-filter-button {
-
-    border: 1px solid var(--sales-brown);
-
-    background: var(--sales-brown);
-
-    color: #fff;
-
-    cursor: pointer;
-
-}
-
-
-.sales-filter-button:hover {
-
-    background: var(--sales-brown-dark);
-
-}
-
-
-.sales-filter-clear {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border: 1px solid var(--sales-border);
-
-    color: var(--sales-brown);
-
-    background: #fff;
-
-}
-
-
-/* ==========================================================
-   SALES CONTENT
-========================================================== */
-
-.sales-content {
-
     width: 100%;
 
 }
 
 
-/* ==========================================================
-   SALES PANELS
-========================================================== */
+.sales-liability-form {
 
-.sales-panel {
+    grid-template-columns: 1fr;
+
+}
+
+
+.sales-liability-form-actions {
+
+    grid-column: 1;
+
+}
+
+
+.sales-liability-submit {
 
     width: 100%;
 
 }
 
-
-.sales-panel[hidden] {
-
-    display: none;
-
 }
-
 
 /* ==========================================================
-   SALES SECTIONS
+MOBILE — SALES PAGE
 ========================================================== */
 
-.sales-section {
+@media (max-width: 520px) {
 
-    width: 100%;
+.sales-page {
 
-}
+    padding-left: 12px;
 
-
-.sales-section-heading {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    margin-bottom: 18px;
+    padding-right: 12px;
 
 }
 
 
-.sales-section-heading h2 {
+.sales-header h1 {
 
-    margin: 0 0 5px;
-
-    font-size: 22px;
-
-}
-
-
-/* ==========================================================
-   SUMMARY CARDS
-========================================================== */
-
-.sales-summary-grid {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-
-    gap: 16px;
-
-}
-
-
-.sales-summary-card {
-
-    min-height: 145px;
-
-    padding: 22px;
-
-    box-sizing: border-box;
-
-    border: 1px solid var(--sales-border);
-
-    border-radius: 14px;
-
-    background: #fff;
-
-    box-shadow:
-        0 5px 18px
-        rgba(74, 43, 25, 0.06);
-
-    display: flex;
-
-    flex-direction: column;
-
-    justify-content: center;
-
-}
-
-
-.sales-summary-label {
-
-    color: var(--sales-muted);
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-    margin-bottom: 10px;
+    font-size: 25px;
 
 }
 
 
 .sales-summary-value {
 
-    color: var(--sales-brown);
-
-    font-size: 26px;
-
-    line-height: 1.2;
+    font-size: 23px;
 
 }
 
 
-/* ==========================================================
-   TABLE WRAPPER
-========================================================== */
+.sales-navigation {
 
-.sales-table-wrapper {
+    gap: 7px;
 
-    width: 100%;
+    padding: 8px 10px;
 
-    overflow-x: auto;
+    margin-bottom: 16px;
 
-    border: 1px solid var(--sales-border);
-
-    border-radius: 12px;
-
-    background: #fff;
+    border-radius: 11px;
 
 }
 
 
-/* ==========================================================
-   SALES TABLE
-========================================================== */
+.sales-navigation-tab {
 
-.sales-table {
+    min-height: 36px;
 
-    width: 100%;
+    padding: 8px 14px;
 
-    min-width: 720px;
-
-    border-collapse: collapse;
+    font-size: 12px;
 
 }
 
 
-.sales-table th,
-.sales-table td {
+.sales-liability-entry {
 
-    padding: 14px 15px;
-
-    text-align: left;
-
-    border-bottom:
-        1px solid #f0e5dd;
+    padding: 16px;
 
 }
 
 
-.sales-table th {
+.sales-liability-table {
 
-    background: var(--sales-cream);
-
-    color: var(--sales-brown-dark);
-
-    font-size: 13px;
-
-    white-space: nowrap;
+    min-width: 850px;
 
 }
 
-
-.sales-table td {
-
-    font-size: 14px;
-
-}
-
-
-.sales-table tbody tr:last-child td {
-
-    border-bottom: 0;
-
-}
-
-
-.sales-table tbody tr:hover {
-
-    background: #fffdfb;
-
-}
-
-.sales-product-row {
-    cursor: pointer;
-}
-
-.sales-product-row:hover {
-    background: rgba(139, 69, 19, 0.08);
-}
-
-.sales-product-row:focus {
-    outline: 2px solid #8b4513;
-    outline-offset: -2px;
-}
-
-
-/* ==========================================================
-   SALES LINKS
-========================================================== */
-
-.sales-phone-link,
-.sales-package-link {
-
-    color: var(--sales-brown);
-
-    text-decoration: none;
-
-    font-weight: 700;
-
-}
-
-
-.sales-phone-link:hover,
-.sales-package-link:hover {
-
-    color: var(--sales-brown-dark);
-
-    text-decoration: underline;
-
-}
-
-
-/* ==========================================================
-   ARREARS
-========================================================== */
-
-.sales-arrears-value {
-
-    color: var(--sales-brown);
-
-}
-
-
-.sales-muted {
-
-    color: var(--sales-muted);
-
-}
-
-
-/* ==========================================================
-   EMPTY STATE
-========================================================== */
-
-.sales-empty {
-
-    padding: 30px !important;
-
-    text-align: center !important;
-
-    color: var(--sales-muted);
-
-}
-
-
-/* ==========================================================
-   MOBILE — FILTER
-========================================================== */
-
-@media (max-width: 800px) {
-
-    .sales-summary-grid {
-
-        grid-template-columns: 1fr;
-
-    }
-
-
-    .sales-filter {
-
-        align-items: stretch;
-
-    }
-
-
-    .sales-filter-field {
-
-        min-width: 100%;
-
-    }
-
-
-    .sales-filter-button,
-    .sales-filter-clear {
-
-        width: 100%;
-
-    }
-
-}
-
-
-/* ==========================================================
-   MOBILE — SALES PAGE
-========================================================== */
-
-@media (max-width: 520px) {
-
-    .sales-page {
-
-        padding-left: 12px;
-
-        padding-right: 12px;
-
-    }
-
-
-    .sales-header h1 {
-
-        font-size: 25px;
-
-    }
-
-
-    .sales-summary-value {
-
-        font-size: 23px;
-
-    }
-
-
-    /* ----------------------------------------------
-       SALES TABS
-    ---------------------------------------------- */
-
-    .sales-navigation {
-
-        gap: 7px;
-
-        padding: 8px 10px;
-
-        margin-bottom: 16px;
-
-        border-radius: 11px;
-
-    }
-
-
-    .sales-navigation-tab {
-
-        min-height: 36px;
-
-        padding: 8px 14px;
-
-        font-size: 12px;
-
-    }
-
-}
-
-
-.sales-filter-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.65rem 1rem;
-    margin: 0 0 1rem;
-    border: 1px solid #8b4513;
-    border-radius: 8px;
-    background: #8b4513;
-    color: #ffffff;
-    font-size: 0.9rem;
-    font-weight: 600;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.sales-filter-toggle:hover {
-    background: #6f350f;
-    border-color: #6f350f;
-}
-
-.sales-filter-toggle:active {
-    transform: translateY(1px);
-}
-
-.sales-filter-toggle:focus-visible {
-    outline: 2px solid #8b4513;
-    outline-offset: 3px;
-}
-
-.sales-filter[hidden] {
-    display: none !important;
 }
