@@ -3067,143 +3067,189 @@ body.checkout-message-modal-open {
   font-size: 15px;
 }
 
+/* ==========================================================
+   STAFF CART PAYMENT MODE
+   ========================================================== */
 
-/* =========================================================
+.cart-payment-mode {
+  width: 100%;
+
+  margin: 0 0 16px;
+}
+
+
+/* ==========================================================
+   PAYMENT MODE LABEL
+   ========================================================== */
+
+.cart-payment-mode-label {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 9px;
+
+  color: var(--cart-brown-800);
+
+  font-size: 13px;
+
+  font-weight: 800;
+
+  line-height: 1.4;
+}
+
+
+/* ==========================================================
    PAYMENT MODE SELECT
-========================================================= */
+   ========================================================== */
 
-.checkout-payment-select {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 42px 0 14px;
-
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-
-  background: #fff;
-
-  font-size: 15px;
-  font-weight: 500;
-
-  color: #111827;
-
-  cursor: pointer;
-
-  outline: none;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-
-.checkout-payment-select:hover {
-  border-color: #9ca3af;
-}
-
-
-.checkout-payment-select:focus {
-  border-color: #0b5d1e;
-
-  box-shadow:
-    0 0 0 3px rgba(11, 93, 30, 0.12);
-}
-
-
-/* Default "Select payment mode" */
-
-.checkout-payment-select option[value=""] {
-  color: #6b7280;
-}
-
-
-/* =========================================================
-   M-PESA PHONE FIELD
-========================================================= */
-
-.checkout-payment-fieldset .phone-field {
-  display: none;
-
-  margin-top: 14px;
-
-  padding: 14px;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-
-  background: #f9fafb;
-}
-
-
-.checkout-payment-fieldset .phone-field.show {
-  display: block;
-}
-
-
-.checkout-payment-fieldset .phone-field label {
+.cart-payment-mode-select {
   display: block;
 
-  margin-bottom: 7px;
-
-  font-size: 14px;
-  font-weight: 600;
-}
-
-
-.checkout-payment-fieldset .phone-field label i {
-  margin-right: 6px;
-}
-
-
-.checkout-payment-fieldset .phone-field input {
   width: 100%;
-  min-height: 46px;
 
-  padding: 0 13px;
+  min-height: 50px;
 
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-
-  background: #fff;
-
-  font-size: 15px;
-
-  outline: none;
+  padding: 12px 42px 12px 14px;
 
   box-sizing: border-box;
 
+  border: 1px solid var(--cart-brown-300);
+
+  border-radius: 10px;
+
+  background-color: #fff;
+
+  color: var(--cart-brown-950);
+
+  font-family: inherit;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  line-height: 1.4;
+
+  outline: none;
+
+  cursor: pointer;
+
+  appearance: auto;
+  -webkit-appearance: menulist;
+
   transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color .2s ease,
+    box-shadow .2s ease,
+    background-color .2s ease;
 }
 
 
-.checkout-payment-fieldset .phone-field input:focus {
-  border-color: #0b5d1e;
+/* ==========================================================
+   HOVER
+   ========================================================== */
+
+.cart-payment-mode-select:hover {
+  border-color: var(--cart-brown-400);
+
+  background-color: #fffdfb;
+}
+
+
+/* ==========================================================
+   FOCUS
+   ========================================================== */
+
+.cart-payment-mode-select:focus {
+  border-color: var(--cart-brown-600);
 
   box-shadow:
-    0 0 0 3px rgba(11, 93, 30, 0.12);
+    0 0 0 3px
+    rgba(123, 77, 54, .12);
 }
 
 
-.checkout-payment-fieldset .phone-field input::placeholder {
-  color: #9ca3af;
+/* ==========================================================
+   SELECTED / NORMAL OPTIONS
+   ========================================================== */
+
+.cart-payment-mode-select option {
+  padding: 10px;
+
+  background: #fff;
+
+  color: var(--cart-brown-950);
+
+  font-family: inherit;
+
+  font-size: 14px;
 }
 
 
-/* =========================================================
+/* ==========================================================
+   DEFAULT "SELECT PAYMENT MODE"
+   ========================================================== */
+
+.cart-payment-mode-select option[value=""] {
+  color: #8d7b70;
+}
+
+
+/* ==========================================================
+   DISABLED SELECT
+   ========================================================== */
+
+.cart-payment-mode-select:disabled {
+  opacity: .65;
+
+  cursor: wait;
+
+  background-color: var(--cart-brown-50);
+}
+
+
+/* ==========================================================
    MOBILE
-========================================================= */
+   ========================================================== */
 
-@media (max-width: 600px) {
+@media (max-width: 650px) {
 
-  .checkout-payment-select {
-    min-height: 50px;
-    font-size: 15px;
+  .cart-payment-mode {
+    margin-bottom: 15px;
   }
 
-  .checkout-payment-fieldset .phone-field {
-    padding: 12px;
+  .cart-payment-mode-label {
+    font-size: 12.5px;
+  }
+
+  .cart-payment-mode-select {
+    min-height: 50px;
+
+    padding:
+      12px
+      14px;
+
+    font-size: 15px;
+
+    /* Keep the native mobile dropdown selectable */
+    appearance: auto;
+    -webkit-appearance: menulist;
+  }
+
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+   ========================================================== */
+
+@media (max-width: 420px) {
+
+  .cart-payment-mode-select {
+    min-height: 48px;
+
+    font-size: 14px;
   }
 
 }
