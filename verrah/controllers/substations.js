@@ -97,7 +97,9 @@ function buildSubstationData(
   const body =
     req.body || {};
 
+
   const data = {
+
     name:
       body.name,
 
@@ -116,6 +118,7 @@ function buildSubstationData(
       body.description || "",
 
     gps: {
+
       latitude:
         normalizeCoordinate(
           body.latitude,
@@ -292,10 +295,6 @@ exports.create = async (
       e
     );
 
-    /*
-     * Rebuild the form data so that fields such as GPS,
-     * phone number and directions are not lost after an error.
-     */
 
     let old = {
       ...(req.body || {})
@@ -609,23 +608,14 @@ async (
     );
 
 
-    /*
-     * Preserve the user's submitted values when the update
-     * fails validation.
-     */
-
     const substation = {
+
       ...(req.body || {}),
 
       _id:
         req.params.id
     };
 
-
-    /*
-     * Keep the existing icon available when no new icon
-     * was uploaded.
-     */
 
     try {
 
@@ -660,6 +650,30 @@ async (
       substation.substationIcon =
         `/uploads/substations/${req.file.filename}`;
     }
+
+
+    /*
+     * Preserve GPS in the edit form after validation errors.
+     * The submitted coordinates are flat form fields, while
+     * the database stores them under substation.gps.
+     */
+
+    substation.gps = {
+
+      latitude:
+        normalizeCoordinate(
+          req.body?.latitude,
+          -90,
+          90
+        ),
+
+      longitude:
+        normalizeCoordinate(
+          req.body?.longitude,
+          -180,
+          180
+        )
+    };
 
 
     return res.status(400).render(
@@ -784,11 +798,6 @@ async (
       );
     }
 
-
-    /*
-     * Dedicated icon management requires an uploaded
-     * image.
-     */
 
     if (!req.file) {
 
@@ -934,10 +943,6 @@ async (
     }
 
 
-    // ------------------------------------------------------
-    // EXISTING IMAGES TO KEEP
-    // ------------------------------------------------------
-
     let keepImages =
       req.body.keepImages || [];
 
@@ -970,10 +975,6 @@ async (
       );
 
 
-    // ------------------------------------------------------
-    // NEWLY UPLOADED IMAGES
-    // ------------------------------------------------------
-
     const uploadedImages =
       Array.isArray(
         req.files
@@ -985,10 +986,6 @@ async (
             )
         : [];
 
-
-    // ------------------------------------------------------
-    // FINAL IMAGE LIST
-    // ------------------------------------------------------
 
     const images = [
       ...keepImages,
@@ -1005,10 +1002,6 @@ async (
       );
     }
 
-
-    // ------------------------------------------------------
-    // SAVE
-    // ------------------------------------------------------
 
     await service.updateImages(
       req.params.id,
