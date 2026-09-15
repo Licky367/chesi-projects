@@ -1,6 +1,32 @@
+<%
+const totalAmount =
+Number(packageDoc?.totalAmount || 0);
+
+const totalPaid =
+Number(
+packageDoc?.totalPaid ||
+packageDoc?.paidAmount ||
+0
+);
+
+const arrears =
+Math.max(
+0,
+totalAmount - totalPaid
+);
+
+const isDelivered =
+packageDoc?.status === "delivered";
+
+const canClear =
+isDelivered &&
+arrears === 0 &&
+!cleared;
+%>
+
 <div class="staff-items-card">  <div class="staff-items-heading">
     ITEMS
-  </div><% (packageDoc.items || []).forEach(function(item) { %>
+  </div><% (packageDoc?.items || []).forEach(function(item) { %>
 
 <div class="staff-item-row">
 
