@@ -148,6 +148,21 @@ const cartSchema = new mongoose.Schema(
 
 
         // --------------------------------------------------
+        // MOBILE CART
+        //
+        // Indicates whether the cart is associated with
+        // the mobile shopping experience.
+        //
+        // Defaults to true.
+        // --------------------------------------------------
+
+        isMobile: {
+            type: Boolean,
+            default: true
+        },
+
+
+        // --------------------------------------------------
         // CART ITEMS
         // --------------------------------------------------
 
