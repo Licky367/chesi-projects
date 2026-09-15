@@ -1113,7 +1113,7 @@ if (profileRoutes) {
 if (liabilityRoutes) {
 
     app.use(
-        "/profile",
+        "/liability",
         liabilityRoutes
     );
 
