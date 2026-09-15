@@ -738,6 +738,53 @@ exports.staffDetails = async (
     }
 
 
+    // -------------------------------------------------------
+    // DETERMINE WHETHER THIS IS A DIRECT SELL
+    // -------------------------------------------------------
+    //
+    // A package is a direct sell when the user who owns
+    // the package has role === "staff".
+    //
+    // packageService does not currently return the user's
+    // role, so we retrieve it here using clientId.
+    // -------------------------------------------------------
+
+    const packageOwner =
+      packageDoc.clientId
+        ? await User.findById(
+            packageDoc.clientId
+          )
+            .select("_id role")
+            .lean()
+        : null;
+
+
+    const clientRole =
+      String(
+        packageOwner?.role ||
+        ""
+      ).toLowerCase();
+
+
+    const isDirectSell =
+      clientRole === "staff";
+
+
+    // -------------------------------------------------------
+    // ADD DIRECT-SELL INFORMATION TO PACKAGE DOC
+    // -------------------------------------------------------
+
+    packageDoc.isDirectSell =
+      isDirectSell;
+
+    packageDoc.clientRole =
+      clientRole;
+
+
+    // -------------------------------------------------------
+    // CONFIRMATION STATE
+    // -------------------------------------------------------
+
     const confirmationState =
       packageDoc.status === "pending"
         ? await confirmationService.getConfirmationState(
@@ -750,6 +797,10 @@ exports.staffDetails = async (
           };
 
 
+    // -------------------------------------------------------
+    // DELIVERED RECORD
+    // -------------------------------------------------------
+
     const deliveredRecord =
       await DeliveredPackage.findOne({
         packageId:
@@ -760,6 +811,10 @@ exports.staffDetails = async (
         )
         .lean();
 
+
+    // -------------------------------------------------------
+    // RENDER
+    // -------------------------------------------------------
 
     res.render(
       "packages/staff-details",
