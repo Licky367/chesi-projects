@@ -34,18 +34,12 @@ router.get(
 // PAYMENT MODE
 // POST /carts/payment-mode
 //
-// Used by staff to select:
+// Staff selects:
 //
-//     Cash Payment
-//         isMobile = false
+//     Cash  -> isMobile = false
+//     M-PESA -> isMobile = true
 //
-//     Mpesa Payment
-//         isMobile = true
-//
-// The selected value is saved to the logged-in user's cart.
-//
-// This does NOT complete a sale.
-// It only changes the cart payment mode.
+// This only updates the cart payment mode.
 // ==========================================================
 
 router.post(
@@ -59,9 +53,7 @@ router.post(
 // CHECKOUT PROCESS
 // POST /carts/checkout
 //
-// The selected pickup substation is saved first.
-// checkoutSubstation.saveSelection then passes
-// control to controller.checkout.
+// Existing checkout flow.
 // ==========================================================
 
 router.post(
@@ -73,16 +65,15 @@ router.post(
 
 
 // ==========================================================
-// STAFF SALE
+// STAFF CASH SALE
 // POST /carts/staff-sale
 //
-// Used by staff for CASH payments.
-//
-// Cash payment:
+// Used by staff when:
 //
 //     isMobile = false
 //
-// The existing staff-sale flow remains unchanged.
+// The salesName is submitted from the
+// staff sales popup.
 // ==========================================================
 
 router.post(
@@ -142,24 +133,40 @@ router.post(
 
 
 // ==========================================================
+// M-PESA CHECKOUT
+// POST /carts/:id
+//
+// Used by staff when:
+//
+//     isMobile = true
+//
+// The staff popup submits:
+//
+//     salesName
+//
+// to this route.
+//
+// IMPORTANT:
+// This must come BEFORE the GET /:id route,
+// but AFTER the more specific routes above.
+// ==========================================================
+
+router.post(
+    "/:id",
+    requireLogin,
+    checkoutSubstation.saveSelection,
+    controller.checkout
+);
+
+
+// ==========================================================
 // CHECKOUT PAGE
 // GET /carts/:id
 //
-// This is the checkout page.
+// Displays the checkout page.
 //
-// Both:
-//
-//     normal users
-//
-// and:
-//
-//     staff using Mpesa
-//
-// can reach this page.
-//
-// Staff + Mpesa:
-//     isMobile = true
-//     /carts/:id
+// Staff + M-PESA can also arrive here through
+// the normal checkout flow after the POST above.
 // ==========================================================
 
 router.get(
