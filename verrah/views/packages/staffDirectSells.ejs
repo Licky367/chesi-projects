@@ -155,6 +155,11 @@ const tabCounts = counts || {
           pkg.status === "delivered" &&
           arrears > 0;
 
+        const displayClientName =
+          pkg.isDirectSell === true
+            ? (pkg.salesName || "Unknown")
+            : (pkg.client?.name || "Unknown");
+
       %>
 
         <a
@@ -204,7 +209,7 @@ const tabCounts = counts || {
 
               Client:
               <strong>
-                <%= pkg.client?.name || "Unknown" %>
+                <%= displayClientName %>
               </strong>
 
               <br>
