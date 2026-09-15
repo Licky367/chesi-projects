@@ -13,6 +13,9 @@ const paymentService =
 const packageService =
     require("../services/packageService");
 
+const substationService =
+    require("../services/substationService");
+
 
 // ==========================================================
 // CART ERROR HELPER
@@ -38,6 +41,26 @@ function getCartErrorMessage(err, fallback) {
 
 
 // ==========================================================
+// GET SUBSTATIONS
+//
+// Uses the actual Verrah substation service.
+//
+// substationService.list()
+// returns active substations sorted by name.
+// ==========================================================
+
+async function getSubstations() {
+
+    const substations =
+        await substationService.list();
+
+    return Array.isArray(substations)
+        ? substations
+        : [];
+}
+
+
+// ==========================================================
 // CART LIST
 // GET /carts
 // ==========================================================
@@ -46,11 +69,23 @@ exports.list = async (req, res) => {
 
     try {
 
-        const cart =
-            await cartService.getCart(req);
+        const [
+            cart,
+            substations
+        ] = await Promise.all([
+
+            cartService.getCart(req),
+
+            getSubstations()
+
+        ]);
+
 
         const total =
-            cartService.calculateTotal(cart);
+            cartService.calculateTotal(
+                cart
+            );
+
 
         return res.render(
             "cart/carts",
@@ -61,6 +96,8 @@ exports.list = async (req, res) => {
                 cart,
 
                 total,
+
+                substations,
 
                 error:
                     req.query.error ||
@@ -78,6 +115,7 @@ exports.list = async (req, res) => {
             err
         );
 
+
         return res.status(500).render(
             "cart/carts",
             {
@@ -89,6 +127,9 @@ exports.list = async (req, res) => {
 
                 total:
                     0,
+
+                substations:
+                    [],
 
                 error:
                     "Unable to load your cart.",
@@ -128,6 +169,7 @@ exports.updatePaymentMode = async (
         if (!req.user) {
 
             return res.status(401).json({
+
                 ok:
                     false,
 
@@ -155,6 +197,7 @@ exports.updatePaymentMode = async (
         ) {
 
             return res.status(403).json({
+
                 ok:
                     false,
 
@@ -187,7 +230,8 @@ exports.updatePaymentMode = async (
                 .toLowerCase() === "true"
         ) {
 
-            isMobile = true;
+            isMobile =
+                true;
 
         } else if (
             submittedValue === false ||
@@ -198,11 +242,13 @@ exports.updatePaymentMode = async (
                 .toLowerCase() === "false"
         ) {
 
-            isMobile = false;
+            isMobile =
+                false;
 
         } else {
 
             return res.status(400).json({
+
                 ok:
                     false,
 
@@ -213,15 +259,13 @@ exports.updatePaymentMode = async (
 
 
         // --------------------------------------------------
-        // UPDATE THROUGH THE SERVICE
+        // UPDATE THROUGH CART SERVICE
         //
         // IMPORTANT:
         //
-        // cartService.getCart() returns a LEAN object.
-        // A lean object cannot use .save().
-        //
-        // updatePaymentMode() retrieves a real Mongoose
-        // document and saves it.
+        // cartService.getCart() returns a lean object.
+        // Therefore we use updatePaymentMode(), which
+        // retrieves the real Mongoose document and saves it.
         // --------------------------------------------------
 
         const cart =
@@ -230,10 +274,6 @@ exports.updatePaymentMode = async (
                 isMobile
             );
 
-
-        // --------------------------------------------------
-        // SUCCESS
-        // --------------------------------------------------
 
         return res.json({
 
@@ -253,6 +293,7 @@ exports.updatePaymentMode = async (
             "Update payment mode error:",
             err
         );
+
 
         return res.status(
             err.statusCode || 500
@@ -283,7 +324,9 @@ exports.checkoutPage = async (
     try {
 
         const cart =
-            await cartService.getCart(req);
+            await cartService.getCart(
+                req
+            );
 
 
         if (
@@ -297,6 +340,10 @@ exports.checkoutPage = async (
             );
         }
 
+
+        // --------------------------------------------------
+        // FIND CART ITEM
+        // --------------------------------------------------
 
         const item =
             cart.items.find(
@@ -318,13 +365,34 @@ exports.checkoutPage = async (
         }
 
 
-        const substations =
+        // --------------------------------------------------
+        // CHECKOUT SUBSTATIONS
+        //
+        // checkoutSubstation.load normally places these
+        // inside res.locals.substations.
+        //
+        // If available, use them.
+        // Otherwise load them directly from the service.
+        // --------------------------------------------------
+
+        let substations =
             Array.isArray(
                 res.locals.substations
             )
                 ? res.locals.substations
-                : [];
+                : null;
 
+
+        if (!substations) {
+
+            substations =
+                await getSubstations();
+        }
+
+
+        // --------------------------------------------------
+        // PICKUP STATION
+        // --------------------------------------------------
 
         const pickupStation =
             res.locals.pickupStation ||
@@ -336,6 +404,10 @@ exports.checkoutPage = async (
                     : ""
             );
 
+
+        // --------------------------------------------------
+        // TOTAL
+        // --------------------------------------------------
 
         const total =
             cartService.calculateTotal(
@@ -403,7 +475,9 @@ exports.details = async (
     try {
 
         const cart =
-            await cartService.getCart(req);
+            await cartService.getCart(
+                req
+            );
 
 
         if (
@@ -572,7 +646,9 @@ exports.checkout = async (
     try {
 
         const cart =
-            await cartService.getCart(req);
+            await cartService.getCart(
+                req
+            );
 
 
         const role =
@@ -598,6 +674,10 @@ exports.checkout = async (
             "";
 
 
+        // --------------------------------------------------
+        // STAFF + M-PESA
+        // --------------------------------------------------
+
         if (
             isStaff &&
             isMobile
@@ -608,6 +688,16 @@ exports.checkout = async (
                     req.body?.salesName ||
                     ""
                 ).trim();
+
+
+            if (
+                !salesName
+            ) {
+
+                throw new Error(
+                    "Sales name is required."
+                );
+            }
 
 
             if (
@@ -702,10 +792,13 @@ exports.checkout = async (
 
 
         return res.redirect(
+
             productId
+
                 ? `/carts/${encodeURIComponent(
                     productId
                 )}?error=${error}`
+
                 : `/carts?error=${error}`
         );
 
@@ -725,12 +818,15 @@ exports.checkout = async (
 
 
         return res.redirect(
+
             productId
+
                 ? `/carts/${encodeURIComponent(
                     productId
                 )}?error=${encodeURIComponent(
                     message
                 )}`
+
                 : `/carts?error=${encodeURIComponent(
                     message
                 )}`
@@ -780,6 +876,10 @@ exports.staffSale = async (
         }
 
 
+        // --------------------------------------------------
+        // ASSIGNED SUBSTATION
+        // --------------------------------------------------
+
         const assignedSubstation =
             req.user.assignedSubstation;
 
@@ -793,6 +893,10 @@ exports.staffSale = async (
             );
         }
 
+
+        // --------------------------------------------------
+        // SALES NAME
+        // --------------------------------------------------
 
         const salesName =
             String(
@@ -826,8 +930,27 @@ exports.staffSale = async (
         );
 
 
+        // --------------------------------------------------
+        // HANDLE BOTH:
+        //
+        // assignedSubstation = ObjectId/string
+        //
+        // OR
+        //
+        // assignedSubstation = populated object
+        // --------------------------------------------------
+
+        const assignedSubstationId =
+            typeof assignedSubstation === "object"
+                ? (
+                    assignedSubstation._id ||
+                    assignedSubstation.id
+                )
+                : assignedSubstation;
+
+
         return res.redirect(
-            `/branch/${assignedSubstation}`
+            `/branch/${assignedSubstationId}`
         );
 
     } catch (err) {
