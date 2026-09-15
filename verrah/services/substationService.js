@@ -96,17 +96,26 @@ const normalizeCoordinate = (
 
 const buildGPS = (body) => {
 
+    const source =
+        body &&
+        body.gps &&
+        typeof body.gps === "object"
+            ? body.gps
+            : body;
+
+
     const latitude =
         normalizeCoordinate(
-            body.latitude,
+            source.latitude,
             -90,
             90,
             "Latitude"
         );
 
+
     const longitude =
         normalizeCoordinate(
-            body.longitude,
+            source.longitude,
             -180,
             180,
             "Longitude"
