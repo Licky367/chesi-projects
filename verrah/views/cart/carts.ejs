@@ -78,7 +78,7 @@ const checkoutProductId =
 
 
     <!-- =====================================================
-         ERROR MESSAGE
+         ERROR
     ====================================================== -->
 
     <% if (typeof error !== "undefined" && error) { %>
@@ -333,8 +333,7 @@ const checkoutProductId =
 
                 <% if (isStaff) { %>
 
-                    Enter the sales name before continuing
-                    to checkout.
+                    Choose how this sale will be paid.
 
                 <% } else { %>
 
@@ -347,7 +346,7 @@ const checkoutProductId =
 
 
             <!-- =================================================
-                 STAFF
+                 STAFF CHECKOUT
             ================================================== -->
 
             <% if (isStaff && checkoutProductId) { %>
@@ -366,19 +365,19 @@ const checkoutProductId =
 
 
                 <!-- =============================================
-                     STAFF SALES NAME MODAL
-                     THIS MODAL EXISTS ON /CARTS
+                     STAFF CHECKOUT MODAL
+                     THIS MODAL IS ON /CARTS
                 ============================================== -->
 
                 <div
                     class="staff-sale-modal"
-                    id="staffSalesNameModal"
+                    id="staffCheckoutModal"
                     aria-hidden="true"
                 >
 
                     <div
                         class="staff-sale-modal-overlay"
-                        id="staffSalesNameOverlay"
+                        id="staffCheckoutOverlay"
                     ></div>
 
 
@@ -386,7 +385,7 @@ const checkoutProductId =
                         class="staff-sale-modal-content"
                         role="dialog"
                         aria-modal="true"
-                        aria-labelledby="staffSalesNameTitle"
+                        aria-labelledby="staffCheckoutTitle"
                     >
 
                         <!-- =================================
@@ -397,7 +396,7 @@ const checkoutProductId =
 
                             <div class="staff-sale-modal-icon">
 
-                                <i class="fas fa-user-tie"></i>
+                                <i class="fas fa-cash-register"></i>
 
                             </div>
 
@@ -410,9 +409,9 @@ const checkoutProductId =
 
                                 <h2
                                     class="staff-sale-modal-title"
-                                    id="staffSalesNameTitle"
+                                    id="staffCheckoutTitle"
                                 >
-                                    Sales Name
+                                    Complete Sale
                                 </h2>
 
                             </div>
@@ -421,7 +420,7 @@ const checkoutProductId =
                             <button
                                 type="button"
                                 class="staff-sale-modal-close"
-                                id="closeStaffSalesNameModal"
+                                id="closeStaffCheckoutModal"
                                 aria-label="Close"
                             >
 
@@ -440,36 +439,24 @@ const checkoutProductId =
 
                             <p class="staff-sale-modal-description">
 
-                                Enter the sales name before
-                                continuing to checkout.
+                                Select the payment method for this sale.
 
                             </p>
 
 
-                            <!-- =================================
-                                 IMPORTANT
-
-                                 This form does NOT submit a POST
-                                 to /carts/:id.
-
-                                 It submits GET /carts/:id with
-                                 salesName as a query parameter.
-
-                                 The normal checkout page then
-                                 handles the rest.
-                            ================================== -->
-
                             <form
-                                action="/carts/<%= checkoutProductId %>"
-                                method="GET"
                                 class="staff-sale-form"
                                 id="staffCheckoutForm"
                             >
 
+                                <!-- =================================
+                                     SALES NAME
+                                ================================== -->
+
                                 <div class="staff-sale-form-group">
 
                                     <label
-                                        for="salesName"
+                                        for="staffSalesName"
                                         class="staff-sale-field"
                                     >
                                         Sales Name
@@ -482,12 +469,157 @@ const checkoutProductId =
 
                                         <input
                                             type="text"
-                                            id="salesName"
+                                            id="staffSalesName"
                                             name="salesName"
                                             placeholder="Enter sales name"
                                             autocomplete="off"
                                             required
                                         >
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- =================================
+                                     PAYMENT METHOD
+                                ================================== -->
+
+                                <div class="staff-sale-form-group">
+
+                                    <label class="staff-sale-field">
+                                        Payment Method
+                                    </label>
+
+
+                                    <label
+                                        class="payment-choice"
+                                        for="staffPaymentMpesa"
+                                    >
+
+                                        <input
+                                            type="radio"
+                                            name="staffPaymentMethod"
+                                            id="staffPaymentMpesa"
+                                            value="mpesa"
+                                        >
+
+                                        <span>
+
+                                            <strong>
+                                                Pay now with M-Pesa
+                                            </strong>
+
+                                            <small>
+                                                An STK Push will be sent
+                                                to the customer's phone.
+                                            </small>
+
+                                        </span>
+
+                                    </label>
+
+
+                                    <label
+                                        class="payment-choice"
+                                        for="staffPaymentDelivery"
+                                    >
+
+                                        <input
+                                            type="radio"
+                                            name="staffPaymentMethod"
+                                            id="staffPaymentDelivery"
+                                            value="pay_on_delivery"
+                                        >
+
+                                        <span>
+
+                                            <strong>
+                                                Pay upon delivery
+                                            </strong>
+
+                                            <small>
+                                                The package will be created
+                                                immediately.
+                                            </small>
+
+                                        </span>
+
+                                    </label>
+
+                                </div>
+
+
+                                <!-- =================================
+                                     M-PESA PHONE
+                                ================================== -->
+
+                                <div
+                                    class="staff-sale-form-group phone-field"
+                                    id="staffPhoneField"
+                                    style="display:none;"
+                                >
+
+                                    <label
+                                        for="staffPhoneNumber"
+                                        class="staff-sale-field"
+                                    >
+                                        M-Pesa Phone Number
+                                    </label>
+
+
+                                    <div class="staff-sale-input-wrap">
+
+                                        <i class="fas fa-phone"></i>
+
+                                        <input
+                                            type="tel"
+                                            id="staffPhoneNumber"
+                                            name="phoneNumber"
+                                            placeholder="07XXXXXXXX"
+                                            autocomplete="tel"
+                                        >
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- =================================
+                                     SUMMARY
+                                ================================== -->
+
+                                <div class="staff-sale-summary">
+
+                                    <div class="staff-sale-preview">
+
+                                        <div class="staff-sale-preview-card">
+
+                                            <span class="staff-sale-preview-label">
+                                                ORDER TOTAL
+                                            </span>
+
+                                            <strong class="staff-sale-preview-value sale-total">
+                                                KSh <%= Number(cartTotal).toLocaleString() %>
+                                            </strong>
+
+                                        </div>
+
+
+                                        <div class="staff-sale-preview-card">
+
+                                            <span class="staff-sale-preview-label">
+                                                PAYMENT
+                                            </span>
+
+                                            <strong
+                                                class="staff-sale-preview-value"
+                                                id="staffPaymentPreview"
+                                            >
+                                                Select payment method
+                                            </strong>
+
+                                        </div>
 
                                     </div>
 
@@ -507,7 +639,7 @@ const checkoutProductId =
 
                                         <i class="fas fa-arrow-right"></i>
 
-                                        Continue to Checkout
+                                        Continue
 
                                     </button>
 
@@ -528,7 +660,7 @@ const checkoutProductId =
 
                                 <i class="fas fa-lock"></i>
 
-                                Sales information will be recorded
+                                Your sales information is recorded
                                 with this order.
 
                             </span>
@@ -544,7 +676,7 @@ const checkoutProductId =
 
 
                 <!-- =================================================
-                     NORMAL USER
+                     NORMAL USER CHECKOUT
                 ================================================== -->
 
                 <a
@@ -563,7 +695,7 @@ const checkoutProductId =
 
 
             <!-- =================================================
-                 BACK
+                 BACK TO SHOP
             ================================================== -->
 
             <div class="cart-summary-back">
@@ -589,7 +721,7 @@ const checkoutProductId =
 
 
 <!-- =========================================================
-     STAFF SALES NAME MODAL
+     STAFF CHECKOUT MODAL JAVASCRIPT
 ========================================================= -->
 
 <% if (isStaff && checkoutProductId) { %>
@@ -601,7 +733,7 @@ document.addEventListener(
 
         const modal =
             document.getElementById(
-                "staffSalesNameModal"
+                "staffCheckoutModal"
             );
 
         const openButton =
@@ -611,12 +743,12 @@ document.addEventListener(
 
         const closeButton =
             document.getElementById(
-                "closeStaffSalesNameModal"
+                "closeStaffCheckoutModal"
             );
 
         const overlay =
             document.getElementById(
-                "staffSalesNameOverlay"
+                "staffCheckoutOverlay"
             );
 
         const form =
@@ -626,7 +758,32 @@ document.addEventListener(
 
         const salesName =
             document.getElementById(
-                "salesName"
+                "staffSalesName"
+            );
+
+        const mpesaRadio =
+            document.getElementById(
+                "staffPaymentMpesa"
+            );
+
+        const deliveryRadio =
+            document.getElementById(
+                "staffPaymentDelivery"
+            );
+
+        const phoneField =
+            document.getElementById(
+                "staffPhoneField"
+            );
+
+        const phoneNumber =
+            document.getElementById(
+                "staffPhoneNumber"
+            );
+
+        const paymentPreview =
+            document.getElementById(
+                "staffPaymentPreview"
             );
 
 
@@ -636,7 +793,21 @@ document.addEventListener(
 
 
         /* =====================================================
-           OPEN
+           ROUTES
+        ====================================================== */
+
+        const checkoutUrl =
+            "/carts/<%= checkoutProductId %>";
+
+        const staffSaleUrl =
+            "/carts/staff-sale";
+
+        const paymentModeUrl =
+            "/carts/payment-mode";
+
+
+        /* =====================================================
+           OPEN MODAL
         ====================================================== */
 
         function openModal() {
@@ -670,7 +841,7 @@ document.addEventListener(
 
 
         /* =====================================================
-           CLOSE
+           CLOSE MODAL
         ====================================================== */
 
         function closeModal() {
@@ -692,7 +863,194 @@ document.addEventListener(
 
 
         /* =====================================================
-           OPEN BUTTON
+           UPDATE PAYMENT DISPLAY
+        ====================================================== */
+
+        function updatePaymentDisplay() {
+
+            if (
+                mpesaRadio &&
+                mpesaRadio.checked
+            ) {
+
+                if (paymentPreview) {
+
+                    paymentPreview.textContent =
+                        "Pay now with M-Pesa";
+
+                }
+
+                if (phoneField) {
+
+                    phoneField.style.display =
+                        "block";
+
+                }
+
+                if (phoneNumber) {
+
+                    phoneNumber.required =
+                        true;
+
+                }
+
+            } else if (
+                deliveryRadio &&
+                deliveryRadio.checked
+            ) {
+
+                if (paymentPreview) {
+
+                    paymentPreview.textContent =
+                        "Pay upon delivery";
+
+                }
+
+                if (phoneField) {
+
+                    phoneField.style.display =
+                        "none";
+
+                }
+
+                if (phoneNumber) {
+
+                    phoneNumber.required =
+                        false;
+
+                }
+
+            } else {
+
+                if (paymentPreview) {
+
+                    paymentPreview.textContent =
+                        "Select payment method";
+
+                }
+
+                if (phoneField) {
+
+                    phoneField.style.display =
+                        "none";
+
+                }
+
+                if (phoneNumber) {
+
+                    phoneNumber.required =
+                        false;
+
+                }
+
+            }
+
+        }
+
+
+        /* =====================================================
+           SAVE PAYMENT MODE
+        ====================================================== */
+
+        async function savePaymentMode(
+            isMobile
+        ) {
+
+            try {
+
+                const response =
+                    await fetch(
+                        paymentModeUrl,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                isMobile:
+                                    isMobile
+                            })
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "Unable to update payment mode."
+                    );
+
+                }
+
+                return true;
+
+            } catch (error) {
+
+                console.error(
+                    "Payment mode error:",
+                    error
+                );
+
+                return false;
+
+            }
+
+        }
+
+
+        /* =====================================================
+           PAYMENT RADIO CHANGE
+        ====================================================== */
+
+        if (mpesaRadio) {
+
+            mpesaRadio.addEventListener(
+                "change",
+                async function () {
+
+                    if (!this.checked) {
+                        return;
+                    }
+
+                    updatePaymentDisplay();
+
+                    await savePaymentMode(
+                        true
+                    );
+
+                }
+            );
+
+        }
+
+
+        if (deliveryRadio) {
+
+            deliveryRadio.addEventListener(
+                "change",
+                async function () {
+
+                    if (!this.checked) {
+                        return;
+                    }
+
+                    updatePaymentDisplay();
+
+                    await savePaymentMode(
+                        false
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =====================================================
+           OPEN
         ====================================================== */
 
         openButton.addEventListener(
@@ -702,7 +1060,7 @@ document.addEventListener(
 
 
         /* =====================================================
-           CLOSE BUTTON
+           CLOSE
         ====================================================== */
 
         if (closeButton) {
@@ -714,10 +1072,6 @@ document.addEventListener(
 
         }
 
-
-        /* =====================================================
-           OVERLAY
-        ====================================================== */
 
         if (overlay) {
 
@@ -753,24 +1107,29 @@ document.addEventListener(
 
 
         /* =====================================================
-           SALES NAME VALIDATION
+           SUBMIT
         ====================================================== */
 
         if (form) {
 
             form.addEventListener(
                 "submit",
-                function (event) {
+                async function (event) {
 
-                    const value =
+                    event.preventDefault();
+
+
+                    const name =
                         salesName
                             ? salesName.value.trim()
                             : "";
 
 
-                    if (!value) {
+                    /* =========================================
+                       SALES NAME REQUIRED
+                    ========================================== */
 
-                        event.preventDefault();
+                    if (!name) {
 
                         if (salesName) {
                             salesName.focus();
@@ -780,10 +1139,145 @@ document.addEventListener(
 
                     }
 
+
+                    /* =========================================
+                       PAYMENT REQUIRED
+                    ========================================== */
+
+                    const paymentMethod =
+                        mpesaRadio &&
+                        mpesaRadio.checked
+                            ? "mpesa"
+                            : (
+                                deliveryRadio &&
+                                deliveryRadio.checked
+                                    ? "pay_on_delivery"
+                                    : null
+                            );
+
+
+                    if (!paymentMethod) {
+                        return;
+                    }
+
+
+                    /* =========================================
+                       M-PESA PHONE REQUIRED
+                    ========================================== */
+
+                    if (
+                        paymentMethod === "mpesa" &&
+                        (
+                            !phoneNumber ||
+                            !phoneNumber.value.trim()
+                        )
+                    ) {
+
+                        if (phoneNumber) {
+                            phoneNumber.focus();
+                        }
+
+                        return;
+
+                    }
+
+
+                    /* =========================================
+                       CASH
+                       
+                       KEEP EXISTING STAFF CASH FLOW.
+                    ========================================== */
+
+                    if (
+                        paymentMethod ===
+                        "pay_on_delivery"
+                    ) {
+
+                        const formData =
+                            new FormData();
+
+                        formData.append(
+                            "salesName",
+                            name
+                        );
+
+
+                        window.location.href =
+                            staffSaleUrl +
+                            "?" +
+                            new URLSearchParams(
+                                {
+                                    salesName:
+                                        name
+                                }
+                            ).toString();
+
+                        return;
+
+                    }
+
+
+                    /* =========================================
+                       M-PESA
+                       
+                       Staff enters ONLY salesName here.
+                       
+                       Payment mode has already been set to
+                       isMobile = true.
+
+                       Continue through the normal checkout
+                       route rather than staff-sale.
+                    ========================================== */
+
+                    if (
+                        paymentMethod ===
+                        "mpesa"
+                    ) {
+
+                        const saved =
+                            await savePaymentMode(
+                                true
+                            );
+
+
+                        if (!saved) {
+                            return;
+                        }
+
+
+                        const params =
+                            new URLSearchParams();
+
+                        params.set(
+                            "salesName",
+                            name
+                        );
+
+
+                        params.set(
+                            "phoneNumber",
+                            phoneNumber.value.trim()
+                        );
+
+
+                        window.location.href =
+                            checkoutUrl +
+                            "?" +
+                            params.toString();
+
+                    }
+
                 }
             );
 
         }
+
+
+        /* =====================================================
+           INITIAL DISPLAY
+        ====================================================== */
+
+        updatePaymentDisplay();
 
     }
 );
