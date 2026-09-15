@@ -1,4 +1,68 @@
-<!-- =======================================================
+<div class="cart-checkout-card">
+
+  <!-- =========================================================
+       CHECKOUT HEADER
+  ========================================================== -->
+
+  <div class="cart-checkout-heading">
+
+    <div>
+
+      <span class="cart-section-kicker">
+        CHECKOUT
+      </span>
+
+      <h2>
+        Complete your order
+      </h2>
+
+    </div>
+
+    <i class="fas fa-bag-shopping"></i>
+
+  </div>
+
+
+  <!-- =========================================================
+       CART TOTAL
+  ========================================================== -->
+
+  <div class="cart-total-line">
+
+    <span>
+      Cart total
+    </span>
+
+    <strong>
+      KSh <%= Number(total || 0).toLocaleString() %>
+    </strong>
+
+  </div>
+
+
+  <!-- =========================================================
+       CHECKOUT FORM
+  ========================================================== -->
+
+  <form
+    action="/carts/checkout"
+    method="POST"
+    class="checkout-form"
+    id="checkoutForm"
+  >
+
+    <!-- =======================================================
+         PRODUCT ID
+    ======================================================== -->
+
+    <input
+      type="hidden"
+      name="productId"
+      value="<%= item.productId || item.product?._id || item.product || '' %>"
+    >
+
+
+    <!-- =======================================================
          PICKUP SUBSTATION
     ======================================================== -->
 
@@ -117,6 +181,11 @@
 
           <% if (assignedSubstationId) { %>
 
+            <!--
+              Hidden input submits the assigned substation.
+              The visible select is disabled/read-only.
+            -->
+
             <input
               type="hidden"
               name="packageSubstation"
@@ -169,7 +238,7 @@
 
 
           <!-- ===================================================
-               STAFF CUSTOMER NAME
+               CUSTOMER NAME / SALES NAME
           ==================================================== -->
 
           <div class="checkout-substation-wrap">
@@ -279,3 +348,728 @@
       </div>
 
     </fieldset>
+
+
+    <!-- =======================================================
+         PAYMENT METHOD
+    ======================================================== -->
+
+    <fieldset class="payment-methods">
+
+      <legend>
+        Payment method
+      </legend>
+
+
+      <!-- =====================================================
+           M-PESA
+      ====================================================== -->
+
+      <label
+        class="payment-choice"
+        for="paymentMpesa"
+      >
+
+        <input
+          type="radio"
+          name="paymentMethod"
+          id="paymentMpesa"
+          value="mpesa"
+          required
+        >
+
+
+        <span class="payment-choice-icon">
+
+          <i class="fas fa-mobile-screen-button"></i>
+
+        </span>
+
+
+        <span class="payment-choice-copy">
+
+          <strong>
+            Pay now with M-Pesa
+          </strong>
+
+          <small>
+            An STK Push will be sent to your phone.
+          </small>
+
+        </span>
+
+      </label>
+
+
+      <!-- =====================================================
+           M-PESA PHONE NUMBER
+      ====================================================== -->
+
+      <div
+        id="phoneField"
+        class="phone-field"
+      >
+
+        <label for="phoneNumber">
+          M-Pesa phone number
+        </label>
+
+
+        <input
+          type="tel"
+          name="phoneNumber"
+          id="phoneNumber"
+          placeholder="0712345678"
+          inputmode="numeric"
+          autocomplete="tel"
+        >
+
+      </div>
+
+
+      <!-- =====================================================
+           PAY ON DELIVERY
+      ====================================================== -->
+
+      <label
+        class="payment-choice"
+        for="paymentDelivery"
+      >
+
+        <input
+          type="radio"
+          name="paymentMethod"
+          id="paymentDelivery"
+          value="pay_on_delivery"
+        >
+
+
+        <span class="payment-choice-icon">
+
+          <i class="fas fa-truck"></i>
+
+        </span>
+
+
+        <span class="payment-choice-copy">
+
+          <strong>
+            Pay upon delivery
+          </strong>
+
+          <small>
+            Your package will be created immediately.
+          </small>
+
+        </span>
+
+      </label>
+
+    </fieldset>
+
+
+    <!-- =======================================================
+         CONTINUE CHECKOUT
+    ======================================================== -->
+
+    <button
+      class="primary-btn cart-continue-btn"
+      type="submit"
+    >
+
+      <i class="fas fa-check-circle"></i>
+
+      Continue Checkout
+
+    </button>
+
+  </form>
+
+</div>
+
+
+<!-- ===========================================================
+     CHECKOUT MESSAGE POPUP MODAL
+============================================================ -->
+
+<div
+  id="checkoutMessageModal"
+  class="checkout-message-modal"
+  aria-hidden="true"
+>
+
+  <div
+    class="checkout-message-overlay"
+    id="checkoutMessageOverlay"
+  ></div>
+
+
+  <div
+    class="checkout-message-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="checkoutMessageTitle"
+  >
+
+    <button
+      type="button"
+      class="checkout-message-close"
+      id="checkoutMessageClose"
+      aria-label="Close"
+    >
+
+      <i class="fas fa-xmark"></i>
+
+    </button>
+
+
+    <div
+      class="checkout-message-icon"
+      id="checkoutMessageIcon"
+    >
+
+      <i class="fas fa-circle-exclamation"></i>
+
+    </div>
+
+
+    <h3 id="checkoutMessageTitle">
+      Checkout Error
+    </h3>
+
+
+    <p id="checkoutMessageText">
+      Something went wrong.
+    </p>
+
+
+    <button
+      type="button"
+      class="checkout-message-button"
+      id="checkoutMessageButton"
+    >
+
+      OK
+
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- ===========================================================
+     CHECKOUT JAVASCRIPT
+============================================================ -->
+
+<script>
+(function () {
+
+  const form =
+    document.getElementById("checkoutForm");
+
+  const phoneField =
+    document.getElementById("phoneField");
+
+  const phoneInput =
+    document.getElementById("phoneNumber");
+
+  const paymentRadios =
+    document.querySelectorAll(
+      'input[name="paymentMethod"]'
+    );
+
+
+  /* =========================================================
+     POPUP MODAL ELEMENTS
+  ========================================================== */
+
+  const modal =
+    document.getElementById(
+      "checkoutMessageModal"
+    );
+
+  const modalOverlay =
+    document.getElementById(
+      "checkoutMessageOverlay"
+    );
+
+  const modalClose =
+    document.getElementById(
+      "checkoutMessageClose"
+    );
+
+  const modalButton =
+    document.getElementById(
+      "checkoutMessageButton"
+    );
+
+  const modalTitle =
+    document.getElementById(
+      "checkoutMessageTitle"
+    );
+
+  const modalText =
+    document.getElementById(
+      "checkoutMessageText"
+    );
+
+  const modalIcon =
+    document.getElementById(
+      "checkoutMessageIcon"
+    );
+
+
+  /* =========================================================
+     SHOW POPUP
+  ========================================================== */
+
+  function showCheckoutMessage(
+    message,
+    type,
+    title
+  ) {
+
+    if (!modal) {
+      return;
+    }
+
+
+    modal.classList.remove(
+      "checkout-message-success",
+      "checkout-message-error"
+    );
+
+
+    if (type === "success") {
+
+      modal.classList.add(
+        "checkout-message-success"
+      );
+
+
+      modalTitle.textContent =
+        title || "Success";
+
+
+      modalIcon.innerHTML =
+        '<i class="fas fa-circle-check"></i>';
+
+    } else {
+
+      modal.classList.add(
+        "checkout-message-error"
+      );
+
+
+      modalTitle.textContent =
+        title || "Checkout Error";
+
+
+      modalIcon.innerHTML =
+        '<i class="fas fa-circle-exclamation"></i>';
+
+    }
+
+
+    modalText.textContent =
+      message || "Something went wrong.";
+
+
+    modal.classList.add("show");
+
+    modal.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+
+    document.body.classList.add(
+      "checkout-message-modal-open"
+    );
+
+  }
+
+
+  /* =========================================================
+     CLOSE POPUP
+  ========================================================== */
+
+  function closeCheckoutMessage() {
+
+    if (!modal) {
+      return;
+    }
+
+
+    modal.classList.remove("show");
+
+    modal.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+
+    document.body.classList.remove(
+      "checkout-message-modal-open"
+    );
+
+  }
+
+
+  /* =========================================================
+     POPUP EVENTS
+  ========================================================== */
+
+  if (modalClose) {
+
+    modalClose.addEventListener(
+      "click",
+      closeCheckoutMessage
+    );
+
+  }
+
+
+  if (modalButton) {
+
+    modalButton.addEventListener(
+      "click",
+      closeCheckoutMessage
+    );
+
+  }
+
+
+  if (modalOverlay) {
+
+    modalOverlay.addEventListener(
+      "click",
+      closeCheckoutMessage
+    );
+
+  }
+
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (
+        event.key === "Escape" &&
+        modal &&
+        modal.classList.contains("show")
+      ) {
+
+        closeCheckoutMessage();
+
+      }
+
+    }
+  );
+
+
+  /* =========================================================
+     STOP SAFELY IF CHECKOUT ELEMENTS ARE MISSING
+  ========================================================== */
+
+  if (
+    !form ||
+    !phoneField ||
+    !phoneInput ||
+    !paymentRadios.length
+  ) {
+
+    return;
+
+  }
+
+
+  /* =========================================================
+     M-PESA PHONE FIELD
+  ========================================================== */
+
+  function updatePhoneField() {
+
+    const selected =
+      document.querySelector(
+        'input[name="paymentMethod"]:checked'
+      );
+
+
+    const mpesaSelected =
+      selected &&
+      selected.value === "mpesa";
+
+
+    phoneField.classList.toggle(
+      "show",
+      Boolean(mpesaSelected)
+    );
+
+
+    phoneInput.required =
+      Boolean(mpesaSelected);
+
+
+    phoneInput.disabled =
+      !mpesaSelected;
+
+
+    if (!mpesaSelected) {
+
+      phoneInput.value = "";
+
+    }
+
+  }
+
+
+  /* =========================================================
+     PAYMENT METHOD CHANGES
+  ========================================================== */
+
+  paymentRadios.forEach(
+    function (radio) {
+
+      radio.addEventListener(
+        "change",
+        updatePhoneField
+      );
+
+    }
+  );
+
+
+  /* =========================================================
+     FORM VALIDATION
+  ========================================================== */
+
+  form.addEventListener(
+    "submit",
+    function (event) {
+
+      /* -----------------------------------------------
+         PICKUP SUBSTATION
+      ------------------------------------------------ */
+
+      const substation =
+        document.getElementById(
+          "packageSubstation"
+        );
+
+
+      if (!substation) {
+
+        event.preventDefault();
+
+
+        showCheckoutMessage(
+          "A pickup substation could not be determined.",
+          "error",
+          "Pickup Substation Required"
+        );
+
+
+        return;
+
+      }
+
+
+      const staff =
+        <%= JSON.stringify(
+          typeof user !== "undefined" &&
+          user &&
+          String(user.role || "").toLowerCase() === "staff"
+        ) %>;
+
+
+      /*
+       * For staff:
+       * The visible select is disabled, so the hidden
+       * packageSubstation input is checked instead.
+       *
+       * For non-staff:
+       * The normal select carries the substation value.
+       */
+
+      if (!staff && !substation.value) {
+
+        event.preventDefault();
+
+
+        showCheckoutMessage(
+          "Please select the substation where you want to collect your package.",
+          "error",
+          "Pickup Substation Required"
+        );
+
+
+        return;
+
+      }
+
+
+      if (
+        staff &&
+        !document.querySelector(
+          'input[name="packageSubstation"]'
+        )?.value
+      ) {
+
+        event.preventDefault();
+
+
+        showCheckoutMessage(
+          "You do not have an assigned pickup substation.",
+          "error",
+          "Pickup Substation Required"
+        );
+
+
+        return;
+
+      }
+
+
+      /* -----------------------------------------------
+         CUSTOMER NAME FOR STAFF
+      ------------------------------------------------ */
+
+      if (staff) {
+
+        const salesName =
+          document.getElementById("salesName");
+
+
+        if (
+          !salesName ||
+          !salesName.value.trim()
+        ) {
+
+          event.preventDefault();
+
+
+          showCheckoutMessage(
+            "Please enter the customer's name.",
+            "error",
+            "Customer Name Required"
+          );
+
+
+          if (salesName) {
+
+            salesName.focus();
+
+          }
+
+
+          return;
+
+        }
+
+      }
+
+
+      /* -----------------------------------------------
+         PAYMENT METHOD
+      ------------------------------------------------ */
+
+      const selected =
+        document.querySelector(
+          'input[name="paymentMethod"]:checked'
+        );
+
+
+      if (!selected) {
+
+        event.preventDefault();
+
+
+        showCheckoutMessage(
+          "Please select a payment method before continuing.",
+          "error",
+          "Payment Method Required"
+        );
+
+
+        return;
+
+      }
+
+
+      /* -----------------------------------------------
+         M-PESA PHONE
+      ------------------------------------------------ */
+
+      if (
+        selected.value === "mpesa"
+      ) {
+
+        const phone =
+          phoneInput.value.trim();
+
+
+        if (!phone) {
+
+          event.preventDefault();
+
+
+          showCheckoutMessage(
+            "Please enter the M-Pesa phone number that should receive the STK Push.",
+            "error",
+            "M-Pesa Number Required"
+          );
+
+
+          phoneInput.focus();
+
+
+          return;
+
+        }
+
+      }
+
+    }
+  );
+
+
+  /* =========================================================
+     INITIAL STATE
+  ========================================================== */
+
+  updatePhoneField();
+
+
+  /* =========================================================
+     SERVER-SIDE ERROR
+  ========================================================== */
+
+  <% if (typeof error !== "undefined" && error) { %>
+
+    showCheckoutMessage(
+      <%- JSON.stringify(error) %>,
+      "error",
+      "Checkout Error"
+    );
+
+  <% } %>
+
+
+  /* =========================================================
+     SERVER-SIDE SUCCESS
+  ========================================================== */
+
+  <% if (typeof success !== "undefined" && success) { %>
+
+    showCheckoutMessage(
+      <%- JSON.stringify(success) %>,
+      "success",
+      "Checkout Successful"
+    );
+
+  <% } %>
+
+})();
+</script>
