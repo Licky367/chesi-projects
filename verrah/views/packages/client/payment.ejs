@@ -1,0 +1,250 @@
+<!-- =========================================================
+     PACKAGE PAYMENT
+========================================================= -->
+
+
+<%
+  const paymentPackage =
+    (typeof packageDoc !== "undefined" && packageDoc)
+      ? packageDoc
+      : null;
+
+
+  const paymentTotalAmount =
+    Number(
+      paymentPackage?.totalAmount || 0
+    );
+
+
+  const paymentStatus =
+    paymentPackage?.paymentStatus || "";
+
+
+  const paymentMethod =
+    paymentPackage?.paymentMethod || "";
+
+
+  const paymentIsPaid =
+    paymentStatus === "paid" ||
+    paymentStatus === "confirmed";
+
+
+  const paymentCanUseMpesa =
+    paymentPackage &&
+    paymentPackage.status !== "delivered" &&
+    paymentMethod === "pay_on_delivery" &&
+    !paymentIsPaid;
+%>
+
+
+<% if (paymentPackage) { %>
+
+  <!-- =======================================================
+       PAYMENT INFORMATION
+  ======================================================== -->
+
+  <div class="package-payment-overview">
+
+    <div class="package-total-line">
+
+      <span>
+        Package Total
+      </span>
+
+
+      <strong>
+
+        KSh
+        <%= paymentTotalAmount.toLocaleString() %>
+
+      </strong>
+
+    </div>
+
+
+    <div class="package-payment-meta">
+
+      <span>
+
+        Payment method:
+
+        <strong>
+
+          <%= paymentMethod === "mpesa"
+            ? "M-Pesa"
+            : "Pay upon delivery"
+          %>
+
+        </strong>
+
+      </span>
+
+
+      <% if (paymentIsPaid) { %>
+
+        <span class="payment-confirmed">
+
+          <i class="fas fa-circle-check"></i>
+
+          Paid
+
+        </span>
+
+      <% } %>
+
+
+      <% if (
+        paymentPackage.mpesaReceiptNumber
+      ) { %>
+
+        <span>
+
+          Receipt:
+
+          <strong>
+            <%= paymentPackage.mpesaReceiptNumber %>
+          </strong>
+
+        </span>
+
+      <% } %>
+
+    </div>
+
+  </div>
+
+
+  <!-- =======================================================
+       M-PESA PAYMENT
+  ======================================================== -->
+
+  <% if (paymentCanUseMpesa) { %>
+
+    <div class="package-mpesa-card">
+
+      <div class="package-mpesa-icon">
+
+        <i class="fas fa-mobile-screen-button"></i>
+
+      </div>
+
+
+      <div class="package-mpesa-content">
+
+        <h3>
+          Pay this package with M-Pesa
+        </h3>
+
+
+        <p>
+          You selected pay on delivery when
+          placing this order. You can pay now
+          using M-Pesa instead.
+        </p>
+
+
+        <form
+          action="/packages/<%= paymentPackage._id %>/pay"
+          method="POST"
+          class="package-mpesa-form"
+        >
+
+          <label for="package-phone">
+
+            M-Pesa phone number
+
+          </label>
+
+
+          <input
+            id="package-phone"
+            name="phoneNumber"
+            type="tel"
+            inputmode="numeric"
+            autocomplete="tel"
+            placeholder="0712345678"
+            required
+          >
+
+
+          <button
+            type="submit"
+            class="primary-btn packages-primary-btn"
+          >
+
+            <i class="fas fa-mobile-screen-button"></i>
+
+            Pay KSh
+            <%= paymentTotalAmount.toLocaleString() %>
+            with M-Pesa
+
+          </button>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  <% } %>
+
+
+  <!-- =======================================================
+       ALREADY PAID
+  ======================================================== -->
+
+  <% if (paymentIsPaid) { %>
+
+    <div class="package-payment-confirmed">
+
+      <i class="fas fa-circle-check"></i>
+
+      <div>
+
+        <strong>
+          Payment confirmed
+        </strong>
+
+        <p>
+          This package has already been paid for.
+        </p>
+
+      </div>
+
+    </div>
+
+  <% } %>
+
+
+  <!-- =======================================================
+       DELIVERY PAYMENT
+  ======================================================== -->
+
+  <% if (
+    paymentMethod === "pay_on_delivery" &&
+    !paymentIsPaid &&
+    paymentPackage.status === "delivered"
+  ) { %>
+
+    <div class="package-payment-pending">
+
+      <i class="fas fa-clock"></i>
+
+      <div>
+
+        <strong>
+          Payment pending
+        </strong>
+
+        <p>
+          This package was delivered with
+          payment still pending.
+        </p>
+
+      </div>
+
+    </div>
+
+  <% } %>
+
+<% } %>
