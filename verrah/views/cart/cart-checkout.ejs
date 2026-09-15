@@ -84,77 +84,236 @@
 
           <i class="fas fa-location-dot"></i>
 
-          Select where you want to collect your package
+          <% if (
+            typeof user !== "undefined" &&
+            user &&
+            String(user.role || "").toLowerCase() === "staff"
+          ) { %>
+
+            Assigned pickup substation
+
+          <% } else { %>
+
+            Select where you want to collect your package
+
+          <% } %>
 
         </label>
 
 
-        <select
-          id="packageSubstation"
-          name="packageSubstation"
-          class="checkout-substation-select"
-          required
-        >
+        <!-- =====================================================
+             STAFF PICKUP SUBSTATION
+        ====================================================== -->
 
-          <option value="">
-            Select a substation
-          </option>
+        <% if (
+          typeof user !== "undefined" &&
+          user &&
+          String(user.role || "").toLowerCase() === "staff"
+        ) { %>
+
+          <%
+            const assignedSubstation =
+              user.assignedSubstation || null;
+
+            const assignedSubstationId =
+              assignedSubstation &&
+              typeof assignedSubstation === "object"
+                ? (
+                    assignedSubstation._id ||
+                    assignedSubstation.id ||
+                    ""
+                  )
+                : assignedSubstation || "";
+
+            const assignedSubstationName =
+              assignedSubstation &&
+              typeof assignedSubstation === "object"
+                ? (
+                    assignedSubstation.name ||
+                    assignedSubstation.location ||
+                    String(assignedSubstationId || "")
+                  )
+                : (
+                    substations &&
+                    Array.isArray(substations)
+                      ? (
+                          substations.find(
+                            function (substation) {
+                              return String(
+                                substation._id
+                              ) === String(
+                                assignedSubstationId
+                              );
+                            }
+                          )?.name || String(
+                            assignedSubstationId || ""
+                          )
+                        )
+                      : String(
+                          assignedSubstationId || ""
+                        )
+                  );
+
+            const assignedSubstationLocation =
+              assignedSubstation &&
+              typeof assignedSubstation === "object"
+                ? (
+                    assignedSubstation.location || ""
+                  )
+                : (
+                    substations &&
+                    Array.isArray(substations)
+                      ? (
+                          substations.find(
+                            function (substation) {
+                              return String(
+                                substation._id
+                              ) === String(
+                                assignedSubstationId
+                              );
+                            }
+                          )?.location || ""
+                        )
+                      : ""
+                  );
+          %>
 
 
-          <% if (
-            Array.isArray(substations) &&
-            substations.length > 0
-          ) { %>
+          <% if (assignedSubstationId) { %>
 
-            <% substations.forEach(function (substation) { %>
+            <!--
+              Disabled/read-only visual select.
+
+              The hidden input is what actually submits the
+              assigned substation because disabled inputs are
+              not submitted by browsers.
+            -->
+
+            <input
+              type="hidden"
+              name="packageSubstation"
+              value="<%= assignedSubstationId %>"
+            >
+
+
+            <select
+              id="packageSubstation"
+              class="checkout-substation-select"
+              disabled
+            >
 
               <option
-                value="<%= substation._id %>"
-                <%= String(pickupStation || "") === String(substation._id)
-                  ? "selected"
-                  : "" %>
+                value="<%= assignedSubstationId %>"
+                selected
               >
 
-                <%= substation.name %>
+                <%= assignedSubstationName %>
 
-                <% if (substation.location) { %>
-                  — <%= substation.location %>
+                <% if (assignedSubstationLocation) { %>
+                  — <%= assignedSubstationLocation %>
                 <% } %>
 
               </option>
 
-            <% }); %>
+            </select>
+
+
+            <small class="checkout-substation-default">
+
+              <i class="fas fa-lock"></i>
+
+              Pickup is restricted to your assigned substation.
+
+            </small>
+
+
+          <% } else { %>
+
+            <div class="checkout-substation-empty">
+
+              <i class="fas fa-circle-exclamation"></i>
+
+              You have not been assigned a pickup substation.
+
+            </div>
 
           <% } %>
 
-        </select>
+
+        <!-- =====================================================
+             NON-STAFF PICKUP SUBSTATION
+        ====================================================== -->
+
+        <% } else { %>
+
+          <select
+            id="packageSubstation"
+            name="packageSubstation"
+            class="checkout-substation-select"
+            required
+          >
+
+            <option value="">
+              Select a substation
+            </option>
 
 
-        <% if (
-          Array.isArray(substations) &&
-          substations.length === 0
-        ) { %>
+            <% if (
+              Array.isArray(substations) &&
+              substations.length > 0
+            ) { %>
 
-          <small class="checkout-substation-empty">
+              <% substations.forEach(function (substation) { %>
 
-            <i class="fas fa-circle-exclamation"></i>
+                <option
+                  value="<%= substation._id %>"
+                  <%= String(pickupStation || "") === String(substation._id)
+                    ? "selected"
+                    : "" %>
+                >
 
-            No pickup substations are currently available.
+                  <%= substation.name %>
 
-          </small>
+                  <% if (substation.location) { %>
+                    — <%= substation.location %>
+                  <% } %>
 
-        <% } %>
+                </option>
+
+              <% }); %>
+
+            <% } %>
+
+          </select>
 
 
-        <% if (pickupStation) { %>
+          <% if (
+            Array.isArray(substations) &&
+            substations.length === 0
+          ) { %>
 
-          <small class="checkout-substation-default">
+            <small class="checkout-substation-empty">
 
-            <i class="fas fa-circle-check"></i>
+              <i class="fas fa-circle-exclamation"></i>
 
-            Your previous pickup station is selected by default.
+              No pickup substations are currently available.
 
-          </small>
+            </small>
+
+          <% } %>
+
+
+          <% if (pickupStation) { %>
+
+            <small class="checkout-substation-default">
+
+              <i class="fas fa-circle-check"></i>
+
+              Your previous pickup station is selected by default.
+
+            </small>
+
+          <% } %>
 
         <% } %>
 
@@ -667,15 +826,70 @@
 
 
       if (
-        !substation ||
-        !substation.value
+        !substation
       ) {
 
         event.preventDefault();
 
 
         showCheckoutMessage(
+          "A pickup substation could not be determined.",
+          "error",
+          "Pickup Substation Required"
+        );
+
+
+        return;
+
+      }
+
+
+      /*
+       * For staff, the visible select is disabled.
+       * The hidden input named packageSubstation carries
+       * the actual assigned substation value.
+       *
+       * For non-staff, the normal select itself carries
+       * the value.
+       */
+
+      const staff =
+        <%= JSON.stringify(
+          typeof user !== "undefined" &&
+          user &&
+          String(user.role || "").toLowerCase() === "staff"
+        ) %>;
+
+
+      if (!staff && !substation.value) {
+
+        event.preventDefault();
+
+
+        showCheckoutMessage(
           "Please select the substation where you want to collect your package.",
+          "error",
+          "Pickup Substation Required"
+        );
+
+
+        return;
+
+      }
+
+
+      if (
+        staff &&
+        !document.querySelector(
+          'input[name="packageSubstation"]'
+        )?.value
+      ) {
+
+        event.preventDefault();
+
+
+        showCheckoutMessage(
+          "You do not have an assigned pickup substation.",
           "error",
           "Pickup Substation Required"
         );
