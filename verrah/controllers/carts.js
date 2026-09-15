@@ -135,7 +135,7 @@ exports.updatePaymentMode = async (
 
 
         // --------------------------------------------------
-        // Only staff can change the payment mode.
+        // Only staff can change payment mode.
         // --------------------------------------------------
 
         const role =
@@ -163,10 +163,10 @@ exports.updatePaymentMode = async (
 
 
         // --------------------------------------------------
-        // Convert the submitted value safely to boolean.
+        // Convert submitted value to boolean.
         //
-        // true  = Mpesa Payment
-        // false = Cash Payment
+        // true  = Mpesa
+        // false = Cash
         // --------------------------------------------------
 
         const submittedValue =
@@ -183,7 +183,7 @@ exports.updatePaymentMode = async (
 
 
         // --------------------------------------------------
-        // Get the logged-in user's cart.
+        // Get current user's cart.
         // --------------------------------------------------
 
         const cart =
@@ -205,9 +205,6 @@ exports.updatePaymentMode = async (
 
         // --------------------------------------------------
         // Save payment mode.
-        //
-        // Cash  -> false
-        // Mpesa -> true
         // --------------------------------------------------
 
         cart.isMobile =
@@ -216,11 +213,6 @@ exports.updatePaymentMode = async (
 
         await cart.save();
 
-
-        // --------------------------------------------------
-        // Return JSON because the carts.ejs payment-mode
-        // selector changes this value through fetch().
-        // --------------------------------------------------
 
         return res.json(
             {
@@ -255,22 +247,6 @@ exports.updatePaymentMode = async (
 // ==========================================================
 // CHECKOUT PAGE
 // GET /carts/:id
-//
-// IMPORTANT:
-//
-// This route renders:
-//
-//     cart/cart-checkout.ejs
-//
-// The checkoutSubstation middleware runs BEFORE this
-// controller and places:
-//
-//     res.locals.substations
-//     res.locals.pickupStation
-//
-// into the request.
-//
-// We explicitly pass those values to the checkout view.
 // ==========================================================
 
 exports.checkoutPage = async (req, res) => {
@@ -291,7 +267,7 @@ exports.checkoutPage = async (req, res) => {
 
 
         // --------------------------------------------------
-        // Find the cart item being checked out.
+        // Find cart item.
         // --------------------------------------------------
 
         const item =
@@ -314,12 +290,7 @@ exports.checkoutPage = async (req, res) => {
 
 
         // --------------------------------------------------
-        // IMPORTANT:
-        //
-        // checkoutSubstation.load has already loaded
-        // these values into res.locals.
-        //
-        // Do NOT load them through the details controller.
+        // Checkout substation data.
         // --------------------------------------------------
 
         const substations =
@@ -404,15 +375,6 @@ exports.checkoutPage = async (req, res) => {
 // ==========================================================
 // CART ITEM DETAILS
 // GET /carts/:id/details
-//
-// IMPORTANT:
-//
-// This route renders ONLY:
-//
-//     cart/cart-details.ejs
-//
-// It does NOT render checkout.
-// It does NOT own the checkout substation data.
 // ==========================================================
 
 exports.details = async (req, res) => {
@@ -456,10 +418,6 @@ exports.details = async (req, res) => {
                 cart
             );
 
-
-        // --------------------------------------------------
-        // DETAILS VIEW ONLY
-        // --------------------------------------------------
 
         return res.render(
             "cart/cart-details",
@@ -552,11 +510,18 @@ exports.remove = async (req, res) => {
 // checkoutSubstation.saveSelection runs BEFORE this
 // controller.
 //
-// Therefore, by the time this function runs:
+// PAYMENT / SALES LOGIC:
 //
-//     req.user.pickupStation
+//     Staff + isMobile=false
+//         -> Cash
+//         -> handled through /carts/staff-sale
+//         -> StaffSale.salesName
 //
-// has already been updated.
+//     Staff + isMobile=true
+//         -> Mpesa / normal checkout
+//         -> Package.salesName
+//
+// Normal clients continue using the existing package flow.
 // ==========================================================
 
 exports.checkout = async (req, res) => {
@@ -578,6 +543,90 @@ exports.checkout = async (req, res) => {
     try {
 
         // --------------------------------------------------
+        // GET CURRENT CART
+        //
+        // We need the cart here specifically so we can
+        // determine whether this isMobile payment mode.
+        // --------------------------------------------------
+
+        const cart =
+            await cartService.getCart(req);
+
+
+        // --------------------------------------------------
+        // DETERMINE ROLE
+        // --------------------------------------------------
+
+        const role =
+            String(
+                req.user?.role ||
+                ""
+            )
+                .trim()
+                .toLowerCase();
+
+
+        const isStaff =
+            role === "staff";
+
+
+        // --------------------------------------------------
+        // STAFF MOBILE PAYMENT MODE
+        //
+        // true = Mpesa
+        // false = Cash
+        //
+        // Default to false if no cart exists so that we do
+        // not accidentally treat a missing cart as Mpesa.
+        // --------------------------------------------------
+
+        const isMobile =
+            isStaff &&
+            cart &&
+            cart.isMobile === true;
+
+
+        // --------------------------------------------------
+        // SALES NAME
+        //
+        // For STAFF + M-PESA:
+        //
+        //     salesName belongs to the Package.
+        //
+        // For STAFF + CASH:
+        //
+        //     salesName belongs to StaffSale and is handled
+        //     separately by staffSale().
+        // --------------------------------------------------
+
+        let salesName = "";
+
+
+        if (
+            isStaff &&
+            isMobile
+        ) {
+
+            salesName =
+                String(
+                    req.body.salesName ||
+                    ""
+                ).trim();
+
+
+            if (
+                salesName.length >
+                150
+            ) {
+
+                throw new Error(
+                    "Sales name cannot exceed 150 characters."
+                );
+            }
+        }
+
+
+        // --------------------------------------------------
         // PAY UPON DELIVERY
         // --------------------------------------------------
 
@@ -586,21 +635,41 @@ exports.checkout = async (req, res) => {
             "pay_on_delivery"
         ) {
 
+            const packageOptions = {
+
+                paymentMethod:
+                    "pay_on_delivery",
+
+                paymentStatus:
+                    "unpaid",
+
+                paidAmount:
+                    0,
+
+                phoneNumber:
+                    ""
+            };
+
+
+            // ------------------------------------------------
+            // STAFF + isMobile=true
+            //
+            // Save salesName on the Package.
+            // ------------------------------------------------
+
+            if (
+                isStaff &&
+                isMobile
+            ) {
+
+                packageOptions.salesName =
+                    salesName;
+            }
+
+
             await packageService.createPackageFromCart(
                 req,
-                {
-                    paymentMethod:
-                        "pay_on_delivery",
-
-                    paymentStatus:
-                        "unpaid",
-
-                    paidAmount:
-                        0,
-
-                    phoneNumber:
-                        ""
-                }
+                packageOptions
             );
 
 
@@ -683,6 +752,14 @@ exports.checkout = async (req, res) => {
 // ==========================================================
 // STAFF SALE
 // POST /carts/staff-sale
+//
+// CASH PAYMENT ONLY
+//
+// salesName is saved in:
+//
+//     StaffSale.salesName
+//
+// This is completely separate from Package.salesName.
 // ==========================================================
 
 exports.staffSale = async (req, res) => {
@@ -739,7 +816,8 @@ exports.staffSale = async (req, res) => {
 
 
         if (
-            salesName.length > 150
+            salesName.length >
+            150
         ) {
             return res.status(400).send(
                 "Sales name is too long."
@@ -882,7 +960,7 @@ exports.paymentStatus = async (req, res) => {
 
         console.error(
             "Payment status error:",
-        err
+            err
         );
 
         return res.status(500).json(
