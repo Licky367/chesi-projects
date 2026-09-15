@@ -1,0 +1,497 @@
+<!-- =========================================================
+     VERRAH COSMETICS
+     PACKAGE DETAILS TABS
+========================================================= -->
+
+<section class="shop-page packages-page package-details-page">
+
+  <% if (packageDoc) { %>
+
+    <div class="package-summary-card">
+
+      <!-- =====================================================
+           TABS
+      ====================================================== -->
+
+      <div
+        class="verrah-tabs-container"
+      >
+
+        <div
+          class="verrah-tabs"
+          role="tablist"
+          aria-label="Package information"
+        >
+
+          <!-- DETAILS -->
+          <button
+            type="button"
+            class="verrah-tab active"
+            role="tab"
+            aria-selected="true"
+            aria-controls="details"
+            data-tab="details"
+          >
+            Details
+          </button>
+
+
+          <!-- PAYMENT -->
+          <button
+            type="button"
+            class="verrah-tab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="payment"
+            data-tab="payment"
+          >
+            Payment
+          </button>
+
+        </div>
+
+
+        <!-- ===================================================
+             TAB CONTENT
+        ==================================================== -->
+
+        <div class="verrah-tab-content">
+
+          <!-- DETAILS -->
+          <div
+            class="verrah-tab-panel active"
+            id="details"
+            role="tabpanel"
+            aria-labelledby="details-tab"
+          >
+
+            <%- include("details") %>
+
+          </div>
+
+
+          <!-- PAYMENT -->
+          <div
+            class="verrah-tab-panel"
+            id="payment"
+            role="tabpanel"
+            aria-labelledby="payment-tab"
+            hidden
+          >
+
+            <%- include("payment") %>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  <% end %>
+
+</section>
+
+
+<!-- ===========================================================
+     PACKAGE MESSAGE POPUP MODAL
+============================================================ -->
+
+<div
+  id="checkoutMessageModal"
+  class="checkout-message-modal"
+  aria-hidden="true"
+>
+
+  <div
+    class="checkout-message-overlay"
+    id="checkoutMessageOverlay"
+  ></div>
+
+
+  <div
+    class="checkout-message-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="checkoutMessageTitle"
+  >
+
+    <button
+      type="button"
+      class="checkout-message-close"
+      id="checkoutMessageClose"
+      aria-label="Close"
+    >
+
+      <i class="fas fa-xmark"></i>
+
+    </button>
+
+
+    <div
+      class="checkout-message-icon"
+      id="checkoutMessageIcon"
+    >
+
+      <i class="fas fa-circle-exclamation"></i>
+
+    </div>
+
+
+    <h3 id="checkoutMessageTitle">
+      Package Error
+    </h3>
+
+
+    <p id="checkoutMessageText">
+      Something went wrong.
+    </p>
+
+
+    <button
+      type="button"
+      class="checkout-message-button"
+      id="checkoutMessageButton"
+    >
+      OK
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- ===========================================================
+     PACKAGE MESSAGE + TABS JAVASCRIPT
+============================================================ -->
+
+<script>
+(function () {
+
+  /* =========================================================
+     TABS
+  ========================================================== */
+
+  const tabs =
+    document.querySelectorAll(
+      ".verrah-tab"
+    );
+
+  const panels =
+    document.querySelectorAll(
+      ".verrah-tab-panel"
+    );
+
+
+  tabs.forEach(function (tab) {
+
+    tab.addEventListener(
+      "click",
+      function () {
+
+        const target =
+          this.dataset.tab;
+
+
+        tabs.forEach(function (item) {
+
+          const active =
+            item === tab;
+
+          item.classList.toggle(
+            "active",
+            active
+          );
+
+          item.setAttribute(
+            "aria-selected",
+            active
+              ? "true"
+              : "false"
+          );
+
+        });
+
+
+        panels.forEach(function (panel) {
+
+          const active =
+            panel.id === target;
+
+          panel.classList.toggle(
+            "active",
+            active
+          );
+
+          panel.hidden =
+            !active;
+
+        });
+
+
+        tab.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center"
+        });
+
+      }
+    );
+
+  });
+
+
+  /* =========================================================
+     MESSAGE MODAL
+  ========================================================== */
+
+  const modal =
+    document.getElementById(
+      "checkoutMessageModal"
+    );
+
+  const modalOverlay =
+    document.getElementById(
+      "checkoutMessageOverlay"
+    );
+
+  const modalClose =
+    document.getElementById(
+      "checkoutMessageClose"
+    );
+
+  const modalButton =
+    document.getElementById(
+      "checkoutMessageButton"
+    );
+
+  const modalTitle =
+    document.getElementById(
+      "checkoutMessageTitle"
+    );
+
+  const modalText =
+    document.getElementById(
+      "checkoutMessageText"
+    );
+
+  const modalIcon =
+    document.getElementById(
+      "checkoutMessageIcon"
+    );
+
+
+  /* =========================================================
+     SHOW MESSAGE
+  ========================================================== */
+
+  function showPackageMessage(
+    message,
+    type,
+    title
+  ) {
+
+    if (!modal) {
+      return;
+    }
+
+
+    modal.classList.remove(
+      "checkout-message-success",
+      "checkout-message-error"
+    );
+
+
+    if (type === "success") {
+
+      modal.classList.add(
+        "checkout-message-success"
+      );
+
+
+      modalTitle.textContent =
+        title || "Success";
+
+
+      modalIcon.innerHTML =
+        '<i class="fas fa-circle-check"></i>';
+
+    } else {
+
+      modal.classList.add(
+        "checkout-message-error"
+      );
+
+
+      modalTitle.textContent =
+        title || "Package Error";
+
+
+      modalIcon.innerHTML =
+        '<i class="fas fa-circle-exclamation"></i>';
+
+    }
+
+
+    modalText.textContent =
+      message ||
+      "Something went wrong.";
+
+
+    modal.classList.add(
+      "show"
+    );
+
+
+    modal.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+
+    document.body.classList.add(
+      "checkout-message-modal-open"
+    );
+
+  }
+
+
+  /* =========================================================
+     CLOSE MESSAGE
+  ========================================================== */
+
+  function closePackageMessage() {
+
+    if (!modal) {
+      return;
+    }
+
+
+    modal.classList.remove(
+      "show"
+    );
+
+
+    modal.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+
+    document.body.classList.remove(
+      "checkout-message-modal-open"
+    );
+
+  }
+
+
+  /* =========================================================
+     CLOSE BUTTON
+  ========================================================== */
+
+  if (modalClose) {
+
+    modalClose.addEventListener(
+      "click",
+      closePackageMessage
+    );
+
+  }
+
+
+  /* =========================================================
+     OK BUTTON
+  ========================================================== */
+
+  if (modalButton) {
+
+    modalButton.addEventListener(
+      "click",
+      closePackageMessage
+    );
+
+  }
+
+
+  /* =========================================================
+     OVERLAY
+  ========================================================== */
+
+  if (modalOverlay) {
+
+    modalOverlay.addEventListener(
+      "click",
+      closePackageMessage
+    );
+
+  }
+
+
+  /* =========================================================
+     ESC KEY
+  ========================================================== */
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (
+        event.key === "Escape" &&
+        modal &&
+        modal.classList.contains("show")
+      ) {
+
+        closePackageMessage();
+
+      }
+
+    }
+  );
+
+
+  /* =========================================================
+     SERVER-SIDE ERROR
+  ========================================================== */
+
+  <% if (
+    typeof error !== "undefined" &&
+    error
+  ) { %>
+
+    showPackageMessage(
+      <%- JSON.stringify(error) %>,
+      "error",
+      "Package Error"
+    );
+
+  <% } else if (!packageDoc) { %>
+
+    showPackageMessage(
+      "Package not found.",
+      "error",
+      "Package Not Found"
+    );
+
+  <% } %>
+
+
+  /* =========================================================
+     SERVER-SIDE SUCCESS
+  ========================================================== */
+
+  <% if (
+    typeof success !== "undefined" &&
+    success
+  ) { %>
+
+    showPackageMessage(
+      <%- JSON.stringify(success) %>,
+      "success",
+      "Success"
+    );
+
+  <% } %>
+
+})();
+</script>
