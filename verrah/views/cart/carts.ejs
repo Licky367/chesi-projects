@@ -1,25 +1,34 @@
 <%
 /* =========================================================
    VERRAH COSMETICS
-   CART PAGE
+   CARTS PAGE
 ========================================================= */
 
-const currentUser =
+/* =========================================================
+   USER
+========================================================= */
+
+const pageUser =
     typeof user !== "undefined"
         ? user
         : (
-            typeof currentUser !== "undefined"
-                ? currentUser
-                : (
-                    typeof req !== "undefined"
-                        ? req.user
-                        : null
-                )
+            typeof req !== "undefined"
+                ? req.user
+                : null
         );
 
+const userRole =
+    String(pageUser?.role || "")
+        .trim()
+        .toLowerCase();
+
 const isStaff =
-    currentUser &&
-    String(currentUser.role || "").toLowerCase() === "staff";
+    userRole === "staff";
+
+
+/* =========================================================
+   CART DATA
+========================================================= */
 
 const cartItems =
     Array.isArray(cart?.items)
@@ -30,43 +39,42 @@ const hasItems =
     cartItems.length > 0;
 
 const cartTotal =
-    Number(
-        cart?.total ||
-        cart?.cartTotal ||
-        0
-    );
+    Number(cart?.total || 0);
 
 const isMobile =
     cart?.isMobile !== false;
 
 
 /* =========================================================
-   FIRST PRODUCT ID
-   Used by /cash/:id for M-PESA
+   PRODUCT ID
+   Used for:
+   /carts/:id
 ========================================================= */
 
-const checkoutProductId =
-    cartItems.length > 0
-        ? (
-            cartItems[0]?.product?._id ||
-            cartItems[0]?.product?.id ||
-            cartItems[0]?.product ||
-            ""
-        )
-        : "";
+let checkoutProductId = null;
 
+if (cartItems.length > 0) {
 
-/* =========================================================
-   STAFF ASSIGNED SUBSTATION
-========================================================= */
+    const firstItem =
+        cartItems[0];
 
-const assignedSubstation =
-    currentUser?.assignedSubstation || null;
+    if (firstItem?.product?._id) {
 
-const staffBranchUrl =
-    assignedSubstation
-        ? `/substations/${assignedSubstation}`
-        : "/substations";
+        checkoutProductId =
+            firstItem.product._id;
+
+    } else if (firstItem?.product) {
+
+        checkoutProductId =
+            firstItem.product;
+
+    } else if (firstItem?.productId) {
+
+        checkoutProductId =
+            firstItem.productId;
+
+    }
+}
 %>
 
 
@@ -77,16 +85,16 @@ const staffBranchUrl =
          PAGE HEADER
     ====================================================== -->
 
-    <div class="cart-page-head">
+    <header class="cart-page-head">
 
         <div>
 
             <span class="cart-kicker">
-                SHOPPING CART
+                YOUR CART
             </span>
 
             <h1 class="page-title">
-                Your Cart
+                Shopping Cart
             </h1>
 
             <p class="page-subtitle">
@@ -95,480 +103,350 @@ const staffBranchUrl =
 
         </div>
 
-
-        <% if (isStaff) { %>
-
-            <a
-                href="<%= staffBranchUrl %>"
-                class="secondary-btn"
-            >
-                <i class="fas fa-store"></i>
-                My Substation
-            </a>
-
-        <% } %>
-
-    </div>
-
+    </header>
 
 
     <!-- =====================================================
-         ERROR
+         ALERTS
     ====================================================== -->
 
-    <% if (typeof error !== "undefined" && error) { %>
+    <% if (
+        typeof error !== "undefined" &&
+        error
+    ) { %>
 
         <div class="cart-alert cart-alert-error">
-
-            <i class="fas fa-exclamation-circle"></i>
-
-            <span>
-                <%= error %>
-            </span>
-
+            <%= error %>
         </div>
 
     <% } %>
 
 
-
-    <!-- =====================================================
-         SUCCESS
-    ====================================================== -->
-
-    <% if (typeof success !== "undefined" && success) { %>
+    <% if (
+        typeof success !== "undefined" &&
+        success
+    ) { %>
 
         <div class="cart-alert cart-alert-success">
-
-            <i class="fas fa-check-circle"></i>
-
-            <span>
-                <%= success %>
-            </span>
-
+            <%= success %>
         </div>
 
     <% } %>
-
 
 
     <% if (hasItems) { %>
 
 
         <!-- =================================================
-             CART LAYOUT
+             CART ITEMS
         ================================================== -->
 
-        <div class="cart-layout">
+        <div class="cart-list">
+
+            <% cartItems.forEach((item) => {
+
+                const product =
+                    item.product || {};
+
+                const productId =
+                    product._id ||
+                    item.productId ||
+                    "";
+
+                const productName =
+                    product.name ||
+                    "Product";
+
+                const productImage =
+                    product.image ||
+                    product.images?.[0] ||
+                    "/images/default-product.png";
+
+                const quantity =
+                    Number(item.quantity || 1);
+
+                const itemPrice =
+                    Number(
+                        item.price ||
+                        product.price ||
+                        0
+                    );
+
+                const itemTotal =
+                    Number(
+                        item.total ||
+                        itemPrice * quantity
+                    );
+
+            %>
 
 
-            <!-- =============================================
-                 CART ITEMS
-            ============================================== -->
-
-            <section class="cart-items-section">
+                <div class="cart-item-card">
 
 
-                <div class="cart-section-heading">
+                    <!-- =====================================
+                         PRODUCT
+                    ====================================== -->
 
-                    <div>
+                    <a
+                        href="/products/<%= productId %>"
+                        class="cart-item-link"
+                    >
 
-                        <span class="cart-section-kicker">
-                            CART ITEMS
-                        </span>
+                        <div class="cart-item-image">
 
-                        <h2>
-                            Your Products
-                        </h2>
-
-                    </div>
-
-
-                    <span class="cart-item-count">
-
-                        <%= cartItems.length %>
-
-                        <%= cartItems.length === 1
-                            ? "item"
-                            : "items"
-                        %>
-
-                    </span>
-
-                </div>
-
-
-
-                <div class="cart-list">
-
-
-                    <% cartItems.forEach((item) => { %>
-
-                        <%
-                        const product =
-                            item.product || {};
-
-                        const productId =
-                            product._id ||
-                            product.id ||
-                            item.product ||
-                            "";
-
-                        const productName =
-                            product.name ||
-                            item.name ||
-                            "Product";
-
-                        const quantity =
-                            Number(
-                                item.quantity || 1
-                            );
-
-                        const price =
-                            Number(
-                                item.price ||
-                                product.price ||
-                                0
-                            );
-
-                        const subtotal =
-                            quantity * price;
-
-                        const image =
-                            product.image ||
-                            item.image ||
-                            "";
-                        %>
-
-
-                        <article class="cart-item-card">
-
-
-                            <!-- =================================
-                                 PRODUCT
-                            ================================== -->
-
-                            <a
-                                href="/carts/<%= productId %>"
-                                class="cart-item-link"
+                            <img
+                                src="<%= productImage %>"
+                                alt="<%= productName %>"
                             >
-
-
-                                <div class="cart-item-image">
-
-                                    <% if (image) { %>
-
-                                        <img
-                                            src="<%= image %>"
-                                            alt="<%= productName %>"
-                                        >
-
-                                    <% } else { %>
-
-                                        <i
-                                            class="fas fa-box-open cart-item-placeholder"
-                                        ></i>
-
-                                    <% } %>
-
-                                </div>
-
-
-
-                                <div class="cart-item-main">
-
-
-                                    <div class="cart-item-topline">
-
-                                        <span class="cart-item-label">
-                                            PRODUCT
-                                        </span>
-
-                                        <i
-                                            class="fas fa-chevron-right cart-item-arrow"
-                                        ></i>
-
-                                    </div>
-
-
-                                    <h3>
-                                        <%= productName %>
-                                    </h3>
-
-
-                                    <div class="cart-item-meta">
-
-                                        <span>
-
-                                            <i class="fas fa-tag"></i>
-
-                                            Price:
-
-                                            <strong>
-                                                KSh
-                                                <%= price.toLocaleString() %>
-                                            </strong>
-
-                                        </span>
-
-
-                                        <span>
-
-                                            <i class="fas fa-layer-group"></i>
-
-                                            Quantity:
-
-                                            <strong>
-                                                <%= quantity %>
-                                            </strong>
-
-                                        </span>
-
-                                    </div>
-
-
-                                    <div class="cart-item-total">
-
-                                        KSh
-                                        <%= subtotal.toLocaleString() %>
-
-                                    </div>
-
-                                </div>
-
-
-                            </a>
-
-
-
-                            <!-- =================================
-                                 REMOVE
-                            ================================== -->
-
-                            <% if (!isStaff) { %>
-
-                                <form
-                                    action="/carts/<%= productId %>/remove"
-                                    method="POST"
-                                    class="cart-remove-form"
-                                >
-
-                                    <button
-                                        type="submit"
-                                        class="cart-remove-btn"
-                                        title="Remove item"
-                                    >
-
-                                        <i class="fas fa-trash"></i>
-
-                                    </button>
-
-                                </form>
-
-                            <% } %>
-
-
-                        </article>
-
-
-                    <% }) %>
-
-
-                </div>
-
-
-            </section>
-
-
-
-            <!-- =================================================
-                 CHECKOUT SUMMARY
-            ================================================== -->
-
-            <aside class="cart-summary-card">
-
-
-                <div class="cart-summary-head">
-
-                    <div>
-
-                        <span class="cart-section-kicker">
-                            CHECKOUT
-                        </span>
-
-                        <h2>
-                            Order Summary
-                        </h2>
-
-                    </div>
-
-
-                    <i class="fas fa-shopping-bag"></i>
-
-                </div>
-
-
-
-                <!-- =============================================
-                     TOTAL
-                ============================================== -->
-
-                <div class="cart-summary-row">
-
-                    <span>
-                        Items
-                    </span>
-
-                    <strong>
-                        <%= cartItems.length %>
-                    </strong>
-
-                </div>
-
-
-                <div class="cart-summary-row cart-summary-total">
-
-                    <span>
-                        Total
-                    </span>
-
-                    <strong>
-                        KSh
-                        <%= cartTotal.toLocaleString() %>
-                    </strong>
-
-                </div>
-
-
-                <p class="cart-summary-note">
-                    Review your order carefully before completing
-                    checkout.
-                </p>
-
-
-
-                <% if (isStaff) { %>
-
-
-                    <!-- =========================================
-                         STAFF PAYMENT MODE
-                    ========================================== -->
-
-                    <div class="staff-sale-field">
-
-                        <label for="staffPaymentMode">
-                            Payment Method
-                        </label>
-
-
-                        <div class="staff-sale-input-wrap">
-
-                            <i
-                                id="staffPaymentModeIcon"
-                                class="<%= isMobile
-                                    ? 'fas fa-mobile-alt'
-                                    : 'fas fa-money-bill-wave'
-                                %>"
-                            ></i>
-
-
-                            <select
-                                id="staffPaymentMode"
-                                class="checkout-substation-select"
-                            >
-
-                                <option
-                                    value="cash"
-                                    <%= !isMobile
-                                        ? "selected"
-                                        : "" %>
-                                >
-                                    Cash Payment
-                                </option>
-
-
-                                <option
-                                    value="mpesa"
-                                    <%= isMobile
-                                        ? "selected"
-                                        : "" %>
-                                >
-                                    M-PESA
-                                </option>
-
-                            </select>
 
                         </div>
 
-                    </div>
+
+                        <div class="cart-item-main">
+
+                            <div class="cart-item-topline">
+
+                                <span class="cart-item-label">
+                                    PRODUCT
+                                </span>
+
+                                <span class="cart-item-arrow">
+                                    <i class="fas fa-chevron-right"></i>
+                                </span>
+
+                            </div>
 
 
+                            <h3>
+                                <%= productName %>
+                            </h3>
 
-                    <!-- =========================================
-                         STAFF SALE TRIGGER
 
-                         IMPORTANT:
-                         Same popup opens for BOTH payment modes.
-                    ========================================== -->
+                            <div class="cart-item-meta">
 
-                    <button
-                        type="button"
-                        id="openStaffSaleModal"
-                        class="staff-sale-trigger primary-btn"
+                                <span>
+                                    Quantity:
+                                    <strong>
+                                        <%= quantity %>
+                                    </strong>
+                                </span>
+
+                            </div>
+
+
+                            <div class="cart-item-total">
+
+                                KSh
+                                <%= itemTotal.toLocaleString() %>
+
+                            </div>
+
+                        </div>
+
+                    </a>
+
+
+                    <!-- =====================================
+                         REMOVE
+                    ====================================== -->
+
+                    <form
+                        action="/carts/remove/<%= productId %>"
+                        method="POST"
+                        class="cart-remove-form"
                     >
 
-                        <i
-                            id="staffSaleTriggerIcon"
-                            class="<%= isMobile
-                                ? 'fas fa-mobile-alt'
-                                : 'fas fa-cash-register'
-                            %>"
-                        ></i>
+                        <button
+                            type="submit"
+                            class="cart-remove-btn"
+                            aria-label="Remove product"
+                        >
+
+                            <i class="fas fa-trash"></i>
+
+                        </button>
+
+                    </form>
+
+                </div>
 
 
-                        <span id="staffSaleTriggerText">
+            <% }); %>
 
-                            <%= isMobile
-                                ? "Continue with M-PESA"
-                                : "Complete Cash Sale"
-                            %>
+        </div>
 
-                        </span>
 
-                    </button>
+        <!-- =================================================
+             CART SUMMARY
+        ================================================== -->
 
+        <aside class="cart-summary-card">
+
+            <div class="cart-summary-head">
+
+                <span class="cart-kicker">
+                    SUMMARY
+                </span>
+
+                <h2>
+                    Order Summary
+                </h2>
+
+            </div>
+
+
+            <div class="cart-summary-row">
+
+                <span>
+                    Items
+                </span>
+
+                <strong>
+                    <%= cartItems.length %>
+                </strong>
+
+            </div>
+
+
+            <div class="cart-summary-row">
+
+                <span>
+                    Payment
+                </span>
+
+                <strong id="cart-payment-mode-label">
+                    <%= isMobile ? "M-PESA" : "Cash" %>
+                </strong>
+
+            </div>
+
+
+            <div class="cart-summary-row cart-summary-total">
+
+                <span>
+                    Total
+                </span>
+
+                <strong>
+                    KSh
+                    <%= cartTotal.toLocaleString() %>
+                </strong>
+
+            </div>
+
+
+            <p class="cart-summary-note">
+
+                <% if (isStaff) { %>
+
+                    Select your payment method,
+                    then continue with the appropriate
+                    staff checkout.
 
                 <% } else { %>
 
+                    Continue to checkout to complete
+                    your order.
 
-                    <!-- =========================================
-                         NORMAL CUSTOMER CHECKOUT
-                    ========================================== -->
+                <% } %>
+
+            </p>
+
+
+            <!-- =================================================
+                 STAFF CHECKOUT
+            ================================================== -->
+
+            <% if (isStaff) { %>
+
+
+                <div class="staff-sale-form-group">
+
+                    <label for="staff-payment-mode">
+                        Payment Method
+                    </label>
+
+
+                    <div class="staff-sale-input-wrap">
+
+                        <i class="fas fa-wallet"></i>
+
+                        <select
+                            id="staff-payment-mode"
+                            class="checkout-substation-select"
+                        >
+
+                            <option
+                                value="true"
+                                <%= isMobile ? "selected" : "" %>
+                            >
+                                M-PESA
+                            </option>
+
+                            <option
+                                value="false"
+                                <%= !isMobile ? "selected" : "" %>
+                            >
+                                Cash
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
+                     STAFF MODAL TRIGGER
+                ============================================== -->
+
+                <button
+                    type="button"
+                    id="staff-sale-trigger"
+                    class="staff-sale-trigger primary-btn"
+                >
+
+                    <i class="fas fa-cash-register"></i>
+
+                    Continue to Checkout
+
+                </button>
+
+
+            <% } else { %>
+
+
+                <!-- =================================================
+                     NORMAL USER CHECKOUT
+                ================================================== -->
+
+                <% if (checkoutProductId) { %>
 
                     <a
                         href="/carts/<%= checkoutProductId %>"
-                        class="primary-btn cart-checkout-btn"
+                        class="cart-checkout-btn"
                     >
 
-                        <i class="fas fa-credit-card"></i>
+                        <i class="fas fa-shopping-cart"></i>
 
                         Checkout
 
                     </a>
 
-
                 <% } %>
 
+            <% } %>
 
 
-                <!-- =============================================
-                     BACK TO PRODUCTS
-                ============================================== -->
+            <!-- =================================================
+                 CONTINUE SHOPPING
+            ================================================== -->
 
-                <a
-                    href="/products"
-                    class="cart-summary-back"
-                >
+            <div class="cart-summary-back">
+
+                <a href="/products">
 
                     <i class="fas fa-arrow-left"></i>
 
@@ -576,25 +454,247 @@ const staffBranchUrl =
 
                 </a>
 
+            </div>
 
-            </aside>
+        </aside>
 
 
-        </div>
+        <!-- =====================================================
+             STAFF SALE MODAL
+        ====================================================== -->
+
+        <% if (isStaff) { %>
+
+            <div
+                id="staff-sale-modal"
+                class="staff-sale-modal"
+                aria-hidden="true"
+            >
+
+
+                <!-- =================================================
+                     MODAL OVERLAY
+                ================================================== -->
+
+                <div
+                    class="staff-sale-modal-overlay"
+                    data-staff-sale-close
+                ></div>
+
+
+                <!-- =================================================
+                     MODAL CONTENT
+                ================================================== -->
+
+                <div
+                    class="staff-sale-modal-content"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="staff-sale-modal-title"
+                >
+
+
+                    <!-- =============================================
+                         MODAL HEADER
+                    ============================================== -->
+
+                    <div class="staff-sale-modal-header">
+
+                        <div class="staff-sale-modal-icon">
+
+                            <i class="fas fa-receipt"></i>
+
+                        </div>
+
+
+                        <div>
+
+                            <span class="staff-sale-modal-kicker">
+                                STAFF CHECKOUT
+                            </span>
+
+                            <h2
+                                id="staff-sale-modal-title"
+                                class="staff-sale-modal-title"
+                            >
+                                Complete Sale
+                            </h2>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            class="staff-sale-modal-close"
+                            data-staff-sale-close
+                            aria-label="Close"
+                        >
+
+                            <i class="fas fa-times"></i>
+
+                        </button>
+
+                    </div>
+
+
+                    <!-- =============================================
+                         MODAL BODY
+                    ============================================== -->
+
+                    <div class="staff-sale-modal-body">
+
+
+                        <p class="staff-sale-modal-description">
+
+                            Confirm the sale details before
+                            continuing to checkout.
+
+                        </p>
+
+
+                        <form
+                            id="staff-sale-form"
+                            class="staff-sale-form"
+                            method="POST"
+                            action=""
+                        >
+
+
+                            <!-- =====================================
+                                 SALE SUMMARY
+                            ====================================== -->
+
+                            <div class="staff-sale-summary">
+
+                                <div class="staff-sale-preview">
+
+
+                                    <!-- PAYMENT -->
+
+                                    <div class="staff-sale-preview-card">
+
+                                        <span class="staff-sale-preview-label">
+                                            PAYMENT METHOD
+                                        </span>
+
+                                        <strong
+                                            id="staff-payment-preview"
+                                            class="staff-sale-preview-value"
+                                        >
+                                            <%= isMobile ? "M-PESA" : "Cash" %>
+                                        </strong>
+
+                                    </div>
+
+
+                                    <!-- TOTAL -->
+
+                                    <div class="staff-sale-preview-card">
+
+                                        <span class="staff-sale-preview-label">
+                                            TOTAL
+                                        </span>
+
+                                        <strong
+                                            class="staff-sale-preview-value sale-total"
+                                        >
+                                            KSh
+                                            <%= cartTotal.toLocaleString() %>
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="staff-sale-preview-row">
+
+                                    <span>
+                                        Items
+                                    </span>
+
+                                    <strong>
+                                        <%= cartItems.length %>
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- =====================================
+                                 MODAL ACTIONS
+                            ====================================== -->
+
+                            <div class="staff-sale-modal-actions">
+
+
+                                <button
+                                    type="button"
+                                    class="staff-sale-submit"
+                                    data-staff-sale-close
+                                >
+
+                                    Cancel
+
+                                </button>
+
+
+                                <button
+                                    type="submit"
+                                    class="staff-sale-submit-btn"
+                                >
+
+                                    <i class="fas fa-check"></i>
+
+                                    Continue
+
+                                </button>
+
+
+                            </div>
+
+
+                        </form>
+
+                    </div>
+
+
+                    <!-- =============================================
+                         MODAL FOOTER
+                    ============================================== -->
+
+                    <div class="staff-sale-modal-footer">
+
+                        <p class="staff-sale-modal-note">
+
+                            Your selected payment method will
+                            determine the checkout process.
+
+                        </p>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        <% } %>
 
 
     <% } else { %>
 
 
-        <!-- =================================================
+        <!-- =====================================================
              EMPTY CART
-        ================================================== -->
+        ====================================================== -->
 
         <div class="cart-empty">
 
             <div class="cart-empty-icon">
 
-                <i class="fas fa-shopping-cart"></i>
+                <i class="fas fa-shopping-bag"></i>
 
             </div>
 
@@ -605,7 +705,7 @@ const staffBranchUrl =
 
 
             <p>
-                You haven't added any products to your cart yet.
+                You haven't added any products yet.
             </p>
 
 
@@ -625,365 +725,10 @@ const staffBranchUrl =
 
     <% } %>
 
-
 </section>
 
 
-
 <% if (isStaff && hasItems) { %>
-
-
-<!-- =========================================================
-     STAFF SALE POPUP MODAL
-
-     CSS CLASSES MATCH THE PROVIDED CART CSS EXACTLY.
-
-     CASH:
-       /carts/staff-sales
-
-     M-PESA:
-       /cash/:id
-========================================================== -->
-
-<div
-    id="staffSaleModal"
-    class="staff-sale-modal"
-    aria-hidden="true"
->
-
-
-    <!-- =====================================================
-         MODAL OVERLAY
-    ====================================================== -->
-
-    <div
-        class="staff-sale-modal-overlay"
-        id="staffSaleModalOverlay"
-    ></div>
-
-
-
-    <!-- =====================================================
-         MODAL CONTENT
-    ====================================================== -->
-
-    <div
-        class="staff-sale-modal-content"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="staffSaleModalTitle"
-    >
-
-
-        <!-- =================================================
-             MODAL HEADER
-        ================================================== -->
-
-        <div class="staff-sale-modal-header">
-
-
-            <div class="staff-sale-modal-icon">
-
-                <i
-                    id="staffSaleModalIcon"
-                    class="<%= isMobile
-                        ? 'fas fa-mobile-alt'
-                        : 'fas fa-cash-register'
-                    %>"
-                ></i>
-
-            </div>
-
-
-            <div class="staff-sale-modal-header-content">
-
-                <span class="staff-sale-modal-kicker">
-                    STAFF CHECKOUT
-                </span>
-
-
-                <h2
-                    id="staffSaleModalTitle"
-                    class="staff-sale-modal-title"
-                >
-                    Confirm Sale
-                </h2>
-
-            </div>
-
-
-            <button
-                type="button"
-                id="closeStaffSaleModal"
-                class="staff-sale-modal-close"
-                aria-label="Close"
-            >
-
-                <i class="fas fa-times"></i>
-
-            </button>
-
-
-        </div>
-
-
-
-        <!-- =================================================
-             MODAL BODY
-        ================================================== -->
-
-        <div class="staff-sale-modal-body">
-
-
-            <p class="staff-sale-modal-description">
-
-                Confirm the customer details and payment method
-                before proceeding with this sale.
-
-            </p>
-
-
-
-            <!-- =============================================
-                 SALE PREVIEW
-            ============================================== -->
-
-            <div class="staff-sale-preview">
-
-
-                <div class="staff-sale-preview-card">
-
-                    <span class="staff-sale-preview-label">
-                        Payment Method
-                    </span>
-
-
-                    <strong
-                        id="staffSalePaymentPreview"
-                        class="staff-sale-preview-value"
-                    >
-
-                        <%= isMobile
-                            ? "M-PESA"
-                            : "Cash"
-                        %>
-
-                    </strong>
-
-                </div>
-
-
-                <div class="staff-sale-preview-card">
-
-                    <span class="staff-sale-preview-label">
-                        Total
-                    </span>
-
-
-                    <strong
-                        class="staff-sale-preview-value sale-total"
-                    >
-
-                        KSh
-                        <%= cartTotal.toLocaleString() %>
-
-                    </strong>
-
-                </div>
-
-
-            </div>
-
-
-
-            <!-- =================================================
-                 STAFF SALE FORM
-            ================================================== -->
-
-            <form
-                action="<%= isMobile
-                    ? `/cash/${checkoutProductId}`
-                    : `/carts/staff-sales`
-                %>"
-                method="POST"
-                id="staffSaleForm"
-                class="staff-sale-form"
-            >
-
-
-                <!-- =============================================
-                     PAYMENT MODE
-                ============================================== -->
-
-                <input
-                    type="hidden"
-                    name="isMobile"
-                    id="staffSaleIsMobile"
-                    value="<%= isMobile
-                        ? 'true'
-                        : 'false'
-                    %>"
-                >
-
-
-
-                <!-- =============================================
-                     CUSTOMER NAME
-                ============================================== -->
-
-                <div class="staff-sale-field">
-
-
-                    <label for="salesName">
-                        Customer Name
-                    </label>
-
-
-                    <div class="staff-sale-input-wrap">
-
-                        <i class="fas fa-user"></i>
-
-
-                        <input
-                            type="text"
-                            id="salesName"
-                            name="salesName"
-                            placeholder="Enter customer name"
-                            autocomplete="name"
-                            required
-                        >
-
-                    </div>
-
-
-                </div>
-
-
-
-                <!-- =============================================
-                     SALE PREVIEW ROWS
-                ============================================== -->
-
-                <div class="staff-sale-preview-row">
-
-                    <span>
-                        Number of Items
-                    </span>
-
-
-                    <strong>
-                        <%= cartItems.length %>
-                    </strong>
-
-                </div>
-
-
-                <div class="staff-sale-preview-row">
-
-                    <span>
-                        Order Total
-                    </span>
-
-
-                    <strong>
-                        KSh
-                        <%= cartTotal.toLocaleString() %>
-                    </strong>
-
-                </div>
-
-
-
-                <!-- =============================================
-                     MODAL ACTIONS
-                ============================================== -->
-
-                <div class="staff-sale-modal-actions">
-
-
-                    <button
-                        type="button"
-                        id="cancelStaffSale"
-                        class="secondary-btn"
-                    >
-
-                        <i class="fas fa-times"></i>
-
-                        Cancel
-
-                    </button>
-
-
-                    <button
-                        type="submit"
-                        id="confirmStaffSale"
-                        class="primary-btn staff-sale-submit"
-                    >
-
-                        <i
-                            id="confirmStaffSaleIcon"
-                            class="<%= isMobile
-                                ? 'fas fa-mobile-alt'
-                                : 'fas fa-check'
-                            %>"
-                        ></i>
-
-
-                        <span id="confirmStaffSaleText">
-
-                            <%= isMobile
-                                ? "Continue to M-PESA"
-                                : "Complete Cash Sale"
-                            %>
-
-                        </span>
-
-                    </button>
-
-
-                </div>
-
-
-            </form>
-
-
-        </div>
-
-
-
-        <!-- =================================================
-             MODAL FOOTER
-        ================================================== -->
-
-        <div class="staff-sale-modal-footer">
-
-            <p class="staff-sale-modal-note">
-
-                <i class="fas fa-info-circle"></i>
-
-                <span id="staffSaleModalNote">
-
-                    <%= isMobile
-                        ? "You will continue to the M-PESA payment process."
-                        : "This sale will be recorded as a cash payment."
-                    %>
-
-                </span>
-
-            </p>
-
-        </div>
-
-
-    </div>
-
-</div>
-
-
-
-<!-- =========================================================
-     STAFF CART JAVASCRIPT
-========================================================== -->
 
 <script>
 (function () {
@@ -995,84 +740,34 @@ const staffBranchUrl =
        ELEMENTS
     ====================================================== */
 
-    const paymentMode =
+    const modal =
         document.getElementById(
-            "staffPaymentMode"
+            "staff-sale-modal"
         );
 
-    const paymentModeIcon =
+    const trigger =
         document.getElementById(
-            "staffPaymentModeIcon"
+            "staff-sale-trigger"
         );
 
-    const staffSaleModal =
+    const form =
         document.getElementById(
-            "staffSaleModal"
+            "staff-sale-form"
         );
 
-    const modalOverlay =
+    const paymentSelect =
         document.getElementById(
-            "staffSaleModalOverlay"
-        );
-
-    const openButton =
-        document.getElementById(
-            "openStaffSaleModal"
-        );
-
-    const closeButton =
-        document.getElementById(
-            "closeStaffSaleModal"
-        );
-
-    const cancelButton =
-        document.getElementById(
-            "cancelStaffSale"
-        );
-
-    const staffSaleForm =
-        document.getElementById(
-            "staffSaleForm"
-        );
-
-    const staffSaleIsMobile =
-        document.getElementById(
-            "staffSaleIsMobile"
-        );
-
-    const modalIcon =
-        document.getElementById(
-            "staffSaleModalIcon"
+            "staff-payment-mode"
         );
 
     const paymentPreview =
         document.getElementById(
-            "staffSalePaymentPreview"
+            "staff-payment-preview"
         );
 
-    const modalNote =
+    const paymentLabel =
         document.getElementById(
-            "staffSaleModalNote"
-        );
-
-    const triggerIcon =
-        document.getElementById(
-            "staffSaleTriggerIcon"
-        );
-
-    const triggerText =
-        document.getElementById(
-            "staffSaleTriggerText"
-        );
-
-    const confirmIcon =
-        document.getElementById(
-            "confirmStaffSaleIcon"
-        );
-
-    const confirmText =
-        document.getElementById(
-            "confirmStaffSaleText"
+            "cart-payment-mode-label"
         );
 
 
@@ -1080,11 +775,30 @@ const staffBranchUrl =
        ROUTES
     ====================================================== */
 
-    const CASH_ACTION =
-        "/carts/staff-sales";
+    /*
+     * M-PESA:
+     * /carts/:id
+     */
 
-    const MPESA_ACTION =
-        "/cash/<%= checkoutProductId %>";
+    const CART_CHECKOUT_ACTION =
+        "/carts/<%= checkoutProductId %>";
+
+
+    /*
+     * CASH:
+     * /carts/staff-sale
+     */
+
+    const STAFF_CASH_ACTION =
+        "/carts/staff-sale";
+
+
+    /*
+     * Background payment-mode update.
+     */
+
+    const PAYMENT_MODE_ACTION =
+        "/carts/payment-mode";
 
 
     /* =====================================================
@@ -1096,147 +810,42 @@ const staffBranchUrl =
 
 
     /* =====================================================
-       UPDATE UI
+       UPDATE FORM ACTION
     ====================================================== */
 
-    function updatePaymentUI(
-        mobile
-    ) {
+    function updateFormAction() {
 
-        /* -----------------------------------------------
-           FORM ACTION
-        ----------------------------------------------- */
+        if (!form) {
+            return;
+        }
 
-        if (staffSaleForm) {
 
-            staffSaleForm.action =
-                mobile
-                    ? MPESA_ACTION
-                    : CASH_ACTION;
+        /*
+         * M-PESA
+         * Goes to:
+         *
+         * /carts/:id
+         */
+
+        if (currentIsMobile) {
+
+            form.action =
+                CART_CHECKOUT_ACTION;
 
         }
 
 
-        /* -----------------------------------------------
-           HIDDEN PAYMENT VALUE
-        ----------------------------------------------- */
+        /*
+         * CASH
+         * Goes to:
+         *
+         * /carts/staff-sale
+         */
 
-        if (staffSaleIsMobile) {
+        else {
 
-            staffSaleIsMobile.value =
-                String(mobile);
-
-        }
-
-
-        /* -----------------------------------------------
-           PAYMENT PREVIEW
-        ----------------------------------------------- */
-
-        if (paymentPreview) {
-
-            paymentPreview.textContent =
-                mobile
-                    ? "M-PESA"
-                    : "Cash";
-
-        }
-
-
-        /* -----------------------------------------------
-           MODAL ICON
-        ----------------------------------------------- */
-
-        if (modalIcon) {
-
-            modalIcon.className =
-                mobile
-                    ? "fas fa-mobile-alt"
-                    : "fas fa-cash-register";
-
-        }
-
-
-        /* -----------------------------------------------
-           PAYMENT SELECT ICON
-        ----------------------------------------------- */
-
-        if (paymentModeIcon) {
-
-            paymentModeIcon.className =
-                mobile
-                    ? "fas fa-mobile-alt"
-                    : "fas fa-money-bill-wave";
-
-        }
-
-
-        /* -----------------------------------------------
-           TRIGGER ICON
-        ----------------------------------------------- */
-
-        if (triggerIcon) {
-
-            triggerIcon.className =
-                mobile
-                    ? "fas fa-mobile-alt"
-                    : "fas fa-cash-register";
-
-        }
-
-
-        /* -----------------------------------------------
-           TRIGGER TEXT
-        ----------------------------------------------- */
-
-        if (triggerText) {
-
-            triggerText.textContent =
-                mobile
-                    ? "Continue with M-PESA"
-                    : "Complete Cash Sale";
-
-        }
-
-
-        /* -----------------------------------------------
-           CONFIRM BUTTON ICON
-        ----------------------------------------------- */
-
-        if (confirmIcon) {
-
-            confirmIcon.className =
-                mobile
-                    ? "fas fa-mobile-alt"
-                    : "fas fa-check";
-
-        }
-
-
-        /* -----------------------------------------------
-           CONFIRM BUTTON TEXT
-        ----------------------------------------------- */
-
-        if (confirmText) {
-
-            confirmText.textContent =
-                mobile
-                    ? "Continue to M-PESA"
-                    : "Complete Cash Sale";
-
-        }
-
-
-        /* -----------------------------------------------
-           FOOTER NOTE
-        ----------------------------------------------- */
-
-        if (modalNote) {
-
-            modalNote.textContent =
-                mobile
-                    ? "You will continue to the M-PESA payment process."
-                    : "This sale will be recorded as a cash payment.";
+            form.action =
+                STAFF_CASH_ACTION;
 
         }
 
@@ -1244,141 +853,177 @@ const staffBranchUrl =
 
 
     /* =====================================================
-       INITIAL UI
+       UPDATE PAYMENT DISPLAY
     ====================================================== */
 
-    updatePaymentUI(
-        currentIsMobile
-    );
+    function updatePaymentDisplay() {
+
+        const text =
+            currentIsMobile
+                ? "M-PESA"
+                : "Cash";
+
+
+        if (paymentPreview) {
+
+            paymentPreview.textContent =
+                text;
+
+        }
+
+
+        if (paymentLabel) {
+
+            paymentLabel.textContent =
+                text;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       SAVE PAYMENT MODE
+    ====================================================== */
+
+    async function savePaymentMode(
+        newIsMobile
+    ) {
+
+        try {
+
+            const response =
+                await fetch(
+                    PAYMENT_MODE_ACTION,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/x-www-form-urlencoded; charset=UTF-8",
+
+                            "X-Requested-With":
+                                "XMLHttpRequest"
+                        },
+
+                        body:
+                            new URLSearchParams({
+                                isMobile:
+                                    String(
+                                        newIsMobile
+                                    )
+                            })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                !response.ok ||
+                !data.ok
+            ) {
+
+                throw new Error(
+                    data?.error ||
+                    "Unable to update payment mode."
+                );
+
+            }
+
+
+            /*
+             * Use the value returned
+             * by the server.
+             */
+
+            currentIsMobile =
+                Boolean(
+                    data.isMobile
+                );
+
+
+            updatePaymentDisplay();
+
+            updateFormAction();
+
+
+        } catch (error) {
+
+            console.error(
+                "Payment mode update error:",
+                error
+            );
+
+
+            /*
+             * Restore the saved value
+             * if the request fails.
+             */
+
+            currentIsMobile =
+                !newIsMobile;
+
+
+            if (paymentSelect) {
+
+                paymentSelect.value =
+                    String(
+                        currentIsMobile
+                    );
+
+            }
+
+
+            updatePaymentDisplay();
+
+            updateFormAction();
+
+
+            alert(
+                error?.message ||
+                "Unable to update payment mode."
+            );
+
+        }
+
+    }
 
 
     /* =====================================================
        PAYMENT MODE CHANGE
-       
-       IMPORTANT:
-       The browser must NOT navigate to
-       /carts/payment-mode because that endpoint
-       returns JSON.
-
-       Instead, update it using fetch().
     ====================================================== */
 
-    if (paymentMode) {
+    if (paymentSelect) {
 
-        paymentMode.addEventListener(
+        paymentSelect.addEventListener(
             "change",
             async function () {
 
-                const previousMode =
-                    currentIsMobile;
-
-                const newMode =
-                    paymentMode.value === "mpesa";
+                const newIsMobile =
+                    this.value === "true";
 
 
-                paymentMode.disabled =
-                    true;
+                /*
+                 * Update the interface immediately.
+                 */
+
+                currentIsMobile =
+                    newIsMobile;
+
+                updatePaymentDisplay();
+                updateFormAction();
 
 
-                try {
+                /*
+                 * Save the change in the cart.
+                 */
 
-                    const response =
-                        await fetch(
-                            "/carts/payment-mode",
-                            {
-                                method: "POST",
-
-                                headers: {
-                                    "Content-Type":
-                                        "application/x-www-form-urlencoded",
-
-                                    "Accept":
-                                        "application/json"
-                                },
-
-                                body:
-                                    new URLSearchParams({
-                                        isMobile:
-                                            String(newMode)
-                                    })
-                            }
-                        );
-
-
-                    let result;
-
-
-                    try {
-
-                        result =
-                            await response.json();
-
-                    } catch (error) {
-
-                        result = null;
-
-                    }
-
-
-                    if (
-                        !response.ok ||
-                        !result ||
-                        result.ok !== true
-                    ) {
-
-                        throw new Error(
-                            result?.error ||
-                            "Unable to update payment method."
-                        );
-
-                    }
-
-
-                    currentIsMobile =
-                        Boolean(
-                            result.isMobile
-                        );
-
-
-                    paymentMode.value =
-                        currentIsMobile
-                            ? "mpesa"
-                            : "cash";
-
-
-                    updatePaymentUI(
-                        currentIsMobile
-                    );
-
-
-                } catch (error) {
-
-                    currentIsMobile =
-                        previousMode;
-
-
-                    paymentMode.value =
-                        previousMode
-                            ? "mpesa"
-                            : "cash";
-
-
-                    updatePaymentUI(
-                        previousMode
-                    );
-
-
-                    alert(
-                        error?.message ||
-                        "Unable to update payment method."
-                    );
-
-                } finally {
-
-                    paymentMode.disabled =
-                        false;
-
-                }
+                await savePaymentMode(
+                    newIsMobile
+                );
 
             }
         );
@@ -1390,24 +1035,24 @@ const staffBranchUrl =
        OPEN MODAL
     ====================================================== */
 
-    function openStaffModal() {
+    function openModal() {
 
-        if (!staffSaleModal) {
+        if (!modal) {
             return;
         }
 
 
-        updatePaymentUI(
-            currentIsMobile
-        );
+        updatePaymentDisplay();
+
+        updateFormAction();
 
 
-        staffSaleModal.classList.add(
+        modal.classList.add(
             "is-open"
         );
 
 
-        staffSaleModal.setAttribute(
+        modal.setAttribute(
             "aria-hidden",
             "false"
         );
@@ -1417,26 +1062,6 @@ const staffBranchUrl =
             "staff-sale-modal-open"
         );
 
-
-        const salesName =
-            document.getElementById(
-                "salesName"
-            );
-
-
-        if (salesName) {
-
-            setTimeout(
-                function () {
-
-                    salesName.focus();
-
-                },
-                100
-            );
-
-        }
-
     }
 
 
@@ -1444,19 +1069,19 @@ const staffBranchUrl =
        CLOSE MODAL
     ====================================================== */
 
-    function closeStaffModal() {
+    function closeModal() {
 
-        if (!staffSaleModal) {
+        if (!modal) {
             return;
         }
 
 
-        staffSaleModal.classList.remove(
+        modal.classList.remove(
             "is-open"
         );
 
 
-        staffSaleModal.setAttribute(
+        modal.setAttribute(
             "aria-hidden",
             "true"
         );
@@ -1470,59 +1095,45 @@ const staffBranchUrl =
 
 
     /* =====================================================
-       OPEN BUTTON
+       OPEN STAFF SALE MODAL
     ====================================================== */
 
-    if (openButton) {
+    if (trigger) {
 
-        openButton.addEventListener(
+        trigger.addEventListener(
             "click",
-            openStaffModal
+            function () {
+
+                openModal();
+
+            }
         );
 
     }
 
 
     /* =====================================================
-       CLOSE BUTTON
+       CLOSE MODAL
     ====================================================== */
 
-    if (closeButton) {
+    document
+        .querySelectorAll(
+            "[data-staff-sale-close]"
+        )
+        .forEach(
+            function (element) {
 
-        closeButton.addEventListener(
-            "click",
-            closeStaffModal
+                element.addEventListener(
+                    "click",
+                    function () {
+
+                        closeModal();
+
+                    }
+                );
+
+            }
         );
-
-    }
-
-
-    /* =====================================================
-       CANCEL BUTTON
-    ====================================================== */
-
-    if (cancelButton) {
-
-        cancelButton.addEventListener(
-            "click",
-            closeStaffModal
-        );
-
-    }
-
-
-    /* =====================================================
-       CLICK BACKDROP TO CLOSE
-    ====================================================== */
-
-    if (modalOverlay) {
-
-        modalOverlay.addEventListener(
-            "click",
-            closeStaffModal
-        );
-
-    }
 
 
     /* =====================================================
@@ -1535,13 +1146,13 @@ const staffBranchUrl =
 
             if (
                 event.key === "Escape" &&
-                staffSaleModal &&
-                staffSaleModal.classList.contains(
+                modal &&
+                modal.classList.contains(
                     "is-open"
                 )
             ) {
 
-                closeStaffModal();
+                closeModal();
 
             }
 
@@ -1550,41 +1161,54 @@ const staffBranchUrl =
 
 
     /* =====================================================
-       FINAL SUBMIT ROUTE CHECK
-       
-       CASH:
-         /carts/staff-sales
-
-       M-PESA:
-         /cash/:id
+       FINAL FORM ACTION
     ====================================================== */
 
-    if (staffSaleForm) {
+    if (form) {
 
-        staffSaleForm.addEventListener(
+        form.addEventListener(
             "submit",
             function () {
 
-                const selectedIsMobile =
-                    paymentMode &&
-                    paymentMode.value === "mpesa";
+                /*
+                 * M-PESA:
+                 * /carts/:id
+                 */
+
+                if (currentIsMobile) {
+
+                    form.action =
+                        CART_CHECKOUT_ACTION;
+
+                }
 
 
-                staffSaleForm.action =
-                    selectedIsMobile
-                        ? MPESA_ACTION
-                        : CASH_ACTION;
+                /*
+                 * CASH:
+                 * /carts/staff-sale
+                 */
 
+                else {
 
-                staffSaleIsMobile.value =
-                    String(
-                        selectedIsMobile
-                    );
+                    form.action =
+                        STAFF_CASH_ACTION;
+
+                }
 
             }
         );
 
     }
+
+
+    /* =====================================================
+       INITIAL STATE
+    ====================================================== */
+
+    updatePaymentDisplay();
+
+    updateFormAction();
+
 
 })();
 </script>
