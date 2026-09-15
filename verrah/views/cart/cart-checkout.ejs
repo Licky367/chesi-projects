@@ -51,9 +51,7 @@
     id="checkoutForm"
   >
 
-    <!-- =======================================================
-         PRODUCT ID
-    ======================================================== -->
+    <!-- PRODUCT ID -->
 
     <input
       type="hidden"
@@ -66,14 +64,11 @@
          PICKUP SUBSTATION
     ======================================================== -->
 
-    <fieldset
-      class="payment-methods checkout-substation-fieldset"
-    >
+    <fieldset class="payment-methods checkout-substation-fieldset">
 
       <legend>
         Pickup substation
       </legend>
-
 
       <div class="checkout-substation-wrap">
 
@@ -139,19 +134,13 @@
                       ? (
                           substations.find(
                             function (substation) {
-                              return String(
-                                substation._id
-                              ) === String(
-                                assignedSubstationId
-                              );
+                              return String(substation._id) ===
+                                String(assignedSubstationId);
                             }
-                          )?.name || String(
-                            assignedSubstationId || ""
-                          )
+                          )?.name ||
+                          String(assignedSubstationId || "")
                         )
-                      : String(
-                          assignedSubstationId || ""
-                        )
+                      : String(assignedSubstationId || "")
                   );
 
             const assignedSubstationLocation =
@@ -166,11 +155,8 @@
                       ? (
                           substations.find(
                             function (substation) {
-                              return String(
-                                substation._id
-                              ) === String(
-                                assignedSubstationId
-                              );
+                              return String(substation._id) ===
+                                String(assignedSubstationId);
                             }
                           )?.location || ""
                         )
@@ -181,17 +167,11 @@
 
           <% if (assignedSubstationId) { %>
 
-            <!--
-              Hidden input submits the assigned substation.
-              The visible select is disabled/read-only.
-            -->
-
             <input
               type="hidden"
               name="packageSubstation"
               value="<%= assignedSubstationId %>"
             >
-
 
             <select
               id="packageSubstation"
@@ -295,7 +275,8 @@
 
                 <option
                   value="<%= substation._id %>"
-                  <%= String(pickupStation || "") === String(substation._id)
+                  <%= String(pickupStation || "") ===
+                      String(substation._id)
                     ? "selected"
                     : "" %>
                 >
@@ -351,119 +332,99 @@
 
 
     <!-- =======================================================
-         PAYMENT METHOD
+         PAYMENT MODE
     ======================================================== -->
 
-    <fieldset class="payment-methods">
+    <fieldset class="payment-methods checkout-payment-fieldset">
 
       <legend>
-        Payment method
+        Payment mode
       </legend>
 
 
-      <!-- =====================================================
-           M-PESA
-      ====================================================== -->
+      <div class="checkout-payment-wrap">
 
-      <label
-        class="payment-choice"
-        for="paymentMpesa"
-      >
-
-        <input
-          type="radio"
-          name="paymentMethod"
-          id="paymentMpesa"
-          value="mpesa"
-          required
+        <label
+          for="paymentMethod"
+          class="checkout-payment-label"
         >
 
+          <i class="fas fa-money-bill-wave"></i>
 
-        <span class="payment-choice-icon">
+          Select how you want to pay
 
-          <i class="fas fa-mobile-screen-button"></i>
-
-        </span>
-
-
-        <span class="payment-choice-copy">
-
-          <strong>
-            Pay now with M-Pesa
-          </strong>
-
-          <small>
-            An STK Push will be sent to your phone.
-          </small>
-
-        </span>
-
-      </label>
-
-
-      <!-- =====================================================
-           M-PESA PHONE NUMBER
-      ====================================================== -->
-
-      <div
-        id="phoneField"
-        class="phone-field"
-      >
-
-        <label for="phoneNumber">
-          M-Pesa phone number
         </label>
 
 
-        <input
-          type="tel"
-          name="phoneNumber"
-          id="phoneNumber"
-          placeholder="0712345678"
-          inputmode="numeric"
-          autocomplete="tel"
+        <!-- =====================================================
+             PAYMENT MODE SELECT
+        ====================================================== -->
+
+        <select
+          id="paymentMethod"
+          name="paymentMethod"
+          class="checkout-payment-select"
+          required
         >
+
+          <!-- DEFAULT: NOTHING SELECTED -->
+
+          <option
+            value=""
+            selected
+            disabled
+          >
+            Select payment mode
+          </option>
+
+
+          <!-- M-PESA -->
+
+          <option value="mpesa">
+            M-Pesa
+          </option>
+
+
+          <!-- CASH -->
+
+          <option value="cash">
+            Cash
+          </option>
+
+        </select>
+
+
+        <!-- =====================================================
+             M-PESA PHONE NUMBER
+        ====================================================== -->
+
+        <div
+          id="phoneField"
+          class="phone-field"
+        >
+
+          <label for="phoneNumber">
+
+            <i class="fas fa-mobile-screen-button"></i>
+
+            M-Pesa phone number
+
+          </label>
+
+
+          <input
+            type="tel"
+            name="phoneNumber"
+            id="phoneNumber"
+            placeholder="0712345678"
+            inputmode="numeric"
+            autocomplete="tel"
+            disabled
+          >
+
+        </div>
 
       </div>
-
-
-      <!-- =====================================================
-           PAY ON DELIVERY
-      ====================================================== -->
-
-      <label
-        class="payment-choice"
-        for="paymentDelivery"
-      >
-
-        <input
-          type="radio"
-          name="paymentMethod"
-          id="paymentDelivery"
-          value="pay_on_delivery"
-        >
-
-
-        <span class="payment-choice-icon">
-
-          <i class="fas fa-truck"></i>
-
-        </span>
-
-
-        <span class="payment-choice-copy">
-
-          <strong>
-            Pay upon delivery
-          </strong>
-
-          <small>
-            Your package will be created immediately.
-          </small>
-
-        </span>
-
-      </label>
 
     </fieldset>
 
@@ -574,10 +535,8 @@
   const phoneInput =
     document.getElementById("phoneNumber");
 
-  const paymentRadios =
-    document.querySelectorAll(
-      'input[name="paymentMethod"]'
-    );
+  const paymentMethod =
+    document.getElementById("paymentMethod");
 
 
   /* =========================================================
@@ -585,39 +544,25 @@
   ========================================================== */
 
   const modal =
-    document.getElementById(
-      "checkoutMessageModal"
-    );
+    document.getElementById("checkoutMessageModal");
 
   const modalOverlay =
-    document.getElementById(
-      "checkoutMessageOverlay"
-    );
+    document.getElementById("checkoutMessageOverlay");
 
   const modalClose =
-    document.getElementById(
-      "checkoutMessageClose"
-    );
+    document.getElementById("checkoutMessageClose");
 
   const modalButton =
-    document.getElementById(
-      "checkoutMessageButton"
-    );
+    document.getElementById("checkoutMessageButton");
 
   const modalTitle =
-    document.getElementById(
-      "checkoutMessageTitle"
-    );
+    document.getElementById("checkoutMessageTitle");
 
   const modalText =
-    document.getElementById(
-      "checkoutMessageText"
-    );
+    document.getElementById("checkoutMessageText");
 
   const modalIcon =
-    document.getElementById(
-      "checkoutMessageIcon"
-    );
+    document.getElementById("checkoutMessageIcon");
 
 
   /* =========================================================
@@ -647,10 +592,8 @@
         "checkout-message-success"
       );
 
-
       modalTitle.textContent =
         title || "Success";
-
 
       modalIcon.innerHTML =
         '<i class="fas fa-circle-check"></i>';
@@ -661,10 +604,8 @@
         "checkout-message-error"
       );
 
-
       modalTitle.textContent =
         title || "Checkout Error";
-
 
       modalIcon.innerHTML =
         '<i class="fas fa-circle-exclamation"></i>';
@@ -770,14 +711,14 @@
 
 
   /* =========================================================
-     STOP SAFELY IF CHECKOUT ELEMENTS ARE MISSING
+     STOP SAFELY IF REQUIRED ELEMENTS ARE MISSING
   ========================================================== */
 
   if (
     !form ||
     !phoneField ||
     !phoneInput ||
-    !paymentRadios.length
+    !paymentMethod
   ) {
 
     return;
@@ -786,35 +727,40 @@
 
 
   /* =========================================================
-     M-PESA PHONE FIELD
+     UPDATE PAYMENT MODE
   ========================================================== */
 
-  function updatePhoneField() {
+  function updatePaymentMode() {
 
     const selected =
-      document.querySelector(
-        'input[name="paymentMethod"]:checked'
-      );
+      paymentMethod.value;
 
 
     const mpesaSelected =
-      selected &&
-      selected.value === "mpesa";
+      selected === "mpesa";
 
+
+    /* Show phone field only for M-Pesa */
 
     phoneField.classList.toggle(
       "show",
-      Boolean(mpesaSelected)
+      mpesaSelected
     );
 
 
-    phoneInput.required =
-      Boolean(mpesaSelected);
+    /* Phone is required only for M-Pesa */
 
+    phoneInput.required =
+      mpesaSelected;
+
+
+    /* Disable phone input when not using M-Pesa */
 
     phoneInput.disabled =
       !mpesaSelected;
 
+
+    /* Clear phone number when switching to Cash */
 
     if (!mpesaSelected) {
 
@@ -826,18 +772,12 @@
 
 
   /* =========================================================
-     PAYMENT METHOD CHANGES
+     PAYMENT MODE CHANGE
   ========================================================== */
 
-  paymentRadios.forEach(
-    function (radio) {
-
-      radio.addEventListener(
-        "change",
-        updatePhoneField
-      );
-
-    }
+  paymentMethod.addEventListener(
+    "change",
+    updatePaymentMode
   );
 
 
@@ -884,14 +824,9 @@
         ) %>;
 
 
-      /*
-       * For staff:
-       * The visible select is disabled, so the hidden
-       * packageSubstation input is checked instead.
-       *
-       * For non-staff:
-       * The normal select carries the substation value.
-       */
+      /* -----------------------------------------------
+         NON-STAFF SUBSTATION
+      ------------------------------------------------ */
 
       if (!staff && !substation.value) {
 
@@ -909,6 +844,10 @@
 
       }
 
+
+      /* -----------------------------------------------
+         STAFF SUBSTATION
+      ------------------------------------------------ */
 
       if (
         staff &&
@@ -933,7 +872,7 @@
 
 
       /* -----------------------------------------------
-         CUSTOMER NAME FOR STAFF
+         STAFF CUSTOMER NAME
       ------------------------------------------------ */
 
       if (staff) {
@@ -972,25 +911,26 @@
 
 
       /* -----------------------------------------------
-         PAYMENT METHOD
+         PAYMENT MODE
       ------------------------------------------------ */
 
-      const selected =
-        document.querySelector(
-          'input[name="paymentMethod"]:checked'
-        );
+      const selectedPayment =
+        paymentMethod.value;
 
 
-      if (!selected) {
+      if (!selectedPayment) {
 
         event.preventDefault();
 
 
         showCheckoutMessage(
-          "Please select a payment method before continuing.",
+          "Please select either M-Pesa or Cash before continuing.",
           "error",
-          "Payment Method Required"
+          "Payment Mode Required"
         );
+
+
+        paymentMethod.focus();
 
 
         return;
@@ -999,12 +939,10 @@
 
 
       /* -----------------------------------------------
-         M-PESA PHONE
+         M-PESA PHONE NUMBER
       ------------------------------------------------ */
 
-      if (
-        selected.value === "mpesa"
-      ) {
+      if (selectedPayment === "mpesa") {
 
         const phone =
           phoneInput.value.trim();
@@ -1039,7 +977,7 @@
      INITIAL STATE
   ========================================================== */
 
-  updatePhoneField();
+  updatePaymentMode();
 
 
   /* =========================================================
