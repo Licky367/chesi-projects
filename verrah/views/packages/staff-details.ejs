@@ -86,10 +86,23 @@
         packageDoc.confirmedSubstationId ||
         null;
 
+
+      /*
+       * DIRECT SELL:
+       *
+       * If the package belongs to a staff user,
+       * isDirectSell is true and the salesName is
+       * displayed instead of the staff user's name.
+       */
+
       const clientName =
-        packageDoc.client?.name ||
-        packageDoc.clientId ||
-        "—";
+        packageDoc.isDirectSell === true
+          ? (packageDoc.salesName || "—")
+          : (
+              packageDoc.client?.name ||
+              packageDoc.clientId ||
+              "—"
+            );
 
       const clientEmail =
         packageDoc.client?.email ||
@@ -162,7 +175,7 @@
       <div class="staff-detail-overview-grid">
 
 
-        <!-- CLIENT -->
+        <!-- CLIENT / SALES NAME -->
 
         <div class="staff-info-card">
 
@@ -278,12 +291,6 @@
               <% } %>
 
             <% } else if (packageDoc.packageSubstation) { %>
-
-              <!--
-                The package contains a station ID,
-                but the station record could not be
-                resolved. Never falsely say "Not assigned".
-              -->
 
               <%= String(
                 packageDoc.packageSubstation
