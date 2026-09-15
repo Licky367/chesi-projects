@@ -156,6 +156,77 @@ function normalizeStatus(
 
 
 // =========================================================
+// PHONE NORMALIZER
+// =========================================================
+//
+// User.phone is the authoritative customer phone.
+//
+// "_" and empty values are treated as missing.
+// This also prevents "_" from being displayed as a
+// customer's phone number in the staff package page.
+// =========================================================
+
+function normalizePhone(
+  phone
+) {
+  if (
+    phone === undefined ||
+    phone === null
+  ) {
+    return "";
+  }
+
+  const value =
+    String(phone).trim();
+
+  if (
+    !value ||
+    value === "_" ||
+    value === "—"
+  ) {
+    return "";
+  }
+
+  return value;
+}
+
+
+// =========================================================
+// GET CLIENT
+// =========================================================
+//
+// User model uses:
+//
+// phone
+//
+// This helper makes sure every package-related operation
+// uses the same customer information.
+// =========================================================
+
+async function getClient(
+  clientId,
+  dbSession = null
+) {
+  let query =
+    User.findById(
+      clientId
+    )
+      .select(
+        "_id name email phone"
+      );
+
+  if (dbSession) {
+    query =
+      query.session(
+        dbSession
+      );
+  }
+
+  return query.lean();
+}
+
+
+// =========================================================
 // CREATE PACKAGE FROM CART
 // =========================================================
 //
@@ -165,12 +236,10 @@ function normalizeStatus(
 // No sessionId.
 //
 // Inventory is NOT reduced here.
-// Inventory is reduced when the sale/delivery process
-// actually completes according to the application's
-// inventory workflow.
+// Inventory is reduced when delivery occurs.
 //
-// After the package is successfully created, the cart
-// is cleared.
+// The customer's phone is read directly from User.phone
+// and saved into Package.phoneNumber.
 // =========================================================
 
 async function createPackageFromCart(
@@ -195,6 +264,28 @@ async function createPackageFromCart(
 
     await dbSession.withTransaction(
       async () => {
+
+        // -------------------------------------------------
+        // FIND USER
+        // -------------------------------------------------
+
+        const client =
+          await getClient(
+            clientId,
+            dbSession
+          );
+
+        if (!client) {
+          throw new Error(
+            "Customer account not found."
+          );
+        }
+
+        const clientPhone =
+          normalizePhone(
+            client.phone
+          );
+
 
         // -------------------------------------------------
         // FIND USER CART
@@ -326,6 +417,7 @@ async function createPackageFromCart(
         for (
           const item of items
         ) {
+
           if (
             !item.productId
           ) {
@@ -414,9 +506,10 @@ async function createPackageFromCart(
                   paymentData.mpesaReceiptNumber ||
                   "",
 
+                // IMPORTANT:
+                // Always take the phone from User.phone.
                 phoneNumber:
-                  paymentData.phoneNumber ||
-                  "",
+                  clientPhone,
 
                 status:
                   "pending"
@@ -431,9 +524,6 @@ async function createPackageFromCart(
 
         // -------------------------------------------------
         // CLEAR CART
-        //
-        // Package creation succeeded, so clear the
-        // user's cart.
         // -------------------------------------------------
 
         await Cart.deleteOne(
@@ -465,13 +555,10 @@ async function createPackageFromCart(
 // CREATE PACKAGE FROM PAYMENT
 // =========================================================
 //
-// This is called after M-Pesa confirms a cart payment.
+// Called after M-Pesa confirms a cart payment.
 //
-// The payment contains its own snapshot of cartItems.
-// After package creation, the user's cart is found ONLY
-// through payment.clientId.
-//
-// No sessionId.
+// The customer's phone is read from User.phone.
+// Payment.phoneNumber is only used as a fallback.
 // =========================================================
 
 async function createPackageFromPayment(
@@ -531,6 +618,31 @@ async function createPackageFromPayment(
 
           return;
         }
+
+
+        // -------------------------------------------------
+        // GET CLIENT
+        // -------------------------------------------------
+
+        const client =
+          await getClient(
+            payment.clientId,
+            dbSession
+          );
+
+        if (!client) {
+          throw new Error(
+            "Customer account not found."
+          );
+        }
+
+        const clientPhone =
+          normalizePhone(
+            client.phone
+          ) ||
+          normalizePhone(
+            payment.phoneNumber
+          );
 
 
         // -------------------------------------------------
@@ -708,9 +820,10 @@ async function createPackageFromPayment(
                   payment.mpesaReceiptNumber ||
                   "",
 
+                // IMPORTANT:
+                // User.phone is authoritative.
                 phoneNumber:
-                  payment.phoneNumber ||
-                  "",
+                  clientPhone,
 
                 status:
                   "pending"
@@ -725,9 +838,6 @@ async function createPackageFromPayment(
 
         // -------------------------------------------------
         // FIND USER CART
-        //
-        // IMPORTANT:
-        // Cart identity is ONLY user.
         // -------------------------------------------------
 
         const cart =
@@ -745,11 +855,7 @@ async function createPackageFromPayment(
 
 
         // -------------------------------------------------
-        // REMOVE ONLY THE QUANTITIES THAT WERE PAID FOR
-        //
-        // This is safer than deleting the entire cart,
-        // because the customer could have added another
-        // item while the M-Pesa request was pending.
+        // REMOVE ONLY QUANTITIES THAT WERE PAID FOR
         // -------------------------------------------------
 
         for (
@@ -945,6 +1051,7 @@ async function getStaffPackages(
     };
   }
 
+
   const allVisible =
     await Package.find(
       visibleQuery
@@ -952,6 +1059,10 @@ async function getStaffPackages(
       .sort({
         createdAt: -1
       })
+      .populate(
+        "packageSubstation",
+        "name location"
+      )
       .populate(
         "confirmedSubstationId",
         "name location"
@@ -961,6 +1072,7 @@ async function getStaffPackages(
         "name location"
       )
       .lean();
+
 
   const counts = {
 
@@ -989,6 +1101,7 @@ async function getStaffPackages(
       ).length
   };
 
+
   const packages =
     status === "all"
       ? allVisible
@@ -997,6 +1110,7 @@ async function getStaffPackages(
             p.status ===
             status
         );
+
 
   const clientIds =
     [
@@ -1012,6 +1126,7 @@ async function getStaffPackages(
       )
     ];
 
+
   const clients =
     await User.find({
       _id: {
@@ -1019,59 +1134,97 @@ async function getStaffPackages(
       }
     })
       .select(
-        "_id name email"
+        "_id name email phone"
       )
       .lean();
+
 
   const clientMap =
     new Map(
       clients.map(
         (client) => [
+
           String(
             client._id
           ),
-          client
+
+          {
+            ...client,
+
+            phone:
+              normalizePhone(
+                client.phone
+              )
+          }
         ]
       )
     );
+
 
   return {
 
     packages:
       packages.map(
-        (pkg) => ({
+        (pkg) => {
 
-          ...pkg,
-
-          client:
+          const client =
             clientMap.get(
               String(
                 pkg.clientId
               )
-            ) || null,
+            ) || null;
 
-          totalPaid:
-            Math.max(
-              0,
-              Number(
-                pkg.paidAmount ||
-                0
-              )
-            ),
 
-          arrearsAmount:
-            Math.max(
-              0,
-              Number(
-                pkg.totalAmount ||
-                0
-              ) -
-              Number(
-                pkg.paidAmount ||
-                0
+          // ------------------------------------------------
+          // PHONE FALLBACK
+          //
+          // Prefer User.phone.
+          // Package.phoneNumber is the stored snapshot.
+          // ------------------------------------------------
+
+          if (
+            client
+          ) {
+
+            client.phone =
+              normalizePhone(
+                client.phone
+              ) ||
+              normalizePhone(
+                pkg.phoneNumber
+              );
+          }
+
+
+          return {
+
+            ...pkg,
+
+            client,
+
+            totalPaid:
+              Math.max(
+                0,
+                Number(
+                  pkg.paidAmount ||
+                  0
+                )
+              ),
+
+            arrearsAmount:
+              Math.max(
+                0,
+                Number(
+                  pkg.totalAmount ||
+                  0
+                ) -
+                Number(
+                  pkg.paidAmount ||
+                  0
+                )
               )
-            )
-        })
+          };
+        }
       ),
 
     counts
@@ -1099,10 +1252,15 @@ async function getStaffPackage(
     );
   }
 
+
   const pkg =
     await Package.findById(
       id
     )
+      .populate(
+        "packageSubstation",
+        "name location"
+      )
       .populate(
         "confirmedSubstationId",
         "name location"
@@ -1113,9 +1271,11 @@ async function getStaffPackage(
       )
       .lean();
 
+
   if (!pkg) {
     return null;
   }
+
 
   if (
     role === "staff"
@@ -1136,14 +1296,39 @@ async function getStaffPackage(
     }
   }
 
+
+  // --------------------------------------------------------
+  // GET CLIENT
+  // --------------------------------------------------------
+
   const client =
     await User.findById(
       pkg.clientId
     )
       .select(
-        "_id name email"
+        "_id name email phone"
       )
       .lean();
+
+
+  if (client) {
+
+    // ------------------------------------------------------
+    // IMPORTANT:
+    //
+    // User.phone is the primary source.
+    // Package.phoneNumber is the stored snapshot fallback.
+    // ------------------------------------------------------
+
+    client.phone =
+      normalizePhone(
+        client.phone
+      ) ||
+      normalizePhone(
+        pkg.phoneNumber
+      );
+  }
+
 
   return {
 
@@ -1193,8 +1378,10 @@ async function confirmPackage(
     );
   }
 
+
   const staffId =
     staffIdOf(req);
+
 
   const staffName =
     String(
@@ -1202,6 +1389,7 @@ async function confirmPackage(
       req.user.email ||
       "Staff"
     ).trim();
+
 
   const staff =
     await User.findOne({
@@ -1213,11 +1401,13 @@ async function confirmPackage(
       )
       .lean();
 
+
   if (!staff) {
     throw new Error(
       "Staff account not found."
     );
   }
+
 
   if (
     !staff.assignedSubstation
@@ -1226,6 +1416,7 @@ async function confirmPackage(
       "You must have an assigned substation before confirming packages."
     );
   }
+
 
   const updated =
     await Package.findOneAndUpdate(
@@ -1259,11 +1450,13 @@ async function confirmPackage(
       }
     ).lean();
 
+
   if (!updated) {
     throw new Error(
       "Package is no longer pending or does not exist."
     );
   }
+
 
   return updated;
 }
@@ -1309,8 +1502,10 @@ async function deliverPackage(
     );
   }
 
+
   const staffId =
     staffIdOf(req);
+
 
   const staffName =
     String(
@@ -1319,10 +1514,12 @@ async function deliverPackage(
       "Staff"
     ).trim();
 
+
   const dbSession =
     await mongoose.startSession();
 
   let delivered;
+
 
   try {
 
@@ -1346,11 +1543,13 @@ async function deliverPackage(
             )
             .lean();
 
+
         if (!staff) {
           throw new Error(
             "Staff account not found."
           );
         }
+
 
         if (
           !staff.assignedSubstation
@@ -1378,6 +1577,7 @@ async function deliverPackage(
             .session(
               dbSession
             );
+
 
         if (!pkg) {
           throw new Error(
@@ -1411,6 +1611,7 @@ async function deliverPackage(
               dbSession
             );
 
+
         if (!substation) {
           throw new Error(
             "The staff member's assigned substation does not exist."
@@ -1430,6 +1631,7 @@ async function deliverPackage(
             Number(
               item.qty || 0
             );
+
 
           if (
             !Number.isInteger(
@@ -1455,6 +1657,7 @@ async function deliverPackage(
                 dbSession
               );
 
+
           if (!product) {
             throw new Error(
               `Product "${item.name}" no longer exists.`
@@ -1470,6 +1673,7 @@ async function deliverPackage(
             Number(
               product.units || 0
             );
+
 
           if (
             productUnits <
@@ -1491,8 +1695,10 @@ async function deliverPackage(
             product.substationUnits !==
               null;
 
+
           let substationUnits =
             null;
+
 
           if (
             hasSubstationUnits
@@ -1503,6 +1709,7 @@ async function deliverPackage(
                 product.substationUnits ||
                 0
               );
+
 
             if (
               substationUnits <
@@ -1530,6 +1737,7 @@ async function deliverPackage(
                 )
             );
 
+
           if (!inventory) {
             throw new Error(
               `${item.name} is not allocated to ${substation.name}.`
@@ -1541,6 +1749,7 @@ async function deliverPackage(
             Number(
               inventory.units || 0
             );
+
 
           if (
             inventoryUnits <
@@ -1593,6 +1802,7 @@ async function deliverPackage(
             inventoryUnits -
             qty;
 
+
           inventory.updatedAt =
             new Date();
 
@@ -1612,6 +1822,7 @@ async function deliverPackage(
                 )
             );
 
+
           if (reduction) {
 
             reduction.unitsReduced =
@@ -1620,13 +1831,16 @@ async function deliverPackage(
                 0
               ) + qty;
 
+
             reduction.productName =
               item.name;
+
 
             reduction.category =
               item.category ||
               reduction.category ||
               "";
+
 
             reduction.lastReducedAt =
               new Date();
@@ -1673,20 +1887,26 @@ async function deliverPackage(
         pkg.status =
           "delivered";
 
+
         pkg.deliveredByStaffId =
           staffId;
+
 
         pkg.deliveredByStaffName =
           staffName;
 
+
         pkg.deliveredAt =
           new Date();
+
 
         pkg.deliveredSubstationId =
           staff.assignedSubstation;
 
+
         pkg.substationReductionRecorded =
           true;
+
 
         await pkg.save({
           session:
@@ -1703,7 +1923,7 @@ async function deliverPackage(
             pkg.clientId
           )
             .select(
-              "name"
+              "name phone"
             )
             .session(
               dbSession
@@ -1801,6 +2021,7 @@ async function deliverPackage(
       }
     );
 
+
     return delivered;
 
   } finally {
@@ -1822,6 +2043,7 @@ async function recordPayment(
   const role =
     roleOf(req);
 
+
   if (
     role !== "staff" &&
     role !== "admin"
@@ -1831,8 +2053,10 @@ async function recordPayment(
     );
   }
 
+
   const numericAmount =
     Number(amount);
+
 
   if (
     !Number.isFinite(
@@ -1845,16 +2069,19 @@ async function recordPayment(
     );
   }
 
+
   const pkg =
     await Package.findById(
       id
     );
+
 
   if (!pkg) {
     throw new Error(
       "Package not found."
     );
   }
+
 
   if (
     pkg.status !==
@@ -1864,6 +2091,7 @@ async function recordPayment(
       "Amount paid can only be entered after delivery."
     );
   }
+
 
   if (
     role === "staff" &&
@@ -1878,6 +2106,7 @@ async function recordPayment(
     );
   }
 
+
   if (
     numericAmount >
     Number(
@@ -1889,8 +2118,10 @@ async function recordPayment(
     );
   }
 
+
   pkg.paidAmount =
     numericAmount;
+
 
   pkg.paymentStatus =
     numericAmount >=
@@ -1902,7 +2133,9 @@ async function recordPayment(
         ? "partialPaid"
         : "unpaid";
 
+
   await pkg.save();
+
 
   await DeliveredPackage.findOneAndUpdate(
     {
@@ -1929,6 +2162,7 @@ async function recordPayment(
     }
   );
 
+
   return pkg;
 }
 
@@ -1944,6 +2178,7 @@ async function confirmPackagePayment(
     await mongoose.startSession();
 
   let packageDoc;
+
 
   try {
 
@@ -1965,9 +2200,11 @@ async function confirmPackagePayment(
               dbSession
             );
 
+
         if (!payment) {
           return;
         }
+
 
         const packageDocQuery =
           await Package.findOne({
@@ -1981,17 +2218,20 @@ async function confirmPackagePayment(
               dbSession
             );
 
+
         if (!packageDocQuery) {
           throw new Error(
             "The package linked to this M-Pesa payment no longer exists."
           );
         }
 
+
         const totalPaid =
           await getConfirmedPaymentTotal(
             packageDocQuery._id,
             dbSession
           );
+
 
         const totalAmount =
           Math.max(
@@ -2002,17 +2242,21 @@ async function confirmPackagePayment(
             )
           );
 
+
         const cappedPaid =
           Math.min(
             totalPaid,
             totalAmount
           );
 
+
         packageDocQuery.paymentMethod =
           "mpesa";
 
+
         packageDocQuery.paidAmount =
           cappedPaid;
+
 
         packageDocQuery.paymentStatus =
           getPaymentStatus(
@@ -2020,25 +2264,60 @@ async function confirmPackagePayment(
             cappedPaid
           );
 
+
         packageDocQuery.mpesaReceiptNumber =
           payment.mpesaReceiptNumber ||
           packageDocQuery.mpesaReceiptNumber ||
           "";
 
-        packageDocQuery.phoneNumber =
-          payment.phoneNumber ||
-          packageDocQuery.phoneNumber ||
-          "";
+
+        // -------------------------------------------------
+        // PHONE
+        //
+        // User.phone is authoritative.
+        // -------------------------------------------------
+
+        const client =
+          await getClient(
+            packageDocQuery.clientId,
+            dbSession
+          );
+
+
+        const clientPhone =
+          normalizePhone(
+            client?.phone
+          );
+
+
+        if (
+          clientPhone
+        ) {
+          packageDocQuery.phoneNumber =
+            clientPhone;
+        } else {
+
+          packageDocQuery.phoneNumber =
+            normalizePhone(
+              payment.phoneNumber
+            ) ||
+            normalizePhone(
+              packageDocQuery.phoneNumber
+            );
+        }
+
 
         await packageDocQuery.save({
           session:
             dbSession
         });
 
+
         packageDoc =
           packageDocQuery;
       }
     );
+
 
     return packageDoc;
 
@@ -2053,8 +2332,6 @@ async function confirmPackagePayment(
 // RELEASE PAYMENT RESERVATION
 // =========================================================
 //
-// IMPORTANT:
-//
 // There is NO inventory reservation anymore.
 //
 // Starting an M-Pesa payment does not reduce Product.units.
@@ -2063,19 +2340,11 @@ async function confirmPackagePayment(
 // - Product.units are NOT restored.
 // - Cart is NOT changed.
 // - Cart remains available to the customer.
-//
-// This function remains exported because the existing
-// payment callback calls it for failed cart payments.
 // =========================================================
 
 async function releasePaymentReservation(
   payment
 ) {
-  // No inventory was reserved.
-  // Do not modify the cart.
-  // A failed/cancelled M-Pesa payment leaves the
-  // customer's cart exactly as it was.
-
   return;
 }
 
