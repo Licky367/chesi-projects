@@ -10,13 +10,13 @@
 <section class="branch-page">
 
     <% if (user && user.role === "admin") { %>
-    <%- include("./branch-edit") %>
+    <%- include("../branch-edit") %>
 <% } else if (user && user.role === "client"){ %>
-    <%- include("./branch-back") %>
+    <%- include("../branch-back") %>
 <% } %>
 
-    <%- include("./branch-header") %>
+    <%- include("../branch-header") %>
 
-    <%- include("./branch-about") %>
+    <%- include("../branch-about") %>
 
 </section>
