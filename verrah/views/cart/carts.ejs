@@ -1,38 +1,29 @@
 <%
 /* =========================================================
    VERRAH COSMETICS
-   CARTS PAGE
-========================================================= */
-
-
-/* =========================================================
-   USER
-========================================================= */
+   CART PAGE
+   ========================================================= */
 
 const pageUser =
-    typeof user !== "undefined"
+    (typeof user !== "undefined" && user)
         ? user
         : (
-            typeof req !== "undefined"
-                ? req.user
+            typeof currentUser !== "undefined"
+                ? currentUser
                 : null
         );
 
 const userRole =
-    String(pageUser?.role || "")
-        .trim()
-        .toLowerCase();
+    pageUser && pageUser.role
+        ? String(pageUser.role).toLowerCase()
+        : "";
 
 const isStaff =
     userRole === "staff";
 
-
-/* =========================================================
-   CART
-========================================================= */
-
 const cartItems =
-    Array.isArray(cart?.items)
+    cart &&
+    Array.isArray(cart.items)
         ? cart.items
         : [];
 
@@ -40,180 +31,26 @@ const hasItems =
     cartItems.length > 0;
 
 const cartTotal =
-    Number(
-        cart?.total || 0
-    );
+    cart && typeof cart.total === "number"
+        ? cart.total
+        : (
+            typeof total === "number"
+                ? total
+                : 0
+        );
 
-
-/*
- * true  = M-PESA / Pay now
- * false = Cash / Pay upon delivery
- */
-
-const isMobile =
-    cart?.isMobile !== false;
-
-
-/* =========================================================
-   PRODUCT ID
-   Used by /carts/:id
-========================================================= */
-
-let checkoutProductId = null;
-
-
-if (cartItems.length > 0) {
-
-    const firstItem =
-        cartItems[0];
-
-
-    if (firstItem?.product?._id) {
-
-        checkoutProductId =
-            firstItem.product._id;
-
-    } else if (firstItem?.product) {
-
-        checkoutProductId =
-            firstItem.product;
-
-    } else if (firstItem?.productId) {
-
-        checkoutProductId =
-            firstItem.productId;
-
-    }
-
-}
-
-
-/* =========================================================
-   PICKUP SUBSTATIONS
-========================================================= */
-
-/*
- * The controller now passes `substations` directly.
- *
- * This is intentionally NOT treated as an optional
- * undefined variable.
- */
-
-const availableSubstations =
-    Array.isArray(substations)
-        ? substations
-        : [];
-
-
-/* =========================================================
-   STAFF ASSIGNED SUBSTATION
-========================================================= */
-
-let assignedSubstation =
-    null;
-
-let assignedSubstationId =
-    "";
-
-let assignedSubstationName =
-    "";
-
-let assignedSubstationLocation =
-    "";
-
-
-if (isStaff) {
-
-    assignedSubstation =
-        pageUser?.assignedSubstation || null;
-
-
-    /*
-     * assignedSubstation may be:
-     *
-     * 1. Populated object
-     * 2. ObjectId
-     * 3. String ID
-     */
-
-    if (
-        assignedSubstation &&
-        typeof assignedSubstation === "object"
-    ) {
-
-        assignedSubstationId =
-            String(
-                assignedSubstation._id ||
-                assignedSubstation.id ||
-                ""
-            );
-
-
-        assignedSubstationName =
-            assignedSubstation.name ||
-            assignedSubstation.location ||
-            assignedSubstationId;
-
-
-        assignedSubstationLocation =
-            assignedSubstation.location ||
-            "";
-
-    } else {
-
-        assignedSubstationId =
-            String(
-                assignedSubstation || ""
-            );
-
-
-        /*
-         * Resolve the name/location when the user
-         * only contains the substation ID.
-         */
-
-        const matchedSubstation =
-            availableSubstations.find(
-                function (substation) {
-
-                    return String(
-                        substation?._id || ""
-                    ) ===
-                    String(
-                        assignedSubstationId
-                    );
-
-                }
-            );
-
-
-        if (matchedSubstation) {
-
-            assignedSubstationName =
-                matchedSubstation.name ||
-                matchedSubstation.location ||
-                assignedSubstationId;
-
-
-            assignedSubstationLocation =
-                matchedSubstation.location ||
-                "";
-
-        } else {
-
-            assignedSubstationName =
-                assignedSubstationId;
-
-        }
-
-    }
-
-}
+const checkoutProductId =
+    hasItems && cartItems[0].product
+        ? (
+            cartItems[0].product._id ||
+            cartItems[0].product.id ||
+            cartItems[0].product
+        )
+        : null;
 %>
 
 
 <section class="shop-page cart-page">
-
 
     <!-- =====================================================
          PAGE HEADER
@@ -224,11 +61,11 @@ if (isStaff) {
         <div>
 
             <span class="cart-kicker">
-                YOUR CART
+                SHOPPING CART
             </span>
 
             <h1 class="page-title">
-                Shopping Cart
+                Your Cart
             </h1>
 
             <p class="page-subtitle">
@@ -241,34 +78,67 @@ if (isStaff) {
 
 
     <!-- =====================================================
-         ALERTS
+         ERROR MESSAGE
     ====================================================== -->
 
-    <% if (
-        typeof error !== "undefined" &&
-        error
-    ) { %>
+    <% if (typeof error !== "undefined" && error) { %>
 
         <div class="cart-alert cart-alert-error">
-            <%= error %>
+
+            <i class="fas fa-circle-exclamation"></i>
+
+            <span>
+                <%= error %>
+            </span>
+
         </div>
 
     <% } %>
 
 
-    <% if (
-        typeof success !== "undefined" &&
-        success
-    ) { %>
+    <% if (!hasItems) { %>
 
-        <div class="cart-alert cart-alert-success">
-            <%= success %>
+        <!-- =================================================
+             EMPTY CART
+        ================================================== -->
+
+        <div class="cart-summary-card">
+
+            <div class="cart-summary-head">
+
+                <i class="fas fa-shopping-cart"></i>
+
+                <div>
+
+                    <h2>
+                        Your cart is empty
+                    </h2>
+
+                    <p>
+                        Add products to your cart before checking out.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="cart-summary-back">
+
+                <a
+                    href="/products"
+                    class="secondary-btn"
+                >
+                    <i class="fas fa-arrow-left"></i>
+                    Continue Shopping
+                </a>
+
+            </div>
+
         </div>
 
-    <% } %>
 
-
-    <% if (hasItems) { %>
+    <% } else { %>
 
 
         <!-- =================================================
@@ -277,48 +147,44 @@ if (isStaff) {
 
         <div class="cart-list">
 
-            <% cartItems.forEach((item) => {
+            <% cartItems.forEach(function(item) {
 
                 const product =
                     item.product || {};
 
                 const productId =
                     product._id ||
-                    item.productId ||
+                    product.id ||
                     "";
 
                 const productName =
                     product.name ||
                     "Product";
 
-                const productImage =
-                    product.image ||
-                    product.images?.[0] ||
-                    "/images/default-product.png";
-
                 const quantity =
-                    Number(
-                        item.quantity || 1
-                    );
-
-                const itemPrice =
-                    Number(
-                        item.price ||
-                        product.price ||
-                        0
-                    );
+                    Number(item.quantity || 1);
 
                 const itemTotal =
                     Number(
                         item.total ||
-                        itemPrice * quantity
+                        (
+                            Number(item.price || 0) *
+                            quantity
+                        )
+                    );
+
+                const productImage =
+                    product.image ||
+                    (
+                        Array.isArray(product.images) &&
+                        product.images.length
+                            ? product.images[0]
+                            : ""
                     );
 
             %>
 
-
-                <div class="cart-item-card">
-
+                <article class="cart-item-card">
 
                     <!-- =====================================
                          PRODUCT
@@ -329,14 +195,18 @@ if (isStaff) {
                         class="cart-item-link"
                     >
 
-                        <div class="cart-item-image">
+                        <% if (productImage) { %>
 
-                            <img
-                                src="<%= productImage %>"
-                                alt="<%= productName %>"
-                            >
+                            <div class="cart-item-image">
 
-                        </div>
+                                <img
+                                    src="<%= productImage %>"
+                                    alt="<%= productName %>"
+                                >
+
+                            </div>
+
+                        <% } %>
 
 
                         <div class="cart-item-main">
@@ -347,11 +217,7 @@ if (isStaff) {
                                     PRODUCT
                                 </span>
 
-                                <span class="cart-item-arrow">
-
-                                    <i class="fas fa-chevron-right"></i>
-
-                                </span>
+                                <i class="fas fa-chevron-right cart-item-arrow"></i>
 
                             </div>
 
@@ -364,13 +230,10 @@ if (isStaff) {
                             <div class="cart-item-meta">
 
                                 <span>
-
                                     Quantity:
-
                                     <strong>
                                         <%= quantity %>
                                     </strong>
-
                                 </span>
 
                             </div>
@@ -393,7 +256,7 @@ if (isStaff) {
                     ====================================== -->
 
                     <form
-                        action="/carts/remove/<%= productId %>"
+                        action="/carts/<%= productId %>/remove"
                         method="POST"
                         class="cart-remove-form"
                     >
@@ -401,7 +264,7 @@ if (isStaff) {
                         <button
                             type="submit"
                             class="cart-remove-btn"
-                            aria-label="Remove product"
+                            title="Remove from cart"
                         >
 
                             <i class="fas fa-trash"></i>
@@ -410,8 +273,7 @@ if (isStaff) {
 
                     </form>
 
-                </div>
-
+                </article>
 
             <% }); %>
 
@@ -422,18 +284,21 @@ if (isStaff) {
              CART SUMMARY
         ================================================== -->
 
-        <aside class="cart-summary-card">
-
+        <div class="cart-summary-card">
 
             <div class="cart-summary-head">
 
-                <span class="cart-kicker">
-                    SUMMARY
-                </span>
+                <div>
 
-                <h2>
-                    Order Summary
-                </h2>
+                    <span class="cart-kicker">
+                        ORDER SUMMARY
+                    </span>
+
+                    <h2>
+                        Checkout
+                    </h2>
+
+                </div>
 
             </div>
 
@@ -451,24 +316,6 @@ if (isStaff) {
             </div>
 
 
-            <div class="cart-summary-row">
-
-                <span>
-                    Payment
-                </span>
-
-                <strong id="cart-payment-mode-label">
-
-                    <%= isMobile
-                        ? "Pay now with M-Pesa"
-                        : "Pay upon delivery"
-                    %>
-
-                </strong>
-
-            </div>
-
-
             <div class="cart-summary-row cart-summary-total">
 
                 <span>
@@ -476,10 +323,7 @@ if (isStaff) {
                 </span>
 
                 <strong>
-
-                    KSh
-                    <%= cartTotal.toLocaleString() %>
-
+                    KSh <%= Number(cartTotal).toLocaleString() %>
                 </strong>
 
             </div>
@@ -489,14 +333,13 @@ if (isStaff) {
 
                 <% if (isStaff) { %>
 
-                    Choose how the customer will pay,
-                    then enter the sales name and confirm
-                    your assigned pickup substation.
+                    Enter the sales name before continuing
+                    to checkout.
 
                 <% } else { %>
 
-                    Continue to checkout to complete
-                    your order.
+                    Continue to checkout to select your pickup
+                    substation and payment method.
 
                 <% } %>
 
@@ -504,20 +347,15 @@ if (isStaff) {
 
 
             <!-- =================================================
-                 STAFF CHECKOUT
+                 STAFF
             ================================================== -->
 
-            <% if (isStaff) { %>
-
-
-                <!-- =============================================
-                     OPEN STAFF CHECKOUT MODAL
-                ============================================== -->
+            <% if (isStaff && checkoutProductId) { %>
 
                 <button
                     type="button"
-                    id="staff-sale-trigger"
                     class="staff-sale-trigger primary-btn"
+                    id="openStaffSalesNameModal"
                 >
 
                     <i class="fas fa-cash-register"></i>
@@ -527,38 +365,213 @@ if (isStaff) {
                 </button>
 
 
-            <% } else { %>
+                <!-- =============================================
+                     STAFF SALES NAME MODAL
+                     THIS MODAL EXISTS ON /CARTS
+                ============================================== -->
+
+                <div
+                    class="staff-sale-modal"
+                    id="staffSalesNameModal"
+                    aria-hidden="true"
+                >
+
+                    <div
+                        class="staff-sale-modal-overlay"
+                        id="staffSalesNameOverlay"
+                    ></div>
+
+
+                    <div
+                        class="staff-sale-modal-content"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="staffSalesNameTitle"
+                    >
+
+                        <!-- =================================
+                             HEADER
+                        ================================== -->
+
+                        <div class="staff-sale-modal-header">
+
+                            <div class="staff-sale-modal-icon">
+
+                                <i class="fas fa-user-tie"></i>
+
+                            </div>
+
+
+                            <div>
+
+                                <span class="staff-sale-modal-kicker">
+                                    STAFF CHECKOUT
+                                </span>
+
+                                <h2
+                                    class="staff-sale-modal-title"
+                                    id="staffSalesNameTitle"
+                                >
+                                    Sales Name
+                                </h2>
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                class="staff-sale-modal-close"
+                                id="closeStaffSalesNameModal"
+                                aria-label="Close"
+                            >
+
+                                <i class="fas fa-times"></i>
+
+                            </button>
+
+                        </div>
+
+
+                        <!-- =================================
+                             BODY
+                        ================================== -->
+
+                        <div class="staff-sale-modal-body">
+
+                            <p class="staff-sale-modal-description">
+
+                                Enter the sales name before
+                                continuing to checkout.
+
+                            </p>
+
+
+                            <!-- =================================
+                                 IMPORTANT
+
+                                 This form does NOT submit a POST
+                                 to /carts/:id.
+
+                                 It submits GET /carts/:id with
+                                 salesName as a query parameter.
+
+                                 The normal checkout page then
+                                 handles the rest.
+                            ================================== -->
+
+                            <form
+                                action="/carts/<%= checkoutProductId %>"
+                                method="GET"
+                                class="staff-sale-form"
+                                id="staffCheckoutForm"
+                            >
+
+                                <div class="staff-sale-form-group">
+
+                                    <label
+                                        for="salesName"
+                                        class="staff-sale-field"
+                                    >
+                                        Sales Name
+                                    </label>
+
+
+                                    <div class="staff-sale-input-wrap">
+
+                                        <i class="fas fa-user"></i>
+
+                                        <input
+                                            type="text"
+                                            id="salesName"
+                                            name="salesName"
+                                            placeholder="Enter sales name"
+                                            autocomplete="off"
+                                            required
+                                        >
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- =================================
+                                     ACTION
+                                ================================== -->
+
+                                <div class="staff-sale-modal-actions">
+
+                                    <button
+                                        type="submit"
+                                        class="staff-sale-submit staff-sale-submit-btn"
+                                    >
+
+                                        <i class="fas fa-arrow-right"></i>
+
+                                        Continue to Checkout
+
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                        </div>
+
+
+                        <!-- =================================
+                             FOOTER
+                        ================================== -->
+
+                        <div class="staff-sale-modal-footer">
+
+                            <span class="staff-sale-modal-note">
+
+                                <i class="fas fa-lock"></i>
+
+                                Sales information will be recorded
+                                with this order.
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            <% } else if (checkoutProductId) { %>
 
 
                 <!-- =================================================
-                     NORMAL USER CHECKOUT
+                     NORMAL USER
                 ================================================== -->
 
-                <% if (checkoutProductId) { %>
+                <a
+                    href="/carts/<%= checkoutProductId %>"
+                    class="cart-checkout-btn"
+                >
 
-                    <a
-                        href="/carts/<%= checkoutProductId %>"
-                        class="cart-checkout-btn"
-                    >
+                    <i class="fas fa-arrow-right"></i>
 
-                        <i class="fas fa-shopping-cart"></i>
+                    Continue to Checkout
 
-                        Checkout
+                </a>
 
-                    </a>
-
-                <% } %>
 
             <% } %>
 
 
             <!-- =================================================
-                 CONTINUE SHOPPING
+                 BACK
             ================================================== -->
 
             <div class="cart-summary-back">
 
-                <a href="/products">
+                <a
+                    href="/products"
+                    class="secondary-btn"
+                >
 
                     <i class="fas fa-arrow-left"></i>
 
@@ -568,1321 +581,212 @@ if (isStaff) {
 
             </div>
 
-        </aside>
-
-
-        <!-- =====================================================
-             STAFF CHECKOUT MODAL
-        ====================================================== -->
-
-        <% if (isStaff) { %>
-
-            <div
-                id="staff-sale-modal"
-                class="staff-sale-modal"
-                aria-hidden="true"
-            >
-
-
-                <!-- =============================================
-                     OVERLAY
-                ============================================== -->
-
-                <div
-                    class="staff-sale-modal-overlay"
-                    data-staff-sale-close
-                ></div>
-
-
-                <!-- =============================================
-                     MODAL CONTENT
-                ============================================== -->
-
-                <div
-                    class="staff-sale-modal-content"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="staff-sale-modal-title"
-                >
-
-
-                    <!-- =========================================
-                         HEADER
-                    ========================================== -->
-
-                    <div class="staff-sale-modal-header">
-
-
-                        <div class="staff-sale-modal-icon">
-
-                            <i class="fas fa-receipt"></i>
-
-                        </div>
-
-
-                        <div>
-
-                            <span class="staff-sale-modal-kicker">
-
-                                STAFF CHECKOUT
-
-                            </span>
-
-
-                            <h2
-                                id="staff-sale-modal-title"
-                                class="staff-sale-modal-title"
-                            >
-
-                                Complete Checkout
-
-                            </h2>
-
-                        </div>
-
-
-                        <button
-                            type="button"
-                            class="staff-sale-modal-close"
-                            data-staff-sale-close
-                            aria-label="Close"
-                        >
-
-                            <i class="fas fa-times"></i>
-
-                        </button>
-
-                    </div>
-
-
-                    <!-- =========================================
-                         BODY
-                    ========================================== -->
-
-                    <div class="staff-sale-modal-body">
-
-
-                        <p class="staff-sale-modal-description">
-
-                            Choose how the customer will pay,
-                            enter the sales name, and confirm
-                            the assigned pickup substation.
-
-                        </p>
-
-
-                        <!-- =====================================
-                             STAFF CHECKOUT FORM
-                        ====================================== -->
-
-                        <form
-                            id="staff-sale-form"
-                            class="staff-sale-form"
-                            method="POST"
-                            action=""
-                        >
-
-
-                            <!-- =================================
-                                 SALES NAME
-                            ================================== -->
-
-                            <div class="staff-sale-form-group">
-
-                                <label for="salesName">
-
-                                    Sales Name
-
-                                </label>
-
-
-                                <div class="staff-sale-input-wrap">
-
-                                    <i class="fas fa-user"></i>
-
-                                    <input
-                                        type="text"
-                                        id="salesName"
-                                        name="salesName"
-                                        placeholder="Enter sales name"
-                                        autocomplete="name"
-                                        maxlength="150"
-                                        required
-                                    >
-
-                                </div>
-
-                            </div>
-
-
-                            <!-- =================================
-                                 PICKUP SUBSTATION
-                            ================================== -->
-
-                            <div class="staff-sale-form-group">
-
-                                <label for="staffPickupSubstation">
-
-                                    <i class="fas fa-location-dot"></i>
-
-                                    Assigned Pickup Substation
-
-                                </label>
-
-
-                                <% if (assignedSubstationId) { %>
-
-
-                                    <!--
-                                      Hidden input carries the
-                                      actual submitted substation.
-
-                                      The visible select is disabled
-                                      so staff cannot change it.
-                                    -->
-
-                                    <input
-                                        type="hidden"
-                                        name="packageSubstation"
-                                        value="<%= assignedSubstationId %>"
-                                    >
-
-
-                                    <div class="staff-sale-input-wrap">
-
-                                        <i class="fas fa-lock"></i>
-
-                                        <select
-                                            id="staffPickupSubstation"
-                                            class="checkout-substation-select"
-                                            disabled
-                                        >
-
-                                            <option
-                                                value="<%= assignedSubstationId %>"
-                                                selected
-                                            >
-
-                                                <%= assignedSubstationName %>
-
-                                                <% if (
-                                                    assignedSubstationLocation
-                                                ) { %>
-
-                                                    —
-                                                    <%= assignedSubstationLocation %>
-
-                                                <% } %>
-
-                                            </option>
-
-                                        </select>
-
-                                    </div>
-
-
-                                    <small class="checkout-substation-default">
-
-                                        <i class="fas fa-lock"></i>
-
-                                        Pickup is restricted to your
-                                        assigned substation.
-
-                                    </small>
-
-
-                                <% } else { %>
-
-
-                                    <div class="checkout-substation-empty">
-
-                                        <i class="fas fa-circle-exclamation"></i>
-
-                                        You have not been assigned
-                                        a pickup substation.
-
-                                    </div>
-
-
-                                    <input
-                                        type="hidden"
-                                        name="packageSubstation"
-                                        value=""
-                                    >
-
-                                <% } %>
-
-                            </div>
-
-
-                            <!-- =================================
-                                 PAYMENT METHOD
-                            ================================== -->
-
-                            <div class="staff-sale-form-group">
-
-                                <label>
-
-                                    Payment Method
-
-                                </label>
-
-
-                                <div
-                                    class="payment-methods"
-                                    id="staffPaymentMethods"
-                                >
-
-
-                                    <!-- =================================
-                                         PAY NOW
-                                    ================================== -->
-
-                                    <label
-                                        class="payment-choice"
-                                        for="staffPaymentMpesa"
-                                    >
-
-                                        <input
-                                            type="radio"
-                                            name="staffPaymentMethod"
-                                            id="staffPaymentMpesa"
-                                            value="mpesa"
-                                            <%= isMobile
-                                                ? "checked"
-                                                : "" %>
-                                        >
-
-
-                                        <span class="payment-choice-icon">
-
-                                            <i class="fas fa-mobile-screen-button"></i>
-
-                                        </span>
-
-
-                                        <span class="payment-choice-copy">
-
-                                            <strong>
-                                                Pay now with M-Pesa
-                                            </strong>
-
-                                            <small>
-                                                An STK Push will be sent to
-                                                the customer's phone.
-                                            </small>
-
-                                        </span>
-
-                                    </label>
-
-
-                                    <!-- =================================
-                                         M-PESA PHONE NUMBER
-                                    ================================== -->
-
-                                    <div
-                                        id="staffPhoneField"
-                                        class="phone-field"
-                                    >
-
-                                        <label for="staffPhoneNumber">
-
-                                            M-Pesa phone number
-
-                                        </label>
-
-
-                                        <input
-                                            type="tel"
-                                            name="phoneNumber"
-                                            id="staffPhoneNumber"
-                                            placeholder="0712345678"
-                                            inputmode="numeric"
-                                            autocomplete="tel"
-                                        >
-
-                                    </div>
-
-
-                                    <!-- =================================
-                                         PAY UPON DELIVERY
-                                    ================================== -->
-
-                                    <label
-                                        class="payment-choice"
-                                        for="staffPaymentDelivery"
-                                    >
-
-                                        <input
-                                            type="radio"
-                                            name="staffPaymentMethod"
-                                            id="staffPaymentDelivery"
-                                            value="pay_on_delivery"
-                                            <%= !isMobile
-                                                ? "checked"
-                                                : "" %>
-                                        >
-
-
-                                        <span class="payment-choice-icon">
-
-                                            <i class="fas fa-truck"></i>
-
-                                        </span>
-
-
-                                        <span class="payment-choice-copy">
-
-                                            <strong>
-                                                Pay upon delivery
-                                            </strong>
-
-                                            <small>
-                                                The package will be created
-                                                immediately.
-                                            </small>
-
-                                        </span>
-
-                                    </label>
-
-                                </div>
-
-                            </div>
-
-
-                            <!-- =================================
-                                 SALE SUMMARY
-                            ================================== -->
-
-                            <div class="staff-sale-summary">
-
-
-                                <div class="staff-sale-preview">
-
-
-                                    <!-- PAYMENT -->
-
-                                    <div class="staff-sale-preview-card">
-
-                                        <span class="staff-sale-preview-label">
-
-                                            PAYMENT METHOD
-
-                                        </span>
-
-
-                                        <strong
-                                            id="staff-payment-preview"
-                                            class="staff-sale-preview-value"
-                                        >
-
-                                            <%= isMobile
-                                                ? "Pay now with M-Pesa"
-                                                : "Pay upon delivery"
-                                            %>
-
-                                        </strong>
-
-                                    </div>
-
-
-                                    <!-- TOTAL -->
-
-                                    <div class="staff-sale-preview-card">
-
-                                        <span class="staff-sale-preview-label">
-
-                                            TOTAL
-
-                                        </span>
-
-
-                                        <strong
-                                            class="staff-sale-preview-value sale-total"
-                                        >
-
-                                            KSh
-                                            <%= cartTotal.toLocaleString() %>
-
-                                        </strong>
-
-                                    </div>
-
-                                </div>
-
-
-                                <!-- ITEMS -->
-
-                                <div class="staff-sale-preview-row">
-
-                                    <span>
-                                        Items
-                                    </span>
-
-                                    <strong>
-                                        <%= cartItems.length %>
-                                    </strong>
-
-                                </div>
-
-
-                                <!-- PICKUP -->
-
-                                <div class="staff-sale-preview-row">
-
-                                    <span>
-                                        Pickup
-                                    </span>
-
-                                    <strong>
-
-                                        <%= assignedSubstationId
-                                            ? assignedSubstationName
-                                            : "Not assigned" %>
-
-                                    </strong>
-
-                                </div>
-
-
-                            </div>
-
-
-                            <!-- =================================
-                                 ACTIONS
-                            ================================== -->
-
-                            <div class="staff-sale-modal-actions">
-
-
-                                <button
-                                    type="button"
-                                    class="staff-sale-submit"
-                                    data-staff-sale-close
-                                >
-
-                                    Cancel
-
-                                </button>
-
-
-                                <button
-                                    type="submit"
-                                    class="staff-sale-submit-btn"
-                                    <%= !assignedSubstationId
-                                        ? "disabled"
-                                        : "" %>
-                                >
-
-                                    <i class="fas fa-check"></i>
-
-                                    Continue
-
-                                </button>
-
-
-                            </div>
-
-
-                        </form>
-
-                    </div>
-
-
-                    <!-- =========================================
-                         FOOTER
-                    ========================================== -->
-
-                    <div class="staff-sale-modal-footer">
-
-                        <p class="staff-sale-modal-note">
-
-                            The sales name and your assigned
-                            pickup substation are required
-                            before checkout can continue.
-
-                        </p>
-
-                    </div>
-
-
-                </div>
-
-            </div>
-
-        <% } %>
-
-
-    <% } else { %>
-
-
-        <!-- =====================================================
-             EMPTY CART
-        ====================================================== -->
-
-        <div class="cart-empty">
-
-
-            <div class="cart-empty-icon">
-
-                <i class="fas fa-shopping-bag"></i>
-
-            </div>
-
-
-            <h2>
-                Your cart is empty
-            </h2>
-
-
-            <p>
-                You haven't added any products yet.
-            </p>
-
-
-            <a
-                href="/products"
-                class="primary-btn"
-            >
-
-                <i class="fas fa-store"></i>
-
-                Browse Products
-
-            </a>
-
-
         </div>
-
 
     <% } %>
 
 </section>
 
 
-<% if (isStaff && hasItems) { %>
+<!-- =========================================================
+     STAFF SALES NAME MODAL
+========================================================= -->
+
+<% if (isStaff && checkoutProductId) { %>
 
 <script>
-(function () {
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-    "use strict";
+        const modal =
+            document.getElementById(
+                "staffSalesNameModal"
+            );
 
+        const openButton =
+            document.getElementById(
+                "openStaffSalesNameModal"
+            );
 
-    /* =====================================================
-       ELEMENTS
-    ====================================================== */
+        const closeButton =
+            document.getElementById(
+                "closeStaffSalesNameModal"
+            );
 
-    const modal =
-        document.getElementById(
-            "staff-sale-modal"
-        );
+        const overlay =
+            document.getElementById(
+                "staffSalesNameOverlay"
+            );
 
+        const form =
+            document.getElementById(
+                "staffCheckoutForm"
+            );
 
-    const trigger =
-        document.getElementById(
-            "staff-sale-trigger"
-        );
-
-
-    const form =
-        document.getElementById(
-            "staff-sale-form"
-        );
-
-
-    const salesNameInput =
-        document.getElementById(
-            "salesName"
-        );
-
-
-    const paymentRadios =
-        document.querySelectorAll(
-            'input[name="staffPaymentMethod"]'
-        );
+        const salesName =
+            document.getElementById(
+                "salesName"
+            );
 
 
-    const mpesaRadio =
-        document.getElementById(
-            "staffPaymentMpesa"
-        );
-
-
-    const deliveryRadio =
-        document.getElementById(
-            "staffPaymentDelivery"
-        );
-
-
-    const phoneField =
-        document.getElementById(
-            "staffPhoneField"
-        );
-
-
-    const phoneInput =
-        document.getElementById(
-            "staffPhoneNumber"
-        );
-
-
-    const paymentPreview =
-        document.getElementById(
-            "staff-payment-preview"
-        );
-
-
-    const paymentLabel =
-        document.getElementById(
-            "cart-payment-mode-label"
-        );
-
-
-    const packageSubstationInput =
-        form
-            ? form.querySelector(
-                'input[name="packageSubstation"]'
-            )
-            : null;
-
-
-    /* =====================================================
-       ASSIGNED SUBSTATION
-    ====================================================== */
-
-    const assignedSubstationId =
-        <%- JSON.stringify(
-            assignedSubstationId || ""
-        ) %>;
-
-
-    /* =====================================================
-       ROUTES
-    ====================================================== */
-
-    /*
-     * PAY NOW WITH M-PESA
-     *
-     * POST /carts/:id
-     */
-
-    const CART_CHECKOUT_ACTION =
-        "/carts/<%= checkoutProductId %>";
-
-
-    /*
-     * PAY UPON DELIVERY
-     *
-     * POST /carts/staff-sale
-     */
-
-    const STAFF_DELIVERY_ACTION =
-        "/carts/staff-sale";
-
-
-    /*
-     * Background payment-mode update.
-     *
-     * true  = M-PESA
-     * false = pay upon delivery
-     */
-
-    const PAYMENT_MODE_ACTION =
-        "/carts/payment-mode";
-
-
-    /* =====================================================
-       CURRENT PAYMENT MODE
-    ====================================================== */
-
-    let currentIsMobile =
-        <%= isMobile ? "true" : "false" %>;
-
-
-    /* =====================================================
-       UPDATE PAYMENT FORM ACTION
-    ====================================================== */
-
-    function updateFormAction() {
-
-        if (!form) {
+        if (!modal || !openButton) {
             return;
         }
 
 
-        if (currentIsMobile) {
+        /* =====================================================
+           OPEN
+        ====================================================== */
 
-            /*
-             * PAY NOW WITH M-PESA
-             */
+        function openModal() {
 
-            form.action =
-                CART_CHECKOUT_ACTION;
-
-        } else {
-
-            /*
-             * PAY UPON DELIVERY
-             */
-
-            form.action =
-                STAFF_DELIVERY_ACTION;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       UPDATE PAYMENT DISPLAY
-    ====================================================== */
-
-    function updatePaymentDisplay() {
-
-        const paymentText =
-            currentIsMobile
-                ? "Pay now with M-Pesa"
-                : "Pay upon delivery";
-
-
-        if (paymentPreview) {
-
-            paymentPreview.textContent =
-                paymentText;
-
-        }
-
-
-        if (paymentLabel) {
-
-            paymentLabel.textContent =
-                paymentText;
-
-        }
-
-
-        if (phoneField) {
-
-            phoneField.classList.toggle(
-                "show",
-                currentIsMobile
+            modal.classList.add(
+                "is-open"
             );
 
-        }
+            modal.setAttribute(
+                "aria-hidden",
+                "false"
+            );
 
-
-        if (phoneInput) {
-
-            phoneInput.required =
-                currentIsMobile;
-
-            phoneInput.disabled =
-                !currentIsMobile;
-
-
-            if (!currentIsMobile) {
-
-                phoneInput.value =
-                    "";
-
-            }
-
-        }
-
-    }
-
-
-    /* =====================================================
-       SAVE PAYMENT MODE
-    ====================================================== */
-
-    async function savePaymentMode(
-        newIsMobile
-    ) {
-
-        try {
-
-            const response =
-                await fetch(
-                    PAYMENT_MODE_ACTION,
-                    {
-                        method:
-                            "POST",
-
-                        headers: {
-
-                            "Content-Type":
-                                "application/x-www-form-urlencoded; charset=UTF-8",
-
-                            "X-Requested-With":
-                                "XMLHttpRequest"
-
-                        },
-
-                        body:
-                            new URLSearchParams({
-
-                                isMobile:
-                                    String(
-                                        newIsMobile
-                                    )
-
-                            })
-
-                        }
-                    );
-
-
-            const data =
-                await response.json();
-
-
-            if (
-                !response.ok ||
-                !data.ok
-            ) {
-
-                throw new Error(
-                    data?.error ||
-                    "Unable to update payment method."
-                );
-
-            }
-
-
-            currentIsMobile =
-                Boolean(
-                    data.isMobile
-                );
-
-
-            updatePaymentDisplay();
-
-            updateFormAction();
-
-        } catch (error) {
-
-            console.error(
-                "Payment mode update error:",
-                error
+            document.body.classList.add(
+                "staff-sale-modal-open"
             );
 
 
-            /*
-             * Revert the selection.
-             */
-
-            currentIsMobile =
-                !newIsMobile;
-
-
-            if (mpesaRadio) {
-
-                mpesaRadio.checked =
-                    currentIsMobile;
-
-            }
-
-
-            if (deliveryRadio) {
-
-                deliveryRadio.checked =
-                    !currentIsMobile;
-
-            }
-
-
-            updatePaymentDisplay();
-
-            updateFormAction();
-
-
-            alert(
-                error?.message ||
-                "Unable to update payment method."
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       PAYMENT METHOD CHANGE
-    ====================================================== */
-
-    paymentRadios.forEach(
-        function (radio) {
-
-            radio.addEventListener(
-                "change",
-                async function () {
-
-                    const newIsMobile =
-                        this.value === "mpesa";
-
-
-                    /*
-                     * Update immediately so the
-                     * interface responds instantly.
-                     */
-
-                    currentIsMobile =
-                        newIsMobile;
-
-
-                    updatePaymentDisplay();
-
-                    updateFormAction();
-
-
-                    /*
-                     * Persist in the cart without
-                     * navigating away from this page.
-                     */
-
-                    await savePaymentMode(
-                        newIsMobile
-                    );
-
-                }
-            );
-
-        }
-    );
-
-
-    /* =====================================================
-       OPEN MODAL
-    ====================================================== */
-
-    function openModal() {
-
-        if (!modal) {
-            return;
-        }
-
-
-        updatePaymentDisplay();
-
-        updateFormAction();
-
-
-        modal.classList.add(
-            "is-open"
-        );
-
-
-        modal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-
-        document.body.classList.add(
-            "staff-sale-modal-open"
-        );
-
-
-        setTimeout(
-            function () {
-
-                if (salesNameInput) {
-
-                    salesNameInput.focus();
-
-                }
-
-            },
-            100
-        );
-
-    }
-
-
-    /* =====================================================
-       CLOSE MODAL
-    ====================================================== */
-
-    function closeModal() {
-
-        if (!modal) {
-            return;
-        }
-
-
-        modal.classList.remove(
-            "is-open"
-        );
-
-
-        modal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-
-        document.body.classList.remove(
-            "staff-sale-modal-open"
-        );
-
-    }
-
-
-    /* =====================================================
-       OPEN BUTTON
-    ====================================================== */
-
-    if (trigger) {
-
-        trigger.addEventListener(
-            "click",
-            function () {
-
-                openModal();
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       CLOSE BUTTONS
-    ====================================================== */
-
-    document
-        .querySelectorAll(
-            "[data-staff-sale-close]"
-        )
-        .forEach(
-            function (element) {
-
-                element.addEventListener(
-                    "click",
-                    function () {
-
-                        closeModal();
-
+            setTimeout(
+                function () {
+
+                    if (salesName) {
+                        salesName.focus();
                     }
-                );
 
-            }
+                },
+                100
+            );
+
+        }
+
+
+        /* =====================================================
+           CLOSE
+        ====================================================== */
+
+        function closeModal() {
+
+            modal.classList.remove(
+                "is-open"
+            );
+
+            modal.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+            document.body.classList.remove(
+                "staff-sale-modal-open"
+            );
+
+        }
+
+
+        /* =====================================================
+           OPEN BUTTON
+        ====================================================== */
+
+        openButton.addEventListener(
+            "click",
+            openModal
         );
 
 
-    /* =====================================================
-       ESCAPE KEY
-    ====================================================== */
+        /* =====================================================
+           CLOSE BUTTON
+        ====================================================== */
 
-    document.addEventListener(
-        "keydown",
-        function (event) {
+        if (closeButton) {
 
-            if (
-                event.key === "Escape" &&
-                modal &&
-                modal.classList.contains(
-                    "is-open"
-                )
-            ) {
-
-                closeModal();
-
-            }
+            closeButton.addEventListener(
+                "click",
+                closeModal
+            );
 
         }
-    );
 
 
-    /* =====================================================
-       FINAL SUBMISSION
-    ====================================================== */
+        /* =====================================================
+           OVERLAY
+        ====================================================== */
 
-    if (form) {
+        if (overlay) {
 
-        form.addEventListener(
-            "submit",
+            overlay.addEventListener(
+                "click",
+                closeModal
+            );
+
+        }
+
+
+        /* =====================================================
+           ESCAPE
+        ====================================================== */
+
+        document.addEventListener(
+            "keydown",
             function (event) {
 
-                /* -----------------------------------------
-                   SALES NAME
-                ------------------------------------------ */
-
                 if (
-                    !salesNameInput ||
-                    !salesNameInput.value.trim()
+                    event.key === "Escape" &&
+                    modal.classList.contains(
+                        "is-open"
+                    )
                 ) {
 
-                    event.preventDefault();
-
-
-                    if (salesNameInput) {
-
-                        salesNameInput.focus();
-
-                    }
-
-
-                    return;
+                    closeModal();
 
                 }
 
-
-                /* -----------------------------------------
-                   PICKUP SUBSTATION
-                ------------------------------------------ */
-
-                if (
-                    !packageSubstationInput ||
-                    !String(
-                        packageSubstationInput.value ||
-                        ""
-                    ).trim()
-                ) {
-
-                    event.preventDefault();
+            }
+        );
 
 
-                    alert(
-                        "You do not have an assigned pickup substation."
-                    );
+        /* =====================================================
+           SALES NAME VALIDATION
+        ====================================================== */
 
+        if (form) {
 
-                    return;
+            form.addEventListener(
+                "submit",
+                function (event) {
 
-                }
-
-
-                /*
-                 * Always submit the staff member's
-                 * assigned substation.
-                 */
-
-                packageSubstationInput.value =
-                    assignedSubstationId;
-
-
-                /* -----------------------------------------
-                   PAYMENT METHOD
-                ------------------------------------------ */
-
-                const selectedPayment =
-                    document.querySelector(
-                        'input[name="staffPaymentMethod"]:checked'
-                    );
-
-
-                if (!selectedPayment) {
-
-                    event.preventDefault();
-
-
-                    alert(
-                        "Please choose how the customer will pay."
-                    );
-
-
-                    return;
-
-                }
-
-
-                /* -----------------------------------------
-                   M-PESA PHONE
-                ------------------------------------------ */
-
-                if (
-                    selectedPayment.value ===
-                    "mpesa"
-                ) {
-
-                    const phone =
-                        phoneInput
-                            ? phoneInput.value.trim()
+                    const value =
+                        salesName
+                            ? salesName.value.trim()
                             : "";
 
 
-                    if (!phone) {
+                    if (!value) {
 
                         event.preventDefault();
 
-
-                        if (phoneInput) {
-
-                            phoneInput.focus();
-
+                        if (salesName) {
+                            salesName.focus();
                         }
-
-
-                        alert(
-                            "Please enter the M-Pesa phone number that should receive the STK Push."
-                        );
-
 
                         return;
 
                     }
 
                 }
+            );
 
-
-                /* -----------------------------------------
-                   PAYMENT ROUTE
-                ------------------------------------------ */
-
-                if (
-                    selectedPayment.value ===
-                    "mpesa"
-                ) {
-
-                    /*
-                     * PAY NOW
-                     *
-                     * POST /carts/:id
-                     */
-
-                    currentIsMobile =
-                        true;
-
-
-                    form.action =
-                        CART_CHECKOUT_ACTION;
-
-                } else {
-
-                    /*
-                     * PAY UPON DELIVERY
-                     *
-                     * POST /carts/staff-sale
-                     */
-
-                    currentIsMobile =
-                        false;
-
-
-                    form.action =
-                        STAFF_DELIVERY_ACTION;
-
-                }
-
-            }
-        );
+        }
 
     }
-
-
-    /* =====================================================
-       INITIAL STATE
-    ====================================================== */
-
-    updatePaymentDisplay();
-
-    updateFormAction();
-
-})();
+);
 </script>
 
 <% } %>
