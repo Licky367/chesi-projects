@@ -40,6 +40,10 @@ const packageSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+    salesName: {
+      type: String,
+      default: ""
+    },
 
     // --------------------------------------------------------
     // CUSTOMER-SELECTED PICKUP SUBSTATION
