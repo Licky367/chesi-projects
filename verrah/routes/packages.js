@@ -19,10 +19,15 @@ const packageSubstationAccess =
 
 // IMPORTANT:
 // Staff routes must be declared before /:id.
+// The direct-sell route is also declared before /:id
+// so "staffDirect" is not treated as a package ID.
 
 // =========================================================
 // STAFF PACKAGE LIST
 // GET /packages/staff
+//
+// Displays normal packages where the package owner is NOT
+// a staff user.
 //
 // For staff, pending packages are filtered by the staff
 // member's assignedSubstation against packageSubstation.
@@ -33,6 +38,26 @@ router.get(
     requireStaffOrAdmin,
     packageSubstationAccess.filterStaffList,
     controller.staffList
+);
+
+// =========================================================
+// STAFF DIRECT SELL PACKAGE LIST
+// GET /packages/staffDirect
+//
+// Displays packages where the package owner is a staff user.
+//
+// This renders:
+// packages/staffDirectSells.ejs
+//
+// The controller is responsible for determining:
+// isDirectSell === true
+// =========================================================
+
+router.get(
+    "/staffDirect",
+    requireStaffOrAdmin,
+    packageSubstationAccess.filterStaffList,
+    controller.staffDirectSells
 );
 
 // =========================================================
