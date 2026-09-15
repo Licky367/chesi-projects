@@ -1,0 +1,254 @@
+<!-- =========================================================
+     PACKAGE DETAILS
+========================================================= -->
+
+
+<%
+  const detailsPackage =
+    (typeof packageDoc !== "undefined" && packageDoc)
+      ? packageDoc
+      : null;
+
+
+  const detailsTotalAmount =
+    Number(
+      detailsPackage?.totalAmount || 0
+    );
+
+
+  const detailsPackageId =
+    detailsPackage?._id
+      ? String(detailsPackage._id)
+      : "";
+
+
+  const detailsCreatedAt =
+    detailsPackage?.createdAt
+      ? new Date(
+          detailsPackage.createdAt
+        ).toLocaleString()
+      : "—";
+
+
+  const detailsItems =
+    Array.isArray(
+      detailsPackage?.items
+    )
+      ? detailsPackage.items
+      : [];
+
+
+  const detailsPaymentMethod =
+    detailsPackage?.paymentMethod === "mpesa"
+      ? "M-Pesa"
+      : "Pay upon delivery";
+
+
+  const detailsPaymentConfirmed =
+    detailsPackage?.paymentStatus === "paid" ||
+    detailsPackage?.paymentStatus === "confirmed";
+
+
+  const detailsReceipt =
+    detailsPackage?.mpesaReceiptNumber || null;
+%>
+
+
+<% if (detailsPackage) { %>
+
+  <!-- =======================================================
+       PACKAGE HEADER
+  ======================================================== -->
+
+  <div class="package-detail-header">
+
+    <div>
+
+      <span class="packages-kicker">
+        ORDER DETAILS
+      </span>
+
+
+      <h1>
+        Package
+        <%= detailsPackageId.slice(-8) %>
+      </h1>
+
+
+      <p>
+        <%= detailsCreatedAt %>
+      </p>
+
+    </div>
+
+
+    <span
+      class="package-status status-<%= detailsPackage.status %>"
+    >
+      <%= detailsPackage.status %>
+    </span>
+
+  </div>
+
+
+  <!-- =======================================================
+       PACKAGE ITEMS
+  ======================================================== -->
+
+  <div class="package-detail-items">
+
+    <% detailsItems.forEach(function (item) { %>
+
+      <%
+        const itemPrice =
+          Number(item.price || 0);
+
+        const itemQty =
+          Number(item.qty || 0);
+
+        const itemTotal =
+          itemPrice * itemQty;
+      %>
+
+
+      <div class="package-item-card">
+
+        <!-- IMAGE -->
+
+        <div class="package-item-image">
+
+          <% if (item.image) { %>
+
+            <img
+              src="<%= item.image %>"
+              alt="<%= item.name || 'Product' %>"
+            >
+
+          <% } else { %>
+
+            <i class="fas fa-box"></i>
+
+          <% } %>
+
+        </div>
+
+
+        <!-- ITEM INFORMATION -->
+
+        <div class="package-item-main">
+
+          <h3>
+            <%= item.name %>
+          </h3>
+
+
+          <div class="package-item-meta">
+
+            Quantity:
+
+            <strong>
+              <%= itemQty %>
+            </strong>
+
+          </div>
+
+
+          <div class="package-item-meta">
+
+            KSh
+            <%= itemPrice.toLocaleString() %>
+            each
+
+          </div>
+
+        </div>
+
+
+        <!-- ITEM TOTAL -->
+
+        <strong class="package-item-total">
+
+          KSh
+          <%= itemTotal.toLocaleString() %>
+
+        </strong>
+
+      </div>
+
+    <% }) %>
+
+  </div>
+
+
+  <!-- =======================================================
+       PAYMENT OVERVIEW
+  ======================================================== -->
+
+  <div class="package-payment-overview">
+
+    <!-- TOTAL -->
+
+    <div class="package-total-line">
+
+      <span>
+        Total
+      </span>
+
+
+      <strong>
+
+        KSh
+        <%= detailsTotalAmount.toLocaleString() %>
+
+      </strong>
+
+    </div>
+
+
+    <!-- PAYMENT META -->
+
+    <div class="package-payment-meta">
+
+      <span>
+
+        Payment:
+
+        <strong>
+          <%= detailsPaymentMethod %>
+        </strong>
+
+      </span>
+
+
+      <% if (detailsPaymentConfirmed) { %>
+
+        <span class="payment-confirmed">
+
+          <i class="fas fa-circle-check"></i>
+
+          Paid
+
+        </span>
+
+      <% } %>
+
+
+      <% if (detailsReceipt) { %>
+
+        <span>
+
+          Receipt:
+
+          <strong>
+            <%= detailsReceipt %>
+          </strong>
+
+        </span>
+
+      <% } %>
+
+    </div>
+
+  </div>
+
+<% } %>
