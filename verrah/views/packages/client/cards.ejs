@@ -1,6 +1,7 @@
 <!-- =========================================================
      VERRAH COSMETICS
-     PACKAGE DETAILS TABS
+     PACKAGE DETAILS
+     MOTHER PAGE
 ========================================================= -->
 
 <section class="shop-page packages-page package-details-page">
@@ -13,9 +14,7 @@
            TABS
       ====================================================== -->
 
-      <div
-        class="verrah-tabs-container"
-      >
+      <div class="verrah-tabs-container">
 
         <div
           class="verrah-tabs"
@@ -57,7 +56,10 @@
 
         <div class="verrah-tab-content">
 
-          <!-- DETAILS -->
+          <!-- =================================================
+               DETAILS TAB
+          ================================================== -->
+
           <div
             class="verrah-tab-panel active"
             id="details"
@@ -70,7 +72,10 @@
           </div>
 
 
-          <!-- PAYMENT -->
+          <!-- =================================================
+               PAYMENT TAB
+          ================================================== -->
+
           <div
             class="verrah-tab-panel"
             id="payment"
@@ -89,7 +94,7 @@
 
     </div>
 
-  <% end %>
+  <% } %>
 
 </section>
 
@@ -310,12 +315,20 @@
       );
 
 
-      modalTitle.textContent =
-        title || "Success";
+      if (modalTitle) {
+
+        modalTitle.textContent =
+          title || "Success";
+
+      }
 
 
-      modalIcon.innerHTML =
-        '<i class="fas fa-circle-check"></i>';
+      if (modalIcon) {
+
+        modalIcon.innerHTML =
+          '<i class="fas fa-circle-check"></i>';
+
+      }
 
     } else {
 
@@ -324,19 +337,31 @@
       );
 
 
-      modalTitle.textContent =
-        title || "Package Error";
+      if (modalTitle) {
+
+        modalTitle.textContent =
+          title || "Package Error";
+
+      }
 
 
-      modalIcon.innerHTML =
-        '<i class="fas fa-circle-exclamation"></i>';
+      if (modalIcon) {
+
+        modalIcon.innerHTML =
+          '<i class="fas fa-circle-exclamation"></i>';
+
+      }
 
     }
 
 
-    modalText.textContent =
-      message ||
-      "Something went wrong.";
+    if (modalText) {
+
+      modalText.textContent =
+        message ||
+        "Something went wrong.";
+
+    }
 
 
     modal.classList.add(
