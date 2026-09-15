@@ -6,7 +6,7 @@
 
 <%
     const isStaff =
-        String(user?.role || "").toLowerCase() === "staff";
+        String(user?.role || "").trim().toLowerCase() === "staff";
 
     const staffBranchUrl =
         isStaff && user?.assignedSubstation
@@ -31,17 +31,10 @@
     /*
      * PAYMENT MODE
      *
-     * isMobile === false
-     *     = Cash Payment
-     *     = Record Sale
-     *     = Existing staff-sale popup
+     * true  = M-PESA
+     * false = Cash
      *
-     * isMobile === true
-     *     = Mpesa Payment
-     *     = Checkout
-     *     = /carts/:productId
-     *
-     * Cart model defaults isMobile to true.
+     * Default is M-PESA.
      */
     const isMobile =
         cart?.isMobile !== false;
@@ -87,8 +80,11 @@
             href="<%= staffBranchUrl %>"
             class="secondary-btn"
         >
+
             <i class="fas fa-arrow-left"></i>
+
             Continue Shopping
+
         </a>
 
     </div>
@@ -98,7 +94,7 @@
          ERROR
     ======================================================= -->
 
-    <% if (error) { %>
+    <% if (typeof error !== "undefined" && error) { %>
 
         <div class="cart-alert cart-alert-error">
 
@@ -122,23 +118,31 @@
         <div class="cart-empty">
 
             <div class="cart-empty-icon">
+
                 <i class="fas fa-shopping-basket"></i>
+
             </div>
+
 
             <h2>
                 Your Cart Is Empty
             </h2>
 
+
             <p>
                 You have not added any products to your cart yet.
             </p>
+
 
             <a
                 class="primary-btn"
                 href="<%= staffBranchUrl %>"
             >
+
                 <i class="fas fa-store"></i>
+
                 Browse Products
+
             </a>
 
         </div>
@@ -202,11 +206,6 @@
                                     ""
                                 );
 
-                            /*
-                             * qty is the canonical cart quantity.
-                             * quantity is kept only as a fallback for
-                             * older documents.
-                             */
                             const quantity =
                                 Number(
                                     item.qty ??
@@ -408,8 +407,6 @@
 
                 <!-- ==================================================
                      STAFF PAYMENT MODE
-                     
-                     ONLY STAFF SEE THIS.
                 =================================================== -->
 
                 <% if (isStaff) { %>
@@ -458,77 +455,35 @@
                 <% if (isStaff) { %>
 
                     <!--
-                        STAFF + CASH
+                        STAFF ALWAYS GETS THE POPUP.
 
-                        isMobile = false
+                        Payment mode does NOT determine whether
+                        the popup exists.
 
-                        Button:
-                            Record Sale
-
-                        Clicking:
-                            Existing staff-sale popup
+                        The selected payment mode is passed into
+                        the popup form.
                     -->
 
-                    <% if (!isMobile) { %>
+                    <button
+                        type="button"
+                        class="primary-btn cart-checkout-btn staff-sale-trigger"
+                        id="openStaffSaleModal"
+                    >
 
-                        <button
-                            type="button"
-                            class="primary-btn cart-checkout-btn staff-sale-trigger"
-                            id="openStaffSaleModal"
-                        >
+                        <i class="fas fa-cash-register"></i>
 
-                            <i class="fas fa-cash-register"></i>
+                        <span>
+                            Continue
+                        </span>
 
-                            <span>
-                                Record Sale
-                            </span>
-
-                        </button>
-
-
-                    <% } else { %>
-
-
-                        <!--
-                            STAFF + MPESA
-
-                            isMobile = true
-
-                            Button:
-                                Checkout
-
-                            Clicking goes directly to:
-
-                                /carts/:productId
-
-                            No staff-sale popup is opened.
-                        -->
-
-                        <a
-                            class="primary-btn cart-checkout-btn"
-                            id="staffMpesaCheckout"
-                            href="/carts/<%= checkoutProductId %>"
-                        >
-
-                            <i class="fas fa-credit-card"></i>
-
-                            <span>
-                                Checkout
-                            </span>
-
-                        </a>
-
-                    <% } %>
+                    </button>
 
 
                 <% } else { %>
 
-                    <!--
-                        NORMAL USERS
-
-                        EXISTING CHECKOUT LOGIC REMAINS
-                        EXACTLY THE SAME.
-                    -->
+                    <!-- ==================================================
+                         NORMAL USER CHECKOUT
+                    =================================================== -->
 
                     <a
                         class="primary-btn cart-checkout-btn"
@@ -566,18 +521,24 @@
 
 
 <!-- ==========================================================
-     STAFF CASH SALE MODAL
+     STAFF SALE / CHECKOUT POPUP
 
-     ONLY USED WHEN:
+     IMPORTANT:
+
+     This popup is rendered whenever:
 
          role = staff
-         isMobile = false
+         AND cart has items
 
-     Mpesa does NOT use this modal.
-     Mpesa goes directly to /carts/:productId.
+     It is NOT dependent on isMobile.
+
+     Therefore:
+
+         STAFF + CASH  -> popup
+         STAFF + MPESA -> popup
 ========================================================== -->
 
-<% if (isStaff && hasItems && !isMobile) { %>
+<% if (isStaff && hasItems) { %>
 
     <div
         class="staff-sale-modal"
@@ -585,11 +546,19 @@
         aria-hidden="true"
     >
 
+        <!-- ==================================================
+             OVERLAY
+        =================================================== -->
+
         <div
             class="staff-sale-modal-overlay"
             data-close-staff-sale-modal
         ></div>
 
+
+        <!-- ==================================================
+             MODAL CONTENT
+        =================================================== -->
 
         <div
             class="staff-sale-modal-content"
@@ -614,11 +583,11 @@
                 <div>
 
                     <span class="staff-sale-modal-kicker">
-                        STAFF SALE
+                        STAFF CHECKOUT
                     </span>
 
                     <h2 id="staffSaleModalTitle">
-                        Record Sale
+                        Complete Sale
                     </h2>
 
                 </div>
@@ -646,10 +615,36 @@
 
                 <p class="staff-sale-modal-description">
 
-                    Enter the name of the customer for this sale.
+                    Enter the customer or sales name to continue.
 
                 </p>
 
+
+                <!-- ==================================================
+                     SELECTED PAYMENT MODE
+                =================================================== -->
+
+                <div class="staff-sale-summary">
+
+                    <span>
+                        Payment mode
+                    </span>
+
+                    <strong id="staffSalePaymentModeLabel">
+
+                        <%= isMobile
+                            ? "M-PESA"
+                            : "Cash"
+                        %>
+
+                    </strong>
+
+                </div>
+
+
+                <!-- ==================================================
+                     STAFF SALE FORM
+                =================================================== -->
 
                 <form
                     action="/carts/staff-sale"
@@ -659,30 +654,31 @@
                 >
 
                     <!--
-                        Cash payment:
-
-                            isMobile = false
+                        This value is updated by JavaScript
+                        whenever the staff changes payment mode.
                     -->
 
                     <input
                         type="hidden"
                         name="isMobile"
-                        value="false"
+                        id="staffSaleIsMobile"
+                        value="<%= isMobile ? 'true' : 'false' %>"
                     >
 
 
                     <div class="staff-sale-field">
 
-                        <label
-                            for="salesName"
-                        >
+                        <label for="salesName">
+
                             Customer / Sales Name
+
                         </label>
 
 
                         <div class="staff-sale-input-wrap">
 
                             <i class="fas fa-user"></i>
+
 
                             <input
                                 type="text"
@@ -698,6 +694,10 @@
 
                     </div>
 
+
+                    <!-- ==================================================
+                         TOTAL
+                    =================================================== -->
 
                     <div class="staff-sale-summary">
 
@@ -753,7 +753,7 @@
 
 
     <!-- ==========================================================
-         STAFF CASH SALE MODAL JAVASCRIPT
+         STAFF POPUP JAVASCRIPT
     =========================================================== -->
 
     <script>
@@ -774,38 +774,35 @@
                     "salesName"
                 );
 
+            const staffSaleForm =
+                document.getElementById(
+                    "staffSaleForm"
+                );
+
+            const staffSaleIsMobile =
+                document.getElementById(
+                    "staffSaleIsMobile"
+                );
+
+            const paymentMode =
+                document.getElementById(
+                    "staffPaymentMode"
+                );
+
+            const paymentModeLabel =
+                document.getElementById(
+                    "staffSalePaymentModeLabel"
+                );
+
 
             if (!modal || !openButton) {
                 return;
             }
 
 
-            // ==================================================
-            // CLOSE MODAL
-            // ==================================================
-
-            const closeModal =
-                function () {
-
-                    modal.classList.remove(
-                        "is-open"
-                    );
-
-                    modal.setAttribute(
-                        "aria-hidden",
-                        "true"
-                    );
-
-                    document.body.classList.remove(
-                        "staff-sale-modal-open"
-                    );
-
-                };
-
-
-            // ==================================================
-            // OPEN MODAL
-            // ==================================================
+            /* ==================================================
+               OPEN MODAL
+            ================================================== */
 
             const openModal =
                 function () {
@@ -840,9 +837,32 @@
                 };
 
 
-            // ==================================================
-            // OPEN BUTTON
-            // ==================================================
+            /* ==================================================
+               CLOSE MODAL
+            ================================================== */
+
+            const closeModal =
+                function () {
+
+                    modal.classList.remove(
+                        "is-open"
+                    );
+
+                    modal.setAttribute(
+                        "aria-hidden",
+                        "true"
+                    );
+
+                    document.body.classList.remove(
+                        "staff-sale-modal-open"
+                    );
+
+                };
+
+
+            /* ==================================================
+               OPEN BUTTON
+            ================================================== */
 
             openButton.addEventListener(
                 "click",
@@ -850,9 +870,9 @@
             );
 
 
-            // ==================================================
-            // CLOSE BUTTONS / OVERLAY
-            // ==================================================
+            /* ==================================================
+               CLOSE BUTTONS / OVERLAY
+            ================================================== */
 
             modal
                 .querySelectorAll(
@@ -870,9 +890,9 @@
                 );
 
 
-            // ==================================================
-            // ESCAPE KEY
-            // ==================================================
+            /* ==================================================
+               ESCAPE KEY
+            ================================================== */
 
             document.addEventListener(
                 "keydown",
@@ -892,156 +912,214 @@
                 }
             );
 
-        })();
-    </script>
 
-<% } %>
+            /* ==================================================
+               PAYMENT MODE
+               
+               Update the cart in the background.
+               
+               NEVER navigate to /carts/payment-mode.
+            ================================================== */
+
+            if (paymentMode) {
+
+                paymentMode.addEventListener(
+                    "change",
+                    async function () {
+
+                        const selectedMode =
+                            paymentMode.value;
+
+                        const newIsMobile =
+                            selectedMode === "mpesa";
+
+                        const oldIsMobile =
+                            staffSaleIsMobile
+                                ? staffSaleIsMobile.value === "true"
+                                : <%= isMobile ? "true" : "false" %>;
 
 
-<!-- ==========================================================
-     STAFF PAYMENT MODE JAVASCRIPT
+                        paymentMode.disabled =
+                            true;
 
-     Cash:
-         isMobile = false
-         Record Sale
-         Existing popup
 
-     Mpesa:
-         isMobile = true
-         Checkout
-         /carts/:productId
-========================================================== -->
+                        try {
 
-<% if (isStaff && hasItems) { %>
+                            const response =
+                                await fetch(
+                                    "/carts/payment-mode",
+                                    {
+                                        method: "POST",
 
-    <script>
-        (function () {
+                                        headers: {
+                                            "Content-Type":
+                                                "application/x-www-form-urlencoded",
+                                            "Accept":
+                                                "application/json"
+                                        },
 
-            const paymentMode =
-                document.getElementById(
-                    "staffPaymentMode"
+                                        body:
+                                            new URLSearchParams({
+                                                isMobile:
+                                                    String(
+                                                        newIsMobile
+                                                    )
+                                            })
+                                    }
+                                );
+
+
+                            let result = null;
+
+
+                            try {
+
+                                result =
+                                    await response.json();
+
+                            } catch (jsonError) {
+
+                                result = null;
+
+                            }
+
+
+                            if (
+                                !response.ok ||
+                                !result ||
+                                result.ok !== true
+                            ) {
+
+                                throw new Error(
+                                    result?.error ||
+                                    "Unable to update payment mode."
+                                );
+
+                            }
+
+
+                            /*
+                             * Update the popup's hidden value.
+                             */
+
+                            if (staffSaleIsMobile) {
+
+                                staffSaleIsMobile.value =
+                                    String(
+                                        newIsMobile
+                                    );
+
+                            }
+
+
+                            /*
+                             * Update payment mode shown
+                             * inside the popup.
+                             */
+
+                            if (paymentModeLabel) {
+
+                                paymentModeLabel.textContent =
+                                    newIsMobile
+                                        ? "M-PESA"
+                                        : "Cash";
+
+                            }
+
+
+                            /*
+                             * Keep the current cart page.
+                             *
+                             * Do NOT reload.
+                             *
+                             * Do NOT navigate to the API.
+                             *
+                             * The staff can continue using
+                             * the popup immediately.
+                             */
+
+                        } catch (error) {
+
+                            console.error(
+                                "Payment mode update error:",
+                                error
+                            );
+
+
+                            /*
+                             * Restore the previous selection.
+                             */
+
+                            paymentMode.value =
+                                oldIsMobile
+                                    ? "mpesa"
+                                    : "cash";
+
+
+                            if (staffSaleIsMobile) {
+
+                                staffSaleIsMobile.value =
+                                    String(
+                                        oldIsMobile
+                                    );
+
+                            }
+
+
+                            if (paymentModeLabel) {
+
+                                paymentModeLabel.textContent =
+                                    oldIsMobile
+                                        ? "M-PESA"
+                                        : "Cash";
+
+                            }
+
+
+                            alert(
+                                error?.message ||
+                                "Unable to update payment mode."
+                            );
+
+                        } finally {
+
+                            paymentMode.disabled =
+                                false;
+
+                        }
+
+                    }
                 );
 
-            if (!paymentMode) {
-                return;
             }
 
 
-            paymentMode.addEventListener(
-                "change",
-                function () {
+            /* ==================================================
+               KEEP POPUP PAYMENT MODE SYNCHRONIZED
+            ================================================== */
 
-                    const selectedMode =
-                        paymentMode.value;
+            if (
+                staffSaleForm &&
+                staffSaleIsMobile
+            ) {
 
+                staffSaleForm.addEventListener(
+                    "submit",
+                    function () {
 
-                    /*
-                     * CASH
-                     *
-                     * isMobile = false
-                     *
-                     * Reload the cart page so the server
-                     * renders the existing Record Sale
-                     * button and staff-sale modal.
-                     */
-                    if (selectedMode === "cash") {
+                        if (paymentMode) {
 
-                        /*
-                         * The payment mode must be persisted
-                         * before the page is reloaded.
-                         *
-                         * This submits a small form to the cart
-                         * update route.
-                         */
-                        const form =
-                            document.createElement(
-                                "form"
-                            );
+                            staffSaleIsMobile.value =
+                                paymentMode.value === "mpesa"
+                                    ? "true"
+                                    : "false";
 
-                        form.method = "POST";
-
-                        form.action =
-                            "/carts/payment-mode";
-
-
-                        const input =
-                            document.createElement(
-                                "input"
-                            );
-
-                        input.type = "hidden";
-
-                        input.name =
-                            "isMobile";
-
-                        input.value =
-                            "false";
-
-
-                        form.appendChild(
-                            input
-                        );
-
-                        document.body.appendChild(
-                            form
-                        );
-
-                        form.submit();
-
-                        return;
-                    }
-
-
-                    /*
-                     * MPESA
-                     *
-                     * isMobile = true
-                     *
-                     * Persist the payment mode, then reload
-                     * so the server renders the normal Checkout
-                     * link to /carts/:productId.
-                     */
-                    if (selectedMode === "mpesa") {
-
-                        const form =
-                            document.createElement(
-                                "form"
-                            );
-
-                        form.method = "POST";
-
-                        form.action =
-                            "/carts/payment-mode";
-
-
-                        const input =
-                            document.createElement(
-                                "input"
-                            );
-
-                        input.type = "hidden";
-
-                        input.name =
-                            "isMobile";
-
-                        input.value =
-                            "true";
-
-
-                        form.appendChild(
-                            input
-                        );
-
-                        document.body.appendChild(
-                            form
-                        );
-
-                        form.submit();
+                        }
 
                     }
+                );
 
-                }
-            );
+            }
 
         })();
     </script>
