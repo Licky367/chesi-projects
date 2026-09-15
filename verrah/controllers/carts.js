@@ -41,6 +41,39 @@ function getCartErrorMessage(err, fallback) {
 
 
 // ==========================================================
+// PACKAGE REDIRECT HELPER
+//
+// Staff:
+//     /packages/staffDirect
+//
+// Everyone else:
+//     /packages
+// ==========================================================
+
+function getPackageRedirect(req) {
+
+    const role =
+        String(
+            req.user?.role ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    if (
+        role === "staff"
+    ) {
+
+        return "/packages/staffDirect";
+    }
+
+
+    return "/packages";
+}
+
+
+// ==========================================================
 // GET SUBSTATIONS
 //
 // Uses the actual Verrah substation service.
@@ -753,8 +786,16 @@ exports.checkout = async (
             );
 
 
+            /*
+             * STAFF:
+             *     /packages/staffDirect
+             *
+             * NON-STAFF:
+             *     /packages
+             */
+
             return res.redirect(
-                "/packages"
+                getPackageRedirect(req)
             );
         }
 
@@ -774,6 +815,17 @@ exports.checkout = async (
                     req.body?.phoneNumber
                 );
 
+
+            /*
+             * Do NOT redirect staff directly to
+             * /packages/staffDirect here.
+             *
+             * The STK push has only been initiated.
+             * The payment still needs to be confirmed.
+             *
+             * payment-status handles the confirmation
+             * process before the package is created.
+             */
 
             return res.redirect(
                 `/carts/payment/${result.paymentId}`
