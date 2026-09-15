@@ -207,18 +207,6 @@ async function getEnrichedStaffPackages(
   // -------------------------------------------------------
   // GET CLIENT IDS
   // -------------------------------------------------------
-  //
-  // packageService already gives us clientId.
-  //
-  // We use those IDs to obtain the user's role.
-  //
-  // We do NOT depend on client.role because the service
-  // currently selects:
-  //
-  //     _id name email phone
-  //
-  // and therefore does not return role.
-  // -------------------------------------------------------
 
   const clientIds = [
     ...new Set(
@@ -278,10 +266,6 @@ async function getEnrichedStaffPackages(
       packages.map(
         async (pkg) => {
 
-          /*
-           * The package belongs to a staff user
-           * when the role of its clientId is "staff".
-           */
           const clientRole =
             roleMap.get(
               String(
@@ -294,10 +278,6 @@ async function getEnrichedStaffPackages(
             clientRole === "staff";
 
 
-          /*
-           * Confirmation state is the same for both
-           * package pages.
-           */
           const confirmationState =
             pkg.status === "pending"
               ? await confirmationService.getConfirmationState(
@@ -313,15 +293,8 @@ async function getEnrichedStaffPackages(
           return {
             ...pkg,
 
-            /*
-             * This is the boolean we need.
-             */
             isDirectSell,
 
-            /*
-             * Also expose the owner's role.
-             * This can be useful to the EJS later.
-             */
             clientRole,
 
             confirmationState
@@ -343,19 +316,6 @@ async function getEnrichedStaffPackages(
 
 // =========================================================
 // CALCULATE COUNTS
-// =========================================================
-//
-// Counts must be calculated AFTER filtering.
-//
-// This means:
-//
-// /packages/staff
-//
-// gets counts for normal packages only.
-//
-// /packages/staffDirectSells
-//
-// gets counts for direct-sale packages only.
 // =========================================================
 
 function getPackageCounts(
@@ -394,16 +354,6 @@ function getPackageCounts(
 // =========================================================
 // STAFF PACKAGE LIST
 // =========================================================
-//
-// Renders:
-//
-//     packages/staff
-//
-// ONLY:
-//
-//     isDirectSell === false
-//
-// =========================================================
 
 exports.staffList = async (
   req,
@@ -435,10 +385,6 @@ exports.staffList = async (
 
   try {
 
-    // -----------------------------------------------------
-    // GET AND ENRICH ONCE
-    // -----------------------------------------------------
-
     const {
       packages: enrichedPackages
     } =
@@ -448,13 +394,6 @@ exports.staffList = async (
       );
 
 
-    // -----------------------------------------------------
-    // NORMAL STAFF PACKAGES
-    // -----------------------------------------------------
-    //
-    // Direct sells are excluded.
-    // -----------------------------------------------------
-
     const packages =
       enrichedPackages.filter(
         (pkg) =>
@@ -463,19 +402,11 @@ exports.staffList = async (
       );
 
 
-    // -----------------------------------------------------
-    // COUNTS FOR THIS PAGE
-    // -----------------------------------------------------
-
     const counts =
       getPackageCounts(
         packages
       );
 
-
-    // -----------------------------------------------------
-    // RENDER
-    // -----------------------------------------------------
 
     return res.render(
       "packages/staff",
@@ -542,16 +473,6 @@ exports.staffList = async (
 // =========================================================
 // STAFF DIRECT-SELL LIST
 // =========================================================
-//
-// Renders:
-//
-//     packages/staffDirectSells
-//
-// ONLY:
-//
-//     isDirectSell === true
-//
-// =========================================================
 
 exports.staffDirectSells =
   async (
@@ -584,10 +505,6 @@ exports.staffDirectSells =
 
     try {
 
-      // ---------------------------------------------------
-      // GET AND ENRICH ONCE
-      // ---------------------------------------------------
-
       const {
         packages: enrichedPackages
       } =
@@ -597,10 +514,6 @@ exports.staffDirectSells =
         );
 
 
-      // ---------------------------------------------------
-      // DIRECT SELL PACKAGES
-      // ---------------------------------------------------
-
       const packages =
         enrichedPackages.filter(
           (pkg) =>
@@ -609,19 +522,11 @@ exports.staffDirectSells =
         );
 
 
-      // ---------------------------------------------------
-      // COUNTS FOR DIRECT SELLS
-      // ---------------------------------------------------
-
       const counts =
         getPackageCounts(
           packages
         );
 
-
-      // ---------------------------------------------------
-      // RENDER
-      // ---------------------------------------------------
 
       return res.render(
         "packages/staffDirectSells",
@@ -688,6 +593,27 @@ exports.staffDirectSells =
 // =========================================================
 // STAFF PACKAGE DETAILS
 // =========================================================
+//
+// IMPORTANT:
+//
+// Do NOT create a second/direct-sell determination here.
+//
+// The exact same enrichment helper used by
+// /packages/staffDirect is used.
+//
+// This guarantees that:
+//
+//     isDirectSell
+//
+// has exactly the same value on the details page as it has
+// on the direct-sell list page.
+//
+// The original packageDoc is retained so that:
+//
+//     salesName
+//
+// remains exactly as stored on the Package document.
+// =========================================================
 
 exports.staffDetails = async (
   req,
@@ -695,6 +621,10 @@ exports.staffDetails = async (
 ) => {
 
   try {
+
+    // -------------------------------------------------------
+    // GET THE ORIGINAL PACKAGE
+    // -------------------------------------------------------
 
     const packageDoc =
       await packageService.getStaffPackage(
@@ -739,46 +669,60 @@ exports.staffDetails = async (
 
 
     // -------------------------------------------------------
-    // DETERMINE WHETHER THIS IS A DIRECT SELL
+    // GET THE SAME ENRICHED PACKAGE USED BY THE
+    // DIRECT-SELL LIST
     // -------------------------------------------------------
     //
-    // A package is a direct sell when the user who owns
-    // the package has role === "staff".
+    // This is the important part.
     //
-    // packageService does not currently return the user's
-    // role, so we retrieve it here using clientId.
+    // We do NOT rebuild salesName.
+    //
+    // We only obtain isDirectSell from the same helper that
+    // already works on /packages/staffDirect.
     // -------------------------------------------------------
 
-    const packageOwner =
-      packageDoc.clientId
-        ? await User.findById(
-            packageDoc.clientId
+    const {
+      packages: enrichedPackages
+    } =
+      await getEnrichedStaffPackages(
+        req,
+        "all"
+      );
+
+
+    const enrichedPackage =
+      enrichedPackages.find(
+        (pkg) =>
+          String(
+            pkg._id
+          ) ===
+          String(
+            packageDoc._id
           )
-            .select("_id role")
-            .lean()
-        : null;
-
-
-    const clientRole =
-      String(
-        packageOwner?.role ||
-        ""
-      ).toLowerCase();
-
-
-    const isDirectSell =
-      clientRole === "staff";
+      );
 
 
     // -------------------------------------------------------
-    // ADD DIRECT-SELL INFORMATION TO PACKAGE DOC
+    // ONLY ADD THE DIRECT-SELL FLAGS
+    // -------------------------------------------------------
+    //
+    // Keep the original packageDoc intact.
+    //
+    // In particular:
+    //
+    //     packageDoc.salesName
+    //
+    // remains untouched.
     // -------------------------------------------------------
 
-    packageDoc.isDirectSell =
-      isDirectSell;
+    if (enrichedPackage) {
 
-    packageDoc.clientRole =
-      clientRole;
+      packageDoc.isDirectSell =
+        enrichedPackage.isDirectSell;
+
+      packageDoc.clientRole =
+        enrichedPackage.clientRole;
+    }
 
 
     // -------------------------------------------------------
