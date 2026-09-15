@@ -1,0 +1,325 @@
+/* ==========================================================
+   SUBSTATION GPS LOCATION CARD
+   ========================================================== */
+
+.substation-gps-card {
+    width: 100%;
+    box-sizing: border-box;
+    background: #ffffff;
+    border: 1px solid #e7e7e7;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+
+/* ==========================================================
+   HEADER
+   ========================================================== */
+
+.substation-gps-header {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 20px;
+}
+
+.substation-gps-icon {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+    background: #0b5d1e;
+    color: #ffffff;
+
+    font-size: 25px;
+    line-height: 1;
+}
+
+.substation-gps-heading {
+    min-width: 0;
+}
+
+.substation-gps-heading h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #222222;
+}
+
+.substation-gps-heading p {
+    margin: 3px 0 0;
+    font-size: 13px;
+    color: #777777;
+}
+
+
+/* ==========================================================
+   COORDINATES
+   ========================================================== */
+
+.substation-gps-coordinates {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.substation-gps-coordinate {
+    min-width: 0;
+    padding: 14px;
+    border-radius: 12px;
+    background: #f7f9f7;
+    border: 1px solid #edf0ed;
+}
+
+.substation-gps-label {
+    display: block;
+    margin-bottom: 6px;
+
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+
+    color: #777777;
+}
+
+.substation-gps-coordinate strong {
+    display: block;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    color: #0b5d1e;
+
+    overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================
+   LOCATION NAME
+   ========================================================== */
+
+.substation-gps-location {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    padding: 13px 14px;
+    margin-bottom: 14px;
+
+    background: #fafafa;
+    border: 1px solid #eeeeee;
+    border-radius: 12px;
+}
+
+.substation-gps-location-dot {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+
+    border-radius: 50%;
+    background: #0b5d1e;
+
+    box-shadow: 0 0 0 5px rgba(11, 93, 30, 0.10);
+}
+
+.substation-gps-location-title {
+    display: block;
+
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    color: #888888;
+}
+
+.substation-gps-location-name {
+    display: block;
+    margin-top: 2px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #333333;
+
+    overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================
+   DIRECTIONS BUTTON
+   ========================================================== */
+
+.substation-gps-directions {
+    width: 100%;
+    min-height: 48px;
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    padding: 12px 16px;
+
+    border-radius: 12px;
+    background: #0b5d1e;
+    color: #ffffff;
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.substation-gps-directions:hover {
+    background: #084816;
+    color: #ffffff;
+
+    transform: translateY(-1px);
+
+    box-shadow: 0 5px 14px rgba(11, 93, 30, 0.20);
+}
+
+.substation-gps-directions:active {
+    transform: translateY(0);
+}
+
+.substation-gps-directions-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+
+/* ==========================================================
+   RAW COORDINATES
+   ========================================================== */
+
+.substation-gps-coordinates-copy {
+    margin-top: 11px;
+
+    text-align: center;
+
+    font-size: 11px;
+    color: #888888;
+
+    word-break: break-all;
+}
+
+
+/* ==========================================================
+   EMPTY GPS STATE
+   ========================================================== */
+
+.substation-gps-empty {
+    padding: 28px 16px;
+    text-align: center;
+
+    border: 1px dashed #d8d8d8;
+    border-radius: 14px;
+    background: #fafafa;
+}
+
+.substation-gps-empty-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    background: #eeeeee;
+
+    color: #777777;
+    font-size: 24px;
+}
+
+.substation-gps-empty h4 {
+    margin: 0 0 5px;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    color: #444444;
+}
+
+.substation-gps-empty p {
+    margin: 0;
+
+    font-size: 13px;
+    line-height: 1.5;
+
+    color: #888888;
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 480px) {
+
+    .substation-gps-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .substation-gps-header {
+        margin-bottom: 16px;
+    }
+
+    .substation-gps-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        font-size: 23px;
+    }
+
+    .substation-gps-heading h3 {
+        font-size: 17px;
+    }
+
+    .substation-gps-coordinates {
+        gap: 8px;
+    }
+
+    .substation-gps-coordinate {
+        padding: 12px 10px;
+    }
+
+    .substation-gps-coordinate strong {
+        font-size: 13px;
+    }
+
+    .substation-gps-directions {
+        min-height: 46px;
+    }
+}
+
+
+/* ==========================================================
+   VERY SMALL SCREENS
+   ========================================================== */
+
+@media (max-width: 340px) {
+
+    .substation-gps-coordinates {
+        grid-template-columns: 1fr;
+    }
+
+}
