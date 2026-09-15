@@ -31,6 +31,31 @@ router.get(
 
 
 // ==========================================================
+// PAYMENT MODE
+// POST /carts/payment-mode
+//
+// Used by staff to select:
+//
+//     Cash Payment
+//         isMobile = false
+//
+//     Mpesa Payment
+//         isMobile = true
+//
+// The selected value is saved to the logged-in user's cart.
+//
+// This does NOT complete a sale.
+// It only changes the cart payment mode.
+// ==========================================================
+
+router.post(
+    "/payment-mode",
+    requireLogin,
+    controller.updatePaymentMode
+);
+
+
+// ==========================================================
 // CHECKOUT PROCESS
 // POST /carts/checkout
 //
@@ -50,6 +75,14 @@ router.post(
 // ==========================================================
 // STAFF SALE
 // POST /carts/staff-sale
+//
+// Used by staff for CASH payments.
+//
+// Cash payment:
+//
+//     isMobile = false
+//
+// The existing staff-sale flow remains unchanged.
 // ==========================================================
 
 router.post(
@@ -113,6 +146,20 @@ router.post(
 // GET /carts/:id
 //
 // This is the checkout page.
+//
+// Both:
+//
+//     normal users
+//
+// and:
+//
+//     staff using Mpesa
+//
+// can reach this page.
+//
+// Staff + Mpesa:
+//     isMobile = true
+//     /carts/:id
 // ==========================================================
 
 router.get(
