@@ -1,0 +1,116 @@
+<section class="sales-liability-records"><div class="sales-section-heading">
+
+    <div>
+
+        <h2>
+            Liability Records
+        </h2>
+
+        <p>
+            Recorded liabilities by substation.
+        </p>
+
+    </div>
+
+</div>
+
+
+<% if (typeof liabilities === "undefined" || !liabilities.length) { %>
+
+    <div class="sales-empty sales-liability-empty">
+
+        No liability records found.
+
+    </div>
+
+<% } else { %>
+
+    <div class="sales-table-wrapper sales-liability-table-wrapper">
+
+        <table class="sales-table sales-liability-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        #
+                    </th>
+
+                    <th>
+                        Name
+                    </th>
+
+                    <th>
+                        Amount
+                    </th>
+
+                    <th>
+                        Substation
+                    </th>
+
+                    <th>
+                        Recorded By
+                    </th>
+
+                    <th>
+                        Date
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                <% liabilities.forEach(function (liability, index) { %>
+
+                    <tr>
+
+                        <td>
+                            <%= index + 1 %>
+                        </td>
+
+                        <td>
+                            <strong>
+                                <%= liability.name %>
+                            </strong>
+                        </td>
+
+                        <td class="sales-liability-amount">
+                            KSh
+                            <%= Number(liability.amount || 0).toLocaleString("en-KE", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            }) %>
+                        </td>
+
+                        <td>
+                            <%= liability.substation?.name || "—" %>
+                        </td>
+
+                        <td>
+                            <%= liability.recordedBy?.name || liability.recordedBy?.phone || "—" %>
+                        </td>
+
+                        <td>
+                            <%= liability.createdAt
+                                ? new Date(liability.createdAt).toLocaleDateString("en-KE")
+                                : "—"
+                            %>
+                        </td>
+
+                    </tr>
+
+                <% }); %>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+<% } %>
+
+</section>
