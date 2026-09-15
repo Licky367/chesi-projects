@@ -40,7 +40,15 @@ const hasItems =
     cartItems.length > 0;
 
 const cartTotal =
-    Number(cart?.total || 0);
+    Number(
+        cart?.total || 0
+    );
+
+
+/*
+ * true  = M-PESA / Pay now
+ * false = Cash / Pay upon delivery
+ */
 
 const isMobile =
     cart?.isMobile !== false;
@@ -53,10 +61,12 @@ const isMobile =
 
 let checkoutProductId = null;
 
+
 if (cartItems.length > 0) {
 
     const firstItem =
         cartItems[0];
+
 
     if (firstItem?.product?._id) {
 
@@ -74,12 +84,20 @@ if (cartItems.length > 0) {
             firstItem.productId;
 
     }
+
 }
 
 
 /* =========================================================
    PICKUP SUBSTATIONS
 ========================================================= */
+
+/*
+ * The controller now passes `substations` directly.
+ *
+ * This is intentionally NOT treated as an optional
+ * undefined variable.
+ */
 
 const availableSubstations =
     Array.isArray(substations)
@@ -113,7 +131,7 @@ if (isStaff) {
     /*
      * assignedSubstation may be:
      *
-     * 1. Object
+     * 1. Populated object
      * 2. ObjectId
      * 3. String ID
      */
@@ -150,9 +168,8 @@ if (isStaff) {
 
 
         /*
-         * If only the ID is stored on the user,
-         * resolve the name and location from
-         * the available substations.
+         * Resolve the name/location when the user
+         * only contains the substation ID.
          */
 
         const matchedSubstation =
@@ -161,7 +178,8 @@ if (isStaff) {
 
                     return String(
                         substation?._id || ""
-                    ) === String(
+                    ) ===
+                    String(
                         assignedSubstationId
                     );
 
@@ -279,7 +297,9 @@ if (isStaff) {
                     "/images/default-product.png";
 
                 const quantity =
-                    Number(item.quantity || 1);
+                    Number(
+                        item.quantity || 1
+                    );
 
                 const itemPrice =
                     Number(
@@ -440,8 +460,8 @@ if (isStaff) {
                 <strong id="cart-payment-mode-label">
 
                     <%= isMobile
-                        ? "M-PESA"
-                        : "Cash"
+                        ? "Pay now with M-Pesa"
+                        : "Pay upon delivery"
                     %>
 
                 </strong>
@@ -469,9 +489,9 @@ if (isStaff) {
 
                 <% if (isStaff) { %>
 
-                    Enter the sales name and confirm
-                    the pickup substation before
-                    completing this sale.
+                    Choose how the customer will pay,
+                    then enter the sales name and confirm
+                    your assigned pickup substation.
 
                 <% } else { %>
 
@@ -491,59 +511,7 @@ if (isStaff) {
 
 
                 <!-- =============================================
-                     PAYMENT METHOD
-                ============================================== -->
-
-                <div class="staff-sale-form-group">
-
-                    <label for="staff-payment-mode">
-
-                        Payment Method
-
-                    </label>
-
-
-                    <div class="staff-sale-input-wrap">
-
-                        <i class="fas fa-wallet"></i>
-
-                        <select
-                            id="staff-payment-mode"
-                            class="checkout-substation-select"
-                        >
-
-                            <option
-                                value="true"
-                                <%= isMobile
-                                    ? "selected"
-                                    : "" %>
-                            >
-
-                                M-PESA
-
-                            </option>
-
-
-                            <option
-                                value="false"
-                                <%= !isMobile
-                                    ? "selected"
-                                    : "" %>
-                            >
-
-                                Cash
-
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                </div>
-
-
-                <!-- =============================================
-                     OPEN SALES MODAL
+                     OPEN STAFF CHECKOUT MODAL
                 ============================================== -->
 
                 <button
@@ -604,7 +572,7 @@ if (isStaff) {
 
 
         <!-- =====================================================
-             STAFF SALES MODAL
+             STAFF CHECKOUT MODAL
         ====================================================== -->
 
         <% if (isStaff) { %>
@@ -627,7 +595,7 @@ if (isStaff) {
 
 
                 <!-- =============================================
-                     MODAL
+                     MODAL CONTENT
                 ============================================== -->
 
                 <div
@@ -656,7 +624,7 @@ if (isStaff) {
 
                             <span class="staff-sale-modal-kicker">
 
-                                STAFF SALE
+                                STAFF CHECKOUT
 
                             </span>
 
@@ -666,7 +634,7 @@ if (isStaff) {
                                 class="staff-sale-modal-title"
                             >
 
-                                Record Sale
+                                Complete Checkout
 
                             </h2>
 
@@ -696,14 +664,15 @@ if (isStaff) {
 
                         <p class="staff-sale-modal-description">
 
-                            Enter the sales name and confirm
-                            the pickup substation for this sale.
+                            Choose how the customer will pay,
+                            enter the sales name, and confirm
+                            the assigned pickup substation.
 
                         </p>
 
 
                         <!-- =====================================
-                             STAFF SALE FORM
+                             STAFF CHECKOUT FORM
                         ====================================== -->
 
                         <form
@@ -737,6 +706,7 @@ if (isStaff) {
                                         name="salesName"
                                         placeholder="Enter sales name"
                                         autocomplete="name"
+                                        maxlength="150"
                                         required
                                     >
 
@@ -764,11 +734,11 @@ if (isStaff) {
 
 
                                     <!--
-                                      Disabled select is purely
-                                      visual.
+                                      Hidden input carries the
+                                      actual submitted substation.
 
-                                      The hidden input is the
-                                      actual submitted value.
+                                      The visible select is disabled
+                                      so staff cannot change it.
                                     -->
 
                                     <input
@@ -824,10 +794,6 @@ if (isStaff) {
                                 <% } else { %>
 
 
-                                    <!-- =================================
-                                         NO ASSIGNED SUBSTATION
-                                    ================================== -->
-
                                     <div class="checkout-substation-empty">
 
                                         <i class="fas fa-circle-exclamation"></i>
@@ -838,11 +804,6 @@ if (isStaff) {
                                     </div>
 
 
-                                    <!--
-                                      Empty hidden value makes the
-                                      server-side validation explicit.
-                                    -->
-
                                     <input
                                         type="hidden"
                                         name="packageSubstation"
@@ -850,6 +811,143 @@ if (isStaff) {
                                     >
 
                                 <% } %>
+
+                            </div>
+
+
+                            <!-- =================================
+                                 PAYMENT METHOD
+                            ================================== -->
+
+                            <div class="staff-sale-form-group">
+
+                                <label>
+
+                                    Payment Method
+
+                                </label>
+
+
+                                <div
+                                    class="payment-methods"
+                                    id="staffPaymentMethods"
+                                >
+
+
+                                    <!-- =================================
+                                         PAY NOW
+                                    ================================== -->
+
+                                    <label
+                                        class="payment-choice"
+                                        for="staffPaymentMpesa"
+                                    >
+
+                                        <input
+                                            type="radio"
+                                            name="staffPaymentMethod"
+                                            id="staffPaymentMpesa"
+                                            value="mpesa"
+                                            <%= isMobile
+                                                ? "checked"
+                                                : "" %>
+                                        >
+
+
+                                        <span class="payment-choice-icon">
+
+                                            <i class="fas fa-mobile-screen-button"></i>
+
+                                        </span>
+
+
+                                        <span class="payment-choice-copy">
+
+                                            <strong>
+                                                Pay now with M-Pesa
+                                            </strong>
+
+                                            <small>
+                                                An STK Push will be sent to
+                                                the customer's phone.
+                                            </small>
+
+                                        </span>
+
+                                    </label>
+
+
+                                    <!-- =================================
+                                         M-PESA PHONE NUMBER
+                                    ================================== -->
+
+                                    <div
+                                        id="staffPhoneField"
+                                        class="phone-field"
+                                    >
+
+                                        <label for="staffPhoneNumber">
+
+                                            M-Pesa phone number
+
+                                        </label>
+
+
+                                        <input
+                                            type="tel"
+                                            name="phoneNumber"
+                                            id="staffPhoneNumber"
+                                            placeholder="0712345678"
+                                            inputmode="numeric"
+                                            autocomplete="tel"
+                                        >
+
+                                    </div>
+
+
+                                    <!-- =================================
+                                         PAY UPON DELIVERY
+                                    ================================== -->
+
+                                    <label
+                                        class="payment-choice"
+                                        for="staffPaymentDelivery"
+                                    >
+
+                                        <input
+                                            type="radio"
+                                            name="staffPaymentMethod"
+                                            id="staffPaymentDelivery"
+                                            value="pay_on_delivery"
+                                            <%= !isMobile
+                                                ? "checked"
+                                                : "" %>
+                                        >
+
+
+                                        <span class="payment-choice-icon">
+
+                                            <i class="fas fa-truck"></i>
+
+                                        </span>
+
+
+                                        <span class="payment-choice-copy">
+
+                                            <strong>
+                                                Pay upon delivery
+                                            </strong>
+
+                                            <small>
+                                                The package will be created
+                                                immediately.
+                                            </small>
+
+                                        </span>
+
+                                    </label>
+
+                                </div>
 
                             </div>
 
@@ -864,7 +962,7 @@ if (isStaff) {
                                 <div class="staff-sale-preview">
 
 
-                                    <!-- PAYMENT METHOD -->
+                                    <!-- PAYMENT -->
 
                                     <div class="staff-sale-preview-card">
 
@@ -881,8 +979,8 @@ if (isStaff) {
                                         >
 
                                             <%= isMobile
-                                                ? "M-PESA"
-                                                : "Cash"
+                                                ? "Pay now with M-Pesa"
+                                                : "Pay upon delivery"
                                             %>
 
                                         </strong>
@@ -980,7 +1078,7 @@ if (isStaff) {
 
                                     <i class="fas fa-check"></i>
 
-                                    Record Sale
+                                    Continue
 
                                 </button>
 
@@ -1003,7 +1101,7 @@ if (isStaff) {
 
                             The sales name and your assigned
                             pickup substation are required
-                            before the sale can be completed.
+                            before checkout can continue.
 
                         </p>
 
@@ -1100,9 +1198,33 @@ if (isStaff) {
         );
 
 
-    const paymentSelect =
+    const paymentRadios =
+        document.querySelectorAll(
+            'input[name="staffPaymentMethod"]'
+        );
+
+
+    const mpesaRadio =
         document.getElementById(
-            "staff-payment-mode"
+            "staffPaymentMpesa"
+        );
+
+
+    const deliveryRadio =
+        document.getElementById(
+            "staffPaymentDelivery"
+        );
+
+
+    const phoneField =
+        document.getElementById(
+            "staffPhoneField"
+        );
+
+
+    const phoneInput =
+        document.getElementById(
+            "staffPhoneNumber"
         );
 
 
@@ -1127,7 +1249,7 @@ if (isStaff) {
 
 
     /* =====================================================
-       STAFF ASSIGNED SUBSTATION
+       ASSIGNED SUBSTATION
     ====================================================== */
 
     const assignedSubstationId =
@@ -1141,7 +1263,7 @@ if (isStaff) {
     ====================================================== */
 
     /*
-     * M-PESA
+     * PAY NOW WITH M-PESA
      *
      * POST /carts/:id
      */
@@ -1151,17 +1273,20 @@ if (isStaff) {
 
 
     /*
-     * CASH
+     * PAY UPON DELIVERY
      *
      * POST /carts/staff-sale
      */
 
-    const STAFF_CASH_ACTION =
+    const STAFF_DELIVERY_ACTION =
         "/carts/staff-sale";
 
 
     /*
      * Background payment-mode update.
+     *
+     * true  = M-PESA
+     * false = pay upon delivery
      */
 
     const PAYMENT_MODE_ACTION =
@@ -1177,7 +1302,7 @@ if (isStaff) {
 
 
     /* =====================================================
-       UPDATE FORM ACTION
+       UPDATE PAYMENT FORM ACTION
     ====================================================== */
 
     function updateFormAction() {
@@ -1190,9 +1315,7 @@ if (isStaff) {
         if (currentIsMobile) {
 
             /*
-             * M-PESA
-             *
-             * POST /carts/:id
+             * PAY NOW WITH M-PESA
              */
 
             form.action =
@@ -1201,13 +1324,11 @@ if (isStaff) {
         } else {
 
             /*
-             * CASH
-             *
-             * POST /carts/staff-sale
+             * PAY UPON DELIVERY
              */
 
             form.action =
-                STAFF_CASH_ACTION;
+                STAFF_DELIVERY_ACTION;
 
         }
 
@@ -1222,8 +1343,8 @@ if (isStaff) {
 
         const paymentText =
             currentIsMobile
-                ? "M-PESA"
-                : "Cash";
+                ? "Pay now with M-Pesa"
+                : "Pay upon delivery";
 
 
         if (paymentPreview) {
@@ -1238,6 +1359,35 @@ if (isStaff) {
 
             paymentLabel.textContent =
                 paymentText;
+
+        }
+
+
+        if (phoneField) {
+
+            phoneField.classList.toggle(
+                "show",
+                currentIsMobile
+            );
+
+        }
+
+
+        if (phoneInput) {
+
+            phoneInput.required =
+                currentIsMobile;
+
+            phoneInput.disabled =
+                !currentIsMobile;
+
+
+            if (!currentIsMobile) {
+
+                phoneInput.value =
+                    "";
+
+            }
 
         }
 
@@ -1258,25 +1408,31 @@ if (isStaff) {
                 await fetch(
                     PAYMENT_MODE_ACTION,
                     {
-                        method: "POST",
+                        method:
+                            "POST",
 
                         headers: {
+
                             "Content-Type":
                                 "application/x-www-form-urlencoded; charset=UTF-8",
 
                             "X-Requested-With":
                                 "XMLHttpRequest"
+
                         },
 
                         body:
                             new URLSearchParams({
+
                                 isMobile:
                                     String(
                                         newIsMobile
                                     )
+
                             })
-                    }
-                );
+
+                        }
+                    );
 
 
             const data =
@@ -1290,7 +1446,7 @@ if (isStaff) {
 
                 throw new Error(
                     data?.error ||
-                    "Unable to update payment mode."
+                    "Unable to update payment method."
                 );
 
             }
@@ -1315,19 +1471,25 @@ if (isStaff) {
 
 
             /*
-             * Revert the UI.
+             * Revert the selection.
              */
 
             currentIsMobile =
                 !newIsMobile;
 
 
-            if (paymentSelect) {
+            if (mpesaRadio) {
 
-                paymentSelect.value =
-                    String(
-                        currentIsMobile
-                    );
+                mpesaRadio.checked =
+                    currentIsMobile;
+
+            }
+
+
+            if (deliveryRadio) {
+
+                deliveryRadio.checked =
+                    !currentIsMobile;
 
             }
 
@@ -1337,14 +1499,9 @@ if (isStaff) {
             updateFormAction();
 
 
-            /*
-             * Use the existing checkout-style
-             * message if available.
-             */
-
             alert(
                 error?.message ||
-                "Unable to update payment mode."
+                "Unable to update payment method."
             );
 
         }
@@ -1353,36 +1510,48 @@ if (isStaff) {
 
 
     /* =====================================================
-       PAYMENT MODE CHANGE
+       PAYMENT METHOD CHANGE
     ====================================================== */
 
-    if (paymentSelect) {
+    paymentRadios.forEach(
+        function (radio) {
 
-        paymentSelect.addEventListener(
-            "change",
-            async function () {
+            radio.addEventListener(
+                "change",
+                async function () {
 
-                const newIsMobile =
-                    this.value === "true";
-
-
-                currentIsMobile =
-                    newIsMobile;
+                    const newIsMobile =
+                        this.value === "mpesa";
 
 
-                updatePaymentDisplay();
+                    /*
+                     * Update immediately so the
+                     * interface responds instantly.
+                     */
 
-                updateFormAction();
+                    currentIsMobile =
+                        newIsMobile;
 
 
-                await savePaymentMode(
-                    newIsMobile
-                );
+                    updatePaymentDisplay();
 
-            }
-        );
+                    updateFormAction();
 
-    }
+
+                    /*
+                     * Persist in the cart without
+                     * navigating away from this page.
+                     */
+
+                    await savePaymentMode(
+                        newIsMobile
+                    );
+
+                }
+            );
+
+        }
+    );
 
 
     /* =====================================================
@@ -1416,11 +1585,6 @@ if (isStaff) {
             "staff-sale-modal-open"
         );
 
-
-        /*
-         * Put cursor directly into
-         * Sales Name.
-         */
 
         setTimeout(
             function () {
@@ -1548,13 +1712,19 @@ if (isStaff) {
                 ------------------------------------------ */
 
                 if (
-                    salesNameInput &&
+                    !salesNameInput ||
                     !salesNameInput.value.trim()
                 ) {
 
                     event.preventDefault();
 
-                    salesNameInput.focus();
+
+                    if (salesNameInput) {
+
+                        salesNameInput.focus();
+
+                    }
+
 
                     return;
 
@@ -1568,7 +1738,8 @@ if (isStaff) {
                 if (
                     !packageSubstationInput ||
                     !String(
-                        packageSubstationInput.value || ""
+                        packageSubstationInput.value ||
+                        ""
                     ).trim()
                 ) {
 
@@ -1586,9 +1757,8 @@ if (isStaff) {
 
 
                 /*
-                 * Make absolutely sure the submitted
-                 * pickup station is the staff member's
-                 * assigned station.
+                 * Always submit the staff member's
+                 * assigned substation.
                  */
 
                 packageSubstationInput.value =
@@ -1596,16 +1766,87 @@ if (isStaff) {
 
 
                 /* -----------------------------------------
+                   PAYMENT METHOD
+                ------------------------------------------ */
+
+                const selectedPayment =
+                    document.querySelector(
+                        'input[name="staffPaymentMethod"]:checked'
+                    );
+
+
+                if (!selectedPayment) {
+
+                    event.preventDefault();
+
+
+                    alert(
+                        "Please choose how the customer will pay."
+                    );
+
+
+                    return;
+
+                }
+
+
+                /* -----------------------------------------
+                   M-PESA PHONE
+                ------------------------------------------ */
+
+                if (
+                    selectedPayment.value ===
+                    "mpesa"
+                ) {
+
+                    const phone =
+                        phoneInput
+                            ? phoneInput.value.trim()
+                            : "";
+
+
+                    if (!phone) {
+
+                        event.preventDefault();
+
+
+                        if (phoneInput) {
+
+                            phoneInput.focus();
+
+                        }
+
+
+                        alert(
+                            "Please enter the M-Pesa phone number that should receive the STK Push."
+                        );
+
+
+                        return;
+
+                    }
+
+                }
+
+
+                /* -----------------------------------------
                    PAYMENT ROUTE
                 ------------------------------------------ */
 
-                if (currentIsMobile) {
+                if (
+                    selectedPayment.value ===
+                    "mpesa"
+                ) {
 
                     /*
-                     * M-PESA
+                     * PAY NOW
                      *
                      * POST /carts/:id
                      */
+
+                    currentIsMobile =
+                        true;
+
 
                     form.action =
                         CART_CHECKOUT_ACTION;
@@ -1613,13 +1854,17 @@ if (isStaff) {
                 } else {
 
                     /*
-                     * CASH
+                     * PAY UPON DELIVERY
                      *
                      * POST /carts/staff-sale
                      */
 
+                    currentIsMobile =
+                        false;
+
+
                     form.action =
-                        STAFF_CASH_ACTION;
+                        STAFF_DELIVERY_ACTION;
 
                 }
 
@@ -1636,7 +1881,6 @@ if (isStaff) {
     updatePaymentDisplay();
 
     updateFormAction();
-
 
 })();
 </script>
