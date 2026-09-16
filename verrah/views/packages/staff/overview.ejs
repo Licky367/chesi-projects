@@ -1,291 +1,377 @@
 <%
 /* =========================================================
-OVERVIEW DATA
+   OVERVIEW DATA
 ========================================================== */
 
 const overviewPackage =
-(typeof packageDoc !== "undefined" && packageDoc)
-? packageDoc
-: null;
+  (typeof packageDoc !== "undefined" && packageDoc)
+    ? packageDoc
+    : null;
 
 const overviewTotalPaid =
-overviewPackage
-? Number(
-overviewPackage.totalPaid ||
-overviewPackage.paidAmount ||
-0
-)
-: 0;
+  overviewPackage
+    ? Number(
+        overviewPackage.totalPaid ||
+        overviewPackage.paidAmount ||
+        0
+      )
+    : 0;
 
 const overviewTotalAmount =
-overviewPackage
-? Number(
-overviewPackage.totalAmount || 0
-)
-: 0;
+  overviewPackage
+    ? Number(
+        overviewPackage.totalAmount || 0
+      )
+    : 0;
 
 const overviewArrears =
-Math.max(
-0,
-overviewTotalAmount - overviewTotalPaid
-);
+  Math.max(
+    0,
+    overviewTotalAmount - overviewTotalPaid
+  );
+
 
 /* =========================================================
-CLIENT / SALES NAME
+   CLIENT / SALES NAME
 ========================================================== */
 
 const overviewClientName =
-overviewPackage?.isDirectSell === true
-? (
-overviewPackage.salesName ||
-"—"
-)
-: (
-overviewPackage?.client?.name ||
-overviewPackage?.clientId ||
-"—"
-);
+  overviewPackage?.isDirectSell === true
+    ? (
+        overviewPackage.salesName ||
+        "—"
+      )
+    : (
+        overviewPackage?.client?.name ||
+        overviewPackage?.clientId ||
+        "—"
+      );
+
 
 /* =========================================================
-CLIENT CONTACT DETAILS
+   CLIENT CONTACT DETAILS
 ========================================================== */
 
 const overviewClientEmail =
-overviewPackage?.client?.email ||
-"—";
+  overviewPackage?.client?.email ||
+  "—";
 
 const overviewClientPhone =
-overviewPackage?.client?.phone ||
-overviewPackage?.phoneNumber ||
-"—";
+  overviewPackage?.client?.phone ||
+  overviewPackage?.phoneNumber ||
+  "—";
+
 
 /* =========================================================
-SUBSTATIONS
+   CUSTOMER PICKUP SUBSTATION
+==========================================================
 
- packageSubstationInfo is the customer's selected
- pickup substation.
+   SOURCE OF TRUTH:
 
- confirmedSubstationId is the substation where the
- package was confirmed.
+       packageSubstation
+
+   The service may populate this directly.
+
+   Some existing package/view data may expose the populated
+   information as packageSubstationInfo, so support both.
+
+   IMPORTANT:
+
+   DO NOT use:
+
+       req.user.assignedSubstation
+
+   assignedSubstation belongs to staff operations.
 
 ========================================================== */
 
 const overviewSelectedSubstation =
-overviewPackage?.packageSubstationInfo ||
-null;
+  overviewPackage?.packageSubstationInfo ||
+  overviewPackage?.packageSubstation ||
+  null;
+
+
+/* =========================================================
+   CONFIRMED SUBSTATION
+==========================================================
+
+   This is NOT the customer's selected pickup substation.
+
+   It represents the substation where the package was
+   actually confirmed by staff.
+
+========================================================== */
 
 const overviewConfirmedSubstation =
-overviewPackage?.confirmedSubstationId ||
-null;
+  overviewPackage?.confirmedSubstationId ||
+  null;
+
+
+/* =========================================================
+   NORMALIZE CUSTOMER PICKUP SUBSTATION DISPLAY
+========================================================== */
+
+const overviewSelectedSubstationName =
+  overviewSelectedSubstation?.name ||
+  null;
+
+const overviewSelectedSubstationLocation =
+  overviewSelectedSubstation?.location ||
+  null;
+
+
+/* =========================================================
+   NORMALIZE CONFIRMED SUBSTATION DISPLAY
+========================================================== */
+
+const overviewConfirmedSubstationName =
+  overviewConfirmedSubstation?.name ||
+  (
+    typeof overviewConfirmedSubstation === "string"
+      ? overviewConfirmedSubstation
+      : null
+  );
 %>
+
 
 <!-- =========================================================
      OVERVIEW
-========================================================= --><div class="staff-overview-card">  <div class="staff-section-label">
+========================================================= -->
+
+<div class="staff-overview-card">
+
+  <div class="staff-section-label">
     OVERVIEW
-  </div>  <div class="staff-detail-overview-grid"><!-- =====================================================
-     CLIENT / SALES NAME
-====================================================== -->
-
-<div class="staff-info-card">
-
-  <small>
-    CLIENT
-  </small>
-
-  <strong>
-    <%= overviewClientName %>
-  </strong>
-
-</div>
+  </div>
 
 
-<!-- =====================================================
-     PHONE
-====================================================== -->
+  <div class="staff-detail-overview-grid">
 
-<div class="staff-info-card">
 
-  <small>
-    PHONE
-  </small>
+    <!-- =====================================================
+         CLIENT / SALES NAME
+    ====================================================== -->
 
-  <strong>
+    <div class="staff-info-card">
 
-    <% if (overviewClientPhone !== "—") { %>
+      <small>
+        CLIENT
+      </small>
 
-      <a
-        href="tel:<%= overviewClientPhone %>"
-        class="staff-phone-link"
+      <strong>
+        <%= overviewClientName %>
+      </strong>
+
+    </div>
+
+
+    <!-- =====================================================
+         PHONE
+    ====================================================== -->
+
+    <div class="staff-info-card">
+
+      <small>
+        PHONE
+      </small>
+
+      <strong>
+
+        <% if (overviewClientPhone !== "—") { %>
+
+          <a
+            href="tel:<%= overviewClientPhone %>"
+            class="staff-phone-link"
+          >
+            <%= overviewClientPhone %>
+          </a>
+
+        <% } else { %>
+
+          —
+
+        <% } %>
+
+      </strong>
+
+    </div>
+
+
+    <!-- =====================================================
+         EMAIL
+    ====================================================== -->
+
+    <div class="staff-info-card">
+
+      <small>
+        EMAIL
+      </small>
+
+      <strong>
+        <%= overviewClientEmail %>
+      </strong>
+
+    </div>
+
+
+    <!-- =====================================================
+         CONFIRMED BY
+    ====================================================== -->
+
+    <div class="staff-info-card">
+
+      <small>
+        CONFIRMED BY
+      </small>
+
+      <strong>
+        <%= overviewPackage?.confirmedByStaffName || "Not yet" %>
+      </strong>
+
+    </div>
+
+
+    <!-- =====================================================
+         CUSTOMER PICKUP SUBSTATION
+         
+         IMPORTANT:
+         
+         This is the substation attached to THIS PACKAGE.
+         
+         It comes from:
+         
+             packageSubstation
+         
+         or its populated representation:
+         
+             packageSubstationInfo
+         
+         It MUST NOT come from:
+         
+             req.user.assignedSubstation
+         
+         The logged-in staff member's assigned substation
+         has no authority over what pickup substation the
+         customer selected for this package.
+    ====================================================== -->
+
+    <div class="staff-info-card">
+
+      <small>
+        SUBSTATION
+      </small>
+
+      <strong>
+
+        <% if (overviewSelectedSubstationName) { %>
+
+          <%= overviewSelectedSubstationName %>
+
+          <% if (overviewSelectedSubstationLocation) { %>
+
+            <span
+              style="
+                display:block;
+                margin-top:4px;
+                font-size:12px;
+                font-weight:500;
+                opacity:.7;
+              "
+            >
+              <%= overviewSelectedSubstationLocation %>
+            </span>
+
+          <% } %>
+
+
+        <% } else if (
+          overviewSelectedSubstation &&
+          typeof overviewSelectedSubstation === "string"
+        ) { %>
+
+          <%= overviewSelectedSubstation %>
+
+
+        <% } else { %>
+
+          Not assigned
+
+        <% } %>
+
+      </strong>
+
+    </div>
+
+
+    <!-- =====================================================
+         CONFIRMED SUBSTATION
+         
+         This is intentionally separate from CUSTOMER PICKUP
+         SUBSTATION.
+    ====================================================== -->
+
+    <% if (overviewConfirmedSubstationName) { %>
+
+      <div class="staff-info-card">
+
+        <small>
+          CONFIRMED AT
+        </small>
+
+        <strong>
+          <%= overviewConfirmedSubstationName %>
+        </strong>
+
+      </div>
+
+    <% } %>
+
+
+    <!-- =====================================================
+         PAID
+    ====================================================== -->
+
+    <div class="staff-info-card">
+
+      <small>
+        PAID
+      </small>
+
+      <strong>
+
+        KSh
+        <%= overviewTotalPaid.toLocaleString() %>
+
+      </strong>
+
+    </div>
+
+
+    <!-- =====================================================
+         ARREARS
+    ====================================================== -->
+
+    <div class="staff-info-card">
+
+      <small>
+        ARREARS
+      </small>
+
+      <strong
+        class="<%= overviewArrears > 0
+          ? 'staff-arrears-amount'
+          : 'staff-cleared-amount'
+        %>"
       >
-        <%= overviewClientPhone %>
-      </a>
 
-    <% } else { %>
+        KSh
+        <%= overviewArrears.toLocaleString() %>
 
-      —
+      </strong>
 
-    <% } %>
+    </div>
 
-  </strong>
-
-</div>
-
-
-<!-- =====================================================
-     EMAIL
-====================================================== -->
-
-<div class="staff-info-card">
-
-  <small>
-    EMAIL
-  </small>
-
-  <strong>
-    <%= overviewClientEmail %>
-  </strong>
-
-</div>
-
-
-<!-- =====================================================
-     CONFIRMED BY
-====================================================== -->
-
-<div class="staff-info-card">
-
-  <small>
-    CONFIRMED BY
-  </small>
-
-  <strong>
-    <%= overviewPackage?.confirmedByStaffName || "Not yet" %>
-  </strong>
-
-</div>
-
-
-<!-- =====================================================
-     CUSTOMER PICKUP SUBSTATION
-
-     IMPORTANT:
-     Use packageSubstation first.
-
-     Do NOT use confirmedSubstationId here.
-====================================================== -->
-
-<div class="staff-info-card">
-
-  <small>
-    SUBSTATION
-  </small>
-
-  <strong>
-
-    <% if (overviewSelectedSubstation) { %>
-
-      <%= overviewSelectedSubstation.name %>
-
-
-      <% if (overviewSelectedSubstation.location) { %>
-
-        <span
-          style="
-            display:block;
-            margin-top:4px;
-            font-size:12px;
-            font-weight:500;
-            opacity:.7;
-          "
-        >
-          <%= overviewSelectedSubstation.location %>
-        </span>
-
-      <% } %>
-
-
-    <% } else if (overviewPackage?.packageSubstation) { %>
-
-      <%= String(
-        overviewPackage.packageSubstation
-      ) %>
-
-
-    <% } else { %>
-
-      Not assigned
-
-    <% } %>
-
-  </strong>
-
-</div>
-
-
-<!-- =====================================================
-     CONFIRMED SUBSTATION
-====================================================== -->
-
-<% if (overviewConfirmedSubstation) { %>
-
-  <div class="staff-info-card">
-
-    <small>
-      CONFIRMED AT
-    </small>
-
-    <strong>
-      <%= overviewConfirmedSubstation.name || "—" %>
-    </strong>
 
   </div>
 
-<% } %>
-
-
-<!-- =====================================================
-     PAID
-====================================================== -->
-
-<div class="staff-info-card">
-
-  <small>
-    PAID
-  </small>
-
-  <strong>
-
-    KSh
-    <%= overviewTotalPaid.toLocaleString() %>
-
-  </strong>
-
 </div>
-
-
-<!-- =====================================================
-     ARREARS
-====================================================== -->
-
-<div class="staff-info-card">
-
-  <small>
-    ARREARS
-  </small>
-
-  <strong
-    class="<%= overviewArrears > 0
-      ? 'staff-arrears-amount'
-      : 'staff-cleared-amount'
-    %>"
-  >
-
-    KSh
-    <%= overviewArrears.toLocaleString() %>
-
-  </strong>
-
-</div>
-
-  </div></div>
