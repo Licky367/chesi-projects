@@ -1091,9 +1091,28 @@ async function getUserPackages(
     .lean();
 }
 
-
 // =========================================================
 // GET USER PACKAGE
+// =========================================================
+//
+// IMPORTANT:
+//
+// The substation shown for a customer's package MUST come
+// from the package itself:
+//
+//     package.packageSubstation
+//
+// If an older package does not have packageSubstation,
+// fall back to the customer's:
+//
+//     User.pickupStation
+//
+// NEVER use:
+//
+//     req.user.assignedSubstation
+//
+// assignedSubstation belongs to staff operations and is
+// unrelated to the customer's selected pickup station.
 // =========================================================
 
 async function getUserPackage(
@@ -1109,10 +1128,60 @@ async function getUserPackage(
     );
   }
 
-  return Package.findOne({
-    _id: id,
-    clientId
-  }).lean();
+  const packageDoc =
+    await Package.findOne({
+      _id: id,
+      clientId
+    })
+      .populate(
+        "packageSubstation",
+        "name location phoneNumber"
+      )
+      .lean();
+
+  if (!packageDoc) {
+    return null;
+  }
+
+  // -------------------------------------------------------
+  // PACKAGE SUBSTATION
+  // -------------------------------------------------------
+  //
+  // This is the authoritative destination for this package.
+  //
+  // Do NOT replace it with req.user.assignedSubstation.
+  // -------------------------------------------------------
+
+  if (
+    !packageDoc.packageSubstation
+  ) {
+    const client =
+      await User.findById(
+        packageDoc.clientId
+      )
+        .select(
+          "_id pickupStation"
+        )
+        .populate(
+          "pickupStation",
+          "name location phoneNumber"
+        )
+        .lean();
+
+    // -----------------------------------------------------
+    // FALLBACK FOR OLDER PACKAGES
+    // -----------------------------------------------------
+    //
+    // Only use the customer's pickupStation when the package
+    // itself has no packageSubstation.
+    // -----------------------------------------------------
+
+    packageDoc.packageSubstation =
+      client?.pickupStation ||
+      null;
+  }
+
+  return packageDoc;
 }
 
 
