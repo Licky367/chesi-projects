@@ -5,22 +5,25 @@
    ========================================================== */
 %>
 
+<section class="verrah-sales-activities">
+
 <% if (
     !error &&
     substation &&
     substation.description
 ) { %>
 
-    <div class="branch-description">
+    <div class="verrah-sales-content">
 
         <h2>
             About This Branch
         </h2>
 
-        <p>
+        <p class="verrah-sales-description">
             <%= substation.description %>
         </p>
 
     </div>
 
 <% } %>
+</section>
