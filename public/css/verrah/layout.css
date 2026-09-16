@@ -899,12 +899,13 @@ body{
 
 /* =========================================================
    AUTHENTICATION PAGES
+   No header on auth pages
 ========================================================= */
 
 .auth-page .main{
 
     padding:
-        var(--header-height)
+        20px
         18px
         var(--footer-height);
 
