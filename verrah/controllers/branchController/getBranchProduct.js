@@ -49,7 +49,7 @@ exports.getBranchProduct = async function (req, res) {
         if (!substation) {
 
             return res.status(404).render(
-                "branch/product-specific",
+                "branch-partials/product-specific",
                 {
                     title:
                         "Location Not Found | Verrah Cosmetics",
