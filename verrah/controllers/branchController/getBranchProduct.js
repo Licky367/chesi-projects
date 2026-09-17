@@ -98,7 +98,7 @@ exports.getBranchProduct = async function (req, res) {
         if (!product) {
 
             return res.status(404).render(
-                "branch/product-specific",
+                "branch-partials/product-specific",
                 {
                     title:
                         "Product Not Found | Verrah Cosmetics",
