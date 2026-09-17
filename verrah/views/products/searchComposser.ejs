@@ -6,21 +6,27 @@
 
    PURPOSE:
    ----------------------------------------------------------
-   - Reusable search entry component
-   - Used by products.ejs and search.ejs
-   - Clicking anywhere on the composer opens:
-         /products/search
-   - This is a navigation component, NOT the actual
-     search form.
+   - Reusable product search component
+   - User can tap and type directly into the composer
+   - Submits through GET
+   - Opens:
+         /products/search?q=SEARCH_TERM
+   - Search results are therefore ready when the
+     search page opens.
+
+   IMPORTANT:
+   ----------------------------------------------------------
+   This is an actual search form, NOT a navigation link.
    ========================================================== */
 %>
 
 
-<a
-    href="/products/search"
+<form
+    action="/products/search"
+    method="GET"
     class="products-search-composer"
-    aria-label="Search products or categories"
-    title="Search products"
+    role="search"
+    aria-label="Search products"
 >
 
 
@@ -39,28 +45,34 @@
 
 
     <!-- ======================================================
-         SEARCH TEXT
+         SEARCH INPUT
     ======================================================= -->
 
-    <span class="products-search-composer-text">
-
-        Search products or categories...
-
-    </span>
+    <input
+        type="search"
+        name="q"
+        class="products-search-composer-input"
+        placeholder="Search products or categories..."
+        aria-label="Search products or categories"
+        autocomplete="off"
+        required
+    >
 
 
     <!-- ======================================================
-         SEARCH ACTION ICON
+         SEARCH ACTION
     ======================================================= -->
 
-    <span
+    <button
+        type="submit"
         class="products-search-composer-action"
-        aria-hidden="true"
+        aria-label="Search"
+        title="Search"
     >
 
-        <i class="fas fa-arrow-right"></i>
+        <i class="fas fa-arrow-right" aria-hidden="true"></i>
 
-    </span>
+    </button>
 
 
-</a>
+</form>
