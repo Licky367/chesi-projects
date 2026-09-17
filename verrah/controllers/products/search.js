@@ -12,7 +12,7 @@
 // ==========================================================
 
 const productService =
-    require("../../services/products");
+    require("../../services/productService");
 
 
 // ==========================================================
