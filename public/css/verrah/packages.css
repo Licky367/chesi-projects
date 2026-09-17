@@ -16,19 +16,29 @@
   --pkg-brown-200: #ddcabe;
   --pkg-brown-100: #eee3db;
   --pkg-brown-50: #faf7f4;
+
   --pkg-text: #2b211d;
   --pkg-muted: #75685f;
   --pkg-border: #dfd2ca;
   --pkg-white: #ffffff;
+
   --pkg-danger: #a9362f;
   --pkg-danger-bg: #fff0ee;
+
   --pkg-success: #356b45;
   --pkg-success-bg: #edf7ef;
+
   --pkg-warning: #916d20;
   --pkg-warning-bg: #fff7df;
+
   --pkg-blue: #365f83;
   --pkg-blue-bg: #edf4fa;
 }
+
+
+/* ==========================================================
+   BASE
+========================================================== */
 
 .packages-page,
 .package-staff-page {
@@ -49,13 +59,21 @@
   padding: 10px;
 }
 
+
+/* ==========================================================
+   PACKAGE HEADER
+========================================================== */
+
 .staff-package-header {
   display: flex;
   align-items: center;
   gap: 14px;
+
   padding: 17px;
+
   border: 1px solid var(--pkg-brown-200);
   border-radius: 16px;
+
   background: var(--pkg-brown-50);
 }
 
@@ -63,18 +81,24 @@
   width: 54px;
   height: 54px;
   flex: 0 0 54px;
+
   display: grid;
   place-items: center;
+
   border-radius: 15px;
+
   background: var(--pkg-brown-900);
   color: #fff;
+
   font-size: 22px;
 }
 
 .staff-kicker {
   display: block;
   margin-bottom: 4px;
+
   color: var(--pkg-brown-600);
+
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 1.3px;
@@ -83,7 +107,9 @@
 
 .package-staff-page h1 {
   margin: 0;
+
   color: var(--pkg-brown-950);
+
   line-height: 1.15;
 }
 
@@ -93,18 +119,28 @@
 
 .staff-package-header p {
   margin: 7px 0 0;
+
   color: var(--pkg-muted);
+
   font-size: 12px;
   line-height: 1.5;
 }
+
+
+/* ==========================================================
+   ALERTS
+========================================================== */
 
 .staff-alert {
   display: flex;
   align-items: flex-start;
   gap: 10px;
+
   margin-bottom: 18px;
   padding: 13px 15px;
+
   border-radius: 12px;
+
   line-height: 1.45;
   font-size: 14px;
 }
@@ -121,76 +157,245 @@
   color: var(--pkg-success);
 }
 
+
+/* ==========================================================
+   CARDS
+========================================================== */
+
 .staff-overview-card,
 .staff-packages-card,
 .staff-items-card,
 .staff-detail-header-card {
   margin-top: 12px;
   padding: 13px;
+
   border: 1px solid var(--pkg-border);
   border-radius: 18px;
+
   background: var(--pkg-brown-50);
+
   box-shadow: none;
 }
+
+
+/* ==========================================================
+   SECTION LABEL
+========================================================== */
 
 .staff-section-label,
 .staff-items-heading {
   padding: 0 4px 9px;
+
   color: var(--pkg-brown-700);
+
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 1px;
 }
 
-.staff-status-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
 
-.staff-status-tab {
+/* ==========================================================
+   PACKAGE STATUS NAVIGATION
+   ----------------------------------------------------------
+   SALES-STYLE HORIZONTAL TAB UI
+========================================================== */
+
+.staff-status-navigation {
+  position: relative;
+
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 42px;
-  padding: 9px 11px;
+  align-items: stretch;
+
+  width: 100%;
+  min-width: 0;
+
+  gap: 6px;
+
+  padding: 4px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
   border: 1px solid var(--pkg-border);
-  border-radius: 10px;
+  border-radius: 14px;
+
   background: #fff;
-  color: var(--pkg-brown-800);
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 700;
+
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+
+  scrollbar-width: none;
+
+  scroll-behavior: auto;
 }
 
-.staff-status-tab span:first-child {
+.staff-status-navigation::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* ==========================================================
+   INDIVIDUAL STATUS TAB
+========================================================== */
+
+.staff-status-navigation-tab {
+  position: relative;
+
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+
+  flex: 0 0 auto;
+
+  min-height: 42px;
+
+  padding: 9px 14px;
+
+  gap: 7px;
+
+  border: 1px solid transparent;
+  border-radius: 10px;
+
+  background: transparent;
+
+  color: var(--pkg-brown-700);
+
+  text-decoration: none;
+
+  white-space: nowrap;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  transition:
+    background-color .18s ease,
+    border-color .18s ease,
+    color .18s ease,
+    box-shadow .18s ease,
+    transform .18s ease;
 }
 
-.staff-status-tab.is-active {
+
+/* ==========================================================
+   TAB ICON
+========================================================== */
+
+.staff-status-navigation-tab > i {
+  flex: 0 0 auto;
+
+  color: var(--pkg-brown-500);
+
+  font-size: 13px;
+
+  transition: color .18s ease;
+}
+
+
+/* ==========================================================
+   TAB HOVER
+========================================================== */
+
+.staff-status-navigation-tab:hover {
+  border-color: var(--pkg-brown-200);
+
+  background: var(--pkg-brown-50);
+
+  color: var(--pkg-brown-950);
+}
+
+.staff-status-navigation-tab:hover > i {
+  color: var(--pkg-brown-700);
+}
+
+
+/* ==========================================================
+   ACTIVE TAB
+========================================================== */
+
+.staff-status-navigation-tab.active {
   border-color: var(--pkg-brown-900);
+
   background: var(--pkg-brown-900);
+
+  color: #fff;
+
+  box-shadow:
+    0 3px 8px rgba(59, 33, 23, .16);
+}
+
+.staff-status-navigation-tab.active > i {
   color: #fff;
 }
 
-.staff-tab-count {
-  min-width: 21px;
-  height: 21px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
+
+/* ==========================================================
+   TAB COUNT
+========================================================== */
+
+.staff-status-navigation-tab .staff-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 23px;
+  height: 23px;
+
+  padding: 0 7px;
+
+  border-radius: 999px;
+
   background: var(--pkg-brown-100);
+
   color: var(--pkg-brown-900);
+
   font-size: 10px;
   font-weight: 900;
+  line-height: 1;
 }
 
-.staff-status-tab.is-active .staff-tab-count {
+.staff-status-navigation-tab.active .staff-tab-count {
   background: #fff;
+
+  color: var(--pkg-brown-900);
 }
+
+
+/* ==========================================================
+   ACTIVE TAB SUBTLE EMPHASIS
+========================================================== */
+
+.staff-status-navigation-tab.active::after {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  bottom: 3px;
+
+  width: 20px;
+  height: 2px;
+
+  transform: translateX(-50%);
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, .75);
+}
+
+
+/* ==========================================================
+   KEYBOARD ACCESSIBILITY
+========================================================== */
+
+.staff-status-navigation-tab:focus-visible {
+  outline: 3px solid rgba(143, 101, 78, .22);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================
+   PACKAGE CARD
+========================================================== */
 
 .staff-packages-card {
   padding: 10px;
@@ -200,54 +405,111 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 14px;
+
   padding: 4px 3px 11px;
+
   border-bottom: 1px solid var(--pkg-border);
 }
 
 .staff-packages-heading h2 {
   margin: 0;
+
   color: var(--pkg-brown-900);
+
   font-size: 13px;
 }
 
 .staff-packages-heading p {
   margin: 3px 0 0;
+
   color: var(--pkg-muted);
+
   font-size: 10px;
 }
+
+
+/* ==========================================================
+   PACKAGE LIST
+========================================================== */
 
 .staff-package-list {
   display: flex;
   flex-direction: column;
+
   gap: 8px;
+
   margin-top: 10px;
 }
+
+
+/* ==========================================================
+   PACKAGE ITEM
+========================================================== */
 
 .staff-package-item {
   display: flex;
   align-items: center;
+
   gap: 10px;
+
   min-width: 0;
+
   padding: 12px;
+
   border: 1px solid var(--pkg-border);
   border-radius: 11px;
+
   background: #fff;
+
   color: inherit;
+
   text-decoration: none;
+
+  transition:
+    border-color .18s ease,
+    background-color .18s ease,
+    transform .18s ease,
+    box-shadow .18s ease;
 }
+
+.staff-package-item:hover {
+  border-color: var(--pkg-brown-300);
+
+  background: var(--pkg-brown-50);
+
+  box-shadow: 0 4px 12px rgba(59, 33, 23, .06);
+
+  transform: translateY(-1px);
+}
+
+
+/* ==========================================================
+   PACKAGE ITEM ICON
+========================================================== */
 
 .staff-package-item-icon {
   width: 52px;
   height: 52px;
   flex: 0 0 52px;
+
   display: grid;
   place-items: center;
+
   border-radius: 14px;
+
   background: var(--pkg-brown-100);
+
   color: var(--pkg-brown-700);
+
   font-size: 20px;
 }
+
+
+/* ==========================================================
+   PACKAGE ITEM MAIN
+========================================================== */
 
 .staff-package-item-main {
   min-width: 0;
@@ -258,15 +520,20 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+
   gap: 6px;
+
   color: var(--pkg-brown-950);
+
   font-size: 12px;
   font-weight: 800;
 }
 
 .staff-package-item-meta {
   margin-top: 4px;
+
   color: var(--pkg-muted);
+
   font-size: 10px;
   line-height: 1.5;
 }
@@ -275,21 +542,48 @@
   color: var(--pkg-text);
 }
 
+
+/* ==========================================================
+   PACKAGE ARROW
+========================================================== */
+
 .staff-package-arrow {
   flex: 0 0 auto;
+
   color: var(--pkg-brown-400);
+
+  transition:
+    color .18s ease,
+    transform .18s ease;
 }
+
+.staff-package-item:hover .staff-package-arrow {
+  color: var(--pkg-brown-700);
+
+  transform: translateX(2px);
+}
+
+
+/* ==========================================================
+   PACKAGE STATUS BADGES
+========================================================== */
 
 .package-status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   flex: 0 0 auto;
+
   padding: 5px 9px;
+
   border-radius: 999px;
+
   font-size: 10px;
   font-weight: 900;
+
   letter-spacing: .45px;
+
   text-transform: uppercase;
 }
 
@@ -313,6 +607,7 @@
   color: var(--pkg-blue);
 }
 
+
 /* ==========================================================
    OUTSTANDING ARREARS LABEL
 ========================================================== */
@@ -321,14 +616,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   width: 20px;
   height: 20px;
   flex: 0 0 20px;
+
   border-radius: 50%;
+
   background: var(--pkg-danger);
+
   color: #fff;
+
   font-size: 11px;
   font-weight: 900;
+
   line-height: 1;
 }
 
@@ -336,11 +637,13 @@
   width: 24px;
   height: 24px;
   flex-basis: 24px;
+
   font-size: 12px;
 }
 
 .staff-arrears-text {
   color: var(--pkg-danger);
+
   font-weight: 800;
 }
 
@@ -355,9 +658,12 @@
 .staff-detail-status-group {
   display: flex;
   align-items: center;
+
   gap: 7px;
+
   flex-wrap: wrap;
 }
+
 
 /* ==========================================================
    DETAILS
@@ -366,10 +672,15 @@
 .staff-back-link {
   display: inline-flex;
   align-items: center;
+
   gap: 7px;
+
   margin-bottom: 16px;
+
   color: var(--pkg-brown-800);
+
   text-decoration: none;
+
   font-size: 12px;
   font-weight: 800;
 }
@@ -378,7 +689,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 14px;
+
   padding: 16px;
 }
 
@@ -388,39 +701,63 @@
 
 .staff-detail-header-card p {
   margin: 3px 0 0;
+
   color: var(--pkg-muted);
+
   font-size: 10px;
 }
 
+
+/* ==========================================================
+   DETAIL OVERVIEW
+========================================================== */
+
 .staff-detail-overview-grid {
   display: grid;
+
   grid-template-columns: 1fr 1fr;
+
   gap: 8px;
 }
 
 .staff-info-card {
   min-width: 0;
+
   padding: 10px;
+
   border: 1px solid var(--pkg-border);
   border-radius: 10px;
+
   background: #fff;
 }
 
 .staff-info-card small {
   display: block;
+
   color: var(--pkg-muted);
+
   font-size: 9px;
   font-weight: 800;
+
   letter-spacing: .5px;
 }
 
 .staff-info-card strong {
   display: block;
+
   margin-top: 4px;
+
   overflow-wrap: anywhere;
+
   color: var(--pkg-text);
+
   font-size: 12px;
 }
+
+
+/* ==========================================================
+   ITEMS
+========================================================== */
 
 .staff-items-card {
   background: var(--pkg-brown-50);
@@ -429,11 +766,16 @@
 .staff-item-row {
   display: flex;
   align-items: center;
+
   gap: 12px;
+
   min-width: 0;
+
   padding: 12px;
+
   border: 1px solid var(--pkg-border);
   border-radius: 13px;
+
   background: #fff;
 }
 
@@ -441,19 +783,27 @@
   width: 58px;
   height: 58px;
   flex: 0 0 58px;
+
   display: grid;
   place-items: center;
+
   overflow: hidden;
+
   border-radius: 11px;
+
   background: var(--pkg-brown-50);
+
   color: var(--pkg-brown-500);
+
   font-size: 21px;
 }
 
 .staff-item-image img {
   width: 100%;
   height: 100%;
+
   display: block;
+
   object-fit: cover;
 }
 
@@ -464,20 +814,26 @@
 
 .staff-item-name {
   color: var(--pkg-brown-950);
+
   font-size: 12px;
   font-weight: 800;
 }
 
 .staff-item-meta {
   color: var(--pkg-muted);
+
   font-size: 12px;
+
   line-height: 1.45;
 }
 
 .staff-item-total {
   flex: 0 0 auto;
+
   color: var(--pkg-brown-900);
+
   font-size: 13px;
+
   white-space: nowrap;
 }
 
@@ -485,11 +841,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 12px;
+
   margin-top: 12px;
   padding-top: 12px;
+
   border-top: 1px solid var(--pkg-border);
+
   color: var(--pkg-brown-950);
+
   font-size: 13px;
   font-weight: 900;
 }
@@ -498,27 +859,34 @@
   color: var(--pkg-brown-700);
 }
 
+
 /* ==========================================================
    ACTION CARDS
 ========================================================== */
 
 .staff-action-card {
   margin-top: 14px;
+
   padding: 13px;
+
   border: 1px solid var(--pkg-brown-200);
   border-radius: 12px;
+
   background: #fff;
 }
 
 .staff-action-title {
   color: var(--pkg-brown-950);
+
   font-size: 13px;
   font-weight: 800;
 }
 
 .staff-action-card p {
   margin: 5px 0 0;
+
   color: var(--pkg-muted);
+
   font-size: 11px;
   line-height: 1.5;
 }
@@ -526,29 +894,51 @@
 .staff-action-btn,
 .staff-clear-btn {
   width: 100%;
+
   min-height: 43px;
+
   margin-top: 10px;
+
   border: 0;
   border-radius: 10px;
+
   background: var(--pkg-brown-900);
+
   color: #fff;
+
   font: inherit;
+
   font-size: 12px;
   font-weight: 800;
+
   cursor: pointer;
+
+  transition:
+    background-color .18s ease,
+    transform .18s ease;
 }
 
 .staff-action-btn:hover,
 .staff-clear-btn:hover {
   background: var(--pkg-brown-800);
+
+  transform: translateY(-1px);
 }
 
 .staff-action-error {
   margin-top: 6px;
+
   color: var(--pkg-danger);
+
   font-size: 10px;
+
   line-height: 1.5;
 }
+
+
+/* ==========================================================
+   PAYMENT FORM
+========================================================== */
 
 .staff-payment-form {
   margin-top: 9px;
@@ -556,29 +946,46 @@
 
 .staff-payment-form label {
   display: block;
+
   margin-bottom: 6px;
+
   color: var(--pkg-brown-800);
+
   font-size: 13px;
   font-weight: 700;
 }
 
 .staff-payment-form input {
   width: 100%;
+
   min-height: 44px;
+
   margin-bottom: 1px;
   padding: 0 12px;
+
   border: 1px solid var(--pkg-brown-200);
   border-radius: 10px;
+
   outline: none;
+
   background: #fff;
+
   color: var(--pkg-text);
+
   font: inherit;
+
+  transition:
+    border-color .18s ease,
+    box-shadow .18s ease;
 }
 
 .staff-payment-form input:focus {
   border-color: var(--pkg-brown-500);
-  box-shadow: 0 0 0 3px rgba(120, 80, 59, .12);
+
+  box-shadow:
+    0 0 0 3px rgba(120, 80, 59, .12);
 }
+
 
 /* ==========================================================
    CLEAR PACKAGE
@@ -587,11 +994,15 @@
 .staff-clear-card {
   display: flex;
   align-items: flex-start;
+
   gap: 12px;
+
   margin-top: 14px;
   padding: 13px;
+
   border: 1px solid #c8dfcd;
   border-radius: 12px;
+
   background: var(--pkg-success-bg);
 }
 
@@ -599,10 +1010,14 @@
   width: 36px;
   height: 36px;
   flex: 0 0 36px;
+
   display: grid;
   place-items: center;
+
   border-radius: 10px;
+
   background: var(--pkg-success);
+
   color: #fff;
 }
 
@@ -613,14 +1028,18 @@
 
 .staff-clear-title {
   color: var(--pkg-success);
+
   font-size: 13px;
   font-weight: 900;
 }
 
 .staff-clear-card p {
   margin: 5px 0 0;
+
   color: var(--pkg-muted);
+
   font-size: 11px;
+
   line-height: 1.5;
 }
 
@@ -635,11 +1054,15 @@
 .staff-cleared-card {
   display: flex;
   align-items: center;
+
   gap: 12px;
+
   margin-top: 14px;
   padding: 13px;
+
   border: 1px solid #c8dfcd;
   border-radius: 12px;
+
   background: var(--pkg-success-bg);
 }
 
@@ -647,24 +1070,33 @@
   width: 36px;
   height: 36px;
   flex: 0 0 36px;
+
   display: grid;
   place-items: center;
+
   border-radius: 10px;
+
   background: var(--pkg-success);
+
   color: #fff;
 }
 
 .staff-cleared-card strong {
   color: var(--pkg-success);
+
   font-size: 13px;
 }
 
 .staff-cleared-card p {
   margin: 3px 0 0;
+
   color: var(--pkg-muted);
+
   font-size: 10px;
+
   line-height: 1.45;
 }
+
 
 /* ==========================================================
    EMPTY STATE
@@ -673,23 +1105,31 @@
 .staff-empty {
   display: flex;
   flex-direction: column;
+
   align-items: center;
   justify-content: center;
+
   padding: 42px 22px;
+
   border: 1px dashed var(--pkg-brown-300);
   border-radius: 18px;
+
   background: var(--pkg-brown-50);
+
   text-align: center;
 }
 
 .staff-empty i {
   margin-bottom: 8px;
+
   color: var(--pkg-brown-500);
+
   font-size: 25px;
 }
 
 .staff-empty strong {
   color: var(--pkg-brown-900);
+
   font-size: 12px;
 }
 
@@ -697,33 +1137,105 @@
   min-height: 200px;
 }
 
+
 /* ==========================================================
    RESPONSIVE
 ========================================================== */
 
 @media (max-width: 520px) {
+
+  .package-staff-page {
+    padding: 8px;
+  }
+
+
+  /* --------------------------------------------------------
+     HEADER
+  -------------------------------------------------------- */
+
   .staff-package-header {
+    gap: 11px;
+
     padding: 14px;
+
+    border-radius: 15px;
   }
 
   .staff-package-icon {
     width: 46px;
     height: 46px;
+
     flex-basis: 46px;
+
+    border-radius: 13px;
+
     font-size: 18px;
   }
 
-  .staff-status-tabs {
-    grid-template-columns: 1fr 1fr;
+
+  /* --------------------------------------------------------
+     STATUS NAVIGATION
+  -------------------------------------------------------- */
+
+  .staff-overview-card {
+    padding: 11px;
   }
+
+  .staff-status-navigation {
+    gap: 5px;
+
+    padding: 4px;
+
+    border-radius: 13px;
+  }
+
+  .staff-status-navigation-tab {
+    min-height: 40px;
+
+    padding: 8px 12px;
+
+    gap: 6px;
+
+    border-radius: 9px;
+
+    font-size: 11px;
+  }
+
+  .staff-status-navigation-tab > i {
+    font-size: 12px;
+  }
+
+  .staff-status-navigation-tab .staff-tab-count {
+    min-width: 21px;
+    height: 21px;
+
+    padding: 0 6px;
+
+    font-size: 9px;
+  }
+
+
+  /* --------------------------------------------------------
+     DETAIL GRID
+  -------------------------------------------------------- */
 
   .staff-detail-overview-grid {
     grid-template-columns: 1fr;
   }
 
+
+  /* --------------------------------------------------------
+     DETAIL HEADER
+  -------------------------------------------------------- */
+
   .staff-detail-header-card {
     align-items: flex-start;
   }
+
+
+  /* --------------------------------------------------------
+     ITEM ROW
+  -------------------------------------------------------- */
 
   .staff-item-row {
     align-items: flex-start;
@@ -732,4 +1244,25 @@
   .staff-item-total {
     font-size: 11px;
   }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL PHONES
+========================================================== */
+
+@media (max-width: 360px) {
+
+  .staff-status-navigation-tab {
+    padding-left: 10px;
+    padding-right: 10px;
+
+    font-size: 10px;
+  }
+
+  .staff-status-navigation-tab > i {
+    font-size: 11px;
+  }
+
 }
