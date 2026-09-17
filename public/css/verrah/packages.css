@@ -142,102 +142,174 @@ font-weight: 900;
 letter-spacing: 1px;
 }
 
-/* ==========================================================
-STATUS TABS
-Verrah-style brownish-red pill navigation
-========================================================== */
 
-.staff-status-tabs {
-width: 100%;
-display: flex;
-align-items: center;
-gap: 8px;
-overflow-x: auto;
-overflow-y: hidden;
-padding: 10px 14px;
-white-space: nowrap;
--webkit-overflow-scrolling: touch;
-scrollbar-width: none;
-background: #fffaf7;
-border-bottom: 1px solid #eadbd2;
+/* =========================================================
+   STAFF STATUS TABS
+========================================================= */
+
+.package-staff-page .staff-status-navigation {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 10px 14px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    background: #fffaf7;
+    border-bottom: 1px solid #eadbd2;
 }
 
-.staff-status-tabs::-webkit-scrollbar {
-display: none;
+.package-staff-page .staff-status-navigation::-webkit-scrollbar {
+    display: none;
 }
 
-.staff-status-tab {
-flex: 0 0 auto;
-appearance: none;
-display: inline-flex;
-align-items: center;
-justify-content: center;
-gap: 8px;
-border: 1px solid #eadbd2;
-background: #ffffff;
-color: #6f350f;
-padding: 9px 17px;
-min-height: 38px;
-border-radius: 20px;
-font-family: Arial, sans-serif;
-font-size: 13px;
-font-weight: 600;
-line-height: 1;
-cursor: pointer;
-white-space: nowrap;
-text-decoration: none;
-transition:
-background 0.2s ease,
-color 0.2s ease,
-border-color 0.2s ease,
-transform 0.2s ease;
+/* INDIVIDUAL TAB */
+
+.package-staff-page .staff-status-navigation-tab {
+    flex: 0 0 auto;
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    min-height: 38px;
+    padding: 9px 17px;
+
+    border: 1px solid #eadbd2;
+    border-radius: 20px;
+
+    background: #ffffff;
+    color: #6f350f;
+
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
 }
 
-.staff-status-tab:hover {
-border-color: #a0522d;
-color: #8b4513;
+.package-staff-page .staff-status-navigation-tab:hover {
+    border-color: #a0522d;
+    color: #8b4513;
+    text-decoration: none;
 }
 
-.staff-status-tab.is-active {
-background: #8b4513;
-border-color: #8b4513;
-color: #ffffff;
+.package-staff-page .staff-status-navigation-tab.active {
+    background: #8b4513;
+    border-color: #8b4513;
+    color: #ffffff;
 }
 
-.staff-status-tab.is-active:hover {
-background: #6f350f;
-border-color: #6f350f;
-color: #ffffff;
+.package-staff-page .staff-status-navigation-tab.active:hover {
+    background: #6f350f;
+    border-color: #6f350f;
+    color: #ffffff;
 }
 
-.staff-status-tab:focus-visible {
-outline: 2px solid #a0522d;
-outline-offset: 2px;
+.package-staff-page .staff-status-navigation-tab:focus-visible {
+    outline: 2px solid #a0522d;
+    outline-offset: 2px;
 }
 
-.staff-status-tab span:first-child {
-display: inline-flex;
-align-items: center;
-gap: 6px;
+/* TAB ICONS */
+
+.package-staff-page .staff-status-navigation-tab i {
+    flex: 0 0 auto;
+    font-size: 12px;
+    line-height: 1;
 }
 
+.package-staff-page .staff-status-navigation-tab.active i {
+    color: #ffffff;
+}
+
+/* TAB COUNT */
+
+.package-staff-page .staff-tab-count {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #f3e8e1;
+    color: #6f350f;
+
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.package-staff-page
+.staff-status-navigation-tab.active
 .staff-tab-count {
-min-width: 21px;
-height: 21px;
-display: inline-grid;
-place-items: center;
-border-radius: 50%;
-background: #f3e3da;
-color: #6f350f;
-font-size: 10px;
-font-weight: 900;
-line-height: 1;
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
 }
 
-.staff-status-tab.is-active .staff-tab-count {
-background: #ffffff;
-color: #8b4513;
+/* RESPONSIVE - TABS */
+
+@media (max-width: 600px) {
+    .package-staff-page .staff-status-navigation {
+        gap: 7px;
+        padding: 9px 12px;
+    }
+
+    .package-staff-page .staff-status-navigation-tab {
+        min-height: 36px;
+        padding: 8px 15px;
+        font-size: 12px;
+    }
+
+    .package-staff-page .staff-status-navigation-tab i {
+        font-size: 11px;
+    }
+
+    .package-staff-page .staff-tab-count {
+        min-width: 19px;
+        height: 19px;
+        font-size: 9px;
+    }
 }
+
+@media (max-width: 380px) {
+    .package-staff-page .staff-status-navigation {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .package-staff-page .staff-status-navigation-tab {
+        padding-left: 13px;
+        padding-right: 13px;
+    }
+}
+
 
 /* ==========================================================
 PACKAGES
@@ -364,6 +436,7 @@ background: var(--pkg-blue-bg);
 color: var(--pkg-blue);
 }
 
+
 /* ==========================================================
 OUTSTANDING ARREARS LABEL
 ========================================================== */
@@ -409,6 +482,7 @@ align-items: center;
 gap: 7px;
 flex-wrap: wrap;
 }
+
 
 /* ==========================================================
 DETAILS
@@ -549,6 +623,7 @@ font-weight: 900;
 color: var(--pkg-brown-700);
 }
 
+
 /* ==========================================================
 ACTION CARDS
 ========================================================== */
@@ -630,6 +705,7 @@ font: inherit;
 border-color: var(--pkg-brown-500);
 box-shadow: 0 0 0 3px rgba(120, 80, 59, .12);
 }
+
 
 /* ==========================================================
 CLEAR PACKAGE
@@ -717,6 +793,7 @@ font-size: 10px;
 line-height: 1.45;
 }
 
+
 /* ==========================================================
 EMPTY STATE
 ========================================================== */
@@ -748,24 +825,10 @@ font-size: 12px;
 min-height: 200px;
 }
 
+
 /* ==========================================================
 RESPONSIVE
 ========================================================== */
-
-@media (max-width: 600px) {
-
-.staff-status-tabs {
-gap: 7px;
-padding: 9px 12px;
-}
-
-.staff-status-tab {
-min-height: 36px;
-padding: 8px 15px;
-font-size: 12px;
-}
-
-}
 
 @media (max-width: 520px) {
 
