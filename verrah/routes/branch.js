@@ -16,7 +16,7 @@ const branchController =
 
 router.get(
     "/:id/product/:productId",
-    controller.getBranchProduct
+    branchController.getBranchProduct
 );
 
 
