@@ -7,6 +7,7 @@ const express = require("express");
 
 const router = express.Router();
 
+
 // ----------------------------------------------------------
 // CONTROLLERS
 // ----------------------------------------------------------
@@ -16,6 +17,7 @@ const controller =
 
 const categoryController =
   require("../controllers/categoryController");
+
 
 // ----------------------------------------------------------
 // MIDDLEWARE
@@ -30,15 +32,41 @@ const requireAdmin =
 const categoryUpload =
   require("../middleware/categoryUpload");
 
+
 // ==========================================================
 // PRODUCTS
 // ==========================================================
 
-// Product listing
+// ----------------------------------------------------------
+// PRODUCT LISTING
+// GET /products
+// ----------------------------------------------------------
+
 router.get(
   "/",
   controller.list
 );
+
+
+// ----------------------------------------------------------
+// PRODUCT SEARCH
+// GET /products/search?q=...
+// ----------------------------------------------------------
+//
+// IMPORTANT:
+// This route MUST come before:
+//
+//     /:id
+//
+// Otherwise "search" may be interpreted as a product ID.
+//
+// ----------------------------------------------------------
+
+router.get(
+  "/search",
+  controller.search
+);
+
 
 // ==========================================================
 // CATEGORY
@@ -54,6 +82,7 @@ router.get(
   requireAdmin,
   categoryController.addForm
 );
+
 
 // ----------------------------------------------------------
 // CREATE CATEGORY
@@ -75,9 +104,11 @@ router.post(
   categoryController.create
 );
 
+
 // ----------------------------------------------------------
 // EDIT CATEGORY FORM
 // GET /products/category/add/:id
+// ----------------------------------------------------------
 //
 // Used by the admin Edit button.
 //
@@ -91,9 +122,11 @@ router.get(
   categoryController.editForm
 );
 
+
 // ----------------------------------------------------------
 // UPDATE CATEGORY
 // POST /products/category/add/:id
+// ----------------------------------------------------------
 //
 // The same image upload middleware is used so the admin
 // can optionally replace the existing category image.
@@ -106,6 +139,7 @@ router.post(
   categoryController.update
 );
 
+
 // ----------------------------------------------------------
 // CATEGORY PRODUCTS
 // GET /products/category/:id
@@ -116,6 +150,7 @@ router.get(
   categoryController.products
 );
 
+
 // ==========================================================
 // PRODUCT DETAILS
 // ==========================================================
@@ -124,6 +159,7 @@ router.get(
   "/:id",
   controller.details
 );
+
 
 // ==========================================================
 // ADD PRODUCT TO CART
@@ -134,6 +170,7 @@ router.post(
   requireLogin,
   controller.addToCart
 );
+
 
 // ==========================================================
 // EXPORT
