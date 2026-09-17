@@ -145,122 +145,169 @@ letter-spacing: 1px;
 
 /* ==========================================================
 STAFF STATUS TABS
-PILL-STYLE HORIZONTAL NAVIGATION
+UI MATCHES VERRAH TABS REFERENCE
 ----------------------------------------------------------
-ONLY TAB UI RULES ARE DEFINED HERE.
-NO OTHER PAGE CLASSES ARE MODIFIED.
+Existing class names are preserved exactly.
+Only tab styling is changed.
 ========================================================== */
 
 .staff-status-tabs {
-display: flex;
-align-items: center;
-gap: 8px;
-width: 100%;
-overflow-x: auto;
-overflow-y: hidden;
-padding: 10px 14px;
-white-space: nowrap;
--webkit-overflow-scrolling: touch;
-scrollbar-width: none;
-background: #fffaf7;
-border-bottom: 1px solid #eadbd2;
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding: 10px 14px;
+
+    white-space: nowrap;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+
+    background: #fffaf7;
+
+    border-bottom: 1px solid #eadbd2;
+
 }
 
 .staff-status-tabs::-webkit-scrollbar {
-display: none;
+
+    display: none;
+
 }
 
 .staff-status-tab {
-flex: 0 0 auto;
-display: inline-flex;
-align-items: center;
-justify-content: center;
-gap: 7px;
 
-min-height: 38px;
-padding: 9px 17px;
+    flex: 0 0 auto;
 
-border: 1px solid #eadbd2;
-border-radius: 20px;
+    appearance: none;
 
-background: #ffffff;
-color: #6f350f;
+    border: 1px solid #eadbd2;
 
-font-family: Arial, sans-serif;
-font-size: 13px;
-font-weight: 600;
-line-height: 1;
+    background: #ffffff;
 
-text-decoration: none;
-white-space: nowrap;
-cursor: pointer;
+    color: #6f350f;
 
-transition:
-background 0.2s ease,
-color 0.2s ease,
-border-color 0.2s ease,
-transform 0.2s ease;
+    padding: 9px 17px;
+
+    min-height: 38px;
+
+    border-radius: 20px;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    white-space: nowrap;
+
+    text-decoration: none;
+
+    transition:
+
+        background 0.2s ease,
+
+        color 0.2s ease,
+
+        border-color 0.2s ease,
+
+        transform 0.2s ease;
+
 }
 
 .staff-status-tab:hover {
-border-color: #a0522d;
-background: #ffffff;
-color: #8b4513;
-text-decoration: none;
+
+    border-color: #a0522d;
+
+    color: #8b4513;
+
 }
 
 .staff-status-tab.is-active {
-background: #8b4513;
-border-color: #8b4513;
-color: #ffffff;
+
+    background: #8b4513;
+
+    border-color: #8b4513;
+
+    color: #ffffff;
+
 }
 
 .staff-status-tab.is-active:hover {
-background: #6f350f;
-border-color: #6f350f;
-color: #ffffff;
+
+    background: #6f350f;
+
+    border-color: #6f350f;
+
+    color: #ffffff;
+
 }
 
 .staff-status-tab:focus-visible {
-outline: 2px solid #a0522d;
-outline-offset: 2px;
+
+    outline: 2px solid #a0522d;
+
+    outline-offset: 2px;
+
 }
 
 .staff-status-tab span:first-child {
-display: inline-flex;
-align-items: center;
-gap: 6px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
 }
 
 .staff-tab-count {
-min-width: 21px;
-height: 21px;
-padding: 0 6px;
 
-display: inline-flex;
-align-items: center;
-justify-content: center;
+    min-width: 21px;
 
-margin-left: 2px;
+    height: 21px;
 
-border-radius: 50%;
+    display: grid;
 
-background: #f3e8e1;
-color: #6f350f;
+    place-items: center;
 
-font-size: 10px;
-font-weight: 900;
-line-height: 1;
+    border-radius: 50%;
+
+    background: #f3e8e1;
+
+    color: #6f350f;
+
+    font-size: 10px;
+
+    font-weight: 900;
+
 }
 
 .staff-status-tab.is-active .staff-tab-count {
-background: rgba(255, 255, 255, 0.22);
-color: #ffffff;
+
+    background: #ffffff;
+
+    color: #8b4513;
+
 }
 
 
 /* ==========================================================
-THE REST OF THE ORIGINAL CSS
+PACKAGES
 UNCHANGED
 ========================================================== */
 
@@ -785,26 +832,27 @@ flex-basis: 46px;
 font-size: 18px;
 }
 
-.staff-status-tabs {
-display: flex;
-align-items: center;
-gap: 7px;
-overflow-x: auto;
-overflow-y: hidden;
-padding: 9px 12px;
-white-space: nowrap;
--webkit-overflow-scrolling: touch;
-scrollbar-width: none;
-}
+/* ========================================================
+   MOBILE TABS
+   Same VERRAH pill UI
+======================================================== */
 
-.staff-status-tabs::-webkit-scrollbar {
-display: none;
+.staff-status-tabs {
+
+    gap: 7px;
+
+    padding: 9px 12px;
+
 }
 
 .staff-status-tab {
-min-height: 36px;
-padding: 8px 15px;
-font-size: 12px;
+
+    min-height: 36px;
+
+    padding: 8px 15px;
+
+    font-size: 12px;
+
 }
 
 .staff-detail-overview-grid {
