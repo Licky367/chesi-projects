@@ -1,0 +1,365 @@
+<%
+/* ==========================================================
+   views/products/search.ejs
+   VERRAH COSMETICS
+   PRODUCT SEARCH RESULTS
+
+   STRUCTURE:
+   ----------------------------------------------------------
+   - Search term comes from query
+   - Products come from the search service
+   - Product.name and Category.name are searched
+   - Category ObjectId is NEVER displayed
+   - Existing product-card classes are maintained
+   - Search results use the same product-card presentation
+   ========================================================== */
+%>
+
+<section class="shop-page">
+
+
+    <!-- ======================================================
+         PAGE HEADER
+    ======================================================= -->
+
+    <div class="products-heading">
+
+        <h1 class="page-title">
+            Search Products
+        </h1>
+
+        <p class="page-subtitle">
+            Search for a product by name or category.
+        </p>
+
+
+        <!-- ==================================================
+             SEARCH FORM
+        =================================================== -->
+
+        <form
+            action="/products/search"
+            method="GET"
+            class="products-search-form"
+            role="search"
+        >
+
+            <div class="products-search-box">
+
+                <i
+                    class="fas fa-search products-search-icon"
+                    aria-hidden="true"
+                ></i>
+
+                <input
+                    type="search"
+                    name="q"
+                    value="<%= typeof query !== "undefined" ? query : "" %>"
+                    placeholder="Search products or categories..."
+                    class="products-search-input"
+                    autocomplete="off"
+                    aria-label="Search products"
+                >
+
+                <% if (typeof query !== "undefined" && query) { %>
+
+                    <a
+                        href="/products/search"
+                        class="products-search-clear"
+                        aria-label="Clear search"
+                        title="Clear search"
+                    >
+                        <i
+                            class="fas fa-times"
+                            aria-hidden="true"
+                        ></i>
+                    </a>
+
+                <% } %>
+
+                <button
+                    type="submit"
+                    class="products-search-button"
+                >
+                    <i
+                        class="fas fa-search"
+                        aria-hidden="true"
+                    ></i>
+
+                    <span>
+                        Search
+                    </span>
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- ======================================================
+         ERROR MESSAGE
+    ======================================================= -->
+
+    <% if (typeof error !== "undefined" && error) { %>
+
+        <div class="error">
+            <%= error %>
+        </div>
+
+    <% } %>
+
+
+    <!-- ======================================================
+         SEARCH RESULTS
+    ======================================================= -->
+
+    <% if (typeof query !== "undefined" && query) { %>
+
+        <div class="search-results-heading">
+
+            <h2>
+                Search Results
+            </h2>
+
+            <span class="search-results-count">
+
+                <%= Array.isArray(products) ? products.length : 0 %>
+
+                result<%= Array.isArray(products) && products.length === 1 ? "" : "s" %>
+
+            </span>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- ======================================================
+         NO RESULTS
+    ======================================================= -->
+
+    <% if (!Array.isArray(products) || products.length === 0) { %>
+
+        <div class="empty products-empty">
+
+            <i class="fas fa-search"></i>
+
+            <div>
+
+                <% if (typeof query !== "undefined" && query) { %>
+
+                    No products found for
+                    "<%= query %>".
+
+                <% } else { %>
+
+                    Enter a product name or category to search.
+
+                <% } %>
+
+            </div>
+
+        </div>
+
+
+    <% } else { %>
+
+
+        <!-- ==================================================
+             SEARCH RESULTS
+        =================================================== -->
+
+        <section class="category-section">
+
+
+            <!-- ==============================================
+                 RESULT HEADER
+            =============================================== -->
+
+            <div class="category-head">
+
+                <h2>
+                    Products
+                </h2>
+
+                <span class="category-count">
+
+                    <%= products.length %>
+
+                    product<%= products.length === 1 ? "" : "s" %>
+
+                </span>
+
+            </div>
+
+
+            <!-- ==============================================
+                 PRODUCT ROW
+                 Existing classes maintained
+            =============================================== -->
+
+            <div
+                class="product-row category-product-row"
+                aria-label="Search results"
+            >
+
+
+                <% products.forEach(function(product) { %>
+
+
+                    <!-- ======================================
+                         PRODUCT CARD
+                    ======================================= -->
+
+                    <a
+                        href="/products/<%= product._id %>"
+                        class="product-card"
+                    >
+
+
+                        <!-- ==================================
+                             PRODUCT IMAGE
+                        =================================== -->
+
+                        <div class="product-image">
+
+                            <% if (product.image) { %>
+
+                                <img
+                                    src="<%= product.image %>"
+                                    alt="<%= product.name || 'Product' %>"
+                                    loading="lazy"
+                                    onerror="
+                                        this.style.display='none';
+                                        this.nextElementSibling.style.display='flex';
+                                    "
+                                >
+
+                                <div
+                                    class="placeholder product-image-fallback"
+                                    style="display:none;"
+                                >
+
+                                    <i class="fas fa-box"></i>
+
+                                </div>
+
+                            <% } else { %>
+
+                                <div class="placeholder">
+
+                                    <i class="fas fa-box"></i>
+
+                                </div>
+
+                            <% } %>
+
+                        </div>
+
+
+                        <!-- ==================================
+                             PRODUCT INFORMATION
+                        =================================== -->
+
+                        <div class="product-info">
+
+
+                            <!-- PRODUCT NAME -->
+
+                            <div class="product-name">
+                                <%= product.name || "Unnamed product" %>
+                            </div>
+
+
+                            <!-- CATEGORY -->
+
+                            <div class="stock-meta-line">
+
+                                <%= product.categoryName || "Other" %>
+
+                            </div>
+
+
+                            <!-- SUBCATEGORY -->
+
+                            <% if (product.subcategory) { %>
+
+                                <div class="stock-meta-line">
+                                    <%= product.subcategory %>
+                                </div>
+
+                            <% } %>
+
+
+                            <!-- PRICE -->
+
+                            <div class="product-price">
+
+                                KSh
+
+                                <%= Number(
+                                    product.unitSellPrice || 0
+                                ).toLocaleString() %>
+
+                            </div>
+
+
+                            <!-- DELIVERY -->
+
+                            <div class="stock-text">
+
+                                <strong>
+                                    <%= Number(
+                                        product.days || 0
+                                    ) %>
+                                </strong>
+
+                                day<%= Number(product.days || 0) === 1 ? "" : "s" %>
+                                delivery
+
+                            </div>
+
+
+                            <!-- STOCK -->
+
+                            <% if (Number(product.units || 0) > 0) { %>
+
+                                <div class="stock-text">
+
+                                    <%= Number(
+                                        product.units
+                                    ).toLocaleString() %>
+
+                                    available
+
+                                </div>
+
+                            <% } else { %>
+
+                                <div class="stock-text out">
+
+                                    Out of stock
+
+                                </div>
+
+                            <% } %>
+
+
+                        </div>
+
+                    </a>
+
+
+                <% }); %>
+
+
+            </div>
+
+        </section>
+
+    <% } %>
+
+
+</section>
