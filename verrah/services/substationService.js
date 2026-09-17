@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 const Substation = require("../models/substations");
 const Product = require("../models/products");
 const Stock = require("../models/stock");
+const Category = require("../models/category");
 
 
 // ==========================================================
@@ -294,6 +295,10 @@ exports.getWithProducts = async (
     }
 
 
+    // --------------------------------------------------------
+    // SUBSTATION INVENTORY
+    // --------------------------------------------------------
+
     const inventory =
         Array.isArray(
             substation.productInventory
@@ -311,6 +316,10 @@ exports.getWithProducts = async (
             .filter(Boolean);
 
 
+    // --------------------------------------------------------
+    // LOAD ACTIVE PRODUCTS
+    // --------------------------------------------------------
+
     const products =
         await Product
             .find({
@@ -326,16 +335,130 @@ exports.getWithProducts = async (
             .lean();
 
 
-    const productMap =
+    // --------------------------------------------------------
+    // LOAD CATEGORY NAMES
+    // --------------------------------------------------------
+    //
+    // Product.category may contain the Category ObjectId.
+    //
+    // The view should receive:
+    //
+    //     product.category
+    //
+    // as the human-readable category name.
+    //
+    // --------------------------------------------------------
+
+    const categoryIds =
+        products
+            .map(
+                product =>
+                    product.category
+            )
+            .filter(
+                category =>
+                    mongoose.isValidObjectId(
+                        category
+                    )
+            );
+
+
+    const categories =
+        categoryIds.length
+            ? await Category
+                .find({
+                    _id: {
+                        $in: categoryIds
+                    }
+                })
+                .select(
+                    "name"
+                )
+                .lean()
+            : [];
+
+
+    const categoryMap =
         new Map(
-            products.map(
-                product => [
-                    String(product._id),
-                    product
+            categories.map(
+                category => [
+                    String(category._id),
+                    category.name
                 ]
             )
         );
 
+
+    // --------------------------------------------------------
+    // PRODUCT MAP
+    // --------------------------------------------------------
+
+    const productMap =
+        new Map(
+            products.map(
+                product => {
+
+                    /*
+                     * Resolve the category name before placing
+                     * the product in the map.
+                     */
+
+                    const categoryId =
+                        product.category;
+
+
+                    const categoryName =
+                        categoryId &&
+                        categoryMap.has(
+                            String(categoryId)
+                        )
+                            ? categoryMap.get(
+                                String(categoryId)
+                            )
+                            : (
+                                typeof categoryId === "string"
+                                    ? categoryId
+                                    : ""
+                            );
+
+
+                    return [
+                        String(product._id),
+
+                        {
+                            ...product,
+
+                            // ------------------------------------------------
+                            // CATEGORY NAME FOR THE VIEW
+                            // ------------------------------------------------
+                            //
+                            // The view can now simply use:
+                            //
+                            //     product.category
+                            //
+                            // ------------------------------------------------
+
+                            category:
+                                categoryName
+                        }
+                    ];
+                }
+            )
+        );
+
+
+    // --------------------------------------------------------
+    // BUILD PHYSICAL PRODUCTS
+    // --------------------------------------------------------
+    //
+    // IMPORTANT:
+    //
+    // substationUnits is the quantity available at THIS
+    // substation.
+    //
+    // It must not be replaced by product.units.
+    //
+    // --------------------------------------------------------
 
     const physicalProducts =
         inventory
@@ -358,10 +481,18 @@ exports.getWithProducts = async (
                     return {
                         ...product,
 
+                        // ------------------------------------------------
+                        // SUBSTATION-SPECIFIC UNITS
+                        // ------------------------------------------------
+
                         substationUnits:
                             Number(
                                 item.units || 0
                             ),
+
+                        // ------------------------------------------------
+                        // SUBSTATION INVENTORY PRODUCT ID
+                        // ------------------------------------------------
 
                         substationInventoryId:
                             item.productId
@@ -370,6 +501,10 @@ exports.getWithProducts = async (
             )
             .filter(Boolean);
 
+
+    // --------------------------------------------------------
+    // RETURN SUBSTATION
+    // --------------------------------------------------------
 
     return {
         ...substation,
@@ -413,6 +548,40 @@ exports.getProduct = async (
         return null;
     }
 
+
+    // --------------------------------------------------------
+    // RESOLVE CATEGORY NAME
+    // --------------------------------------------------------
+
+    if (
+        product.category &&
+        mongoose.isValidObjectId(
+            product.category
+        )
+    ) {
+
+        const category =
+            await Category
+                .findById(
+                    product.category
+                )
+                .select(
+                    "name"
+                )
+                .lean();
+
+
+        if (category) {
+
+            product.category =
+                category.name;
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // FIND SUBSTATIONS CARRYING PRODUCT
+    // --------------------------------------------------------
 
     const substations =
         await Substation
