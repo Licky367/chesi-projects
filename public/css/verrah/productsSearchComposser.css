@@ -1,0 +1,230 @@
+/* ==========================================================
+   PRODUCT SEARCH COMPOSER
+========================================================== */
+
+.products-search-composer {
+  width: 100%;
+  max-width: 900px;
+
+  min-height: 54px;
+
+  margin: 22px auto 0;
+  padding: 0 16px;
+
+  display: flex;
+  align-items: center;
+
+  box-sizing: border-box;
+
+  border: 1.5px solid var(--verrah-brown);
+  border-radius: 14px;
+
+  background: var(--verrah-white);
+  color: var(--verrah-muted);
+
+  text-decoration: none;
+
+  box-shadow:
+    0 4px 14px rgba(91, 48, 24, 0.08);
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+/* ==========================================================
+   HOVER
+========================================================== */
+
+.products-search-composer:hover {
+  border-color: var(--verrah-brown-dark);
+
+  background: var(--verrah-cream);
+
+  color: var(--verrah-brown-dark);
+
+  box-shadow:
+    0 7px 20px rgba(91, 48, 24, 0.12);
+
+  transform: translateY(-1px);
+}
+
+
+/* ==========================================================
+   SEARCH ICON
+========================================================== */
+
+.products-search-composer-icon {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+
+  margin-right: 10px;
+
+  border-radius: 50%;
+
+  background: var(--verrah-brown-soft);
+  color: var(--verrah-brown);
+
+  font-size: 14px;
+}
+
+
+/* ==========================================================
+   SEARCH TEXT
+========================================================== */
+
+.products-search-composer-text {
+  flex: 1;
+
+  min-width: 0;
+
+  overflow: hidden;
+
+  color: var(--verrah-muted);
+
+  font-size: 14px;
+  line-height: 1.4;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+
+/* ==========================================================
+   ACTION ICON
+========================================================== */
+
+.products-search-composer-action {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+
+  margin-left: 10px;
+
+  border-radius: 50%;
+
+  background: var(--verrah-brown);
+
+  color: var(--verrah-white);
+
+  font-size: 12px;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+.products-search-composer:hover
+.products-search-composer-action {
+  background: var(--verrah-brown-dark);
+
+  transform: translateX(2px);
+}
+
+
+/* ==========================================================
+   FOCUS ACCESSIBILITY
+========================================================== */
+
+.products-search-composer:focus-visible {
+  outline: 3px solid rgba(139, 69, 19, 0.28);
+  outline-offset: 3px;
+}
+
+
+/* ==========================================================
+   MOBILE SEARCH COMPOSER
+========================================================== */
+
+@media (max-width: 600px) {
+
+  .products-search-composer {
+    min-height: 50px;
+
+    margin-top: 16px;
+
+    padding: 0 12px;
+
+    border-radius: 12px;
+  }
+
+
+  .products-search-composer-icon {
+    width: 31px;
+    height: 31px;
+
+    margin-right: 9px;
+
+    font-size: 13px;
+  }
+
+
+  .products-search-composer-text {
+    font-size: 13px;
+  }
+
+
+  .products-search-composer-action {
+    width: 31px;
+    height: 31px;
+
+    margin-left: 8px;
+
+    font-size: 11px;
+  }
+
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media (max-width: 480px) {
+
+  .products-search-composer {
+    min-height: 47px;
+
+    padding: 0 10px;
+
+    border-radius: 11px;
+  }
+
+
+  .products-search-composer-icon {
+    width: 29px;
+    height: 29px;
+
+    margin-right: 8px;
+  }
+
+
+  .products-search-composer-text {
+    font-size: 12px;
+  }
+
+
+  .products-search-composer-action {
+    width: 29px;
+    height: 29px;
+
+    margin-left: 7px;
+  }
+
+}
