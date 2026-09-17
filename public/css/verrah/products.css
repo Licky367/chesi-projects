@@ -989,3 +989,311 @@
   outline: 3px solid rgba(139, 69, 19, 0.28);
   outline-offset: 3px;
 }
+
+
+/* =========================================================
+   PRODUCT SEARCH
+========================================================= */
+
+.products-search-form {
+    width: 100%;
+    max-width: 900px;
+    margin: 22px auto 0;
+}
+
+
+.products-search-box {
+    position: relative;
+
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+
+    gap: 0;
+
+    background: #ffffff;
+
+    border: 1.5px solid #0a4d1e;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 4px 14px rgba(10, 77, 30, 0.08);
+}
+
+
+/* =========================================================
+   SEARCH ICON
+========================================================= */
+
+.products-search-icon {
+    flex: 0 0 auto;
+
+    margin-left: 16px;
+
+    color: #0a4d1e;
+
+    font-size: 17px;
+}
+
+
+/* =========================================================
+   SEARCH INPUT
+========================================================= */
+
+.products-search-input {
+    flex: 1;
+
+    min-width: 0;
+
+    height: 52px;
+
+    padding:
+        0 14px;
+
+    border: none;
+
+    outline: none;
+
+    background: transparent;
+
+    color: #222;
+
+    font-size: 15px;
+}
+
+
+.products-search-input::placeholder {
+    color: #777;
+}
+
+
+.products-search-input:focus {
+    outline: none;
+}
+
+
+/* =========================================================
+   CLEAR SEARCH
+========================================================= */
+
+.products-search-clear {
+    flex: 0 0 auto;
+
+    width: 38px;
+    height: 38px;
+
+    margin-right: 5px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #777;
+
+    text-decoration: none;
+
+    border-radius: 50%;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+
+.products-search-clear:hover {
+    background: #e8f5e9;
+
+    color: #0a4d1e;
+}
+
+
+/* =========================================================
+   SEARCH BUTTON
+========================================================= */
+
+.products-search-button {
+    flex: 0 0 auto;
+
+    height: 52px;
+
+    padding:
+        0 20px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    border: none;
+
+    background: #0a4d1e;
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease;
+}
+
+
+.products-search-button:hover {
+    background: #083d18;
+}
+
+
+.products-search-button i {
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   SEARCH RESULTS HEADER
+========================================================= */
+
+.search-results-heading {
+    width: 100%;
+
+    max-width: 1300px;
+
+    margin:
+        24px auto 14px;
+
+    padding:
+        0 4px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+}
+
+
+.search-results-heading h2 {
+    margin: 0;
+
+    color: #0a4d1e;
+
+    font-size: 21px;
+
+    font-weight: 700;
+}
+
+
+.search-results-count {
+    flex: 0 0 auto;
+
+    padding:
+        6px 12px;
+
+    border:
+        1px solid #0a4d1e;
+
+    border-radius: 999px;
+
+    color: #0a4d1e;
+
+    background: #f1f8e9;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   MOBILE SEARCH
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .products-search-form {
+        margin-top: 16px;
+    }
+
+
+    .products-search-box {
+        border-radius: 12px;
+    }
+
+
+    .products-search-icon {
+        margin-left: 13px;
+
+        font-size: 15px;
+    }
+
+
+    .products-search-input {
+        height: 48px;
+
+        padding:
+            0 10px;
+
+        font-size: 14px;
+    }
+
+
+    .products-search-button {
+        height: 48px;
+
+        padding:
+            0 15px;
+    }
+
+
+    .products-search-button span {
+        display: none;
+    }
+
+
+    .products-search-button i {
+        font-size: 15px;
+    }
+
+
+    .products-search-clear {
+        width: 32px;
+        height: 32px;
+
+        margin-right: 2px;
+    }
+
+
+    .search-results-heading {
+        margin-top: 20px;
+
+        padding:
+            0 2px;
+    }
+
+
+    .search-results-heading h2 {
+        font-size: 18px;
+    }
+
+
+    .search-results-count {
+        padding:
+            5px 10px;
+
+        font-size: 12px;
+    }
+
+}
