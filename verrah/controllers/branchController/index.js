@@ -1,5 +1,5 @@
 // ==========================================================
-// controllers/branch/index.js
+// controllers/branchController/index.js
 // VERRAH COSMETICS
 // BRANCH / SUBSTATION CONTROLLER
 // ==========================================================
