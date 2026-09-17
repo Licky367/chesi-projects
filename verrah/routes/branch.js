@@ -10,6 +10,16 @@ const branchController =
    BRANCH DETAILS
 ======================================================== */
 
+// ==========================================================
+// BRANCH PRODUCT DETAILS
+// ==========================================================
+
+router.get(
+    "/:id/product/:productId",
+    controller.getBranchProduct
+);
+
+
 router.get(
     "/:id",
     branchController.getBranch
