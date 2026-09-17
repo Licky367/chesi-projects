@@ -145,14 +145,17 @@ letter-spacing: 1px;
 
 /* ==========================================================
 STAFF STATUS TABS
-HORIZONTAL PILL-STYLE NAVIGATION
+PILL-STYLE HORIZONTAL NAVIGATION
+----------------------------------------------------------
+ONLY TAB UI RULES ARE DEFINED HERE.
+NO OTHER PAGE CLASSES ARE MODIFIED.
 ========================================================== */
 
 .staff-status-tabs {
-width: 100%;
 display: flex;
 align-items: center;
 gap: 8px;
+width: 100%;
 overflow-x: auto;
 overflow-y: hidden;
 padding: 10px 14px;
@@ -169,20 +172,29 @@ display: none;
 
 .staff-status-tab {
 flex: 0 0 auto;
-appearance: none;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 7px;
+
+min-height: 38px;
+padding: 9px 17px;
+
 border: 1px solid #eadbd2;
+border-radius: 20px;
+
 background: #ffffff;
 color: #6f350f;
-padding: 9px 17px;
-min-height: 38px;
-border-radius: 20px;
+
 font-family: Arial, sans-serif;
 font-size: 13px;
 font-weight: 600;
 line-height: 1;
-cursor: pointer;
-white-space: nowrap;
+
 text-decoration: none;
+white-space: nowrap;
+cursor: pointer;
+
 transition:
 background 0.2s ease,
 color 0.2s ease,
@@ -192,6 +204,7 @@ transform 0.2s ease;
 
 .staff-status-tab:hover {
 border-color: #a0522d;
+background: #ffffff;
 color: #8b4513;
 text-decoration: none;
 }
@@ -222,24 +235,33 @@ gap: 6px;
 .staff-tab-count {
 min-width: 21px;
 height: 21px;
-display: inline-grid;
-place-items: center;
-margin-left: 3px;
+padding: 0 6px;
+
+display: inline-flex;
+align-items: center;
+justify-content: center;
+
+margin-left: 2px;
+
 border-radius: 50%;
+
 background: #f3e8e1;
 color: #6f350f;
+
 font-size: 10px;
 font-weight: 900;
+line-height: 1;
 }
 
 .staff-status-tab.is-active .staff-tab-count {
-background: rgba(255, 255, 255, 0.2);
-color: #fff;
+background: rgba(255, 255, 255, 0.22);
+color: #ffffff;
 }
 
 
 /* ==========================================================
-THE REST OF THE ORIGINAL CSS IS UNCHANGED
+THE REST OF THE ORIGINAL CSS
+UNCHANGED
 ========================================================== */
 
 .staff-packages-card {
@@ -763,7 +785,6 @@ flex-basis: 46px;
 font-size: 18px;
 }
 
-/* Tabs remain horizontal on mobile */
 .staff-status-tabs {
 display: flex;
 align-items: center;
