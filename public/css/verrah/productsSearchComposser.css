@@ -1,230 +1,308 @@
-/* ==========================================================
+/* =========================================================
+   VERRAH COSMETICS
    PRODUCT SEARCH COMPOSER
-========================================================== */
+   FILE:
+       /verrah/views/products/searchComposser.ejs
+========================================================= */
+
+
+/* =========================================================
+   SEARCH COMPOSER
+========================================================= */
 
 .products-search-composer {
-  width: 100%;
-  max-width: 900px;
+    width: 100%;
+    max-width: 850px;
+    min-height: 58px;
 
-  min-height: 54px;
+    margin: 0 auto 28px;
+    padding: 7px 8px 7px 16px;
 
-  margin: 22px auto 0;
-  padding: 0 16px;
+    display: flex;
+    align-items: center;
 
-  display: flex;
-  align-items: center;
+    box-sizing: border-box;
 
-  box-sizing: border-box;
+    background: #ffffff;
 
-  border: 1.5px solid var(--verrah-brown);
-  border-radius: 14px;
+    border: 1.5px solid #eadbd2;
+    border-radius: 999px;
 
-  background: var(--verrah-white);
-  color: var(--verrah-muted);
+    box-shadow:
+        0 2px 8px rgba(111, 53, 15, 0.08);
 
-  text-decoration: none;
-
-  box-shadow:
-    0 4px 14px rgba(91, 48, 24, 0.08);
-
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
 }
 
 
-/* ==========================================================
+/* =========================================================
    HOVER
-========================================================== */
+========================================================= */
 
 .products-search-composer:hover {
-  border-color: var(--verrah-brown-dark);
+    border-color: #a0522d;
 
-  background: var(--verrah-cream);
+    box-shadow:
+        0 6px 20px rgba(111, 53, 15, 0.12);
 
-  color: var(--verrah-brown-dark);
-
-  box-shadow:
-    0 7px 20px rgba(91, 48, 24, 0.12);
-
-  transform: translateY(-1px);
+    transform: translateY(-1px);
 }
 
 
-/* ==========================================================
+/* =========================================================
+   FOCUS
+========================================================= */
+
+.products-search-composer:focus-within {
+    border-color: #8b4513;
+
+    box-shadow:
+        0 0 0 4px rgba(139, 69, 19, 0.10),
+        0 6px 20px rgba(111, 53, 15, 0.12);
+}
+
+
+/* =========================================================
    SEARCH ICON
-========================================================== */
+========================================================= */
 
 .products-search-composer-icon {
-  flex: 0 0 auto;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-  width: 34px;
-  height: 34px;
+    color: #8b4513;
 
-  margin-right: 10px;
+    font-size: 1rem;
 
-  border-radius: 50%;
-
-  background: var(--verrah-brown-soft);
-  color: var(--verrah-brown);
-
-  font-size: 14px;
+    pointer-events: none;
 }
 
 
-/* ==========================================================
-   SEARCH TEXT
-========================================================== */
+/* =========================================================
+   SEARCH INPUT
+========================================================= */
 
-.products-search-composer-text {
-  flex: 1;
+.products-search-composer-input {
+    flex: 1;
 
-  min-width: 0;
+    width: 100%;
+    min-width: 0;
+    height: 42px;
 
-  overflow: hidden;
-
-  color: var(--verrah-muted);
-
-  font-size: 14px;
-  line-height: 1.4;
-
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-
-/* ==========================================================
-   ACTION ICON
-========================================================== */
-
-.products-search-composer-action {
-  flex: 0 0 auto;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 34px;
-  height: 34px;
-
-  margin-left: 10px;
-
-  border-radius: 50%;
-
-  background: var(--verrah-brown);
-
-  color: var(--verrah-white);
-
-  font-size: 12px;
-
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
-}
-
-
-.products-search-composer:hover
-.products-search-composer-action {
-  background: var(--verrah-brown-dark);
-
-  transform: translateX(2px);
-}
-
-
-/* ==========================================================
-   FOCUS ACCESSIBILITY
-========================================================== */
-
-.products-search-composer:focus-visible {
-  outline: 3px solid rgba(139, 69, 19, 0.28);
-  outline-offset: 3px;
-}
-
-
-/* ==========================================================
-   MOBILE SEARCH COMPOSER
-========================================================== */
-
-@media (max-width: 600px) {
-
-  .products-search-composer {
-    min-height: 50px;
-
-    margin-top: 16px;
-
+    margin: 0;
     padding: 0 12px;
 
-    border-radius: 12px;
-  }
+    border: 0;
+    outline: none;
+
+    background: transparent;
+
+    color: #2f211a;
+
+    font-family: inherit;
+    font-size: 0.98rem;
+    font-weight: 500;
+
+    box-sizing: border-box;
+}
 
 
-  .products-search-composer-icon {
-    width: 31px;
-    height: 31px;
+/* =========================================================
+   INPUT PLACEHOLDER
+========================================================= */
 
-    margin-right: 9px;
-
-    font-size: 13px;
-  }
-
-
-  .products-search-composer-text {
-    font-size: 13px;
-  }
+.products-search-composer-input::placeholder {
+    color: #786960;
+    opacity: 0.9;
+}
 
 
-  .products-search-composer-action {
-    width: 31px;
-    height: 31px;
+/* =========================================================
+   SEARCH INPUT BROWSER CLEAR BUTTON
+========================================================= */
 
-    margin-left: 8px;
+.products-search-composer-input::-webkit-search-cancel-button {
+    appearance: none;
 
-    font-size: 11px;
-  }
+    width: 18px;
+    height: 18px;
+
+    margin-right: 5px;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   SUBMIT BUTTON
+========================================================= */
+
+.products-search-composer-action {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: #8b4513;
+
+    color: #ffffff;
+
+    font-family: inherit;
+    font-size: 0.95rem;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+/* =========================================================
+   SUBMIT HOVER
+========================================================= */
+
+.products-search-composer-action:hover {
+    background: #6f350f;
+
+    transform: scale(1.05);
+
+    box-shadow:
+        0 4px 12px rgba(111, 53, 15, 0.22);
+}
+
+
+/* =========================================================
+   SUBMIT ACTIVE
+========================================================= */
+
+.products-search-composer-action:active {
+    transform: scale(0.96);
+}
+
+
+/* =========================================================
+   SUBMIT FOCUS
+========================================================= */
+
+.products-search-composer-action:focus-visible {
+    outline: 3px solid rgba(139, 69, 19, 0.22);
+    outline-offset: 3px;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .products-search-composer {
+        min-height: 54px;
+
+        margin-bottom: 22px;
+        padding-left: 10px;
+        padding-right: 6px;
+    }
+
+
+    .products-search-composer-icon {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+    }
+
+
+    .products-search-composer-input {
+        height: 40px;
+
+        padding: 0 7px;
+
+        font-size: 0.9rem;
+    }
+
+
+    .products-search-composer-action {
+        width: 40px;
+        min-width: 40px;
+        height: 40px;
+    }
 
 }
 
 
-/* ==========================================================
+/* =========================================================
    SMALL MOBILE
-========================================================== */
+========================================================= */
 
-@media (max-width: 480px) {
+@media (max-width: 420px) {
 
-  .products-search-composer {
-    min-height: 47px;
+    .products-search-composer {
+        min-height: 50px;
 
-    padding: 0 10px;
-
-    border-radius: 11px;
-  }
-
-
-  .products-search-composer-icon {
-    width: 29px;
-    height: 29px;
-
-    margin-right: 8px;
-  }
+        padding-left: 7px;
+        padding-right: 5px;
+    }
 
 
-  .products-search-composer-text {
-    font-size: 12px;
-  }
+    .products-search-composer-icon {
+        width: 32px;
+        min-width: 32px;
+    }
 
 
-  .products-search-composer-action {
-    width: 29px;
-    height: 29px;
+    .products-search-composer-input {
+        font-size: 0.84rem;
+    }
 
-    margin-left: 7px;
-  }
+
+    .products-search-composer-action {
+        width: 37px;
+        min-width: 37px;
+        height: 37px;
+
+        font-size: 0.82rem;
+    }
+
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+.products-search-composer-input:focus {
+    outline: none;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .products-search-composer,
+    .products-search-composer-action {
+        transition: none;
+    }
 
 }
