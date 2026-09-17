@@ -1,1 +1,3 @@
-    <%- include("branch-partials/branch/cards") %>
+<% if(user && user.role === "staff") { %>
+    <%- include("branch-partials/branch/cards") <% } else {%>
+ <%- include("branch-partials/branch/cards") %> <% } %>
