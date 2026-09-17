@@ -143,8 +143,8 @@ letter-spacing: 1px;
 }
 
 /* ==========================================================
-TABS ONLY
-Brownish-red / reddish-brown pill navigation
+STATUS TABS
+Verrah-style brownish-red pill navigation
 ========================================================== */
 
 .staff-status-tabs {
@@ -154,7 +154,7 @@ align-items: center;
 gap: 8px;
 overflow-x: auto;
 overflow-y: hidden;
-padding: 10px 4px;
+padding: 10px 14px;
 white-space: nowrap;
 -webkit-overflow-scrolling: touch;
 scrollbar-width: none;
@@ -168,24 +168,24 @@ display: none;
 
 .staff-status-tab {
 flex: 0 0 auto;
+appearance: none;
 display: inline-flex;
 align-items: center;
 justify-content: center;
 gap: 8px;
-appearance: none;
-min-height: 38px;
-padding: 9px 17px;
 border: 1px solid #eadbd2;
-border-radius: 20px;
 background: #ffffff;
 color: #6f350f;
-text-decoration: none;
+padding: 9px 17px;
+min-height: 38px;
+border-radius: 20px;
 font-family: Arial, sans-serif;
 font-size: 13px;
 font-weight: 600;
 line-height: 1;
 cursor: pointer;
 white-space: nowrap;
+text-decoration: none;
 transition:
 background 0.2s ease,
 color 0.2s ease,
@@ -195,19 +195,18 @@ transform 0.2s ease;
 
 .staff-status-tab:hover {
 border-color: #a0522d;
-background: #fffaf7;
 color: #8b4513;
 }
 
 .staff-status-tab.is-active {
-border-color: #8b4513;
 background: #8b4513;
+border-color: #8b4513;
 color: #ffffff;
 }
 
 .staff-status-tab.is-active:hover {
-border-color: #6f350f;
 background: #6f350f;
+border-color: #6f350f;
 color: #ffffff;
 }
 
@@ -241,7 +240,7 @@ color: #8b4513;
 }
 
 /* ==========================================================
-REST OF ORIGINAL CSS
+PACKAGES
 ========================================================== */
 
 .staff-packages-card {
@@ -757,7 +756,7 @@ RESPONSIVE
 
 .staff-status-tabs {
 gap: 7px;
-padding: 9px 2px;
+padding: 9px 12px;
 }
 
 .staff-status-tab {
@@ -779,10 +778,6 @@ width: 46px;
 height: 46px;
 flex-basis: 46px;
 font-size: 18px;
-}
-
-.staff-status-tabs {
-grid-template-columns: 1fr 1fr;
 }
 
 .staff-detail-overview-grid {
