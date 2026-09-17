@@ -38,17 +38,41 @@ const {
 // SUBSTATION VIEW FIELDS
 // =========================================================
 //
-// packageSubstation is the CUSTOMER'S selected destination.
+// packageSubstation is the customer's selected pickup
+// destination.
 //
-// These fields are deliberately included because the
-// customer-facing package views need destination information,
-// contact information, description, icon and GPS.
+// IMPORTANT:
 //
-// Staff assignedSubstation is NOT used here.
+// directions is the HUMAN-READABLE directions text stored
+// in the Substation document.
+//
+// It is NOT converted into a Google Maps URL.
+//
+// GPS remains separate and is passed as:
+//     packageSubstation.gps
+//
+// Customer-facing views can therefore use:
+//
+//     packageSubstation.name
+//     packageSubstation.location
+//     packageSubstation.phoneNumber
+//     packageSubstation.substationIcon
+//     packageSubstation.description
+//     packageSubstation.directions
+//     packageSubstation.gps
+//
 // =========================================================
 
 const SUBSTATION_VIEW_FIELDS =
-  "name location phoneNumber description substationIcon gps";
+  [
+    "name",
+    "location",
+    "phoneNumber",
+    "substationIcon",
+    "description",
+    "directions",
+    "gps"
+  ].join(" ");
 
 
 // =========================================================
@@ -233,173 +257,30 @@ function normalizeSalesName(
 
 
 // =========================================================
-// GPS VALUE
-// =========================================================
-//
-// Accepts common numeric representations.
-//
-// Example:
-//
-// gps: {
-//     latitude: -1.286389,
-//     longitude: 36.817223
-// }
-//
-// The service does not invent coordinates.
-// It only creates directions when valid coordinates exist.
-// =========================================================
-
-function getGpsCoordinates(
-  gps
-) {
-  if (
-    !gps ||
-    typeof gps !== "object"
-  ) {
-    return null;
-  }
-
-  const latitude =
-    Number(
-      gps.latitude ??
-      gps.lat
-    );
-
-  const longitude =
-    Number(
-      gps.longitude ??
-      gps.lng ??
-      gps.lon
-    );
-
-  if (
-    !Number.isFinite(
-      latitude
-    ) ||
-    !Number.isFinite(
-      longitude
-    )
-  ) {
-    return null;
-  }
-
-  if (
-    latitude < -90 ||
-    latitude > 90 ||
-    longitude < -180 ||
-    longitude > 180
-  ) {
-    return null;
-  }
-
-  return {
-    latitude,
-    longitude
-  };
-}
-
-
-// =========================================================
-// CREATE DIRECTIONS URL
-// =========================================================
-//
-// The destination is the package/customer substation.
-//
-// This produces a Google Maps directions URL which can be
-// used directly by the EJS:
-//
-//     packageSubstation.directions
-//
-// or:
-//
-//     packageSubstation.directionsUrl
-//
-// The destination is represented by GPS coordinates so the
-// link points directly to the substation coordinates.
-// =========================================================
-
-function createDirectionsUrl(
-  gps
-) {
-  const coordinates =
-    getGpsCoordinates(
-      gps
-    );
-
-  if (!coordinates) {
-    return "";
-  }
-
-  const destination =
-    encodeURIComponent(
-      `${coordinates.latitude},${coordinates.longitude}`
-    );
-
-  return (
-    "https://www.google.com/maps/dir/?api=1" +
-    `&destination=${destination}` +
-    "&travelmode=driving"
-  );
-}
-
-
-// =========================================================
-// CREATE GOOGLE MAPS LOCATION URL
-// =========================================================
-//
-// This opens the exact coordinate on Google Maps.
-//
-// Directions and location links are deliberately exposed
-// separately.
-// =========================================================
-
-function createGoogleMapsUrl(
-  gps
-) {
-  const coordinates =
-    getGpsCoordinates(
-      gps
-    );
-
-  if (!coordinates) {
-    return "";
-  }
-
-  const destination =
-    encodeURIComponent(
-      `${coordinates.latitude},${coordinates.longitude}`
-    );
-
-  return (
-    "https://www.google.com/maps/search/?api=1" +
-    `&query=${destination}`
-  );
-}
-
-
-// =========================================================
 // PREPARE SUBSTATION FOR VIEW
 // =========================================================
 //
-// This is the important bridge between MongoDB data and the
-// EJS views.
+// THIS FUNCTION IS IMPORTANT.
 //
-// The view receives one complete packageSubstation object.
+// It passes the Substation data to the EJS without replacing
+// the human-readable `directions` field.
 //
-// It includes the original database information plus:
+// The following remains separate:
 //
 //     directions
+//         = human-readable stored directions
+//
+//     gps
+//         = GPS coordinates
+//
+// There is NO:
+//
 //     directionsUrl
-//     googleMapsUrl
 //
-// `directions` is intentionally provided as an alias of the
-// directions URL so existing views can use either:
+// There is NO:
 //
-//     packageSubstation.directions
+//     directions = Google Maps URL
 //
-// or:
-//
-//     packageSubstation.directionsUrl
 // =========================================================
 
 function prepareSubstationForView(
@@ -409,69 +290,65 @@ function prepareSubstationForView(
     return null;
   }
 
+
   const prepared = {
     ...substation
   };
 
 
   // -------------------------------------------------------
-  // GPS
+  // HUMAN-READABLE DIRECTIONS
+  // -------------------------------------------------------
+  //
+  // Keep the actual directions entered for the substation.
+  //
+  // Example:
+  //
+  // "From Nairobi, take Ngong Road toward Karen.
+  //  Turn left at the Total station and continue for
+  //  approximately 500 metres."
+  //
+  // This is what the EJS should receive.
+  //
   // -------------------------------------------------------
 
-  const coordinates =
-    getGpsCoordinates(
-      prepared.gps
-    );
+  prepared.directions =
+    typeof prepared.directions === "string"
+      ? prepared.directions.trim()
+      : (
+          prepared.directions === undefined ||
+          prepared.directions === null
+            ? ""
+            : String(
+                prepared.directions
+              ).trim()
+        );
 
 
-  if (coordinates) {
+  // -------------------------------------------------------
+  // GPS
+  // -------------------------------------------------------
+  //
+  // GPS is deliberately left as GPS data.
+  //
+  // Do NOT turn it into directions text.
+  // Do NOT turn it into a URL.
+  //
+  // -------------------------------------------------------
 
-    // Preserve the original GPS object while ensuring
-    // latitude and longitude are readily available.
+  if (
+    prepared.gps &&
+    typeof prepared.gps === "object"
+  ) {
 
     prepared.gps = {
-      ...prepared.gps,
-
-      latitude:
-        coordinates.latitude,
-
-      longitude:
-        coordinates.longitude
+      ...prepared.gps
     };
 
   } else {
 
-    prepared.gps =
-      prepared.gps || null;
+    prepared.gps = null;
   }
-
-
-  // -------------------------------------------------------
-  // DIRECTIONS
-  // -------------------------------------------------------
-
-  const directionsUrl =
-    createDirectionsUrl(
-      prepared.gps
-    );
-
-
-  prepared.directionsUrl =
-    directionsUrl;
-
-
-  prepared.directions =
-    directionsUrl;
-
-
-  // -------------------------------------------------------
-  // GOOGLE MAPS LOCATION
-  // -------------------------------------------------------
-
-  prepared.googleMapsUrl =
-    createGoogleMapsUrl(
-      prepared.gps
-    );
 
 
   return prepared;
@@ -482,17 +359,18 @@ function prepareSubstationForView(
 // PREPARE PACKAGE DESTINATION
 // =========================================================
 //
-// Ensures the package destination is always prepared before
-// reaching the view.
-//
 // Priority:
 //
 // 1. Package.packageSubstation
-// 2. Customer User.pickupStation
+// 2. Customer User.pickupStation for older packages
 //
-// NEVER:
+// NEVER use:
 //
-// req.user.assignedSubstation
+//     req.user.assignedSubstation
+//
+// assignedSubstation belongs to staff operations and must
+// never replace the customer's package destination.
+//
 // =========================================================
 
 async function preparePackageDestination(
@@ -505,12 +383,13 @@ async function preparePackageDestination(
 
 
   // -------------------------------------------------------
-  // EXISTING PACKAGE SUBSTATION
+  // PACKAGE DESTINATION
   // -------------------------------------------------------
 
   if (
     packageDoc.packageSubstation
   ) {
+
     packageDoc.packageSubstation =
       prepareSubstationForView(
         packageDoc.packageSubstation
@@ -527,6 +406,7 @@ async function preparePackageDestination(
   if (
     !packageDoc.clientId
   ) {
+
     packageDoc.packageSubstation =
       null;
 
@@ -538,9 +418,9 @@ async function preparePackageDestination(
   // OLD PACKAGE FALLBACK
   // -------------------------------------------------------
   //
-  // Older packages may not contain packageSubstation.
+  // Only packages without a stored packageSubstation use
+  // the customer's current pickupStation.
   //
-  // Use the customer's pickupStation only in this situation.
   // -------------------------------------------------------
 
   let query =
@@ -555,12 +435,15 @@ async function preparePackageDestination(
         SUBSTATION_VIEW_FIELDS
       );
 
+
   if (dbSession) {
+
     query =
       query.session(
         dbSession
       );
   }
+
 
   const client =
     await query.lean();
@@ -581,10 +464,14 @@ async function preparePackageDestination(
 // GET CLIENT
 // =========================================================
 //
-// Includes pickupStation because it is required when a new
-// package is created.
+// User.phone is authoritative for the customer's phone.
 //
-// User.phone remains the authoritative customer phone.
+// pickupStation is included because it is needed for:
+//
+//     Package.packageSubstation
+//
+// when creating a package.
+//
 // =========================================================
 
 async function getClient(
@@ -603,12 +490,15 @@ async function getClient(
         SUBSTATION_VIEW_FIELDS
       );
 
+
   if (dbSession) {
+
     query =
       query.session(
         dbSession
       );
   }
+
 
   return query.lean();
 }
@@ -618,17 +508,13 @@ async function getClient(
 // CREATE PACKAGE FROM CART
 // =========================================================
 //
-// Customer destination:
-//
-//     User.pickupStation
-//
-// is stored permanently as:
+// The customer's pickupStation is stored permanently as:
 //
 //     Package.packageSubstation
 //
-// This means changing the customer's pickup station later
-// does not silently change the destination of an existing
-// package.
+// This prevents a later change to User.pickupStation from
+// silently changing an existing package's destination.
+//
 // =========================================================
 
 async function createPackageFromCart(
@@ -637,6 +523,7 @@ async function createPackageFromCart(
 ) {
   const clientId =
     getUserId(req);
+
 
   if (!clientId) {
     throw new Error(
@@ -648,6 +535,7 @@ async function createPackageFromCart(
   const dbSession =
     await mongoose.startSession();
 
+
   let created;
 
 
@@ -656,9 +544,9 @@ async function createPackageFromCart(
     await dbSession.withTransaction(
       async () => {
 
-        // -------------------------------------------------
-        // GET CLIENT
-        // -------------------------------------------------
+        // ===============================================
+        // CLIENT
+        // ===============================================
 
         const client =
           await getClient(
@@ -674,9 +562,9 @@ async function createPackageFromCart(
         }
 
 
-        // -------------------------------------------------
-        // CUSTOMER PHONE
-        // -------------------------------------------------
+        // ===============================================
+        // PHONE
+        // ===============================================
 
         const clientPhone =
           normalizePhone(
@@ -684,13 +572,9 @@ async function createPackageFromCart(
           );
 
 
-        // -------------------------------------------------
+        // ===============================================
         // CUSTOMER DESTINATION
-        // -------------------------------------------------
-        //
-        // pickupStation is the customer's selected
-        // destination.
-        // -------------------------------------------------
+        // ===============================================
 
         const packageSubstation =
           client.pickupStation?._id ||
@@ -698,9 +582,9 @@ async function createPackageFromCart(
           null;
 
 
-        // -------------------------------------------------
+        // ===============================================
         // SALES NAME
-        // -------------------------------------------------
+        // ===============================================
 
         const salesName =
           normalizeSalesName(
@@ -708,9 +592,9 @@ async function createPackageFromCart(
           );
 
 
-        // -------------------------------------------------
-        // FIND CART
-        // -------------------------------------------------
+        // ===============================================
+        // CART
+        // ===============================================
 
         const cart =
           await Cart.findOne({
@@ -734,9 +618,9 @@ async function createPackageFromCart(
         }
 
 
-        // -------------------------------------------------
+        // ===============================================
         // PRODUCT IDS
-        // -------------------------------------------------
+        // ===============================================
 
         const productIds =
           cart.items
@@ -748,9 +632,9 @@ async function createPackageFromCart(
             .filter(Boolean);
 
 
-        // -------------------------------------------------
+        // ===============================================
         // PRODUCTS
-        // -------------------------------------------------
+        // ===============================================
 
         const products =
           await Product.find({
@@ -777,9 +661,9 @@ async function createPackageFromCart(
           );
 
 
-        // -------------------------------------------------
+        // ===============================================
         // PACKAGE ITEMS
-        // -------------------------------------------------
+        // ===============================================
 
         const items =
           cart.items.map(
@@ -788,6 +672,7 @@ async function createPackageFromCart(
               const productId =
                 item.productId ||
                 item.product;
+
 
               const source =
                 productMap.get(
@@ -834,9 +719,9 @@ async function createPackageFromCart(
           );
 
 
-        // -------------------------------------------------
+        // ===============================================
         // VALIDATE ITEMS
-        // -------------------------------------------------
+        // ===============================================
 
         for (
           const item of items
@@ -876,9 +761,9 @@ async function createPackageFromCart(
         }
 
 
-        // -------------------------------------------------
+        // ===============================================
         // TOTAL
-        // -------------------------------------------------
+        // ===============================================
 
         const totalAmount =
           items.reduce(
@@ -893,9 +778,9 @@ async function createPackageFromCart(
           );
 
 
-        // -------------------------------------------------
+        // ===============================================
         // CREATE PACKAGE
-        // -------------------------------------------------
+        // ===============================================
 
         [
           created
@@ -910,7 +795,6 @@ async function createPackageFromCart(
 
                 totalAmount,
 
-                // Customer-selected destination
                 packageSubstation,
 
                 salesName,
@@ -952,9 +836,9 @@ async function createPackageFromCart(
           );
 
 
-        // -------------------------------------------------
+        // ===============================================
         // CLEAR CART
-        // -------------------------------------------------
+        // ===============================================
 
         await Cart.deleteOne(
           {
@@ -986,8 +870,9 @@ async function createPackageFromCart(
 // CREATE PACKAGE FROM PAYMENT
 // =========================================================
 //
-// M-Pesa package creation also stores the customer's
-// pickupStation in Package.packageSubstation.
+// M-Pesa package creation stores the customer's
+// pickupStation as packageSubstation.
+//
 // =========================================================
 
 async function createPackageFromPayment(
@@ -995,6 +880,7 @@ async function createPackageFromPayment(
 ) {
   const dbSession =
     await mongoose.startSession();
+
 
   let packageDoc;
 
@@ -1004,9 +890,9 @@ async function createPackageFromPayment(
     await dbSession.withTransaction(
       async () => {
 
-        // -------------------------------------------------
+        // ===============================================
         // PAYMENT
-        // -------------------------------------------------
+        // ===============================================
 
         const payment =
           await Payment.findOne({
@@ -1025,9 +911,9 @@ async function createPackageFromPayment(
         }
 
 
-        // -------------------------------------------------
+        // ===============================================
         // DUPLICATE PROTECTION
-        // -------------------------------------------------
+        // ===============================================
 
         const existing =
           await Package.findOne({
@@ -1054,9 +940,9 @@ async function createPackageFromPayment(
         }
 
 
-        // -------------------------------------------------
+        // ===============================================
         // CLIENT
-        // -------------------------------------------------
+        // ===============================================
 
         const client =
           await getClient(
@@ -1072,9 +958,9 @@ async function createPackageFromPayment(
         }
 
 
-        // -------------------------------------------------
+        // ===============================================
         // PHONE
-        // -------------------------------------------------
+        // ===============================================
 
         const clientPhone =
           normalizePhone(
@@ -1085,9 +971,9 @@ async function createPackageFromPayment(
           );
 
 
-        // -------------------------------------------------
+        // ===============================================
         // CUSTOMER DESTINATION
-        // -------------------------------------------------
+        // ===============================================
 
         const packageSubstation =
           client.pickupStation?._id ||
@@ -1095,9 +981,9 @@ async function createPackageFromPayment(
           null;
 
 
-        // -------------------------------------------------
+        // ===============================================
         // SALES NAME
-        // -------------------------------------------------
+        // ===============================================
 
         const salesName =
           normalizeSalesName(
@@ -1105,9 +991,9 @@ async function createPackageFromPayment(
           );
 
 
-        // -------------------------------------------------
+        // ===============================================
         // PRODUCT IDS
-        // -------------------------------------------------
+        // ===============================================
 
         const productIds =
           (
@@ -1121,9 +1007,9 @@ async function createPackageFromPayment(
             .filter(Boolean);
 
 
-        // -------------------------------------------------
+        // ===============================================
         // PRODUCTS
-        // -------------------------------------------------
+        // ===============================================
 
         const products =
           await Product.find({
@@ -1150,9 +1036,9 @@ async function createPackageFromPayment(
           );
 
 
-        // -------------------------------------------------
+        // ===============================================
         // ITEMS
-        // -------------------------------------------------
+        // ===============================================
 
         const items =
           (
@@ -1207,9 +1093,9 @@ async function createPackageFromPayment(
           );
 
 
-        // -------------------------------------------------
+        // ===============================================
         // VALIDATE ITEMS
-        // -------------------------------------------------
+        // ===============================================
 
         if (
           !items.length
@@ -1246,9 +1132,9 @@ async function createPackageFromPayment(
         }
 
 
-        // -------------------------------------------------
+        // ===============================================
         // CREATE PAID PACKAGE
-        // -------------------------------------------------
+        // ===============================================
 
         [
           packageDoc
@@ -1267,7 +1153,6 @@ async function createPackageFromPayment(
                     payment.amount || 0
                   ),
 
-                // Customer destination
                 packageSubstation,
 
                 salesName,
@@ -1303,9 +1188,9 @@ async function createPackageFromPayment(
           );
 
 
-        // -------------------------------------------------
+        // ===============================================
         // CART
-        // -------------------------------------------------
+        // ===============================================
 
         const cart =
           await Cart.findOne({
@@ -1322,9 +1207,9 @@ async function createPackageFromPayment(
         }
 
 
-        // -------------------------------------------------
+        // ===============================================
         // REMOVE PAID QUANTITIES
-        // -------------------------------------------------
+        // ===============================================
 
         for (
           const paidItem of
@@ -1374,9 +1259,9 @@ async function createPackageFromPayment(
         }
 
 
-        // -------------------------------------------------
+        // ===============================================
         // SAVE / DELETE CART
-        // -------------------------------------------------
+        // ===============================================
 
         if (
           cart.items.length
@@ -1420,10 +1305,11 @@ async function createPackageFromPayment(
 // GET USER PACKAGES
 // =========================================================
 //
-// Every package returned to the customer receives a fully
-// prepared packageSubstation object.
+// Returns customer packages with packageSubstation fully
+// populated.
 //
-// Directions are generated before the data reaches the EJS.
+// `directions` remains human-readable.
+//
 // =========================================================
 
 async function getUserPackages(
@@ -1454,9 +1340,9 @@ async function getUserPackages(
       .lean();
 
 
-  // -------------------------------------------------------
-  // CUSTOMER FALLBACK DESTINATION
-  // -------------------------------------------------------
+  // ===============================================
+  // FALLBACK PICKUP STATION
+  // ===============================================
 
   const client =
     await User.findById(
@@ -1479,9 +1365,9 @@ async function getUserPackages(
     );
 
 
-  // -------------------------------------------------------
-  // PREPARE EVERY PACKAGE
-  // -------------------------------------------------------
+  // ===============================================
+  // PREPARE PACKAGES
+  // ===============================================
 
   return packages.map(
     (pkg) => {
@@ -1495,14 +1381,19 @@ async function getUserPackages(
             pkg.packageSubstation
           );
 
+      } else if (
+        fallbackSubstation
+      ) {
+
+        pkg.packageSubstation =
+          {
+            ...fallbackSubstation
+          };
+
       } else {
 
         pkg.packageSubstation =
-          fallbackSubstation
-            ? {
-                ...fallbackSubstation
-              }
-            : null;
+          null;
       }
 
 
@@ -1514,18 +1405,6 @@ async function getUserPackages(
 
 // =========================================================
 // GET USER PACKAGE
-// =========================================================
-//
-// Customer destination:
-//
-//     package.packageSubstation
-//
-// Older-package fallback:
-//
-//     User.pickupStation
-//
-// Directions are attached to packageSubstation before the
-// object is returned to the controller/view.
 // =========================================================
 
 async function getUserPackage(
@@ -1540,6 +1419,15 @@ async function getUserPackage(
     throw new Error(
       "Login is required."
     );
+  }
+
+
+  if (
+    !mongoose.isValidObjectId(
+      id
+    )
+  ) {
+    return null;
   }
 
 
@@ -1575,19 +1463,14 @@ async function getUserPackage(
 // =========================================================
 //
 // packageSubstation:
-//
 //     Customer destination
 //
 // confirmedSubstationId:
-//
 //     Staff confirmation location
 //
 // deliveredSubstationId:
-//
 //     Staff delivery location
 //
-// All three are populated with the information required by
-// the relevant views, including GPS and directions.
 // =========================================================
 
 async function getStaffPackages(
@@ -1616,6 +1499,10 @@ async function getStaffPackages(
 
   let visibleQuery = {};
 
+
+  // ===============================================
+  // STAFF VISIBILITY
+  // ===============================================
 
   if (
     role === "staff"
@@ -1648,6 +1535,10 @@ async function getStaffPackages(
   }
 
 
+  // ===============================================
+  // LOAD PACKAGES
+  // ===============================================
+
   const allVisible =
     await Package.find(
       visibleQuery
@@ -1670,9 +1561,9 @@ async function getStaffPackages(
       .lean();
 
 
-  // -------------------------------------------------------
-  // PREPARE SUBSTATION DATA
-  // -------------------------------------------------------
+  // ===============================================
+  // PREPARE SUBSTATIONS
+  // ===============================================
 
   allVisible.forEach(
     (pkg) => {
@@ -1680,6 +1571,7 @@ async function getStaffPackages(
       if (
         pkg.packageSubstation
       ) {
+
         pkg.packageSubstation =
           prepareSubstationForView(
             pkg.packageSubstation
@@ -1690,6 +1582,7 @@ async function getStaffPackages(
       if (
         pkg.confirmedSubstationId
       ) {
+
         pkg.confirmedSubstationId =
           prepareSubstationForView(
             pkg.confirmedSubstationId
@@ -1700,6 +1593,7 @@ async function getStaffPackages(
       if (
         pkg.deliveredSubstationId
       ) {
+
         pkg.deliveredSubstationId =
           prepareSubstationForView(
             pkg.deliveredSubstationId
@@ -1709,9 +1603,9 @@ async function getStaffPackages(
   );
 
 
-  // -------------------------------------------------------
+  // ===============================================
   // COUNTS
-  // -------------------------------------------------------
+  // ===============================================
 
   const counts = {
 
@@ -1741,9 +1635,9 @@ async function getStaffPackages(
   };
 
 
-  // -------------------------------------------------------
-  // FILTER
-  // -------------------------------------------------------
+  // ===============================================
+  // STATUS FILTER
+  // ===============================================
 
   const packages =
     status === "all"
@@ -1755,9 +1649,9 @@ async function getStaffPackages(
         );
 
 
-  // -------------------------------------------------------
+  // ===============================================
   // CLIENT IDS
-  // -------------------------------------------------------
+  // ===============================================
 
   const clientIds =
     [
@@ -1774,9 +1668,9 @@ async function getStaffPackages(
     ];
 
 
-  // -------------------------------------------------------
+  // ===============================================
   // CLIENTS
-  // -------------------------------------------------------
+  // ===============================================
 
   const clients =
     await User.find({
@@ -1812,9 +1706,9 @@ async function getStaffPackages(
     );
 
 
-  // -------------------------------------------------------
+  // ===============================================
   // RETURN
-  // -------------------------------------------------------
+  // ===============================================
 
   return {
 
@@ -1902,6 +1796,15 @@ async function getStaffPackage(
   }
 
 
+  if (
+    !mongoose.isValidObjectId(
+      id
+    )
+  ) {
+    return null;
+  }
+
+
   const pkg =
     await Package.findById(
       id
@@ -1926,9 +1829,9 @@ async function getStaffPackage(
   }
 
 
-  // -------------------------------------------------------
+  // ===============================================
   // STAFF VISIBILITY
-  // -------------------------------------------------------
+  // ===============================================
 
   if (
     role === "staff"
@@ -1952,14 +1855,18 @@ async function getStaffPackage(
   }
 
 
-  // -------------------------------------------------------
-  // PREPARE ALL SUBSTATION DATA
-  // -------------------------------------------------------
+  // ===============================================
+  // DESTINATION
+  // ===============================================
 
   await preparePackageDestination(
     pkg
   );
 
+
+  // ===============================================
+  // CONFIRMED SUBSTATION
+  // ===============================================
 
   if (
     pkg.confirmedSubstationId
@@ -1972,6 +1879,10 @@ async function getStaffPackage(
   }
 
 
+  // ===============================================
+  // DELIVERED SUBSTATION
+  // ===============================================
+
   if (
     pkg.deliveredSubstationId
   ) {
@@ -1983,9 +1894,9 @@ async function getStaffPackage(
   }
 
 
-  // -------------------------------------------------------
+  // ===============================================
   // CLIENT
-  // -------------------------------------------------------
+  // ===============================================
 
   const client =
     await User.findById(
@@ -2008,6 +1919,10 @@ async function getStaffPackage(
       );
   }
 
+
+  // ===============================================
+  // RETURN
+  // ===============================================
 
   return {
 
@@ -2044,17 +1959,16 @@ async function getStaffPackage(
 // CONFIRM PACKAGE
 // =========================================================
 //
-// IMPORTANT:
+// Staff assignedSubstation is operational information.
 //
-// Staff assignedSubstation is operational data only.
-//
-// It becomes:
+// It is saved as:
 //
 //     confirmedSubstationId
 //
-// It does NOT overwrite:
+// It NEVER replaces:
 //
 //     packageSubstation
+//
 // =========================================================
 
 async function confirmPackage(
@@ -2162,14 +2076,18 @@ async function confirmPackage(
   }
 
 
-  // -------------------------------------------------------
-  // PREPARE DESTINATION DATA
-  // -------------------------------------------------------
+  // ===============================================
+  // PREPARE CUSTOMER DESTINATION
+  // ===============================================
 
   await preparePackageDestination(
     updated
   );
 
+
+  // ===============================================
+  // PREPARE CONFIRMATION SUBSTATION
+  // ===============================================
 
   if (
     updated.confirmedSubstationId
@@ -2194,6 +2112,7 @@ async function confirmPackage(
 // operational delivery.
 //
 // packageSubstation remains the customer's destination.
+//
 // =========================================================
 
 async function deliverPackage(
@@ -2234,9 +2153,9 @@ async function deliverPackage(
     await dbSession.withTransaction(
       async () => {
 
-        // =================================================
+        // =============================================
         // STAFF
-        // =================================================
+        // =============================================
 
         const staff =
           await User.findOne({
@@ -2269,9 +2188,9 @@ async function deliverPackage(
         }
 
 
-        // =================================================
+        // =============================================
         // PACKAGE
-        // =================================================
+        // =============================================
 
         const pkg =
           await Package.findOne({
@@ -2295,9 +2214,9 @@ async function deliverPackage(
         }
 
 
-        // =================================================
+        // =============================================
         // DUPLICATE PROTECTION
-        // =================================================
+        // =============================================
 
         if (
           pkg.substationReductionRecorded
@@ -2308,9 +2227,9 @@ async function deliverPackage(
         }
 
 
-        // =================================================
-        // STAFF OPERATIONAL SUBSTATION
-        // =================================================
+        // =============================================
+        // OPERATIONAL SUBSTATION
+        // =============================================
 
         const substation =
           await Substation.findById(
@@ -2328,9 +2247,9 @@ async function deliverPackage(
         }
 
 
-        // =================================================
+        // =============================================
         // PROCESS ITEMS
-        // =================================================
+        // =============================================
 
         for (
           const item of pkg.items
@@ -2354,9 +2273,9 @@ async function deliverPackage(
           }
 
 
-          // ===============================================
+          // -------------------------------------------
           // PRODUCT
-          // ===============================================
+          // -------------------------------------------
 
           const product =
             await Product.findById(
@@ -2374,9 +2293,9 @@ async function deliverPackage(
           }
 
 
-          // ===============================================
-          // PRODUCT.UNITS
-          // ===============================================
+          // -------------------------------------------
+          // PRODUCT UNITS
+          // -------------------------------------------
 
           const productUnits =
             Number(
@@ -2394,9 +2313,9 @@ async function deliverPackage(
           }
 
 
-          // ===============================================
-          // PRODUCT.SUBSTATIONUNITS
-          // ===============================================
+          // -------------------------------------------
+          // PRODUCT SUBSTATION UNITS
+          // -------------------------------------------
 
           const hasSubstationUnits =
             product.substationUnits !==
@@ -2431,9 +2350,9 @@ async function deliverPackage(
           }
 
 
-          // ===============================================
+          // -------------------------------------------
           // SUBSTATION INVENTORY
-          // ===============================================
+          // -------------------------------------------
 
           const inventory =
             substation.productInventory.find(
@@ -2470,9 +2389,9 @@ async function deliverPackage(
           }
 
 
-          // ===============================================
+          // -------------------------------------------
           // REDUCE PRODUCT
-          // ===============================================
+          // -------------------------------------------
 
           product.units =
             productUnits -
@@ -2495,9 +2414,9 @@ async function deliverPackage(
           });
 
 
-          // ===============================================
+          // -------------------------------------------
           // REDUCE SUBSTATION INVENTORY
-          // ===============================================
+          // -------------------------------------------
 
           inventory.units =
             inventoryUnits -
@@ -2508,9 +2427,9 @@ async function deliverPackage(
             new Date();
 
 
-          // ===============================================
+          // -------------------------------------------
           // PRODUCT REDUCTIONS
-          // ===============================================
+          // -------------------------------------------
 
           const reduction =
             substation.productReductions.find(
@@ -2572,9 +2491,9 @@ async function deliverPackage(
         }
 
 
-        // =================================================
+        // =============================================
         // SAVE SUBSTATION
-        // =================================================
+        // =============================================
 
         await substation.save({
           session:
@@ -2582,9 +2501,9 @@ async function deliverPackage(
         });
 
 
-        // =================================================
+        // =============================================
         // MARK PACKAGE DELIVERED
-        // =================================================
+        // =============================================
 
         pkg.status =
           "delivered";
@@ -2616,9 +2535,9 @@ async function deliverPackage(
         });
 
 
-        // =================================================
+        // =============================================
         // CLIENT
-        // =================================================
+        // =============================================
 
         const client =
           await User.findById(
@@ -2633,9 +2552,9 @@ async function deliverPackage(
             .lean();
 
 
-        // =================================================
+        // =============================================
         // DELIVERED PACKAGE
-        // =================================================
+        // =============================================
 
         delivered =
           await DeliveredPackage.findOneAndUpdate(
@@ -2867,6 +2786,31 @@ async function recordPayment(
   );
 
 
+  // -------------------------------------------------------
+  // Return package with customer destination populated.
+  // -------------------------------------------------------
+
+  const result =
+    await Package.findById(
+      pkg._id
+    )
+      .populate(
+        "packageSubstation",
+        SUBSTATION_VIEW_FIELDS
+      )
+      .lean();
+
+
+  if (result) {
+
+    await preparePackageDestination(
+      result
+    );
+
+    return result;
+  }
+
+
   return pkg;
 }
 
@@ -2876,10 +2820,13 @@ async function recordPayment(
 // =========================================================
 //
 // Payment confirmation updates payment information while
-// preserving the package destination.
+// preserving packageSubstation.
 //
-// If an older package has no packageSubstation, the
-// customer's pickupStation is used.
+// Existing packageSubstation is NEVER replaced.
+//
+// Older packages without packageSubstation receive the
+// customer's pickupStation.
+//
 // =========================================================
 
 async function confirmPackagePayment(
@@ -2887,6 +2834,7 @@ async function confirmPackagePayment(
 ) {
   const dbSession =
     await mongoose.startSession();
+
 
   let packageDoc;
 
@@ -2896,9 +2844,9 @@ async function confirmPackagePayment(
     await dbSession.withTransaction(
       async () => {
 
-        // -------------------------------------------------
+        // =============================================
         // PAYMENT
-        // -------------------------------------------------
+        // =============================================
 
         const payment =
           await Payment.findOne({
@@ -2921,9 +2869,9 @@ async function confirmPackagePayment(
         }
 
 
-        // -------------------------------------------------
+        // =============================================
         // PACKAGE
-        // -------------------------------------------------
+        // =============================================
 
         const packageDocQuery =
           await Package.findOne({
@@ -2945,9 +2893,9 @@ async function confirmPackagePayment(
         }
 
 
-        // -------------------------------------------------
+        // =============================================
         // PAYMENT TOTAL
-        // -------------------------------------------------
+        // =============================================
 
         const totalPaid =
           await getConfirmedPaymentTotal(
@@ -2994,9 +2942,9 @@ async function confirmPackagePayment(
           "";
 
 
-        // -------------------------------------------------
+        // =============================================
         // CLIENT
-        // -------------------------------------------------
+        // =============================================
 
         const client =
           await getClient(
@@ -3005,9 +2953,9 @@ async function confirmPackagePayment(
           );
 
 
-        // -------------------------------------------------
+        // =============================================
         // PHONE
-        // -------------------------------------------------
+        // =============================================
 
         const clientPhone =
           normalizePhone(
@@ -3034,9 +2982,9 @@ async function confirmPackagePayment(
         }
 
 
-        // -------------------------------------------------
+        // =============================================
         // SALES NAME
-        // -------------------------------------------------
+        // =============================================
 
         const paymentSalesName =
           normalizeSalesName(
@@ -3060,15 +3008,16 @@ async function confirmPackagePayment(
         }
 
 
-        // -------------------------------------------------
+        // =============================================
         // PACKAGE DESTINATION
-        // -------------------------------------------------
+        // =============================================
         //
-        // Never replace an existing package destination.
+        // Never replace an existing destination.
         //
-        // Only older packages without one receive the
-        // customer's pickupStation.
-        // -------------------------------------------------
+        // Only old packages without a destination receive
+        // the customer's pickupStation.
+        //
+        // =============================================
 
         if (
           !packageDocQuery.packageSubstation &&
@@ -3093,6 +3042,37 @@ async function confirmPackagePayment(
     );
 
 
+    // -------------------------------------------------------
+    // Re-fetch the package after the transaction so the EJS
+    // receives the complete populated destination.
+    // -------------------------------------------------------
+
+    if (packageDoc?._id) {
+
+      const populated =
+        await Package.findById(
+          packageDoc._id
+        )
+          .populate(
+            "packageSubstation",
+            SUBSTATION_VIEW_FIELDS
+          )
+          .lean();
+
+
+      if (populated) {
+
+        await preparePackageDestination(
+          populated
+        );
+
+
+        packageDoc =
+          populated;
+      }
+    }
+
+
     return packageDoc;
 
   } finally {
@@ -3106,15 +3086,16 @@ async function confirmPackagePayment(
 // RELEASE PAYMENT RESERVATION
 // =========================================================
 //
-// There is NO inventory reservation.
+// There is no inventory reservation.
 //
 // Starting M-Pesa payment does not reduce inventory.
 //
 // Failed/cancelled payment:
 //
-// - Product.units unchanged
-// - Cart unchanged
-// - Cart remains available
+//     Product.units unchanged
+//     Cart unchanged
+//     Cart remains available
+//
 // =========================================================
 
 async function releasePaymentReservation(
