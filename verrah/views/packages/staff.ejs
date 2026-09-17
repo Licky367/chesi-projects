@@ -11,6 +11,10 @@ const tabCounts = counts || {
 
 <section class="package-staff-page">
 
+  <!-- =====================================================
+       STAFF PACKAGE HEADER
+  ====================================================== -->
+
   <div class="staff-package-header">
 
     <div class="staff-package-icon">
@@ -31,6 +35,10 @@ const tabCounts = counts || {
 
   </div>
 
+
+  <!-- =====================================================
+       ALERTS
+  ====================================================== -->
 
   <% if (typeof error !== "undefined" && error) { %>
 
@@ -58,13 +66,23 @@ const tabCounts = counts || {
   <% } %>
 
 
+  <!-- =====================================================
+       PACKAGE STATUS NAVIGATION
+       
+       Arranged like the SALES navigation tabs.
+  ====================================================== -->
+
   <div class="staff-overview-card">
 
     <div class="staff-section-label">
       OVERVIEW
     </div>
 
-    <div class="staff-status-tabs">
+
+    <nav
+      class="sales-navigation staff-status-navigation"
+      id="staff-status-navigation"
+    >
 
       <% ["all", "pending", "confirmed", "delivered"].forEach(function (t) {
 
@@ -83,15 +101,13 @@ const tabCounts = counts || {
 
         <a
           href="/packages/staff?status=<%= t %>"
-          class="staff-status-tab <%= active ? "is-active" : "" %>"
+          class="sales-navigation-tab staff-status-navigation-tab <%= active ? 'active' : '' %>"
         >
 
+          <i class="fas <%= icon %>"></i>
+
           <span>
-
-            <i class="fas <%= icon %>"></i>
-
             <%= t.charAt(0).toUpperCase() + t.slice(1) %>
-
           </span>
 
           <span class="staff-tab-count">
@@ -102,10 +118,14 @@ const tabCounts = counts || {
 
       <% }); %>
 
-    </div>
+    </nav>
 
   </div>
 
+
+  <!-- =====================================================
+       PACKAGES CONTENT
+  ====================================================== -->
 
   <div class="staff-packages-card">
 
@@ -125,6 +145,10 @@ const tabCounts = counts || {
 
     </div>
 
+
+    <!-- ===================================================
+         PACKAGE LIST
+    ==================================================== -->
 
     <div class="staff-package-list">
 
@@ -259,3 +283,150 @@ const tabCounts = counts || {
   </div>
 
 </section>
+
+
+<!-- =====================================================
+     PACKAGE STATUS NAVIGATION SCRIPT
+     
+     Same horizontal-scroll behavior as SALES navigation.
+====================================================== -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const navigation =
+        document.getElementById("staff-status-navigation");
+
+    if (!navigation) {
+        return;
+    }
+
+
+    /*
+     * Restore the navigation's horizontal position
+     * after changing package status tabs.
+     *
+     * The active tab is NOT automatically scrolled
+     * into view. This prevents the navigation from
+     * jumping back toward the first tab.
+     */
+
+    const savedScrollLeft =
+        sessionStorage.getItem(
+            "staffStatusNavigationScrollLeft"
+        );
+
+    if (savedScrollLeft !== null) {
+
+        requestAnimationFrame(function () {
+
+            navigation.scrollLeft =
+                Number(savedScrollLeft);
+
+        });
+
+        sessionStorage.removeItem(
+            "staffStatusNavigationScrollLeft"
+        );
+    }
+
+
+    /*
+     * Save the exact horizontal position before
+     * navigating to another package status.
+     */
+
+    const tabs =
+        navigation.querySelectorAll(
+            ".sales-navigation-tab"
+        );
+
+    tabs.forEach(function (tab) {
+
+        tab.addEventListener("click", function () {
+
+            sessionStorage.setItem(
+                "staffStatusNavigationScrollLeft",
+                String(navigation.scrollLeft)
+            );
+
+        });
+
+    });
+
+});
+</script>
+
+CSS adjustment
+
+Because the new navigation uses the Sales tab classes, your existing ".sales-navigation" and ".sales-navigation-tab" styling can be reused. Add only the package-specific count styling if you don't already have it:
+
+:::writing{variant="standard" id="74618" title="Package Status Tab CSS"}
+
+/* =========================================================
+   PACKAGE STATUS NAVIGATION
+   Uses the same arrangement as SALES navigation
+========================================================= */
+
+.staff-status-navigation {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.staff-status-navigation::-webkit-scrollbar {
+    display: none;
+}
+
+
+/* Individual package status tab */
+
+.staff-status-navigation-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+
+/* Count beside the tab label */
+
+.staff-status-navigation-tab .staff-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 7px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+
+/* Keep the count visually integrated with the active tab */
+
+.staff-status-navigation-tab.active .staff-tab-count {
+    font-weight: 800;
+}
+
+
+/* Mobile */
+
+@media (max-width: 576px) {
+
+    .staff-status-navigation-tab {
+        gap: 6px;
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+}
