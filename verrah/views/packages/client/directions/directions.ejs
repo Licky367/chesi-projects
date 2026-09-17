@@ -1,51 +1,71 @@
 <%
 /* ==========================================================
-PACKAGE SUBSTATION ABOUT
-DESCRIPTION
+   PACKAGE SUBSTATION DIRECTIONS
+   ==========================================================
 
-IMPORTANT:
-For package pages, packageSubstation is the authoritative
-customer pickup/destination substation.
+   IMPORTANT:
+   packageSubstation is the authoritative customer
+   pickup/destination substation.
 
-substation remains only as a compatibility fallback.
-========================================================== */
+   The Substation model contains:
+       directions
+       gps.latitude
+       gps.longitude
+
+   This section displays the stored human-readable
+   directions from:
+       packageDestination.directions
+
+   substation is retained only as a compatibility fallback.
+   ========================================================== */
 
 const packageDestination =
-(typeof packageSubstation !== "undefined" &&
-packageSubstation)
-? packageSubstation
-: (
-typeof packageDoc !== "undefined" &&
-packageDoc &&
-packageDoc.packageSubstation
-? packageDoc.packageSubstation
-: (
-typeof substation !== "undefined"
-? substation
-: null
-)
-);
+    (typeof packageSubstation !== "undefined" &&
+     packageSubstation)
+        ? packageSubstation
+
+        : (
+            typeof packageDoc !== "undefined" &&
+            packageDoc &&
+            packageDoc.packageSubstation
+                ? packageDoc.packageSubstation
+
+                : (
+                    typeof substation !== "undefined" &&
+                    substation
+                        ? substation
+                        : null
+                )
+          );
+
+const packageDirections =
+    packageDestination &&
+    typeof packageDestination.directions === "string"
+        ? packageDestination.directions.trim()
+        : "";
 
 %>
 
-<section class="verah-sales-activities"><% if (
-    !error &&
-    packageDestination &&
-    packageDestination.directions
-) { %>
+<section class="verah-sales-activities">
 
-    <div class="verah-sales-content">
+    <% if (
+        !error &&
+        packageDestination &&
+        packageDirections
+    ) { %>
 
-        <h2>
-            Directions
-        </h2>
+        <div class="verah-sales-content">
 
-        <p class="verah-sales-description">
-            <%= packageDestination.directions %>
-        </p>
+            <h2>
+                Directions
+            </h2>
 
-    </div>
+            <p class="verah-sales-description">
+                <%= packageDirections %>
+            </p>
 
-<% } %>
+        </div>
+
+    <% } %>
 
 </section>
