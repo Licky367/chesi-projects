@@ -142,173 +142,106 @@ font-weight: 900;
 letter-spacing: 1px;
 }
 
-
 /* ==========================================================
-STAFF STATUS TABS
-UI MATCHES VERRAH TABS REFERENCE
-----------------------------------------------------------
-Existing class names are preserved exactly.
-Only tab styling is changed.
+TABS ONLY
+Brownish-red / reddish-brown pill navigation
 ========================================================== */
 
 .staff-status-tabs {
-
-    width: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    overflow-x: auto;
-
-    overflow-y: hidden;
-
-    padding: 10px 14px;
-
-    white-space: nowrap;
-
-    -webkit-overflow-scrolling: touch;
-
-    scrollbar-width: none;
-
-    background: #fffaf7;
-
-    border-bottom: 1px solid #eadbd2;
-
+width: 100%;
+display: flex;
+align-items: center;
+gap: 8px;
+overflow-x: auto;
+overflow-y: hidden;
+padding: 10px 4px;
+white-space: nowrap;
+-webkit-overflow-scrolling: touch;
+scrollbar-width: none;
+background: #fffaf7;
+border-bottom: 1px solid #eadbd2;
 }
 
 .staff-status-tabs::-webkit-scrollbar {
-
-    display: none;
-
+display: none;
 }
 
 .staff-status-tab {
-
-    flex: 0 0 auto;
-
-    appearance: none;
-
-    border: 1px solid #eadbd2;
-
-    background: #ffffff;
-
-    color: #6f350f;
-
-    padding: 9px 17px;
-
-    min-height: 38px;
-
-    border-radius: 20px;
-
-    font-family: Arial, sans-serif;
-
-    font-size: 13px;
-
-    font-weight: 600;
-
-    line-height: 1;
-
-    cursor: pointer;
-
-    white-space: nowrap;
-
-    text-decoration: none;
-
-    transition:
-
-        background 0.2s ease,
-
-        color 0.2s ease,
-
-        border-color 0.2s ease,
-
-        transform 0.2s ease;
-
+flex: 0 0 auto;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+appearance: none;
+min-height: 38px;
+padding: 9px 17px;
+border: 1px solid #eadbd2;
+border-radius: 20px;
+background: #ffffff;
+color: #6f350f;
+text-decoration: none;
+font-family: Arial, sans-serif;
+font-size: 13px;
+font-weight: 600;
+line-height: 1;
+cursor: pointer;
+white-space: nowrap;
+transition:
+background 0.2s ease,
+color 0.2s ease,
+border-color 0.2s ease,
+transform 0.2s ease;
 }
 
 .staff-status-tab:hover {
-
-    border-color: #a0522d;
-
-    color: #8b4513;
-
+border-color: #a0522d;
+background: #fffaf7;
+color: #8b4513;
 }
 
 .staff-status-tab.is-active {
-
-    background: #8b4513;
-
-    border-color: #8b4513;
-
-    color: #ffffff;
-
+border-color: #8b4513;
+background: #8b4513;
+color: #ffffff;
 }
 
 .staff-status-tab.is-active:hover {
-
-    background: #6f350f;
-
-    border-color: #6f350f;
-
-    color: #ffffff;
-
+border-color: #6f350f;
+background: #6f350f;
+color: #ffffff;
 }
 
 .staff-status-tab:focus-visible {
-
-    outline: 2px solid #a0522d;
-
-    outline-offset: 2px;
-
+outline: 2px solid #a0522d;
+outline-offset: 2px;
 }
 
 .staff-status-tab span:first-child {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
+display: inline-flex;
+align-items: center;
+gap: 6px;
 }
 
 .staff-tab-count {
-
-    min-width: 21px;
-
-    height: 21px;
-
-    display: grid;
-
-    place-items: center;
-
-    border-radius: 50%;
-
-    background: #f3e8e1;
-
-    color: #6f350f;
-
-    font-size: 10px;
-
-    font-weight: 900;
-
+min-width: 21px;
+height: 21px;
+display: inline-grid;
+place-items: center;
+border-radius: 50%;
+background: #f3e3da;
+color: #6f350f;
+font-size: 10px;
+font-weight: 900;
+line-height: 1;
 }
 
 .staff-status-tab.is-active .staff-tab-count {
-
-    background: #ffffff;
-
-    color: #8b4513;
-
+background: #ffffff;
+color: #8b4513;
 }
 
-
 /* ==========================================================
-PACKAGES
-UNCHANGED
+REST OF ORIGINAL CSS
 ========================================================== */
 
 .staff-packages-card {
@@ -820,7 +753,23 @@ min-height: 200px;
 RESPONSIVE
 ========================================================== */
 
+@media (max-width: 600px) {
+
+.staff-status-tabs {
+gap: 7px;
+padding: 9px 2px;
+}
+
+.staff-status-tab {
+min-height: 36px;
+padding: 8px 15px;
+font-size: 12px;
+}
+
+}
+
 @media (max-width: 520px) {
+
 .staff-package-header {
 padding: 14px;
 }
@@ -832,27 +781,8 @@ flex-basis: 46px;
 font-size: 18px;
 }
 
-/* ========================================================
-   MOBILE TABS
-   Same VERRAH pill UI
-======================================================== */
-
 .staff-status-tabs {
-
-    gap: 7px;
-
-    padding: 9px 12px;
-
-}
-
-.staff-status-tab {
-
-    min-height: 36px;
-
-    padding: 8px 15px;
-
-    font-size: 12px;
-
+grid-template-columns: 1fr 1fr;
 }
 
 .staff-detail-overview-grid {
@@ -870,4 +800,5 @@ align-items: flex-start;
 .staff-item-total {
 font-size: 11px;
 }
+
 }
