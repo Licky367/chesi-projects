@@ -1,16 +1,37 @@
 <%
 /* ==========================================================
-   BRANCH ABOUT
-   DESCRIPTION
-   ========================================================== */
+PACKAGE SUBSTATION ABOUT
+DESCRIPTION
+
+IMPORTANT:
+For package pages, packageSubstation is the authoritative
+customer pickup/destination substation.
+
+substation remains only as a compatibility fallback.
+========================================================== */
+
+const packageDestination =
+(typeof packageSubstation !== "undefined" &&
+packageSubstation)
+? packageSubstation
+: (
+typeof packageDoc !== "undefined" &&
+packageDoc &&
+packageDoc.packageSubstation
+? packageDoc.packageSubstation
+: (
+typeof substation !== "undefined"
+? substation
+: null
+)
+);
+
 %>
 
-<section class="verah-sales-activities">
-
-<% if (
+<section class="verah-sales-activities"><% if (
     !error &&
-    substation &&
-    substation.description
+    packageDestination &&
+    packageDestination.description
 ) { %>
 
     <div class="verah-sales-content">
@@ -20,10 +41,11 @@
         </h2>
 
         <p class="verah-sales-description">
-            <%= substation.description %>
+            <%= packageDestination.description %>
         </p>
 
     </div>
 
 <% } %>
+
 </section>
