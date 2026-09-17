@@ -1,5 +1,5 @@
 // ==========================================================
-// controllers/branch/renderBranch.js
+// controllers/branchController/renderBranch.js
 // VERRAH COSMETICS
 // BRANCH / SUBSTATION RENDERER
 // ==========================================================
@@ -9,6 +9,14 @@
 //     • Render successful branch pages
 //     • Render not-found branch pages
 //     • Render branch server-error pages
+//     • Provide both `branch` and `substation`
+//
+// IMPORTANT:
+//
+//     Existing branch partials use `branch`.
+//     Other views/controllers may use `substation`.
+//
+//     Therefore BOTH variables are intentionally supplied.
 //
 // ==========================================================
 
@@ -39,13 +47,34 @@ exports.success = function (
             title:
                 `${substation.name} | Verrah Cosmetics`,
 
-            // Selected substation.
+            // ------------------------------------------------
+            // MAIN SUBSTATION OBJECT
+            // ------------------------------------------------
+
             substation,
 
-            // The branch view/partials can use this
-            // collection variable.
+            // ------------------------------------------------
+            // BACKWARD-COMPATIBILITY ALIAS
+            // ------------------------------------------------
+            //
+            // Existing branch partials expect `branch`.
+            //
+            // Do not remove this unless those partials are
+            // also changed to use `substation`.
+            //
+            branch:
+                substation,
+
+            // ------------------------------------------------
+            // SUBSTATIONS COLLECTION
+            // ------------------------------------------------
+
             substations:
                 [substation],
+
+            // ------------------------------------------------
+            // CURRENT USER
+            // ------------------------------------------------
 
             currentUser:
                 getCurrentUser(req),
@@ -73,6 +102,11 @@ exports.notFound = function (
                 "Location Not Found | Verrah Cosmetics",
 
             substation:
+                null,
+
+            // Existing partials may still try to access
+            // `branch`, so provide it explicitly.
+            branch:
                 null,
 
             substations:
@@ -104,6 +138,11 @@ exports.error = function (
                 "Branch | Verrah Cosmetics",
 
             substation:
+                null,
+
+            // Keep the variable available to all branch
+            // partials even when loading failed.
+            branch:
                 null,
 
             substations:
