@@ -6,16 +6,21 @@
 
    STRUCTURE:
    ----------------------------------------------------------
-   - Products are grouped by category
-   - Category NAME is displayed
-   - Category ObjectId is NEVER displayed
+   - Page heading
+   - Page description
+   - Error message
+   - Products grouped by category
+   - Category name displayed
+   - Category ObjectId NEVER displayed
    - Maximum 6 products per desktop row
-   - Mobile horizontal scrolling is handled by CSS
-   - Subcategories do not create separate sections
+   - Mobile horizontal scrolling handled by CSS
+   - Subcategories remain product information
    ========================================================== */
 %>
 
+
 <section class="shop-page">
+
 
     <!-- ======================================================
          PAGE HEADER
@@ -28,8 +33,9 @@
         </h1>
 
         <p class="page-subtitle">
-            Welcome to Verrah Cosmetics Products.
-            Browse through our products and order your wish.
+            Welcome to Verrah Cosmetics.
+            Explore our collection of beauty and cosmetic products
+            and find something you love.
         </p>
 
     </div>
@@ -42,27 +48,38 @@
     <% if (typeof error !== "undefined" && error) { %>
 
         <div class="error">
+
             <%= error %>
+
         </div>
 
     <% } %>
 
 
     <!-- ======================================================
-         NO CATEGORIES / NO PRODUCTS
+         PRODUCTS AVAILABILITY
     ======================================================= -->
 
     <% if (!Array.isArray(categories) || categories.length === 0) { %>
 
+
+        <!-- ==================================================
+             NO PRODUCTS
+        =================================================== -->
+
         <div class="empty products-empty">
 
-            <i class="fas fa-box-open"></i>
+            <i
+                class="fas fa-box-open"
+                aria-hidden="true"
+            ></i>
 
             <div>
                 No products are available right now.
             </div>
 
         </div>
+
 
     <% } else { %>
 
@@ -73,66 +90,60 @@
 
         <% categories.forEach(function(group) { %>
 
+
             <%
-            /*
-             * ------------------------------------------------
-             * CATEGORY DISPLAY NAME
-             * ------------------------------------------------
-             *
-             * IMPORTANT:
-             *
-             * The frontend does NOT use:
-             *
-             *     group.category._id
-             *
-             *     group.category
-             *
-             *     Category._id
-             *
-             * The backend should provide the human-readable
-             * category name through:
-             *
-             *     group.label
-             *
-             * or:
-             *
-             *     group.categoryName
-             *
-             * ------------------------------------------------
-             */
+            /* ==================================================
+               CATEGORY DISPLAY NAME
+            ===================================================
+
+               The frontend displays only the human-readable
+               category name.
+
+               Supported backend properties:
+                   group.label
+                   group.categoryName
+
+               Category ObjectIds are never displayed.
+            =================================================== */
 
             var categoryName = "Other";
+
 
             if (
                 typeof group.label === "string" &&
                 group.label.trim()
             ) {
+
                 categoryName = group.label.trim();
 
             } else if (
                 typeof group.categoryName === "string" &&
                 group.categoryName.trim()
             ) {
+
                 categoryName = group.categoryName.trim();
+
             }
 
 
-            /*
-             * ------------------------------------------------
-             * COLLECT PRODUCTS
-             * ------------------------------------------------
-             *
-             * Supports the same structure used by /stock:
-             *
-             * group.rows[].products
-             *
-             * Also supports:
-             *
-             * group.products
-             * ------------------------------------------------
-             */
+            /* ==================================================
+               COLLECT PRODUCTS
+            ===================================================
+
+               Primary structure:
+
+                   group.rows[].products
+
+               Fallback structure:
+
+                   group.products
+
+               This keeps the view compatible with the
+               existing product service response.
+            =================================================== */
 
             var categoryProducts = [];
+
 
             if (Array.isArray(group.rows)) {
 
@@ -146,7 +157,9 @@
                         row.products.forEach(function(product) {
 
                             if (product) {
+
                                 categoryProducts.push(product);
+
                             }
 
                         });
@@ -158,9 +171,9 @@
             }
 
 
-            /*
-             * FALLBACK
-             */
+            /* ==================================================
+               FALLBACK PRODUCTS
+            =================================================== */
 
             if (
                 categoryProducts.length === 0 &&
@@ -170,20 +183,24 @@
                 group.products.forEach(function(product) {
 
                     if (product) {
+
                         categoryProducts.push(product);
+
                     }
 
                 });
 
             }
+
             %>
 
 
             <!-- ==================================================
-                 CATEGORY
+                 CATEGORY SECTION
             =================================================== -->
 
             <% if (categoryProducts.length > 0) { %>
+
 
                 <section class="category-section">
 
@@ -202,7 +219,9 @@
 
                             <%= categoryProducts.length %>
 
-                            product<%= categoryProducts.length === 1 ? "" : "s" %>
+                            product<%= (
+                                categoryProducts.length === 1
+                            ) ? "" : "s" %>
 
                         </span>
 
@@ -210,8 +229,7 @@
 
 
                     <!-- ==========================================
-                         PRODUCTS
-                         CSS CONTROLS THE SIX-COLUMN LAYOUT
+                         PRODUCT ROW
                     =========================================== -->
 
                     <div
@@ -233,13 +251,15 @@
                             >
 
 
-                                <!-- ==============================
+                                <!-- ==================================
                                      PRODUCT IMAGE
-                                =============================== -->
+                                =================================== -->
 
                                 <div class="product-image">
 
+
                                     <% if (product.image) { %>
+
 
                                         <img
                                             src="<%= product.image %>"
@@ -251,50 +271,79 @@
                                             "
                                         >
 
+
+                                        <!-- IMAGE FALLBACK -->
+
                                         <div
                                             class="placeholder product-image-fallback"
                                             style="display:none;"
                                         >
 
-                                            <i class="fas fa-box"></i>
+                                            <i
+                                                class="fas fa-box"
+                                                aria-hidden="true"
+                                            ></i>
 
                                         </div>
 
+
                                     <% } else { %>
+
+
+                                        <!-- NO IMAGE -->
 
                                         <div class="placeholder">
 
-                                            <i class="fas fa-box"></i>
+                                            <i
+                                                class="fas fa-box"
+                                                aria-hidden="true"
+                                            ></i>
+
+                                        </div>
+
+
+                                    <% } %>
+
+
+                                </div>
+
+
+                                <!-- ==================================
+                                     PRODUCT INFORMATION
+                                =================================== -->
+
+                                <div class="product-info">
+
+
+                                    <!-- ==================================
+                                         PRODUCT NAME
+                                    =================================== -->
+
+                                    <div class="product-name">
+
+                                        <%= product.name || "Unnamed product" %>
+
+                                    </div>
+
+
+                                    <!-- ==================================
+                                         SUBCATEGORY
+                                    =================================== -->
+
+                                    <% if (product.subcategory) { %>
+
+                                        <div class="stock-meta-line">
+
+                                            <%= product.subcategory %>
 
                                         </div>
 
                                     <% } %>
 
-                                </div>
 
-
-                                <!-- ==============================
-                                     PRODUCT INFORMATION
-                                =============================== -->
-
-                                <div class="product-info">
-
-
-                                    <!-- PRODUCT NAME -->
-
-                                    <div class="product-name">
-                                        <%= product.name || "Unnamed product" %>
-                                    </div>
-
-
-                                    <!-- SUBCATEGORY -->
-
-                                    <div class="stock-meta-line">
-                                        <%= product.subcategory || "Other" %>
-                                    </div>
-
-
-                                    <!-- PRICE -->
+                                    <!-- ==================================
+                                         PRICE
+                                    =================================== -->
 
                                     <div class="product-price">
 
@@ -307,25 +356,35 @@
                                     </div>
 
 
-                                    <!-- DELIVERY -->
+                                    <!-- ==================================
+                                         DELIVERY
+                                    =================================== -->
 
                                     <div class="stock-text">
 
                                         <strong>
+
                                             <%= Number(
                                                 product.days || 0
                                             ) %>
+
                                         </strong>
 
-                                        day<%= Number(product.days || 0) === 1 ? "" : "s" %>
+                                        day<%= (
+                                            Number(product.days || 0) === 1
+                                        ) ? "" : "s" %>
+
                                         delivery
 
                                     </div>
 
 
-                                    <!-- STOCK -->
+                                    <!-- ==================================
+                                         STOCK
+                                    =================================== -->
 
                                     <% if (Number(product.units || 0) > 0) { %>
+
 
                                         <div class="stock-text">
 
@@ -337,7 +396,9 @@
 
                                         </div>
 
+
                                     <% } else { %>
+
 
                                         <div class="stock-text out">
 
@@ -345,10 +406,12 @@
 
                                         </div>
 
+
                                     <% } %>
 
 
                                 </div>
+
 
                             </a>
 
@@ -358,7 +421,9 @@
 
                     </div>
 
+
                 </section>
+
 
             <% } %>
 
@@ -367,5 +432,6 @@
 
 
     <% } %>
+
 
 </section>
