@@ -132,7 +132,7 @@ exports.getBranchProduct = async function (req, res) {
         // ----------------------------------------------------
 
         return res.render(
-            "branch/product-specific",
+            "branch-partials/product-specific",
             {
                 title:
                     `${product.name} | ${substation.name} | Verrah Cosmetics`,
