@@ -35,6 +35,22 @@ const {
 
 
 // =========================================================
+// SUBSTATION VIEW FIELDS
+// =========================================================
+//
+// These are the fields required by the package/customer
+// views.
+//
+// packageSubstation is the customer's selected destination.
+// assignedSubstation belongs to staff operations and must
+// NOT replace packageSubstation in customer views.
+// =========================================================
+
+const SUBSTATION_VIEW_FIELDS =
+  "name location phoneNumber description substationIcon gps";
+
+
+// =========================================================
 // PAYMENT STATUS
 // =========================================================
 
@@ -158,11 +174,6 @@ function normalizeStatus(
 // =========================================================
 // PHONE NORMALIZER
 // =========================================================
-//
-// User.phone is the authoritative customer phone.
-//
-// "_" and empty values are treated as missing.
-// =========================================================
 
 function normalizePhone(
   phone
@@ -191,25 +202,6 @@ function normalizePhone(
 
 // =========================================================
 // SALES NAME NORMALIZER
-// =========================================================
-//
-// salesName is used by staff when a staff member performs
-// the normal checkout/M-Pesa package flow.
-//
-// IMPORTANT:
-//
-// Staff cash:
-//
-//     isMobile = false
-//     -> StaffSale.salesName
-//
-// Staff M-Pesa:
-//
-//     isMobile = true
-//     -> Package.salesName
-//
-// This helper only cleans the value. The controller decides
-// when salesName should be supplied.
 // =========================================================
 
 function normalizeSalesName(
@@ -243,12 +235,19 @@ function normalizeSalesName(
 // GET CLIENT
 // =========================================================
 //
-// User model uses:
+// The customer's pickupStation is loaded here because it is
+// the source used to establish Package.packageSubstation when
+// a package is created.
 //
-// phone
+// IMPORTANT:
 //
-// This helper makes sure package-related operations use
-// the same customer information.
+// pickupStation:
+//     Customer-selected pickup destination
+//
+// assignedSubstation:
+//     Staff operational assignment
+//
+// They are different concepts.
 // =========================================================
 
 async function getClient(
@@ -260,7 +259,11 @@ async function getClient(
       clientId
     )
       .select(
-        "_id name email phone"
+        "_id name email phone pickupStation"
+      )
+      .populate(
+        "pickupStation",
+        SUBSTATION_VIEW_FIELDS
       );
 
   if (dbSession) {
@@ -275,6 +278,73 @@ async function getClient(
 
 
 // =========================================================
+// GET PACKAGE SUBSTATION
+// =========================================================
+//
+// Central helper for customer package destination.
+//
+// Priority:
+//
+// 1. Package.packageSubstation
+// 2. User.pickupStation for older packages
+//
+// NEVER:
+//
+// req.user.assignedSubstation
+//
+// assignedSubstation is staff operational data.
+// =========================================================
+
+async function ensurePackageSubstation(
+  packageDoc,
+  dbSession = null
+) {
+  if (
+    packageDoc?.packageSubstation
+  ) {
+    return packageDoc.packageSubstation;
+  }
+
+  if (
+    !packageDoc?.clientId
+  ) {
+    packageDoc.packageSubstation =
+      null;
+
+    return null;
+  }
+
+  let query =
+    User.findById(
+      packageDoc.clientId
+    )
+      .select(
+        "_id pickupStation"
+      )
+      .populate(
+        "pickupStation",
+        SUBSTATION_VIEW_FIELDS
+      );
+
+  if (dbSession) {
+    query =
+      query.session(
+        dbSession
+      );
+  }
+
+  const client =
+    await query.lean();
+
+  packageDoc.packageSubstation =
+    client?.pickupStation ||
+    null;
+
+  return packageDoc.packageSubstation;
+}
+
+
+// =========================================================
 // CREATE PACKAGE FROM CART
 // =========================================================
 //
@@ -282,19 +352,27 @@ async function getClient(
 //
 //     { user: clientId }
 //
-// No sessionId.
-//
 // Inventory is NOT reduced here.
-// Inventory is reduced when delivery occurs.
+//
+// Inventory is reduced only when delivery occurs.
 //
 // Customer phone:
+//
 //     User.phone
 //
-// Staff M-Pesa package:
+// Customer pickup destination:
+//
+//     User.pickupStation
+//
+// is saved into:
+//
+//     Package.packageSubstation
+//
+// Staff M-Pesa:
 //
 //     paymentData.salesName
 //
-// is saved directly into:
+// is saved into:
 //
 //     Package.salesName
 // =========================================================
@@ -338,6 +416,11 @@ async function createPackageFromCart(
           );
         }
 
+
+        // -------------------------------------------------
+        // CUSTOMER PHONE
+        // -------------------------------------------------
+
         const clientPhone =
           normalizePhone(
             client.phone
@@ -345,14 +428,21 @@ async function createPackageFromCart(
 
 
         // -------------------------------------------------
-        // SALES NAME
+        // CUSTOMER PICKUP SUBSTATION
         // -------------------------------------------------
         //
-        // This value is supplied by the controller for the
-        // staff + isMobile=true package checkout.
-        //
-        // Cash staff sales do NOT come through here.
-        // Cash staff sales use StaffSale.salesName.
+        // The customer's pickupStation becomes the package
+        // destination.
+        // -------------------------------------------------
+
+        const packageSubstation =
+          client.pickupStation?._id ||
+          client.pickupStation ||
+          null;
+
+
+        // -------------------------------------------------
+        // SALES NAME
         // -------------------------------------------------
 
         const salesName =
@@ -544,24 +634,6 @@ async function createPackageFromCart(
         // -------------------------------------------------
         // CREATE PACKAGE
         // -------------------------------------------------
-        //
-        // salesName is deliberately saved here.
-        //
-        // For staff + isMobile=true:
-        //
-        //     Package.salesName
-        //
-        // receives the name supplied by the controller.
-        //
-        // For normal customers:
-        //
-        //     salesName = ""
-        //
-        // For staff cash:
-        //
-        //     This function is not used by the cash
-        //     StaffSale flow.
-        // -------------------------------------------------
 
         [
           created
@@ -574,6 +646,18 @@ async function createPackageFromCart(
                 items,
 
                 totalAmount,
+
+                // -----------------------------------------
+                // CUSTOMER DESTINATION
+                // -----------------------------------------
+                //
+                // This is the customer's selected pickup
+                // substation.
+                //
+                // It is NOT staff.assignedSubstation.
+                // -----------------------------------------
+
+                packageSubstation,
 
                 salesName,
 
@@ -600,8 +684,6 @@ async function createPackageFromCart(
                   paymentData.mpesaReceiptNumber ||
                   "",
 
-                // IMPORTANT:
-                // Always take phone from User.phone.
                 phoneNumber:
                   clientPhone,
 
@@ -651,11 +733,13 @@ async function createPackageFromCart(
 //
 // Called after M-Pesa confirms a cart payment.
 //
-// The customer's phone is read from User.phone.
-// Payment.phoneNumber is only used as a fallback.
+// User.phone is authoritative for the customer's phone.
 //
-// If salesName was stored on the Payment document, it is
-// also carried into the Package.
+// User.pickupStation becomes Package.packageSubstation.
+//
+// Payment.phoneNumber remains a fallback for phone only.
+//
+// Payment.salesName is preserved when available.
 // =========================================================
 
 async function createPackageFromPayment(
@@ -692,7 +776,7 @@ async function createPackageFromPayment(
 
 
         // -------------------------------------------------
-        // PROTECT AGAINST DUPLICATE PACKAGE CREATION
+        // DUPLICATE PACKAGE PROTECTION
         // -------------------------------------------------
 
         const existing =
@@ -735,6 +819,11 @@ async function createPackageFromPayment(
           );
         }
 
+
+        // -------------------------------------------------
+        // CUSTOMER PHONE
+        // -------------------------------------------------
+
         const clientPhone =
           normalizePhone(
             client.phone
@@ -745,13 +834,17 @@ async function createPackageFromPayment(
 
 
         // -------------------------------------------------
-        // SALES NAME
+        // CUSTOMER PICKUP SUBSTATION
         // -------------------------------------------------
-        //
-        // If the Payment model carries salesName, preserve
-        // it when creating the package.
-        //
-        // If not present, Package.salesName becomes "".
+
+        const packageSubstation =
+          client.pickupStation?._id ||
+          client.pickupStation ||
+          null;
+
+
+        // -------------------------------------------------
+        // SALES NAME
         // -------------------------------------------------
 
         const salesName =
@@ -918,9 +1011,9 @@ async function createPackageFromPayment(
                     payment.amount || 0
                   ),
 
-                // IMPORTANT:
-                // Preserve staff sales name on the package
-                // when it exists.
+                // Customer-selected destination
+                packageSubstation,
+
                 salesName,
 
                 paymentMethod:
@@ -940,8 +1033,6 @@ async function createPackageFromPayment(
                   payment.mpesaReceiptNumber ||
                   "",
 
-                // IMPORTANT:
-                // User.phone is authoritative.
                 phoneNumber:
                   clientPhone,
 
@@ -975,7 +1066,7 @@ async function createPackageFromPayment(
 
 
         // -------------------------------------------------
-        // REMOVE ONLY QUANTITIES THAT WERE PAID FOR
+        // REMOVE ONLY PAID QUANTITIES
         // -------------------------------------------------
 
         for (
@@ -1026,7 +1117,7 @@ async function createPackageFromPayment(
 
 
         // -------------------------------------------------
-        // SAVE REMAINING CART OR DELETE EMPTY CART
+        // SAVE OR DELETE CART
         // -------------------------------------------------
 
         if (
@@ -1069,6 +1160,12 @@ async function createPackageFromPayment(
 // =========================================================
 // GET USER PACKAGES
 // =========================================================
+//
+// Customer-facing package list.
+//
+// packageSubstation is populated so the destination is
+// immediately available to the view.
+// =========================================================
 
 async function getUserPackages(
   req
@@ -1082,37 +1179,75 @@ async function getUserPackages(
     );
   }
 
-  return Package.find({
-    clientId
-  })
-    .sort({
-      createdAt: -1
+  const packages =
+    await Package.find({
+      clientId
     })
-    .lean();
+      .sort({
+        createdAt: -1
+      })
+      .populate(
+        "packageSubstation",
+        SUBSTATION_VIEW_FIELDS
+      )
+      .lean();
+
+
+  // -------------------------------------------------------
+  // BACKWARD COMPATIBILITY
+  // -------------------------------------------------------
+  //
+  // Older packages may not have packageSubstation.
+  //
+  // Use the customer's pickupStation only as a fallback.
+  // -------------------------------------------------------
+
+  const client =
+    await User.findById(
+      clientId
+    )
+      .select(
+        "_id pickupStation"
+      )
+      .populate(
+        "pickupStation",
+        SUBSTATION_VIEW_FIELDS
+      )
+      .lean();
+
+
+  return packages.map(
+    (pkg) => {
+
+      if (
+        !pkg.packageSubstation
+      ) {
+        pkg.packageSubstation =
+          client?.pickupStation ||
+          null;
+      }
+
+      return pkg;
+    }
+  );
 }
+
 
 // =========================================================
 // GET USER PACKAGE
 // =========================================================
 //
-// IMPORTANT:
+// Customer package destination:
 //
-// The substation shown for a customer's package MUST come
-// from the package itself:
+//     Package.packageSubstation
 //
-//     package.packageSubstation
-//
-// If an older package does not have packageSubstation,
-// fall back to the customer's:
+// Older package fallback:
 //
 //     User.pickupStation
 //
-// NEVER use:
+// NEVER:
 //
 //     req.user.assignedSubstation
-//
-// assignedSubstation belongs to staff operations and is
-// unrelated to the customer's selected pickup station.
 // =========================================================
 
 async function getUserPackage(
@@ -1128,6 +1263,7 @@ async function getUserPackage(
     );
   }
 
+
   const packageDoc =
     await Package.findOne({
       _id: id,
@@ -1135,51 +1271,20 @@ async function getUserPackage(
     })
       .populate(
         "packageSubstation",
-        "name location phoneNumber"
+        SUBSTATION_VIEW_FIELDS
       )
       .lean();
+
 
   if (!packageDoc) {
     return null;
   }
 
-  // -------------------------------------------------------
-  // PACKAGE SUBSTATION
-  // -------------------------------------------------------
-  //
-  // This is the authoritative destination for this package.
-  //
-  // Do NOT replace it with req.user.assignedSubstation.
-  // -------------------------------------------------------
 
-  if (
-    !packageDoc.packageSubstation
-  ) {
-    const client =
-      await User.findById(
-        packageDoc.clientId
-      )
-        .select(
-          "_id pickupStation"
-        )
-        .populate(
-          "pickupStation",
-          "name location phoneNumber"
-        )
-        .lean();
+  await ensurePackageSubstation(
+    packageDoc
+  );
 
-    // -----------------------------------------------------
-    // FALLBACK FOR OLDER PACKAGES
-    // -----------------------------------------------------
-    //
-    // Only use the customer's pickupStation when the package
-    // itself has no packageSubstation.
-    // -----------------------------------------------------
-
-    packageDoc.packageSubstation =
-      client?.pickupStation ||
-      null;
-  }
 
   return packageDoc;
 }
@@ -1187,6 +1292,18 @@ async function getUserPackage(
 
 // =========================================================
 // GET STAFF PACKAGES
+// =========================================================
+//
+// Staff operational visibility.
+//
+// packageSubstation:
+//     Customer's selected destination
+//
+// confirmedSubstationId:
+//     Staff confirmation location
+//
+// deliveredSubstationId:
+//     Staff delivery location
 // =========================================================
 
 async function getStaffPackages(
@@ -1205,12 +1322,15 @@ async function getStaffPackages(
     );
   }
 
+
   status =
     normalizeStatus(
       status
     );
 
+
   let visibleQuery = {};
+
 
   if (
     role === "staff"
@@ -1224,6 +1344,7 @@ async function getStaffPackages(
         "Staff identity is missing."
       );
     }
+
 
     visibleQuery = {
       $or: [
@@ -1250,15 +1371,15 @@ async function getStaffPackages(
       })
       .populate(
         "packageSubstation",
-        "name location"
+        SUBSTATION_VIEW_FIELDS
       )
       .populate(
         "confirmedSubstationId",
-        "name location"
+        SUBSTATION_VIEW_FIELDS
       )
       .populate(
         "deliveredSubstationId",
-        "name location"
+        SUBSTATION_VIEW_FIELDS
       )
       .lean();
 
@@ -1366,9 +1487,6 @@ async function getStaffPackages(
 
           // ------------------------------------------------
           // PHONE FALLBACK
-          //
-          // Prefer User.phone.
-          // Package.phoneNumber is the stored snapshot.
           // ------------------------------------------------
 
           if (
@@ -1448,15 +1566,15 @@ async function getStaffPackage(
     )
       .populate(
         "packageSubstation",
-        "name location"
+        SUBSTATION_VIEW_FIELDS
       )
       .populate(
         "confirmedSubstationId",
-        "name location"
+        SUBSTATION_VIEW_FIELDS
       )
       .populate(
         "deliveredSubstationId",
-        "name location"
+        SUBSTATION_VIEW_FIELDS
       )
       .lean();
 
@@ -1487,6 +1605,15 @@ async function getStaffPackage(
 
 
   // --------------------------------------------------------
+  // BACKWARD COMPATIBILITY
+  // --------------------------------------------------------
+
+  await ensurePackageSubstation(
+    pkg
+  );
+
+
+  // --------------------------------------------------------
   // GET CLIENT
   // --------------------------------------------------------
 
@@ -1501,13 +1628,6 @@ async function getStaffPackage(
 
 
   if (client) {
-
-    // ------------------------------------------------------
-    // IMPORTANT:
-    //
-    // User.phone is the primary source.
-    // Package.phoneNumber is the stored snapshot fallback.
-    // ------------------------------------------------------
 
     client.phone =
       normalizePhone(
@@ -1552,6 +1672,18 @@ async function getStaffPackage(
 
 // =========================================================
 // CONFIRM PACKAGE
+// =========================================================
+//
+// Staff's assignedSubstation is used ONLY for operational
+// confirmation.
+//
+// It is stored as:
+//
+//     confirmedSubstationId
+//
+// It does NOT replace:
+//
+//     packageSubstation
 // =========================================================
 
 async function confirmPackage(
@@ -1637,7 +1769,16 @@ async function confirmPackage(
       {
         new: true
       }
-    ).lean();
+    )
+      .populate(
+        "packageSubstation",
+        SUBSTATION_VIEW_FIELDS
+      )
+      .populate(
+        "confirmedSubstationId",
+        SUBSTATION_VIEW_FIELDS
+      )
+      .lean();
 
 
   if (!updated) {
@@ -1655,27 +1796,25 @@ async function confirmPackage(
 // DELIVER PACKAGE
 // =========================================================
 //
-// When delivery occurs:
+// Delivery uses STAFF assignedSubstation for inventory
+// operations.
+//
+// Customer destination remains package.packageSubstation.
+//
+// Inventory changes:
 //
 // Product.units
-//     -> REDUCE
-//
 // Product.substationUnits
-//     -> REDUCE when the field exists
-//
 // Substation.productInventory[].units
-//     -> REDUCE
-//
 // Substation.productReductions[].unitsReduced
-//     -> INCREASE / CREATE
 //
-// Package
-//     -> Mark delivered
+// Package:
+//     delivered
 //
-// DeliveredPackage
-//     -> Create / update
+// DeliveredPackage:
+//     created / updated
 //
-// Everything runs inside ONE transaction.
+// Everything runs in one transaction.
 // =========================================================
 
 async function deliverPackage(
@@ -1789,7 +1928,7 @@ async function deliverPackage(
 
 
         // =================================================
-        // GET SUBSTATION
+        // GET STAFF OPERATIONAL SUBSTATION
         // =================================================
 
         const substation =
@@ -1991,13 +2130,12 @@ async function deliverPackage(
             inventoryUnits -
             qty;
 
-
           inventory.updatedAt =
             new Date();
 
 
           // ===============================================
-          // UPDATE SUBSTATION PRODUCT REDUCTIONS
+          // UPDATE PRODUCT REDUCTIONS
           // ===============================================
 
           const reduction =
@@ -2020,16 +2158,13 @@ async function deliverPackage(
                 0
               ) + qty;
 
-
             reduction.productName =
               item.name;
-
 
             reduction.category =
               item.category ||
               reduction.category ||
               "";
-
 
             reduction.lastReducedAt =
               new Date();
@@ -2076,22 +2211,17 @@ async function deliverPackage(
         pkg.status =
           "delivered";
 
-
         pkg.deliveredByStaffId =
           staffId;
-
 
         pkg.deliveredByStaffName =
           staffName;
 
-
         pkg.deliveredAt =
           new Date();
 
-
         pkg.deliveredSubstationId =
           staff.assignedSubstation;
-
 
         pkg.substationReductionRecorded =
           true;
@@ -2462,8 +2592,6 @@ async function confirmPackagePayment(
 
         // -------------------------------------------------
         // PHONE
-        //
-        // User.phone is authoritative.
         // -------------------------------------------------
 
         const client =
@@ -2482,8 +2610,10 @@ async function confirmPackagePayment(
         if (
           clientPhone
         ) {
+
           packageDocQuery.phoneNumber =
             clientPhone;
+
         } else {
 
           packageDocQuery.phoneNumber =
@@ -2498,10 +2628,6 @@ async function confirmPackagePayment(
 
         // -------------------------------------------------
         // SALES NAME
-        //
-        // Preserve the package salesName. If the payment
-        // has a salesName, use it when the package does not
-        // already have one.
         // -------------------------------------------------
 
         const paymentSalesName =
@@ -2513,14 +2639,37 @@ async function confirmPackagePayment(
         if (
           paymentSalesName
         ) {
+
           packageDocQuery.salesName =
             paymentSalesName;
+
         } else {
 
           packageDocQuery.salesName =
             normalizeSalesName(
               packageDocQuery.salesName
             );
+        }
+
+
+        // -------------------------------------------------
+        // PACKAGE SUBSTATION
+        // -------------------------------------------------
+        //
+        // Preserve the package destination.
+        //
+        // If an old package does not have one, use the
+        // customer's pickupStation.
+        // -------------------------------------------------
+
+        if (
+          !packageDocQuery.packageSubstation &&
+          client?.pickupStation
+        ) {
+
+          packageDocQuery.packageSubstation =
+            client.pickupStation._id ||
+            client.pickupStation;
         }
 
 
@@ -2549,7 +2698,7 @@ async function confirmPackagePayment(
 // RELEASE PAYMENT RESERVATION
 // =========================================================
 //
-// There is NO inventory reservation anymore.
+// There is NO inventory reservation.
 //
 // Starting an M-Pesa payment does not reduce Product.units.
 //
