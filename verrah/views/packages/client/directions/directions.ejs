@@ -1,0 +1,29 @@
+<%
+/* ==========================================================
+   BRANCH ABOUT
+   DESCRIPTION
+   ========================================================== */
+%>
+
+<section class="verah-sales-activities">
+
+<% if (
+    !error &&
+    substation &&
+    substation.description
+) { %>
+
+    <div class="verah-sales-content">
+
+        <h2>
+            About This Branch
+        </h2>
+
+        <p class="verah-sales-description">
+            <%= substation.description %>
+        </p>
+
+    </div>
+
+<% } %>
+</section>
