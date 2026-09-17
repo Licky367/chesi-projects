@@ -3,20 +3,12 @@
    PACKAGE SUBSTATION DIRECTIONS
    ==========================================================
 
-   IMPORTANT:
    packageSubstation is the authoritative customer
    pickup/destination substation.
 
-   The Substation model contains:
-       directions
-       gps.latitude
-       gps.longitude
-
-   This section displays the stored human-readable
-   directions from:
-       packageDestination.directions
-
-   substation is retained only as a compatibility fallback.
+   directions may contain either:
+   1. Human-readable directions
+   2. A Google Maps directions URL
    ========================================================== */
 
 const packageDestination =
@@ -44,6 +36,9 @@ const packageDirections =
         ? packageDestination.directions.trim()
         : "";
 
+const isDirectionsUrl =
+    /^https?:\/\//i.test(packageDirections);
+
 %>
 
 <section class="verah-sales-activities">
@@ -60,9 +55,25 @@ const packageDirections =
                 Directions
             </h2>
 
-            <p class="verah-sales-description">
-                <%= packageDirections %>
-            </p>
+            <% if (isDirectionsUrl) { %>
+
+                <a
+                    href="<%= packageDirections %>"
+                    class="verah-directions-button"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <i class="fas fa-route"></i>
+                    Get Directions
+                </a>
+
+            <% } else { %>
+
+                <p class="verah-sales-description">
+                    <%= packageDirections %>
+                </p>
+
+            <% } %>
 
         </div>
 
