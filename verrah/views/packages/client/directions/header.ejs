@@ -1,98 +1,168 @@
 <%
 /* ==========================================================
-   BRANCH HEADER
-   NAME + LOCATION + ICON
-   ========================================================== */
+PACKAGE SUBSTATION HEADER
+NAME + LOCATION + ICON
+
+IMPORTANT:
+For package pages, packageSubstation is the authoritative
+customer pickup/destination substation.
+
+substation is retained only as a fallback for compatibility
+with standalone substation pages.
+========================================================== */
+
+const packageDestination =
+(typeof packageSubstation !== "undefined" &&
+packageSubstation)
+? packageSubstation
+: (
+typeof packageDoc !== "undefined" &&
+packageDoc &&
+packageDoc.packageSubstation
+? packageDoc.packageSubstation
+: (
+typeof substation !== "undefined"
+? substation
+: null
+)
+);
+
 %>
 
 <% if (error) { %>
 
-    <div class="branch-error">
+<div class="branch-error">
 
-        <i class="fas fa-circle-exclamation"></i>
+    <i class="fas fa-circle-exclamation"></i>
 
-        <span>
-            <%= error %>
-        </span>
+    <span>
+        <%= error %>
+    </span>
+
+</div>
+
+<% } else if (packageDestination) { %>
+
+<!-- ======================================================
+     PACKAGE SUBSTATION HEADER
+======================================================= -->
+
+<div class="branch-header">
+
+
+    <!-- ==================================================
+         SUBSTATION ICON
+    =================================================== -->
+
+    <div class="branch-header-icon">
+
+        <% if (
+            packageDestination.substationIcon &&
+            String(
+                packageDestination.substationIcon
+            ).trim()
+        ) { %>
+
+            <img
+                src="<%= packageDestination.substationIcon %>"
+                alt="<%= packageDestination.name || 'Pickup Substation' %>"
+                onerror="
+                    this.style.display='none';
+                    this.nextElementSibling.style.display='flex';
+                "
+            >
+
+            <div
+                class="branch-icon-fallback"
+                style="display:none;"
+            >
+
+                <i class="fas fa-store"></i>
+
+            </div>
+
+
+        <% } else { %>
+
+
+            <div class="branch-icon-fallback">
+
+                <i class="fas fa-store"></i>
+
+            </div>
+
+
+        <% } %>
+
+    </div>
+
+
+    <!-- ==================================================
+         SUBSTATION INFORMATION
+    =================================================== -->
+
+    <div class="branch-header-content">
+
+        <h1>
+
+            <%= packageDestination.name ||
+                "Pickup Substation" %>
+
+        </h1>
+
+
+        <% if (packageDestination.location) { %>
+
+            <p class="branch-location">
+
+                <i class="fas fa-location-dot"></i>
+
+                <%= packageDestination.location %>
+
+            </p>
+
+        <% } %>
+
+
+        <!-- ==============================================
+             OPTIONAL PHONE
+        =============================================== -->
+
+        <% if (packageDestination.phoneNumber) { %>
+
+            <p class="branch-phone">
+
+                <i class="fas fa-phone"></i>
+
+                <%= packageDestination.phoneNumber %>
+
+            </p>
+
+        <% } %>
 
     </div>
 
-<% } else if (substation) { %>
-
-    <div class="branch-header">
-
-        <div class="branch-header-icon">
-
-            <% if (
-                substation.substationIcon &&
-                String(substation.substationIcon).trim()
-            ) { %>
-
-                <img
-                    src="<%= substation.substationIcon %>"
-                    alt="<%= substation.name %>"
-                    onerror="
-                        this.style.display='none';
-                        this.nextElementSibling.style.display='flex';
-                    "
-                >
-
-                <div
-                    class="branch-icon-fallback"
-                    style="display:none;"
-                >
-                    <i class="fas fa-store"></i>
-                </div>
-
-            <% } else { %>
-
-                <div class="branch-icon-fallback">
-
-                    <i class="fas fa-store"></i>
-
-                </div>
-
-            <% } %>
-
-        </div>
-
-        <div class="branch-header-content">
-
-            <h1>
-                <%= substation.name %>
-            </h1>
-
-            <% if (substation.location) { %>
-
-                <p class="branch-location">
-
-                    <i class="fas fa-location-dot"></i>
-
-                    <%= substation.location %>
-
-                </p>
-
-            <% } %>
-
-        </div>
-
-    </div>
+</div>
 
 <% } else { %>
 
-    <div class="branch-empty">
+<!-- ======================================================
+     NO SUBSTATION
+======================================================= -->
 
-        <i class="fas fa-store-slash"></i>
+<div class="branch-empty">
 
-        <h2>
-            Location Not Found
-        </h2>
+    <i class="fas fa-store-slash"></i>
 
-        <p>
-            The requested Verrah Cosmetics location
-            could not be found.
-        </p>
+    <h2>
+        Pickup Location Not Found
+    </h2>
 
-    </div>
+    <p>
+        The pickup substation for this package
+        could not be found.
+    </p>
+
+</div>
 
 <% } %>
