@@ -11,6 +11,10 @@ const tabCounts = counts || {
 
 <section class="package-staff-page">
 
+  <!-- =====================================================
+       PACKAGE HEADER
+  ====================================================== -->
+
   <div class="staff-package-header">
 
     <div class="staff-package-icon">
@@ -18,19 +22,29 @@ const tabCounts = counts || {
     </div>
 
     <div>
-      <span class="staff-kicker">VERRAH COSMETICS</span>
 
-      <h1>Package Management</h1>
+      <span class="staff-kicker">
+        VERRAH COSMETICS
+      </span>
+
+      <h1>
+        Package Management
+      </h1>
 
       <p>
         <%= role === "admin"
           ? "Manage all client packages."
           : "Claim and process pending packages." %>
       </p>
+
     </div>
 
   </div>
 
+
+  <!-- =====================================================
+       ERROR ALERT
+  ====================================================== -->
 
   <% if (typeof error !== "undefined" && error) { %>
 
@@ -38,12 +52,18 @@ const tabCounts = counts || {
 
       <i class="fas fa-circle-exclamation"></i>
 
-      <span><%= error %></span>
+      <span>
+        <%= error %>
+      </span>
 
     </div>
 
   <% } %>
 
+
+  <!-- =====================================================
+       SUCCESS ALERT
+  ====================================================== -->
 
   <% if (typeof success !== "undefined" && success) { %>
 
@@ -51,12 +71,19 @@ const tabCounts = counts || {
 
       <i class="fas fa-circle-check"></i>
 
-      <span><%= success %></span>
+      <span>
+        <%= success %>
+      </span>
 
     </div>
 
   <% } %>
 
+
+  <!-- =====================================================
+       PACKAGE STATUS NAVIGATION
+       Same arrangement as SALES tabs
+  ====================================================== -->
 
   <div class="staff-overview-card">
 
@@ -64,7 +91,11 @@ const tabCounts = counts || {
       OVERVIEW
     </div>
 
-    <div class="staff-status-tabs">
+
+    <nav
+      class="sales-navigation staff-status-navigation"
+      id="staff-status-navigation"
+    >
 
       <% ["all", "pending", "confirmed", "delivered"].forEach(function (t) {
 
@@ -83,15 +114,13 @@ const tabCounts = counts || {
 
         <a
           href="/packages/staff?status=<%= t %>"
-          class="staff-status-tab <%= active ? "is-active" : "" %>"
+          class="sales-navigation-tab staff-status-navigation-tab <%= active ? 'active' : '' %>"
         >
 
+          <i class="fas <%= icon %>"></i>
+
           <span>
-
-            <i class="fas <%= icon %>"></i>
-
             <%= t.charAt(0).toUpperCase() + t.slice(1) %>
-
           </span>
 
           <span class="staff-tab-count">
@@ -102,10 +131,14 @@ const tabCounts = counts || {
 
       <% }); %>
 
-    </div>
+    </nav>
 
   </div>
 
+
+  <!-- =====================================================
+       PACKAGES CONTENT
+  ====================================================== -->
 
   <div class="staff-packages-card">
 
@@ -125,6 +158,10 @@ const tabCounts = counts || {
 
     </div>
 
+
+    <!-- ===================================================
+         PACKAGE LIST
+    ==================================================== -->
 
     <div class="staff-package-list">
 
@@ -226,6 +263,7 @@ const tabCounts = counts || {
               <% if (pkg.confirmedByStaffName) { %>
 
                 <br>
+
                 Staff:
                 <%= pkg.confirmedByStaffName %>
 
@@ -259,3 +297,74 @@ const tabCounts = counts || {
   </div>
 
 </section>
+
+
+<!-- =====================================================
+     HORIZONTAL TAB SCROLL POSITION
+     Same behavior as SALES navigation
+====================================================== -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const navigation =
+        document.getElementById("staff-status-navigation");
+
+    if (!navigation) {
+        return;
+    }
+
+
+    /*
+     * Restore the navigation's horizontal position
+     * after changing package status tabs.
+     *
+     * The active tab is NOT automatically scrolled
+     * into view.
+     */
+
+    const savedScrollLeft =
+        sessionStorage.getItem(
+            "staffStatusNavigationScrollLeft"
+        );
+
+    if (savedScrollLeft !== null) {
+
+        requestAnimationFrame(function () {
+
+            navigation.scrollLeft =
+                Number(savedScrollLeft);
+
+        });
+
+        sessionStorage.removeItem(
+            "staffStatusNavigationScrollLeft"
+        );
+    }
+
+
+    /*
+     * Save the exact horizontal position before
+     * navigating to another package status.
+     */
+
+    const tabs =
+        navigation.querySelectorAll(
+            ".staff-status-navigation-tab"
+        );
+
+    tabs.forEach(function (tab) {
+
+        tab.addEventListener("click", function () {
+
+            sessionStorage.setItem(
+                "staffStatusNavigationScrollLeft",
+                String(navigation.scrollLeft)
+            );
+
+        });
+
+    });
+
+});
+</script>
