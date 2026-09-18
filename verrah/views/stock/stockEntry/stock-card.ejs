@@ -1,0 +1,133 @@
+
+  <% if (typeof error !== "undefined" && error) { %>
+
+    <div class="error">
+      <%= error %>
+    </div>
+
+  <% } %>
+
+
+  <% if (typeof saved !== "undefined" && saved === "1") { %>
+
+    <div class="notice">
+      Product allocation saved successfully.
+    </div>
+
+  <% } %>
+
+
+  <% if (!stock) { %>
+
+    <div class="error">
+      Stock item not found.
+    </div>
+
+  <% } else { %>
+
+
+    <div class="detail-card stock-allocation-card">
+
+
+      <!-- =====================================================
+           STOCK DETAILS
+      ====================================================== -->
+
+      <div class="detail-grid">
+
+
+        <div class="detail-image stock-detail-image">
+
+          <% if (stock.image) { %>
+
+            <img
+              src="<%= stock.image %>"
+              alt="<%= stock.name || stock.subcategory || 'Stock item' %>"
+              class="stock-detail-image-source"
+            >
+
+            <div class="placeholder stock-image-fallback">
+              <i class="fas fa-box"></i>
+            </div>
+
+          <% } else { %>
+
+            <div class="placeholder">
+              <i class="fas fa-box"></i>
+            </div>
+
+          <% } %>
+
+        </div>
+
+
+        <div class="detail-content">
+
+          <span class="detail-category">
+            <%= stock.category || "Other" %>
+          </span>
+
+
+          <h1>
+            <%= stock.subcategory ||
+                stock.name ||
+                "Stock item" %>
+          </h1>
+
+
+          <div class="detail-subcategory">
+
+            <i class="fas fa-layer-group"></i>
+
+            <%= stock.subcategory ||
+                stock.name ||
+                "Other" %>
+
+          </div>
+
+
+          <div class="detail-price">
+
+            KSh
+
+            <%= Number(
+              stock.buyPrice || 0
+            ).toLocaleString() %>
+
+            <small>
+              buy / unit
+            </small>
+
+          </div>
+
+
+          <% if (stock.description) { %>
+
+            <div class="detail-description">
+              <%= stock.description %>
+            </div>
+
+          <% } %>
+
+
+          <div class="stock-balance-box">
+
+            <span>
+              Warehouse balance
+            </span>
+
+            <strong>
+
+              <%= Number(
+                stock.units || 0
+              ).toLocaleString() %>
+
+              units
+
+            </strong>
+
+          </div>
+
+        </div>
+
+      </div>
