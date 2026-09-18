@@ -243,7 +243,7 @@ async function getProduct(id) {
 //
 // ==========================================================
 
-async function updatePrice(
+async function updateProduct(
     productId,
     unitSellPrice
 ) {
