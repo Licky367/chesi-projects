@@ -2,16 +2,36 @@
 // controllers/products/details.js
 // PRODUCT DETAILS CONTROLLER
 // ==========================================================
+//
+// Handles:
+//
+// - Product details page
+// - Product editing
+//
+// Product update route:
+//
+// POST /products/:id/update
+//
+// The route is protected by requireAdmin in the router.
+//
+// The controller passes the complete req.body to the service.
+// ==========================================================
 
 const productService =
     require("../../services/productService");
 
 
 // ==========================================================
+// PRODUCT DETAILS
+// ==========================================================
+//
 // GET /products/:id
 // ==========================================================
 
-exports.details = async (req, res) => {
+exports.details = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -21,34 +41,32 @@ exports.details = async (req, res) => {
             );
 
 
-        // ====================================================
-        // NOT FOUND
-        // ====================================================
+        // ----------------------------------------------------
+        // PRODUCT NOT FOUND
+        // ----------------------------------------------------
 
         if (!product) {
 
-            return res
-                .status(404)
-                .render(
-                    "products/product-details",
-                    {
-                        title:
-                            "Product not found | Verrah Cosmetics",
+            return res.status(404).render(
+                "products/product-details",
+                {
+                    title:
+                        "Product not found | Verrah Cosmetics",
 
-                        product:
-                            null,
+                    product:
+                        null,
 
-                        error:
-                            "Product not found."
-                    }
-                );
+                    error:
+                        "Product not found."
+                }
+            );
 
         }
 
 
-        // ====================================================
-        // RENDER
-        // ====================================================
+        // ----------------------------------------------------
+        // RENDER PRODUCT
+        // ----------------------------------------------------
 
         return res.render(
             "products/product-details",
@@ -59,17 +77,19 @@ exports.details = async (req, res) => {
                 product,
 
                 error:
-                    req.query.error || null,
+                    req.query.error ||
+                    null,
 
                 query:
-                    req.query.added || ""
+                    req.query.added ||
+                    ""
             }
         );
 
     } catch (err) {
 
         console.error(
-            "================================================"
+            "=================================================="
         );
 
         console.error(
@@ -77,27 +97,27 @@ exports.details = async (req, res) => {
         );
 
         console.error(
-            "================================================"
+            err
         );
 
-        console.error(err);
+        console.error(
+            "=================================================="
+        );
 
 
-        return res
-            .status(404)
-            .render(
-                "products/product-details",
-                {
-                    title:
-                        "Product | Verrah Cosmetics",
+        return res.status(404).render(
+            "products/product-details",
+            {
+                title:
+                    "Product | Verrah Cosmetics",
 
-                    product:
-                        null,
+                product:
+                    null,
 
-                    error:
-                        "Product not found."
-                }
-            );
+                error:
+                    "Product not found."
+            }
+        );
 
     }
 
@@ -105,66 +125,88 @@ exports.details = async (req, res) => {
 
 
 // ==========================================================
-// POST /products/:id/update
+// UPDATE PRODUCT
 // ==========================================================
 //
-// Updates the product sell price.
+// POST /products/:id/update
 //
-// URL:
+// The product ID is taken from:
 //
-//     /products/:id/update
+//     req.params.id
 //
-// Body:
+// Editable fields are taken from:
 //
-//     unitSellPrice
+//     req.body
 //
-// The route should be protected by requireAdmin.
+// Example:
+//
+// req.body = {
+//
+//     unitSellPrice: "500"
+//
+// }
+//
+// The service handles:
+//
+// - Product validation
+// - Product update
+// - Linked Stock synchronization
+// - Category conversion
+// - FIFO protection
 //
 // ==========================================================
 
-exports.updateProduct = async (req, res) => {
+exports.updateProduct = async (
+    req,
+    res
+) => {
+
+    const productId =
+        req.params.id;
+
 
     try {
 
-        const productId =
-            req.params.id;
-
-
-        const {
-            unitSellPrice
-        } =
-            req.body;
-
-
-        // ====================================================
-        // UPDATE PRODUCT
-        // ====================================================
+        // ----------------------------------------------------
+        // SEND COMPLETE UPDATE DATA TO SERVICE
+        // ----------------------------------------------------
+        //
+        // Do NOT send only req.body.unitSellPrice.
+        //
+        // The service accepts the complete editable product
+        // object so the same endpoint can update other product
+        // fields as they are added to the editor.
+        // ----------------------------------------------------
 
         const result =
             await productService.updateProduct(
                 productId,
-                unitSellPrice
+                req.body
             );
 
 
-        // ====================================================
+        // ----------------------------------------------------
         // UPDATE FAILED
-        // ====================================================
+        // ----------------------------------------------------
 
-        if (!result.success) {
+        if (
+            !result ||
+            !result.success
+        ) {
 
             return res.redirect(
                 `/products/${productId}?error=${encodeURIComponent(
-                    result.error
+                    result?.error ||
+                    "Failed to update product."
                 )}`
             );
 
         }
 
 
-        // ====================================================
-        // SUCCESS
-        // ====================================================
+        // ----------------------------------------------------
+        // UPDATE SUCCESSFUL
+        // ----------------------------------------------------
 
         return res.redirect(
             `/products/${result.product._id}`
@@ -172,8 +214,12 @@ exports.updateProduct = async (req, res) => {
 
     } catch (err) {
 
+        // ----------------------------------------------------
+        // LOG ERROR
+        // ----------------------------------------------------
+
         console.error(
-            "================================================"
+            "=================================================="
         );
 
         console.error(
@@ -181,18 +227,20 @@ exports.updateProduct = async (req, res) => {
         );
 
         console.error(
-            "================================================"
+            err
         );
 
-        console.error(err);
+        console.error(
+            "=================================================="
+        );
 
 
-        // ====================================================
-        // RETURN TO PRODUCT
-        // ====================================================
+        // ----------------------------------------------------
+        // RETURN TO PRODUCT DETAILS
+        // ----------------------------------------------------
 
         return res.redirect(
-            `/products/${req.params.id}?error=${encodeURIComponent(
+            `/products/${productId}?error=${encodeURIComponent(
                 "Failed to update product."
             )}`
         );
