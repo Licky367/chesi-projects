@@ -205,4 +205,285 @@
 
 })();
 
+(function () {
+
+  "use strict";
+
+
+  const form =
+    document.getElementById(
+      "allocationForm"
+    );
+
+
+  if (!form) {
+    return;
+  }
+
+
+  const inputs =
+    Array.from(
+      document.querySelectorAll(
+        ".allocation-input"
+      )
+    );
+
+
+  const hiddenTotal =
+    document.getElementById(
+      "totalUnits"
+    );
+
+
+  const total =
+    document.getElementById(
+      "allocationTotal"
+    );
+
+
+  const summaryTotal =
+    document.getElementById(
+      "summaryTotal"
+    );
+
+
+  const remaining =
+    document.getElementById(
+      "summaryRemaining"
+    );
+
+
+  const warning =
+    document.getElementById(
+      "allocationWarning"
+    );
+
+
+  const button =
+    document.getElementById(
+      "allocateButton"
+    );
+
+
+  const sellPrice =
+    document.getElementById(
+      "unitSellPrice"
+    );
+
+
+  const warehouse =
+    Number(
+      <%= stock
+        ? Number(stock.units || 0)
+        : 0 %>
+    );
+
+
+  function valueOf(input) {
+
+    const raw =
+      String(
+        input.value ?? ""
+      ).trim();
+
+
+    if (raw === "") {
+      return 0;
+    }
+
+
+    const value =
+      Number(raw);
+
+
+    if (
+      !Number.isFinite(value) ||
+      value < 0
+    ) {
+
+      return 0;
+
+    }
+
+
+    return Math.floor(value);
+
+  }
+
+
+  function calculate() {
+
+    const sum =
+      inputs.reduce(
+        function (
+          totalValue,
+          input
+        ) {
+
+          return (
+            totalValue +
+            valueOf(input)
+          );
+
+        },
+        0
+      );
+
+
+    hiddenTotal.value =
+      String(sum);
+
+
+    total.textContent =
+      sum.toLocaleString();
+
+
+    summaryTotal.textContent =
+      sum.toLocaleString();
+
+
+    remaining.textContent =
+      Math.max(
+        warehouse - sum,
+        0
+      ).toLocaleString();
+
+
+    let message =
+      "";
+
+
+    if (sum <= 0) {
+
+      message =
+        "Allocate at least one unit to at least one substation.";
+
+    } else if (sum > warehouse) {
+
+      message =
+        "The total allocation cannot exceed the warehouse balance.";
+
+    }
+
+
+    warning.textContent =
+      message;
+
+
+    warning.hidden =
+      !message;
+
+
+    if (button) {
+
+      button.disabled =
+        Boolean(message);
+
+    }
+
+
+    return sum;
+
+  }
+
+
+  inputs.forEach(
+    function (input) {
+
+      input.addEventListener(
+        "input",
+        calculate
+      );
+
+
+      input.addEventListener(
+        "change",
+        calculate
+      );
+
+    }
+  );
+
+
+  form.addEventListener(
+    "submit",
+    function (event) {
+
+      const sum =
+        calculate();
+
+
+      hiddenTotal.value =
+        String(sum);
+
+
+      if (
+        sum <= 0 ||
+        sum > warehouse ||
+        !sellPrice ||
+        String(
+          sellPrice.value
+        ).trim() === ""
+      ) {
+
+        event.preventDefault();
+
+        return;
+
+      }
+
+
+      if (button) {
+
+        button.disabled =
+          true;
+
+
+        button.innerHTML =
+          '<i class="fas fa-spinner fa-spin"></i> Allocating...';
+
+      }
+
+    }
+  );
+
+
+  const image =
+    document.querySelector(
+      ".stock-detail-image-source"
+    );
+
+
+  if (image) {
+
+    image.addEventListener(
+      "error",
+      function () {
+
+        image.classList.add(
+          "is-hidden"
+        );
+
+
+        const fallback =
+          image.nextElementSibling;
+
+
+        if (fallback) {
+
+          fallback.classList.add(
+            "is-visible"
+          );
+
+        }
+
+      }
+    );
+
+  }
+
+
+  calculate();
+
+})();
 </script>
