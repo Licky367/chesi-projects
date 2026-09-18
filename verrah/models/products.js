@@ -132,8 +132,7 @@ const fifoBatchSchema = new mongoose.Schema(
     receivedAt: {
       type: Date,
       required: true,
-      default: Date.now,
-      index: true
+      default: Date.now
     }
   },
   {
@@ -397,6 +396,24 @@ productSchema.index({
   subcategory: 1,
   name: 1
 });
+
+
+// ----------------------------------------------------------
+// FIFO RECEIVED DATE INDEX
+// ----------------------------------------------------------
+//
+// IMPORTANT:
+//
+// `receivedAt` is NOT declared with `index: true` inside
+// fifoBatchSchema.
+//
+// This parent-level index is the SINGLE index definition
+// for:
+//
+//     fifoBatches.receivedAt
+//
+// This prevents the Mongoose duplicate-index warning.
+// ----------------------------------------------------------
 
 productSchema.index({
   "fifoBatches.receivedAt": 1
