@@ -1,226 +1,247 @@
-          <!-- =================================================
-               SUBSTATION BALANCES
-          ================================================== -->
+<%
+/* =========================================================
+   SUBSTATION BALANCES
+   VERRAH COSMETICS
+========================================================= */
 
-          <div class="inventory-heading">
+function number(value) {
+    return Number(value || 0).toLocaleString("en-KE");
+}
 
-            <div>
+const isAdmin =
+    typeof user !== "undefined" &&
+    user &&
+    user.role === "admin";
+%>
 
-              <span class="section-kicker">
-                DISTRIBUTION
-              </span>
 
-              <h2>
-                Substation Balances
-              </h2>
+<!-- =========================================================
+     SUBSTATION BALANCES
+========================================================= -->
 
-            </div>
+<div class="inventory-heading">
 
-          </div>
+    <div>
 
+        <span class="section-kicker">
+            DISTRIBUTION
+        </span>
 
-          <% if (
-            !product.substationStocks ||
-            !product.substationStocks.length
-          ) { %>
-
-            <div class="empty-inline">
-
-              <i class="fas fa-box-open"></i>
-
-              <span>
-                No substation allocation exists for this product.
-              </span>
-
-            </div>
-
-          <% } else { %>
-
-
-            <!-- =================================================
-                 BALANCES TABLE
-            ================================================== -->
-
-            <div class="sales-table-wrapper">
-
-              <table class="sales-table">
-
-                <thead>
-
-                  <tr>
-
-                    <th>
-                      #
-                    </th>
-
-                    <th>
-                      Substation
-                    </th>
-
-                    <th>
-                      Location
-                    </th>
-
-                    <th>
-                      Units Available
-                    </th>
-
-                    <% if (
-                      typeof role !== "undefined" &&
-                      role === "admin"
-                    ) { %>
-
-                      <th>
-                        Update
-                      </th>
-
-                    <% } %>
-
-                  </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                  <% product.substationStocks.forEach(function(item, index) { %>
-
-                    <tr class="sales-product-row">
-
-                      <!-- =======================================
-                           NUMBER
-                      ======================================== -->
-
-                      <td>
-                        <%= index + 1 %>
-                      </td>
-
-
-                      <!-- =======================================
-                           SUBSTATION NAME
-                      ======================================== -->
-
-                      <td>
-
-                        <strong>
-                          <%= item.name %>
-                        </strong>
-
-                      </td>
-
-
-                      <!-- =======================================
-                           LOCATION
-                      ======================================== -->
-
-                      <td>
-
-                        <% if (item.location) { %>
-
-                          <span>
-
-                            <i class="fas fa-location-dot"></i>
-
-                            <%= item.location %>
-
-                          </span>
-
-                        <% } else { %>
-
-                          <span>
-                            —
-                          </span>
-
-                        <% } %>
-
-                      </td>
-
-
-                      <!-- =======================================
-                           AVAILABLE UNITS
-                      ======================================== -->
-
-                      <td>
-
-                        <strong>
-                          <%= number(item.units) %>
-                        </strong>
-
-                      </td>
-
-
-                      <!-- =======================================
-                           ADMIN UPDATE
-                      ======================================== -->
-
-                      <% if (
-                        typeof role !== "undefined" &&
-                        role === "admin"
-                      ) { %>
-
-                        <td>
-
-                          <form
-                            method="POST"
-                            action="/substations/product/<%= product._id %>"
-                            class="inventory-update-form"
-                          >
-
-                            <input
-                              type="hidden"
-                              name="substationId"
-                              value="<%= item._id %>"
-                            >
-
-
-                            <div class="field inventory-units-field">
-
-                              <input
-                                id="units-<%= item._id %>"
-                                name="units"
-                                type="number"
-                                min="0"
-                                step="1"
-                                value="<%= Number(item.units || 0) %>"
-                                required
-                              >
-
-                            </div>
-
-
-                            <button
-                              type="submit"
-                              class="primary-btn"
-                            >
-
-                              <i class="fas fa-save"></i>
-
-                              Save
-
-                            </button>
-
-                          </form>
-
-                        </td>
-
-                      <% } %>
-
-                    </tr>
-
-                  <% }); %>
-
-                </tbody>
-
-              </table>
-
-            </div>
-
-          <% } %>
-
-        </div>
-
-      </div>
+        <h2>
+            Substation Balances
+        </h2>
 
     </div>
 
-  <% } %>
+</div>
+
+
+<!-- =========================================================
+     NO SUBSTATION ALLOCATIONS
+========================================================= -->
+
+<% if (
+    !product.substationStocks ||
+    !product.substationStocks.length
+) { %>
+
+    <div
+        class="empty-inline"
+        role="status"
+    >
+
+        <i class="fas fa-box-open"></i>
+
+        <span>
+            No substation allocation exists for this product.
+        </span>
+
+    </div>
+
+
+<% } else { %>
+
+
+    <!-- =====================================================
+         BALANCES TABLE
+    ====================================================== -->
+
+    <div class="sales-table-wrapper">
+
+        <table class="sales-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        #
+                    </th>
+
+                    <th>
+                        Substation
+                    </th>
+
+                    <th>
+                        Location
+                    </th>
+
+                    <th>
+                        Units Available
+                    </th>
+
+                    <% if (isAdmin) { %>
+
+                        <th>
+                            Update
+                        </th>
+
+                    <% } %>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                <% product.substationStocks.forEach(function(item, index) { %>
+
+                    <tr class="sales-product-row">
+
+
+                        <!-- =================================
+                             NUMBER
+                        ================================== -->
+
+                        <td>
+                            <%= index + 1 %>
+                        </td>
+
+
+                        <!-- =================================
+                             SUBSTATION NAME
+                        ================================== -->
+
+                        <td>
+
+                            <strong>
+                                <%= item.name || "Unnamed Substation" %>
+                            </strong>
+
+                        </td>
+
+
+                        <!-- =================================
+                             LOCATION
+                        ================================== -->
+
+                        <td>
+
+                            <% if (item.location) { %>
+
+                                <span>
+
+                                    <i class="fas fa-location-dot"></i>
+
+                                    <%= item.location %>
+
+                                </span>
+
+                            <% } else { %>
+
+                                <span>
+                                    —
+                                </span>
+
+                            <% } %>
+
+                        </td>
+
+
+                        <!-- =================================
+                             AVAILABLE UNITS
+                        ================================== -->
+
+                        <td>
+
+                            <strong>
+                                <%= number(item.units) %>
+                            </strong>
+
+                        </td>
+
+
+                        <!-- =================================
+                             ADMIN UPDATE
+                        ================================== -->
+
+                        <% if (isAdmin) { %>
+
+                            <td>
+
+                                <form
+                                    method="POST"
+                                    action="/substations/product/<%= product._id %>"
+                                    class="inventory-update-form"
+                                >
+
+                                    <input
+                                        type="hidden"
+                                        name="substationId"
+                                        value="<%= item._id %>"
+                                    >
+
+
+                                    <div class="field inventory-units-field">
+
+                                        <label
+                                            for="units-<%= item._id %>"
+                                            class="sr-only"
+                                        >
+                                            Units for
+                                            <%= item.name || "substation" %>
+                                        </label>
+
+                                        <input
+                                            id="units-<%= item._id %>"
+                                            name="units"
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            value="<%= Number(item.units || 0) %>"
+                                            required
+                                        >
+
+                                    </div>
+
+
+                                    <button
+                                        type="submit"
+                                        class="primary-btn"
+                                    >
+
+                                        <i class="fas fa-save"></i>
+
+                                        Save
+
+                                    </button>
+
+                                </form>
+
+                            </td>
+
+                        <% } %>
+
+
+                    </tr>
+
+                <% }); %>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+<% } %>
