@@ -1,226 +1,1750 @@
 <section class="shop-page stock-entry-page">
   <div class="form-card stock-management-form">
-    <a href="/stock" class="secondary-btn"><i class="fas fa-arrow-left"></i> Stock</a>
+
+    <a href="/stock" class="secondary-btn">
+      <i class="fas fa-arrow-left"></i> Stock
+    </a>
 
     <h1 class="page-title"><%= title %></h1>
-    <p class="page-subtitle">Add the stock details and, when needed, give customers clear instructions for using the product.</p>
 
-    <% if (error) { %><div class="error"><%= error %></div><% } %>
-    <% if (saved === "1") { %><div class="notice">Stock subcategory saved successfully.</div><% } %>
+    <p class="page-subtitle">
+      Add the stock details and, when needed, give customers clear instructions
+      for using the product.
+    </p>
+
+    <% if (error) { %>
+      <div class="error"><%= error %></div>
+    <% } %>
+
+    <% if (saved === "1") { %>
+      <div class="notice">Stock subcategory saved successfully.</div>
+    <% } %>
+
+
+    <!-- ======================================================
+         STOCK FORM
+    ======================================================= -->
 
     <form action="/stock" method="POST" id="stockForm" novalidate>
-      <input type="hidden" name="stockId" id="stockId" value="<%= selectedStockId || old?.stockId || '' %>">
+
+      <input
+        type="hidden"
+        name="stockId"
+        id="stockId"
+        value="<%= selectedStockId || old?.stockId || '' %>"
+      >
+
 
       <div class="form-grid">
+
+
+        <!-- ==================================================
+             CATEGORY
+        =================================================== -->
+
         <div class="field">
-          <label for="category">Category</label>
+
+          <label for="category">
+            Category
+          </label>
+
           <div class="select-wrap">
-            <select id="category" name="category" required aria-describedby="categoryHelp">
-              <option value="">Select a category</option>
-              <% (categories || []).forEach((category) => { 
-                const categoryId = String(category._id || '');
-                const categoryName = String(category.name || '');
-                const oldCategory = String(old?.category?._id || old?.category || '');
+
+            <select
+              id="category"
+              name="category"
+              required
+              aria-describedby="categoryHelp"
+            >
+
+              <option value="">
+                Select a category
+              </option>
+
+              <% (categories || []).forEach((category) => {
+
+                const categoryId =
+                  String(category._id || '');
+
+                const categoryName =
+                  String(category.name || '');
+
+                const oldCategory =
+                  String(
+                    old?.category?._id ||
+                    old?.category ||
+                    ''
+                  );
+
               %>
-                <option value="<%= categoryId %>" <%= oldCategory === categoryId ? 'selected' : '' %>>
-                  <%= categoryName.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) %>
+
+                <option
+                  value="<%= categoryId %>"
+                  data-existing-units="0"
+                  <%= oldCategory === categoryId ? 'selected' : '' %>
+                >
+                  <%= categoryName
+                    .replace(/[-_]+/g, ' ')
+                    .replace(/\b\w/g, c => c.toUpperCase()) %>
                 </option>
+
               <% }) %>
+
             </select>
+
           </div>
-          <small class="form-help" id="categoryHelp">Select one of the active categories from the database.</small>
+
+          <small
+            class="form-help"
+            id="categoryHelp"
+          >
+            Select one of the active categories from the database.
+          </small>
+
         </div>
 
-        <div class="field">
-          <label for="subcategory">Subcategory</label>
-          <input id="subcategory" name="subcategory" value="<%= old?.subcategory || '' %>" required autocomplete="off">
-          <small class="form-help">This becomes the product name.</small>
-        </div>
+
+        <!-- ==================================================
+             SUBCATEGORY
+        =================================================== -->
 
         <div class="field">
-          <label for="units" id="unitsLabel">Initial warehouse units</label>
-          <input id="units" name="units" type="number" min="0" step="1" value="<%= old?.additionalUnits ?? old?.units ?? '' %>" required>
-          <small class="form-help" id="unitsHelp">Units for a new subcategory.</small>
+
+          <label for="subcategory">
+            Subcategory
+          </label>
+
+          <input
+            id="subcategory"
+            name="subcategory"
+            value="<%= old?.subcategory || '' %>"
+            required
+            autocomplete="off"
+          >
+
+          <small class="form-help">
+            This becomes the product name.
+          </small>
+
         </div>
 
-        <div class="field">
-          <label for="buyPrice">Buy price per unit</label>
-          <input id="buyPrice" name="buyPrice" type="number" min="0" step="0.01" value="<%= old?.buyPrice ?? 0 %>" required>
-        </div>
+
+        <!-- ==================================================
+             UNITS
+        =================================================== -->
 
         <div class="field">
-          <label for="days">Delivery days</label>
-          <input id="days" name="days" type="number" min="0" step="1" value="<%= old?.days ?? 0 %>" required>
-          <small class="form-help">Delivery time for this subcategory.</small>
+
+          <label for="units" id="unitsLabel">
+            Initial warehouse units
+          </label>
+
+          <input
+            id="units"
+            name="units"
+            type="number"
+            min="0"
+            step="1"
+            value="<%= old?.units ?? old?.additionalUnits ?? '' %>"
+            required
+            inputmode="numeric"
+            aria-describedby="unitsHelp unitsValidation"
+          >
+
+          <small
+            class="form-help"
+            id="unitsHelp"
+          >
+            Units for a new subcategory.
+          </small>
+
+          <small
+            id="unitsValidation"
+            class="field-validation"
+            hidden
+          ></small>
+
         </div>
+
+
+        <!-- ==================================================
+             BUY PRICE
+        =================================================== -->
+
+        <div class="field">
+
+          <label for="buyPrice" id="buyPriceLabel">
+            Buy price per unit
+          </label>
+
+          <input
+            id="buyPrice"
+            name="buyPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            value="<%= old?.buyPrice ?? '' %>"
+            required
+            inputmode="decimal"
+            aria-describedby="buyPriceHelp buyPriceValidation"
+          >
+
+          <small
+            class="form-help"
+            id="buyPriceHelp"
+          >
+            Buy price per unit.
+          </small>
+
+          <small
+            id="buyPriceValidation"
+            class="field-validation"
+            hidden
+          ></small>
+
+        </div>
+
+
+        <!-- ==================================================
+             DELIVERY DAYS
+        =================================================== -->
+
+        <div class="field">
+
+          <label for="days">
+            Delivery days
+          </label>
+
+          <input
+            id="days"
+            name="days"
+            type="number"
+            min="0"
+            step="1"
+            value="<%= old?.days ?? 0 %>"
+            required
+          >
+
+          <small class="form-help">
+            Delivery time for this subcategory.
+          </small>
+
+        </div>
+
+
+        <!-- ==================================================
+             IMAGE
+        =================================================== -->
 
         <div class="field full">
-          <label for="image">Image URL <span class="optional">(optional when updating)</span></label>
-          <input id="image" name="image" value="<%= old?.image || '' %>" autocomplete="url">
+
+          <label for="image">
+            Image URL
+            <span class="optional">
+              (optional when updating)
+            </span>
+          </label>
+
+          <input
+            id="image"
+            name="image"
+            value="<%= old?.image || '' %>"
+            autocomplete="url"
+          >
+
         </div>
 
+
+        <!-- ==================================================
+             DESCRIPTION
+        =================================================== -->
+
         <div class="field full">
-          <label for="description">Description</label>
-          <textarea id="description" name="description" placeholder="Briefly describe the product"><%= old?.description || '' %></textarea>
+
+          <label for="description">
+            Description
+          </label>
+
+          <textarea
+            id="description"
+            name="description"
+            placeholder="Briefly describe the product"
+          ><%= old?.description || '' %></textarea>
+
         </div>
+
       </div>
 
-      <section class="directions-editor" aria-labelledby="directionsHeading">
-        <div class="directions-editor-head">
-          <div>
-            <span class="directions-kicker"><i class="fas fa-circle-info"></i> Customer information</span>
-            <h2 id="directionsHeading">Directions of Use</h2>
-            <p>Add practical instructions that customers should see on the product page. This section is optional.</p>
-          </div>
-          <button type="button" class="secondary-btn directions-add-btn" id="addDirectionBtn"><i class="fas fa-plus"></i> Add instruction</button>
+
+      <!-- ====================================================
+           EDIT MODE STOCK SUMMARY
+      ===================================================== -->
+
+      <div
+        class="stock-edit-summary"
+        id="stockEditSummary"
+        hidden
+      >
+
+        <div class="stock-summary-row">
+
+          <strong>
+            Current warehouse units:
+          </strong>
+
+          <span id="currentUnits">
+            0
+          </span>
+
         </div>
+
+
+        <div class="stock-summary-row">
+
+          <strong>
+            New warehouse units:
+          </strong>
+
+          <span id="projectedUnits">
+            0
+          </span>
+
+        </div>
+
+
+        <div
+          class="stock-summary-row additional-row"
+          id="additionalUnitsRow"
+          hidden
+        >
+
+          <strong>
+            Additional units:
+          </strong>
+
+          <span id="additionalUnits">
+            0
+          </span>
+
+        </div>
+
+
+        <div
+          class="stock-summary-message"
+          id="stockSummaryMessage"
+        ></div>
+
+      </div>
+
+
+      <!-- ====================================================
+           DIRECTIONS OF USE
+      ===================================================== -->
+
+      <section
+        class="directions-editor"
+        aria-labelledby="directionsHeading"
+      >
+
+        <div class="directions-editor-head">
+
+          <div>
+
+            <span class="directions-kicker">
+              <i class="fas fa-circle-info"></i>
+              Customer information
+            </span>
+
+            <h2 id="directionsHeading">
+              Directions of Use
+            </h2>
+
+            <p>
+              Add practical instructions that customers should see on the
+              product page. This section is optional.
+            </p>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="secondary-btn directions-add-btn"
+            id="addDirectionBtn"
+          >
+            <i class="fas fa-plus"></i>
+            Add instruction
+          </button>
+
+        </div>
+
+
+        <!-- ==================================================
+             DIRECTIONS TITLE
+        =================================================== -->
 
         <div class="field full">
-          <label for="directionsTitle">Section title</label>
-          <input id="directionsTitle" name="directionsOfUse[title]" value="<%= old?.directionsOfUse?.title || '' %>" placeholder="e.g. How to use this product">
+
+          <label for="directionsTitle">
+            Section title
+          </label>
+
+          <input
+            id="directionsTitle"
+            name="directionsOfUse[title]"
+            value="<%= old?.directionsOfUse?.title || '' %>"
+            placeholder="e.g. How to use this product"
+          >
+
         </div>
 
-        <div id="directionsList" class="directions-list">
-          <% const items = Array.isArray(old?.directionsOfUse?.items) ? old.directionsOfUse.items : [{ subtitle: '', content: '' }]; %>
+
+        <!-- ==================================================
+             DIRECTIONS LIST
+        =================================================== -->
+
+        <div
+          id="directionsList"
+          class="directions-list"
+        >
+
+          <%
+            const items =
+              Array.isArray(old?.directionsOfUse?.items)
+                ? old.directionsOfUse.items
+                : [{ subtitle: '', content: '' }];
+          %>
+
+
           <% items.forEach((item, index) => { %>
-            <div class="direction-item" data-index="<%= index %>">
-              <div class="direction-item-number"><%= index + 1 %></div>
-              <div class="direction-item-fields">
-                <div class="field">
-                  <label>Instruction heading</label>
-                  <input name="directionsOfUse[items][<%= index %>][subtitle]" value="<%= item?.subtitle || '' %>" placeholder="e.g. Before use">
-                </div>
-                <div class="field full">
-                  <label>Instruction</label>
-                  <textarea name="directionsOfUse[items][<%= index %>][content]" placeholder="Explain what the customer should do"><%= item?.content || '' %></textarea>
-                </div>
+
+            <div
+              class="direction-item"
+              data-index="<%= index %>"
+            >
+
+              <div class="direction-item-number">
+                <%= index + 1 %>
               </div>
-              <button type="button" class="direction-remove" aria-label="Remove instruction" title="Remove instruction"><i class="fas fa-trash"></i></button>
+
+
+              <div class="direction-item-fields">
+
+                <div class="field">
+
+                  <label>
+                    Instruction heading
+                  </label>
+
+                  <input
+                    name="directionsOfUse[items][<%= index %>][subtitle]"
+                    value="<%= item?.subtitle || '' %>"
+                    placeholder="e.g. Before use"
+                  >
+
+                </div>
+
+
+                <div class="field full">
+
+                  <label>
+                    Instruction
+                  </label>
+
+                  <textarea
+                    name="directionsOfUse[items][<%= index %>][content]"
+                    placeholder="Explain what the customer should do"
+                  ><%= item?.content || '' %></textarea>
+
+                </div>
+
+              </div>
+
+
+              <button
+                type="button"
+                class="direction-remove"
+                aria-label="Remove instruction"
+                title="Remove instruction"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+
             </div>
+
           <% }) %>
+
         </div>
 
-        <div id="directionsEmpty" class="directions-empty" hidden>
-          <i class="fas fa-list-check"></i><strong>No directions added yet</strong><span>Add another instruction when the product needs more than one step.</span>
+
+        <!-- ==================================================
+             EMPTY DIRECTIONS
+        =================================================== -->
+
+        <div
+          id="directionsEmpty"
+          class="directions-empty"
+          hidden
+        >
+
+          <i class="fas fa-list-check"></i>
+
+          <strong>
+            No directions added yet
+          </strong>
+
+          <span>
+            Add another instruction when the product needs
+            more than one step.
+          </span>
+
         </div>
 
-        <input type="hidden" name="directionsOfUse[clear]" id="directionsClear" value="0">
+
+        <!-- ==================================================
+             CLEAR DIRECTIONS
+        =================================================== -->
+
+        <input
+          type="hidden"
+          name="directionsOfUse[clear]"
+          id="directionsClear"
+          value="0"
+        >
+
         <label class="directions-clear-option">
-          <input type="checkbox" id="clearDirections">
-          <span>Remove directions of use from this stock item</span>
+
+          <input
+            type="checkbox"
+            id="clearDirections"
+          >
+
+          <span>
+            Remove directions of use from this stock item
+          </span>
+
         </label>
+
       </section>
 
-      <div class="stock-edit-summary" id="stockEditSummary" hidden>
-        <div><strong>Current warehouse units:</strong> <span id="currentUnits">0</span></div>
-        <div><strong>After this update:</strong> <span id="projectedUnits">0</span></div>
-      </div>
+
+      <!-- ====================================================
+           FORM ACTIONS
+      ===================================================== -->
 
       <div class="form-actions">
-        <button type="submit" class="primary-btn" id="submitButton"><i class="fas fa-plus"></i> Create Stock Subcategory</button>
-        <a href="/stock" class="secondary-btn">Cancel</a>
+
+        <button
+          type="submit"
+          class="primary-btn"
+          id="submitButton"
+        >
+          <i class="fas fa-plus"></i>
+          Create Stock Subcategory
+        </button>
+
+        <a
+          href="/stock"
+          class="secondary-btn"
+        >
+          Cancel
+        </a>
+
       </div>
+
     </form>
+
   </div>
 </section>
 
+
 <style>
-.stock-entry-page .select-wrap{position:relative;width:100%}
-.stock-entry-page .select-wrap::after{content:"\\f078";font-family:"Font Awesome 6 Free";font-weight:900;position:absolute;right:16px;top:50%;transform:translateY(-50%);pointer-events:none;color:#0a4d1e;font-size:.8rem}
-.stock-entry-page select#category{display:block;width:100%;min-height:48px;padding:12px 44px 12px 14px;border:1px solid #cfd8d2;border-radius:10px;background:#fff;color:#173d30;font:inherit;line-height:1.3;appearance:none;-webkit-appearance:none;cursor:pointer}
-.stock-entry-page select#category:focus{outline:none;border-color:#0a4d1e;box-shadow:0 0 0 3px rgba(10,77,30,.12)}
-.stock-entry-page select#category option{padding:10px;background:#fff;color:#173d30}
+
+/* ==========================================================
+   CATEGORY SELECT
+========================================================== */
+
+.stock-entry-page .select-wrap{
+  position:relative;
+  width:100%;
+}
+
+.stock-entry-page .select-wrap::after{
+  content:"\f078";
+  font-family:"Font Awesome 6 Free";
+  font-weight:900;
+  position:absolute;
+  right:16px;
+  top:50%;
+  transform:translateY(-50%);
+  pointer-events:none;
+  color:#0a4d1e;
+  font-size:.8rem;
+}
+
+.stock-entry-page select#category{
+  display:block;
+  width:100%;
+  min-height:48px;
+  padding:12px 44px 12px 14px;
+  border:1px solid #cfd8d2;
+  border-radius:10px;
+  background:#fff;
+  color:#173d30;
+  font:inherit;
+  line-height:1.3;
+  appearance:none;
+  -webkit-appearance:none;
+  cursor:pointer;
+}
+
+.stock-entry-page select#category:focus{
+  outline:none;
+  border-color:#0a4d1e;
+  box-shadow:0 0 0 3px rgba(10,77,30,.12);
+}
+
+.stock-entry-page select#category option{
+  padding:10px;
+  background:#fff;
+  color:#173d30;
+}
+
+
+/* ==========================================================
+   STOCK EDIT SUMMARY
+========================================================== */
+
+.stock-edit-summary{
+  width:100%;
+  box-sizing:border-box;
+  margin:24px 0;
+  padding:18px 20px;
+  border:1px solid #c5e1a5;
+  border-left:5px solid #0a4d1e;
+  border-radius:14px;
+  background:#f1f8e9;
+  color:#173d30;
+}
+
+.stock-summary-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  padding:7px 0;
+}
+
+.stock-summary-row strong{
+  color:#0a4d1e;
+}
+
+.stock-summary-row span{
+  font-weight:700;
+  font-size:1.05rem;
+}
+
+.stock-summary-row.additional-row{
+  margin-top:8px;
+  padding-top:14px;
+  border-top:1px solid #c5e1a5;
+}
+
+.stock-summary-message{
+  margin-top:10px;
+  font-size:.9rem;
+  color:#456052;
+}
+
+
+/* ==========================================================
+   VALIDATION
+========================================================== */
+
+.field-validation{
+  display:block;
+  margin-top:6px;
+  font-size:.85rem;
+  line-height:1.4;
+  color:#b42318;
+}
+
+.field input.stock-invalid,
+.field select.stock-invalid{
+  border-color:#b42318 !important;
+  box-shadow:0 0 0 3px rgba(180,35,24,.08);
+}
+
+.field input.stock-valid{
+  border-color:#0a4d1e;
+}
+
+.stock-edit-summary.stock-invalid-summary{
+  border-color:#b42318;
+  border-left-color:#b42318;
+  background:#fff5f5;
+}
+
+
+/* ==========================================================
+   REQUIRED BUY PRICE INDICATOR
+========================================================== */
+
+.buy-price-required-note{
+  color:#b42318;
+  font-size:.82rem;
+  margin-left:4px;
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width:600px){
+
+  .stock-summary-row{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:3px;
+  }
+
+}
+
 </style>
 
+
 <script>
+
 (function(){
+
   "use strict";
-  const form=document.getElementById("stockForm");
-  const stockId=document.getElementById("stockId");
-  const category=document.getElementById("category");
-  const units=document.getElementById("units");
-  const unitsLabel=document.getElementById("unitsLabel");
-  const unitsHelp=document.getElementById("unitsHelp");
-  const submitButton=document.getElementById("submitButton");
-  const summary=document.getElementById("stockEditSummary");
-  const currentUnits=document.getElementById("currentUnits");
-  const projectedUnits=document.getElementById("projectedUnits");
-  const directionsList=document.getElementById("directionsList");
-  const directionsEmpty=document.getElementById("directionsEmpty");
-  const addDirectionBtn=document.getElementById("addDirectionBtn");
-  const clearDirections=document.getElementById("clearDirections");
-  const directionsClear=document.getElementById("directionsClear");
 
-  function renumber(){
-    const items=[...directionsList.querySelectorAll(".direction-item")];
-    items.forEach((item,index)=>{
-      item.dataset.index=index;
-      item.querySelector(".direction-item-number").textContent=index+1;
-      item.querySelectorAll("input,textarea").forEach(field=>{
-        const type=field.name.includes("subtitle")?"subtitle":"content";
-        field.name=`directionsOfUse[items][${index}][${type}]`;
-      });
-    });
-    directionsEmpty.hidden=items.length>0;
+
+  /* ========================================================
+     ELEMENTS
+  ======================================================== */
+
+  const form =
+    document.getElementById("stockForm");
+
+  const stockId =
+    document.getElementById("stockId");
+
+  const category =
+    document.getElementById("category");
+
+  const units =
+    document.getElementById("units");
+
+  const unitsLabel =
+    document.getElementById("unitsLabel");
+
+  const unitsHelp =
+    document.getElementById("unitsHelp");
+
+  const buyPrice =
+    document.getElementById("buyPrice");
+
+  const buyPriceLabel =
+    document.getElementById("buyPriceLabel");
+
+  const buyPriceHelp =
+    document.getElementById("buyPriceHelp");
+
+  const submitButton =
+    document.getElementById("submitButton");
+
+  const summary =
+    document.getElementById("stockEditSummary");
+
+  const currentUnits =
+    document.getElementById("currentUnits");
+
+  const projectedUnits =
+    document.getElementById("projectedUnits");
+
+  const additionalUnits =
+    document.getElementById("additionalUnits");
+
+  const additionalUnitsRow =
+    document.getElementById("additionalUnitsRow");
+
+  const stockSummaryMessage =
+    document.getElementById("stockSummaryMessage");
+
+  const unitsValidation =
+    document.getElementById("unitsValidation");
+
+  const buyPriceValidation =
+    document.getElementById("buyPriceValidation");
+
+  const directionsList =
+    document.getElementById("directionsList");
+
+  const directionsEmpty =
+    document.getElementById("directionsEmpty");
+
+  const addDirectionBtn =
+    document.getElementById("addDirectionBtn");
+
+  const clearDirections =
+    document.getElementById("clearDirections");
+
+  const directionsClear =
+    document.getElementById("directionsClear");
+
+
+  /* ========================================================
+     MODE
+  ======================================================== */
+
+  const editMode =
+    Boolean(stockId.value);
+
+
+  /*
+   * IMPORTANT:
+   *
+   * In EDIT MODE:
+   *
+   * units = NEW TOTAL UNITS
+   *
+   * It is NOT additionalUnits.
+   *
+   * Example:
+   *
+   * Current = 100
+   * Enter = 130
+   *
+   * Additional = 30
+   */
+
+
+  /* ========================================================
+     CURRENT UNITS
+  ======================================================== */
+
+  let existingUnits = 0;
+
+  <% if (old?.units !== undefined && old?.units !== null) { %>
+    existingUnits =
+      Number("<%= Number(old.units || 0) %>");
+  <% } %>
+
+
+  if (!Number.isFinite(existingUnits) || existingUnits < 0){
+    existingUnits = 0;
   }
 
-  function addDirection(subtitle="",content=""){
-    const index=directionsList.querySelectorAll(".direction-item").length;
-    const item=document.createElement("div");
-    item.className="direction-item";
-    item.innerHTML=`<div class="direction-item-number">${index+1}</div><div class="direction-item-fields"><div class="field"><label>Instruction heading</label><input name="directionsOfUse[items][${index}][subtitle]" placeholder="e.g. Before use"></div><div class="field full"><label>Instruction</label><textarea name="directionsOfUse[items][${index}][content]" placeholder="Explain what the customer should do"></textarea></div></div><button type="button" class="direction-remove" aria-label="Remove instruction"><i class="fas fa-trash"></i></button>`;
-    item.querySelector("input").value=subtitle;
-    item.querySelector("textarea").value=content;
-    directionsList.appendChild(item);
-    renumber();
+
+  /* ========================================================
+     NUMBER HELPERS
+  ======================================================== */
+
+  function numberValue(element){
+
+    const value =
+      Number(element.value);
+
+    return Number.isFinite(value)
+      ? value
+      : 0;
   }
 
-  function updateDisabled(){
-    const disabled=clearDirections.checked;
-    directionsClear.value=disabled?"1":"0";
-    document.querySelectorAll("#directionsList input,#directionsList textarea,#directionsTitle").forEach(el=>el.disabled=disabled);
+
+  function formatNumber(value){
+
+    return Number(value || 0)
+      .toLocaleString();
   }
 
-  directionsList.addEventListener("click",e=>{
-    const btn=e.target.closest(".direction-remove");
-    if(!btn)return;
-    btn.closest(".direction-item")?.remove();
-    renumber();
-  });
-  addDirectionBtn.addEventListener("click",()=>addDirection());
-  clearDirections.addEventListener("change",updateDisabled);
+
+  function clearUnitsValidation(){
+
+    unitsValidation.hidden = true;
+    unitsValidation.textContent = "";
+
+    units.classList.remove(
+      "stock-invalid",
+      "stock-valid"
+    );
+  }
+
+
+  function clearBuyPriceValidation(){
+
+    buyPriceValidation.hidden = true;
+    buyPriceValidation.textContent = "";
+
+    buyPrice.classList.remove(
+      "stock-invalid",
+      "stock-valid"
+    );
+  }
+
+
+  /* ========================================================
+     BUY PRICE REQUIREMENT
+  ======================================================== */
+
+  function updateBuyPriceRequirement(additional){
+
+    clearBuyPriceValidation();
+
+
+    if(!editMode){
+
+      buyPrice.required = true;
+
+      buyPriceLabel.innerHTML =
+        'Buy price per unit';
+
+      buyPriceHelp.textContent =
+        "Buy price per unit.";
+
+      return;
+    }
+
+
+    /*
+     * Existing quantity unchanged:
+     *
+     * No new purchase is being made.
+     *
+     * Therefore a new buy price is NOT required.
+     */
+
+    if(additional <= 0){
+
+      buyPrice.required = false;
+
+      buyPriceLabel.innerHTML =
+        'Buy price per unit <span class="optional">(not required when units are unchanged)</span>';
+
+      buyPriceHelp.textContent =
+        "A buy price is required only when adding new units.";
+
+      return;
+    }
+
+
+    /*
+     * Additional units exist.
+     *
+     * A buy price MUST be entered.
+     */
+
+    buyPrice.required = true;
+
+    buyPriceLabel.innerHTML =
+      'Buy price for additional units <span class="buy-price-required-note">*</span>';
+
+    buyPriceHelp.textContent =
+      "Required because additional units are being added.";
+
+  }
+
+
+  /* ========================================================
+     VALIDATE UNITS
+  ======================================================== */
+
+  function validateUnits(){
+
+    clearUnitsValidation();
+
+
+    const entered =
+      Number(units.value);
+
+
+    if(!Number.isFinite(entered)){
+
+      unitsValidation.hidden = false;
+
+      unitsValidation.textContent =
+        editMode
+          ? "Enter the new total number of warehouse units."
+          : "Enter the initial number of warehouse units.";
+
+      units.classList.add("stock-invalid");
+
+      return false;
+    }
+
+
+    if(!Number.isInteger(entered)){
+
+      unitsValidation.hidden = false;
+
+      unitsValidation.textContent =
+        "Units must be a whole number.";
+
+      units.classList.add("stock-invalid");
+
+      return false;
+    }
+
+
+    if(entered < 0){
+
+      unitsValidation.hidden = false;
+
+      unitsValidation.textContent =
+        "Units cannot be negative.";
+
+      units.classList.add("stock-invalid");
+
+      return false;
+    }
+
+
+    /*
+     * EDIT MODE:
+     *
+     * Never allow the new total to be
+     * less than the current quantity.
+     */
+
+    if(editMode && entered < existingUnits){
+
+      unitsValidation.hidden = false;
+
+      unitsValidation.textContent =
+        `The new units cannot be less than the current ${formatNumber(existingUnits)} units.`;
+
+      units.classList.add("stock-invalid");
+
+      return false;
+    }
+
+
+    units.classList.add("stock-valid");
+
+    return true;
+
+  }
+
+
+  /* ========================================================
+     VALIDATE BUY PRICE
+  ======================================================== */
+
+  function validateBuyPrice(additional){
+
+    clearBuyPriceValidation();
+
+
+    /*
+     * Create mode:
+     *
+     * Buy price is always required.
+     */
+
+    if(!editMode){
+
+      const value =
+        Number(buyPrice.value);
+
+
+      if(
+        !Number.isFinite(value) ||
+        value < 0
+      ){
+
+        buyPriceValidation.hidden = false;
+
+        buyPriceValidation.textContent =
+          "Enter a valid buy price.";
+
+        buyPrice.classList.add(
+          "stock-invalid"
+        );
+
+        return false;
+      }
+
+
+      buyPrice.classList.add(
+        "stock-valid"
+      );
+
+      return true;
+    }
+
+
+    /*
+     * EDIT MODE:
+     *
+     * No additional units:
+     * buy price not required.
+     */
+
+    if(additional <= 0){
+
+      buyPrice.required = false;
+
+      return true;
+    }
+
+
+    /*
+     * Additional units exist:
+     *
+     * Buy price is mandatory.
+     */
+
+    const raw =
+      String(buyPrice.value || "").trim();
+
+    const value =
+      Number(raw);
+
+
+    if(
+      raw === "" ||
+      !Number.isFinite(value) ||
+      value < 0
+    ){
+
+      buyPriceValidation.hidden = false;
+
+      buyPriceValidation.textContent =
+        "A buy price for the additional units is required.";
+
+      buyPrice.classList.add(
+        "stock-invalid"
+      );
+
+      return false;
+    }
+
+
+    buyPrice.classList.add(
+      "stock-valid"
+    );
+
+    return true;
+
+  }
+
+
+  /* ========================================================
+     UPDATE STOCK SUMMARY
+  ======================================================== */
 
   function updateSummary(){
-    if(!stockId.value){summary.hidden=true;return;}
-    const selected=category.options[category.selectedIndex];
-    const current=Number(selected?.dataset.units||0);
-    const additional=Math.max(0,Number(units.value||0));
-    currentUnits.textContent=current.toLocaleString();
-    projectedUnits.textContent=(current+additional).toLocaleString();
-    summary.hidden=false;
+
+    if(!editMode){
+
+      summary.hidden = true;
+
+      return;
+
+    }
+
+
+    const entered =
+      Number(units.value);
+
+
+    const safeEntered =
+      Number.isFinite(entered)
+        ? entered
+        : existingUnits;
+
+
+    const additional =
+      Math.max(
+        0,
+        safeEntered - existingUnits
+      );
+
+
+    currentUnits.textContent =
+      formatNumber(existingUnits);
+
+    projectedUnits.textContent =
+      formatNumber(safeEntered);
+
+    additionalUnits.textContent =
+      formatNumber(additional);
+
+
+    summary.hidden = false;
+
+
+    if(additional > 0){
+
+      additionalUnitsRow.hidden = false;
+
+      stockSummaryMessage.textContent =
+        `${formatNumber(additional)} additional unit${additional === 1 ? "" : "s"} will be added. A buy price for these additional units is required.`;
+
+      updateBuyPriceRequirement(additional);
+
+    }else{
+
+      additionalUnitsRow.hidden = true;
+
+      stockSummaryMessage.textContent =
+        "No additional units will be added. The current warehouse quantity will remain unchanged.";
+
+      updateBuyPriceRequirement(0);
+
+    }
+
+
+    if(safeEntered < existingUnits){
+
+      summary.classList.add(
+        "stock-invalid-summary"
+      );
+
+    }else{
+
+      summary.classList.remove(
+        "stock-invalid-summary"
+      );
+
+    }
+
   }
 
-  if(stockId.value){
-    units.name="additionalUnits";
-    units.value="0";
-    units.required=false;
-    unitsLabel.textContent="Additional warehouse units";
-    unitsHelp.textContent="These units are added to the existing warehouse balance.";
-    submitButton.innerHTML='<i class="fas fa-save"></i> Update Stock Subcategory';
-    const selectedCategory="<%= String(old?.category?._id || old?.category || '') %>";
-    if(selectedCategory && [...category.options].some(o=>o.value===selectedCategory)) category.value=selectedCategory;
-    const existingUnits=Number("<%= Number(old?.units || 0) %>");
-    const selected=category.options[category.selectedIndex];
-    if(selected) selected.dataset.units=String(existingUnits);
+
+  /* ========================================================
+     DIRECTIONS
+  ======================================================== */
+
+  function renumber(){
+
+    const items =
+      [
+        ...directionsList.querySelectorAll(
+          ".direction-item"
+        )
+      ];
+
+
+    items.forEach((item,index)=>{
+
+      item.dataset.index =
+        index;
+
+
+      const number =
+        item.querySelector(
+          ".direction-item-number"
+        );
+
+      if(number){
+
+        number.textContent =
+          index + 1;
+
+      }
+
+
+      item
+        .querySelectorAll(
+          "input,textarea"
+        )
+        .forEach(field=>{
+
+          const type =
+            field.name.includes(
+              "subtitle"
+            )
+              ? "subtitle"
+              : "content";
+
+
+          field.name =
+            `directionsOfUse[items][${index}][${type}]`;
+
+        });
+
+    });
+
+
+    directionsEmpty.hidden =
+      items.length > 0;
+
+  }
+
+
+  function addDirection(
+    subtitle="",
+    content=""
+  ){
+
+    const index =
+      directionsList.querySelectorAll(
+        ".direction-item"
+      ).length;
+
+
+    const item =
+      document.createElement("div");
+
+
+    item.className =
+      "direction-item";
+
+
+    item.innerHTML = `
+
+      <div class="direction-item-number">
+        ${index + 1}
+      </div>
+
+      <div class="direction-item-fields">
+
+        <div class="field">
+
+          <label>
+            Instruction heading
+          </label>
+
+          <input
+            name="directionsOfUse[items][${index}][subtitle]"
+            placeholder="e.g. Before use"
+          >
+
+        </div>
+
+        <div class="field full">
+
+          <label>
+            Instruction
+          </label>
+
+          <textarea
+            name="directionsOfUse[items][${index}][content]"
+            placeholder="Explain what the customer should do"
+          ></textarea>
+
+        </div>
+
+      </div>
+
+      <button
+        type="button"
+        class="direction-remove"
+        aria-label="Remove instruction"
+        title="Remove instruction"
+      >
+        <i class="fas fa-trash"></i>
+      </button>
+
+    `;
+
+
+    item.querySelector(
+      "input"
+    ).value =
+      subtitle;
+
+
+    item.querySelector(
+      "textarea"
+    ).value =
+      content;
+
+
+    directionsList.appendChild(
+      item
+    );
+
+
+    renumber();
+
+  }
+
+
+  /* ========================================================
+     CLEAR DIRECTIONS
+  ======================================================== */
+
+  function updateDisabled(){
+
+    const disabled =
+      clearDirections.checked;
+
+
+    directionsClear.value =
+      disabled
+        ? "1"
+        : "0";
+
+
+    document
+      .querySelectorAll(
+        "#directionsList input," +
+        "#directionsList textarea," +
+        "#directionsTitle"
+      )
+      .forEach(el=>{
+
+        el.disabled =
+          disabled;
+
+      });
+
+  }
+
+
+  /* ========================================================
+     EVENTS — DIRECTIONS
+  ======================================================== */
+
+  directionsList.addEventListener(
+    "click",
+    function(e){
+
+      const btn =
+        e.target.closest(
+          ".direction-remove"
+        );
+
+
+      if(!btn){
+        return;
+      }
+
+
+      btn
+        .closest(".direction-item")
+        ?.remove();
+
+
+      renumber();
+
+    }
+  );
+
+
+  addDirectionBtn.addEventListener(
+    "click",
+    function(){
+
+      addDirection();
+
+    }
+  );
+
+
+  clearDirections.addEventListener(
+    "change",
+    updateDisabled
+  );
+
+
+  /* ========================================================
+     EVENTS — UNITS
+  ======================================================== */
+
+  units.addEventListener(
+    "input",
+    function(){
+
+      if(editMode){
+
+        const entered =
+          Number(units.value);
+
+
+        if(
+          Number.isFinite(entered) &&
+          entered < existingUnits
+        ){
+
+          unitsValidation.hidden =
+            false;
+
+          unitsValidation.textContent =
+            `Units cannot be reduced below the current ${formatNumber(existingUnits)} units.`;
+
+          units.classList.add(
+            "stock-invalid"
+          );
+
+        }else{
+
+          clearUnitsValidation();
+
+        }
+
+      }
+
+
+      updateSummary();
+
+    }
+  );
+
+
+  units.addEventListener(
+    "change",
+    function(){
+
+      validateUnits();
+      updateSummary();
+
+    }
+  );
+
+
+  /* ========================================================
+     EVENTS — BUY PRICE
+  ======================================================== */
+
+  buyPrice.addEventListener(
+    "input",
+    function(){
+
+      const entered =
+        Number(units.value);
+
+
+      const additional =
+        editMode
+          ? Math.max(
+              0,
+              entered - existingUnits
+            )
+          : 0;
+
+
+      if(editMode && additional > 0){
+
+        validateBuyPrice(
+          additional
+        );
+
+      }
+
+    }
+  );
+
+
+  /* ========================================================
+     CATEGORY
+  ======================================================== */
+
+  category.addEventListener(
+    "change",
+    function(){
+
+      updateSummary();
+
+    }
+  );
+
+
+  /* ========================================================
+     FORM SUBMISSION
+  ======================================================== */
+
+  form.addEventListener(
+    "submit",
+    function(e){
+
+      const unitsValid =
+        validateUnits();
+
+
+      const entered =
+        Number(units.value);
+
+
+      const additional =
+        editMode
+          ? Math.max(
+              0,
+              entered - existingUnits
+            )
+          : 0;
+
+
+      const buyPriceValid =
+        validateBuyPrice(
+          additional
+        );
+
+
+      /*
+       * DO NOT submit if:
+       *
+       * 1. Units are invalid
+       * 2. Units are being reduced
+       * 3. Additional units have no buy price
+       */
+
+      if(
+        !unitsValid ||
+        !buyPriceValid
+      ){
+
+        e.preventDefault();
+
+        updateSummary();
+
+        if(!unitsValid){
+
+          units.focus();
+
+        }else if(!buyPriceValid){
+
+          buyPrice.focus();
+
+        }
+
+        return false;
+
+      }
+
+
+      /*
+       * IMPORTANT:
+       *
+       * We deliberately submit:
+       *
+       * units = NEW TOTAL
+       *
+       * The backend will calculate:
+       *
+       * additionalUnits =
+       * newTotal - currentUnits
+       *
+       * and add only the difference.
+       */
+
+
+      directionsClear.value =
+        clearDirections.checked
+          ? "1"
+          : "0";
+
+    }
+  );
+
+
+  /* ========================================================
+     INITIALISE CREATE / EDIT MODE
+  ======================================================== */
+
+  if(editMode){
+
+    /* -----------------------------------------------
+       EDIT MODE
+    ------------------------------------------------ */
+
+    units.name =
+      "units";
+
+    units.min =
+      String(existingUnits);
+
+    units.required =
+      true;
+
+
+    unitsLabel.textContent =
+      "New total warehouse units";
+
+
+    unitsHelp.textContent =
+      `Current warehouse units: ${formatNumber(existingUnits)}. Enter the new total. You cannot reduce the current quantity.`;
+
+
+    submitButton.innerHTML =
+      '<i class="fas fa-save"></i> Update Stock Subcategory';
+
+
+    /*
+     * Existing units are displayed as the
+     * current starting point.
+     */
+
+    if(
+      !units.value ||
+      Number.isNaN(Number(units.value))
+    ){
+
+      units.value =
+        String(existingUnits);
+
+    }
+
+
+    /*
+     * IMPORTANT:
+     *
+     * Do NOT automatically copy old buyPrice
+     * into a new purchase transaction.
+     *
+     * If units increase, the user must
+     * explicitly provide the new buy price.
+     */
+
     updateSummary();
-  } else {
-    units.name="units";
-    units.required=true;
+
+  }else{
+
+    /* -----------------------------------------------
+       CREATE MODE
+    ------------------------------------------------ */
+
+    units.name =
+      "units";
+
+    units.min =
+      "0";
+
+    units.required =
+      true;
+
+
+    unitsLabel.textContent =
+      "Initial warehouse units";
+
+
+    unitsHelp.textContent =
+      "Units for a new subcategory.";
+
+
+    buyPrice.required =
+      true;
+
+
+    buyPriceLabel.textContent =
+      "Buy price per unit";
+
+
+    buyPriceHelp.textContent =
+      "Buy price per unit.";
+
+
+    submitButton.innerHTML =
+      '<i class="fas fa-plus"></i> Create Stock Subcategory';
+
+
+    summary.hidden =
+      true;
+
   }
 
-  units.addEventListener("input",updateSummary);
-  category.addEventListener("change",updateSummary);
-  form.addEventListener("submit",()=>{directionsClear.value=clearDirections.checked?"1":"0";});
+
+  /* ========================================================
+     INITIALISE
+  ======================================================== */
+
   updateDisabled();
+
+  updateSummary();
+
 })();
+
 </script>
