@@ -14,6 +14,13 @@ const {
 } =
     require("./details");
 
+const {
+    updateProduct
+} =
+    require("./details");
+
+
+
 
 const {
     searchProducts
