@@ -28,7 +28,7 @@ const {
 //
 // Used by:
 //
-//     /products/:id
+//     GET /products/:id
 //
 // ==========================================================
 
@@ -230,16 +230,21 @@ async function getProduct(id) {
 
 
 // ==========================================================
-// UPDATE PRODUCT SELL PRICE
+// UPDATE PRODUCT
 // ==========================================================
 //
 // Used by:
 //
-//     POST /products/price
+//     POST /products/:id/update
 //
-// The controller will handle the request and role
-// authorization. This service handles validation and the
-// actual Product update.
+// Updates:
+//
+//     unitSellPrice
+//
+// The controller handles the HTTP request and the route
+// middleware handles admin authorization.
+//
+// This service handles validation and the database update.
 //
 // ==========================================================
 
