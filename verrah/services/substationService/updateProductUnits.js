@@ -5,9 +5,9 @@
 
 const mongoose = require("mongoose");
 
-const Substation = require("../models/substations");
-const Product = require("../models/products");
-const Stock = require("../models/stock");
+const Substation = require("../../models/substations");
+const Product = require("../../models/products");
+const Stock = require("../../models/stock");
 
 exports.updateProductUnits = async (
     productId,
