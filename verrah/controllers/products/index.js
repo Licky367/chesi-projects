@@ -42,6 +42,15 @@ module.exports = {
     details:
         detailsController.details,
 
+    // --------------------------------------------------------
+    // Product listing
+    // --------------------------------------------------------
+
+    updateProduct:
+        updateController.updateProduct,
+
+
+
 
     // --------------------------------------------------------
     // Add to cart
