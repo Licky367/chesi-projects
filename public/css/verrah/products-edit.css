@@ -1,0 +1,287 @@
+/* ==========================================================
+   VERRAH COSMETICS
+   ADMIN SELL PRICE EDITOR
+   ========================================================== */
+
+.admin-price-editor {
+    width: 100%;
+    margin: 22px 0 24px;
+    padding: 18px 20px;
+
+    background: #f8f3ee;
+
+    border: 1px solid #c9b5a3;
+    border-left: 4px solid #6b3f25;
+
+    border-radius: 12px;
+
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   EDITOR TITLE
+   ========================================================== */
+
+.admin-price-editor-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    margin-bottom: 15px;
+
+    color: #5a321f;
+
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+
+.admin-price-editor-title i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 30px;
+    height: 30px;
+
+    background: #6b3f25;
+    color: #ffffff;
+
+    border-radius: 50%;
+
+    font-size: 13px;
+}
+
+
+/* ==========================================================
+   FORM
+   ========================================================== */
+
+.admin-price-form {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+
+/* ==========================================================
+   INPUT + BUTTON ROW
+   ========================================================== */
+
+.admin-price-input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+
+    width: 100%;
+}
+
+
+/* ==========================================================
+   INPUT GROUP
+   ========================================================== */
+
+.admin-price-input-group {
+    flex: 1;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+
+.admin-price-input-group label {
+    display: block;
+
+    color: #6b4632;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    line-height: 1.3;
+}
+
+
+/* ==========================================================
+   PRICE INPUT
+   ========================================================== */
+
+.admin-price-input-group input {
+    width: 100%;
+    height: 44px;
+
+    padding: 0 13px;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+
+    border: 1.5px solid #b99d87;
+    border-radius: 8px;
+
+    color: #3f281b;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+
+.admin-price-input-group input:hover {
+    border-color: #8a5a3c;
+}
+
+
+.admin-price-input-group input:focus {
+    border-color: #6b3f25;
+
+    background: #fffdfb;
+
+    box-shadow:
+        0 0 0 3px rgba(107, 63, 37, 0.12);
+}
+
+
+/* ==========================================================
+   UPDATE BUTTON
+   ========================================================== */
+
+.admin-price-form .primary-btn {
+    flex: 0 0 auto;
+
+    min-height: 44px;
+
+    padding: 0 18px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    background: #6b3f25;
+    color: #ffffff;
+
+    border: 1px solid #6b3f25;
+    border-radius: 8px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    text-decoration: none;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.admin-price-form .primary-btn:hover {
+    background: #542f1d;
+    border-color: #542f1d;
+
+    box-shadow:
+        0 4px 10px rgba(84, 47, 29, 0.18);
+}
+
+
+.admin-price-form .primary-btn:active {
+    transform: translateY(1px);
+}
+
+
+.admin-price-form .primary-btn i {
+    font-size: 13px;
+}
+
+
+/* ==========================================================
+   DISABLED STATE
+   ========================================================== */
+
+.admin-price-form .primary-btn:disabled,
+.admin-price-input-group input:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 600px) {
+
+    .admin-price-editor {
+        margin: 18px 0 22px;
+
+        padding: 16px;
+    }
+
+
+    .admin-price-input-row {
+        flex-direction: column;
+        align-items: stretch;
+
+        gap: 11px;
+    }
+
+
+    .admin-price-input-group {
+        width: 100%;
+    }
+
+
+    .admin-price-form .primary-btn {
+        width: 100%;
+    }
+
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+   ========================================================== */
+
+@media (max-width: 380px) {
+
+    .admin-price-editor {
+        padding: 14px;
+    }
+
+
+    .admin-price-editor-title {
+        font-size: 14px;
+    }
+
+
+    .admin-price-editor-title i {
+        width: 28px;
+        height: 28px;
+
+        font-size: 12px;
+    }
+
+
+    .admin-price-input-group input {
+        height: 42px;
+    }
+
+
+    .admin-price-form .primary-btn {
+        min-height: 42px;
+    }
+
+}
