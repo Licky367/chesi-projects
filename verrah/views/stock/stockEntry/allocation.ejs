@@ -1,0 +1,166 @@
+      <!-- =====================================================
+           ALLOCATION
+      ====================================================== -->
+
+      <div class="allocation-panel">
+
+
+        <div class="allocation-heading">
+
+          <div>
+
+            <h2>
+              Dispatch to substations
+            </h2>
+
+            <p>
+              Enter the units each substation receives.
+            </p>
+
+          </div>
+
+
+          <div class="allocation-total-box">
+
+            <small>
+              Total allocated
+            </small>
+
+            <strong id="allocationTotal">
+              0
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <form
+          action="/stock/<%= stock._id %>"
+          method="POST"
+          class="allocation-form"
+          id="allocationForm"
+        >
+
+          <input
+            type="hidden"
+            name="units"
+            id="totalUnits"
+            value="0"
+          >
+
+
+          <div class="field">
+
+            <label for="unitSellPrice">
+              Selling price per unit
+            </label>
+
+            <input
+              id="unitSellPrice"
+              type="number"
+              min="0"
+              step="0.01"
+              name="unitSellPrice"
+              value="<%= old && old.unitSellPrice != null
+                ? old.unitSellPrice
+                : "" %>"
+              required
+            >
+
+          </div>
+
+
+          <div class="substation-allocation-list">
+
+
+            <% if (substations && substations.length) { %>
+
+
+              <% substations.forEach((substation) => { %>
+
+                <%
+                  const substationId =
+                    String(substation._id);
+
+                  const value =
+                    old &&
+                    old.allocations &&
+                    typeof old.allocations === "object"
+                      ? (
+                          old.allocations[
+                            substationId
+                          ] ?? ""
+                        )
+                      : "";
+                %>
+
+
+                <div class="substation-allocation-row">
+
+                  <div class="substation-name">
+
+                    <i class="fas fa-store"></i>
+
+                    <div>
+
+                      <strong>
+                        <%= substation.name %>
+                      </strong>
+
+
+                      <% if (substation.location) { %>
+
+                        <small>
+                          <%= substation.location %>
+                        </small>
+
+                      <% } %>
+
+                    </div>
+
+                  </div>
+
+
+                  <div class="substation-unit-input">
+
+                    <label
+                      for="allocation-<%= substationId %>"
+                    >
+                      Units
+                    </label>
+
+                    <input
+                      id="allocation-<%= substationId %>"
+                      class="allocation-input"
+                      type="number"
+                      min="0"
+                      max="<%= Number(stock.units || 0) %>"
+                      step="1"
+                      inputmode="numeric"
+                      name="allocations[<%= substationId %>]"
+                      value="<%= value %>"
+                      autocomplete="off"
+                    >
+
+                  </div>
+
+                </div>
+
+
+              <% }) %>
+
+
+            <% } else { %>
+
+
+              <div class="error">
+                No active substations are available.
+              </div>
+
+
+            <% } %>
+
+
+          </div>
+
