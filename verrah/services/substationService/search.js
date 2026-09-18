@@ -7,13 +7,13 @@ const mongoose =
     require("mongoose");
 
 const Substation =
-    require("../models/substations");
+    require("../../models/substations");
 
 const Product =
-    require("../models/products");
+    require("../../models/products");
 
 const Category =
-    require("../models/category");
+    require("../../models/category");
 
 
 // ==========================================================
