@@ -198,7 +198,16 @@ exports.newStockForm =
 
                         category:
                             selectedStock.category ||
-                            ""
+                            "",
+
+                        // --------------------------------------------------
+                        // IMPORTANT:
+                        // units represents the CURRENT TOTAL WAREHOUSE
+                        // BALANCE when editing.
+                        // --------------------------------------------------
+
+                        units:
+                            selectedStock.units ?? 0
                     }
                     : {};
 
@@ -236,6 +245,32 @@ exports.newStockForm =
 // ==========================================================
 // CREATE OR UPDATE STOCK
 // ==========================================================
+//
+// IMPORTANT UNITS RULE
+//
+// CREATE:
+//     body.units = initial warehouse units
+//
+// UPDATE:
+//     body.units = NEW TOTAL warehouse units
+//
+// The controller does NOT calculate additional units.
+//
+// The service calculates:
+//
+//     additionalUnits =
+//         newTotalUnits - currentUnits
+//
+// The service also enforces:
+//
+//     newTotalUnits >= currentUnits
+//
+// and:
+//
+//     if additionalUnits > 0,
+//     buyPrice is required.
+//
+// ==========================================================
 
 exports.createOrUpdateStock =
     async (
@@ -260,6 +295,19 @@ exports.createOrUpdateStock =
                 await resolveCategoryId(
                     req.body.category
                 );
+
+            // --------------------------------------------------
+            // IMPORTANT:
+            //
+            // Keep units exactly as submitted.
+            //
+            // In UPDATE mode this is the NEW TOTAL warehouse
+            // units, NOT additional units.
+            //
+            // Do not convert it here.
+            // Do not calculate additionalUnits here.
+            // The service owns that calculation.
+            // --------------------------------------------------
 
             const body = {
                 ...req.body,
@@ -308,6 +356,14 @@ exports.createOrUpdateStock =
 
                     error:
                         error.message,
+
+                    // --------------------------------------------------
+                    // Preserve exactly what the user entered.
+                    //
+                    // This is particularly important during an update
+                    // validation failure because units represents the
+                    // requested NEW TOTAL.
+                    // --------------------------------------------------
 
                     old:
                         req.body,
