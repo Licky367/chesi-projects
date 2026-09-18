@@ -1,4 +1,4 @@
-// ==========================================================
+ // ==========================================================
 // models/stock.js
 // STOCK MODEL
 //
@@ -145,13 +145,18 @@ const purchaseBatchSchema =
             //
             // FIFO uses this field to determine which batch
             // is oldest.
+            //
+            // IMPORTANT:
+            //
+            // Do not add `index: true` here.
+            // The parent Stock schema defines the single
+            // index for purchaseBatches.purchasedAt below.
             // --------------------------------------------------
 
             purchasedAt: {
                 type: Date,
                 required: true,
-                default: Date.now,
-                index: true
+                default: Date.now
             }
         },
         {
@@ -361,6 +366,12 @@ stockSchema.index({
 // Helps MongoDB locate stock records containing FIFO batches.
 // The service itself determines FIFO ordering by
 // purchaseBatches.purchasedAt.
+//
+// This is the SINGLE index definition for:
+//     purchaseBatches.purchasedAt
+//
+// Do not also use `index: true` on purchasedAt inside
+// purchaseBatchSchema.
 // ==========================================================
 
 stockSchema.index({
