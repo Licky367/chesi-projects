@@ -53,7 +53,7 @@ module.exports = {
     // Product search
     // --------------------------------------------------------
 
-    searchProducts
+    searchProducts,
 
     // --------------------------------------------------------
     // Product Update 
