@@ -3,7 +3,7 @@
 // CREATE SUBSTATION
 // ==========================================================
 
-const Substation = require("../models/substations");
+const Substation = require("../../models/substations");
 const {
     text,
     normalizePhoneNumber,
