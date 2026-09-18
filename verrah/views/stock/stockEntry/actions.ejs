@@ -1,0 +1,53 @@
+          <!-- =================================================
+               ACTIONS
+          ================================================== -->
+
+          <div class="form-actions">
+
+            <button
+              type="submit"
+              class="primary-btn"
+              id="allocateButton"
+              <%= !substations ||
+                  !substations.length
+                    ? "disabled"
+                    : "" %>
+            >
+
+              <i class="fas fa-boxes-stacked"></i>
+
+              Allocate Product
+
+            </button>
+
+
+            <a
+              href="/stock/new?stockId=<%= stock._id %>"
+              class="secondary-btn"
+            >
+
+              <i class="fas fa-pen"></i>
+
+              Edit Stock
+
+            </a>
+
+
+            <a
+              href="/stock"
+              class="secondary-btn"
+            >
+              Cancel
+            </a>
+
+          </div>
+
+
+        </form>
+
+      </div>
+
+    </div>
+
+
+  <% } %>
