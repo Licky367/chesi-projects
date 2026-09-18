@@ -10,6 +10,8 @@ const listController =
 const detailsController =
     require("./details");
 
+const updateController =
+    require("./details");
 
 const addToCartController =
     require("./addToCart");
