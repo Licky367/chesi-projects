@@ -3,6 +3,32 @@
 //
 // VERRAH COSMETICS
 // CART SERVICE
+//
+// IMPORTANT STAFF SALE RULE:
+//
+// Once a StaffSale is created, the product information inside
+// that StaffSale is a SNAPSHOT.
+//
+// Existing StaffSales must NEVER depend on the current Product
+// document for their historical product details.
+//
+// Example:
+//
+// Product sell price when sale is created:
+//     500
+//
+// StaffSale product price:
+//     500
+//
+// Product sell price changed later:
+//     600
+//
+// Existing StaffSale product price:
+//     STILL 500
+//
+// A NEW StaffSale can use:
+//     600
+//
 // ==========================================================
 
 const mongoose =
@@ -146,7 +172,14 @@ async function getOrCreateCart(
 // ADD TO CART
 //
 // Adding quantity increases existing quantity.
+//
 // Inventory is NOT reduced here.
+//
+// The current Product selling price is captured into the
+// cart at the time the product is added/updated.
+//
+// The StaffSale will later take a SNAPSHOT of this cart
+// price when the sale is created.
 // ==========================================================
 
 async function addToCart(
@@ -278,11 +311,29 @@ async function addToCart(
                 }
 
 
+                // ------------------------------------------------
+                // CAPTURE CURRENT PRODUCT SELL PRICE IN CART
+                //
+                // This is the price that will subsequently be
+                // copied into StaffSale when the sale is created.
+                // ------------------------------------------------
+
                 const price =
                     Number(
                         product.unitSellPrice ||
                         0
                     );
+
+
+                if (
+                    !Number.isFinite(price) ||
+                    price < 0
+                ) {
+
+                    throw new Error(
+                        `Invalid selling price for "${product.name}".`
+                    );
+                }
 
 
                 if (existing) {
@@ -355,6 +406,7 @@ async function addToCart(
 // GET CART
 //
 // IMPORTANT:
+//
 // This returns a LEAN object for reading.
 //
 // Do NOT call .save() on the result of this function.
@@ -584,10 +636,35 @@ async function removeItem(
 // ==========================================================
 // CREATE STAFF SALE
 //
-// Inventory is reduced ONLY here.
+// INVENTORY IS REDUCED ONLY HERE.
 //
-// The cart is cleared only after all sale operations
-// succeed inside the transaction.
+// IMPORTANT:
+//
+// At this point the cart information is converted into a
+// PERMANENT STAFF SALE SNAPSHOT.
+//
+// The following values are copied into StaffSale:
+//
+//     productId
+//     name
+//     image
+//     category
+//     subcategory
+//     qty
+//     price
+//     total
+//
+// After StaffSale creation, changes to Product do not alter
+// those stored values.
+//
+// The current Product is used only for:
+//
+//     - confirming the product exists
+//     - confirming it is active
+//     - checking available inventory
+//     - checking substation inventory
+//
+// It is NOT used to overwrite the historical sale price.
 // ==========================================================
 
 async function createStaffSale(
@@ -646,9 +723,9 @@ async function createStaffSale(
         await dbSession.withTransaction(
             async () => {
 
-                // ------------------------------------------
+                // ==========================================
                 // STAFF
-                // ------------------------------------------
+                // ==========================================
 
                 const staff =
                     await User.findById(
@@ -685,9 +762,9 @@ async function createStaffSale(
                 }
 
 
-                // ------------------------------------------
+                // ==========================================
                 // ASSIGNED SUBSTATION
-                // ------------------------------------------
+                // ==========================================
 
                 if (
                     !staff.assignedSubstation
@@ -715,9 +792,9 @@ async function createStaffSale(
                 }
 
 
-                // ------------------------------------------
+                // ==========================================
                 // STAFF CART
-                // ------------------------------------------
+                // ==========================================
 
                 const cart =
                     await Cart.findOne({
@@ -744,9 +821,9 @@ async function createStaffSale(
                 }
 
 
-                // ------------------------------------------
-                // BUILD SALE SNAPSHOT
-                // ------------------------------------------
+                // ==========================================
+                // BUILD PERMANENT SALE SNAPSHOT
+                // ==========================================
 
                 const saleProducts =
                     [];
@@ -760,6 +837,10 @@ async function createStaffSale(
                     of cart.items
                 ) {
 
+                    // --------------------------------------
+                    // PRODUCT ID
+                    // --------------------------------------
+
                     const productId =
                         cartItem.productId ||
                         cartItem.product;
@@ -772,6 +853,10 @@ async function createStaffSale(
                         );
                     }
 
+
+                    // --------------------------------------
+                    // QUANTITY
+                    // --------------------------------------
 
                     const qty =
                         Number(
@@ -792,6 +877,14 @@ async function createStaffSale(
                         );
                     }
 
+
+                    // --------------------------------------
+                    // CURRENT PRODUCT
+                    //
+                    // Used ONLY to validate the sale and
+                    // obtain information that needs to be
+                    // captured into the snapshot.
+                    // --------------------------------------
 
                     const product =
                         await Product.findById(
@@ -827,6 +920,10 @@ async function createStaffSale(
                     }
 
 
+                    // --------------------------------------
+                    // MAIN INVENTORY VALIDATION
+                    // --------------------------------------
+
                     const availableUnits =
                         Number(
                             product.units ||
@@ -844,6 +941,10 @@ async function createStaffSale(
                         );
                     }
 
+
+                    // --------------------------------------
+                    // SUBSTATION UNITS VALIDATION
+                    // --------------------------------------
 
                     const hasSubstationUnits =
                         product.substationUnits !==
@@ -873,12 +974,35 @@ async function createStaffSale(
                     }
 
 
+                    // ======================================
+                    // PRICE SNAPSHOT
+                    //
+                    // CRITICAL:
+                    //
+                    // Use the PRICE STORED IN THE CART.
+                    //
+                    // DO NOT use:
+                    //
+                    //     product.unitSellPrice
+                    //
+                    // as the primary sale price.
+                    //
+                    // The cart price represents the selling
+                    // price captured for this transaction.
+                    // ======================================
+
                     const price =
-                        Number(
-                            cartItem.price ??
-                            product.unitSellPrice ??
-                            0
-                        );
+                        cartItem.price !==
+                            undefined &&
+                        cartItem.price !==
+                            null
+                            ? Number(
+                                cartItem.price
+                            )
+                            : Number(
+                                product.unitSellPrice ||
+                                0
+                            );
 
 
                     if (
@@ -892,14 +1016,27 @@ async function createStaffSale(
                     }
 
 
-                    const lineTotal =
-                        price *
-                        qty;
+                    // ======================================
+                    // PRODUCT NAME SNAPSHOT
+                    // ======================================
+
+                    const name =
+                        cartItem.name ||
+                        product.name ||
+                        "";
 
 
-                    totalAmount +=
-                        lineTotal;
+                    if (!name) {
 
+                        throw new Error(
+                            "Product name is missing from a sale item."
+                        );
+                    }
+
+
+                    // ======================================
+                    // CATEGORY SNAPSHOT
+                    // ======================================
 
                     let category =
                         "";
@@ -918,24 +1055,61 @@ async function createStaffSale(
                     }
 
 
+                    // ======================================
+                    // SUBCATEGORY SNAPSHOT
+                    // ======================================
+
+                    const subcategory =
+                        product.subcategory ||
+                        cartItem.subcategory ||
+                        "";
+
+
+                    // ======================================
+                    // IMAGE SNAPSHOT
+                    // ======================================
+
+                    const image =
+                        cartItem.image ||
+                        product.image ||
+                        "";
+
+
+                    // ======================================
+                    // LINE TOTAL SNAPSHOT
+                    // ======================================
+
+                    const lineTotal =
+                        price *
+                        qty;
+
+
+                    totalAmount +=
+                        lineTotal;
+
+
+                    // ======================================
+                    // CREATE IMMUTABLE SALE ITEM
+                    //
+                    // Everything below is now stored inside
+                    // StaffSale.
+                    //
+                    // Future changes to Product do not alter
+                    // these values.
+                    // ======================================
+
                     saleProducts.push({
 
                         productId:
                             product._id,
 
-                        name:
-                            product.name,
+                        name,
 
-                        image:
-                            product.image ||
-                            cartItem.image ||
-                            "",
+                        image,
 
                         category,
 
-                        subcategory:
-                            product.subcategory ||
-                            "",
+                        subcategory,
 
                         qty,
 
@@ -951,9 +1125,28 @@ async function createStaffSale(
                 }
 
 
-                // ------------------------------------------
+                // ==========================================
+                // FINAL SALE ITEM VALIDATION
+                // ==========================================
+
+                if (
+                    !saleProducts.length
+                ) {
+
+                    throw new Error(
+                        "The staff sale contains no products."
+                    );
+                }
+
+
+                // ==========================================
                 // REDUCE PRODUCT INVENTORY
-                // ------------------------------------------
+                //
+                // This does NOT modify saleProducts.price.
+                //
+                // saleProducts is already the historical
+                // snapshot.
+                // ==========================================
 
                 for (
                     const saleItem
@@ -1029,9 +1222,9 @@ async function createStaffSale(
                 }
 
 
-                // ------------------------------------------
+                // ==========================================
                 // SUBSTATION INVENTORY
-                // ------------------------------------------
+                // ==========================================
 
                 if (
                     !Array.isArray(
@@ -1088,10 +1281,18 @@ async function createStaffSale(
                     }
 
 
+                    // --------------------------------------
+                    // REDUCE SUBSTATION INVENTORY
+                    // --------------------------------------
+
                     inventoryItem.units =
                         available -
                         saleItem.qty;
 
+
+                    // --------------------------------------
+                    // SNAPSHOT PRODUCT NAME IN INVENTORY
+                    // --------------------------------------
 
                     inventoryItem.productName =
                         saleItem.name;
@@ -1102,9 +1303,9 @@ async function createStaffSale(
                 }
 
 
-                // ------------------------------------------
+                // ==========================================
                 // PRODUCT REDUCTIONS
-                // ------------------------------------------
+                // ==========================================
 
                 for (
                     const saleItem
@@ -1181,9 +1382,9 @@ async function createStaffSale(
                 }
 
 
-                // ------------------------------------------
+                // ==========================================
                 // SAVE SUBSTATION
-                // ------------------------------------------
+                // ==========================================
 
                 await substation.save({
 
@@ -1192,9 +1393,16 @@ async function createStaffSale(
                 });
 
 
-                // ------------------------------------------
+                // ==========================================
                 // CREATE STAFF SALE
-                // ------------------------------------------
+                //
+                // IMPORTANT:
+                //
+                // saleProducts is now the complete historical
+                // snapshot.
+                //
+                // Nothing here references Product.unitSellPrice.
+                // ==========================================
 
                 sale =
                     new StaffSale({
@@ -1219,9 +1427,14 @@ async function createStaffSale(
                 });
 
 
-                // ------------------------------------------
+                // ==========================================
                 // CLEAR STAFF CART
-                // ------------------------------------------
+                //
+                // The cart is temporary.
+                //
+                // The StaffSale is the permanent transaction
+                // record.
+                // ==========================================
 
                 cart.items =
                     [];
@@ -1247,6 +1460,10 @@ async function createStaffSale(
 
 // ==========================================================
 // CALCULATE TOTAL
+//
+// Uses cart snapshot prices.
+//
+// Does NOT query Product.
 // ==========================================================
 
 function calculateTotal(cart) {
