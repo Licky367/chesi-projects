@@ -1,0 +1,59 @@
+          <!-- =================================================
+               ALLOCATION SUMMARY
+          ================================================== -->
+
+          <div class="allocation-summary">
+
+
+            <div>
+
+              <span>
+                Warehouse available
+              </span>
+
+              <strong>
+                <%= Number(
+                  stock.units || 0
+                ).toLocaleString() %>
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Being dispatched
+              </span>
+
+              <strong id="summaryTotal">
+                0
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Remaining warehouse
+              </span>
+
+              <strong id="summaryRemaining">
+
+                <%= Number(
+                  stock.units || 0
+                ).toLocaleString() %>
+
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <div
+            id="allocationWarning"
+            class="error allocation-warning"
+            hidden
+          ></div>
