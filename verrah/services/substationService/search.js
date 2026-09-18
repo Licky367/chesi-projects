@@ -19,22 +19,6 @@ const Category =
 // ==========================================================
 // SEARCH PRODUCTS WITHIN SUBSTATION
 // ==========================================================
-//
-// Searches products allocated to a specific substation.
-//
-// Supported search fields:
-//
-//     Product name
-//     Category name
-//
-// Example:
-//
-//     await substationService.search(
-//         substationId,
-//         "lotion"
-//     );
-//
-// ==========================================================
 
 exports.search = async (
     substationId,
@@ -66,11 +50,6 @@ exports.search = async (
 
     // --------------------------------------------------------
     // EMPTY SEARCH
-    // --------------------------------------------------------
-    //
-    // Do not perform a broad product search when
-    // no search term was supplied.
-    //
     // --------------------------------------------------------
 
     if (!search) {
@@ -131,20 +110,19 @@ exports.search = async (
 
 
     // --------------------------------------------------------
-    // SEARCH PRODUCTS BY NAME
-    // --------------------------------------------------------
-    //
-    // Category IDs are handled separately below because
-    // Product.category may contain an ObjectId.
-    //
+    // SEARCH REGEX
     // --------------------------------------------------------
 
-    const nameRegex =
+    const searchRegex =
         new RegExp(
             escapeRegex(search),
             "i"
         );
 
+
+    // --------------------------------------------------------
+    // SEARCH PRODUCTS BY NAME
+    // --------------------------------------------------------
 
     const productsByName =
         await Product
@@ -158,7 +136,7 @@ exports.search = async (
                     true,
 
                 name:
-                    nameRegex
+                    searchRegex
             })
             .sort({
                 name:
@@ -171,11 +149,11 @@ exports.search = async (
     // FIND CATEGORIES MATCHING SEARCH
     // --------------------------------------------------------
 
-    const categories =
+    const matchingCategories =
         await Category
             .find({
                 name:
-                    nameRegex
+                    searchRegex
             })
             .select(
                 "_id name"
@@ -183,8 +161,8 @@ exports.search = async (
             .lean();
 
 
-    const categoryIds =
-        categories.map(
+    const matchingCategoryIds =
+        matchingCategories.map(
             category =>
                 category._id
         );
@@ -195,7 +173,7 @@ exports.search = async (
     // --------------------------------------------------------
 
     const productsByCategory =
-        categoryIds.length
+        matchingCategoryIds.length
             ? await Product
                 .find({
                     _id: {
@@ -208,7 +186,7 @@ exports.search = async (
 
                     category: {
                         $in:
-                            categoryIds
+                            matchingCategoryIds
                     }
                 })
                 .sort({
@@ -223,8 +201,8 @@ exports.search = async (
     // COMBINE RESULTS
     // --------------------------------------------------------
     //
-    // A product can match both name and category.
-    // Use a Map to prevent duplicates.
+    // A product may match by both name and category.
+    // Map prevents duplicate products.
     //
     // --------------------------------------------------------
 
@@ -251,6 +229,67 @@ exports.search = async (
 
 
     // --------------------------------------------------------
+    // NO RESULTS
+    // --------------------------------------------------------
+
+    if (!productMap.size) {
+        return [];
+    }
+
+
+    // --------------------------------------------------------
+    // GET CATEGORY IDS FROM RETURNED PRODUCTS
+    // --------------------------------------------------------
+    //
+    // IMPORTANT:
+    // Do NOT only use matchingCategoryIds here.
+    //
+    // A product can match the search by NAME while its
+    // category does not match the search term.
+    //
+    // Therefore we must load the categories belonging to
+    // every product that will actually reach the view.
+    //
+    // --------------------------------------------------------
+
+    const returnedProducts =
+        Array.from(
+            productMap.values()
+        );
+
+
+    const returnedCategoryIds =
+        returnedProducts
+            .map(
+                product =>
+                    product.category
+            )
+            .filter(
+                Boolean
+            );
+
+
+    // --------------------------------------------------------
+    // GET CATEGORY NAMES FOR ALL RETURNED PRODUCTS
+    // --------------------------------------------------------
+
+    const categories =
+        returnedCategoryIds.length
+            ? await Category
+                .find({
+                    _id: {
+                        $in:
+                            returnedCategoryIds
+                    }
+                })
+                .select(
+                    "_id name"
+                )
+                .lean()
+            : [];
+
+
+    // --------------------------------------------------------
     // CATEGORY MAP
     // --------------------------------------------------------
 
@@ -273,80 +312,120 @@ exports.search = async (
     // --------------------------------------------------------
 
     const results =
-        Array.from(
-            productMap.values()
-        )
-        .map(
-            product => {
+        returnedProducts
+            .map(
+                product => {
 
-                const inventoryEntry =
-                    inventory.find(
-                        item =>
-                            String(
-                                item.productId
-                            ) ===
-                            String(
-                                product._id
-                            )
-                    );
+                    // --------------------------------------------
+                    // FIND SUBSTATION INVENTORY ENTRY
+                    // --------------------------------------------
 
-
-                const categoryId =
-                    product.category;
+                    const inventoryEntry =
+                        inventory.find(
+                            item =>
+                                String(
+                                    item.productId
+                                ) ===
+                                String(
+                                    product._id
+                                )
+                        );
 
 
-                const categoryName =
-                    categoryId &&
-                    categoryMap.has(
-                        String(
-                            categoryId
-                        )
-                    )
-                        ? categoryMap.get(
+                    // --------------------------------------------
+                    // PRODUCT CATEGORY
+                    // --------------------------------------------
+
+                    const categoryId =
+                        product.category;
+
+
+                    const categoryName =
+                        categoryId &&
+                        categoryMap.has(
                             String(
                                 categoryId
                             )
                         )
-                        : "";
+                            ? categoryMap.get(
+                                String(
+                                    categoryId
+                                )
+                            )
+                            : (
+                                typeof categoryId ===
+                                "string"
+                                    ? categoryId
+                                    : ""
+                            );
 
 
-                return {
+                    // --------------------------------------------
+                    // RETURN PRODUCT
+                    // --------------------------------------------
 
-                    ...product,
+                    return {
 
-                    // ------------------------------------------------
-                    // CATEGORY NAME FOR VIEW
-                    // ------------------------------------------------
+                        ...product,
 
-                    category:
-                        categoryName ||
-                        (
-                            typeof categoryId ===
-                            "string"
-                                ? categoryId
-                                : ""
-                        ),
 
-                    // ------------------------------------------------
-                    // SUBSTATION UNITS
-                    // ------------------------------------------------
+                        // ------------------------------------------------
+                        // CATEGORY NAME
+                        // ------------------------------------------------
+                        //
+                        // `category` now reaches the EJS view as the
+                        // actual category name.
+                        //
+                        // Example:
+                        //
+                        // category: "Body Lotions"
+                        //
+                        // ------------------------------------------------
 
-                    substationUnits:
-                        Number(
-                            inventoryEntry?.units ||
-                            0
-                        ),
+                        category:
+                            categoryName,
 
-                    // ------------------------------------------------
-                    // SUBSTATION INVENTORY PRODUCT ID
-                    // ------------------------------------------------
 
-                    substationInventoryId:
-                        inventoryEntry?.productId ||
-                        product._id
-                };
-            }
-        );
+                        // ------------------------------------------------
+                        // EXPLICIT CATEGORY NAME
+                        // ------------------------------------------------
+                        //
+                        // Also expose categoryName directly so the view
+                        // can use either:
+                        //
+                        // product.category
+                        //
+                        // or:
+                        //
+                        // product.categoryName
+                        //
+                        // ------------------------------------------------
+
+                        categoryName:
+                            categoryName,
+
+
+                        // ------------------------------------------------
+                        // SUBSTATION UNITS
+                        // ------------------------------------------------
+
+                        substationUnits:
+                            Number(
+                                inventoryEntry?.units ||
+                                0
+                            ),
+
+
+                        // ------------------------------------------------
+                        // SUBSTATION INVENTORY PRODUCT ID
+                        // ------------------------------------------------
+
+                        substationInventoryId:
+                            inventoryEntry?.productId ||
+                            product._id
+                    };
+                }
+            );
 
 
     // --------------------------------------------------------
@@ -364,6 +443,10 @@ exports.search = async (
             )
     );
 
+
+    // --------------------------------------------------------
+    // RETURN
+    // --------------------------------------------------------
 
     return results;
 };
