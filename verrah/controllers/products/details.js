@@ -35,7 +35,8 @@ exports.details = async (req, res) => {
                         title:
                             "Product not found | Verrah Cosmetics",
 
-                        product: null,
+                        product:
+                            null,
 
                         error:
                             "Product not found."
@@ -90,7 +91,8 @@ exports.details = async (req, res) => {
                     title:
                         "Product | Verrah Cosmetics",
 
-                    product: null,
+                    product:
+                        null,
 
                     error:
                         "Product not found."
@@ -106,15 +108,17 @@ exports.details = async (req, res) => {
 // POST /products/:id/update
 // ==========================================================
 //
-// Admin-only price update.
+// Updates the product sell price.
 //
-// Expected body:
+// URL:
 //
-//     productId
+//     /products/:id/update
+//
+// Body:
+//
 //     unitSellPrice
 //
-// The route/middleware is responsible for ensuring that
-// only an admin can reach this controller.
+// The route should be protected by requireAdmin.
 //
 // ==========================================================
 
@@ -122,10 +126,14 @@ exports.updateProduct = async (req, res) => {
 
     try {
 
+        const productId =
+            req.params.id;
+
+
         const {
-            productId,
             unitSellPrice
-        } = req.body;
+        } =
+            req.body;
 
 
         // ====================================================
@@ -180,29 +188,14 @@ exports.updateProduct = async (req, res) => {
 
 
         // ====================================================
-        // RETURN TO PRODUCT WHEN POSSIBLE
+        // RETURN TO PRODUCT
         // ====================================================
 
-        if (req.body && req.body.productId) {
-
-            return res.redirect(
-                `/products/${req.body.productId}?error=${encodeURIComponent(
-                    "Failed to update product price."
-                )}`
-            );
-
-        }
-
-
-        // ====================================================
-        // NO PRODUCT ID
-        // ====================================================
-
-        return res
-            .status(400)
-            .send(
+        return res.redirect(
+            `/products/${req.params.id}?error=${encodeURIComponent(
                 "Failed to update product price."
-            );
+            )}`
+        );
 
     }
 
