@@ -175,7 +175,7 @@ router.get(
 router.post(
   "/:id/update",
   requireAdmin,
-  controller.details
+  controller.updateProduct
 );
 
 
