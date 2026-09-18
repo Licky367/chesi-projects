@@ -3,7 +3,7 @@
 // LIST SUBSTATIONS
 // ==========================================================
 
-const Substation = require("../models/substations");
+const Substation = require("../../models/substations");
 const {
     prepareSubstations
 } = require("./helpers");
