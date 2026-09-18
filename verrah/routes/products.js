@@ -3,9 +3,11 @@
 // PRODUCT + CATEGORY ROUTES
 // ==========================================================
 
-const express = require("express");
+const express =
+  require("express");
 
-const router = express.Router();
+const router =
+  express.Router();
 
 
 // ----------------------------------------------------------
@@ -83,17 +85,6 @@ router.get(
   categoryController.addForm
 );
 
-// ----------------------------------------------------------
-// UPDATE PRODUCT
-// ----------------------------------------------------------
-
-router.post(
-  "/:id/update",
-  requireAdmin,
-  controller.updateProduct
-);
-
-
 
 // ----------------------------------------------------------
 // CREATE CATEGORY
@@ -124,7 +115,9 @@ router.post(
 // Used by the admin Edit button.
 //
 // Example:
+//
 // /products/category/add/68abc123...
+//
 // ----------------------------------------------------------
 
 router.get(
@@ -163,8 +156,36 @@ router.get(
 
 
 // ==========================================================
+// PRODUCT UPDATE
+// ==========================================================
+//
+// UPDATE PRODUCT SELL PRICE
+//
+// POST /products/:id/update
+//
+// Admin only.
+//
+// IMPORTANT:
+// This must come BEFORE:
+//
+//     GET /products/:id
+//
+// ----------------------------------------------------------
+
+router.post(
+  "/:id/update",
+  requireAdmin,
+  controller.updateProduct
+);
+
+
+// ==========================================================
 // PRODUCT DETAILS
 // ==========================================================
+//
+// GET /products/:id
+//
+// ----------------------------------------------------------
 
 router.get(
   "/:id",
@@ -175,6 +196,10 @@ router.get(
 // ==========================================================
 // ADD PRODUCT TO CART
 // ==========================================================
+//
+// POST /products/:id/cart
+//
+// ----------------------------------------------------------
 
 router.post(
   "/:id/cart",
@@ -187,4 +212,5 @@ router.post(
 // EXPORT
 // ==========================================================
 
-module.exports = router;
+module.exports =
+  router;
