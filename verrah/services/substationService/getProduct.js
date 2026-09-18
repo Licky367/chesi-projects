@@ -5,9 +5,9 @@
 
 const mongoose = require("mongoose");
 
-const Substation = require("../models/substations");
-const Product = require("../models/products");
-const Category = require("../models/category");
+const Substation = require("../../models/substations");
+const Product = require("../../models/products");
+const Category = require("../../models/category");
 
 exports.getProduct = async (id) => {
     if (!mongoose.isValidObjectId(id)) {
