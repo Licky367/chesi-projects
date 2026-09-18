@@ -137,7 +137,7 @@ exports.updateProduct = async (req, res) => {
 
 
         // ====================================================
-        // UPDATE PRICE
+        // UPDATE PRODUCT
         // ====================================================
 
         const result =
@@ -177,7 +177,7 @@ exports.updateProduct = async (req, res) => {
         );
 
         console.error(
-            "UPDATE PRODUCT PRICE ERROR"
+            "UPDATE PRODUCT ERROR"
         );
 
         console.error(
@@ -193,7 +193,7 @@ exports.updateProduct = async (req, res) => {
 
         return res.redirect(
             `/products/${req.params.id}?error=${encodeURIComponent(
-                "Failed to update product price."
+                "Failed to update product."
             )}`
         );
 
