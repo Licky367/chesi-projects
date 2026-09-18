@@ -76,7 +76,6 @@ router.post(
 
 router.get(
     "/:id/search",
-    requireAdmin,
     controller.searchPage
 );
 
