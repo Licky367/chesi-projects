@@ -17,7 +17,9 @@
     <% } %>
 
     <% if (saved === "1") { %>
-      <div class="notice">Stock subcategory saved successfully.</div>
+      <div class="notice">
+        Stock subcategory saved successfully.
+      </div>
     <% } %>
 
 
@@ -145,7 +147,7 @@
             type="number"
             min="0"
             step="1"
-            value="<%= old?.units ?? old?.additionalUnits ?? '' %>"
+            value="<%= old?.units ?? '' %>"
             required
             inputmode="numeric"
             aria-describedby="unitsHelp unitsValidation"
@@ -184,7 +186,6 @@
             min="0"
             step="0.01"
             value="<%= old?.buyPrice ?? '' %>"
-            required
             inputmode="decimal"
             aria-describedby="buyPriceHelp buyPriceValidation"
           >
@@ -193,7 +194,7 @@
             class="form-help"
             id="buyPriceHelp"
           >
-            Buy price per unit.
+            Purchase cost per unit for the initial FIFO stock batch.
           </small>
 
           <small
@@ -277,6 +278,35 @@
 
 
       <!-- ====================================================
+           FIFO INFORMATION
+      ===================================================== -->
+
+      <div
+        class="fifo-info-card"
+        id="fifoInfoCard"
+      >
+
+        <div class="fifo-info-icon">
+          <i class="fas fa-layer-group"></i>
+        </div>
+
+        <div class="fifo-info-content">
+
+          <strong>
+            FIFO stock costing
+          </strong>
+
+          <p id="fifoInfoText">
+            Each new stock purchase is stored as a separate FIFO
+            purchase batch. Older stock is used before newer stock.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- ====================================================
            EDIT MODE STOCK SUMMARY
       ===================================================== -->
 
@@ -319,11 +349,28 @@
         >
 
           <strong>
-            Additional units:
+            New FIFO batch units:
           </strong>
 
           <span id="additionalUnits">
             0
+          </span>
+
+        </div>
+
+
+        <div
+          class="stock-summary-row"
+          id="newBatchPriceRow"
+          hidden
+        >
+
+          <strong>
+            New FIFO batch price:
+          </strong>
+
+          <span id="newBatchPrice">
+            —
           </span>
 
         </div>
@@ -612,6 +659,56 @@
 
 
 /* ==========================================================
+   FIFO INFORMATION
+========================================================== */
+
+.fifo-info-card{
+  width:100%;
+  box-sizing:border-box;
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+  margin:24px 0;
+  padding:16px 18px;
+  border:1px solid #c5e1a5;
+  border-radius:14px;
+  background:#f8fdf6;
+  color:#173d30;
+}
+
+.fifo-info-icon{
+  flex:0 0 38px;
+  width:38px;
+  height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  background:#e8f5e9;
+  color:#0a4d1e;
+  font-size:1rem;
+}
+
+.fifo-info-content{
+  min-width:0;
+}
+
+.fifo-info-content strong{
+  display:block;
+  margin-bottom:4px;
+  color:#0a4d1e;
+  font-size:.96rem;
+}
+
+.fifo-info-content p{
+  margin:0;
+  color:#456052;
+  font-size:.9rem;
+  line-height:1.5;
+}
+
+
+/* ==========================================================
    STOCK EDIT SUMMARY
 ========================================================== */
 
@@ -653,6 +750,7 @@
 .stock-summary-message{
   margin-top:10px;
   font-size:.9rem;
+  line-height:1.5;
   color:#456052;
 }
 
@@ -707,6 +805,10 @@
     align-items:flex-start;
     flex-direction:column;
     gap:3px;
+  }
+
+  .fifo-info-card{
+    align-items:flex-start;
   }
 
 }
@@ -770,6 +872,12 @@
   const additionalUnitsRow =
     document.getElementById("additionalUnitsRow");
 
+  const newBatchPriceRow =
+    document.getElementById("newBatchPriceRow");
+
+  const newBatchPrice =
+    document.getElementById("newBatchPrice");
+
   const stockSummaryMessage =
     document.getElementById("stockSummaryMessage");
 
@@ -804,20 +912,32 @@
 
 
   /*
-   * IMPORTANT:
+   * IMPORTANT FIFO RULE:
    *
-   * In EDIT MODE:
+   * CREATE:
    *
-   * units = NEW TOTAL UNITS
+   * units = initial warehouse units
+   * buyPrice = cost of the initial FIFO batch
    *
-   * It is NOT additionalUnits.
    *
-   * Example:
+   * EDIT:
    *
-   * Current = 100
-   * Enter = 130
+   * units = NEW TOTAL warehouse units
    *
-   * Additional = 30
+   * If:
+   *
+   * current = 100
+   * new total = 130
+   *
+   * additional = 30
+   *
+   * The backend creates:
+   *
+   *     30 new FIFO units
+   *
+   * using the newly supplied buy price.
+   *
+   * Existing FIFO batches are NOT repriced.
    */
 
 
@@ -833,8 +953,13 @@
   <% } %>
 
 
-  if (!Number.isFinite(existingUnits) || existingUnits < 0){
+  if(
+    !Number.isFinite(existingUnits) ||
+    existingUnits < 0
+  ){
+
     existingUnits = 0;
+
   }
 
 
@@ -850,6 +975,7 @@
     return Number.isFinite(value)
       ? value
       : 0;
+
   }
 
 
@@ -857,30 +983,63 @@
 
     return Number(value || 0)
       .toLocaleString();
+
+  }
+
+
+  function formatPrice(value){
+
+    const number =
+      Number(value);
+
+    if(
+      !Number.isFinite(number)
+    ){
+
+      return "—";
+
+    }
+
+    return number.toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+      }
+    );
+
   }
 
 
   function clearUnitsValidation(){
 
-    unitsValidation.hidden = true;
-    unitsValidation.textContent = "";
+    unitsValidation.hidden =
+      true;
+
+    unitsValidation.textContent =
+      "";
 
     units.classList.remove(
       "stock-invalid",
       "stock-valid"
     );
+
   }
 
 
   function clearBuyPriceValidation(){
 
-    buyPriceValidation.hidden = true;
-    buyPriceValidation.textContent = "";
+    buyPriceValidation.hidden =
+      true;
+
+    buyPriceValidation.textContent =
+      "";
 
     buyPrice.classList.remove(
       "stock-invalid",
       "stock-valid"
     );
+
   }
 
 
@@ -888,60 +1047,65 @@
      BUY PRICE REQUIREMENT
   ======================================================== */
 
-  function updateBuyPriceRequirement(additional){
+  function updateBuyPriceRequirement(
+    additional
+  ){
 
     clearBuyPriceValidation();
 
 
+    /* ------------------------------------------------------
+       CREATE MODE
+    ------------------------------------------------------ */
+
     if(!editMode){
 
-      buyPrice.required = true;
+      buyPrice.required =
+        true;
 
-      buyPriceLabel.innerHTML =
-        'Buy price per unit';
+      buyPriceLabel.textContent =
+        "Buy price per unit";
 
       buyPriceHelp.textContent =
-        "Buy price per unit.";
+        "Purchase cost per unit for the initial FIFO stock batch.";
 
       return;
+
     }
 
 
-    /*
-     * Existing quantity unchanged:
-     *
-     * No new purchase is being made.
-     *
-     * Therefore a new buy price is NOT required.
-     */
+    /* ------------------------------------------------------
+       EDIT MODE — NO NEW STOCK
+    ------------------------------------------------------ */
 
     if(additional <= 0){
 
-      buyPrice.required = false;
+      buyPrice.required =
+        false;
 
       buyPriceLabel.innerHTML =
         'Buy price per unit <span class="optional">(not required when units are unchanged)</span>';
 
       buyPriceHelp.textContent =
-        "A buy price is required only when adding new units.";
+        "Existing FIFO purchase batches keep their original buy prices. A new price is required only when adding units.";
 
       return;
+
     }
 
 
-    /*
-     * Additional units exist.
-     *
-     * A buy price MUST be entered.
-     */
+    /* ------------------------------------------------------
+       EDIT MODE — NEW FIFO BATCH
+    ------------------------------------------------------ */
 
-    buyPrice.required = true;
+    buyPrice.required =
+      true;
 
     buyPriceLabel.innerHTML =
-      'Buy price for additional units <span class="buy-price-required-note">*</span>';
+      'Buy price for new FIFO batch <span class="buy-price-required-note">*</span>';
 
     buyPriceHelp.textContent =
-      "Required because additional units are being added.";
+      "This price applies only to the additional units being added. Existing FIFO batches are not repriced.";
 
   }
 
@@ -959,68 +1123,92 @@
       Number(units.value);
 
 
-    if(!Number.isFinite(entered)){
+    if(
+      units.value.trim() === "" ||
+      !Number.isFinite(entered)
+    ){
 
-      unitsValidation.hidden = false;
+      unitsValidation.hidden =
+        false;
 
       unitsValidation.textContent =
         editMode
           ? "Enter the new total number of warehouse units."
           : "Enter the initial number of warehouse units.";
 
-      units.classList.add("stock-invalid");
+      units.classList.add(
+        "stock-invalid"
+      );
 
       return false;
+
     }
 
 
     if(!Number.isInteger(entered)){
 
-      unitsValidation.hidden = false;
+      unitsValidation.hidden =
+        false;
 
       unitsValidation.textContent =
         "Units must be a whole number.";
 
-      units.classList.add("stock-invalid");
+      units.classList.add(
+        "stock-invalid"
+      );
 
       return false;
+
     }
 
 
     if(entered < 0){
 
-      unitsValidation.hidden = false;
+      unitsValidation.hidden =
+        false;
 
       unitsValidation.textContent =
         "Units cannot be negative.";
 
-      units.classList.add("stock-invalid");
+      units.classList.add(
+        "stock-invalid"
+      );
 
       return false;
+
     }
 
 
     /*
      * EDIT MODE:
      *
-     * Never allow the new total to be
-     * less than the current quantity.
+     * The new total can never be below
+     * the existing warehouse quantity.
      */
 
-    if(editMode && entered < existingUnits){
+    if(
+      editMode &&
+      entered < existingUnits
+    ){
 
-      unitsValidation.hidden = false;
+      unitsValidation.hidden =
+        false;
 
       unitsValidation.textContent =
         `The new units cannot be less than the current ${formatNumber(existingUnits)} units.`;
 
-      units.classList.add("stock-invalid");
+      units.classList.add(
+        "stock-invalid"
+      );
 
       return false;
+
     }
 
 
-    units.classList.add("stock-valid");
+    units.classList.add(
+      "stock-valid"
+    );
 
     return true;
 
@@ -1031,29 +1219,36 @@
      VALIDATE BUY PRICE
   ======================================================== */
 
-  function validateBuyPrice(additional){
+  function validateBuyPrice(
+    additional
+  ){
 
     clearBuyPriceValidation();
 
 
-    /*
-     * Create mode:
-     *
-     * Buy price is always required.
-     */
+    /* ------------------------------------------------------
+       CREATE MODE
+    ------------------------------------------------------ */
 
     if(!editMode){
 
+      const raw =
+        String(
+          buyPrice.value || ""
+        ).trim();
+
       const value =
-        Number(buyPrice.value);
+        Number(raw);
 
 
       if(
+        raw === "" ||
         !Number.isFinite(value) ||
         value < 0
       ){
 
-        buyPriceValidation.hidden = false;
+        buyPriceValidation.hidden =
+          false;
 
         buyPriceValidation.textContent =
           "Enter a valid buy price.";
@@ -1063,6 +1258,7 @@
         );
 
         return false;
+
       }
 
 
@@ -1071,32 +1267,32 @@
       );
 
       return true;
+
     }
 
 
-    /*
-     * EDIT MODE:
-     *
-     * No additional units:
-     * buy price not required.
-     */
+    /* ------------------------------------------------------
+       EDIT MODE — NO ADDITION
+    ------------------------------------------------------ */
 
     if(additional <= 0){
 
-      buyPrice.required = false;
+      buyPrice.required =
+        false;
 
       return true;
+
     }
 
 
-    /*
-     * Additional units exist:
-     *
-     * Buy price is mandatory.
-     */
+    /* ------------------------------------------------------
+       EDIT MODE — ADDITIONAL FIFO BATCH
+    ------------------------------------------------------ */
 
     const raw =
-      String(buyPrice.value || "").trim();
+      String(
+        buyPrice.value || ""
+      ).trim();
 
     const value =
       Number(raw);
@@ -1108,16 +1304,18 @@
       value < 0
     ){
 
-      buyPriceValidation.hidden = false;
+      buyPriceValidation.hidden =
+        false;
 
       buyPriceValidation.textContent =
-        "A buy price for the additional units is required.";
+        "A buy price for the new FIFO batch is required.";
 
       buyPrice.classList.add(
         "stock-invalid"
       );
 
       return false;
+
     }
 
 
@@ -1138,7 +1336,8 @@
 
     if(!editMode){
 
-      summary.hidden = true;
+      summary.hidden =
+        true;
 
       return;
 
@@ -1172,31 +1371,68 @@
       formatNumber(additional);
 
 
-    summary.hidden = false;
+    summary.hidden =
+      false;
 
 
     if(additional > 0){
 
-      additionalUnitsRow.hidden = false;
+      additionalUnitsRow.hidden =
+        false;
+
+      newBatchPriceRow.hidden =
+        false;
+
+
+      const price =
+        Number(buyPrice.value);
+
+
+      if(
+        Number.isFinite(price) &&
+        price >= 0
+      ){
+
+        newBatchPrice.textContent =
+          formatPrice(price);
+
+      }else{
+
+        newBatchPrice.textContent =
+          "Required";
+
+      }
+
 
       stockSummaryMessage.textContent =
-        `${formatNumber(additional)} additional unit${additional === 1 ? "" : "s"} will be added. A buy price for these additional units is required.`;
+        `${formatNumber(additional)} additional unit${additional === 1 ? "" : "s"} will be added as a new FIFO purchase batch. The existing stock batches and their original prices will remain unchanged.`;
 
-      updateBuyPriceRequirement(additional);
+
+      updateBuyPriceRequirement(
+        additional
+      );
 
     }else{
 
-      additionalUnitsRow.hidden = true;
+      additionalUnitsRow.hidden =
+        true;
+
+      newBatchPriceRow.hidden =
+        true;
 
       stockSummaryMessage.textContent =
-        "No additional units will be added. The current warehouse quantity will remain unchanged.";
+        "No additional units will be added. Existing FIFO purchase batches will remain unchanged.";
 
-      updateBuyPriceRequirement(0);
+      updateBuyPriceRequirement(
+        0
+      );
 
     }
 
 
-    if(safeEntered < existingUnits){
+    if(
+      safeEntered < existingUnits
+    ){
 
       summary.classList.add(
         "stock-invalid-summary"
@@ -1227,45 +1463,50 @@
       ];
 
 
-    items.forEach((item,index)=>{
+    items.forEach(
+      (item,index)=>{
 
-      item.dataset.index =
-        index;
+        item.dataset.index =
+          index;
 
 
-      const number =
-        item.querySelector(
-          ".direction-item-number"
-        );
+        const number =
+          item.querySelector(
+            ".direction-item-number"
+          );
 
-      if(number){
 
-        number.textContent =
-          index + 1;
+        if(number){
+
+          number.textContent =
+            index + 1;
+
+        }
+
+
+        item
+          .querySelectorAll(
+            "input,textarea"
+          )
+          .forEach(
+            field=>{
+
+              const type =
+                field.name.includes(
+                  "subtitle"
+                )
+                  ? "subtitle"
+                  : "content";
+
+
+              field.name =
+                `directionsOfUse[items][${index}][${type}]`;
+
+            }
+          );
 
       }
-
-
-      item
-        .querySelectorAll(
-          "input,textarea"
-        )
-        .forEach(field=>{
-
-          const type =
-            field.name.includes(
-              "subtitle"
-            )
-              ? "subtitle"
-              : "content";
-
-
-          field.name =
-            `directionsOfUse[items][${index}][${type}]`;
-
-        });
-
-    });
+    );
 
 
     directionsEmpty.hidden =
@@ -1286,7 +1527,9 @@
 
 
     const item =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
 
     item.className =
@@ -1385,12 +1628,14 @@
         "#directionsList textarea," +
         "#directionsTitle"
       )
-      .forEach(el=>{
+      .forEach(
+        el=>{
 
-        el.disabled =
-          disabled;
+          el.disabled =
+            disabled;
 
-      });
+        }
+      );
 
   }
 
@@ -1410,12 +1655,16 @@
 
 
       if(!btn){
+
         return;
+
       }
 
 
       btn
-        .closest(".direction-item")
+        .closest(
+          ".direction-item"
+        )
         ?.remove();
 
 
@@ -1490,6 +1739,7 @@
     function(){
 
       validateUnits();
+
       updateSummary();
 
     }
@@ -1517,13 +1767,50 @@
           : 0;
 
 
-      if(editMode && additional > 0){
+      if(editMode){
+
+        updateSummary();
+
+      }
+
+
+      if(
+        !editMode ||
+        additional > 0
+      ){
 
         validateBuyPrice(
           additional
         );
 
       }
+
+    }
+  );
+
+
+  buyPrice.addEventListener(
+    "change",
+    function(){
+
+      const entered =
+        Number(units.value);
+
+
+      const additional =
+        editMode
+          ? Math.max(
+              0,
+              entered - existingUnits
+            )
+          : 0;
+
+
+      validateBuyPrice(
+        additional
+      );
+
+      updateSummary();
 
     }
   );
@@ -1591,6 +1878,7 @@
 
         updateSummary();
 
+
         if(!unitsValid){
 
           units.focus();
@@ -1601,6 +1889,7 @@
 
         }
 
+
         return false;
 
       }
@@ -1609,16 +1898,21 @@
       /*
        * IMPORTANT:
        *
-       * We deliberately submit:
+       * The form submits:
        *
-       * units = NEW TOTAL
+       *     units = NEW TOTAL
        *
-       * The backend will calculate:
+       * It does NOT submit additionalUnits.
        *
-       * additionalUnits =
-       * newTotal - currentUnits
+       * The service calculates:
        *
-       * and add only the difference.
+       *     additionalUnits =
+       *       newTotal - currentUnits
+       *
+       * and creates a new FIFO batch only
+       * for that difference.
+       *
+       * Existing FIFO batches are preserved.
        */
 
 
@@ -1637,9 +1931,9 @@
 
   if(editMode){
 
-    /* -----------------------------------------------
+    /* ------------------------------------------------------
        EDIT MODE
-    ------------------------------------------------ */
+    ------------------------------------------------------ */
 
     units.name =
       "units";
@@ -1664,13 +1958,15 @@
 
 
     /*
-     * Existing units are displayed as the
-     * current starting point.
+     * Existing quantity is the default
+     * starting point.
      */
 
     if(
       !units.value ||
-      Number.isNaN(Number(units.value))
+      Number.isNaN(
+        Number(units.value)
+      )
     ){
 
       units.value =
@@ -1680,22 +1976,24 @@
 
 
     /*
-     * IMPORTANT:
+     * Do NOT automatically use the old
+     * buyPrice as the new FIFO purchase price.
      *
-     * Do NOT automatically copy old buyPrice
-     * into a new purchase transaction.
-     *
-     * If units increase, the user must
-     * explicitly provide the new buy price.
+     * A new price must be explicitly entered
+     * whenever additional units are added.
      */
+
+    buyPrice.required =
+      false;
+
 
     updateSummary();
 
   }else{
 
-    /* -----------------------------------------------
+    /* ------------------------------------------------------
        CREATE MODE
-    ------------------------------------------------ */
+    ------------------------------------------------------ */
 
     units.name =
       "units";
@@ -1712,7 +2010,7 @@
 
 
     unitsHelp.textContent =
-      "Units for a new subcategory.";
+      "These units will form the initial FIFO purchase batch.";
 
 
     buyPrice.required =
@@ -1724,7 +2022,7 @@
 
 
     buyPriceHelp.textContent =
-      "Buy price per unit.";
+      "Purchase cost per unit for the initial FIFO stock batch.";
 
 
     submitButton.innerHTML =
