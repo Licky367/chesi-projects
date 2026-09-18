@@ -88,9 +88,9 @@ router.get(
 // ----------------------------------------------------------
 
 router.post(
-  "/update",
+  "/:id/update",
   requireAdmin,
-  controller.create
+  controller.updateProduct
 );
 
 
