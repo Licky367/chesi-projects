@@ -209,7 +209,7 @@ exports.updateProduct = async (
         // ----------------------------------------------------
 
         return res.redirect(
-            `/products/${result.product._id}`
+            `/substations/product/${result.product._id}`
         );
 
     } catch (err) {
