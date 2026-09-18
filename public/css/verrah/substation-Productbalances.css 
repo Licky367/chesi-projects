@@ -1,418 +1,62 @@
 /* =========================================================
-   VERRAH COSMETICS
    SUBSTATION BALANCES
-   BROWN DISTRIBUTION THEME
+   EDIT INPUT + SAVE BUTTON
+   VERRAH COSMETICS
 ========================================================= */
 
 
 /* =========================================================
-   MAIN CONTAINER
+   UNITS EDIT INPUT
 ========================================================= */
 
-.distribution-panel {
+.sales-table input[type="number"]{
+    width:90px;
+    max-width:100%;
+    height:40px;
 
-    width: 100%;
-    max-width: 100%;
+    padding:0 10px;
 
-    margin: 20px 0 0;
+    background:#ffffff;
+    color:var(--text);
 
-    background: var(--white);
+    border:1.5px solid var(--border);
+    border-radius:8px;
 
-    border: 1px solid var(--border);
+    font-size:14px;
+    font-weight:600;
 
-    border-radius: 12px;
+    text-align:center;
 
-    overflow: hidden;
-
-    box-shadow:
-        0 3px 12px rgba(78, 52, 36, .08);
-
-}
-
-
-/* =========================================================
-   HEADER
-========================================================= */
-
-.distribution-header {
-
-    width: 100%;
-
-    padding: 17px 18px;
-
-    background: var(--primary);
-
-    color: #fff;
-
-}
-
-
-.distribution-header-content {
-
-    width: 100%;
-
-}
-
-
-.distribution-label {
-
-    display: block;
-
-    margin-bottom: 4px;
-
-    color: #eadfd7;
-
-    font-size: 10px;
-
-    font-weight: 700;
-
-    letter-spacing: 1.3px;
-
-    line-height: 1.2;
-
-}
-
-
-.distribution-title {
-
-    margin: 0;
-
-    color: #fff;
-
-    font-size: 20px;
-
-    font-weight: 700;
-
-    line-height: 1.3;
-
-}
-
-
-.distribution-description {
-
-    margin: 5px 0 0;
-
-    color: #eee4dc;
-
-    font-size: 12px;
-
-    line-height: 1.4;
-
-}
-
-
-/* =========================================================
-   TABLE AREA
-========================================================= */
-
-.distribution-table-container {
-
-    width: 100%;
-
-    max-width: 100%;
-
-    overflow-x: auto;
-
-    overflow-y: hidden;
-
-    -webkit-overflow-scrolling: touch;
-
-}
-
-
-/* =========================================================
-   TABLE
-========================================================= */
-
-.distribution-table {
-
-    width: 100%;
-
-    border-collapse:collapse;
-
-    border-spacing: 0;
-
-    background: #fff;
-
-}
-
-
-/* =========================================================
-   TABLE HEADER
-========================================================= */
-
-.distribution-table thead {
-
-    background: var(--primary-soft);
-
-}
-
-
-.distribution-table th {
-
-    padding: 12px 13px;
-
-    color: var(--primary-dark);
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    text-align: left;
-
-    white-space: nowrap;
-
-    border-bottom: 1px solid var(--border);
-
-}
-
-
-/* =========================================================
-   TABLE CELLS
-========================================================= */
-
-.distribution-table td {
-
-    padding: 12px 13px;
-
-    color: var(--text);
-
-    font-size: 13px;
-
-    vertical-align: middle;
-
-    border-bottom: 1px solid #eee7e2;
-
-}
-
-
-.distribution-table tbody tr:last-child td {
-
-    border-bottom: 0;
-
-}
-
-
-/* =========================================================
-   ROW
-========================================================= */
-
-.distribution-row {
-
-    background: #fff;
-
-    transition:
-        background .18s ease;
-
-}
-
-
-.distribution-row:hover {
-
-    background: var(--primary-soft);
-
-}
-
-
-/* =========================================================
-   NUMBER
-========================================================= */
-
-.distribution-index {
-
-    width: 42px;
-
-    color: var(--muted) !important;
-
-    font-size: 12px !important;
-
-    font-weight: 600;
-
-}
-
-
-/* =========================================================
-   SUBSTATION
-========================================================= */
-
-.distribution-substation {
-
-    min-width: 130px;
-
-}
-
-
-.distribution-substation strong {
-
-    color: var(--primary-dark);
-
-    font-size: 13px;
-
-    font-weight: 700;
-
-}
-
-
-/* =========================================================
-   LOCATION
-========================================================= */
-
-.distribution-location {
-
-    min-width: 120px;
-
-}
-
-
-.distribution-location span {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    color: var(--muted);
-
-    font-size: 12px;
-
-}
-
-
-.distribution-location i {
-
-    color: var(--primary);
-
-    font-size: 12px;
-
-}
-
-
-/* =========================================================
-   AVAILABLE UNITS
-========================================================= */
-
-.distribution-quantity {
-
-    min-width: 100px;
-
-}
-
-
-.distribution-quantity strong {
-
-    display: inline-block;
-
-    color: var(--primary);
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-}
-
-
-/* =========================================================
-   ADMIN ACTION
-========================================================= */
-
-.distribution-actions {
-
-    min-width: 205px;
-
-}
-
-
-/* =========================================================
-   UPDATE FORM
-========================================================= */
-
-.distribution-update-form {
-
-    display: flex;
-
-    align-items: flex-end;
-
-    gap: 7px;
-
-    margin: 0;
-
-}
-
-
-/* =========================================================
-   INPUT
-========================================================= */
-
-.distribution-input-wrapper {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 3px;
-
-}
-
-
-.distribution-input-label {
-
-    color: var(--muted);
-
-    font-size: 9px;
-
-    font-weight: 600;
-
-    line-height: 1;
-
-}
-
-
-.distribution-units-input {
-
-    width: 85px;
-
-    height: 34px;
-
-    padding: 0 9px;
-
-    border: 1px solid var(--border);
-
-    border-radius: 6px;
-
-    background: #fff;
-
-    color: var(--text);
-
-    outline: none;
-
-    font-family: Arial, sans-serif;
-
-    font-size: 13px;
-
-    font-weight: 600;
+    outline:none;
 
     transition:
         border-color .2s ease,
-        box-shadow .2s ease;
-
+        box-shadow .2s ease,
+        background .2s ease;
 }
 
-
-.distribution-units-input:hover {
-
-    border-color: #bca99d;
-
+.sales-table input[type="number"]:hover{
+    border-color:var(--primary);
 }
 
+.sales-table input[type="number"]:focus{
+    border-color:var(--primary);
 
-.distribution-units-input:focus {
-
-    border-color: var(--primary);
+    background:var(--primary-soft);
 
     box-shadow:
-        0 0 0 2px rgba(111, 78, 55, .12);
+        0 0 0 3px rgba(111,78,55,.12);
+}
 
+
+/* =========================================================
+   REMOVE NUMBER INPUT ARROWS
+========================================================= */
+
+.sales-table input[type="number"]::-webkit-inner-spin-button,
+.sales-table input[type="number"]::-webkit-outer-spin-button{
+    margin:0;
+    opacity:.7;
 }
 
 
@@ -420,152 +64,73 @@
    SAVE BUTTON
 ========================================================= */
 
-.distribution-save-button {
+.sales-table button[type="submit"]{
+    height:40px;
+    min-width:82px;
 
-    height: 34px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
 
-    padding: 0 11px;
+    padding:0 13px;
 
-    display: inline-flex;
+    border:1px solid var(--primary);
+    border-radius:8px;
 
-    align-items: center;
+    background:var(--primary);
+    color:#ffffff;
 
-    justify-content: center;
+    font-size:13px;
+    font-weight:600;
 
-    gap: 6px;
+    cursor:pointer;
 
-    border: 0;
+    white-space:nowrap;
 
-    border-radius: 6px;
-
-    background: var(--primary);
-
-    color: #fff;
-
-    cursor: pointer;
-
-    font-family: Arial, sans-serif;
-
-    font-size: 12px;
-
-    font-weight: 700;
-
-    white-space: nowrap;
+    box-shadow:
+        0 2px 5px rgba(78,52,36,.14);
 
     transition:
         background .2s ease,
-        transform .15s ease;
-
-}
-
-
-.distribution-save-button:hover {
-
-    background: var(--primary-dark);
-
-}
-
-
-.distribution-save-button:active {
-
-    transform: scale(.96);
-
-}
-
-
-.distribution-save-button:focus-visible {
-
-    outline: 2px solid var(--primary);
-
-    outline-offset: 2px;
-
+        border-color .2s ease,
+        transform .15s ease,
+        box-shadow .2s ease;
 }
 
 
 /* =========================================================
-   EMPTY STATE
+   SAVE BUTTON HOVER
 ========================================================= */
 
-.distribution-empty {
+.sales-table button[type="submit"]:hover{
+    background:var(--primary-dark);
+    border-color:var(--primary-dark);
 
-    width: 100%;
-
-    min-height: 125px;
-
-    padding: 25px 15px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 9px;
-
-    background: var(--primary-soft);
-
-    text-align: center;
-
-}
-
-
-.distribution-empty-icon {
-
-    width: 42px;
-
-    height: 42px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background: var(--primary-light);
-
-    color: var(--primary);
-
-    font-size: 18px;
-
-}
-
-
-.distribution-empty-text {
-
-    max-width: 360px;
-
-    color: var(--muted);
-
-    font-size: 12px;
-
-    line-height: 1.5;
-
+    box-shadow:
+        0 4px 10px rgba(78,52,36,.18);
 }
 
 
 /* =========================================================
-   TABLET
+   SAVE BUTTON ACTIVE
 ========================================================= */
 
-@media (max-width: 800px) {
+.sales-table button[type="submit"]:active{
+    transform:translateY(1px);
 
-    .distribution-table-container {
-
-        overflow-x: auto;
-
-    }
+    box-shadow:
+        0 2px 5px rgba(78,52,36,.12);
+}
 
 
-    .distribution-table {
+/* =========================================================
+   SAVE ICON
+========================================================= */
 
-        min-width: 620px;
-
-    }
-
+.sales-table button[type="submit"] i{
+    font-size:13px;
+    line-height:1;
 }
 
 
@@ -573,133 +138,25 @@
    MOBILE
 ========================================================= */
 
-@media (max-width: 600px) {
+@media(max-width:600px){
 
-    .distribution-panel {
-
-        margin-top: 15px;
-
-        border-radius: 10px;
-
+    .sales-table input[type="number"]{
+        width:78px;
+        height:38px;
+        font-size:13px;
     }
 
+    .sales-table button[type="submit"]{
+        min-width:72px;
+        height:38px;
 
-    .distribution-header {
+        padding:0 10px;
 
-        padding: 15px;
-
+        font-size:12px;
     }
 
-
-    .distribution-title {
-
-        font-size: 18px;
-
-    }
-
-
-    .distribution-description {
-
-        font-size: 11px;
-
-    }
-
-
-    .distribution-table th {
-
-        padding: 10px 11px;
-
-        font-size: 10px;
-
-    }
-
-
-    .distribution-table td {
-
-        padding: 10px 11px;
-
-        font-size: 12px;
-
-    }
-
-
-    .distribution-table {
-
-        min-width: 590px;
-
-    }
-
-
-    .distribution-actions {
-
-        min-width: 185px;
-
-    }
-
-
-    .distribution-update-form {
-
-        gap: 6px;
-
-    }
-
-
-    .distribution-units-input {
-
-        width: 75px;
-
-        height: 32px;
-
-    }
-
-
-    .distribution-save-button {
-
-        height: 32px;
-
-        padding: 0 9px;
-
-        font-size: 11px;
-
-    }
-
-}
-
-
-/* =========================================================
-   VERY SMALL PHONES
-========================================================= */
-
-@media (max-width: 380px) {
-
-    .distribution-header {
-
-        padding: 14px 12px;
-
-    }
-
-
-    .distribution-title {
-
-        font-size: 17px;
-
-    }
-
-
-    .distribution-table th,
-    .distribution-table td {
-
-        padding-left: 9px;
-
-        padding-right: 9px;
-
-    }
-
-
-    .distribution-table {
-
-        min-width: 560px;
-
+    .sales-table button[type="submit"] i{
+        font-size:12px;
     }
 
 }
