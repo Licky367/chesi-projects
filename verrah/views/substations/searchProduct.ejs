@@ -1,0 +1,557 @@
+<%
+/* ==========================================================
+   views/substations/search.ejs
+
+   VERRAH COSMETICS
+   SUBSTATION PRODUCT SEARCH
+
+   ----------------------------------------------------------
+   BEHAVIOUR:
+
+   - Searches products within this substation
+   - Search supports product name and category
+   - Uses the existing products-search-composer classes
+   - Results grouped by category
+   - Maximum 6 products per row
+   - 7th product starts a new row
+   - Each row scrolls horizontally
+   - Uses the existing branch product card classes
+========================================================== */
+
+
+const searchSubstation =
+  typeof substation !== "undefined"
+    ? substation
+    : null;
+
+
+const searchProducts =
+  Array.isArray(products)
+    ? products
+    : [];
+
+
+const searchQuery =
+  typeof query !== "undefined"
+    ? String(query || "").trim()
+    : "";
+
+
+const searchUser =
+  typeof currentUser !== "undefined"
+    ? currentUser
+    : (
+        typeof user !== "undefined"
+          ? user
+          : null
+      );
+
+
+// ==========================================================
+// GROUP PRODUCTS BY CATEGORY
+// ==========================================================
+
+const groupedProducts = {};
+
+
+searchProducts.forEach((product) => {
+
+  const categoryName =
+    product.categoryName ||
+    (
+      product.category &&
+      typeof product.category === "object"
+        ? product.category.name
+        : product.category
+    ) ||
+    "Other";
+
+
+  if (!groupedProducts[categoryName]) {
+
+    groupedProducts[categoryName] = [];
+
+  }
+
+
+  groupedProducts[categoryName].push(product);
+
+});
+
+
+const categoryGroups =
+  Object.entries(groupedProducts);
+
+%>
+
+
+<div class="branch-inventory">
+
+
+  <!-- ======================================================
+       INVENTORY / SEARCH HEADER
+  ======================================================= -->
+
+  <div class="branch-inventory-header">
+
+    <div class="branch-inventory-heading">
+
+      <span class="branch-inventory-label">
+        SEARCH
+      </span>
+
+      <h2>
+        Search Products
+      </h2>
+
+    </div>
+
+
+    <span class="branch-inventory-count">
+
+      <%= searchProducts.length %>
+
+    </span>
+
+  </div>
+
+
+
+  <!-- ======================================================
+       SEARCH COMPOSER
+  ======================================================= -->
+
+  <form
+    action=""
+    method="GET"
+    class="products-search-composer"
+    role="search"
+    aria-label="Search products"
+  >
+
+
+    <!-- ====================================================
+         SEARCH ICON
+    ===================================================== -->
+
+    <span
+      class="products-search-composer-icon"
+      aria-hidden="true"
+    >
+
+      <i class="fas fa-search"></i>
+
+    </span>
+
+
+
+    <!-- ====================================================
+         SEARCH INPUT
+    ===================================================== -->
+
+    <input
+      type="search"
+      name="q"
+      class="products-search-composer-input"
+      placeholder="Search products or categories..."
+      aria-label="Search products or categories"
+      autocomplete="off"
+      value="<%= searchQuery %>"
+      required
+    >
+
+
+
+    <!-- ====================================================
+         SEARCH ACTION
+    ===================================================== -->
+
+    <button
+      type="submit"
+      class="products-search-composer-action"
+      aria-label="Search"
+      title="Search"
+    >
+
+      <i
+        class="fas fa-arrow-right"
+        aria-hidden="true"
+      ></i>
+
+    </button>
+
+
+  </form>
+
+
+
+  <!-- ======================================================
+       SEARCH RESULTS TITLE
+  ======================================================= -->
+
+  <% if (searchQuery) { %>
+
+
+    <div class="branch-category-title">
+
+      <h3>
+        Results for "<%= searchQuery %>"
+      </h3>
+
+    </div>
+
+
+  <% } %>
+
+
+
+  <!-- ======================================================
+       NO SEARCH TERM
+  ======================================================= -->
+
+  <% if (!searchQuery) { %>
+
+
+    <div class="branch-inventory-empty">
+
+      <div class="branch-inventory-empty-icon">
+
+        <i class="fas fa-search"></i>
+
+      </div>
+
+
+      <h3>
+        Search this substation
+      </h3>
+
+
+      <p>
+        Search by product name or category.
+      </p>
+
+    </div>
+
+
+  <!-- ======================================================
+       NO RESULTS
+  ======================================================= -->
+
+  <% } else if (!searchProducts.length) { %>
+
+
+    <div class="branch-inventory-empty">
+
+      <div class="branch-inventory-empty-icon">
+
+        <i class="fas fa-box-open"></i>
+
+      </div>
+
+
+      <h3>
+        No products found
+      </h3>
+
+
+      <p>
+        No products matching
+        "<%= searchQuery %>"
+        were found in this substation.
+      </p>
+
+    </div>
+
+
+  <!-- ======================================================
+       SEARCH RESULTS
+  ======================================================= -->
+
+  <% } else { %>
+
+
+    <div class="branch-inventory-categories">
+
+
+      <% categoryGroups.forEach(
+        ([categoryName, productsInCategory]) => {
+      %>
+
+
+        <%
+          /*
+           * Divide products in this category
+           * into rows of six.
+           */
+
+          const productRows = [];
+
+
+          for (
+            let i = 0;
+            i < productsInCategory.length;
+            i += 6
+          ) {
+
+            productRows.push(
+              productsInCategory.slice(
+                i,
+                i + 6
+              )
+            );
+
+          }
+        %>
+
+
+
+        <!-- ==================================================
+             CATEGORY
+        =================================================== -->
+
+        <section class="branch-inventory-category">
+
+
+          <!-- ================================================
+               CATEGORY TITLE
+          ================================================= -->
+
+          <div class="branch-category-title">
+
+            <h3>
+              <%= categoryName %>
+            </h3>
+
+          </div>
+
+
+
+          <!-- ================================================
+               PRODUCT ROWS
+          ================================================= -->
+
+          <div class="branch-product-rows">
+
+
+            <% productRows.forEach(
+              (rowProducts) => {
+            %>
+
+
+              <!-- ============================================
+                   HORIZONTAL PRODUCT ROW
+              ============================================= -->
+
+              <div class="branch-product-row">
+
+
+                <div class="branch-product-scroller">
+
+
+                  <% rowProducts.forEach(
+                    (product) => {
+                  %>
+
+
+                    <%
+                      /*
+                       * Admin users remain inside the
+                       * substation inventory interface.
+                       *
+                       * Other users go to the normal
+                       * product page.
+                       */
+
+                      const productLink =
+                        searchUser &&
+                        searchUser.role === "admin"
+
+                          ? `/substations/product/${product._id}`
+
+                          : `/products/${product._id}`;
+
+
+
+                      /*
+                       * Resolve category name.
+                       */
+
+                      const productCategory =
+                        product.categoryName ||
+                        (
+                          product.category &&
+                          typeof product.category === "object"
+                            ? product.category.name
+                            : product.category
+                        ) ||
+                        categoryName ||
+                        "Other";
+
+
+
+                      /*
+                       * Resolve subcategory name.
+                       */
+
+                      const productSubcategory =
+                        product.subcategoryName ||
+                        (
+                          product.subcategory &&
+                          typeof product.subcategory === "object"
+                            ? product.subcategory.name
+                            : product.subcategory
+                        ) ||
+                        "Other";
+                    %>
+
+
+
+                    <!-- ======================================
+                         PRODUCT CARD
+                    ======================================= -->
+
+                    <a
+                      href="<%= productLink %>"
+                      class="branch-product-card"
+                    >
+
+
+                      <!-- ==================================
+                           PRODUCT IMAGE
+                      =================================== -->
+
+                      <div class="branch-product-photo">
+
+
+                        <% if (product.image) { %>
+
+
+                          <img
+                            src="<%= product.image %>"
+                            alt="<%= product.name %>"
+                            loading="lazy"
+                          >
+
+
+                        <% } else { %>
+
+
+                          <span class="branch-product-placeholder">
+
+                            <i class="fas fa-box"></i>
+
+                          </span>
+
+
+                        <% } %>
+
+
+                      </div>
+
+
+
+                      <!-- ==================================
+                           PRODUCT DETAILS
+                      =================================== -->
+
+                      <div class="branch-product-details">
+
+
+                        <!-- =================================
+                             PRODUCT NAME
+                        ================================== -->
+
+                        <h4 class="branch-product-name">
+
+                          <%= product.name %>
+
+                        </h4>
+
+
+
+                        <!-- =================================
+                             CATEGORY / SUBCATEGORY
+                        ================================== -->
+
+                        <div class="branch-product-meta">
+
+
+                          <span class="branch-product-category">
+
+                            <%= productCategory %>
+
+                          </span>
+
+
+                          <span class="branch-product-separator">
+                            •
+                          </span>
+
+
+                          <span class="branch-product-subcategory">
+
+                            <%= productSubcategory %>
+
+                          </span>
+
+
+                        </div>
+
+
+
+                        <!-- =================================
+                             STOCK
+                        ================================== -->
+
+                        <div class="branch-product-quantity">
+
+                          <strong>
+
+                            <%= Number(
+                              product.substationUnits || 0
+                            ).toLocaleString() %>
+
+                          </strong>
+
+
+                          <span>
+                            units
+                          </span>
+
+                        </div>
+
+
+                      </div>
+
+
+                    </a>
+
+
+                  <% }) %>
+
+
+                </div>
+
+
+              </div>
+
+
+            <% }) %>
+
+
+          </div>
+
+
+        </section>
+
+
+      <% }) %>
+
+
+    </div>
+
+
+  <% } %>
+
+
+</div>
