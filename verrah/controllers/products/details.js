@@ -103,7 +103,7 @@ exports.details = async (req, res) => {
 
 
 // ==========================================================
-// POST /products/price
+// POST /products/:id/update
 // ==========================================================
 //
 // Admin-only price update.
@@ -118,7 +118,7 @@ exports.details = async (req, res) => {
 //
 // ==========================================================
 
-exports.updatePrice = async (req, res) => {
+exports.updateProduct = async (req, res) => {
 
     try {
 
