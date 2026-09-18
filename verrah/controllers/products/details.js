@@ -141,7 +141,7 @@ exports.updateProduct = async (req, res) => {
         // ====================================================
 
         const result =
-            await productService.updatePrice(
+            await productService.updateProduct(
                 productId,
                 unitSellPrice
             );
