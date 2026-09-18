@@ -15,23 +15,27 @@ const isAdmin =
 %>
 
 
-<div class="sales-section">
+<div class="distribution-panel">
 
 
     <!-- =====================================================
-         SECTION HEADING
+         SECTION HEADER
     ====================================================== -->
 
-    <div class="sales-section-heading">
+    <div class="distribution-header">
 
-        <div>
+        <div class="distribution-header-content">
 
-            <h2>
+            <span class="distribution-label">
+                DISTRIBUTION
+            </span>
+
+            <h2 class="distribution-title">
                 Substation Balances
             </h2>
 
-            <p>
-                Product distribution across substations
+            <p class="distribution-description">
+                Product units currently available at each substation.
             </p>
 
         </div>
@@ -40,7 +44,7 @@ const isAdmin =
 
 
     <!-- =====================================================
-         NO SUBSTATION ALLOCATIONS
+         EMPTY STATE
     ====================================================== -->
 
     <% if (
@@ -48,31 +52,17 @@ const isAdmin =
         !product.substationStocks.length
     ) { %>
 
-        <div class="sales-table-wrapper">
+        <div class="distribution-empty">
 
-            <table class="sales-table">
+            <div class="distribution-empty-icon">
 
-                <tbody>
+                <i class="fas fa-box-open"></i>
 
-                    <tr>
+            </div>
 
-                        <td
-                            colspan="<%= isAdmin ? 5 : 4 %>"
-                            class="sales-empty"
-                        >
-
-                            <i class="fas fa-box-open"></i>
-
-                            No substation allocation exists
-                            for this product.
-
-                        </td>
-
-                    </tr>
-
-                </tbody>
-
-            </table>
+            <span class="distribution-empty-text">
+                No substation allocation exists for this product.
+            </span>
 
         </div>
 
@@ -84,9 +74,9 @@ const isAdmin =
              BALANCES TABLE
         ================================================== -->
 
-        <div class="sales-table-wrapper">
+        <div class="distribution-table-container">
 
-            <table class="sales-table">
+            <table class="distribution-table">
 
                 <thead>
 
@@ -125,14 +115,14 @@ const isAdmin =
 
                     <% product.substationStocks.forEach(function(item, index) { %>
 
-                        <tr class="sales-product-row">
+                        <tr class="distribution-row">
 
 
                             <!-- =================================
                                  NUMBER
                             ================================== -->
 
-                            <td>
+                            <td class="distribution-index">
                                 <%= index + 1 %>
                             </td>
 
@@ -141,7 +131,7 @@ const isAdmin =
                                  SUBSTATION
                             ================================== -->
 
-                            <td>
+                            <td class="distribution-substation">
 
                                 <strong>
                                     <%= item.name || "Unnamed Substation" %>
@@ -154,7 +144,7 @@ const isAdmin =
                                  LOCATION
                             ================================== -->
 
-                            <td>
+                            <td class="distribution-location">
 
                                 <% if (item.location) { %>
 
@@ -178,10 +168,10 @@ const isAdmin =
 
 
                             <!-- =================================
-                                 UNITS AVAILABLE
+                                 AVAILABLE UNITS
                             ================================== -->
 
-                            <td>
+                            <td class="distribution-quantity">
 
                                 <strong>
                                     <%= number(item.units) %>
@@ -196,12 +186,12 @@ const isAdmin =
 
                             <% if (isAdmin) { %>
 
-                                <td>
+                                <td class="distribution-actions">
 
                                     <form
                                         method="POST"
                                         action="/substations/product/<%= product._id %>"
-                                        class="inventory-update-form"
+                                        class="distribution-update-form"
                                     >
 
                                         <input
@@ -211,23 +201,23 @@ const isAdmin =
                                         >
 
 
-                                        <div class="field inventory-units-field">
+                                        <div class="distribution-input-wrapper">
 
                                             <label
-                                                for="units-<%= item._id %>"
-                                                class="sr-only"
+                                                for="distribution-units-<%= item._id %>"
+                                                class="distribution-input-label"
                                             >
-                                                Units for
-                                                <%= item.name || "substation" %>
+                                                Units
                                             </label>
 
                                             <input
-                                                id="units-<%= item._id %>"
+                                                id="distribution-units-<%= item._id %>"
                                                 name="units"
                                                 type="number"
                                                 min="0"
                                                 step="1"
                                                 value="<%= Number(item.units || 0) %>"
+                                                class="distribution-units-input"
                                                 required
                                             >
 
@@ -236,12 +226,14 @@ const isAdmin =
 
                                         <button
                                             type="submit"
-                                            class="primary-btn"
+                                            class="distribution-save-button"
                                         >
 
                                             <i class="fas fa-save"></i>
 
-                                            Save
+                                            <span>
+                                                Save
+                                            </span>
 
                                         </button>
 
