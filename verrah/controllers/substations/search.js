@@ -59,7 +59,7 @@ async (
 
 
         return res.render(
-            "substations/search",
+            "substations/searchProduct",
             {
                 title:
                     `Search Products - ${substation.name}`,
