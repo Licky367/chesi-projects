@@ -47,13 +47,6 @@ router.get(
 // ----------------------------------------------------------
 // CREATE SUBSTATION
 // POST /substations
-//
-// Supports:
-// - Normal form fields
-// - GPS latitude
-// - GPS longitude
-// - substationIcon image upload
-// - substationIconUrl
 // ----------------------------------------------------------
 
 router.post(
@@ -69,6 +62,24 @@ router.post(
 // ==========================================================
 // PRODUCTS
 // ==========================================================
+
+// ----------------------------------------------------------
+// SEARCH PRODUCTS IN A SUBSTATION
+//
+// GET /substations/:id/search?q=SEARCH_TERM
+//
+// Searches products belonging to the specified substation
+// by:
+// - Product name
+// - Category name
+// ----------------------------------------------------------
+
+router.get(
+    "/:id/search",
+    requireAdmin,
+    controller.searchPage
+);
+
 
 // ----------------------------------------------------------
 // PRODUCT DETAIL
@@ -113,17 +124,6 @@ router.get(
 // ----------------------------------------------------------
 // UPDATE SUBSTATION
 // POST /substations/branch/:id/edit
-//
-// Supports:
-// - Name
-// - Location
-// - Phone number
-// - Directions
-// - GPS latitude
-// - GPS longitude
-// - Description
-// - Uploaded substation icon
-// - Image URL icon
 // ----------------------------------------------------------
 
 router.post(
@@ -155,9 +155,6 @@ router.get(
 // ----------------------------------------------------------
 // UPDATE ICON
 // POST /substations/branch/icon/:id
-//
-// Supports uploaded icon through:
-// name="substationIcon"
 // ----------------------------------------------------------
 
 router.post(
@@ -189,9 +186,6 @@ router.get(
 // ----------------------------------------------------------
 // UPDATE / ADD IMAGES
 // POST /substations/branch/images/:id
-//
-// Supports up to 20 uploaded images through:
-// name="images"
 // ----------------------------------------------------------
 
 router.post(
