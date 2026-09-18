@@ -20,7 +20,7 @@ const service =
 // SEARCH PAGE
 // ==========================================================
 
-exports.searchProductPage =
+exports.searchPage =
 async (
     req,
     res
