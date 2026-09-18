@@ -373,6 +373,6 @@ module.exports = {
 
     getProduct,
 
-    updatePrice
+    updateProduct
 
 };
