@@ -1,0 +1,108 @@
+<%
+/* ==========================================================
+   productSearch.ejs
+
+   VERRAH COSMETICS
+   REUSABLE PRODUCT SEARCH
+
+   ----------------------------------------------------------
+   EXPECTED VARIABLES:
+
+   searchAction
+       The URL where the search request should be sent.
+
+   searchQuery
+       Existing search value, if any.
+
+   placeholder
+       Optional custom placeholder.
+========================================================== */
+
+
+const partialSearchAction =
+    typeof searchAction !== "undefined" &&
+    searchAction
+        ? searchAction
+        : "";
+
+
+const partialSearchQuery =
+    typeof searchQuery !== "undefined"
+        ? String(searchQuery || "").trim()
+        : "";
+
+
+const partialSearchPlaceholder =
+    typeof placeholder !== "undefined" &&
+    placeholder
+        ? placeholder
+        : "Search products or categories...";
+
+%>
+
+
+<!-- ========================================================
+     PRODUCT SEARCH
+========================================================= -->
+
+<form
+    action="<%= partialSearchAction %>"
+    method="GET"
+    class="products-search-composer"
+    role="search"
+    aria-label="Search products"
+>
+
+
+    <!-- ====================================================
+         SEARCH ICON
+    ===================================================== -->
+
+    <span
+        class="products-search-composer-icon"
+        aria-hidden="true"
+    >
+
+        <i class="fas fa-search"></i>
+
+    </span>
+
+
+
+    <!-- ====================================================
+         SEARCH INPUT
+    ===================================================== -->
+
+    <input
+        type="search"
+        name="q"
+        class="products-search-composer-input"
+        placeholder="<%= partialSearchPlaceholder %>"
+        aria-label="Search products or categories"
+        autocomplete="off"
+        value="<%= partialSearchQuery %>"
+        required
+    >
+
+
+
+    <!-- ====================================================
+         SEARCH ACTION
+    ===================================================== -->
+
+    <button
+        type="submit"
+        class="products-search-composer-action"
+        aria-label="Search"
+        title="Search"
+    >
+
+        <i
+            class="fas fa-arrow-right"
+            aria-hidden="true"
+        ></i>
+
+    </button>
+
+
+</form>
