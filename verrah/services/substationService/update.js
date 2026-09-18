@@ -4,7 +4,7 @@
 // ==========================================================
 
 const mongoose = require("mongoose");
-const Substation = require("../models/substations");
+const Substation = require("../../models/substations");
 
 const {
     text,
