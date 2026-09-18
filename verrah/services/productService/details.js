@@ -230,11 +230,149 @@ async function getProduct(id) {
 
 
 // ==========================================================
+// UPDATE PRODUCT SELL PRICE
+// ==========================================================
+//
+// Used by:
+//
+//     POST /products/price
+//
+// The controller will handle the request and role
+// authorization. This service handles validation and the
+// actual Product update.
+//
+// ==========================================================
+
+async function updatePrice(
+    productId,
+    unitSellPrice
+) {
+
+    // ========================================================
+    // VALIDATE PRODUCT ID
+    // ========================================================
+
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            productId
+        )
+    ) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "Invalid product ID."
+
+        };
+
+    }
+
+
+    // ========================================================
+    // NORMALIZE PRICE
+    // ========================================================
+
+    const price =
+        Number(unitSellPrice);
+
+
+    // ========================================================
+    // VALIDATE PRICE
+    // ========================================================
+
+    if (
+        !Number.isFinite(price) ||
+        price < 0
+    ) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "Invalid sell price."
+
+        };
+
+    }
+
+
+    // ========================================================
+    // UPDATE PRODUCT
+    // ========================================================
+
+    const product =
+        await Product.findByIdAndUpdate(
+
+            productId,
+
+            {
+                $set: {
+
+                    unitSellPrice:
+                        price
+
+                }
+            },
+
+            {
+                new:
+                    true,
+
+                runValidators:
+                    true
+            }
+
+        );
+
+
+    // ========================================================
+    // PRODUCT NOT FOUND
+    // ========================================================
+
+    if (!product) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "Product not found."
+
+        };
+
+    }
+
+
+    // ========================================================
+    // SUCCESS
+    // ========================================================
+
+    return {
+
+        success:
+            true,
+
+        product
+
+    };
+
+}
+
+
+// ==========================================================
 // EXPORT
 // ==========================================================
 
 module.exports = {
 
-    getProduct
+    getProduct,
+
+    updatePrice
 
 };
