@@ -1,120 +1,121 @@
 /* =========================================================
    VERRAH COSMETICS
    SUBSTATION BALANCES
-   DISTRIBUTION COMPONENT
+   BROWN DISTRIBUTION THEME
 ========================================================= */
 
 
 /* =========================================================
-   MAIN DISTRIBUTION PANEL
+   MAIN CONTAINER
 ========================================================= */
 
-.distribution-panel{
+.distribution-panel {
 
-    width:100%;
+    width: 100%;
+    max-width: 100%;
 
-    margin-top:24px;
+    margin: 20px 0 0;
 
-    background:var(--white);
+    background: var(--white);
 
-    border:
-        1px solid var(--border);
+    border: 1px solid var(--border);
 
-    border-radius:14px;
+    border-radius: 12px;
 
-    overflow:hidden;
+    overflow: hidden;
 
     box-shadow:
-        0 4px 14px rgba(78,52,36,.08);
+        0 3px 12px rgba(78, 52, 36, .08);
 
 }
 
 
 /* =========================================================
-   SECTION HEADER
+   HEADER
 ========================================================= */
 
-.distribution-header{
+.distribution-header {
 
-    width:100%;
+    width: 100%;
 
-    padding:20px 22px;
+    padding: 17px 18px;
 
-    background:var(--primary-soft);
+    background: var(--primary);
 
-    border-bottom:
-        1px solid var(--border);
-
-}
-
-
-.distribution-header-content{
-
-    min-width:0;
+    color: #fff;
 
 }
 
 
-.distribution-label{
+.distribution-header-content {
 
-    display:block;
-
-    margin-bottom:5px;
-
-    color:var(--primary);
-
-    font-size:11px;
-
-    font-weight:700;
-
-    letter-spacing:1.2px;
-
-    line-height:1.2;
+    width: 100%;
 
 }
 
 
-.distribution-title{
+.distribution-label {
 
-    margin:0;
+    display: block;
 
-    color:var(--text);
+    margin-bottom: 4px;
 
-    font-size:21px;
+    color: #eadfd7;
 
-    font-weight:700;
+    font-size: 10px;
 
-    line-height:1.3;
+    font-weight: 700;
+
+    letter-spacing: 1.3px;
+
+    line-height: 1.2;
 
 }
 
 
-.distribution-description{
+.distribution-title {
 
-    margin:6px 0 0;
+    margin: 0;
 
-    color:var(--muted);
+    color: #fff;
 
-    font-size:13px;
+    font-size: 20px;
 
-    line-height:1.5;
+    font-weight: 700;
+
+    line-height: 1.3;
+
+}
+
+
+.distribution-description {
+
+    margin: 5px 0 0;
+
+    color: #eee4dc;
+
+    font-size: 12px;
+
+    line-height: 1.4;
 
 }
 
 
 /* =========================================================
-   TABLE CONTAINER
+   TABLE AREA
 ========================================================= */
 
-.distribution-table-container{
+.distribution-table-container {
 
-    width:100%;
+    width: 100%;
 
-    overflow-x:auto;
+    max-width: 100%;
 
-    overflow-y:hidden;
+    overflow-x: auto;
 
-    -webkit-overflow-scrolling:touch;
+    overflow-y: hidden;
+
+    -webkit-overflow-scrolling: touch;
 
 }
 
@@ -123,17 +124,15 @@
    TABLE
 ========================================================= */
 
-.distribution-table{
+.distribution-table {
 
-    width:100%;
-
-    min-width:720px;
+    width: 100%;
 
     border-collapse:collapse;
 
-    border-spacing:0;
+    border-spacing: 0;
 
-    background:var(--white);
+    background: #fff;
 
 }
 
@@ -142,72 +141,65 @@
    TABLE HEADER
 ========================================================= */
 
-.distribution-table thead{
+.distribution-table thead {
 
-    background:#f8f5f2;
-
-}
-
-
-.distribution-table th{
-
-    padding:13px 15px;
-
-    color:var(--primary-dark);
-
-    font-size:12px;
-
-    font-weight:700;
-
-    text-align:left;
-
-    white-space:nowrap;
-
-    border-bottom:
-        1px solid var(--border);
+    background: var(--primary-soft);
 
 }
 
 
-/* =========================================================
-   TABLE BODY
-========================================================= */
+.distribution-table th {
 
-.distribution-table tbody{
+    padding: 12px 13px;
 
-    background:var(--white);
+    color: var(--primary-dark);
 
-}
+    font-size: 11px;
 
+    font-weight: 700;
 
-.distribution-table td{
+    text-align: left;
 
-    padding:14px 15px;
+    white-space: nowrap;
 
-    color:var(--text);
-
-    font-size:14px;
-
-    vertical-align:middle;
-
-    border-bottom:
-        1px solid #eee8e4;
-
-}
-
-
-.distribution-table tbody tr:last-child td{
-
-    border-bottom:none;
+    border-bottom: 1px solid var(--border);
 
 }
 
 
 /* =========================================================
-   DISTRIBUTION ROW
+   TABLE CELLS
 ========================================================= */
 
-.distribution-row{
+.distribution-table td {
+
+    padding: 12px 13px;
+
+    color: var(--text);
+
+    font-size: 13px;
+
+    vertical-align: middle;
+
+    border-bottom: 1px solid #eee7e2;
+
+}
+
+
+.distribution-table tbody tr:last-child td {
+
+    border-bottom: 0;
+
+}
+
+
+/* =========================================================
+   ROW
+========================================================= */
+
+.distribution-row {
+
+    background: #fff;
 
     transition:
         background .18s ease;
@@ -215,52 +207,48 @@
 }
 
 
-.distribution-row:hover{
+.distribution-row:hover {
 
-    background:var(--primary-soft);
-
-}
-
-
-/* =========================================================
-   INDEX
-========================================================= */
-
-.distribution-index{
-
-    width:50px;
-
-    color:var(--muted) !important;
-
-    font-size:13px !important;
-
-    font-weight:600;
+    background: var(--primary-soft);
 
 }
 
 
 /* =========================================================
-   SUBSTATION NAME
+   NUMBER
 ========================================================= */
 
-.distribution-substation{
+.distribution-index {
 
-    min-width:170px;
+    width: 42px;
+
+    color: var(--muted) !important;
+
+    font-size: 12px !important;
+
+    font-weight: 600;
 
 }
 
 
-.distribution-substation strong{
+/* =========================================================
+   SUBSTATION
+========================================================= */
 
-    display:block;
+.distribution-substation {
 
-    color:var(--text);
+    min-width: 130px;
 
-    font-size:14px;
+}
 
-    font-weight:700;
 
-    line-height:1.4;
+.distribution-substation strong {
+
+    color: var(--primary-dark);
+
+    font-size: 13px;
+
+    font-weight: 700;
 
 }
 
@@ -269,66 +257,68 @@
    LOCATION
 ========================================================= */
 
-.distribution-location{
+.distribution-location {
 
-    min-width:160px;
-
-}
-
-
-.distribution-location span{
-
-    display:inline-flex;
-
-    align-items:center;
-
-    gap:7px;
-
-    color:var(--muted);
-
-    line-height:1.4;
+    min-width: 120px;
 
 }
 
 
-.distribution-location i{
+.distribution-location span {
 
-    color:var(--primary);
+    display: inline-flex;
 
-    font-size:14px;
+    align-items: center;
 
-}
+    gap: 6px;
 
+    color: var(--muted);
 
-/* =========================================================
-   AVAILABLE QUANTITY
-========================================================= */
-
-.distribution-quantity{
-
-    min-width:140px;
+    font-size: 12px;
 
 }
 
 
-.distribution-quantity strong{
+.distribution-location i {
 
-    color:var(--primary);
+    color: var(--primary);
 
-    font-size:15px;
-
-    font-weight:700;
+    font-size: 12px;
 
 }
 
 
 /* =========================================================
-   ADMIN ACTIONS
+   AVAILABLE UNITS
 ========================================================= */
 
-.distribution-actions{
+.distribution-quantity {
 
-    min-width:235px;
+    min-width: 100px;
+
+}
+
+
+.distribution-quantity strong {
+
+    display: inline-block;
+
+    color: var(--primary);
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+}
+
+
+/* =========================================================
+   ADMIN ACTION
+========================================================= */
+
+.distribution-actions {
+
+    min-width: 205px;
 
 }
 
@@ -337,111 +327,91 @@
    UPDATE FORM
 ========================================================= */
 
-.distribution-update-form{
+.distribution-update-form {
 
-    display:flex;
+    display: flex;
 
-    align-items:flex-end;
+    align-items: flex-end;
 
-    gap:9px;
+    gap: 7px;
 
-    width:100%;
-
-}
-
-
-/* =========================================================
-   INPUT WRAPPER
-========================================================= */
-
-.distribution-input-wrapper{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:4px;
-
-    min-width:105px;
-
-}
-
-
-.distribution-input-label{
-
-    color:var(--muted);
-
-    font-size:10px;
-
-    font-weight:600;
-
-    line-height:1.2;
+    margin: 0;
 
 }
 
 
 /* =========================================================
-   UNITS INPUT
+   INPUT
 ========================================================= */
 
-.distribution-units-input{
+.distribution-input-wrapper {
 
-    width:105px;
+    display: flex;
 
-    height:38px;
+    flex-direction: column;
 
-    padding:0 10px;
+    gap: 3px;
 
-    border:
-        1px solid var(--border);
+}
 
-    border-radius:7px;
 
-    outline:none;
+.distribution-input-label {
 
-    background:#fff;
+    color: var(--muted);
 
-    color:var(--text);
+    font-size: 9px;
 
-    font-size:14px;
+    font-weight: 600;
 
-    font-weight:600;
+    line-height: 1;
+
+}
+
+
+.distribution-units-input {
+
+    width: 85px;
+
+    height: 34px;
+
+    padding: 0 9px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 6px;
+
+    background: #fff;
+
+    color: var(--text);
+
+    outline: none;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 13px;
+
+    font-weight: 600;
 
     transition:
         border-color .2s ease,
-        box-shadow .2s ease,
-        background .2s ease;
+        box-shadow .2s ease;
 
 }
 
 
-.distribution-units-input:hover{
+.distribution-units-input:hover {
 
-    border-color:#cbbdb3;
+    border-color: #bca99d;
 
 }
 
 
-.distribution-units-input:focus{
+.distribution-units-input:focus {
 
-    border-color:var(--primary);
-
-    background:#fff;
+    border-color: var(--primary);
 
     box-shadow:
-        0 0 0 3px rgba(111,78,55,.12);
-
-}
-
-
-/* =========================================================
-   REMOVE NUMBER INPUT SPINNER — OPTIONAL CLEAN LOOK
-========================================================= */
-
-.distribution-units-input::-webkit-inner-spin-button,
-.distribution-units-input::-webkit-outer-spin-button{
-
-    opacity:1;
+        0 0 0 2px rgba(111, 78, 55, .12);
 
 }
 
@@ -450,75 +420,64 @@
    SAVE BUTTON
 ========================================================= */
 
-.distribution-save-button{
+.distribution-save-button {
 
-    height:38px;
+    height: 34px;
 
-    padding:0 13px;
+    padding: 0 11px;
 
-    display:inline-flex;
+    display: inline-flex;
 
-    align-items:center;
+    align-items: center;
 
-    justify-content:center;
+    justify-content: center;
 
-    gap:7px;
+    gap: 6px;
 
-    border:0;
+    border: 0;
 
-    border-radius:7px;
+    border-radius: 6px;
 
-    background:var(--primary);
+    background: var(--primary);
 
-    color:#fff;
+    color: #fff;
 
-    cursor:pointer;
+    cursor: pointer;
 
-    font-family:Arial,sans-serif;
+    font-family: Arial, sans-serif;
 
-    font-size:13px;
+    font-size: 12px;
 
-    font-weight:600;
+    font-weight: 700;
 
-    white-space:nowrap;
+    white-space: nowrap;
 
     transition:
         background .2s ease,
-        transform .15s ease,
-        box-shadow .2s ease;
+        transform .15s ease;
 
 }
 
 
-.distribution-save-button:hover{
+.distribution-save-button:hover {
 
-    background:var(--primary-dark);
-
-    box-shadow:
-        0 3px 9px rgba(78,52,36,.18);
+    background: var(--primary-dark);
 
 }
 
 
-.distribution-save-button:active{
+.distribution-save-button:active {
 
-    transform:scale(.96);
-
-}
-
-
-.distribution-save-button:focus-visible{
-
-    outline:3px solid rgba(111,78,55,.20);
-
-    outline-offset:2px;
+    transform: scale(.96);
 
 }
 
 
-.distribution-save-button i{
+.distribution-save-button:focus-visible {
 
-    font-size:13px;
+    outline: 2px solid var(--primary);
+
+    outline-offset: 2px;
 
 }
 
@@ -527,97 +486,83 @@
    EMPTY STATE
 ========================================================= */
 
-.distribution-empty{
+.distribution-empty {
 
-    min-height:150px;
+    width: 100%;
 
-    padding:30px 20px;
+    min-height: 125px;
 
-    display:flex;
+    padding: 25px 15px;
 
-    flex-direction:column;
+    display: flex;
 
-    align-items:center;
+    flex-direction: column;
 
-    justify-content:center;
+    align-items: center;
 
-    gap:10px;
+    justify-content: center;
 
-    text-align:center;
+    gap: 9px;
 
-    background:var(--white);
+    background: var(--primary-soft);
+
+    text-align: center;
+
+}
+
+
+.distribution-empty-icon {
+
+    width: 42px;
+
+    height: 42px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: var(--primary-light);
+
+    color: var(--primary);
+
+    font-size: 18px;
+
+}
+
+
+.distribution-empty-text {
+
+    max-width: 360px;
+
+    color: var(--muted);
+
+    font-size: 12px;
+
+    line-height: 1.5;
 
 }
 
 
 /* =========================================================
-   EMPTY ICON
+   TABLET
 ========================================================= */
 
-.distribution-empty-icon{
+@media (max-width: 800px) {
 
-    width:48px;
+    .distribution-table-container {
 
-    height:48px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    border-radius:50%;
-
-    background:var(--primary-light);
-
-    color:var(--primary);
-
-    font-size:20px;
-
-}
-
-
-/* =========================================================
-   EMPTY TEXT
-========================================================= */
-
-.distribution-empty-text{
-
-    max-width:420px;
-
-    color:var(--muted);
-
-    font-size:13px;
-
-    line-height:1.5;
-
-}
-
-
-/* =========================================================
-   SMALL DESKTOP / TABLET
-========================================================= */
-
-@media(max-width:900px){
-
-    .distribution-header{
-
-        padding:18px;
+        overflow-x: auto;
 
     }
 
 
-    .distribution-table{
+    .distribution-table {
 
-        min-width:680px;
-
-    }
-
-
-    .distribution-table th,
-    .distribution-table td{
-
-        padding:12px;
+        min-width: 620px;
 
     }
 
@@ -628,80 +573,93 @@
    MOBILE
 ========================================================= */
 
-@media(max-width:600px){
+@media (max-width: 600px) {
 
-    .distribution-panel{
+    .distribution-panel {
 
-        margin-top:18px;
+        margin-top: 15px;
 
-        border-radius:11px;
-
-    }
-
-
-    /* -----------------------------------------------
-       HEADER
-    ----------------------------------------------- */
-
-    .distribution-header{
-
-        padding:17px 15px;
+        border-radius: 10px;
 
     }
 
 
-    .distribution-title{
+    .distribution-header {
 
-        font-size:18px;
-
-    }
-
-
-    .distribution-description{
-
-        font-size:12px;
+        padding: 15px;
 
     }
 
 
-    /* -----------------------------------------------
-       TABLE
-    ----------------------------------------------- */
+    .distribution-title {
 
-    .distribution-table{
-
-        min-width:680px;
+        font-size: 18px;
 
     }
 
 
-    .distribution-table th{
+    .distribution-description {
 
-        padding:11px 12px;
-
-        font-size:11px;
+        font-size: 11px;
 
     }
 
 
-    .distribution-table td{
+    .distribution-table th {
 
-        padding:12px;
+        padding: 10px 11px;
 
-        font-size:13px;
+        font-size: 10px;
 
     }
 
 
-    /* -----------------------------------------------
-       EMPTY STATE
-    ----------------------------------------------- */
+    .distribution-table td {
 
-    .distribution-empty{
+        padding: 10px 11px;
 
-        min-height:135px;
+        font-size: 12px;
 
-        padding:25px 15px;
+    }
+
+
+    .distribution-table {
+
+        min-width: 590px;
+
+    }
+
+
+    .distribution-actions {
+
+        min-width: 185px;
+
+    }
+
+
+    .distribution-update-form {
+
+        gap: 6px;
+
+    }
+
+
+    .distribution-units-input {
+
+        width: 75px;
+
+        height: 32px;
+
+    }
+
+
+    .distribution-save-button {
+
+        height: 32px;
+
+        padding: 0 9px;
+
+        font-size: 11px;
 
     }
 
@@ -709,50 +667,38 @@
 
 
 /* =========================================================
-   VERY SMALL SCREENS
+   VERY SMALL PHONES
 ========================================================= */
 
-@media(max-width:380px){
+@media (max-width: 380px) {
 
-    .distribution-header{
+    .distribution-header {
 
-        padding:15px 13px;
-
-    }
-
-
-    .distribution-title{
-
-        font-size:17px;
+        padding: 14px 12px;
 
     }
 
 
-    .distribution-label{
+    .distribution-title {
 
-        font-size:10px;
-
-    }
-
-
-    .distribution-table{
-
-        min-width:650px;
+        font-size: 17px;
 
     }
 
 
     .distribution-table th,
-    .distribution-table td{
+    .distribution-table td {
 
-        padding:10px;
+        padding-left: 9px;
+
+        padding-right: 9px;
 
     }
 
 
-    .distribution-empty{
+    .distribution-table {
 
-        padding:22px 12px;
+        min-width: 560px;
 
     }
 
