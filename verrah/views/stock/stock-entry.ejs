@@ -16,42 +16,54 @@
     >
 
 
-        <!-- WELCOME -->
+        <!-- STOCK CARD -->
 
         <button
             type="button"
             class="verrah-tab active"
             role="tab"
             aria-selected="true"
-            data-tab="welcome"
+            data-tab="Stock Info"
         >
-            Welcome
+            Stock Info
         </button>
 
 
-        <!-- DELIVERIES -->
+        <!-- ALLOCATION -->
 
         <button
             type="button"
             class="verrah-tab"
             role="tab"
             aria-selected="false"
-            data-tab="deliveries"
+            data-tab="Stock Allocation"
         >
-            Deliveries
+            Stock Allocation
         </button>
 
-
-        <!-- SALES -->
+        <!-- STOCK SUMMARY -->
 
         <button
             type="button"
             class="verrah-tab"
             role="tab"
             aria-selected="false"
-            data-tab="sales"
+            data-tab="Stock Summary"
         >
-            Sales
+            Stock Summary
+        </button>
+
+
+        <!-- ACTIONS -->
+
+        <button
+            type="button"
+            class="verrah-tab"
+            role="tab"
+            aria-selected="false"
+            data-tab="Actions"
+        >
+            Actions
         </button>
 
 
@@ -65,43 +77,56 @@
     <div class="verrah-tab-content">
 
 
-        <!-- WELCOME / HERO -->
+        <!-- STOCK CARD -->
 
         <div
             class="verrah-tab-panel active"
-            id="welcome"
+            id="Stock Info"
             role="tabpanel"
         >
 
-            <%- include("hero") %>
+            <%- include("stockEntry/stock-catd") %>
 
         </div>
 
 
-        <!-- DELIVERIES -->
+        <!-- ALLOCATION -->
 
         <div
             class="verrah-tab-panel"
-            id="deliveries"
+            id="Stock Allocation"
             role="tabpanel"
             hidden
         >
 
-            <%- include("delivery") %>
+            <%- include("stockEntry/allocation") %>
+
+        </div>
+
+       <!-- STOCK SUMMARY -->
+
+        <div
+            class="verrah-tab-panel"
+            id="Stock Summary"
+            role="tabpanel"
+            hidden
+        >
+
+            <%- include("stockEntry/summary") %>
 
         </div>
 
 
-        <!-- SALES -->
+        <!-- ACTIONS -->
 
         <div
             class="verrah-tab-panel"
-            id="sales"
+            id="Actions"
             role="tabpanel"
             hidden
         >
 
-            <%- include("sales") %>
+            <%- include("stockEntry/actions") %>
 
         </div>
 
