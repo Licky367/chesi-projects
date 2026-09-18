@@ -9,6 +9,7 @@ module.exports = {
     ...require("./getById"),
     ...require("./getWithProducts"),
     ...require("./getProduct"),
+    ...require("./search"),
     ...require("./update"),
     ...require("./updateIcon"),
     ...require("./updateImages"),
