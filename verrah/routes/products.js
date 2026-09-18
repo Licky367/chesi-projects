@@ -84,6 +84,15 @@ router.get(
 );
 
 
+
+router.post(
+  "/update",
+  requireAdmin,
+  controller.create
+);
+
+
+
 // ----------------------------------------------------------
 // CREATE CATEGORY
 // POST /products/category/add
