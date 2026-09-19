@@ -5,235 +5,255 @@
 
 <div class="verrah-tabs-container">
 
+  <!-- =======================================================
+       SCROLLABLE TABS
+  ======================================================== -->
+
+  <div
+    class="verrah-tabs"
+    role="tablist"
+  >
+
+    <!-- STOCK INFO -->
+
+    <button
+      type="button"
+      class="verrah-tab active"
+      role="tab"
+      aria-selected="true"
+      aria-controls="stock-info"
+      data-tab="stock-info"
+    >
+      Stock Info
+    </button>
+
+
+    <!-- STOCK ALLOCATION -->
+
+    <button
+      type="button"
+      class="verrah-tab"
+      role="tab"
+      aria-selected="false"
+      aria-controls="stock-allocation"
+      data-tab="stock-allocation"
+    >
+      Stock Allocation
+    </button>
+
+
+    <!-- STOCK SUMMARY -->
+
+    <button
+      type="button"
+      class="verrah-tab"
+      role="tab"
+      aria-selected="false"
+      aria-controls="stock-summary"
+      data-tab="stock-summary"
+    >
+      Stock Summary
+    </button>
+
+
+    <!-- ACTIONS -->
+
+    <button
+      type="button"
+      class="verrah-tab"
+      role="tab"
+      aria-selected="false"
+      aria-controls="stock-actions"
+      data-tab="stock-actions"
+    >
+      Actions
+    </button>
+
+  </div>
+
+
+  <!-- =======================================================
+       TAB CONTENT
+  ======================================================== -->
+
+  <div class="verrah-tab-content">
 
     <!-- =====================================================
-         SCROLLABLE TABS
+         STOCK INFO
     ====================================================== -->
 
     <div
-        class="verrah-tabs"
-        role="tablist"
+      class="verrah-tab-panel active"
+      id="stock-info"
+      role="tabpanel"
+      aria-labelledby="stock-info-tab"
     >
 
-
-        <!-- STOCK CARD -->
-
-        <button
-            type="button"
-            class="verrah-tab active"
-            role="tab"
-            aria-selected="true"
-            data-tab="Stock Info"
-        >
-            Stock Info
-        </button>
-
-
-        <!-- ALLOCATION -->
-
-        <button
-            type="button"
-            class="verrah-tab"
-            role="tab"
-            aria-selected="false"
-            data-tab="Stock Allocation"
-        >
-            Stock Allocation
-        </button>
-
-        <!-- STOCK SUMMARY -->
-
-        <button
-            type="button"
-            class="verrah-tab"
-            role="tab"
-            aria-selected="false"
-            data-tab="Stock Summary"
-        >
-            Stock Summary
-        </button>
-
-
-        <!-- ACTIONS -->
-
-        <button
-            type="button"
-            class="verrah-tab"
-            role="tab"
-            aria-selected="false"
-            data-tab="Actions"
-        >
-            Actions
-        </button>
-
+      <%- include("stockEntry/stock-card") %>
 
     </div>
 
 
     <!-- =====================================================
-         TAB CONTENT
+         STOCK ALLOCATION
     ====================================================== -->
 
-    <div class="verrah-tab-content">
+    <div
+      class="verrah-tab-panel"
+      id="stock-allocation"
+      role="tabpanel"
+      aria-labelledby="stock-allocation-tab"
+      hidden
+    >
 
-
-        <!-- STOCK CARD -->
-
-        <div
-            class="verrah-tab-panel active"
-            id="Stock Info"
-            role="tabpanel"
-        >
-
-            <%- include("stockEntry/stock-card") %>
-
-        </div>
-
-
-        <!-- ALLOCATION -->
-
-        <div
-            class="verrah-tab-panel"
-            id="Stock Allocation"
-            role="tabpanel"
-            hidden
-        >
-
-            <%- include("stockEntry/allocation") %>
-
-        </div>
-
-       <!-- STOCK SUMMARY -->
-
-        <div
-            class="verrah-tab-panel"
-            id="Stock Summary"
-            role="tabpanel"
-            hidden
-        >
-
-            <%- include("stockEntry/summary") %>
-
-        </div>
-
-
-        <!-- ACTIONS -->
-
-        <div
-            class="verrah-tab-panel"
-            id="Actions"
-            role="tabpanel"
-            hidden
-        >
-
-            <%- include("stockEntry/actions") %>
-
-        </div>
-
+      <%- include("stockEntry/allocation") %>
 
     </div>
+
+
+    <!-- =====================================================
+         STOCK SUMMARY
+    ====================================================== -->
+
+    <div
+      class="verrah-tab-panel"
+      id="stock-summary"
+      role="tabpanel"
+      aria-labelledby="stock-summary-tab"
+      hidden
+    >
+
+      <%- include("stockEntry/summary") %>
+
+    </div>
+
+
+    <!-- =====================================================
+         ACTIONS
+    ====================================================== -->
+
+    <div
+      class="verrah-tab-panel"
+      id="stock-actions"
+      role="tabpanel"
+      aria-labelledby="stock-actions-tab"
+      hidden
+    >
+
+      <%- include("stockEntry/actions") %>
+
+    </div>
+
+  </div>
 
 </div>
 
 
 <!-- =========================================================
-     TAB SWITCHING
+     TAB SWITCHING + ALLOCATION LOGIC
 ========================================================= -->
 
 <script>
-
-(function () {
-
-    const tabs =
-        document.querySelectorAll(
-            ".verrah-tab"
-        );
-
-    const panels =
-        document.querySelectorAll(
-            ".verrah-tab-panel"
-        );
-
-
-    tabs.forEach(function (tab) {
-
-        tab.addEventListener(
-            "click",
-            function () {
-
-                const target =
-                    this.dataset.tab;
-
-
-                /* ---------------------------------------------
-                   UPDATE ACTIVE TAB
-                --------------------------------------------- */
-
-                tabs.forEach(function (item) {
-
-                    const active =
-                        item === tab;
-
-                    item.classList.toggle(
-                        "active",
-                        active
-                    );
-
-                    item.setAttribute(
-                        "aria-selected",
-                        active
-                            ? "true"
-                            : "false"
-                    );
-
-                });
-
-
-                /* ---------------------------------------------
-                   UPDATE VISIBLE CARD
-                --------------------------------------------- */
-
-                panels.forEach(function (panel) {
-
-                    const active =
-                        panel.id === target;
-
-                    panel.classList.toggle(
-                        "active",
-                        active
-                    );
-
-                    panel.hidden =
-                        !active;
-
-                });
-
-
-                /* ---------------------------------------------
-                   KEEP SELECTED TAB VISIBLE
-                --------------------------------------------- */
-
-                tab.scrollIntoView({
-
-                    behavior: "smooth",
-
-                    block: "nearest",
-
-                    inline: "center"
-
-                });
-
-            }
-        );
-
-    });
-
-})();
-
 (function () {
 
   "use strict";
 
+
+  /* =========================================================
+     TAB SWITCHING
+  ========================================================= */
+
+  const tabs = Array.from(
+    document.querySelectorAll(
+      ".verrah-tab"
+    )
+  );
+
+
+  const panels = Array.from(
+    document.querySelectorAll(
+      ".verrah-tab-panel"
+    )
+  );
+
+
+  tabs.forEach(function (tab) {
+
+    tab.addEventListener(
+      "click",
+      function () {
+
+        const target =
+          tab.dataset.tab;
+
+
+        /* -----------------------------------------------------
+           UPDATE TABS
+        ----------------------------------------------------- */
+
+        tabs.forEach(function (item) {
+
+          const isActive =
+            item === tab;
+
+
+          item.classList.toggle(
+            "active",
+            isActive
+          );
+
+
+          item.setAttribute(
+            "aria-selected",
+            isActive
+              ? "true"
+              : "false"
+          );
+
+        });
+
+
+        /* -----------------------------------------------------
+           UPDATE PANELS
+        ----------------------------------------------------- */
+
+        panels.forEach(function (panel) {
+
+          const isActive =
+            panel.id === target;
+
+
+          panel.classList.toggle(
+            "active",
+            isActive
+          );
+
+
+          panel.hidden =
+            !isActive;
+
+        });
+
+
+        /* -----------------------------------------------------
+           KEEP SELECTED TAB VISIBLE
+        ----------------------------------------------------- */
+
+        tab.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center"
+        });
+
+      }
+    );
+
+  });
+
+
+  /* =========================================================
+     ALLOCATION FORM
+  ========================================================= */
 
   const form =
     document.getElementById(
@@ -246,12 +266,11 @@
   }
 
 
-  const inputs =
-    Array.from(
-      document.querySelectorAll(
-        ".allocation-input"
-      )
-    );
+  const inputs = Array.from(
+    document.querySelectorAll(
+      ".allocation-input"
+    )
+  );
 
 
   const hiddenTotal =
@@ -296,6 +315,10 @@
     );
 
 
+  /* =========================================================
+     WAREHOUSE BALANCE
+  ========================================================= */
+
   const warehouse =
     Number(
       <%= stock
@@ -303,6 +326,10 @@
         : 0 %>
     );
 
+
+  /* =========================================================
+     GET INPUT VALUE
+  ========================================================= */
 
   function valueOf(input) {
 
@@ -325,9 +352,7 @@
       !Number.isFinite(value) ||
       value < 0
     ) {
-
       return 0;
-
     }
 
 
@@ -335,6 +360,10 @@
 
   }
 
+
+  /* =========================================================
+     CALCULATE ALLOCATION
+  ========================================================= */
 
   function calculate() {
 
@@ -355,27 +384,58 @@
       );
 
 
-    hiddenTotal.value =
-      String(sum);
+    /* -------------------------------------------------------
+       HIDDEN TOTAL
+    ------------------------------------------------------- */
+
+    if (hiddenTotal) {
+
+      hiddenTotal.value =
+        String(sum);
+
+    }
 
 
-    total.textContent =
-      sum.toLocaleString();
+    /* -------------------------------------------------------
+       DISPLAY TOTAL
+    ------------------------------------------------------- */
+
+    if (total) {
+
+      total.textContent =
+        sum.toLocaleString();
+
+    }
 
 
-    summaryTotal.textContent =
-      sum.toLocaleString();
+    if (summaryTotal) {
+
+      summaryTotal.textContent =
+        sum.toLocaleString();
+
+    }
 
 
-    remaining.textContent =
-      Math.max(
-        warehouse - sum,
-        0
-      ).toLocaleString();
+    /* -------------------------------------------------------
+       REMAINING WAREHOUSE STOCK
+    ------------------------------------------------------- */
+
+    if (remaining) {
+
+      remaining.textContent =
+        Math.max(
+          warehouse - sum,
+          0
+        ).toLocaleString();
+
+    }
 
 
-    let message =
-      "";
+    /* -------------------------------------------------------
+       VALIDATION MESSAGE
+    ------------------------------------------------------- */
+
+    let message = "";
 
 
     if (sum <= 0) {
@@ -391,13 +451,25 @@
     }
 
 
-    warning.textContent =
-      message;
+    /* -------------------------------------------------------
+       WARNING
+    ------------------------------------------------------- */
+
+    if (warning) {
+
+      warning.textContent =
+        message;
 
 
-    warning.hidden =
-      !message;
+      warning.hidden =
+        !message;
 
+    }
+
+
+    /* -------------------------------------------------------
+       ALLOCATION BUTTON
+    ------------------------------------------------------- */
 
     if (button) {
 
@@ -411,6 +483,10 @@
 
   }
 
+
+  /* =========================================================
+     INPUT EVENTS
+  ========================================================= */
 
   inputs.forEach(
     function (input) {
@@ -430,6 +506,10 @@
   );
 
 
+  /* =========================================================
+     FORM SUBMISSION
+  ========================================================= */
+
   form.addEventListener(
     "submit",
     function (event) {
@@ -438,17 +518,25 @@
         calculate();
 
 
-      hiddenTotal.value =
-        String(sum);
+      if (hiddenTotal) {
+
+        hiddenTotal.value =
+          String(sum);
+
+      }
+
+
+      const invalidSellPrice =
+        !sellPrice ||
+        String(
+          sellPrice.value
+        ).trim() === "";
 
 
       if (
         sum <= 0 ||
         sum > warehouse ||
-        !sellPrice ||
-        String(
-          sellPrice.value
-        ).trim() === ""
+        invalidSellPrice
       ) {
 
         event.preventDefault();
@@ -457,6 +545,10 @@
 
       }
 
+
+      /* -----------------------------------------------------
+         PREVENT DOUBLE SUBMISSION
+      ----------------------------------------------------- */
 
       if (button) {
 
@@ -472,6 +564,10 @@
     }
   );
 
+
+  /* =========================================================
+     STOCK IMAGE FALLBACK
+  ========================================================= */
 
   const image =
     document.querySelector(
@@ -507,6 +603,10 @@
 
   }
 
+
+  /* =========================================================
+     INITIAL CALCULATION
+  ========================================================= */
 
   calculate();
 
