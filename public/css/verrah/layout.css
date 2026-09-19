@@ -534,6 +534,8 @@ body{
 
 .sidebar-link{
 
+    position:relative;
+
     width:100%;
 
     min-height:58px;
@@ -559,7 +561,8 @@ body{
 
     transition:
         background .2s ease,
-        color .2s ease;
+        color .2s ease,
+        padding-left .2s ease;
 
 }
 
@@ -579,10 +582,41 @@ body{
 
     color:var(--primary);
 
-    font-weight:600;
+    font-weight:700;
+
+    padding-left:18px;
 
 }
 
+
+/* =========================================================
+   ACTIVE SIDEBAR INDICATOR
+========================================================= */
+
+.sidebar-link.active::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+
+    left:0;
+
+    bottom:0;
+
+    width:5px;
+
+    background:var(--primary);
+
+    border-radius:0 4px 4px 0;
+
+}
+
+
+/* =========================================================
+   ACTIVE SIDEBAR ICON
+========================================================= */
 
 .sidebar-link.active .sidebar-icon{
 
@@ -788,6 +822,24 @@ body{
 
 
 /* =========================================================
+   ACTIVE SUBMENU LINK
+========================================================= */
+
+.sidebar-submenu
+.sidebar-link.active{
+
+    background:var(--primary-light);
+
+    color:var(--primary);
+
+    font-weight:700;
+
+    padding-left:31px;
+
+}
+
+
+/* =========================================================
    SIDEBAR SUBMENU ICON
 ========================================================= */
 
@@ -900,6 +952,7 @@ body{
 /* =========================================================
    AUTHENTICATION PAGES
    No header on auth pages
+   No header padding required
 ========================================================= */
 
 .auth-page .main{
@@ -1094,13 +1147,19 @@ body{
     }
 
 
+    /* -----------------------------------------------
+       AUTH PAGES
+       No header exists on auth pages,
+       therefore no header-height padding.
+    ----------------------------------------------- */
+
     .auth-page .main{
+
+        padding-top:20px;
 
         padding-left:12px;
 
         padding-right:12px;
-
-        padding-top:var(--header-height);
 
         padding-bottom:var(--footer-height);
 
@@ -1199,5 +1258,6 @@ body{
         left:-265px;
 
     }
+
 
 }
