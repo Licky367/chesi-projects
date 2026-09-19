@@ -4,9 +4,10 @@
 
         <li class="sidebar-item">
 
-            <a
-                href="<%= homeLink %>"
-                class="sidebar-link active"
+           <a
+    href="/products"
+    class="sidebar-link <%= req.path.startsWith('/products') ? 'active' : '' %>"
+>
                 title="Dashboard"
             >
 
