@@ -4,7 +4,38 @@
 
 <div class="stock-summary-card">
 
+
+  <!-- =======================================================
+       SUMMARY TITLE
+  ======================================================== -->
+
+  <div class="stock-summary-heading">
+
+    <div>
+
+      <h2>
+        Stock Summary
+      </h2>
+
+      <p>
+        Review the warehouse balance and current allocation.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- =======================================================
+       SUMMARY VALUES
+  ======================================================== -->
+
   <div class="allocation-summary">
+
+
+    <!-- =====================================================
+         WAREHOUSE AVAILABLE
+    ====================================================== -->
 
     <div class="allocation-summary-item">
 
@@ -13,13 +44,19 @@
       </span>
 
       <strong>
+
         <%= Number(
           stock.units || 0
         ).toLocaleString() %>
+
       </strong>
 
     </div>
 
+
+    <!-- =====================================================
+         BEING DISPATCHED
+    ====================================================== -->
 
     <div class="allocation-summary-item">
 
@@ -33,6 +70,10 @@
 
     </div>
 
+
+    <!-- =====================================================
+         REMAINING WAREHOUSE
+    ====================================================== -->
 
     <div class="allocation-summary-item">
 
@@ -52,6 +93,10 @@
 
   </div>
 
+
+  <!-- =======================================================
+       WARNING
+  ======================================================== -->
 
   <div
     id="allocationWarning"
