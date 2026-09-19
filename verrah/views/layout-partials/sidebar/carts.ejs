@@ -18,10 +18,9 @@
 <li class="sidebar-item">
 
     <a
-        href="/carts"
-        class="sidebar-link"
-        title="Carts"
-    >
+    href="/products"
+    class="sidebar-link <%= req.path.startsWith('/carts') ? 'active' : '' %>"
+>
 
         <span
             class="sidebar-icon"
