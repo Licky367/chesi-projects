@@ -1,23 +1,45 @@
 <!-- =========================================================
      STOCK ALLOCATION
      VERRAH COSMETICS
+     
+     PARTIAL:
+     views/stock/stockEntry/allocation.ejs
+     
+     PURPOSE:
+     Edit Product allocation across substations.
+     
+     IMPORTANT:
+     - Product already exists for this Stock.
+     - Product owns unitSellPrice.
+     - Existing substation quantities are handled by the
+       service as the current physical allocation.
+     - Only submitted substation values are changed.
 ========================================================= -->
 
+
 <div class="allocation-panel">
+
 
     <%
         /* =====================================================
            FIND PRODUCT BELONGING TO THIS STOCK
+
+           Stock already has its Product.
+
+           We only use this Product to obtain its current
+           unitSellPrice for the form.
         ====================================================== */
 
         const stockProduct =
-            products &&
-            products.length
+            Array.isArray(products)
                 ? products.find(
                     function (product) {
 
-                        return String(product.stock) ===
-                            String(stock._id);
+                        return String(
+                            product.stock
+                        ) === String(
+                            stock._id
+                        );
 
                     }
                 )
@@ -25,12 +47,9 @@
 
 
         /* =====================================================
-           PRODUCT UNIT SELL PRICE
+           CURRENT PRODUCT SELLING PRICE
 
            Product owns unitSellPrice.
-
-           The value is used as the default in the editable
-           selling-price field below.
         ====================================================== */
 
         const productUnitSellPrice =
@@ -38,23 +57,37 @@
             stockProduct.unitSellPrice != null
                 ? stockProduct.unitSellPrice
                 : "";
+
+
+        /* =====================================================
+           SAFE OLD FORM DATA
+
+           On validation failure, preserve submitted values.
+        ====================================================== */
+
+        const oldAllocations =
+            old &&
+            old.allocations &&
+            typeof old.allocations === "object"
+                ? old.allocations
+                : {};
     %>
 
 
     <!-- =====================================================
-         ALLOCATION HEADING
+         ALLOCATION HEADER
     ====================================================== -->
 
     <div class="allocation-heading">
 
-        <div>
+        <div class="allocation-heading-content">
 
             <h2>
                 Dispatch to substations
             </h2>
 
             <p>
-                Enter the units each substation receives.
+                Enter the final units held by each substation.
             </p>
 
         </div>
@@ -77,6 +110,11 @@
 
     <!-- =====================================================
          ALLOCATION FORM
+
+         This submits to the existing stock update route.
+
+         The service treats this as an UPDATE of the existing
+         Product allocation, not Product creation.
     ====================================================== -->
 
     <form
@@ -86,23 +124,19 @@
         id="allocationForm"
     >
 
-        <input
-            type="hidden"
-            name="units"
-            id="totalUnits"
-            value="0"
-        >
-
 
         <!-- =================================================
-             SELLING PRICE
+             PRODUCT SELLING PRICE
         ================================================== -->
 
         <div class="field">
 
-            <label for="unitSellPrice">
+            <label
+                for="unitSellPrice"
+            >
                 Selling price per unit
             </label>
+
 
             <input
                 id="unitSellPrice"
@@ -114,6 +148,7 @@
                     ? old.unitSellPrice
                     : productUnitSellPrice %>"
                 required
+                autocomplete="off"
             >
 
         </div>
@@ -154,38 +189,42 @@
 
                 <tbody>
 
+
                     <% if (
-                        substations &&
-                        substations.length
+                        Array.isArray(substations) &&
+                        substations.length > 0
                     ) { %>
 
 
                         <% substations.forEach(
-                            function (substation, index)
-                        { %>
+                            function (
+                                substation,
+                                index
+                            ) {
 
-                            <%
                                 const substationId =
-                                    String(substation._id);
+                                    String(
+                                        substation._id
+                                    );
+
 
                                 const value =
-                                    old &&
-                                    old.allocations &&
-                                    typeof old.allocations === "object"
-                                        ? (
-                                            old.allocations[
-                                                substationId
-                                            ] ?? ""
-                                        )
+                                    Object.prototype.hasOwnProperty.call(
+                                        oldAllocations,
+                                        substationId
+                                    )
+                                        ? oldAllocations[
+                                            substationId
+                                        ]
                                         : "";
-                            %>
+                        %>
 
 
                             <tr>
 
 
                                 <!-- =================================
-                                     #
+                                     NUMBER
                                 ================================== -->
 
                                 <td>
@@ -198,7 +237,7 @@
 
 
                                 <!-- =================================
-                                     SUBSTATION
+                                     SUBSTATION NAME
                                 ================================== -->
 
                                 <td>
@@ -217,11 +256,15 @@
 
                                 <td>
 
-                                    <% if (substation.location) { %>
+                                    <% if (
+                                        substation.location
+                                    ) { %>
 
                                         <span>
 
-                                            <i class="fas fa-location-dot"></i>
+                                            <i
+                                                class="fas fa-location-dot"
+                                            ></i>
 
                                             <%= substation.location %>
 
@@ -229,7 +272,9 @@
 
                                     <% } else { %>
 
-                                        <span class="sales-muted">
+                                        <span
+                                            class="sales-muted"
+                                        >
                                             —
                                         </span>
 
@@ -239,7 +284,7 @@
 
 
                                 <!-- =================================
-                                     ALLOCATE UNITS
+                                     FINAL ALLOCATION
                                 ================================== -->
 
                                 <td>
@@ -249,7 +294,6 @@
                                         class="allocation-input"
                                         type="number"
                                         min="0"
-                                        max="<%= Number(stock.units || 0) %>"
                                         step="1"
                                         inputmode="numeric"
                                         name="allocations[<%= substationId %>]"
@@ -283,6 +327,7 @@
 
 
                     <% } %>
+
 
                 </tbody>
 
