@@ -51,11 +51,6 @@
         id="allocationForm"
     >
 
-
-        <!-- =================================================
-             TOTAL UNITS
-        ================================================== -->
-
         <input
             type="hidden"
             name="units"
@@ -97,11 +92,6 @@
 
             <table class="sales-table">
 
-
-                <!-- =============================================
-                     TABLE HEADER
-                ============================================== -->
-
                 <thead>
 
                     <tr>
@@ -127,12 +117,7 @@
                 </thead>
 
 
-                <!-- =============================================
-                     TABLE BODY
-                ============================================== -->
-
                 <tbody>
-
 
                     <% if (
                         substations &&
@@ -143,7 +128,6 @@
                         <% substations.forEach(
                             function (substation, index)
                         { %>
-
 
                             <%
                                 const substationId =
@@ -166,7 +150,7 @@
 
 
                                 <!-- =================================
-                                     NUMBER
+                                     #
                                 ================================== -->
 
                                 <td>
@@ -185,10 +169,8 @@
                                 <td>
 
                                     <strong>
-
                                         <%= substation.name ||
                                             "Unnamed Substation" %>
-
                                     </strong>
 
                                 </td>
@@ -200,9 +182,7 @@
 
                                 <td>
 
-                                    <% if (
-                                        substation.location
-                                    ) { %>
+                                    <% if (substation.location) { %>
 
                                         <span>
 
@@ -224,7 +204,7 @@
 
 
                                 <!-- =================================
-                                     ALLOCATION INPUT
+                                     ALLOCATE UNITS
                                 ================================== -->
 
                                 <td>
@@ -234,9 +214,7 @@
                                         class="allocation-input"
                                         type="number"
                                         min="0"
-                                        max="<%= Number(
-                                            stock.units || 0
-                                        ) %>"
+                                        max="<%= Number(stock.units || 0) %>"
                                         step="1"
                                         inputmode="numeric"
                                         name="allocations[<%= substationId %>]"
@@ -256,27 +234,20 @@
                     <% } else { %>
 
 
-                        <!-- =========================================
-                             EMPTY STATE
-                        ========================================== -->
-
                         <tr>
 
                             <td
                                 colspan="4"
                                 class="sales-empty"
                             >
-
                                 No active substations are available
                                 for allocation.
-
                             </td>
 
                         </tr>
 
 
                     <% } %>
-
 
                 </tbody>
 
