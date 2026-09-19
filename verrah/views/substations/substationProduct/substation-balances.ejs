@@ -53,7 +53,9 @@ if (!id) {
     return;
 }
 
-balanceBySubstation[String(id)] = item;
+balanceBySubstation[
+    String(id)
+] = item;
 
 });
 
@@ -110,7 +112,7 @@ allSubstations.length > 0;
                             <tr>
 
                                 <td
-                                    colspan="<%= isAdmin ? 6 : 4 %>"
+                                    colspan="<%= isAdmin ? 5 : 4 %>"
                                     class="sales-empty"
                                 >
 
@@ -131,182 +133,196 @@ allSubstations.length > 0;
 
 
                 <!-- =============================================
-                     BALANCES TABLE
+                     MULTI-SUBSTATION UPDATE FORM
+
+                     One form controls the entire table.
+
+                     The submitted structure is:
+
+                     allocations[0][substationId]
+                     allocations[0][units]
+
+                     allocations[1][substationId]
+                     allocations[1][units]
+
+                     etc.
                 ============================================== -->
 
-                <div class="sales-table-wrapper">
-
-                    <table class="sales-table">
-
-                        <thead>
-
-                            <tr>
-
-                                <th>
-                                    #
-                                </th>
-
-                                <th>
-                                    Substation
-                                </th>
-
-                                <th>
-                                    Location
-                                </th>
-
-                                <th>
-                                    Available
-                                </th>
-
-                                <% if (isAdmin) { %>
-
-                                    <th>
-                                        Edit Units
-                                    </th>
-
-                                    <th>
-                                        Save
-                                    </th>
-
-                                <% } %>
-
-                            </tr>
-
-                        </thead>
+                <form
+                    method="POST"
+                    action="/substations/product/<%= product._id %>"
+                    id="substation-balances-form"
+                >
 
 
-                        <tbody>
+                    <!-- =========================================
+                         BALANCES TABLE
+                    ========================================== -->
 
-                            <% allSubstations.forEach(
-                                function(substation, index)
-                            { %>
+                    <div class="sales-table-wrapper">
 
+                        <table class="sales-table">
 
-                                <%
-                                /*
-                                 * Find this substation's existing
-                                 * product balance.
-                                 */
-                                const substationId =
-                                    String(
-                                        substation._id
-                                    );
-
-                                const balance =
-                                    balanceBySubstation[
-                                        substationId
-                                    ] || null;
-
-
-                                /*
-                                 * If there is no allocation record,
-                                 * the balance is zero.
-                                 */
-                                const units =
-                                    balance
-                                        ? Number(balance.units || 0)
-                                        : 0;
-                                %>
-
+                            <thead>
 
                                 <tr>
 
+                                    <th>
+                                        #
+                                    </th>
 
-                                    <!-- =================================
-                                         NUMBER
-                                    ================================== -->
+                                    <th>
+                                        Substation
+                                    </th>
 
-                                    <td>
+                                    <th>
+                                        Location
+                                    </th>
 
-                                        <strong>
-                                            <%= index + 1 %>
-                                        </strong>
-
-                                    </td>
-
-
-                                    <!-- =================================
-                                         SUBSTATION
-                                    ================================== -->
-
-                                    <td>
-
-                                        <strong>
-
-                                            <%= substation.name ||
-                                                "Unnamed Substation" %>
-
-                                        </strong>
-
-                                    </td>
-
-
-                                    <!-- =================================
-                                         LOCATION
-                                    ================================== -->
-
-                                    <td>
-
-                                        <% if (substation.location) { %>
-
-                                            <span>
-
-                                                <i class="fas fa-location-dot"></i>
-
-                                                <%= substation.location %>
-
-                                            </span>
-
-                                        <% } else { %>
-
-                                            <span class="sales-muted">
-                                                —
-                                            </span>
-
-                                        <% } %>
-
-                                    </td>
-
-
-                                    <!-- =================================
-                                         AVAILABLE UNITS
-                                    ================================== -->
-
-                                    <td>
-
-                                        <strong class="sales-arrears-value">
-
-                                            <%= number(units) %>
-
-                                        </strong>
-
-                                    </td>
-
+                                    <th>
+                                        Available
+                                    </th>
 
                                     <% if (isAdmin) { %>
 
+                                        <th>
+                                            Edit Units
+                                        </th>
 
-                                        <!-- =================================
-                                             UNITS INPUT
-                                        ================================== -->
+                                    <% } %>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+
+                                <% allSubstations.forEach(
+                                    function(substation, index)
+                                { %>
+
+
+                                    <%
+                                    /* =================================
+                                       FIND CURRENT BALANCE
+                                    ================================== */
+
+                                    const substationId =
+                                        String(
+                                            substation._id
+                                        );
+
+                                    const balance =
+                                        balanceBySubstation[
+                                            substationId
+                                        ] || null;
+
+
+                                    /* =================================
+                                       CURRENT UNITS
+                                    ================================== */
+
+                                    const units =
+                                        balance
+                                            ? Number(
+                                                balance.units || 0
+                                            )
+                                            : 0;
+                                    %>
+
+
+                                    <tr>
+
+
+                                        <!-- =============================
+                                             NUMBER
+                                        ============================== -->
 
                                         <td>
 
-                                            <form
-                                                method="POST"
-                                                action="/substations/product/<%= product._id %>"
-                                                id="substation-update-<%= substation._id %>"
+                                            <strong>
+                                                <%= index + 1 %>
+                                            </strong>
+
+                                        </td>
+
+
+                                        <!-- =============================
+                                             SUBSTATION
+                                        ============================== -->
+
+                                        <td>
+
+                                            <strong>
+
+                                                <%= substation.name ||
+                                                    "Unnamed Substation" %>
+
+                                            </strong>
+
+                                        </td>
+
+
+                                        <!-- =============================
+                                             LOCATION
+                                        ============================== -->
+
+                                        <td>
+
+                                            <% if (
+                                                substation.location
+                                            ) { %>
+
+                                                <span>
+
+                                                    <i class="fas fa-location-dot"></i>
+
+                                                    <%= substation.location %>
+
+                                                </span>
+
+                                            <% } else { %>
+
+                                                <span class="sales-muted">
+                                                    —
+                                                </span>
+
+                                            <% } %>
+
+                                        </td>
+
+
+                                        <!-- =============================
+                                             CURRENT AVAILABLE
+                                        ============================== -->
+
+                                        <td>
+
+                                            <strong
+                                                class="sales-arrears-value"
                                             >
 
-                                                <input
-                                                    type="hidden"
-                                                    name="substationId"
-                                                    value="<%= substation._id %>"
-                                                >
+                                                <%= number(units) %>
+
+                                            </strong>
+
+                                        </td>
+
+
+                                        <% if (isAdmin) { %>
+
+
+                                            <!-- =============================
+                                                 EDIT UNITS
+                                            ============================== -->
+
+                                            <td>
 
                                                 <input
                                                     id="sales-units-<%= substation._id %>"
-                                                    name="units"
+                                                    name="allocations[<%= index %>][units]"
                                                     type="number"
                                                     min="0"
                                                     step="1"
@@ -314,47 +330,59 @@ allSubstations.length > 0;
                                                     required
                                                 >
 
-                                            </form>
+                                                <input
+                                                    type="hidden"
+                                                    name="allocations[<%= index %>][substationId]"
+                                                    value="<%= substation._id %>"
+                                                >
 
-                                        </td>
-
-
-                                        <!-- =================================
-                                             SAVE BUTTON
-                                        ================================== -->
-
-                                        <td>
-
-                                            <button
-                                                type="submit"
-                                                form="substation-update-<%= substation._id %>"
-                                                title="Save units"
-                                            >
-
-                                                <i class="fas fa-save"></i>
-
-                                                <span>
-                                                    Save
-                                                </span>
-
-                                            </button>
-
-                                        </td>
+                                            </td>
 
 
-                                    <% } %>
+                                        <% } %>
 
 
-                                </tr>
+                                    </tr>
 
 
-                            <% }); %>
+                                <% }); %>
 
-                        </tbody>
 
-                    </table>
+                            </tbody>
 
-                </div>
+                        </table>
+
+                    </div>
+
+
+                    <% if (isAdmin) { %>
+
+
+                        <!-- =============================================
+                             SAVE ALL CHANGES
+                        ============================================== -->
+
+                        <div class="allocation-save-row">
+
+                            <button
+                                type="submit"
+                                class="primary-btn"
+                                id="save-all-substation-balances"
+                            >
+
+                                <i class="fas fa-save"></i>
+
+                                Save All Changes
+
+                            </button>
+
+                        </div>
+
+
+                    <% } %>
+
+
+                </form>
 
 
             <% } %>
