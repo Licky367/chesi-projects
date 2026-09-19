@@ -38,91 +38,10 @@
 
 
     <!-- ======================================================
-         SEARCH FORM
+         SEARCH PRODUCTS
     ======================================================= -->
 
-    <form
-        action="/products/search"
-        method="GET"
-        class="products-search-form"
-        role="search"
-    >
-
-        <div class="products-search-box">
-
-
-            <!-- ==================================================
-                 SEARCH ICON
-            =================================================== -->
-
-            <i
-                class="fas fa-search products-search-icon"
-                aria-hidden="true"
-            ></i>
-
-
-            <!-- ==================================================
-                 SEARCH INPUT
-            =================================================== -->
-
-            <input
-                type="search"
-                name="q"
-                value="<%= typeof query !== "undefined" ? query : "" %>"
-                placeholder="Search products or categories..."
-                class="products-search-input"
-                autocomplete="off"
-                aria-label="Search products or categories"
-            >
-
-
-            <!-- ==================================================
-                 CLEAR SEARCH
-            =================================================== -->
-
-            <% if (typeof query !== "undefined" && query) { %>
-
-                <a
-                    href="/products/search"
-                    class="products-search-clear"
-                    aria-label="Clear search"
-                    title="Clear search"
-                >
-
-                    <i
-                        class="fas fa-times"
-                        aria-hidden="true"
-                    ></i>
-
-                </a>
-
-            <% } %>
-
-
-            <!-- ==================================================
-                 SEARCH BUTTON
-            =================================================== -->
-
-            <button
-                type="submit"
-                class="products-search-button"
-            >
-
-                <i
-                    class="fas fa-search"
-                    aria-hidden="true"
-                ></i>
-
-                <span>
-                    Search
-                </span>
-
-            </button>
-
-
-        </div>
-
-    </form>
+    <%- include("./searchComposser") %>
 
 
     <!-- ======================================================
