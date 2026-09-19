@@ -5,6 +5,41 @@
 
 <div class="allocation-panel">
 
+    <%
+        /* =====================================================
+           FIND PRODUCT BELONGING TO THIS STOCK
+        ====================================================== */
+
+        const stockProduct =
+            products &&
+            products.length
+                ? products.find(
+                    function (product) {
+
+                        return String(product.stock) ===
+                            String(stock._id);
+
+                    }
+                )
+                : null;
+
+
+        /* =====================================================
+           PRODUCT UNIT SELL PRICE
+
+           Product owns unitSellPrice.
+
+           The value is used as the default in the editable
+           selling-price field below.
+        ====================================================== */
+
+        const productUnitSellPrice =
+            stockProduct &&
+            stockProduct.unitSellPrice != null
+                ? stockProduct.unitSellPrice
+                : "";
+    %>
+
 
     <!-- =====================================================
          ALLOCATION HEADING
@@ -77,7 +112,7 @@
                 name="unitSellPrice"
                 value="<%= old && old.unitSellPrice != null
                     ? old.unitSellPrice
-                    : (unitSellPrice ?? "") %>"
+                    : productUnitSellPrice %>"
                 required
             >
 
