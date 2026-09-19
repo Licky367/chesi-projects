@@ -3,20 +3,30 @@
 // STOCK CONTROLLER
 // ==========================================================
 
-const service = require("../services/stockService");
-const Category = require("../models/category");
+const service =
+    require("../services/stockService");
+
+const Category =
+    require("../models/category");
+
+const Product =
+    require("../models/products");
 
 // ==========================================================
 // RESOLVE CATEGORY
 //
 // The form submits Category._id.
-// The service will convert that ID into Category.name.
+// The controller validates the category and passes the ID
+// to the service.
 //
-// The controller also accepts a category name.
+// The service is responsible for converting the category
+// into the value required by Stock.
 // ==========================================================
 
 async function resolveCategoryId(value) {
-    const raw = String(value ?? "").trim();
+
+    const raw =
+        String(value ?? "").trim();
 
     if (!raw) {
         throw new Error(
@@ -28,13 +38,18 @@ async function resolveCategoryId(value) {
     // CATEGORY ID
     // ------------------------------------------------------
 
-    if (/^[a-fA-F0-9]{24}$/.test(raw)) {
-        const category = await Category.findOne({
-            _id: raw,
-            isActive: true
-        })
-            .select("_id")
-            .lean();
+    if (
+        /^[a-fA-F0-9]{24}$/.test(raw)
+    ) {
+
+        const category =
+            await Category
+                .findOne({
+                    _id: raw,
+                    isActive: true
+                })
+                .select("_id")
+                .lean();
 
         if (!category) {
             throw new Error(
@@ -42,19 +57,23 @@ async function resolveCategoryId(value) {
             );
         }
 
-        return String(category._id);
+        return String(
+            category._id
+        );
     }
 
     // ------------------------------------------------------
     // CATEGORY NAME
     // ------------------------------------------------------
 
-    const category = await Category.findOne({
-        name: raw.toLowerCase(),
-        isActive: true
-    })
-        .select("_id")
-        .lean();
+    const category =
+        await Category
+            .findOne({
+                name: raw.toLowerCase(),
+                isActive: true
+            })
+            .select("_id")
+            .lean();
 
     if (!category) {
         throw new Error(
@@ -62,7 +81,43 @@ async function resolveCategoryId(value) {
         );
     }
 
-    return String(category._id);
+    return String(
+        category._id
+    );
+}
+
+// ==========================================================
+// GET PRODUCT SELLING PRICE FOR STOCK
+//
+// Stock does NOT store sell price.
+//
+// Product owns:
+//     unitSellPrice
+//
+// This is only used when rendering the stock edit form.
+// ==========================================================
+
+async function getProductSellPrice(
+    stockId
+) {
+
+    if (!stockId) {
+        return null;
+    }
+
+    const product =
+        await Product
+            .findOne({
+                stock: stockId
+            })
+            .select("unitSellPrice")
+            .lean();
+
+    if (!product) {
+        return null;
+    }
+
+    return product.unitSellPrice ?? null;
 }
 
 // ==========================================================
@@ -74,10 +129,12 @@ async function renderForm(
     data = {},
     status = 200
 ) {
+
     const [
         categories,
         stockCatalog
     ] = await Promise.all([
+
         service
             .getCategories()
             .catch(() => []),
@@ -123,56 +180,60 @@ async function renderForm(
 // LIST STOCK
 // ==========================================================
 
-exports.list = async (
-    req,
-    res
-) => {
-    try {
-        const stocks =
-            await service.listStock();
+exports.list =
+    async (
+        req,
+        res
+    ) => {
 
-        return res.render(
-            "stock/stock",
-            {
-                title:
-                    "Stock Management",
+        try {
 
-                stocks,
+            const stocks =
+                await service.listStock();
 
-                error:
-                    req.query.error ||
-                    null,
-
-                saved:
-                    req.query.saved ||
-                    ""
-            }
-        );
-
-    } catch (error) {
-        console.error(
-            "Stock list error:",
-            error
-        );
-
-        return res
-            .status(500)
-            .render(
+            return res.render(
                 "stock/stock",
                 {
                     title:
                         "Stock Management",
 
-                    stocks: [],
+                    stocks,
 
                     error:
-                        error.message,
+                        req.query.error ||
+                        null,
 
-                    saved: ""
+                    saved:
+                        req.query.saved ||
+                        ""
                 }
             );
-    }
-};
+
+        } catch (error) {
+
+            console.error(
+                "Stock list error:",
+                error
+            );
+
+            return res
+                .status(500)
+                .render(
+                    "stock/stock",
+                    {
+                        title:
+                            "Stock Management",
+
+                        stocks: [],
+
+                        error:
+                            error.message,
+
+                        saved: ""
+                    }
+                );
+        }
+    };
 
 // ==========================================================
 // NEW / UPDATE STOCK FORM
@@ -183,59 +244,145 @@ exports.newStockForm =
         req,
         res
     ) => {
+
         try {
-            const selectedStock =
-                req.query.stockId
-                    ? await service.getStock(
-                        req.query.stockId
-                    )
-                    : null;
 
-            const old =
-                selectedStock
-                    ? {
-                        ...selectedStock,
+            const stockId =
+                String(
+                    req.query.stockId ||
+                    ""
+                ).trim();
 
-                        category:
-                            selectedStock.category ||
-                            "",
+            // --------------------------------------------------
+            // CREATE MODE
+            // --------------------------------------------------
 
-                        // --------------------------------------------------
-                        // IMPORTANT:
-                        // units represents the CURRENT TOTAL WAREHOUSE
-                        // BALANCE when editing.
-                        // --------------------------------------------------
+            if (!stockId) {
 
-                        units:
-                            selectedStock.units ?? 0
+                return renderForm(
+                    res,
+                    {
+                        title:
+                            "Add Stock Subcategory",
+
+                        old: {},
+
+                        selectedStockId:
+                            ""
                     }
-                    : {};
+                );
+            }
+
+            // --------------------------------------------------
+            // UPDATE MODE
+            // --------------------------------------------------
+
+            const selectedStock =
+                await service.getStock(
+                    stockId
+                );
+
+            if (!selectedStock) {
+
+                return renderForm(
+                    res,
+                    {
+                        title:
+                            "Update Stock Subcategory",
+
+                        error:
+                            "Stock entry not found.",
+
+                        old: {},
+
+                        selectedStockId:
+                            ""
+                    },
+                    404
+                );
+            }
+
+            // --------------------------------------------------
+            // Product owns unitSellPrice.
+            //
+            // Stock does NOT own sell price.
+            // Fetch the Product linked to this Stock so the
+            // edit form can display its current selling price.
+            // --------------------------------------------------
+
+            const unitSellPrice =
+                await getProductSellPrice(
+                    selectedStock._id
+                );
+
+            const old = {
+
+                ...selectedStock,
+
+                category:
+                    selectedStock.category ||
+                    "",
+
+                // --------------------------------------------------
+                // IMPORTANT:
+                //
+                // units represents the CURRENT TOTAL warehouse
+                // balance when editing.
+                // --------------------------------------------------
+
+                units:
+                    selectedStock.units ??
+                    0,
+
+                // --------------------------------------------------
+                // Product selling price.
+                //
+                // Do NOT put sellPrice on Stock itself.
+                // --------------------------------------------------
+
+                unitSellPrice:
+                    unitSellPrice ??
+                    ""
+            };
 
             return renderForm(
                 res,
                 {
                     title:
-                        selectedStock
-                            ? "Update Stock Subcategory"
-                            : "Add Stock Subcategory",
+                        "Update Stock Subcategory",
 
                     old,
 
                     selectedStockId:
-                        selectedStock?._id
+                        selectedStock._id
                             ?.toString() ||
                         ""
                 }
             );
 
         } catch (error) {
-            console.error(error);
+
+            console.error(
+                "Stock form error:",
+                error
+            );
 
             return renderForm(
                 res,
                 {
+                    title:
+                        req.query.stockId
+                            ? "Update Stock Subcategory"
+                            : "Add Stock Subcategory",
+
                     error:
-                        error.message
+                        error.message,
+
+                    old: {},
+
+                    selectedStockId:
+                        req.query.stockId ||
+                        ""
                 },
                 500
             );
@@ -246,13 +393,27 @@ exports.newStockForm =
 // CREATE OR UPDATE STOCK
 // ==========================================================
 //
-// IMPORTANT UNITS RULE
-//
 // CREATE:
-//     body.units = initial warehouse units
+//
+//     body.units
+//         = initial warehouse units
+//
+//     service creates:
+//         1. Stock
+//         2. Product
+//
+//     Product:
+//         units = 0
+//         buyPrice = Stock.buyPrice
+//         unitSellPrice = submitted selling price
+//
+//     Substations:
+//         NOT touched
 //
 // UPDATE:
-//     body.units = NEW TOTAL warehouse units
+//
+//     body.units
+//         = NEW TOTAL warehouse units
 //
 // The controller does NOT calculate additional units.
 //
@@ -261,7 +422,7 @@ exports.newStockForm =
 //     additionalUnits =
 //         newTotalUnits - currentUnits
 //
-// The service also enforces:
+// The service enforces:
 //
 //     newTotalUnits >= currentUnits
 //
@@ -269,7 +430,6 @@ exports.newStockForm =
 //
 //     if additionalUnits > 0,
 //     buyPrice is required.
-//
 // ==========================================================
 
 exports.createOrUpdateStock =
@@ -277,7 +437,9 @@ exports.createOrUpdateStock =
         req,
         res
     ) => {
+
         try {
+
             const stockId =
                 String(
                     req.body.stockId ||
@@ -285,10 +447,9 @@ exports.createOrUpdateStock =
                 ).trim();
 
             // --------------------------------------------------
-            // The frontend submits Category._id.
+            // Resolve and validate category.
             //
-            // The service converts this into Category.name
-            // before saving Stock.
+            // The frontend submits Category._id.
             // --------------------------------------------------
 
             const categoryId =
@@ -297,21 +458,18 @@ exports.createOrUpdateStock =
                 );
 
             // --------------------------------------------------
-            // IMPORTANT:
+            // Preserve the submitted form values.
             //
-            // Keep units exactly as submitted.
-            //
-            // In UPDATE mode this is the NEW TOTAL warehouse
-            // units, NOT additional units.
-            //
-            // Do not convert it here.
-            // Do not calculate additionalUnits here.
-            // The service owns that calculation.
+            // The controller does not calculate units.
+            // The service owns all stock quantity logic.
             // --------------------------------------------------
 
             const body = {
+
                 ...req.body,
-                category: categoryId
+
+                category:
+                    categoryId
             };
 
             // --------------------------------------------------
@@ -319,6 +477,7 @@ exports.createOrUpdateStock =
             // --------------------------------------------------
 
             if (stockId) {
+
                 await service.updateStockEntry(
                     stockId,
                     body
@@ -327,9 +486,26 @@ exports.createOrUpdateStock =
 
             // --------------------------------------------------
             // CREATE
+            //
+            // createStock now creates both:
+            //
+            //     Stock
+            //     Product
+            //
+            // Product starts with:
+            //
+            //     units = 0
+            //
+            // and receives:
+            //
+            //     buyPrice = Stock.buyPrice
+            //     unitSellPrice = submitted sell price
+            //
+            // No substation allocation occurs here.
             // --------------------------------------------------
 
             else {
+
                 await service.createStock(
                     body
                 );
@@ -344,7 +520,11 @@ exports.createOrUpdateStock =
             );
 
         } catch (error) {
-            console.error(error);
+
+            console.error(
+                "Create/update stock error:",
+                error
+            );
 
             return renderForm(
                 res,
@@ -360,9 +540,8 @@ exports.createOrUpdateStock =
                     // --------------------------------------------------
                     // Preserve exactly what the user entered.
                     //
-                    // This is particularly important during an update
-                    // validation failure because units represents the
-                    // requested NEW TOTAL.
+                    // Especially important for UPDATE because
+                    // body.units is the requested NEW TOTAL.
                     // --------------------------------------------------
 
                     old:
@@ -380,17 +559,28 @@ exports.createOrUpdateStock =
 // ==========================================================
 // STOCK ENTRY / PRODUCT ALLOCATION FORM
 // ==========================================================
+//
+// This is a SEPARATE operation from stock creation.
+//
+// Stock creation does NOT allocate to substations.
+//
+// This form is used later when product units are dispatched
+// from warehouse Stock to substations.
+// ==========================================================
 
 exports.entry =
     async (
         req,
         res
     ) => {
+
         try {
+
             const [
                 stock,
                 substations
             ] = await Promise.all([
+
                 service.getStock(
                     req.params.id
                 ),
@@ -399,6 +589,7 @@ exports.entry =
             ]);
 
             if (!stock) {
+
                 return res.redirect(
                     "/stock?error=Stock+not+found"
                 );
@@ -427,7 +618,11 @@ exports.entry =
             );
 
         } catch (error) {
-            console.error(error);
+
+            console.error(
+                "Stock entry error:",
+                error
+            );
 
             return res.redirect(
                 `/stock?error=${encodeURIComponent(
@@ -440,13 +635,31 @@ exports.entry =
 // ==========================================================
 // CREATE PRODUCT FROM STOCK
 // ==========================================================
+//
+// This is the actual allocation operation.
+//
+// The service is responsible for keeping these balances
+// synchronized:
+//
+//     Stock.units
+//         ↓
+/*
+        Stock.units decreases
+
+        Product.units increases
+
+        Substation.productInventory.units increases
+*/
+// ==========================================================
 
 exports.createProduct =
     async (
         req,
         res
     ) => {
+
         try {
+
             await service.createProductFromStock(
                 req.params.id,
                 req.body
@@ -457,12 +670,17 @@ exports.createProduct =
             );
 
         } catch (error) {
-            console.error(error);
+
+            console.error(
+                "Create product from stock error:",
+                error
+            );
 
             const [
                 stock,
                 substations
             ] = await Promise.all([
+
                 service.getStock(
                     req.params.id
                 ),
@@ -471,6 +689,7 @@ exports.createProduct =
             ]);
 
             if (!stock) {
+
                 return res.redirect(
                     "/stock"
                 );
