@@ -1,201 +1,324 @@
 <!-- =========================================================
      STOCK ALLOCATION
+     VERRAH COSMETICS
 ========================================================= -->
 
 <div class="allocation-panel">
 
 
-  <!-- =======================================================
-       ALLOCATION HEADING
-  ======================================================== -->
-
-  <div class="allocation-heading">
-
-    <div>
-
-      <h2>
-        Dispatch to substations
-      </h2>
-
-      <p>
-        Enter the units each substation receives.
-      </p>
-
-    </div>
-
-
-    <div class="allocation-total-box">
-
-      <small>
-        Total allocated
-      </small>
-
-      <strong id="allocationTotal">
-        0
-      </strong>
-
-    </div>
-
-  </div>
-
-
-  <!-- =======================================================
-       ALLOCATION FORM
-  ======================================================== -->
-
-  <form
-    action="/stock/<%= stock._id %>"
-    method="POST"
-    class="allocation-form"
-    id="allocationForm"
-  >
-
-
     <!-- =====================================================
-         TOTAL UNITS
+         ALLOCATION HEADING
     ====================================================== -->
 
-    <input
-      type="hidden"
-      name="units"
-      id="totalUnits"
-      value="0"
-    >
+    <div class="allocation-heading">
 
+        <div>
 
-    <!-- =====================================================
-         SELLING PRICE
-    ====================================================== -->
+            <h2>
+                Dispatch to substations
+            </h2>
 
-    <div class="field">
+            <p>
+                Enter the units each substation receives.
+            </p>
 
-      <label for="unitSellPrice">
-        Selling price per unit
-      </label>
-
-      <input
-        id="unitSellPrice"
-        type="number"
-        min="0"
-        step="0.01"
-        name="unitSellPrice"
-        value="<%= old && old.unitSellPrice != null
-          ? old.unitSellPrice
-          : "" %>"
-        required
-      >
-
-    </div>
-
-
-    <!-- =====================================================
-         SUBSTATION ALLOCATIONS
-    ====================================================== -->
-
-    <div class="substation-allocation-list">
-
-
-      <% if (substations && substations.length) { %>
-
-
-        <% substations.forEach(function (substation) { %>
-
-          <%
-            const substationId =
-              String(substation._id);
-
-            const value =
-              old &&
-              old.allocations &&
-              typeof old.allocations === "object"
-                ? (
-                    old.allocations[
-                      substationId
-                    ] ?? ""
-                  )
-                : "";
-          %>
-
-
-          <div class="substation-allocation-row">
-
-
-            <!-- =================================================
-                 SUBSTATION NAME
-            ================================================== -->
-
-            <div class="substation-name">
-
-              <i class="fas fa-store"></i>
-
-              <div>
-
-                <strong>
-                  <%= substation.name %>
-                </strong>
-
-
-                <% if (substation.location) { %>
-
-                  <small>
-                    <%= substation.location %>
-                  </small>
-
-                <% } %>
-
-              </div>
-
-            </div>
-
-
-            <!-- =================================================
-                 UNIT INPUT
-            ================================================== -->
-
-            <div class="substation-unit-input">
-
-              <label
-                for="allocation-<%= substationId %>"
-              >
-                Units
-              </label>
-
-
-              <input
-                id="allocation-<%= substationId %>"
-                class="allocation-input"
-                type="number"
-                min="0"
-                max="<%= Number(stock.units || 0) %>"
-                step="1"
-                inputmode="numeric"
-                name="allocations[<%= substationId %>]"
-                value="<%= value %>"
-                autocomplete="off"
-              >
-
-            </div>
-
-          </div>
-
-
-        <% }) %>
-
-
-      <% } else { %>
-
-
-        <div class="error">
-          No active substations are available.
         </div>
 
 
-      <% } %>
+        <div class="allocation-total-box">
 
+            <small>
+                Total allocated
+            </small>
+
+            <strong id="allocationTotal">
+                0
+            </strong>
+
+        </div>
 
     </div>
 
 
-  </form>
+    <!-- =====================================================
+         ALLOCATION FORM
+    ====================================================== -->
+
+    <form
+        action="/stock/<%= stock._id %>"
+        method="POST"
+        class="allocation-form"
+        id="allocationForm"
+    >
+
+
+        <!-- =================================================
+             TOTAL UNITS
+        ================================================== -->
+
+        <input
+            type="hidden"
+            name="units"
+            id="totalUnits"
+            value="0"
+        >
+
+
+        <!-- =================================================
+             SELLING PRICE
+        ================================================== -->
+
+        <div class="field">
+
+            <label for="unitSellPrice">
+                Selling price per unit
+            </label>
+
+            <input
+                id="unitSellPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                name="unitSellPrice"
+                value="<%= old && old.unitSellPrice != null
+                    ? old.unitSellPrice
+                    : "" %>"
+                required
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             SUBSTATION ALLOCATION TABLE
+        ================================================== -->
+
+        <div class="sales-table-wrapper">
+
+            <table class="sales-table">
+
+
+                <!-- =============================================
+                     TABLE HEADER
+                ============================================== -->
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            #
+                        </th>
+
+                        <th>
+                            Substation
+                        </th>
+
+                        <th>
+                            Location
+                        </th>
+
+                        <th>
+                            Warehouse
+                        </th>
+
+                        <th>
+                            Allocate Units
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <!-- =============================================
+                     TABLE BODY
+                ============================================== -->
+
+                <tbody>
+
+
+                    <% if (
+                        substations &&
+                        substations.length
+                    ) { %>
+
+
+                        <% substations.forEach(
+                            function (substation, index)
+                        { %>
+
+
+                            <%
+                                const substationId =
+                                    String(substation._id);
+
+                                const value =
+                                    old &&
+                                    old.allocations &&
+                                    typeof old.allocations === "object"
+                                        ? (
+                                            old.allocations[
+                                                substationId
+                                            ] ?? ""
+                                        )
+                                        : "";
+                            %>
+
+
+                            <tr>
+
+
+                                <!-- =================================
+                                     NUMBER
+                                ================================== -->
+
+                                <td>
+
+                                    <strong>
+                                        <%= index + 1 %>
+                                    </strong>
+
+                                </td>
+
+
+                                <!-- =================================
+                                     SUBSTATION
+                                ================================== -->
+
+                                <td>
+
+                                    <strong>
+
+                                        <%= substation.name ||
+                                            "Unnamed Substation" %>
+
+                                    </strong>
+
+                                </td>
+
+
+                                <!-- =================================
+                                     LOCATION
+                                ================================== -->
+
+                                <td>
+
+                                    <% if (
+                                        substation.location
+                                    ) { %>
+
+                                        <span>
+
+                                            <i class="fas fa-location-dot"></i>
+
+                                            <%= substation.location %>
+
+                                        </span>
+
+                                    <% } else { %>
+
+                                        <span class="sales-muted">
+                                            —
+                                        </span>
+
+                                    <% } %>
+
+                                </td>
+
+
+                                <!-- =================================
+                                     WAREHOUSE AVAILABLE
+                                ================================== -->
+
+                                <td>
+
+                                    <strong
+                                        class="sales-arrears-value"
+                                    >
+
+                                        <%= Number(
+                                            stock.units || 0
+                                        ).toLocaleString("en-KE") %>
+
+                                    </strong>
+
+                                </td>
+
+
+                                <!-- =================================
+                                     ALLOCATION INPUT
+                                ================================== -->
+
+                                <td>
+
+                                    <input
+                                        id="allocation-<%= substationId %>"
+                                        class="allocation-input"
+                                        type="number"
+                                        min="0"
+                                        max="<%= Number(
+                                            stock.units || 0
+                                        ) %>"
+                                        step="1"
+                                        inputmode="numeric"
+                                        name="allocations[<%= substationId %>]"
+                                        value="<%= value %>"
+                                        autocomplete="off"
+                                    >
+
+                                </td>
+
+
+                            </tr>
+
+
+                        <% }); %>
+
+
+                    <% } else { %>
+
+
+                        <!-- =========================================
+                             EMPTY STATE
+                        ========================================== -->
+
+                        <tr>
+
+                            <td
+                                colspan="5"
+                                class="sales-empty"
+                            >
+
+                                No active substations are available
+                                for allocation.
+
+                            </td>
+
+                        </tr>
+
+
+                    <% } %>
+
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- =================================================
+             ALLOCATION WARNING
+        ================================================== -->
+
+        <div
+            id="allocationWarning"
+            class="error allocation-warning"
+            hidden
+        ></div>
+
+
+    </form>
 
 </div>
