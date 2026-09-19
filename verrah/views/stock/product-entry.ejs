@@ -16,7 +16,7 @@
 
         <p>
           <%= old
-            ? "Update the stock item and warehouse quantity."
+            ? "Update the stock item and add additional warehouse quantity."
             : "Add a new stock item to the warehouse."
           %>
         </p>
@@ -75,13 +75,19 @@
               Select category
             </option>
 
-            <% if (typeof categories !== "undefined" && categories.length) { %>
+            <% if (
+              typeof categories !== "undefined" &&
+              categories.length
+            ) { %>
 
               <% categories.forEach(category => { %>
 
                 <option
                   value="<%= category.name || category %>"
-                  <%= old?.category === (category.name || category) ? "selected" : "" %>
+                  <%= old?.category === (category.name || category)
+                    ? "selected"
+                    : ""
+                  %>
                 >
                   <%= category.name || category %>
                 </option>
@@ -156,7 +162,12 @@
         <div class="field">
 
           <label for="units">
-            Units
+
+            <%= old
+              ? "Additional units"
+              : "Initial units"
+            %>
+
           </label>
 
           <input
@@ -165,15 +176,15 @@
             name="units"
             min="0"
             step="1"
-            value="<%= old?.units ?? '' %>"
+            value="<%= old ? '' : (old?.units ?? '') %>"
             required
           >
 
           <% if (old) { %>
 
             <small class="form-help">
-              Enter the new total warehouse quantity.
-              Existing FIFO stock cannot be reduced.
+              Enter only the additional units being added to the
+              existing FIFO stock. Do not enter the new total.
             </small>
 
           <% } else { %>
@@ -203,15 +214,19 @@
             name="buyPrice"
             min="0"
             step="0.01"
-            value="<%= old?.buyPrice ?? '' %>"
+            value="<%= old ? '' : (old?.buyPrice ?? '') %>"
             <%= old ? "" : "required" %>
+            placeholder="<%= old
+              ? 'Price for additional FIFO batch'
+              : 'Enter purchase price'
+            %>"
           >
 
           <% if (old) { %>
 
             <small class="form-help">
-              Required only when adding additional units.
-              Existing FIFO batches are not repriced.
+              Purchase price for the new FIFO batch. Existing FIFO
+              batches are not repriced.
             </small>
 
           <% } else { %>
@@ -341,19 +356,19 @@
           <% if (old) { %>
 
             <p>
-              Existing purchase batches keep their original buy
-              prices. If the new total quantity is greater than the
-              current quantity, only the additional units are added
-              as a new FIFO purchase batch using the supplied
+              Existing FIFO purchase batches keep their original
+              purchase prices. To increase stock, enter only the
+              additional units being received. Those units will
+              become a new FIFO purchase batch using the supplied
               buy price.
             </p>
 
           <% } else { %>
 
             <p>
-              The initial warehouse quantity will be stored as the
-              first FIFO purchase batch using the supplied buy price.
-              Future purchases will create separate batches.
+              The initial warehouse quantity will become the first
+              FIFO purchase batch using the supplied buy price.
+              Future purchases will create separate FIFO batches.
             </p>
 
           <% } %>
@@ -387,11 +402,11 @@
           <div class="edit-summary-item">
 
             <span class="summary-label">
-              New warehouse units
+              Additional units
             </span>
 
-            <strong id="newUnits">
-              <%= Number(old.units || 0).toLocaleString("en-KE") %>
+            <strong id="additionalUnits">
+              0
             </strong>
 
           </div>
@@ -400,11 +415,11 @@
           <div class="edit-summary-item">
 
             <span class="summary-label">
-              Additional units
+              New warehouse total
             </span>
 
-            <strong id="additionalUnits">
-              0
+            <strong id="newUnits">
+              <%= Number(old.units || 0).toLocaleString("en-KE") %>
             </strong>
 
           </div>
@@ -474,7 +489,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   /* ==========================================================
-     EXISTING UNITS
+     EXISTING WAREHOUSE UNITS
   ========================================================== */
 
   const currentUnits =
@@ -483,20 +498,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ==========================================================
      UPDATE EDIT SUMMARY
+     
+     IMPORTANT:
+     In edit mode `units` means ADDITIONAL units.
   ========================================================== */
 
   function updateUnitsSummary() {
 
     <% if (old) { %>
 
-      const newUnits =
-        Number(unitsInput.value || 0);
-
-      const additional =
+      const additionalUnits =
         Math.max(
           0,
-          newUnits - currentUnits
+          Number(unitsInput.value || 0)
         );
+
+      const newTotal =
+        currentUnits + additionalUnits;
+
 
       const newUnitsElement =
         document.getElementById("newUnits");
@@ -505,18 +524,18 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("additionalUnits");
 
 
-      if (newUnitsElement) {
+      if (additionalUnitsElement) {
 
-        newUnitsElement.textContent =
-          newUnits.toLocaleString("en-KE");
+        additionalUnitsElement.textContent =
+          additionalUnits.toLocaleString("en-KE");
 
       }
 
 
-      if (additionalUnitsElement) {
+      if (newUnitsElement) {
 
-        additionalUnitsElement.textContent =
-          additional.toLocaleString("en-KE");
+        newUnitsElement.textContent =
+          newTotal.toLocaleString("en-KE");
 
       }
 
@@ -644,14 +663,14 @@ document.addEventListener("DOMContentLoaded", () => {
       ------------------------------------------------------ */
 
       if (
-        !Number.isFinite(units) ||
+        !Number.isInteger(units) ||
         units < 0
       ) {
 
         event.preventDefault();
 
         alert(
-          "Please enter a valid stock quantity."
+          "Please enter a valid whole-number stock quantity."
         );
 
         unitsInput.focus();
@@ -685,16 +704,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
       /* ------------------------------------------------------
          EDIT MODE
+         
+         `units` is ADDITIONAL quantity.
       ------------------------------------------------------ */
 
       <% if (old) { %>
 
-        if (units < currentUnits) {
+        if (units > 0) {
+
+          const buyPrice =
+            Number(
+              buyPriceInput.value
+            );
+
+
+          if (
+            buyPriceInput.value === "" ||
+            !Number.isFinite(buyPrice) ||
+            buyPrice < 0
+          ) {
+
+            event.preventDefault();
+
+            alert(
+              "Enter the buy price for the additional FIFO units."
+            );
+
+            buyPriceInput.focus();
+
+            return;
+
+          }
+
+        }
+
+      <% } else { %>
+
+        /* ----------------------------------------------------
+           CREATE MODE
+           
+           `units` is the initial quantity.
+        ---------------------------------------------------- */
+
+        if (units <= 0) {
 
           event.preventDefault();
 
           alert(
-            "Warehouse units cannot be reduced when editing stock."
+            "Please enter the initial stock quantity."
           );
 
           unitsInput.focus();
@@ -704,39 +761,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        const additional =
-          units - currentUnits;
-
-
-        if (
-          additional > 0 &&
-          (
-            buyPriceInput.value === "" ||
-            Number(buyPriceInput.value) < 0
-          )
-        ) {
-
-          event.preventDefault();
-
-          alert(
-            "Enter the buy price for the additional FIFO units."
+        const buyPrice =
+          Number(
+            buyPriceInput.value
           );
 
-          buyPriceInput.focus();
-
-          return;
-
-        }
-
-      <% } else { %>
-
-        /* ----------------------------------------------------
-           CREATE MODE
-        ---------------------------------------------------- */
 
         if (
           buyPriceInput.value === "" ||
-          Number(buyPriceInput.value) < 0
+          !Number.isFinite(buyPrice) ||
+          buyPrice < 0
         ) {
 
           event.preventDefault();
