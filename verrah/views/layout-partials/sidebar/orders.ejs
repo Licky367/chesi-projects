@@ -5,10 +5,9 @@
                 <li class="sidebar-item">
 
                     <a
-                        href="/packages"
-                        class="sidebar-link"
-                        title="Packages"
-                    >
+    href="/packages"
+    class="sidebar-link <%= req.path.startsWith('/packages') ? 'active' : '' %>"
+>
 
                         <span
                             class="sidebar-icon"
