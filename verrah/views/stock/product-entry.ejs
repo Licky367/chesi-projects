@@ -241,75 +241,16 @@
             name="sellPrice"
             min="0"
             step="0.01"
-            value="<%= old?.sellPrice ?? '' %>"
+            value="<%= old?.unitSellPrice ?? old?.sellPrice ?? '' %>"
             required
             placeholder="Enter sell price"
           >
 
           <small class="form-help">
-            Selling price for this stock item.
+            Selling price for the product.
           </small>
 
         </div>
-
-
-        <!-- ===================================================
-             SUBSTATION
-             CREATE ONLY
-        ==================================================== -->
-
-        <% if (!old) { %>
-
-          <div class="field">
-
-            <label for="substation">
-              Substation
-            </label>
-
-            <select
-              id="substation"
-              name="substation"
-              required
-            >
-
-              <option value="">
-                Select substation
-              </option>
-
-              <% if (
-                typeof substations !== "undefined" &&
-                substations.length
-              ) { %>
-
-                <% substations.forEach(substation => { %>
-
-                  <%
-                    const substationValue =
-                      substation._id || substation.id;
-
-                    const substationName =
-                      substation.name || substationValue;
-                  %>
-
-                  <option
-                    value="<%= substationValue %>"
-                  >
-                    <%= substationName %>
-                  </option>
-
-                <% }) %>
-
-              <% } %>
-
-            </select>
-
-            <small class="form-help">
-              Select the substation associated with this stock.
-            </small>
-
-          </div>
-
-        <% } %>
 
 
         <!-- ===================================================
@@ -531,13 +472,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const sellPriceInput =
     document.getElementById("sellPrice");
 
-  <% if (!old) { %>
-
-    const substationInput =
-      document.getElementById("substation");
-
-  <% } %>
-
 
   /* ==========================================================
      EXISTING UNITS
@@ -631,11 +565,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       const sellPrice =
-        Number(sellPriceInput.value);
+        Number(
+          sellPriceInput.value
+        );
 
 
       const units =
-        Number(unitsInput.value);
+        Number(
+          unitsInput.value
+        );
 
 
       /* ------------------------------------------------------
@@ -743,34 +681,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
 
       }
-
-
-      /* ------------------------------------------------------
-         SUBSTATION
-         CREATE ONLY
-      ------------------------------------------------------ */
-
-      <% if (!old) { %>
-
-        const substation =
-          substationInput.value.trim();
-
-
-        if (!substation) {
-
-          event.preventDefault();
-
-          alert(
-            "Please select a substation."
-          );
-
-          substationInput.focus();
-
-          return;
-
-        }
-
-      <% } %>
 
 
       /* ------------------------------------------------------
