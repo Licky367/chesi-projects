@@ -14,8 +14,6 @@
     role="tablist"
   >
 
-    <!-- STOCK INFO -->
-
     <button
       type="button"
       class="verrah-tab active"
@@ -27,8 +25,6 @@
       Stock Info
     </button>
 
-
-    <!-- STOCK ALLOCATION -->
 
     <button
       type="button"
@@ -42,8 +38,6 @@
     </button>
 
 
-    <!-- STOCK SUMMARY -->
-
     <button
       type="button"
       class="verrah-tab"
@@ -55,8 +49,6 @@
       Stock Summary
     </button>
 
-
-    <!-- ACTIONS -->
 
     <button
       type="button"
@@ -78,6 +70,7 @@
 
   <div class="verrah-tab-content">
 
+
     <!-- =====================================================
          STOCK INFO
     ====================================================== -->
@@ -86,7 +79,6 @@
       class="verrah-tab-panel active"
       id="stock-info"
       role="tabpanel"
-      aria-labelledby="stock-info-tab"
     >
 
       <%- include("stockEntry/stock-card") %>
@@ -102,7 +94,6 @@
       class="verrah-tab-panel"
       id="stock-allocation"
       role="tabpanel"
-      aria-labelledby="stock-allocation-tab"
       hidden
     >
 
@@ -119,7 +110,6 @@
       class="verrah-tab-panel"
       id="stock-summary"
       role="tabpanel"
-      aria-labelledby="stock-summary-tab"
       hidden
     >
 
@@ -136,7 +126,6 @@
       class="verrah-tab-panel"
       id="stock-actions"
       role="tabpanel"
-      aria-labelledby="stock-actions-tab"
       hidden
     >
 
@@ -150,7 +139,7 @@
 
 
 <!-- =========================================================
-     TAB SWITCHING + ALLOCATION LOGIC
+     TAB SWITCHING
 ========================================================= -->
 
 <script>
@@ -159,21 +148,13 @@
   "use strict";
 
 
-  /* =========================================================
-     TAB SWITCHING
-  ========================================================= */
-
-  const tabs = Array.from(
-    document.querySelectorAll(
-      ".verrah-tab"
-    )
+  const tabs = document.querySelectorAll(
+    ".verrah-tab"
   );
 
 
-  const panels = Array.from(
-    document.querySelectorAll(
-      ".verrah-tab-panel"
-    )
+  const panels = document.querySelectorAll(
+    ".verrah-tab-panel"
   );
 
 
@@ -184,28 +165,24 @@
       function () {
 
         const target =
-          tab.dataset.tab;
+          tab.getAttribute("data-tab");
 
-
-        /* -----------------------------------------------------
-           UPDATE TABS
-        ----------------------------------------------------- */
 
         tabs.forEach(function (item) {
 
-          const isActive =
+          const active =
             item === tab;
 
 
           item.classList.toggle(
             "active",
-            isActive
+            active
           );
 
 
           item.setAttribute(
             "aria-selected",
-            isActive
+            active
               ? "true"
               : "false"
           );
@@ -213,31 +190,23 @@
         });
 
 
-        /* -----------------------------------------------------
-           UPDATE PANELS
-        ----------------------------------------------------- */
-
         panels.forEach(function (panel) {
 
-          const isActive =
+          const active =
             panel.id === target;
 
 
           panel.classList.toggle(
             "active",
-            isActive
+            active
           );
 
 
           panel.hidden =
-            !isActive;
+            !active;
 
         });
 
-
-        /* -----------------------------------------------------
-           KEEP SELECTED TAB VISIBLE
-        ----------------------------------------------------- */
 
         tab.scrollIntoView({
           behavior: "smooth",
@@ -250,10 +219,19 @@
 
   });
 
+})();
+</script>
 
-  /* =========================================================
-     ALLOCATION FORM
-  ========================================================= */
+
+<!-- =========================================================
+     ALLOCATION CALCULATIONS
+========================================================= -->
+
+<script>
+(function () {
+
+  "use strict";
+
 
   const form =
     document.getElementById(
@@ -261,16 +239,12 @@
     );
 
 
-  if (!form) {
-    return;
-  }
-
-
-  const inputs = Array.from(
-    document.querySelectorAll(
-      ".allocation-input"
-    )
-  );
+  const inputs =
+    Array.from(
+      document.querySelectorAll(
+        ".allocation-input"
+      )
+    );
 
 
   const hiddenTotal =
@@ -279,7 +253,7 @@
     );
 
 
-  const total =
+  const allocationTotal =
     document.getElementById(
       "allocationTotal"
     );
@@ -291,7 +265,7 @@
     );
 
 
-  const remaining =
+  const summaryRemaining =
     document.getElementById(
       "summaryRemaining"
     );
@@ -303,7 +277,7 @@
     );
 
 
-  const button =
+  const allocateButton =
     document.getElementById(
       "allocateButton"
     );
@@ -314,10 +288,6 @@
       "unitSellPrice"
     );
 
-
-  /* =========================================================
-     WAREHOUSE BALANCE
-  ========================================================= */
 
   const warehouse =
     Number(
@@ -331,7 +301,7 @@
      GET INPUT VALUE
   ========================================================= */
 
-  function valueOf(input) {
+  function getValue(input) {
 
     const raw =
       String(
@@ -362,7 +332,7 @@
 
 
   /* =========================================================
-     CALCULATE ALLOCATION
+     CALCULATE
   ========================================================= */
 
   function calculate() {
@@ -370,13 +340,13 @@
     const sum =
       inputs.reduce(
         function (
-          totalValue,
+          total,
           input
         ) {
 
           return (
-            totalValue +
-            valueOf(input)
+            total +
+            getValue(input)
           );
 
         },
@@ -385,7 +355,7 @@
 
 
     /* -------------------------------------------------------
-       HIDDEN TOTAL
+       TOTAL ALLOCATED
     ------------------------------------------------------- */
 
     if (hiddenTotal) {
@@ -396,13 +366,9 @@
     }
 
 
-    /* -------------------------------------------------------
-       DISPLAY TOTAL
-    ------------------------------------------------------- */
+    if (allocationTotal) {
 
-    if (total) {
-
-      total.textContent =
+      allocationTotal.textContent =
         sum.toLocaleString();
 
     }
@@ -417,12 +383,12 @@
 
 
     /* -------------------------------------------------------
-       REMAINING WAREHOUSE STOCK
+       REMAINING STOCK
     ------------------------------------------------------- */
 
-    if (remaining) {
+    if (summaryRemaining) {
 
-      remaining.textContent =
+      summaryRemaining.textContent =
         Math.max(
           warehouse - sum,
           0
@@ -432,7 +398,7 @@
 
 
     /* -------------------------------------------------------
-       VALIDATION MESSAGE
+       VALIDATION
     ------------------------------------------------------- */
 
     let message = "";
@@ -451,10 +417,6 @@
     }
 
 
-    /* -------------------------------------------------------
-       WARNING
-    ------------------------------------------------------- */
-
     if (warning) {
 
       warning.textContent =
@@ -467,13 +429,9 @@
     }
 
 
-    /* -------------------------------------------------------
-       ALLOCATION BUTTON
-    ------------------------------------------------------- */
+    if (allocateButton) {
 
-    if (button) {
-
-      button.disabled =
+      allocateButton.disabled =
         Boolean(message);
 
     }
@@ -488,113 +446,64 @@
      INPUT EVENTS
   ========================================================= */
 
-  inputs.forEach(
-    function (input) {
+  inputs.forEach(function (input) {
 
-      input.addEventListener(
-        "input",
-        calculate
-      );
+    input.addEventListener(
+      "input",
+      calculate
+    );
 
 
-      input.addEventListener(
-        "change",
-        calculate
-      );
+    input.addEventListener(
+      "change",
+      calculate
+    );
 
-    }
-  );
+  });
 
 
   /* =========================================================
      FORM SUBMISSION
   ========================================================= */
 
-  form.addEventListener(
-    "submit",
-    function (event) {
+  if (form) {
 
-      const sum =
-        calculate();
+    form.addEventListener(
+      "submit",
+      function (event) {
 
-
-      if (hiddenTotal) {
-
-        hiddenTotal.value =
-          String(sum);
-
-      }
+        const sum =
+          calculate();
 
 
-      const invalidSellPrice =
-        !sellPrice ||
-        String(
-          sellPrice.value
-        ).trim() === "";
+        const invalidSellPrice =
+          !sellPrice ||
+          String(
+            sellPrice.value
+          ).trim() === "";
 
 
-      if (
-        sum <= 0 ||
-        sum > warehouse ||
-        invalidSellPrice
-      ) {
+        if (
+          sum <= 0 ||
+          sum > warehouse ||
+          invalidSellPrice
+        ) {
 
-        event.preventDefault();
+          event.preventDefault();
 
-        return;
+          return;
 
-      }
-
-
-      /* -----------------------------------------------------
-         PREVENT DOUBLE SUBMISSION
-      ----------------------------------------------------- */
-
-      if (button) {
-
-        button.disabled =
-          true;
+        }
 
 
-        button.innerHTML =
-          '<i class="fas fa-spinner fa-spin"></i> Allocating...';
+        if (allocateButton) {
 
-      }
-
-    }
-  );
+          allocateButton.disabled =
+            true;
 
 
-  /* =========================================================
-     STOCK IMAGE FALLBACK
-  ========================================================= */
-
-  const image =
-    document.querySelector(
-      ".stock-detail-image-source"
-    );
-
-
-  if (image) {
-
-    image.addEventListener(
-      "error",
-      function () {
-
-        image.classList.add(
-          "is-hidden"
-        );
-
-
-        const fallback =
-          image.nextElementSibling;
-
-
-        if (fallback) {
-
-          fallback.classList.add(
-            "is-visible"
-          );
+          allocateButton.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i> Allocating...';
 
         }
 
