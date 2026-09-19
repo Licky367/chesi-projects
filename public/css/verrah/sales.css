@@ -1208,3 +1208,359 @@ MOBILE — SALES PAGE
     }
 
 }
+
+
+/* =========================================================
+   VERRAH COSMETICS
+   STOCK ENTRY TABS
+========================================================= */
+
+
+/* =========================================================
+   TABS CONTAINER
+========================================================= */
+
+.verrah-tabs-container {
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+
+/* =========================================================
+   TAB BAR
+========================================================= */
+
+.verrah-tabs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    width: 100%;
+
+    padding: 12px 8px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #eadfd8;
+
+    scrollbar-width: none;
+}
+
+
+.verrah-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+
+/* =========================================================
+   TAB BUTTON
+========================================================= */
+
+.verrah-tab {
+    flex: 0 0 auto;
+
+    min-height: 48px;
+
+    padding: 11px 28px;
+
+    border: 1.5px solid #e2d5cc;
+
+    border-radius: 30px;
+
+    background: #ffffff;
+
+    color: #70452f;
+
+    font-family: inherit;
+
+    font-size: 16px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+/* =========================================================
+   TAB ACTIVE
+========================================================= */
+
+.verrah-tab.active {
+    background: #a84f0a;
+
+    border-color: #a84f0a;
+
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   TAB HOVER
+========================================================= */
+
+.verrah-tab:hover {
+    border-color: #a84f0a;
+}
+
+
+/* =========================================================
+   TAB CONTENT
+========================================================= */
+
+.verrah-tab-content {
+    width: 100%;
+}
+
+
+/* =========================================================
+   ALL TAB PANELS
+========================================================= */
+
+.verrah-tab-panel {
+    display: none;
+
+    width: 100%;
+
+    padding: 20px 0;
+}
+
+
+/* =========================================================
+   ACTIVE TAB PANEL
+========================================================= */
+
+.verrah-tab-panel.active {
+    display: block;
+}
+
+
+/* =========================================================
+   STOCK SUMMARY CARD
+========================================================= */
+
+.stock-summary-card {
+    width: 100%;
+
+    padding: 24px;
+
+    background: #ffffff;
+
+    border: 1px solid #eadfd8;
+
+    border-radius: 16px;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   SUMMARY HEADING
+========================================================= */
+
+.stock-summary-heading h2 {
+    margin: 0 0 6px;
+
+    color: #70452f;
+
+    font-size: 22px;
+}
+
+
+.stock-summary-heading p {
+    margin: 0 0 24px;
+
+    color: #766d68;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   SUMMARY GRID
+========================================================= */
+
+.allocation-summary {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 16px;
+
+    width: 100%;
+}
+
+
+/* =========================================================
+   SUMMARY ITEM
+========================================================= */
+
+.allocation-summary-item {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+    min-width: 0;
+
+    padding: 20px;
+
+    background: #faf7f4;
+
+    border: 1px solid #eadfd8;
+
+    border-radius: 14px;
+}
+
+
+.allocation-summary-item span {
+    color: #766d68;
+
+    font-size: 14px;
+
+    font-weight: 500;
+}
+
+
+.allocation-summary-item strong {
+    color: #70452f;
+
+    font-size: 25px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   WARNING
+========================================================= */
+
+.allocation-warning {
+    margin-top: 18px;
+}
+
+
+/* =========================================================
+   ACTIONS CARD
+========================================================= */
+
+.stock-actions-card {
+    width: 100%;
+
+    padding: 24px;
+
+    background: #ffffff;
+
+    border: 1px solid #eadfd8;
+
+    border-radius: 16px;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   ACTIONS HEADING
+========================================================= */
+
+.stock-actions-heading h2 {
+    margin: 0 0 6px;
+
+    color: #70452f;
+
+    font-size: 22px;
+}
+
+
+.stock-actions-heading p {
+    margin: 0 0 24px;
+
+    color: #766d68;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.stock-actions-card .form-actions {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+    align-items: center;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .verrah-tabs {
+        gap: 10px;
+
+        padding: 10px 4px;
+    }
+
+
+    .verrah-tab {
+        padding: 10px 22px;
+
+        font-size: 15px;
+    }
+
+
+    .verrah-tab-panel {
+        padding: 16px 0;
+    }
+
+
+    .stock-summary-card,
+    .stock-actions-card {
+        padding: 18px;
+    }
+
+
+    .allocation-summary {
+        grid-template-columns: 1fr;
+    }
+
+
+    .stock-actions-card .form-actions {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+
+    .stock-actions-card .form-actions
+    .primary-btn,
+    .stock-actions-card .form-actions
+    .secondary-btn {
+        width: 100%;
+
+        box-sizing: border-box;
+
+        text-align: center;
+    }
+
+}
