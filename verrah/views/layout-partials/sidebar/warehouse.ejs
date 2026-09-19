@@ -2,13 +2,10 @@
                    WAREHOUSE MANAGEMENT
                 ========================================== -->
 
-                <li class="sidebar-item">
-
-                    <a
-                        href="/stock"
-                        class="sidebar-link"
-                        title="Stock Management"
-                    >
+                <a
+    href="/stock"
+    class="sidebar-link <%= req.path.startsWith('/stock') ? 'active' : '' %>"
+>
 
                         <span
                             class="sidebar-icon"
