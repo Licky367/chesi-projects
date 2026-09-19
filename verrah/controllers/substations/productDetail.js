@@ -27,6 +27,9 @@ async (
             );
         }
 
+        const substations =
+            await service.list();
+
         return res.render(
             "substations/product-detail",
             {
@@ -34,6 +37,8 @@ async (
                     product.name,
 
                 product,
+
+                substations,
 
                 role:
                     getRole(req),
