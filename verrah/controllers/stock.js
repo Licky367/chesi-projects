@@ -1,6 +1,7 @@
 // ==========================================================
 // controllers/stock.js
 // STOCK CONTROLLER
+// VERRAH COSMETICS
 // ==========================================================
 
 const service =
@@ -12,15 +13,17 @@ const Category =
 const Product =
     require("../models/products");
 
+
 // ==========================================================
 // RESOLVE CATEGORY
 //
 // The form submits Category._id.
-// The controller validates the category and passes the ID
-// to the service.
 //
-// The service is responsible for converting the category
-// into the value required by Stock.
+// The controller validates the category and passes the
+// resolved Category._id to the service.
+//
+// The service remains responsible for storing the category
+// in the correct Stock format.
 // ==========================================================
 
 async function resolveCategoryId(value) {
@@ -29,14 +32,16 @@ async function resolveCategoryId(value) {
         String(value ?? "").trim();
 
     if (!raw) {
+
         throw new Error(
             "Select a valid stock category."
         );
     }
 
-    // ------------------------------------------------------
+
+    // ======================================================
     // CATEGORY ID
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         /^[a-fA-F0-9]{24}$/.test(raw)
@@ -52,6 +57,7 @@ async function resolveCategoryId(value) {
                 .lean();
 
         if (!category) {
+
             throw new Error(
                 "The selected category was not found or is inactive."
             );
@@ -62,9 +68,10 @@ async function resolveCategoryId(value) {
         );
     }
 
-    // ------------------------------------------------------
+
+    // ======================================================
     // CATEGORY NAME
-    // ------------------------------------------------------
+    // ======================================================
 
     const category =
         await Category
@@ -76,6 +83,7 @@ async function resolveCategoryId(value) {
             .lean();
 
     if (!category) {
+
         throw new Error(
             "The selected category was not found or is inactive."
         );
@@ -86,15 +94,17 @@ async function resolveCategoryId(value) {
     );
 }
 
+
 // ==========================================================
 // GET PRODUCT SELLING PRICE FOR STOCK
 //
-// Stock does NOT store sell price.
+// Stock does NOT own the selling price.
 //
 // Product owns:
+//
 //     unitSellPrice
 //
-// This is only used when rendering the stock edit form.
+// This is used only when rendering the stock edit form.
 // ==========================================================
 
 async function getProductSellPrice(
@@ -119,6 +129,43 @@ async function getProductSellPrice(
 
     return product.unitSellPrice ?? null;
 }
+
+
+// ==========================================================
+// GET PRODUCTS FOR PRODUCT ALLOCATION
+//
+// The allocation EJS needs the available Products.
+//
+// Product allocation is separate from stock creation.
+//
+// Stock creation:
+//     Stock
+//         ↓
+//     Product
+//
+// Later allocation:
+//     Product
+//         ↓
+//     Substation
+//
+// Keep the Product query here read-only.
+// ==========================================================
+
+async function getProductsForAllocation() {
+
+    return Product
+        .find({
+            isActive: true
+        })
+        .select(
+            "_id name stock category subcategory units buyPrice unitSellPrice image description"
+        )
+        .sort({
+            name: 1
+        })
+        .lean();
+}
+
 
 // ==========================================================
 // RENDER STOCK FORM
@@ -175,6 +222,7 @@ async function renderForm(
             }
         );
 }
+
 
 // ==========================================================
 // LIST STOCK
@@ -235,6 +283,7 @@ exports.list =
         }
     };
 
+
 // ==========================================================
 // NEW / UPDATE STOCK FORM
 // ==========================================================
@@ -253,9 +302,10 @@ exports.newStockForm =
                     ""
                 ).trim();
 
-            // --------------------------------------------------
+
+            // ==================================================
             // CREATE MODE
-            // --------------------------------------------------
+            // ==================================================
 
             if (!stockId) {
 
@@ -273,9 +323,10 @@ exports.newStockForm =
                 );
             }
 
-            // --------------------------------------------------
+
+            // ==================================================
             // UPDATE MODE
-            // --------------------------------------------------
+            // ==================================================
 
             const selectedStock =
                 await service.getStock(
@@ -302,18 +353,33 @@ exports.newStockForm =
                 );
             }
 
-            // --------------------------------------------------
-            // Product owns unitSellPrice.
-            //
-            // Stock does NOT own sell price.
-            // Fetch the Product linked to this Stock so the
-            // edit form can display its current selling price.
-            // --------------------------------------------------
+
+            // ==================================================
+            // PRODUCT OWNS SELLING PRICE
+            // ==================================================
 
             const unitSellPrice =
                 await getProductSellPrice(
                     selectedStock._id
                 );
+
+
+            // ==================================================
+            // UPDATE FORM DATA
+            //
+            // IMPORTANT:
+            //
+            // In UPDATE mode, units now means:
+            //
+            //     ADDITIONAL UNITS
+            //
+            // Therefore the form must NOT be populated with
+            // the current Stock.units value as if it were the
+            // value to submit.
+            //
+            // We deliberately start the additional quantity
+            // field at zero.
+            // ==================================================
 
             const old = {
 
@@ -323,27 +389,13 @@ exports.newStockForm =
                     selectedStock.category ||
                     "",
 
-                // --------------------------------------------------
-                // IMPORTANT:
-                //
-                // units represents the CURRENT TOTAL warehouse
-                // balance when editing.
-                // --------------------------------------------------
-
-                units:
-                    selectedStock.units ??
-                    0,
-
-                // --------------------------------------------------
-                // Product selling price.
-                //
-                // Do NOT put sellPrice on Stock itself.
-                // --------------------------------------------------
+                units: 0,
 
                 unitSellPrice:
                     unitSellPrice ??
                     ""
             };
+
 
             return renderForm(
                 res,
@@ -389,6 +441,7 @@ exports.newStockForm =
         }
     };
 
+
 // ==========================================================
 // CREATE OR UPDATE STOCK
 // ==========================================================
@@ -396,40 +449,45 @@ exports.newStockForm =
 // CREATE:
 //
 //     body.units
-//         = initial warehouse units
+//         = INITIAL warehouse units
 //
-//     service creates:
-//         1. Stock
-//         2. Product
+//     body.buyPrice
+//         = TOTAL purchase cost for those units
 //
-//     Product:
-//         units = 0
-//         buyPrice = Stock.buyPrice
-//         unitSellPrice = submitted selling price
+// The service calculates:
 //
-//     Substations:
-//         NOT touched
+//     unitBuyPrice =
+//         totalPurchaseCost / units
+//
+// Then it creates:
+//
+//     Stock
+//     Product
+//
+// Product starts with:
+//
+//     units = 0
+//
+// and receives the calculated Stock unit buy price.
+//
+// ----------------------------------------------------------
 //
 // UPDATE:
 //
 //     body.units
-//         = NEW TOTAL warehouse units
+//         = ADDITIONAL warehouse units
 //
-// The controller does NOT calculate additional units.
+//     body.buyPrice
+//         = TOTAL purchase cost for those additional units
 //
-// The service calculates:
+// The controller does NOT calculate:
 //
-//     additionalUnits =
-//         newTotalUnits - currentUnits
+//     current units
+//     additional units
+//     new total units
+//     unit buy price
 //
-// The service enforces:
-//
-//     newTotalUnits >= currentUnits
-//
-// and:
-//
-//     if additionalUnits > 0,
-//     buyPrice is required.
+// The service owns all of that logic.
 // ==========================================================
 
 exports.createOrUpdateStock =
@@ -446,23 +504,28 @@ exports.createOrUpdateStock =
                     ""
                 ).trim();
 
-            // --------------------------------------------------
-            // Resolve and validate category.
-            //
-            // The frontend submits Category._id.
-            // --------------------------------------------------
+
+            // ==================================================
+            // RESOLVE CATEGORY
+            // ==================================================
 
             const categoryId =
                 await resolveCategoryId(
                     req.body.category
                 );
 
-            // --------------------------------------------------
-            // Preserve the submitted form values.
+
+            // ==================================================
+            // PASS FORM DATA TO SERVICE
             //
-            // The controller does not calculate units.
-            // The service owns all stock quantity logic.
-            // --------------------------------------------------
+            // IMPORTANT:
+            //
+            // buyPrice is intentionally passed through without
+            // calculation.
+            //
+            // The service interprets it as TOTAL PURCHASE COST
+            // and calculates unitBuyPrice itself.
+            // ==================================================
 
             const body = {
 
@@ -472,9 +535,10 @@ exports.createOrUpdateStock =
                     categoryId
             };
 
-            // --------------------------------------------------
+
+            // ==================================================
             // UPDATE
-            // --------------------------------------------------
+            // ==================================================
 
             if (stockId) {
 
@@ -484,25 +548,10 @@ exports.createOrUpdateStock =
                 );
             }
 
-            // --------------------------------------------------
+
+            // ==================================================
             // CREATE
-            //
-            // createStock now creates both:
-            //
-            //     Stock
-            //     Product
-            //
-            // Product starts with:
-            //
-            //     units = 0
-            //
-            // and receives:
-            //
-            //     buyPrice = Stock.buyPrice
-            //     unitSellPrice = submitted sell price
-            //
-            // No substation allocation occurs here.
-            // --------------------------------------------------
+            // ==================================================
 
             else {
 
@@ -511,9 +560,10 @@ exports.createOrUpdateStock =
                 );
             }
 
-            // --------------------------------------------------
+
+            // ==================================================
             // RETURN TO STOCK LIST
-            // --------------------------------------------------
+            // ==================================================
 
             return res.redirect(
                 "/stock?saved=1"
@@ -526,6 +576,20 @@ exports.createOrUpdateStock =
                 error
             );
 
+
+            // ==================================================
+            // PRESERVE USER INPUT
+            //
+            // In UPDATE mode:
+            //
+            //     body.units
+            //
+            // is the additional quantity entered by the user.
+            //
+            // We preserve exactly that value when displaying
+            // the error form.
+            // ==================================================
+
             return renderForm(
                 res,
                 {
@@ -536,13 +600,6 @@ exports.createOrUpdateStock =
 
                     error:
                         error.message,
-
-                    // --------------------------------------------------
-                    // Preserve exactly what the user entered.
-                    //
-                    // Especially important for UPDATE because
-                    // body.units is the requested NEW TOTAL.
-                    // --------------------------------------------------
 
                     old:
                         req.body,
@@ -556,16 +613,24 @@ exports.createOrUpdateStock =
         }
     };
 
+
 // ==========================================================
 // STOCK ENTRY / PRODUCT ALLOCATION FORM
 // ==========================================================
 //
 // This is a SEPARATE operation from stock creation.
 //
-// Stock creation does NOT allocate to substations.
+// Stock creation does NOT allocate anything to substations.
 //
-// This form is used later when product units are dispatched
-// from warehouse Stock to substations.
+// This page is used later to allocate Product inventory from
+// the warehouse to a Substation.
+//
+// The EJS receives:
+//
+//     stock
+//     products
+//     substations
+//
 // ==========================================================
 
 exports.entry =
@@ -578,6 +643,7 @@ exports.entry =
 
             const [
                 stock,
+                products,
                 substations
             ] = await Promise.all([
 
@@ -585,8 +651,15 @@ exports.entry =
                     req.params.id
                 ),
 
+                getProductsForAllocation(),
+
                 service.getSubstations()
             ]);
+
+
+            // ==================================================
+            // STOCK NOT FOUND
+            // ==================================================
 
             if (!stock) {
 
@@ -595,6 +668,15 @@ exports.entry =
                 );
             }
 
+
+            // ==================================================
+            // RENDER PRODUCT ALLOCATION PAGE
+            //
+            // IMPORTANT:
+            //
+            // products is explicitly passed to the EJS.
+            // ==================================================
+
             return res.render(
                 "stock/stock-entry",
                 {
@@ -602,6 +684,8 @@ exports.entry =
                         "Allocate Product",
 
                     stock,
+
+                    products,
 
                     substations,
 
@@ -632,24 +716,23 @@ exports.entry =
         }
     };
 
+
 // ==========================================================
 // CREATE PRODUCT FROM STOCK
 // ==========================================================
 //
 // This is the actual allocation operation.
 //
-// The service is responsible for keeping these balances
-// synchronized:
+// The service is responsible for keeping:
 //
 //     Stock.units
-//         ↓
-/*
-        Stock.units decreases
-
-        Product.units increases
-
-        Substation.productInventory.units increases
-*/
+//     Product.units
+//     Substation.productInventory.units
+//
+// synchronized.
+//
+// FIFO consumption and weighted unit buy price calculation
+// are also handled by the service.
 // ==========================================================
 
 exports.createProduct =
@@ -665,6 +748,11 @@ exports.createProduct =
                 req.body
             );
 
+
+            // ==================================================
+            // SUCCESS
+            // ==================================================
+
             return res.redirect(
                 `/stock/${req.params.id}?saved=1`
             );
@@ -676,8 +764,17 @@ exports.createProduct =
                 error
             );
 
+
+            // ==================================================
+            // RELOAD FORM DATA
+            //
+            // The allocation form must receive products again
+            // when validation fails.
+            // ==================================================
+
             const [
                 stock,
+                products,
                 substations
             ] = await Promise.all([
 
@@ -685,8 +782,15 @@ exports.createProduct =
                     req.params.id
                 ),
 
+                getProductsForAllocation(),
+
                 service.getSubstations()
             ]);
+
+
+            // ==================================================
+            // STOCK NO LONGER EXISTS
+            // ==================================================
 
             if (!stock) {
 
@@ -694,6 +798,11 @@ exports.createProduct =
                     "/stock"
                 );
             }
+
+
+            // ==================================================
+            // RENDER ALLOCATION FORM WITH ERROR
+            // ==================================================
 
             return res
                 .status(400)
@@ -704,6 +813,8 @@ exports.createProduct =
                             "Allocate Product",
 
                         stock,
+
+                        products,
 
                         substations,
 
