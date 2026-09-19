@@ -2,61 +2,61 @@
      STOCK SUMMARY
 ========================================================= -->
 
-<div class="allocation-summary">
+<div class="stock-summary-card">
 
-  <div>
+  <div class="allocation-summary">
 
-    <span>
-      Warehouse available
-    </span>
+    <div class="allocation-summary-item">
 
-    <strong>
-      <%= Number(
-        stock.units || 0
-      ).toLocaleString() %>
-    </strong>
+      <span>
+        Warehouse available
+      </span>
+
+      <strong>
+        <%= Number(
+          stock.units || 0
+        ).toLocaleString() %>
+      </strong>
+
+    </div>
+
+
+    <div class="allocation-summary-item">
+
+      <span>
+        Being dispatched
+      </span>
+
+      <strong id="summaryTotal">
+        0
+      </strong>
+
+    </div>
+
+
+    <div class="allocation-summary-item">
+
+      <span>
+        Remaining warehouse
+      </span>
+
+      <strong id="summaryRemaining">
+
+        <%= Number(
+          stock.units || 0
+        ).toLocaleString() %>
+
+      </strong>
+
+    </div>
 
   </div>
 
 
-  <div>
-
-    <span>
-      Being dispatched
-    </span>
-
-    <strong id="summaryTotal">
-      0
-    </strong>
-
-  </div>
-
-
-  <div>
-
-    <span>
-      Remaining warehouse
-    </span>
-
-    <strong id="summaryRemaining">
-
-      <%= Number(
-        stock.units || 0
-      ).toLocaleString() %>
-
-    </strong>
-
-  </div>
+  <div
+    id="allocationWarning"
+    class="error allocation-warning"
+    hidden
+  ></div>
 
 </div>
-
-
-<!-- =========================================================
-     ALLOCATION WARNING
-========================================================= -->
-
-<div
-  id="allocationWarning"
-  class="error allocation-warning"
-  hidden
-></div>
