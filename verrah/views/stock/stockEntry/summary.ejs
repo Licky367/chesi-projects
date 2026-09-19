@@ -1,59 +1,62 @@
-          <!-- =================================================
-               ALLOCATION SUMMARY
-          ================================================== -->
+<!-- =========================================================
+     STOCK SUMMARY
+========================================================= -->
 
-          <div class="allocation-summary">
+<div class="allocation-summary">
 
+  <div>
 
-            <div>
+    <span>
+      Warehouse available
+    </span>
 
-              <span>
-                Warehouse available
-              </span>
+    <strong>
+      <%= Number(
+        stock.units || 0
+      ).toLocaleString() %>
+    </strong>
 
-              <strong>
-                <%= Number(
-                  stock.units || 0
-                ).toLocaleString() %>
-              </strong>
-
-            </div>
-
-
-            <div>
-
-              <span>
-                Being dispatched
-              </span>
-
-              <strong id="summaryTotal">
-                0
-              </strong>
-
-            </div>
+  </div>
 
 
-            <div>
+  <div>
 
-              <span>
-                Remaining warehouse
-              </span>
+    <span>
+      Being dispatched
+    </span>
 
-              <strong id="summaryRemaining">
+    <strong id="summaryTotal">
+      0
+    </strong>
 
-                <%= Number(
-                  stock.units || 0
-                ).toLocaleString() %>
-
-              </strong>
-
-            </div>
-
-          </div>
+  </div>
 
 
-          <div
-            id="allocationWarning"
-            class="error allocation-warning"
-            hidden
-          ></div>
+  <div>
+
+    <span>
+      Remaining warehouse
+    </span>
+
+    <strong id="summaryRemaining">
+
+      <%= Number(
+        stock.units || 0
+      ).toLocaleString() %>
+
+    </strong>
+
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     ALLOCATION WARNING
+========================================================= -->
+
+<div
+  id="allocationWarning"
+  class="error allocation-warning"
+  hidden
+></div>
