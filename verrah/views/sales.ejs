@@ -40,20 +40,20 @@
 
 
     <a
-        href="/sales?tab=staff-sales<%= salesQuerySuffix %>"
-        class="sales-navigation-tab <%= activeTab === 'staff-sales' ? 'active' : '' %>"
-    >
-        <i class="fas fa-user-tie"></i>
-        <span>Sales Report</span>
-    </a>
-
-
-    <a
         href="/sales?tab=products<%= salesQuerySuffix %>"
         class="sales-navigation-tab <%= activeTab === 'products' ? 'active' : '' %>"
     >
         <i class="fas fa-boxes-stacked"></i>
         <span>Products</span>
+    </a>
+
+
+    <a
+        href="/sales?tab=staff-sales<%= salesQuerySuffix %>"
+        class="sales-navigation-tab <%= activeTab === 'staff-sales' ? 'active' : '' %>"
+    >
+        <i class="fas fa-user-tie"></i>
+        <span>Sales Report</span>
     </a>
 
 
@@ -144,7 +144,10 @@
 
 </main>
 
-</section><script>
+</section>
+
+
+<script>
 document.addEventListener("DOMContentLoaded", function () {
 
     const navigation = document.getElementById("sales-navigation");
