@@ -226,6 +226,93 @@
 
 
         <!-- ===================================================
+             SELL PRICE
+        ==================================================== -->
+
+        <div class="field">
+
+          <label for="sellPrice">
+            Sell price
+          </label>
+
+          <input
+            type="number"
+            id="sellPrice"
+            name="sellPrice"
+            min="0"
+            step="0.01"
+            value="<%= old?.sellPrice ?? '' %>"
+            required
+            placeholder="Enter sell price"
+          >
+
+          <small class="form-help">
+            Selling price for this stock item.
+          </small>
+
+        </div>
+
+
+        <!-- ===================================================
+             SUBSTATION
+             CREATE ONLY
+        ==================================================== -->
+
+        <% if (!old) { %>
+
+          <div class="field">
+
+            <label for="substation">
+              Substation
+            </label>
+
+            <select
+              id="substation"
+              name="substation"
+              required
+            >
+
+              <option value="">
+                Select substation
+              </option>
+
+              <% if (
+                typeof substations !== "undefined" &&
+                substations.length
+              ) { %>
+
+                <% substations.forEach(substation => { %>
+
+                  <%
+                    const substationValue =
+                      substation._id || substation.id;
+
+                    const substationName =
+                      substation.name || substationValue;
+                  %>
+
+                  <option
+                    value="<%= substationValue %>"
+                  >
+                    <%= substationName %>
+                  </option>
+
+                <% }) %>
+
+              <% } %>
+
+            </select>
+
+            <small class="form-help">
+              Select the substation associated with this stock.
+            </small>
+
+          </div>
+
+        <% } %>
+
+
+        <!-- ===================================================
              DELIVERY DAYS
         ==================================================== -->
 
@@ -316,8 +403,8 @@
               Existing purchase batches keep their original buy
               prices. If the new total quantity is greater than the
               current quantity, only the additional units are added
-              as a new FIFO purchase batch using the supplied buy
-              price.
+              as a new FIFO purchase batch using the supplied
+              buy price.
             </p>
 
           <% } else { %>
@@ -441,6 +528,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const buyPriceInput =
     document.getElementById("buyPrice");
 
+  const sellPriceInput =
+    document.getElementById("sellPrice");
+
+  <% if (!old) { %>
+
+    const substationInput =
+      document.getElementById("substation");
+
+  <% } %>
+
 
   /* ==========================================================
      EXISTING UNITS
@@ -533,6 +630,10 @@ document.addEventListener("DOMContentLoaded", () => {
           .trim();
 
 
+      const sellPrice =
+        Number(sellPriceInput.value);
+
+
       const units =
         Number(unitsInput.value);
 
@@ -620,6 +721,56 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
 
       }
+
+
+      /* ------------------------------------------------------
+         SELL PRICE
+      ------------------------------------------------------ */
+
+      if (
+        !Number.isFinite(sellPrice) ||
+        sellPrice < 0
+      ) {
+
+        event.preventDefault();
+
+        alert(
+          "Please enter a valid sell price."
+        );
+
+        sellPriceInput.focus();
+
+        return;
+
+      }
+
+
+      /* ------------------------------------------------------
+         SUBSTATION
+         CREATE ONLY
+      ------------------------------------------------------ */
+
+      <% if (!old) { %>
+
+        const substation =
+          substationInput.value.trim();
+
+
+        if (!substation) {
+
+          event.preventDefault();
+
+          alert(
+            "Please select a substation."
+          );
+
+          substationInput.focus();
+
+          return;
+
+        }
+
+      <% } %>
 
 
       /* ------------------------------------------------------
