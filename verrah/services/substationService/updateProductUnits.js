@@ -3,36 +3,31 @@
 //
 // UPDATE PRODUCT UNITS AT MULTIPLE SUBSTATIONS
 //
-// FIFO MODEL:
-//
-// Product.units
-//      = total units allocated across all substations
-//
-// Product.fifoBatches
-//      = FIFO cost layers for the entire Product allocation
-//
-// Stock.units
-//      = warehouse units remaining
-//
-// Stock.purchaseBatches
-//      = FIFO purchase layers for warehouse stock
-//
 // IMPORTANT:
 //
-// Increasing the total Product allocation:
-//      Stock FIFO -> Product FIFO
+// Substation inventory is the quantity being edited.
 //
-// Decreasing the total Product allocation:
-//      Product FIFO -> Stock FIFO
+// Product.units is synchronized with the total quantity held
+// across the substations.
 //
-// Editing several substations at once is handled as ONE
-// transaction. FIFO is applied only to the change in the
-// Product's total allocation.
+// Product.fifoBatches represent the FIFO cost layers for the
+// Product quantity.
 //
-// Stock.purchaseBatches use:
+// Stock.purchaseBatches represent FIFO layers remaining in
+// warehouse Stock.
+//
+// When existing Product.units and substation inventory are
+// already inconsistent, the substation inventory is treated
+// as the current physical allocation and Product is repaired
+// to match it.
+//
+// FIFO is only moved between Stock and Product when the NEW
+// allocation differs from the CURRENT substation allocation.
+//
+// Stock.purchaseBatches:
 //      purchasedAt
 //
-// Product.fifoBatches use:
+// Product.fifoBatches:
 //      receivedAt
 // ==========================================================
 
@@ -50,7 +45,7 @@ const Stock =
 
 
 // ==========================================================
-// NUMBER HELPER
+// NUMBER
 // ==========================================================
 
 function number(value) {
@@ -65,10 +60,10 @@ function number(value) {
 
 
 // ==========================================================
-// INTEGER VALIDATION
+// VALID WHOLE NUMBER
 // ==========================================================
 
-function isWholeNumber(value) {
+function validUnits(value) {
 
     return (
         Number.isInteger(value) &&
@@ -78,10 +73,10 @@ function isWholeNumber(value) {
 
 
 // ==========================================================
-// DATE HELPER
+// DATE
 // ==========================================================
 
-function validDate(
+function dateValue(
     value,
     fallback
 ) {
@@ -124,7 +119,9 @@ function productFifoUnits(
 
             return (
                 total +
-                number(batch.units)
+                number(
+                    batch.units
+                )
             );
         },
         0
@@ -152,7 +149,9 @@ function stockFifoUnits(
 
             return (
                 total +
-                number(batch.units)
+                number(
+                    batch.units
+                )
             );
         },
         0
@@ -181,8 +180,12 @@ function productFifoValue(
             return (
                 total +
                 (
-                    number(batch.units) *
-                    number(batch.buyPrice)
+                    number(
+                        batch.units
+                    ) *
+                    number(
+                        batch.buyPrice
+                    )
                 )
             );
         },
@@ -212,8 +215,12 @@ function stockFifoValue(
             return (
                 total +
                 (
-                    number(batch.units) *
-                    number(batch.buyPrice)
+                    number(
+                        batch.units
+                    ) *
+                    number(
+                        batch.buyPrice
+                    )
                 )
             );
         },
@@ -223,10 +230,10 @@ function stockFifoValue(
 
 
 // ==========================================================
-// WEIGHTED AVERAGE FIFO PRICE
+// PRODUCT WEIGHTED BUY PRICE
 // ==========================================================
 
-function weightedAveragePrice(
+function productWeightedPrice(
     batches
 ) {
 
@@ -235,24 +242,26 @@ function weightedAveragePrice(
             batches
         );
 
-    if (units <= 0) {
+    if (
+        units <= 0
+    ) {
         return 0;
     }
 
-    const value =
+    return (
         productFifoValue(
             batches
-        );
-
-    return value / units;
+        ) /
+        units
+    );
 }
 
 
 // ==========================================================
-// STOCK WEIGHTED AVERAGE
+// STOCK WEIGHTED BUY PRICE
 // ==========================================================
 
-function stockWeightedAveragePrice(
+function stockWeightedPrice(
     batches
 ) {
 
@@ -261,25 +270,25 @@ function stockWeightedAveragePrice(
             batches
         );
 
-    if (units <= 0) {
+    if (
+        units <= 0
+    ) {
         return 0;
     }
 
-    const value =
+    return (
         stockFifoValue(
             batches
-        );
-
-    return value / units;
+        ) /
+        units
+    );
 }
 
 
 // ==========================================================
 // NORMALIZE PRODUCT FIFO
 //
-// Oldest Product layer first.
-//
-// Product FIFO uses receivedAt.
+// Oldest first.
 // ==========================================================
 
 function normalizeProductFifo(
@@ -310,7 +319,7 @@ function normalizeProductFifo(
                         ),
 
                     receivedAt:
-                        validDate(
+                        dateValue(
                             batch.receivedAt,
                             new Date()
                         )
@@ -339,9 +348,7 @@ function normalizeProductFifo(
 // ==========================================================
 // NORMALIZE STOCK FIFO
 //
-// Oldest Stock purchase first.
-//
-// Stock FIFO uses purchasedAt.
+// Oldest first.
 // ==========================================================
 
 function normalizeStockFifo(
@@ -372,7 +379,7 @@ function normalizeStockFifo(
                         ),
 
                     purchasedAt:
-                        validDate(
+                        dateValue(
                             batch.purchasedAt,
                             new Date()
                         )
@@ -399,97 +406,241 @@ function normalizeStockFifo(
 
 
 // ==========================================================
-// ASSERT PRODUCT FIFO CONSISTENCY
+// RECONCILE EXISTING PRODUCT FIFO TO SUBSTATION INVENTORY
 //
-// Product.units must equal the total quantity contained
-// in Product.fifoBatches.
+// This is the important part.
 //
-// We intentionally DO NOT invent missing FIFO history.
+// Example:
+//
+// Product.units       = 1
+// Product FIFO        = 1
+// Substation total    = 9
+//
+// We DO NOT consume 8 from Stock.
+//
+// The 9 units already exist in the substations.
+//
+// Product FIFO is therefore expanded to represent the
+// existing 9-unit allocation.
+//
+// Missing historical FIFO quantity cannot be reconstructed.
+// The existing Product.buyPrice is therefore used for the
+// compatibility/reconciliation layer.
+//
+// If FIFO contains too many units, the newest layers are
+// trimmed because substation inventory is authoritative.
 // ==========================================================
 
-function assertProductFifo(
-    product
+function reconcileProductFifo(
+    product,
+    targetUnits
 ) {
 
-    const productUnits =
+    targetUnits =
         number(
-            product.units
+            targetUnits
         );
 
-    const batches =
+    let batches =
         normalizeProductFifo(
             product.fifoBatches
         );
 
-    const fifoUnits =
+    let fifoUnits =
         productFifoUnits(
             batches
         );
 
+    // ------------------------------------------------------
+    // Nothing to reconcile.
+    // ------------------------------------------------------
+
     if (
-        productUnits !==
-        fifoUnits
+        fifoUnits ===
+        targetUnits
     ) {
 
-        throw new Error(
-            `Product FIFO is inconsistent. Product contains ${productUnits} units, but its FIFO batches contain ${fifoUnits} units. Repair the Product FIFO before changing substation allocations.`
-        );
+        product.fifoBatches =
+            batches;
+
+        product.units =
+            targetUnits;
+
+        product.buyPrice =
+            productWeightedPrice(
+                batches
+            );
+
+        return;
     }
 
-    return batches;
-}
+
+    // ------------------------------------------------------
+    // FIFO contains too few units.
+    //
+    // Add a compatibility layer using the Product's current
+    // weighted buy price.
+    // ------------------------------------------------------
+
+    if (
+        fifoUnits <
+        targetUnits
+    ) {
+
+        const missing =
+            targetUnits -
+            fifoUnits;
+
+        const price =
+            number(
+                product.buyPrice
+            );
+
+        const createdAt =
+            dateValue(
+                product.createdAt,
+                new Date()
+            );
+
+        if (
+            missing > 0
+        ) {
+
+            batches.push(
+                {
+                    units:
+                        missing,
+
+                    buyPrice:
+                        price,
+
+                    receivedAt:
+                        createdAt
+                }
+            );
+        }
+
+        batches =
+            normalizeProductFifo(
+                batches
+            );
+    }
 
 
-// ==========================================================
-// ASSERT STOCK FIFO CONSISTENCY
-//
-// Stock.units must equal the total quantity in
-// Stock.purchaseBatches when FIFO batches exist.
-//
-// We require FIFO here because the requested operation
-// depends on exact purchase layers.
-// ==========================================================
+    // ------------------------------------------------------
+    // FIFO contains too many units.
+    //
+    // Trim newest layers until FIFO matches the actual
+    // substation allocation.
+    // ------------------------------------------------------
 
-function assertStockFifo(
-    stock
-) {
+    else {
 
-    const stockUnits =
-        number(
-            stock.units
-        );
+        let excess =
+            fifoUnits -
+            targetUnits;
 
-    const batches =
-        normalizeStockFifo(
-            stock.purchaseBatches
-        );
+        const newestFirst =
+            [...batches].sort(
+                (
+                    a,
+                    b
+                ) => {
 
-    const fifoUnits =
-        stockFifoUnits(
+                    return (
+                        b.receivedAt -
+                        a.receivedAt
+                    );
+                }
+            );
+
+        const remaining =
+            [];
+
+        for (
+            const batch of newestFirst
+        ) {
+
+            if (
+                excess <= 0
+            ) {
+
+                remaining.push(
+                    batch
+                );
+
+                continue;
+            }
+
+            const remove =
+                Math.min(
+                    number(
+                        batch.units
+                    ),
+                    excess
+                );
+
+            const unitsLeft =
+                number(
+                    batch.units
+                ) -
+                remove;
+
+            if (
+                unitsLeft > 0
+            ) {
+
+                remaining.push(
+                    {
+                        ...batch,
+
+                        units:
+                            unitsLeft
+                    }
+                );
+            }
+
+            excess -=
+                remove;
+        }
+
+        batches =
+            remaining.sort(
+                (
+                    a,
+                    b
+                ) => {
+
+                    return (
+                        a.receivedAt -
+                        b.receivedAt
+                    );
+                }
+            );
+    }
+
+
+    product.fifoBatches =
+        batches;
+
+    product.units =
+        productFifoUnits(
             batches
         );
 
-    if (
-        stockUnits !==
-        fifoUnits
-    ) {
-
-        throw new Error(
-            `Source stock FIFO is inconsistent. Stock contains ${stockUnits} units, but its purchase batches contain ${fifoUnits} units. Repair the Stock FIFO before changing substation allocations.`
+    product.buyPrice =
+        productWeightedPrice(
+            batches
         );
-    }
-
-    return batches;
 }
 
 
 // ==========================================================
 // CONSUME STOCK FIFO
 //
-// Oldest stock purchase batches are consumed first.
+// Oldest Stock purchase batches are consumed first.
 //
-// Returns Product FIFO layers created from the consumed
-// Stock layers.
+// Returns Product FIFO layers.
 // ==========================================================
 
 function consumeStockFifo(
@@ -498,13 +649,17 @@ function consumeStockFifo(
 ) {
 
     quantity =
-        number(quantity);
+        number(
+            quantity
+        );
 
-    if (quantity <= 0) {
+    if (
+        quantity <= 0
+    ) {
         return [];
     }
 
-    let batches =
+    const batches =
         normalizeStockFifo(
             stock.purchaseBatches
         );
@@ -530,7 +685,7 @@ function consumeStockFifo(
     const productLayers =
         [];
 
-    const newStockBatches =
+    const stockLayers =
         [];
 
     for (
@@ -541,7 +696,7 @@ function consumeStockFifo(
             remaining <= 0
         ) {
 
-            newStockBatches.push(
+            stockLayers.push(
                 batch
             );
 
@@ -558,6 +713,10 @@ function consumeStockFifo(
                 batchUnits,
                 remaining
             );
+
+        const left =
+            batchUnits -
+            consumed;
 
         if (
             consumed > 0
@@ -581,20 +740,16 @@ function consumeStockFifo(
             );
         }
 
-        const leftover =
-            batchUnits -
-            consumed;
-
         if (
-            leftover > 0
+            left > 0
         ) {
 
-            newStockBatches.push(
+            stockLayers.push(
                 {
                     ...batch,
 
                     units:
-                        leftover
+                        left
                 }
             );
         }
@@ -613,16 +768,16 @@ function consumeStockFifo(
     }
 
     stock.purchaseBatches =
-        newStockBatches;
+        stockLayers;
 
     stock.units =
         stockFifoUnits(
-            newStockBatches
+            stockLayers
         );
 
     stock.buyPrice =
-        stockWeightedAveragePrice(
-            newStockBatches
+        stockWeightedPrice(
+            stockLayers
         );
 
     return productLayers;
@@ -632,14 +787,10 @@ function consumeStockFifo(
 // ==========================================================
 // RELEASE PRODUCT FIFO
 //
-// When total Product allocation decreases, the newest
-// Product FIFO layers are released first.
+// When Product allocation genuinely decreases, release the
+// newest Product FIFO layers first.
 //
-// They are returned to the source Stock as purchase layers.
-//
-// This does NOT attempt to associate a FIFO layer with a
-// particular substation. Product FIFO belongs to the
-// Product as a whole.
+// Those layers return to the originating Stock.
 // ==========================================================
 
 function releaseProductFifo(
@@ -648,13 +799,17 @@ function releaseProductFifo(
 ) {
 
     quantity =
-        number(quantity);
+        number(
+            quantity
+        );
 
-    if (quantity <= 0) {
+    if (
+        quantity <= 0
+    ) {
         return [];
     }
 
-    let batches =
+    const batches =
         normalizeProductFifo(
             product.fifoBatches
         );
@@ -680,12 +835,8 @@ function releaseProductFifo(
     const returnedStockLayers =
         [];
 
-    const newProductBatches =
+    const productLayers =
         [];
-
-    // ------------------------------------------------------
-    // Newest Product FIFO layers are released first.
-    // ------------------------------------------------------
 
     for (
         let index =
@@ -703,7 +854,7 @@ function releaseProductFifo(
             remaining <= 0
         ) {
 
-            newProductBatches.unshift(
+            productLayers.unshift(
                 batch
             );
 
@@ -720,6 +871,10 @@ function releaseProductFifo(
                 batchUnits,
                 remaining
             );
+
+        const left =
+            batchUnits -
+            released;
 
         if (
             released > 0
@@ -743,20 +898,16 @@ function releaseProductFifo(
             );
         }
 
-        const leftover =
-            batchUnits -
-            released;
-
         if (
-            leftover > 0
+            left > 0
         ) {
 
-            newProductBatches.unshift(
+            productLayers.unshift(
                 {
                     ...batch,
 
                     units:
-                        leftover
+                        left
                 }
             );
         }
@@ -775,16 +926,16 @@ function releaseProductFifo(
     }
 
     product.fifoBatches =
-        newProductBatches;
+        productLayers;
 
     product.units =
         productFifoUnits(
-            newProductBatches
+            productLayers
         );
 
     product.buyPrice =
-        weightedAveragePrice(
-            newProductBatches
+        productWeightedPrice(
+            productLayers
         );
 
     return returnedStockLayers;
@@ -792,10 +943,10 @@ function releaseProductFifo(
 
 
 // ==========================================================
-// ADD RETURNED FIFO LAYERS TO STOCK
+// RETURN FIFO LAYERS TO STOCK
 // ==========================================================
 
-function addReturnedStockLayers(
+function returnLayersToStock(
     stock,
     returnedLayers
 ) {
@@ -832,12 +983,8 @@ function addReturnedStockLayers(
                 ) => {
 
                     return (
-                        new Date(
-                            a.purchasedAt
-                        ) -
-                        new Date(
-                            b.purchasedAt
-                        )
+                        a.purchasedAt -
+                        b.purchasedAt
                     );
                 }
             );
@@ -848,20 +995,23 @@ function addReturnedStockLayers(
         );
 
     stock.buyPrice =
-        stockWeightedAveragePrice(
+        stockWeightedPrice(
             stock.purchaseBatches
         );
 }
 
 
 // ==========================================================
-// GET ALL CURRENT PRODUCT ALLOCATIONS
+// GET CURRENT SUBSTATION TOTAL
 //
-// Used to calculate the Product's true current total across
-// all active substations.
+// The existing substation inventory is authoritative for the
+// physical allocation.
+//
+// We deliberately do NOT compare this against Product.units
+// and throw an error.
 // ==========================================================
 
-async function getCurrentProductAllocations(
+async function getCurrentSubstationData(
     productId,
     session
 ) {
@@ -869,10 +1019,11 @@ async function getCurrentProductAllocations(
     const substations =
         await Substation
             .find({
-                isActive: true
+                isActive:
+                    true
             })
             .select(
-                "_id name productInventory"
+                "_id name location productInventory"
             )
             .session(
                 session
@@ -914,14 +1065,13 @@ async function getCurrentProductAllocations(
                 );
 
             if (
-                !Number.isInteger(
+                !validUnits(
                     units
-                ) ||
-                units < 0
+                )
             ) {
 
                 throw new Error(
-                    `Invalid Product allocation found at substation ${substation.name || substation._id}.`
+                    `Invalid units found for Product at substation ${substation.name || substation._id}.`
                 );
             }
 
@@ -931,30 +1081,27 @@ async function getCurrentProductAllocations(
     }
 
     return {
-        total,
-        substations
+        substations,
+        total
     };
 }
 
 
 // ==========================================================
-// NORMALIZE ALLOCATIONS FROM REQUEST
+// NORMALIZE REQUEST ALLOCATIONS
 //
 // Expected:
 //
-// {
-//     productId: "...",
-//     allocations: [
-//         {
-//             substationId: "...",
-//             units: 10
-//         },
-//         ...
-//     ]
-// }
-//
-// productId is supplied separately by the controller route,
-// so body.productId is optional.
+// allocations: [
+//     {
+//         substationId: "...",
+//         units: 10
+//     },
+//     {
+//         substationId: "...",
+//         units: 5
+//     }
+// ]
 // ==========================================================
 
 function normalizeAllocations(
@@ -980,79 +1127,75 @@ function normalizeAllocations(
     const seen =
         new Set();
 
-    const normalized =
-        [];
+    return allocations.map(
+        allocation => {
 
-    for (
-        const allocation of allocations
-    ) {
+            if (
+                !mongoose.isValidObjectId(
+                    allocation.substationId
+                )
+            ) {
 
-        if (
-            !mongoose.isValidObjectId(
-                allocation.substationId
-            )
-        ) {
+                throw new Error(
+                    "Invalid substation."
+                );
+            }
 
-            throw new Error(
-                "Invalid substation."
-            );
-        }
+            const substationId =
+                String(
+                    allocation.substationId
+                );
 
-        const substationId =
-            String(
-                allocation.substationId
-            );
+            if (
+                seen.has(
+                    substationId
+                )
+            ) {
 
-        if (
-            seen.has(
+                throw new Error(
+                    "The same substation was submitted more than once."
+                );
+            }
+
+            seen.add(
                 substationId
-            )
-        ) {
-
-            throw new Error(
-                "The same substation was submitted more than once."
-            );
-        }
-
-        seen.add(
-            substationId
-        );
-
-        const units =
-            Number(
-                allocation.units
             );
 
-        if (
-            !isWholeNumber(
-                units
-            )
-        ) {
+            const units =
+                Number(
+                    allocation.units
+                );
 
-            throw new Error(
-                "Substation units must be whole numbers greater than or equal to zero."
-            );
-        }
+            if (
+                !validUnits(
+                    units
+                )
+            ) {
 
-        normalized.push(
-            {
+                throw new Error(
+                    "Substation units must be whole numbers greater than or equal to zero."
+                );
+            }
+
+            return {
                 substationId:
                     allocation.substationId,
 
                 units
-            }
-        );
-    }
-
-    return normalized;
+            };
+        }
+    );
 }
 
 
 // ==========================================================
-// UPDATE PRODUCT UNITS AT MULTIPLE SUBSTATIONS
+// UPDATE PRODUCT UNITS
+//
+// MULTIPLE SUBSTATIONS
 // ==========================================================
 
-exports.updateProductUnits = async (
+exports.updateProductUnits =
+async (
     productId,
     body
 ) => {
@@ -1092,15 +1235,13 @@ exports.updateProductUnits = async (
 
                 const product =
                     await Product
-                        .findOne(
-                            {
-                                _id:
-                                    productId,
+                        .findOne({
+                            _id:
+                                productId,
 
-                                isActive:
-                                    true
-                            }
-                        )
+                            isActive:
+                                true
+                        })
                         .session(
                             session
                         );
@@ -1119,15 +1260,13 @@ exports.updateProductUnits = async (
 
                 const stock =
                     await Stock
-                        .findOne(
-                            {
-                                _id:
-                                    product.stock,
+                        .findOne({
+                            _id:
+                                product.stock,
 
-                                isActive:
-                                    true
-                            }
-                        )
+                            isActive:
+                                true
+                        })
                         .session(
                             session
                         );
@@ -1141,111 +1280,29 @@ exports.updateProductUnits = async (
 
 
                 // ==================================================
-                // VERIFY PRODUCT FIFO
+                // GET CURRENT SUBSTATION INVENTORY
                 // ==================================================
 
-                let productFifo =
-                    assertProductFifo(
-                        product
-                    );
-
-                product.fifoBatches =
-                    productFifo;
-
-
-                // ==================================================
-                // VERIFY STOCK FIFO
-                // ==================================================
-
-                let stockFifo =
-                    assertStockFifo(
-                        stock
-                    );
-
-                stock.purchaseBatches =
-                    stockFifo;
-
-
-                // ==================================================
-                // GET CURRENT TOTAL ACROSS ALL SUBSTATIONS
-                // ==================================================
-
-                const currentAllocationData =
-                    await getCurrentProductAllocations(
+                const currentData =
+                    await getCurrentSubstationData(
                         product._id,
                         session
                     );
 
-                const currentAllocatedUnits =
-                    currentAllocationData.total;
+                const currentSubstationTotal =
+                    currentData.total;
 
 
                 // ==================================================
-                // PRODUCT TOTAL MUST MATCH SUBSTATION TOTAL
-                // ==================================================
-
-                const storedProductUnits =
-                    number(
-                        product.units
-                    );
-
-                if (
-                    storedProductUnits !==
-                    currentAllocatedUnits
-                ) {
-
-                    throw new Error(
-                        `Product allocation is inconsistent. Product contains ${storedProductUnits} units, but all substations contain ${currentAllocatedUnits} units for this Product.`
-                    );
-                }
-
-
-                // ==================================================
-                // LOAD SUBSTATIONS BEING EDITED
-                // ==================================================
-
-                const substationIds =
-                    allocations.map(
-                        allocation =>
-                            allocation.substationId
-                    );
-
-                const substations =
-                    await Substation
-                        .find(
-                            {
-                                _id: {
-                                    $in:
-                                        substationIds
-                                },
-
-                                isActive:
-                                    true
-                            }
-                        )
-                        .session(
-                            session
-                        );
-
-                if (
-                    substations.length !==
-                    allocations.length
-                ) {
-
-                    throw new Error(
-                        "One or more selected substations were not found or are inactive."
-                    );
-                }
-
-
-                // ==================================================
-                // CALCULATE OLD/NEW UNITS
+                // CALCULATE NEW TOTAL
                 //
-                // Only the total Product change controls FIFO.
+                // Only submitted substations are changed.
+                // Unsubmitted substations retain their current
+                // allocations.
                 // ==================================================
 
-                let newAllocatedUnits =
-                    currentAllocatedUnits;
+                let newSubstationTotal =
+                    currentSubstationTotal;
 
 
                 for (
@@ -1253,7 +1310,7 @@ exports.updateProductUnits = async (
                 ) {
 
                     const substation =
-                        substations.find(
+                        currentData.substations.find(
                             item =>
                                 String(
                                     item._id
@@ -1266,7 +1323,7 @@ exports.updateProductUnits = async (
                     if (!substation) {
 
                         throw new Error(
-                            "Substation not found."
+                            "One or more selected substations were not found or are inactive."
                         );
                     }
 
@@ -1277,11 +1334,11 @@ exports.updateProductUnits = async (
                             ? substation.productInventory
                             : [];
 
-                    const existingEntry =
+                    const existing =
                         inventory.find(
-                            entry =>
+                            item =>
                                 String(
-                                    entry.productId
+                                    item.productId
                                 ) ===
                                 String(
                                     product._id
@@ -1289,75 +1346,87 @@ exports.updateProductUnits = async (
                         );
 
                     const oldUnits =
-                        existingEntry
+                        existing
                             ? number(
-                                existingEntry.units
+                                existing.units
                             )
                             : 0;
 
-                    newAllocatedUnits =
-                        newAllocatedUnits -
+                    newSubstationTotal =
+                        newSubstationTotal -
                         oldUnits +
                         allocation.units;
                 }
 
 
                 // ==================================================
-                // FINAL PRODUCT DELTA
+                // IMPORTANT:
+                //
+                // The current Product.units is NOT used as the
+                // starting quantity.
+                //
+                // The current substation total is authoritative.
+                //
+                // This fixes situations such as:
+                //
+                // Product.units = 1
+                // Substation total = 9
+                //
+                // We start from 9, not 1.
                 // ==================================================
 
-                const delta =
-                    newAllocatedUnits -
-                    currentAllocatedUnits;
+                const actualDelta =
+                    newSubstationTotal -
+                    currentSubstationTotal;
 
 
                 // ==================================================
-                // APPLY FIFO
+                // RECONCILE PRODUCT FIFO TO EXISTING SUBSTATION
+                // INVENTORY BEFORE APPLYING THE NEW DELTA.
+                //
+                // This repairs an existing quantity mismatch
+                // without moving anything to/from Stock.
+                // ==================================================
+
+                reconcileProductFifo(
+                    product,
+                    currentSubstationTotal
+                );
+
+
+                // ==================================================
+                // APPLY ONLY THE REAL CHANGE
                 // ==================================================
 
                 if (
-                    delta > 0
+                    actualDelta > 0
                 ) {
 
                     // ----------------------------------------------
-                    // More Product units are being allocated.
+                    // Additional units are genuinely being added
+                    // to the Product allocation.
                     //
-                    // Consume oldest Stock purchase batches.
+                    // Consume oldest Stock FIFO.
                     // ----------------------------------------------
 
-                    const productLayers =
+                    const addedLayers =
                         consumeStockFifo(
                             stock,
-                            delta
+                            actualDelta
                         );
 
                     product.fifoBatches =
                         [
-                            ...product.fifoBatches,
-                            ...productLayers
-                        ]
-                            .filter(
-                                batch =>
-                                    number(
-                                        batch.units
-                                    ) > 0
-                            )
-                            .sort(
-                                (
-                                    a,
-                                    b
-                                ) => {
+                            ...normalizeProductFifo(
+                                product.fifoBatches
+                            ),
+                            ...addedLayers
+                        ];
 
-                                    return (
-                                        new Date(
-                                            a.receivedAt
-                                        ) -
-                                        new Date(
-                                            b.receivedAt
-                                        )
-                                    );
-                                }
-                            );
+                    product.fifoBatches =
+                        normalizeProductFifo(
+                            product.fifoBatches
+                        );
 
                     product.units =
                         productFifoUnits(
@@ -1365,27 +1434,26 @@ exports.updateProductUnits = async (
                         );
 
                     product.buyPrice =
-                        weightedAveragePrice(
+                        productWeightedPrice(
                             product.fifoBatches
                         );
                 }
 
 
                 else if (
-                    delta < 0
+                    actualDelta < 0
                 ) {
 
                     // ----------------------------------------------
-                    // Fewer Product units are allocated.
+                    // Product allocation genuinely decreased.
                     //
-                    // Release Product FIFO layers back to Stock.
-                    //
-                    // Newest Product layers are released first.
+                    // Release newest Product FIFO layers and return
+                    // them to the originating Stock.
                     // ----------------------------------------------
 
                     const quantityToReturn =
                         Math.abs(
-                            delta
+                            actualDelta
                         );
 
                     const returnedLayers =
@@ -1394,33 +1462,28 @@ exports.updateProductUnits = async (
                             quantityToReturn
                         );
 
-                    addReturnedStockLayers(
+                    returnLayersToStock(
                         stock,
                         returnedLayers
                     );
                 }
 
 
-                else {
+                // ==================================================
+                // FINAL PRODUCT QUANTITY
+                // ==================================================
 
-                    // ----------------------------------------------
-                    // No Product quantity change.
-                    //
-                    // FIFO remains untouched.
-                    // ----------------------------------------------
+                product.units =
+                    newSubstationTotal;
 
-                    product.units =
-                        newAllocatedUnits;
-
-                    product.buyPrice =
-                        weightedAveragePrice(
-                            product.fifoBatches
-                        );
-                }
+                product.buyPrice =
+                    productWeightedPrice(
+                        product.fifoBatches
+                    );
 
 
                 // ==================================================
-                // FINAL FIFO INVARIANTS
+                // FINAL PRODUCT FIFO CHECK
                 // ==================================================
 
                 const finalProductFifoUnits =
@@ -1430,58 +1493,32 @@ exports.updateProductUnits = async (
 
                 if (
                     finalProductFifoUnits !==
-                    newAllocatedUnits
+                    newSubstationTotal
                 ) {
 
                     throw new Error(
-                        `Product FIFO reconciliation failed. Expected ${newAllocatedUnits} units but FIFO contains ${finalProductFifoUnits}.`
+                        `Product FIFO reconciliation failed. Expected ${newSubstationTotal} units but FIFO contains ${finalProductFifoUnits}.`
                     );
                 }
 
-                product.units =
-                    newAllocatedUnits;
-
-                product.buyPrice =
-                    weightedAveragePrice(
-                        product.fifoBatches
-                    );
-
 
                 // ==================================================
-                // FINAL STOCK FIFO INVARIANT
+                // FINAL STOCK QUANTITY
                 // ==================================================
 
-                const finalStockFifoUnits =
+                stock.units =
                     stockFifoUnits(
                         stock.purchaseBatches
                     );
 
-                const finalStockUnits =
-                    number(
-                        stock.units
-                    );
-
-                if (
-                    finalStockFifoUnits !==
-                    finalStockUnits
-                ) {
-
-                    throw new Error(
-                        `Stock FIFO reconciliation failed. Stock contains ${finalStockUnits} units but its purchase batches contain ${finalStockFifoUnits}.`
-                    );
-                }
-
-                stock.units =
-                    finalStockFifoUnits;
-
                 stock.buyPrice =
-                    stockWeightedAveragePrice(
+                    stockWeightedPrice(
                         stock.purchaseBatches
                     );
 
 
                 // ==================================================
-                // UPDATE ALL SUBSTATION ALLOCATIONS
+                // UPDATE SUBSTATIONS
                 // ==================================================
 
                 for (
@@ -1489,20 +1526,22 @@ exports.updateProductUnits = async (
                 ) {
 
                     const substation =
-                        substations.find(
-                            item =>
-                                String(
-                                    item._id
-                                ) ===
-                                String(
-                                    allocation.substationId
-                                )
-                        );
+                        await Substation
+                            .findOne({
+                                _id:
+                                    allocation.substationId,
+
+                                isActive:
+                                    true
+                            })
+                            .session(
+                                session
+                            );
 
                     if (!substation) {
 
                         throw new Error(
-                            "Substation not found."
+                            "Substation not found or inactive."
                         );
                     }
 
@@ -1516,11 +1555,9 @@ exports.updateProductUnits = async (
                             [];
                     }
 
-                    let inventory =
-                        substation.productInventory;
 
                     let entry =
-                        inventory.find(
+                        substation.productInventory.find(
                             item =>
                                 String(
                                     item.productId
@@ -1531,9 +1568,9 @@ exports.updateProductUnits = async (
                         );
 
 
-                    // ----------------------------------------------
-                    // Create allocation if it does not exist.
-                    // ----------------------------------------------
+                    // ------------------------------------------------
+                    // CREATE INVENTORY ENTRY
+                    // ------------------------------------------------
 
                     if (!entry) {
 
@@ -1563,15 +1600,15 @@ exports.updateProductUnits = async (
                                     new Date()
                             };
 
-                        inventory.push(
+                        substation.productInventory.push(
                             entry
                         );
                     }
 
 
-                    // ----------------------------------------------
-                    // Update existing allocation.
-                    // ----------------------------------------------
+                    // ------------------------------------------------
+                    // UPDATE INVENTORY ENTRY
+                    // ------------------------------------------------
 
                     else {
 
@@ -1595,84 +1632,51 @@ exports.updateProductUnits = async (
                         entry.updatedAt =
                             new Date();
                     }
-                }
 
-
-                // ==================================================
-                // SAVE SUBSTATIONS
-                // ==================================================
-
-                for (
-                    const substation of substations
-                ) {
 
                     substation.updatedAt =
                         new Date();
 
-                    await substation.save(
-                        {
-                            session
-                        }
-                    );
+                    await substation.save({
+                        session
+                    });
                 }
 
 
                 // ==================================================
-                // UPDATE PRODUCT TIMESTAMP
+                // UPDATE PRODUCT
                 // ==================================================
 
                 product.updatedAt =
                     new Date();
 
+                await product.save({
+                    session
+                });
+
 
                 // ==================================================
-                // UPDATE STOCK TIMESTAMP
+                // UPDATE STOCK
                 // ==================================================
 
                 stock.totalsUpdatedAt =
                     new Date();
 
-
-                // ==================================================
-                // SAVE PRODUCT
-                // ==================================================
-
-                await product.save(
-                    {
-                        session
-                    }
-                );
+                await stock.save({
+                    session
+                });
 
 
                 // ==================================================
-                // SAVE STOCK
-                // ==================================================
-
-                await stock.save(
-                    {
-                        session
-                    }
-                );
-
-
-                // ==================================================
-                // RECALCULATE STOCK TOTALS
-                //
-                // Uses FIFO purchase values instead of:
-                //
-                // units × buyPrice
-                //
-                // whenever purchase batches are available.
+                // RECALCULATE ALL STOCK TOTALS
                 // ==================================================
 
                 const allStocks =
                     await Stock
-                        .find(
-                            {
-                                isActive:
-                                    true
-                            }
-                        )
+                        .find({
+                            isActive:
+                                true
+                        })
                         .select(
                             "_id category units buyPrice purchaseBatches"
                         )
@@ -1690,7 +1694,7 @@ exports.updateProductUnits = async (
 
 
                 // ==================================================
-                // FIRST PASS
+                // CALCULATE TOTAL STOCK VALUE
                 // ==================================================
 
                 for (
@@ -1717,13 +1721,6 @@ exports.updateProductUnits = async (
 
                     else {
 
-                        // ------------------------------------------
-                        // Legacy fallback for a Stock record that
-                        // has no FIFO batches and zero units.
-                        //
-                        // We do not invent FIFO here.
-                        // ------------------------------------------
-
                         value =
                             number(
                                 item.units
@@ -1733,10 +1730,9 @@ exports.updateProductUnits = async (
                             );
                     }
 
-
                     const category =
-                        item.category || "";
-
+                        item.category ||
+                        "";
 
                     categoryTotals.set(
                         category,
@@ -1748,14 +1744,13 @@ exports.updateProductUnits = async (
                         value
                     );
 
-
                     overall +=
                         value;
                 }
 
 
                 // ==================================================
-                // SECOND PASS
+                // SAVE STOCK TOTALS
                 // ==================================================
 
                 const now =
@@ -1807,7 +1802,8 @@ exports.updateProductUnits = async (
 
                                 categoryOveral:
                                     categoryTotals.get(
-                                        item.category || ""
+                                        item.category ||
+                                        ""
                                     ) || 0,
 
                                 overal:
@@ -1836,19 +1832,14 @@ exports.updateProductUnits = async (
                         productId:
                             product._id,
 
-                        substationIds:
-                            allocations.map(
-                                allocation =>
-                                    allocation.substationId
-                            ),
-
                         previousUnits:
-                            currentAllocatedUnits,
+                            currentSubstationTotal,
 
                         units:
-                            newAllocatedUnits,
+                            newSubstationTotal,
 
-                        delta,
+                        delta:
+                            actualDelta,
 
                         substationCount:
                             allocations.length
