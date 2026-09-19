@@ -1,48 +1,63 @@
 <section class="shop-page stock-entry-page">
+
+  <!-- =========================================================
+       STOCK MANAGEMENT FORM
+  ========================================================== -->
+
   <div class="form-card stock-management-form">
 
-    <a href="/stock" class="secondary-btn">
-      <i class="fas fa-arrow-left"></i> Stock
-    </a>
+    <div class="form-card-header">
 
-    <h1 class="page-title"><%= title %></h1>
+      <div>
 
-    <p class="page-subtitle">
-      Add the stock details and, when needed, give customers clear instructions
-      for using the product.
-    </p>
+        <h1>
+          <%= old ? "Edit Stock" : "Add Stock" %>
+        </h1>
 
-    <% if (error) { %>
-      <div class="error"><%= error %></div>
-    <% } %>
+        <p>
+          <%= old
+            ? "Update the stock item and warehouse quantity."
+            : "Add a new stock item to the warehouse."
+          %>
+        </p>
 
-    <% if (saved === "1") { %>
-      <div class="notice">
-        Stock subcategory saved successfully.
       </div>
-    <% } %>
+
+    </div>
 
 
-    <!-- ======================================================
+    <!-- =======================================================
          STOCK FORM
-    ======================================================= -->
+    ======================================================== -->
 
-    <form action="/stock" method="POST" id="stockForm" novalidate>
+    <form
+      action="/stock"
+      method="POST"
+      id="stockForm"
+      novalidate
+    >
 
-      <input
-        type="hidden"
-        name="stockId"
-        id="stockId"
-        value="<%= selectedStockId || old?.stockId || '' %>"
-      >
+      <% if (old && old._id) { %>
 
+        <input
+          type="hidden"
+          name="stockId"
+          value="<%= old._id %>"
+        >
+
+      <% } %>
+
+
+      <!-- =====================================================
+           FORM GRID
+      ====================================================== -->
 
       <div class="form-grid">
 
 
-        <!-- ==================================================
+        <!-- ===================================================
              CATEGORY
-        =================================================== -->
+        ==================================================== -->
 
         <div class="field">
 
@@ -50,65 +65,66 @@
             Category
           </label>
 
-          <div class="select-wrap">
+          <select
+            id="category"
+            name="category"
+            required
+          >
 
-            <select
-              id="category"
-              name="category"
-              required
-              aria-describedby="categoryHelp"
-            >
+            <option value="">
+              Select category
+            </option>
 
-              <option value="">
-                Select a category
-              </option>
+            <% if (typeof categories !== "undefined" && categories.length) { %>
 
-              <% (categories || []).forEach((category) => {
-
-                const categoryId =
-                  String(category._id || '');
-
-                const categoryName =
-                  String(category.name || '');
-
-                const oldCategory =
-                  String(
-                    old?.category?._id ||
-                    old?.category ||
-                    ''
-                  );
-
-              %>
+              <% categories.forEach(category => { %>
 
                 <option
-                  value="<%= categoryId %>"
-                  data-existing-units="0"
-                  <%= oldCategory === categoryId ? 'selected' : '' %>
+                  value="<%= category.name || category %>"
+                  <%= old?.category === (category.name || category) ? "selected" : "" %>
                 >
-                  <%= categoryName
-                    .replace(/[-_]+/g, ' ')
-                    .replace(/\b\w/g, c => c.toUpperCase()) %>
+                  <%= category.name || category %>
                 </option>
 
               <% }) %>
 
-            </select>
+            <% } %>
 
-          </div>
+          </select>
 
-          <small
-            class="form-help"
-            id="categoryHelp"
+        </div>
+
+
+        <!-- ===================================================
+             STOCK NAME
+        ==================================================== -->
+
+        <div class="field">
+
+          <label for="name">
+            Stock name
+          </label>
+
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value="<%= old?.name || '' %>"
+            required
+            autocomplete="off"
+            placeholder="Enter stock name"
           >
-            Select one of the active categories from the database.
+
+          <small class="form-help">
+            The main name of this stock item.
           </small>
 
         </div>
 
 
-        <!-- ==================================================
+        <!-- ===================================================
              SUBCATEGORY
-        =================================================== -->
+        ==================================================== -->
 
         <div class="field">
 
@@ -117,98 +133,101 @@
           </label>
 
           <input
+            type="text"
             id="subcategory"
             name="subcategory"
             value="<%= old?.subcategory || '' %>"
             required
             autocomplete="off"
+            placeholder="Enter subcategory"
           >
 
           <small class="form-help">
-            This becomes the product name.
+            The subcategory of this stock item.
           </small>
 
         </div>
 
 
-        <!-- ==================================================
+        <!-- ===================================================
              UNITS
-        =================================================== -->
+        ==================================================== -->
 
         <div class="field">
 
-          <label for="units" id="unitsLabel">
-            Initial warehouse units
+          <label for="units">
+            Units
           </label>
 
           <input
+            type="number"
             id="units"
             name="units"
-            type="number"
             min="0"
             step="1"
             value="<%= old?.units ?? '' %>"
             required
-            inputmode="numeric"
-            aria-describedby="unitsHelp unitsValidation"
           >
 
-          <small
-            class="form-help"
-            id="unitsHelp"
-          >
-            Units for a new subcategory.
-          </small>
+          <% if (old) { %>
 
-          <small
-            id="unitsValidation"
-            class="field-validation"
-            hidden
-          ></small>
+            <small class="form-help">
+              Enter the new total warehouse quantity.
+              Existing FIFO stock cannot be reduced.
+            </small>
+
+          <% } else { %>
+
+            <small class="form-help">
+              Initial quantity entering the warehouse.
+            </small>
+
+          <% } %>
 
         </div>
 
 
-        <!-- ==================================================
+        <!-- ===================================================
              BUY PRICE
-        =================================================== -->
+        ==================================================== -->
 
         <div class="field">
 
-          <label for="buyPrice" id="buyPriceLabel">
-            Buy price per unit
+          <label for="buyPrice">
+            Buy price
           </label>
 
           <input
+            type="number"
             id="buyPrice"
             name="buyPrice"
-            type="number"
             min="0"
             step="0.01"
             value="<%= old?.buyPrice ?? '' %>"
-            inputmode="decimal"
-            aria-describedby="buyPriceHelp buyPriceValidation"
+            <%= old ? "" : "required" %>
           >
 
-          <small
-            class="form-help"
-            id="buyPriceHelp"
-          >
-            Purchase cost per unit for the initial FIFO stock batch.
-          </small>
+          <% if (old) { %>
 
-          <small
-            id="buyPriceValidation"
-            class="field-validation"
-            hidden
-          ></small>
+            <small class="form-help">
+              Required only when adding additional units.
+              Existing FIFO batches are not repriced.
+            </small>
+
+          <% } else { %>
+
+            <small class="form-help">
+              Purchase price for the initial FIFO batch.
+            </small>
+
+          <% } %>
 
         </div>
 
 
-        <!-- ==================================================
+        <!-- ===================================================
              DELIVERY DAYS
-        =================================================== -->
+        ==================================================== -->
 
         <div class="field">
 
@@ -217,50 +236,45 @@
           </label>
 
           <input
+            type="number"
             id="days"
             name="days"
-            type="number"
             min="0"
             step="1"
-            value="<%= old?.days ?? 0 %>"
-            required
+            value="<%= old?.days ?? '' %>"
+            placeholder="Optional"
           >
-
-          <small class="form-help">
-            Delivery time for this subcategory.
-          </small>
 
         </div>
 
 
-        <!-- ==================================================
+        <!-- ===================================================
              IMAGE
-        =================================================== -->
+        ==================================================== -->
 
-        <div class="field full">
+        <div class="field">
 
           <label for="image">
-            Image URL
-            <span class="optional">
-              (optional when updating)
-            </span>
+            Image
           </label>
 
           <input
+            type="text"
             id="image"
             name="image"
             value="<%= old?.image || '' %>"
-            autocomplete="url"
+            autocomplete="off"
+            placeholder="Image URL"
           >
 
         </div>
 
 
-        <!-- ==================================================
+        <!-- ===================================================
              DESCRIPTION
-        =================================================== -->
+        ==================================================== -->
 
-        <div class="field full">
+        <div class="field field-full">
 
           <label for="description">
             Description
@@ -269,7 +283,8 @@
           <textarea
             id="description"
             name="description"
-            placeholder="Briefly describe the product"
+            rows="5"
+            placeholder="Enter stock description"
           ><%= old?.description || '' %></textarea>
 
         </div>
@@ -277,1772 +292,719 @@
       </div>
 
 
-      <!-- ====================================================
+      <!-- =====================================================
            FIFO INFORMATION
-      ===================================================== -->
+      ====================================================== -->
 
-      <div
-        class="fifo-info-card"
-        id="fifoInfoCard"
-      >
+      <div class="info-card">
 
-        <div class="fifo-info-icon">
+        <div class="info-card-icon">
+
           <i class="fas fa-layer-group"></i>
-        </div>
-
-        <div class="fifo-info-content">
-
-          <strong>
-            FIFO stock costing
-          </strong>
-
-          <p id="fifoInfoText">
-            Each new stock purchase is stored as a separate FIFO
-            purchase batch. Older stock is used before newer stock.
-          </p>
 
         </div>
 
-      </div>
+        <div>
 
+          <h3>
+            FIFO stock management
+          </h3>
 
-      <!-- ====================================================
-           EDIT MODE STOCK SUMMARY
-      ===================================================== -->
-
-      <div
-        class="stock-edit-summary"
-        id="stockEditSummary"
-        hidden
-      >
-
-        <div class="stock-summary-row">
-
-          <strong>
-            Current warehouse units:
-          </strong>
-
-          <span id="currentUnits">
-            0
-          </span>
-
-        </div>
-
-
-        <div class="stock-summary-row">
-
-          <strong>
-            New warehouse units:
-          </strong>
-
-          <span id="projectedUnits">
-            0
-          </span>
-
-        </div>
-
-
-        <div
-          class="stock-summary-row additional-row"
-          id="additionalUnitsRow"
-          hidden
-        >
-
-          <strong>
-            New FIFO batch units:
-          </strong>
-
-          <span id="additionalUnits">
-            0
-          </span>
-
-        </div>
-
-
-        <div
-          class="stock-summary-row"
-          id="newBatchPriceRow"
-          hidden
-        >
-
-          <strong>
-            New FIFO batch price:
-          </strong>
-
-          <span id="newBatchPrice">
-            —
-          </span>
-
-        </div>
-
-
-        <div
-          class="stock-summary-message"
-          id="stockSummaryMessage"
-        ></div>
-
-      </div>
-
-
-      <!-- ====================================================
-           DIRECTIONS OF USE
-      ===================================================== -->
-
-      <section
-        class="directions-editor"
-        aria-labelledby="directionsHeading"
-      >
-
-        <div class="directions-editor-head">
-
-          <div>
-
-            <span class="directions-kicker">
-              <i class="fas fa-circle-info"></i>
-              Customer information
-            </span>
-
-            <h2 id="directionsHeading">
-              Directions of Use
-            </h2>
+          <% if (old) { %>
 
             <p>
-              Add practical instructions that customers should see on the
-              product page. This section is optional.
+              Existing purchase batches keep their original buy
+              prices. If the new total quantity is greater than the
+              current quantity, only the additional units are added
+              as a new FIFO purchase batch using the supplied buy
+              price.
             </p>
+
+          <% } else { %>
+
+            <p>
+              The initial warehouse quantity will be stored as the
+              first FIFO purchase batch using the supplied buy price.
+              Future purchases will create separate batches.
+            </p>
+
+          <% } %>
+
+        </div>
+
+      </div>
+
+
+      <!-- =====================================================
+           EDIT SUMMARY
+      ====================================================== -->
+
+      <% if (old) { %>
+
+        <div class="edit-summary">
+
+          <div class="edit-summary-item">
+
+            <span class="summary-label">
+              Current warehouse units
+            </span>
+
+            <strong id="currentUnits">
+              <%= Number(old.units || 0).toLocaleString("en-KE") %>
+            </strong>
 
           </div>
 
 
+          <div class="edit-summary-item">
+
+            <span class="summary-label">
+              New warehouse units
+            </span>
+
+            <strong id="newUnits">
+              <%= Number(old.units || 0).toLocaleString("en-KE") %>
+            </strong>
+
+          </div>
+
+
+          <div class="edit-summary-item">
+
+            <span class="summary-label">
+              Additional units
+            </span>
+
+            <strong id="additionalUnits">
+              0
+            </strong>
+
+          </div>
+
+        </div>
+
+      <% } %>
+
+
+      <!-- =====================================================
+           DIRECTIONS OF USE
+      ====================================================== -->
+
+      <div class="directions-section">
+
+        <div class="section-heading">
+
+          <div>
+
+            <h2>
+              Directions of Use
+            </h2>
+
+            <p>
+              Add instructions for using this product.
+            </p>
+
+          </div>
+
           <button
             type="button"
-            class="secondary-btn directions-add-btn"
-            id="addDirectionBtn"
+            class="secondary-btn"
+            id="addDirection"
           >
+
             <i class="fas fa-plus"></i>
-            Add instruction
+
+            Add Direction
+
           </button>
 
         </div>
 
 
-        <!-- ==================================================
-             DIRECTIONS TITLE
-        =================================================== -->
-
-        <div class="field full">
-
-          <label for="directionsTitle">
-            Section title
-          </label>
-
-          <input
-            id="directionsTitle"
-            name="directionsOfUse[title]"
-            value="<%= old?.directionsOfUse?.title || '' %>"
-            placeholder="e.g. How to use this product"
-          >
-
-        </div>
-
-
-        <!-- ==================================================
-             DIRECTIONS LIST
-        =================================================== -->
-
         <div
-          id="directionsList"
-          class="directions-list"
+          id="directionsContainer"
+          class="directions-container"
         >
 
-          <%
-            const items =
-              Array.isArray(old?.directionsOfUse?.items)
-                ? old.directionsOfUse.items
-                : [{ subtitle: '', content: '' }];
-          %>
+          <% if (
+            old &&
+            Array.isArray(old.directions) &&
+            old.directions.length
+          ) { %>
 
+            <% old.directions.forEach((direction, index) => { %>
 
-          <% items.forEach((item, index) => { %>
-
-            <div
-              class="direction-item"
-              data-index="<%= index %>"
-            >
-
-              <div class="direction-item-number">
-                <%= index + 1 %>
-              </div>
-
-
-              <div class="direction-item-fields">
+              <div class="direction-row">
 
                 <div class="field">
 
                   <label>
-                    Instruction heading
+                    Direction <%= index + 1 %>
                   </label>
 
                   <input
-                    name="directionsOfUse[items][<%= index %>][subtitle]"
-                    value="<%= item?.subtitle || '' %>"
-                    placeholder="e.g. Before use"
+                    type="text"
+                    name="directions[]"
+                    value="<%= direction %>"
+                    autocomplete="off"
                   >
 
                 </div>
 
+                <button
+                  type="button"
+                  class="remove-direction"
+                  aria-label="Remove direction"
+                >
 
-                <div class="field full">
+                  <i class="fas fa-trash"></i>
 
-                  <label>
-                    Instruction
-                  </label>
-
-                  <textarea
-                    name="directionsOfUse[items][<%= index %>][content]"
-                    placeholder="Explain what the customer should do"
-                  ><%= item?.content || '' %></textarea>
-
-                </div>
+                </button>
 
               </div>
 
+            <% }) %>
+
+          <% } else { %>
+
+            <div class="direction-row">
+
+              <div class="field">
+
+                <label>
+                  Direction 1
+                </label>
+
+                <input
+                  type="text"
+                  name="directions[]"
+                  value=""
+                  autocomplete="off"
+                  placeholder="Enter direction"
+                >
+
+              </div>
 
               <button
                 type="button"
-                class="direction-remove"
-                aria-label="Remove instruction"
-                title="Remove instruction"
+                class="remove-direction"
+                aria-label="Remove direction"
               >
+
                 <i class="fas fa-trash"></i>
+
               </button>
 
             </div>
 
-          <% }) %>
+          <% } %>
 
         </div>
 
-
-        <!-- ==================================================
-             EMPTY DIRECTIONS
-        =================================================== -->
-
-        <div
-          id="directionsEmpty"
-          class="directions-empty"
-          hidden
-        >
-
-          <i class="fas fa-list-check"></i>
-
-          <strong>
-            No directions added yet
-          </strong>
-
-          <span>
-            Add another instruction when the product needs
-            more than one step.
-          </span>
-
-        </div>
+      </div>
 
 
-        <!-- ==================================================
-             CLEAR DIRECTIONS
-        =================================================== -->
+      <!-- =====================================================
+           CLEAR DIRECTIONS
+      ====================================================== -->
 
-        <input
-          type="hidden"
-          name="directionsOfUse[clear]"
-          id="directionsClear"
-          value="0"
-        >
-
-        <label class="directions-clear-option">
-
-          <input
-            type="checkbox"
-            id="clearDirections"
-          >
-
-          <span>
-            Remove directions of use from this stock item
-          </span>
-
-        </label>
-
-      </section>
+      <input
+        type="hidden"
+        name="clearDirections"
+        id="clearDirections"
+        value="0"
+      >
 
 
-      <!-- ====================================================
+      <!-- =====================================================
            FORM ACTIONS
-      ===================================================== -->
+      ====================================================== -->
 
       <div class="form-actions">
-
-        <button
-          type="submit"
-          class="primary-btn"
-          id="submitButton"
-        >
-          <i class="fas fa-plus"></i>
-          Create Stock Subcategory
-        </button>
 
         <a
           href="/stock"
           class="secondary-btn"
         >
+
+          <i class="fas fa-arrow-left"></i>
+
           Cancel
+
         </a>
+
+
+        <button
+          type="submit"
+          class="primary-btn"
+        >
+
+          <i class="fas <%= old ? 'fa-save' : 'fa-plus' %>"></i>
+
+          <%= old ? "Update Stock" : "Add Stock" %>
+
+        </button>
 
       </div>
 
     </form>
 
   </div>
+
 </section>
-
-
-<style>
-
-/* ==========================================================
-   CATEGORY SELECT
-========================================================== */
-
-.stock-entry-page .select-wrap{
-  position:relative;
-  width:100%;
-}
-
-.stock-entry-page .select-wrap::after{
-  content:"\f078";
-  font-family:"Font Awesome 6 Free";
-  font-weight:900;
-  position:absolute;
-  right:16px;
-  top:50%;
-  transform:translateY(-50%);
-  pointer-events:none;
-  color:#0a4d1e;
-  font-size:.8rem;
-}
-
-.stock-entry-page select#category{
-  display:block;
-  width:100%;
-  min-height:48px;
-  padding:12px 44px 12px 14px;
-  border:1px solid #cfd8d2;
-  border-radius:10px;
-  background:#fff;
-  color:#173d30;
-  font:inherit;
-  line-height:1.3;
-  appearance:none;
-  -webkit-appearance:none;
-  cursor:pointer;
-}
-
-.stock-entry-page select#category:focus{
-  outline:none;
-  border-color:#0a4d1e;
-  box-shadow:0 0 0 3px rgba(10,77,30,.12);
-}
-
-.stock-entry-page select#category option{
-  padding:10px;
-  background:#fff;
-  color:#173d30;
-}
-
-
-/* ==========================================================
-   FIFO INFORMATION
-========================================================== */
-
-.fifo-info-card{
-  width:100%;
-  box-sizing:border-box;
-  display:flex;
-  align-items:flex-start;
-  gap:14px;
-  margin:24px 0;
-  padding:16px 18px;
-  border:1px solid #c5e1a5;
-  border-radius:14px;
-  background:#f8fdf6;
-  color:#173d30;
-}
-
-.fifo-info-icon{
-  flex:0 0 38px;
-  width:38px;
-  height:38px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:10px;
-  background:#e8f5e9;
-  color:#0a4d1e;
-  font-size:1rem;
-}
-
-.fifo-info-content{
-  min-width:0;
-}
-
-.fifo-info-content strong{
-  display:block;
-  margin-bottom:4px;
-  color:#0a4d1e;
-  font-size:.96rem;
-}
-
-.fifo-info-content p{
-  margin:0;
-  color:#456052;
-  font-size:.9rem;
-  line-height:1.5;
-}
-
-
-/* ==========================================================
-   STOCK EDIT SUMMARY
-========================================================== */
-
-.stock-edit-summary{
-  width:100%;
-  box-sizing:border-box;
-  margin:24px 0;
-  padding:18px 20px;
-  border:1px solid #c5e1a5;
-  border-left:5px solid #0a4d1e;
-  border-radius:14px;
-  background:#f1f8e9;
-  color:#173d30;
-}
-
-.stock-summary-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:20px;
-  padding:7px 0;
-}
-
-.stock-summary-row strong{
-  color:#0a4d1e;
-}
-
-.stock-summary-row span{
-  font-weight:700;
-  font-size:1.05rem;
-}
-
-.stock-summary-row.additional-row{
-  margin-top:8px;
-  padding-top:14px;
-  border-top:1px solid #c5e1a5;
-}
-
-.stock-summary-message{
-  margin-top:10px;
-  font-size:.9rem;
-  line-height:1.5;
-  color:#456052;
-}
-
-
-/* ==========================================================
-   VALIDATION
-========================================================== */
-
-.field-validation{
-  display:block;
-  margin-top:6px;
-  font-size:.85rem;
-  line-height:1.4;
-  color:#b42318;
-}
-
-.field input.stock-invalid,
-.field select.stock-invalid{
-  border-color:#b42318 !important;
-  box-shadow:0 0 0 3px rgba(180,35,24,.08);
-}
-
-.field input.stock-valid{
-  border-color:#0a4d1e;
-}
-
-.stock-edit-summary.stock-invalid-summary{
-  border-color:#b42318;
-  border-left-color:#b42318;
-  background:#fff5f5;
-}
-
-
-/* ==========================================================
-   REQUIRED BUY PRICE INDICATOR
-========================================================== */
-
-.buy-price-required-note{
-  color:#b42318;
-  font-size:.82rem;
-  margin-left:4px;
-}
-
-
-/* ==========================================================
-   MOBILE
-========================================================== */
-
-@media (max-width:600px){
-
-  .stock-summary-row{
-    align-items:flex-start;
-    flex-direction:column;
-    gap:3px;
-  }
-
-  .fifo-info-card{
-    align-items:flex-start;
-  }
-
-}
-
-</style>
 
 
 <script>
 
-(function(){
+document.addEventListener("DOMContentLoaded", () => {
 
-  "use strict";
-
-
-  /* ========================================================
+  /* ==========================================================
      ELEMENTS
-  ======================================================== */
+  ========================================================== */
 
   const form =
     document.getElementById("stockForm");
 
-  const stockId =
-    document.getElementById("stockId");
-
-  const category =
-    document.getElementById("category");
-
-  const units =
+  const unitsInput =
     document.getElementById("units");
 
-  const unitsLabel =
-    document.getElementById("unitsLabel");
-
-  const unitsHelp =
-    document.getElementById("unitsHelp");
-
-  const buyPrice =
+  const buyPriceInput =
     document.getElementById("buyPrice");
 
-  const buyPriceLabel =
-    document.getElementById("buyPriceLabel");
+  const directionsContainer =
+    document.getElementById("directionsContainer");
 
-  const buyPriceHelp =
-    document.getElementById("buyPriceHelp");
+  const addDirectionButton =
+    document.getElementById("addDirection");
 
-  const submitButton =
-    document.getElementById("submitButton");
-
-  const summary =
-    document.getElementById("stockEditSummary");
-
-  const currentUnits =
-    document.getElementById("currentUnits");
-
-  const projectedUnits =
-    document.getElementById("projectedUnits");
-
-  const additionalUnits =
-    document.getElementById("additionalUnits");
-
-  const additionalUnitsRow =
-    document.getElementById("additionalUnitsRow");
-
-  const newBatchPriceRow =
-    document.getElementById("newBatchPriceRow");
-
-  const newBatchPrice =
-    document.getElementById("newBatchPrice");
-
-  const stockSummaryMessage =
-    document.getElementById("stockSummaryMessage");
-
-  const unitsValidation =
-    document.getElementById("unitsValidation");
-
-  const buyPriceValidation =
-    document.getElementById("buyPriceValidation");
-
-  const directionsList =
-    document.getElementById("directionsList");
-
-  const directionsEmpty =
-    document.getElementById("directionsEmpty");
-
-  const addDirectionBtn =
-    document.getElementById("addDirectionBtn");
-
-  const clearDirections =
+  const clearDirectionsInput =
     document.getElementById("clearDirections");
 
-  const directionsClear =
-    document.getElementById("directionsClear");
 
+  /* ==========================================================
+     EXISTING UNITS
+  ========================================================== */
 
-  /* ========================================================
-     MODE
-  ======================================================== */
+  const currentUnits =
+    <%= Number(old?.units || 0) %>;
 
-  const editMode =
-    Boolean(stockId.value);
 
+  /* ==========================================================
+     UPDATE EDIT SUMMARY
+  ========================================================== */
 
-  /*
-   * IMPORTANT FIFO RULE:
-   *
-   * CREATE:
-   *
-   * units = initial warehouse units
-   * buyPrice = cost of the initial FIFO batch
-   *
-   *
-   * EDIT:
-   *
-   * units = NEW TOTAL warehouse units
-   *
-   * If:
-   *
-   * current = 100
-   * new total = 130
-   *
-   * additional = 30
-   *
-   * The backend creates:
-   *
-   *     30 new FIFO units
-   *
-   * using the newly supplied buy price.
-   *
-   * Existing FIFO batches are NOT repriced.
-   */
+  function updateUnitsSummary() {
 
+    <% if (old) { %>
 
-  /* ========================================================
-     CURRENT UNITS
-  ======================================================== */
+      const newUnits =
+        Number(unitsInput.value || 0);
 
-  let existingUnits = 0;
-
-  <% if (old?.units !== undefined && old?.units !== null) { %>
-    existingUnits =
-      Number("<%= Number(old.units || 0) %>");
-  <% } %>
-
-
-  if(
-    !Number.isFinite(existingUnits) ||
-    existingUnits < 0
-  ){
-
-    existingUnits = 0;
-
-  }
-
-
-  /* ========================================================
-     NUMBER HELPERS
-  ======================================================== */
-
-  function numberValue(element){
-
-    const value =
-      Number(element.value);
-
-    return Number.isFinite(value)
-      ? value
-      : 0;
-
-  }
-
-
-  function formatNumber(value){
-
-    return Number(value || 0)
-      .toLocaleString();
-
-  }
-
-
-  function formatPrice(value){
-
-    const number =
-      Number(value);
-
-    if(
-      !Number.isFinite(number)
-    ){
-
-      return "—";
-
-    }
-
-    return number.toLocaleString(
-      undefined,
-      {
-        minimumFractionDigits:2,
-        maximumFractionDigits:2
-      }
-    );
-
-  }
-
-
-  function clearUnitsValidation(){
-
-    unitsValidation.hidden =
-      true;
-
-    unitsValidation.textContent =
-      "";
-
-    units.classList.remove(
-      "stock-invalid",
-      "stock-valid"
-    );
-
-  }
-
-
-  function clearBuyPriceValidation(){
-
-    buyPriceValidation.hidden =
-      true;
-
-    buyPriceValidation.textContent =
-      "";
-
-    buyPrice.classList.remove(
-      "stock-invalid",
-      "stock-valid"
-    );
-
-  }
-
-
-  /* ========================================================
-     BUY PRICE REQUIREMENT
-  ======================================================== */
-
-  function updateBuyPriceRequirement(
-    additional
-  ){
-
-    clearBuyPriceValidation();
-
-
-    /* ------------------------------------------------------
-       CREATE MODE
-    ------------------------------------------------------ */
-
-    if(!editMode){
-
-      buyPrice.required =
-        true;
-
-      buyPriceLabel.textContent =
-        "Buy price per unit";
-
-      buyPriceHelp.textContent =
-        "Purchase cost per unit for the initial FIFO stock batch.";
-
-      return;
-
-    }
-
-
-    /* ------------------------------------------------------
-       EDIT MODE — NO NEW STOCK
-    ------------------------------------------------------ */
-
-    if(additional <= 0){
-
-      buyPrice.required =
-        false;
-
-      buyPriceLabel.innerHTML =
-        'Buy price per unit <span class="optional">(not required when units are unchanged)</span>';
-
-      buyPriceHelp.textContent =
-        "Existing FIFO purchase batches keep their original buy prices. A new price is required only when adding units.";
-
-      return;
-
-    }
-
-
-    /* ------------------------------------------------------
-       EDIT MODE — NEW FIFO BATCH
-    ------------------------------------------------------ */
-
-    buyPrice.required =
-      true;
-
-    buyPriceLabel.innerHTML =
-      'Buy price for new FIFO batch <span class="buy-price-required-note">*</span>';
-
-    buyPriceHelp.textContent =
-      "This price applies only to the additional units being added. Existing FIFO batches are not repriced.";
-
-  }
-
-
-  /* ========================================================
-     VALIDATE UNITS
-  ======================================================== */
-
-  function validateUnits(){
-
-    clearUnitsValidation();
-
-
-    const entered =
-      Number(units.value);
-
-
-    if(
-      units.value.trim() === "" ||
-      !Number.isFinite(entered)
-    ){
-
-      unitsValidation.hidden =
-        false;
-
-      unitsValidation.textContent =
-        editMode
-          ? "Enter the new total number of warehouse units."
-          : "Enter the initial number of warehouse units.";
-
-      units.classList.add(
-        "stock-invalid"
-      );
-
-      return false;
-
-    }
-
-
-    if(!Number.isInteger(entered)){
-
-      unitsValidation.hidden =
-        false;
-
-      unitsValidation.textContent =
-        "Units must be a whole number.";
-
-      units.classList.add(
-        "stock-invalid"
-      );
-
-      return false;
-
-    }
-
-
-    if(entered < 0){
-
-      unitsValidation.hidden =
-        false;
-
-      unitsValidation.textContent =
-        "Units cannot be negative.";
-
-      units.classList.add(
-        "stock-invalid"
-      );
-
-      return false;
-
-    }
-
-
-    /*
-     * EDIT MODE:
-     *
-     * The new total can never be below
-     * the existing warehouse quantity.
-     */
-
-    if(
-      editMode &&
-      entered < existingUnits
-    ){
-
-      unitsValidation.hidden =
-        false;
-
-      unitsValidation.textContent =
-        `The new units cannot be less than the current ${formatNumber(existingUnits)} units.`;
-
-      units.classList.add(
-        "stock-invalid"
-      );
-
-      return false;
-
-    }
-
-
-    units.classList.add(
-      "stock-valid"
-    );
-
-    return true;
-
-  }
-
-
-  /* ========================================================
-     VALIDATE BUY PRICE
-  ======================================================== */
-
-  function validateBuyPrice(
-    additional
-  ){
-
-    clearBuyPriceValidation();
-
-
-    /* ------------------------------------------------------
-       CREATE MODE
-    ------------------------------------------------------ */
-
-    if(!editMode){
-
-      const raw =
-        String(
-          buyPrice.value || ""
-        ).trim();
-
-      const value =
-        Number(raw);
-
-
-      if(
-        raw === "" ||
-        !Number.isFinite(value) ||
-        value < 0
-      ){
-
-        buyPriceValidation.hidden =
-          false;
-
-        buyPriceValidation.textContent =
-          "Enter a valid buy price.";
-
-        buyPrice.classList.add(
-          "stock-invalid"
+      const additional =
+        Math.max(
+          0,
+          newUnits - currentUnits
         );
 
-        return false;
+      const newUnitsElement =
+        document.getElementById("newUnits");
+
+      const additionalUnitsElement =
+        document.getElementById("additionalUnits");
+
+      if (newUnitsElement) {
+
+        newUnitsElement.textContent =
+          newUnits.toLocaleString("en-KE");
 
       }
 
+      if (additionalUnitsElement) {
 
-      buyPrice.classList.add(
-        "stock-valid"
-      );
+        additionalUnitsElement.textContent =
+          additional.toLocaleString("en-KE");
 
-      return true;
+      }
 
-    }
+    <% } %>
 
-
-    /* ------------------------------------------------------
-       EDIT MODE — NO ADDITION
-    ------------------------------------------------------ */
-
-    if(additional <= 0){
-
-      buyPrice.required =
-        false;
-
-      return true;
-
-    }
+  }
 
 
-    /* ------------------------------------------------------
-       EDIT MODE — ADDITIONAL FIFO BATCH
-    ------------------------------------------------------ */
+  if (unitsInput) {
 
-    const raw =
-      String(
-        buyPrice.value || ""
-      ).trim();
-
-    const value =
-      Number(raw);
-
-
-    if(
-      raw === "" ||
-      !Number.isFinite(value) ||
-      value < 0
-    ){
-
-      buyPriceValidation.hidden =
-        false;
-
-      buyPriceValidation.textContent =
-        "A buy price for the new FIFO batch is required.";
-
-      buyPrice.classList.add(
-        "stock-invalid"
-      );
-
-      return false;
-
-    }
-
-
-    buyPrice.classList.add(
-      "stock-valid"
+    unitsInput.addEventListener(
+      "input",
+      updateUnitsSummary
     );
 
-    return true;
-
   }
 
 
-  /* ========================================================
-     UPDATE STOCK SUMMARY
-  ======================================================== */
+  /* ==========================================================
+     ADD DIRECTION
+  ========================================================== */
 
-  function updateSummary(){
+  function addDirection() {
 
-    if(!editMode){
-
-      summary.hidden =
-        true;
-
-      return;
-
-    }
-
-
-    const entered =
-      Number(units.value);
-
-
-    const safeEntered =
-      Number.isFinite(entered)
-        ? entered
-        : existingUnits;
-
-
-    const additional =
-      Math.max(
-        0,
-        safeEntered - existingUnits
+    const rows =
+      directionsContainer.querySelectorAll(
+        ".direction-row"
       );
 
+    const number =
+      rows.length + 1;
 
-    currentUnits.textContent =
-      formatNumber(existingUnits);
 
-    projectedUnits.textContent =
-      formatNumber(safeEntered);
+    const row =
+      document.createElement("div");
 
-    additionalUnits.textContent =
-      formatNumber(additional);
+    row.className =
+      "direction-row";
 
 
-    summary.hidden =
-      false;
+    row.innerHTML = `
 
+      <div class="field">
 
-    if(additional > 0){
+        <label>
+          Direction ${number}
+        </label>
 
-      additionalUnitsRow.hidden =
-        false;
-
-      newBatchPriceRow.hidden =
-        false;
-
-
-      const price =
-        Number(buyPrice.value);
-
-
-      if(
-        Number.isFinite(price) &&
-        price >= 0
-      ){
-
-        newBatchPrice.textContent =
-          formatPrice(price);
-
-      }else{
-
-        newBatchPrice.textContent =
-          "Required";
-
-      }
-
-
-      stockSummaryMessage.textContent =
-        `${formatNumber(additional)} additional unit${additional === 1 ? "" : "s"} will be added as a new FIFO purchase batch. The existing stock batches and their original prices will remain unchanged.`;
-
-
-      updateBuyPriceRequirement(
-        additional
-      );
-
-    }else{
-
-      additionalUnitsRow.hidden =
-        true;
-
-      newBatchPriceRow.hidden =
-        true;
-
-      stockSummaryMessage.textContent =
-        "No additional units will be added. Existing FIFO purchase batches will remain unchanged.";
-
-      updateBuyPriceRequirement(
-        0
-      );
-
-    }
-
-
-    if(
-      safeEntered < existingUnits
-    ){
-
-      summary.classList.add(
-        "stock-invalid-summary"
-      );
-
-    }else{
-
-      summary.classList.remove(
-        "stock-invalid-summary"
-      );
-
-    }
-
-  }
-
-
-  /* ========================================================
-     DIRECTIONS
-  ======================================================== */
-
-  function renumber(){
-
-    const items =
-      [
-        ...directionsList.querySelectorAll(
-          ".direction-item"
-        )
-      ];
-
-
-    items.forEach(
-      (item,index)=>{
-
-        item.dataset.index =
-          index;
-
-
-        const number =
-          item.querySelector(
-            ".direction-item-number"
-          );
-
-
-        if(number){
-
-          number.textContent =
-            index + 1;
-
-        }
-
-
-        item
-          .querySelectorAll(
-            "input,textarea"
-          )
-          .forEach(
-            field=>{
-
-              const type =
-                field.name.includes(
-                  "subtitle"
-                )
-                  ? "subtitle"
-                  : "content";
-
-
-              field.name =
-                `directionsOfUse[items][${index}][${type}]`;
-
-            }
-          );
-
-      }
-    );
-
-
-    directionsEmpty.hidden =
-      items.length > 0;
-
-  }
-
-
-  function addDirection(
-    subtitle="",
-    content=""
-  ){
-
-    const index =
-      directionsList.querySelectorAll(
-        ".direction-item"
-      ).length;
-
-
-    const item =
-      document.createElement(
-        "div"
-      );
-
-
-    item.className =
-      "direction-item";
-
-
-    item.innerHTML = `
-
-      <div class="direction-item-number">
-        ${index + 1}
-      </div>
-
-      <div class="direction-item-fields">
-
-        <div class="field">
-
-          <label>
-            Instruction heading
-          </label>
-
-          <input
-            name="directionsOfUse[items][${index}][subtitle]"
-            placeholder="e.g. Before use"
-          >
-
-        </div>
-
-        <div class="field full">
-
-          <label>
-            Instruction
-          </label>
-
-          <textarea
-            name="directionsOfUse[items][${index}][content]"
-            placeholder="Explain what the customer should do"
-          ></textarea>
-
-        </div>
+        <input
+          type="text"
+          name="directions[]"
+          value=""
+          autocomplete="off"
+          placeholder="Enter direction"
+        >
 
       </div>
 
       <button
         type="button"
-        class="direction-remove"
-        aria-label="Remove instruction"
-        title="Remove instruction"
+        class="remove-direction"
+        aria-label="Remove direction"
       >
+
         <i class="fas fa-trash"></i>
+
       </button>
 
     `;
 
 
-    item.querySelector(
-      "input"
-    ).value =
-      subtitle;
+    directionsContainer.appendChild(row);
 
-
-    item.querySelector(
-      "textarea"
-    ).value =
-      content;
-
-
-    directionsList.appendChild(
-      item
-    );
-
-
-    renumber();
+    updateDirectionNumbers();
 
   }
 
 
-  /* ========================================================
-     CLEAR DIRECTIONS
-  ======================================================== */
+  /* ==========================================================
+     REMOVE DIRECTION
+  ========================================================== */
 
-  function updateDisabled(){
+  function removeDirection(button) {
 
-    const disabled =
-      clearDirections.checked;
-
-
-    directionsClear.value =
-      disabled
-        ? "1"
-        : "0";
-
-
-    document
-      .querySelectorAll(
-        "#directionsList input," +
-        "#directionsList textarea," +
-        "#directionsTitle"
-      )
-      .forEach(
-        el=>{
-
-          el.disabled =
-            disabled;
-
-        }
+    const rows =
+      directionsContainer.querySelectorAll(
+        ".direction-row"
       );
 
+
+    if (rows.length <= 1) {
+
+      const input =
+        rows[0]?.querySelector(
+          'input[name="directions[]"]'
+        );
+
+      if (input) {
+
+        input.value = "";
+
+      }
+
+      clearDirectionsInput.value = "1";
+
+      return;
+
+    }
+
+
+    button
+      .closest(".direction-row")
+      .remove();
+
+
+    updateDirectionNumbers();
+
   }
 
 
-  /* ========================================================
-     EVENTS — DIRECTIONS
-  ======================================================== */
+  /* ==========================================================
+     UPDATE DIRECTION NUMBERS
+  ========================================================== */
 
-  directionsList.addEventListener(
+  function updateDirectionNumbers() {
+
+    const rows =
+      directionsContainer.querySelectorAll(
+        ".direction-row"
+      );
+
+
+    rows.forEach((row, index) => {
+
+      const label =
+        row.querySelector("label");
+
+      if (label) {
+
+        label.textContent =
+          `Direction ${index + 1}`;
+
+      }
+
+    });
+
+  }
+
+
+  /* ==========================================================
+     DIRECTION EVENTS
+  ========================================================== */
+
+  if (addDirectionButton) {
+
+    addDirectionButton.addEventListener(
+      "click",
+      addDirection
+    );
+
+  }
+
+
+  directionsContainer.addEventListener(
     "click",
-    function(e){
+    event => {
 
-      const btn =
-        e.target.closest(
-          ".direction-remove"
+      const button =
+        event.target.closest(
+          ".remove-direction"
         );
 
 
-      if(!btn){
+      if (!button) {
+        return;
+      }
+
+
+      removeDirection(button);
+
+    }
+  );
+
+
+  /* ==========================================================
+     FORM SUBMISSION
+  ========================================================== */
+
+  form.addEventListener(
+    "submit",
+    event => {
+
+      const name =
+        document
+          .getElementById("name")
+          ?.value
+          .trim();
+
+
+      const category =
+        document
+          .getElementById("category")
+          ?.value
+          .trim();
+
+
+      const subcategory =
+        document
+          .getElementById("subcategory")
+          ?.value
+          .trim();
+
+
+      const units =
+        Number(unitsInput.value);
+
+
+      /* ------------------------------------------------------
+         NAME
+      ------------------------------------------------------ */
+
+      if (!name) {
+
+        event.preventDefault();
+
+        alert(
+          "Please enter the stock name."
+        );
+
+        document
+          .getElementById("name")
+          .focus();
 
         return;
 
       }
 
 
-      btn
-        .closest(
-          ".direction-item"
-        )
-        ?.remove();
+      /* ------------------------------------------------------
+         CATEGORY
+      ------------------------------------------------------ */
+
+      if (!category) {
+
+        event.preventDefault();
+
+        alert(
+          "Please select a category."
+        );
+
+        document
+          .getElementById("category")
+          .focus();
+
+        return;
+
+      }
 
 
-      renumber();
+      /* ------------------------------------------------------
+         SUBCATEGORY
+      ------------------------------------------------------ */
 
-    }
-  );
+      if (!subcategory) {
 
+        event.preventDefault();
 
-  addDirectionBtn.addEventListener(
-    "click",
-    function(){
+        alert(
+          "Please enter the subcategory."
+        );
 
-      addDirection();
+        document
+          .getElementById("subcategory")
+          .focus();
 
-    }
-  );
+        return;
 
-
-  clearDirections.addEventListener(
-    "change",
-    updateDisabled
-  );
-
-
-  /* ========================================================
-     EVENTS — UNITS
-  ======================================================== */
-
-  units.addEventListener(
-    "input",
-    function(){
-
-      if(editMode){
-
-        const entered =
-          Number(units.value);
+      }
 
 
-        if(
-          Number.isFinite(entered) &&
-          entered < existingUnits
-        ){
+      /* ------------------------------------------------------
+         UNITS
+      ------------------------------------------------------ */
 
-          unitsValidation.hidden =
-            false;
+      if (
+        !Number.isFinite(units) ||
+        units < 0
+      ) {
 
-          unitsValidation.textContent =
-            `Units cannot be reduced below the current ${formatNumber(existingUnits)} units.`;
+        event.preventDefault();
 
-          units.classList.add(
-            "stock-invalid"
+        alert(
+          "Please enter a valid stock quantity."
+        );
+
+        unitsInput.focus();
+
+        return;
+
+      }
+
+
+      /* ------------------------------------------------------
+         EDIT MODE
+      ------------------------------------------------------ */
+
+      <% if (old) { %>
+
+        if (units < currentUnits) {
+
+          event.preventDefault();
+
+          alert(
+            "Warehouse units cannot be reduced when editing stock."
           );
 
-        }else{
+          unitsInput.focus();
 
-          clearUnitsValidation();
-
-        }
-
-      }
-
-
-      updateSummary();
-
-    }
-  );
-
-
-  units.addEventListener(
-    "change",
-    function(){
-
-      validateUnits();
-
-      updateSummary();
-
-    }
-  );
-
-
-  /* ========================================================
-     EVENTS — BUY PRICE
-  ======================================================== */
-
-  buyPrice.addEventListener(
-    "input",
-    function(){
-
-      const entered =
-        Number(units.value);
-
-
-      const additional =
-        editMode
-          ? Math.max(
-              0,
-              entered - existingUnits
-            )
-          : 0;
-
-
-      if(editMode){
-
-        updateSummary();
-
-      }
-
-
-      if(
-        !editMode ||
-        additional > 0
-      ){
-
-        validateBuyPrice(
-          additional
-        );
-
-      }
-
-    }
-  );
-
-
-  buyPrice.addEventListener(
-    "change",
-    function(){
-
-      const entered =
-        Number(units.value);
-
-
-      const additional =
-        editMode
-          ? Math.max(
-              0,
-              entered - existingUnits
-            )
-          : 0;
-
-
-      validateBuyPrice(
-        additional
-      );
-
-      updateSummary();
-
-    }
-  );
-
-
-  /* ========================================================
-     CATEGORY
-  ======================================================== */
-
-  category.addEventListener(
-    "change",
-    function(){
-
-      updateSummary();
-
-    }
-  );
-
-
-  /* ========================================================
-     FORM SUBMISSION
-  ======================================================== */
-
-  form.addEventListener(
-    "submit",
-    function(e){
-
-      const unitsValid =
-        validateUnits();
-
-
-      const entered =
-        Number(units.value);
-
-
-      const additional =
-        editMode
-          ? Math.max(
-              0,
-              entered - existingUnits
-            )
-          : 0;
-
-
-      const buyPriceValid =
-        validateBuyPrice(
-          additional
-        );
-
-
-      /*
-       * DO NOT submit if:
-       *
-       * 1. Units are invalid
-       * 2. Units are being reduced
-       * 3. Additional units have no buy price
-       */
-
-      if(
-        !unitsValid ||
-        !buyPriceValid
-      ){
-
-        e.preventDefault();
-
-        updateSummary();
-
-
-        if(!unitsValid){
-
-          units.focus();
-
-        }else if(!buyPriceValid){
-
-          buyPrice.focus();
+          return;
 
         }
 
 
-        return false;
-
-      }
-
-
-      /*
-       * IMPORTANT:
-       *
-       * The form submits:
-       *
-       *     units = NEW TOTAL
-       *
-       * It does NOT submit additionalUnits.
-       *
-       * The service calculates:
-       *
-       *     additionalUnits =
-       *       newTotal - currentUnits
-       *
-       * and creates a new FIFO batch only
-       * for that difference.
-       *
-       * Existing FIFO batches are preserved.
-       */
+        const additional =
+          units - currentUnits;
 
 
-      directionsClear.value =
-        clearDirections.checked
-          ? "1"
-          : "0";
+        if (
+          additional > 0 &&
+          (
+            buyPriceInput.value === "" ||
+            Number(buyPriceInput.value) < 0
+          )
+        ) {
+
+          event.preventDefault();
+
+          alert(
+            "Enter the buy price for the additional FIFO units."
+          );
+
+          buyPriceInput.focus();
+
+          return;
+
+        }
+
+      <% } else { %>
+
+        /* ----------------------------------------------------
+           CREATE MODE
+        ---------------------------------------------------- */
+
+        if (
+          buyPriceInput.value === "" ||
+          Number(buyPriceInput.value) < 0
+        ) {
+
+          event.preventDefault();
+
+          alert(
+            "Please enter the initial buy price."
+          );
+
+          buyPriceInput.focus();
+
+          return;
+
+        }
+
+      <% } %>
 
     }
   );
 
 
-  /* ========================================================
-     INITIALISE CREATE / EDIT MODE
-  ======================================================== */
+  /* ==========================================================
+     INITIAL SUMMARY
+  ========================================================== */
 
-  if(editMode){
+  updateUnitsSummary();
 
-    /* ------------------------------------------------------
-       EDIT MODE
-    ------------------------------------------------------ */
-
-    units.name =
-      "units";
-
-    units.min =
-      String(existingUnits);
-
-    units.required =
-      true;
-
-
-    unitsLabel.textContent =
-      "New total warehouse units";
-
-
-    unitsHelp.textContent =
-      `Current warehouse units: ${formatNumber(existingUnits)}. Enter the new total. You cannot reduce the current quantity.`;
-
-
-    submitButton.innerHTML =
-      '<i class="fas fa-save"></i> Update Stock Subcategory';
-
-
-    /*
-     * Existing quantity is the default
-     * starting point.
-     */
-
-    if(
-      !units.value ||
-      Number.isNaN(
-        Number(units.value)
-      )
-    ){
-
-      units.value =
-        String(existingUnits);
-
-    }
-
-
-    /*
-     * Do NOT automatically use the old
-     * buyPrice as the new FIFO purchase price.
-     *
-     * A new price must be explicitly entered
-     * whenever additional units are added.
-     */
-
-    buyPrice.required =
-      false;
-
-
-    updateSummary();
-
-  }else{
-
-    /* ------------------------------------------------------
-       CREATE MODE
-    ------------------------------------------------------ */
-
-    units.name =
-      "units";
-
-    units.min =
-      "0";
-
-    units.required =
-      true;
-
-
-    unitsLabel.textContent =
-      "Initial warehouse units";
-
-
-    unitsHelp.textContent =
-      "These units will form the initial FIFO purchase batch.";
-
-
-    buyPrice.required =
-      true;
-
-
-    buyPriceLabel.textContent =
-      "Buy price per unit";
-
-
-    buyPriceHelp.textContent =
-      "Purchase cost per unit for the initial FIFO stock batch.";
-
-
-    submitButton.innerHTML =
-      '<i class="fas fa-plus"></i> Create Stock Subcategory';
-
-
-    summary.hidden =
-      true;
-
-  }
-
-
-  /* ========================================================
-     INITIALISE
-  ======================================================== */
-
-  updateDisabled();
-
-  updateSummary();
-
-})();
+});
 
 </script>
