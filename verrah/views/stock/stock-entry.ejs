@@ -1,9 +1,11 @@
 <!-- =========================================================
      VERRAH COSMETICS
+     STOCK ENTRY
      SCROLLABLE TABS + CARD PANELS
 ========================================================= -->
 
 <div class="verrah-tabs-container">
+
 
   <!-- =======================================================
        SCROLLABLE TABS
@@ -12,7 +14,13 @@
   <div
     class="verrah-tabs"
     role="tablist"
+    aria-label="Stock entry sections"
   >
+
+
+    <!-- =====================================================
+         STOCK INFO
+    ====================================================== -->
 
     <button
       type="button"
@@ -26,6 +34,10 @@
     </button>
 
 
+    <!-- =====================================================
+         STOCK ALLOCATION
+    ====================================================== -->
+
     <button
       type="button"
       class="verrah-tab"
@@ -38,6 +50,10 @@
     </button>
 
 
+    <!-- =====================================================
+         STOCK SUMMARY
+    ====================================================== -->
+
     <button
       type="button"
       class="verrah-tab"
@@ -49,6 +65,10 @@
       Stock Summary
     </button>
 
+
+    <!-- =====================================================
+         ACTIONS
+    ====================================================== -->
 
     <button
       type="button"
@@ -94,7 +114,6 @@
       class="verrah-tab-panel"
       id="stock-allocation"
       role="tabpanel"
-      hidden
     >
 
       <%- include("stockEntry/allocation") %>
@@ -110,7 +129,6 @@
       class="verrah-tab-panel"
       id="stock-summary"
       role="tabpanel"
-      hidden
     >
 
       <%- include("stockEntry/summary") %>
@@ -126,7 +144,6 @@
       class="verrah-tab-panel"
       id="stock-actions"
       role="tabpanel"
-      hidden
     >
 
       <%- include("stockEntry/actions") %>
@@ -143,19 +160,22 @@
 ========================================================= -->
 
 <script>
+
 (function () {
 
   "use strict";
 
 
-  const tabs = document.querySelectorAll(
-    ".verrah-tab"
-  );
+  const tabs =
+    document.querySelectorAll(
+      ".verrah-tab"
+    );
 
 
-  const panels = document.querySelectorAll(
-    ".verrah-tab-panel"
-  );
+  const panels =
+    document.querySelectorAll(
+      ".verrah-tab-panel"
+    );
 
 
   tabs.forEach(function (tab) {
@@ -165,24 +185,28 @@
       function () {
 
         const target =
-          tab.getAttribute("data-tab");
+          tab.dataset.tab;
 
+
+        /* ===================================================
+           UPDATE TABS
+        ==================================================== */
 
         tabs.forEach(function (item) {
 
-          const active =
+          const isActive =
             item === tab;
 
 
           item.classList.toggle(
             "active",
-            active
+            isActive
           );
 
 
           item.setAttribute(
             "aria-selected",
-            active
+            isActive
               ? "true"
               : "false"
           );
@@ -190,23 +214,27 @@
         });
 
 
+        /* ===================================================
+           UPDATE PANELS
+        ==================================================== */
+
         panels.forEach(function (panel) {
 
-          const active =
+          const isActive =
             panel.id === target;
 
 
           panel.classList.toggle(
             "active",
-            active
+            isActive
           );
-
-
-          panel.hidden =
-            !active;
 
         });
 
+
+        /* ===================================================
+           KEEP ACTIVE TAB VISIBLE
+        ==================================================== */
 
         tab.scrollIntoView({
           behavior: "smooth",
@@ -220,6 +248,7 @@
   });
 
 })();
+
 </script>
 
 
@@ -228,10 +257,15 @@
 ========================================================= -->
 
 <script>
+
 (function () {
 
   "use strict";
 
+
+  /* =========================================================
+     ELEMENTS
+  ========================================================= */
 
   const form =
     document.getElementById(
@@ -289,6 +323,10 @@
     );
 
 
+  /* =========================================================
+     WAREHOUSE BALANCE
+  ========================================================= */
+
   const warehouse =
     Number(
       <%= stock
@@ -310,7 +348,9 @@
 
 
     if (raw === "") {
+
       return 0;
+
     }
 
 
@@ -322,7 +362,9 @@
       !Number.isFinite(value) ||
       value < 0
     ) {
+
       return 0;
+
     }
 
 
@@ -332,7 +374,7 @@
 
 
   /* =========================================================
-     CALCULATE
+     CALCULATE ALLOCATION
   ========================================================= */
 
   function calculate() {
@@ -354,9 +396,9 @@
       );
 
 
-    /* -------------------------------------------------------
-       TOTAL ALLOCATED
-    ------------------------------------------------------- */
+    /* =======================================================
+       HIDDEN TOTAL
+    ======================================================== */
 
     if (hiddenTotal) {
 
@@ -366,6 +408,10 @@
     }
 
 
+    /* =======================================================
+       ALLOCATION TOTAL
+    ======================================================== */
+
     if (allocationTotal) {
 
       allocationTotal.textContent =
@@ -373,6 +419,10 @@
 
     }
 
+
+    /* =======================================================
+       SUMMARY TOTAL
+    ======================================================== */
 
     if (summaryTotal) {
 
@@ -382,9 +432,9 @@
     }
 
 
-    /* -------------------------------------------------------
-       REMAINING STOCK
-    ------------------------------------------------------- */
+    /* =======================================================
+       REMAINING WAREHOUSE
+    ======================================================== */
 
     if (summaryRemaining) {
 
@@ -397,9 +447,9 @@
     }
 
 
-    /* -------------------------------------------------------
+    /* =======================================================
        VALIDATION
-    ------------------------------------------------------- */
+    ======================================================== */
 
     let message = "";
 
@@ -409,13 +459,20 @@
       message =
         "Allocate at least one unit to at least one substation.";
 
-    } else if (sum > warehouse) {
+    }
+
+
+    else if (sum > warehouse) {
 
       message =
         "The total allocation cannot exceed the warehouse balance.";
 
     }
 
+
+    /* =======================================================
+       WARNING
+    ======================================================== */
 
     if (warning) {
 
@@ -428,6 +485,10 @@
 
     }
 
+
+    /* =======================================================
+       ALLOCATE BUTTON
+    ======================================================== */
 
     if (allocateButton) {
 
@@ -520,4 +581,5 @@
   calculate();
 
 })();
+
 </script>
