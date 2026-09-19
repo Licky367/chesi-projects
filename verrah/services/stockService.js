@@ -76,6 +76,32 @@ const displayLabel = (value) =>
         );
 
 // ==========================================================
+// PRODUCT NAME
+// ==========================================================
+//
+// Product name comes from:
+//
+// 1. Stock.name
+// 2. Stock.subcategory if Stock.name is empty/missing
+//
+// This keeps product naming independent from the stock
+// subcategory whenever a stock name has actually been set.
+// ==========================================================
+
+function productNameFromStock(stock) {
+    const stockName =
+        text(stock?.name);
+
+    if (stockName) {
+        return stockName;
+    }
+
+    return cleanSubcategory(
+        stock?.subcategory
+    );
+}
+
+// ==========================================================
 // FIFO DATE
 // ==========================================================
 
@@ -445,12 +471,6 @@ async function reconcilePurchaseBatches(
     // ------------------------------------------------------
     // BATCH TOTAL GREATER THAN STOCK BALANCE
     // ------------------------------------------------------
-    //
-    // Historical deductions may have occurred without FIFO
-    // batch tracking.
-    //
-    // Remove the required amount from the oldest batches.
-    // ------------------------------------------------------
 
     if (
         batchTotal >
@@ -508,13 +528,6 @@ async function reconcilePurchaseBatches(
     // ------------------------------------------------------
     // BATCH TOTAL LESS THAN STOCK BALANCE
     // ------------------------------------------------------
-    //
-    // There are warehouse units that have no historical
-    // purchase batch.
-    //
-    // Represent those missing units as a compatibility batch
-    // at the current Stock.buyPrice.
-    // ------------------------------------------------------
 
     const missingUnits =
         expectedUnits -
@@ -556,15 +569,6 @@ async function reconcilePurchaseBatches(
 // ==========================================================
 // CATEGORY
 // ==========================================================
-//
-// Accepts:
-//
-// Category._id
-// OR
-// Category.name
-//
-// Returns the active Category document.
-// ==========================================================
 
 async function getCategory(
     value,
@@ -580,10 +584,6 @@ async function getCategory(
     }
 
     let category;
-
-    // ------------------------------------------------------
-    // CATEGORY OBJECT ID
-    // ------------------------------------------------------
 
     if (
         mongoose.isValidObjectId(
@@ -607,10 +607,6 @@ async function getCategory(
         category =
             await query.lean();
     }
-
-    // ------------------------------------------------------
-    // CATEGORY NAME
-    // ------------------------------------------------------
 
     else {
         const query =
@@ -655,11 +651,6 @@ async function getCategory(
 
 // ==========================================================
 // VALIDATE CATEGORY
-// ==========================================================
-//
-// Returns Category.name.
-//
-// Stock.category stores the category name.
 // ==========================================================
 
 async function validateCategory(
@@ -829,15 +820,6 @@ function directionsForProduct(
 // ==========================================================
 // CALCULATE FIFO STOCK VALUE
 // ==========================================================
-//
-// FIFO valuation:
-//
-//     batch.units × batch.buyPrice
-//
-// Each purchase retains its own cost.
-//
-// A new purchase therefore never reprices older stock.
-// ==========================================================
 
 function calculateFifoValue(
     stock
@@ -873,33 +855,6 @@ function calculateFifoValue(
 
 // ==========================================================
 // CONSUME FIFO STOCK
-// ==========================================================
-//
-// Consumes the oldest available purchase batches first.
-//
-// Example:
-//
-// 100 @ 100
-//  50 @ 120
-//
-// Request:
-//
-// 130
-//
-// Consumption:
-//
-// 100 @ 100
-//  30 @ 120
-//
-// Cost:
-//
-// 10,000 + 3,600
-// = 13,600
-//
-// Weighted cost:
-//
-// 13,600 / 130
-// = 104.615384...
 // ==========================================================
 
 function consumeFifoBatches(
@@ -937,10 +892,6 @@ function consumeFifoBatches(
         0;
 
     const consumed = [];
-
-    // ------------------------------------------------------
-    // CONSUME OLDEST FIRST
-    // ------------------------------------------------------
 
     for (
         const batch of batches
@@ -1001,10 +952,6 @@ function consumeFifoBatches(
             consume;
     }
 
-    // ------------------------------------------------------
-    // INSUFFICIENT FIFO STOCK
-    // ------------------------------------------------------
-
     if (
         remaining > 0
     ) {
@@ -1012,10 +959,6 @@ function consumeFifoBatches(
             `Only ${quantity - remaining} FIFO units are available, but ${quantity} units were requested.`
         );
     }
-
-    // ------------------------------------------------------
-    // REMOVE EMPTY BATCHES
-    // ------------------------------------------------------
 
     stock.purchaseBatches =
         batches.filter(
@@ -1056,12 +999,6 @@ exports.getCategories =
 
 // ==========================================================
 // LIST STOCK
-// ==========================================================
-//
-// Stock.category contains Category.name.
-//
-// Categories are loaded separately so the view can receive
-// the Category document.
 // ==========================================================
 
 exports.listStock =
@@ -1299,10 +1236,6 @@ exports.recalculateStockTotals =
 
         let overall = 0;
 
-        // --------------------------------------------------
-        // ENSURE ALL STOCK RECORDS HAVE VALID FIFO DATA
-        // --------------------------------------------------
-
         for (
             const stock of stocks
         ) {
@@ -1311,10 +1244,6 @@ exports.recalculateStockTotals =
                 session
             );
         }
-
-        // --------------------------------------------------
-        // CALCULATE TOTAL VALUES
-        // --------------------------------------------------
 
         for (
             const stock of stocks
@@ -1344,10 +1273,6 @@ exports.recalculateStockTotals =
 
         const now =
             new Date();
-
-        // --------------------------------------------------
-        // UPDATE STOCK TOTALS
-        // --------------------------------------------------
 
         for (
             const stock of stocks
@@ -1412,6 +1337,10 @@ exports.createStock =
 
         // --------------------------------------------------
         // NAME
+        // --------------------------------------------------
+        //
+        // Stock name is taken from body.name when supplied.
+        // If no name is supplied, subcategory is used.
         // --------------------------------------------------
 
         const name =
@@ -1572,30 +1501,6 @@ exports.createStock =
 
 // ==========================================================
 // UPDATE STOCK ENTRY
-// ==========================================================
-//
-// IMPORTANT:
-//
-// body.units is the NEW TOTAL warehouse quantity.
-//
-// Example:
-//
-// Current stock = 100
-// Form units    = 150
-//
-// Additional units = 50
-//
-// If buyPrice = 120:
-//
-// Existing:
-//
-// 100 @ old price
-//
-// New:
-//
-// 50 @ 120
-//
-// The old batch is NEVER repriced.
 // ==========================================================
 
 exports.updateStockEntry =
@@ -1766,6 +1671,21 @@ exports.updateStockEntry =
         }
 
         // --------------------------------------------------
+        // STOCK NAME
+        // --------------------------------------------------
+        //
+        // Preserve the supplied stock name.
+        // If no name is supplied, use the subcategory.
+        // --------------------------------------------------
+
+        const stockName =
+            cleanSubcategory(
+                body.name ||
+                stock.name ||
+                subcategory
+            );
+
+        // --------------------------------------------------
         // DELIVERY DAYS
         // --------------------------------------------------
 
@@ -1816,7 +1736,7 @@ exports.updateStockEntry =
         // ==================================================
 
         stock.name =
-            subcategory;
+            stockName;
 
         stock.category =
             category;
@@ -1864,12 +1784,6 @@ exports.updateStockEntry =
                 }
             );
 
-            // ------------------------------------------------
-            // Legacy/current price field.
-            //
-            // FIFO valuation uses purchaseBatches instead.
-            // ------------------------------------------------
-
             stock.buyPrice =
                 additionalBuyPrice;
         }
@@ -1916,21 +1830,26 @@ exports.updateStockEntry =
         }
 
         // ==================================================
-        // SYNCHRONIZE PRODUCTS
+        // RESOLVE PRODUCT NAME
         // ==================================================
         //
-        // Product.units is NOT changed.
-        //
-        // Product.buyPrice is NOT changed.
-        //
-        // Adding warehouse stock creates a new FIFO batch.
-        // Existing products retain their already-assigned cost.
+        // Stock.name first.
+        // Stock.subcategory only as fallback.
+        // ==================================================
+
+        const resolvedProductName =
+            productNameFromStock(
+                stock
+            );
+
+        // ==================================================
+        // SYNCHRONIZE PRODUCTS
         // ==================================================
 
         const productSync = {
             $set: {
                 name:
-                    stock.name,
+                    resolvedProductName,
 
                 category:
                     categoryDocument._id,
@@ -2017,7 +1936,7 @@ exports.updateStockEntry =
                 {
                     $set: {
                         "productInventory.$[item].productName":
-                            stock.name,
+                            resolvedProductName,
 
                         "productInventory.$[item].category":
                             categoryDocument._id,
@@ -2135,6 +2054,14 @@ function normalizeAllocations(
 //
 // 13,600 / 130
 // = 104.615384...
+//
+// PRODUCT NAME:
+//
+// Stock.name
+//      ↓
+// if empty/missing
+//      ↓
+// Stock.subcategory
 //
 // The Product model currently receives the weighted cost.
 // Detailed batch history will be added later when the Product
@@ -2382,13 +2309,6 @@ exports.createProductFromStock =
                     // ======================================
                     // CONSUME FIFO
                     // ======================================
-                    //
-                    // This mutates the in-memory batch
-                    // quantities.
-                    //
-                    // The resulting stock document is saved
-                    // later in the same transaction.
-                    // ======================================
 
                     const fifoResult =
                         consumeFifoBatches(
@@ -2396,15 +2316,9 @@ exports.createProductFromStock =
                             allocationTotal
                         );
 
-                    // ------------------------------------------------
-                    // IMPORTANT:
-                    //
-                    // Use totalCost directly.
-                    //
-                    // Do not calculate allocationTotal × some
-                    // single batch price because multiple FIFO
-                    // batches may have been consumed.
-                    // ------------------------------------------------
+                    // ======================================
+                    // FIFO COST
+                    // ======================================
 
                     const fifoTotalCost =
                         Number(
@@ -2434,12 +2348,35 @@ exports.createProductFromStock =
                             );
 
                     // ======================================
+                    // PRODUCT NAME
+                    // ======================================
+                    //
+                    // IMPORTANT:
+                    //
+                    // Use Stock.name when it exists.
+                    //
+                    // If Stock.name is empty/missing,
+                    // use Stock.subcategory.
+                    // ======================================
+
+                    const resolvedProductName =
+                        productNameFromStock(
+                            stock
+                        );
+
+                    if (!resolvedProductName) {
+                        throw new Error(
+                            "The stock has no valid name or subcategory to use as the product name."
+                        );
+                    }
+
+                    // ======================================
                     // PRODUCT DATA INHERITED FROM STOCK
                     // ======================================
 
                     const inherited = {
                         name:
-                            stock.name,
+                            resolvedProductName,
 
                         category:
                             category._id,
@@ -2587,10 +2524,6 @@ exports.createProductFromStock =
                     // ======================================
                     // EMPTY WAREHOUSE
                     // ======================================
-                    //
-                    // If warehouse balance reaches zero,
-                    // no FIFO batch can remain.
-                    // ======================================
 
                     if (
                         stock.units ===
@@ -2705,7 +2638,7 @@ exports.createProductFromStock =
                     }
 
                     // ======================================
-                    // RECALCULATE STOCK TOTALS
+                    // RECALCULATE FIFO TOTALS
                     // ======================================
 
                     await exports.recalculateStockTotals(
