@@ -3,12 +3,10 @@
                 ========================================== -->
 
                 <li class="sidebar-item">
-
-                    <a
-                        href="/liability"
-                        class="sidebar-link"
-                        title="Liabilities"
-                    >
+<a
+    href="/liability"
+    class="sidebar-link <%= req.path.startsWith('/liability') ? 'active' : '' %>"
+>
 
                         <span
                             class="sidebar-icon"
