@@ -260,6 +260,41 @@ exports.login =
             );
 
 
+            // ==================================================
+            // POST-LOGIN ENTRY PAGE
+            // ==================================================
+            //
+            // ADMIN:
+            //     /sales
+            //
+            // OTHER USERS:
+            //     requested returnTo
+            //
+            // IMPORTANT:
+            // This only controls where the user goes immediately
+            // AFTER LOGIN.
+            //
+            // It does NOT redirect admins whenever they visit /.
+            //
+            // Therefore an admin can still freely visit:
+            //
+            //     /
+            //
+            // after logging in.
+            // ==================================================
+
+            if (
+                user.role ===
+                "admin" &&
+                returnTo === "/"
+            ) {
+
+                return res.redirect(
+                    "/sales"
+                );
+            }
+
+
             return res.redirect(
                 returnTo
             );
