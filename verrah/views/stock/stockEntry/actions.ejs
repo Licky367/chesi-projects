@@ -4,35 +4,81 @@
 
 <div class="stock-actions-card">
 
+
+  <!-- =======================================================
+       ACTIONS HEADING
+  ======================================================== -->
+
+  <div class="stock-actions-heading">
+
+    <h2>
+      Actions
+    </h2>
+
+    <p>
+      Complete the stock allocation or manage this stock item.
+    </p>
+
+  </div>
+
+
+  <!-- =======================================================
+       ACTION BUTTONS
+  ======================================================== -->
+
   <div class="form-actions">
+
+
+    <!-- =====================================================
+         ALLOCATE PRODUCT
+    ====================================================== -->
 
     <button
       type="submit"
+      form="allocationForm"
       class="primary-btn"
       id="allocateButton"
       <%= !substations || !substations.length
         ? "disabled"
         : "" %>
     >
+
       <i class="fas fa-boxes-stacked"></i>
+
       Allocate Product
+
     </button>
 
+
+    <!-- =====================================================
+         EDIT STOCK
+    ====================================================== -->
 
     <a
       href="/stock/new?stockId=<%= stock._id %>"
       class="secondary-btn"
     >
+
       <i class="fas fa-pen"></i>
+
       Edit Stock
+
     </a>
 
+
+    <!-- =====================================================
+         CANCEL
+    ====================================================== -->
 
     <a
       href="/stock"
       class="secondary-btn"
     >
+
+      <i class="fas fa-times"></i>
+
       Cancel
+
     </a>
 
   </div>
