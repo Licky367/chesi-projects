@@ -25,10 +25,10 @@
   --verrah-danger: #b42318;
 
   --verrah-shadow:
-    0 8px 24px rgba(91, 48, 24, 0.10);
+    0 6px 18px rgba(91, 48, 24, 0.09);
 
   --verrah-shadow-hover:
-    0 14px 30px rgba(91, 48, 24, 0.16);
+    0 10px 24px rgba(91, 48, 24, 0.14);
 }
 
 
@@ -181,7 +181,6 @@
 
 /* ==========================================================
    PRODUCT SEARCH
-   BROWN THEME
 ========================================================== */
 
 .products-search-form {
@@ -435,23 +434,31 @@
 .category-section {
   width: 100%;
 
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
+
+/* ==========================================================
+   CATEGORY HEADER
+   LEFT ALIGNED
+
+   Category name appears immediately before
+   the product-count pill.
+========================================================== */
 
 .category-head {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 
-  gap: 10px;
+  gap: 8px;
 
-  margin-bottom: 10px;
-  padding-bottom: 8px;
+  margin-bottom: 8px;
+  padding: 0 2px 7px;
 
   border-bottom: 1.5px solid var(--verrah-brown-soft);
 
-  text-align: center;
+  text-align: left;
 }
 
 
@@ -460,24 +467,27 @@
 
   color: var(--verrah-brown-dark);
 
-  font-size: 21px;
+  font-size: 19px;
   font-weight: 800;
   line-height: 1.2;
+
+  white-space: nowrap;
 }
 
 
 .category-count {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
 
-  padding: 5px 10px;
+  padding: 4px 9px;
 
   border-radius: 999px;
 
   background: var(--verrah-brown-soft);
   color: var(--verrah-brown-dark);
 
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
 
   line-height: 1.2;
@@ -533,7 +543,7 @@
   grid-template-columns:
     repeat(6, minmax(0, 1fr));
 
-  gap: 16px;
+  gap: 13px;
 
   width: 100%;
 }
@@ -541,6 +551,7 @@
 
 /* ==========================================================
    PRODUCT CARD
+   REDUCED WIDTH / HEIGHT
 ========================================================== */
 
 .product-card {
@@ -552,7 +563,7 @@
   overflow: hidden;
 
   border: 1px solid var(--verrah-border);
-  border-radius: 18px;
+  border-radius: 15px;
 
   background: var(--verrah-white);
   color: inherit;
@@ -569,7 +580,7 @@
 
 
 .product-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-3px);
 
   border-color: #d4b5a4;
 
@@ -579,13 +590,14 @@
 
 /* ==========================================================
    PRODUCT IMAGE
+   SHORTER
 ========================================================== */
 
 .product-image {
   position: relative;
 
   width: 100%;
-  height: 210px;
+  height: 165px;
 
   overflow: hidden;
 
@@ -633,12 +645,13 @@
 
 
 .placeholder i {
-  font-size: 32px;
+  font-size: 28px;
 }
 
 
 /* ==========================================================
    PRODUCT INFORMATION
+   COMPACT
 ========================================================== */
 
 .product-info {
@@ -647,7 +660,7 @@
 
   min-height: 0;
 
-  padding: 12px;
+  padding: 9px 10px 10px;
 
   box-sizing: border-box;
 }
@@ -656,13 +669,13 @@
 .product-name {
   overflow: hidden;
 
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 
   color: var(--verrah-text);
 
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.2;
 
   display: -webkit-box;
 
@@ -671,39 +684,24 @@
 }
 
 
-.stock-meta-line {
-  overflow: hidden;
-
-  margin-bottom: 6px;
-
-  color: var(--verrah-muted);
-
-  font-size: 12px;
-  line-height: 1.25;
-
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-
 .product-price {
-  margin-bottom: 5px;
+  margin-bottom: 3px;
 
   color: var(--verrah-brown);
 
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 
 .stock-text {
-  margin-top: 3px;
+  margin-top: 2px;
 
   color: var(--verrah-muted);
 
-  font-size: 12px;
-  line-height: 1.3;
+  font-size: 11px;
+  line-height: 1.25;
 }
 
 
@@ -1205,6 +1203,8 @@
   .product-row {
     grid-template-columns:
       repeat(4, minmax(0, 1fr));
+
+    gap: 12px;
   }
 
 
@@ -1230,7 +1230,6 @@
 
   /* --------------------------------------------------------
      PAGE HEADER
-     Explicit vertical arrangement
   -------------------------------------------------------- */
 
   .products-heading {
@@ -1365,31 +1364,31 @@
   -------------------------------------------------------- */
 
   .category-section {
-    margin-top: 22px;
+    margin-top: 19px;
   }
 
 
   .category-head {
-    justify-content: center;
+    justify-content: flex-start;
 
-    gap: 8px;
+    gap: 7px;
 
-    margin-bottom: 9px;
-    padding-bottom: 7px;
+    margin-bottom: 7px;
+    padding: 0 1px 6px;
 
-    text-align: center;
+    text-align: left;
   }
 
 
   .category-head h2 {
-    font-size: 19px;
+    font-size: 18px;
 
     line-height: 1.2;
   }
 
 
   .category-count {
-    padding: 4px 9px;
+    padding: 4px 8px;
 
     font-size: 10px;
   }
@@ -1406,9 +1405,9 @@
 
     overflow-x: auto;
 
-    padding: 4px 2px 12px;
+    padding: 3px 1px 10px;
 
-    gap: 13px;
+    gap: 10px;
 
     scroll-snap-type: x proximity;
 
@@ -1417,7 +1416,7 @@
 
 
   .product-row::-webkit-scrollbar {
-    height: 5px;
+    height: 4px;
   }
 
 
@@ -1430,25 +1429,27 @@
 
   /* --------------------------------------------------------
      PRODUCT CARD
+     NARROWER + SHORTER
   -------------------------------------------------------- */
 
   .product-card {
-    flex: 0 0 185px;
+    flex: 0 0 165px;
 
     scroll-snap-align: start;
 
-    border-radius: 15px;
+    border-radius: 13px;
   }
 
 
   /* --------------------------------------------------------
      MOBILE PRODUCT IMAGE
+     SHORTER
   -------------------------------------------------------- */
 
   .product-image {
     width: 100%;
 
-    height: 185px;
+    height: 145px;
 
     aspect-ratio: auto;
 
@@ -1472,41 +1473,33 @@
   .product-info {
     min-height: 0;
 
-    padding: 11px;
+    padding: 8px 9px 9px;
   }
 
 
   .product-name {
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 
-    font-size: 14px;
-    line-height: 1.25;
+    font-size: 13px;
+    line-height: 1.2;
 
     -webkit-line-clamp: 2;
   }
 
 
-  .stock-meta-line {
-    margin-bottom: 6px;
-
-    font-size: 11px;
-    line-height: 1.25;
-  }
-
-
   .product-price {
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 
-    font-size: 16px;
-    line-height: 1.25;
+    font-size: 14px;
+    line-height: 1.2;
   }
 
 
   .stock-text {
-    margin-top: 3px;
+    margin-top: 2px;
 
-    font-size: 11px;
-    line-height: 1.3;
+    font-size: 10px;
+    line-height: 1.2;
   }
 
 
@@ -1689,48 +1682,60 @@
   -------------------------------------------------------- */
 
   .category-section {
-    margin-top: 20px;
+    margin-top: 17px;
   }
 
 
   .category-head {
-    gap: 7px;
+    justify-content: flex-start;
 
-    margin-bottom: 8px;
-    padding-bottom: 6px;
+    gap: 6px;
+
+    margin-bottom: 6px;
+    padding: 0 1px 5px;
+
+    text-align: left;
   }
 
 
   .category-head h2 {
-    font-size: 18px;
+    font-size: 17px;
   }
 
 
   .category-count {
-    padding: 4px 8px;
+    padding: 3px 7px;
 
-    font-size: 10px;
+    font-size: 9px;
   }
 
 
-  .subcategory-head span {
-    font-size: 11px;
+  /* --------------------------------------------------------
+     PRODUCT ROW
+  -------------------------------------------------------- */
+
+  .product-row {
+    gap: 9px;
+
+    padding-top: 2px;
+    padding-bottom: 8px;
   }
 
 
   /* --------------------------------------------------------
      PRODUCT CARD
+     NARROWER + SHORTER
   -------------------------------------------------------- */
 
   .product-card {
-    flex-basis: 170px;
+    flex-basis: 150px;
 
-    border-radius: 14px;
+    border-radius: 12px;
   }
 
 
   .product-image {
-    height: 170px;
+    height: 130px;
 
     aspect-ratio: auto;
   }
@@ -1739,37 +1744,30 @@
   .product-info {
     min-height: 0;
 
-    padding: 10px;
+    padding: 7px 8px 8px;
   }
 
 
   .product-name {
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 
-    font-size: 13px;
-    line-height: 1.25;
-  }
-
-
-  .stock-meta-line {
-    margin-bottom: 5px;
-
-    font-size: 11px;
+    font-size: 12px;
+    line-height: 1.2;
   }
 
 
   .product-price {
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 
-    font-size: 15px;
+    font-size: 13px;
   }
 
 
   .stock-text {
-    margin-top: 3px;
+    margin-top: 2px;
 
-    font-size: 11px;
-    line-height: 1.25;
+    font-size: 10px;
+    line-height: 1.2;
   }
 
 
