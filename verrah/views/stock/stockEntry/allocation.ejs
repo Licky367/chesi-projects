@@ -77,7 +77,7 @@
                 name="unitSellPrice"
                 value="<%= old && old.unitSellPrice != null
                     ? old.unitSellPrice
-                    : "" %>"
+                    : (unitSellPrice ?? "") %>"
                 required
             >
 
