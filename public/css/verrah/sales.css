@@ -43,28 +43,120 @@ color: var(--sales-text);
 
 /* ==========================================================
 SALES HEADER
+UPDATED HEADER STYLING
 ========================================================== */
 
 .sales-header {
 
+display: flex;
+
+align-items: center;
+
+gap: 15px;
+
 margin-bottom: 22px;
+
+padding: 18px 20px;
+
+box-sizing: border-box;
+
+background: linear-gradient(
+    135deg,
+    #fffaf5 0%,
+    #f8eee7 100%
+);
+
+border: 1px solid #eadbd0;
+
+border-left: 4px solid #7a4b2a;
+
+border-radius: 14px;
+
+box-shadow:
+    0 5px 18px
+    rgba(74, 43, 25, 0.07);
 
 }
 
-.sales-header h1 {
+/* ==========================================================
+SALES HEADER ICON
+========================================================== */
 
-margin: 0 0 6px;
+.sales-header-icon {
+
+width: 48px;
+
+height: 48px;
+
+flex: 0 0 48px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+box-sizing: border-box;
+
+background: #7a4b2a;
+
+color: #ffffff;
+
+border-radius: 12px;
+
+box-shadow:
+    0 4px 10px
+    rgba(74, 43, 25, 0.16);
+
+}
+
+/* ==========================================================
+SALES HEADER ICON
+========================================================== */
+
+.sales-header-icon i {
+
+font-size: 21px;
+
+line-height: 1;
+
+}
+
+/* ==========================================================
+SALES TITLE
+========================================================== */
+
+.sales-title {
+
+margin: 0 0 5px;
+
+color: #5d351d;
 
 font-size: 30px;
 
+font-weight: 700;
+
+line-height: 1.2;
+
+letter-spacing: -0.2px;
+
 }
 
-.sales-header p,
-.sales-section-heading p {
+/* ==========================================================
+SALES SUBTITLE
+========================================================== */
+
+.sales-subtitle {
 
 margin: 0;
 
-color: var(--sales-muted);
+color: #7b6b61;
+
+font-size: 14px;
+
+font-weight: 500;
+
+line-height: 1.5;
 
 }
 
@@ -990,7 +1082,7 @@ MOBILE — SALES PAGE
 }
 
 
-.sales-header h1 {
+.sales-title {
 
     font-size: 25px;
 
