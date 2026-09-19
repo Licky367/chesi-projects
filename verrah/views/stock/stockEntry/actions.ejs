@@ -1,34 +1,40 @@
 <!-- =========================================================
-     ACTIONS
+     STOCK ACTIONS
 ========================================================= -->
 
-<div class="form-actions">
+<div class="stock-actions-card">
 
-  <button
-    type="submit"
-    class="primary-btn"
-    id="allocateButton"
-    <%= !substations || !substations.length ? "disabled" : "" %>
-  >
-    <i class="fas fa-boxes-stacked"></i>
-    Allocate Product
-  </button>
+  <div class="form-actions">
 
-
-  <a
-    href="/stock/new?stockId=<%= stock._id %>"
-    class="secondary-btn"
-  >
-    <i class="fas fa-pen"></i>
-    Edit Stock
-  </a>
+    <button
+      type="submit"
+      class="primary-btn"
+      id="allocateButton"
+      <%= !substations || !substations.length
+        ? "disabled"
+        : "" %>
+    >
+      <i class="fas fa-boxes-stacked"></i>
+      Allocate Product
+    </button>
 
 
-  <a
-    href="/stock"
-    class="secondary-btn"
-  >
-    Cancel
-  </a>
+    <a
+      href="/stock/new?stockId=<%= stock._id %>"
+      class="secondary-btn"
+    >
+      <i class="fas fa-pen"></i>
+      Edit Stock
+    </a>
+
+
+    <a
+      href="/stock"
+      class="secondary-btn"
+    >
+      Cancel
+    </a>
+
+  </div>
 
 </div>
