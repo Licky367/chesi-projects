@@ -7,14 +7,20 @@
    STRUCTURE:
    ----------------------------------------------------------
    - Page heading
-   - Page description
+   - Product search
    - Error message
    - Products grouped by category
    - Category name displayed
    - Category ObjectId NEVER displayed
    - Maximum 6 products per desktop row
    - Mobile horizontal scrolling handled by CSS
-   - Subcategories remain product information
+   - Product card shows:
+       • Product image
+       • Product name
+       • Price
+       • Stock availability
+   - Subcategory is NOT displayed
+   - Delivery days are NOT displayed
    ========================================================== */
 %>
 
@@ -31,16 +37,15 @@
         <h1 class="page-title">
             Products
         </h1>
+
     </div>
 
-<!--
-===========================================
-           SEARCH PRODUCTS
-=============================================
--->
 
+    <!-- ======================================================
+         SEARCH PRODUCTS
+    ======================================================= -->
 
-<%- include("./searchComposser") %>
+    <%- include("./searchComposser") %>
 
 
     <!-- ======================================================
@@ -96,16 +101,6 @@
             <%
             /* ==================================================
                CATEGORY DISPLAY NAME
-            ===================================================
-
-               The frontend displays only the human-readable
-               category name.
-
-               Supported backend properties:
-                   group.label
-                   group.categoryName
-
-               Category ObjectIds are never displayed.
             =================================================== */
 
             var categoryName = "Other";
@@ -139,10 +134,7 @@
                Fallback structure:
 
                    group.products
-
-               This keeps the view compatible with the
-               existing product service response.
-            =================================================== */
+            ================================================== */
 
             var categoryProducts = [];
 
@@ -175,7 +167,7 @@
 
             /* ==================================================
                FALLBACK PRODUCTS
-            =================================================== */
+            ================================================== */
 
             if (
                 categoryProducts.length === 0 &&
@@ -199,7 +191,7 @@
 
             <!-- ==================================================
                  CATEGORY SECTION
-            =================================================== -->
+            ================================================== -->
 
             <% if (categoryProducts.length > 0) { %>
 
@@ -243,6 +235,17 @@
                         <% categoryProducts.forEach(function(product) { %>
 
 
+                            <%
+                            /* ==================================================
+                               PRODUCT NAME
+                            ================================================== */
+
+                            var productName =
+                                product.name ||
+                                "Unnamed product";
+                            %>
+
+
                             <!-- ==================================
                                  PRODUCT CARD
                             =================================== -->
@@ -265,7 +268,7 @@
 
                                         <img
                                             src="<%= product.image %>"
-                                            alt="<%= product.name || 'Product' %>"
+                                            alt="<%= productName %>"
                                             loading="lazy"
                                             onerror="
                                                 this.style.display='none';
@@ -323,24 +326,9 @@
 
                                     <div class="product-name">
 
-                                        <%= product.name || "Unnamed product" %>
+                                        <%= productName %>
 
                                     </div>
-
-
-                                    <!-- ==================================
-                                         SUBCATEGORY
-                                    =================================== -->
-
-                                    <% if (product.subcategory) { %>
-
-                                        <div class="stock-meta-line">
-
-                                            <%= product.subcategory %>
-
-                                        </div>
-
-                                    <% } %>
 
 
                                     <!-- ==================================
@@ -354,29 +342,6 @@
                                         <%= Number(
                                             product.unitSellPrice || 0
                                         ).toLocaleString() %>
-
-                                    </div>
-
-
-                                    <!-- ==================================
-                                         DELIVERY
-                                    =================================== -->
-
-                                    <div class="stock-text">
-
-                                        <strong>
-
-                                            <%= Number(
-                                                product.days || 0
-                                            ) %>
-
-                                        </strong>
-
-                                        day<%= (
-                                            Number(product.days || 0) === 1
-                                        ) ? "" : "s" %>
-
-                                        delivery
 
                                     </div>
 
