@@ -1,0 +1,468 @@
+<!-- =========================================================
+   SIDEBAR
+========================================================= -->
+
+<aside
+    id="sidebar"
+    class="sidebar"
+    aria-label="Project navigation"
+    aria-expanded="false"
+>
+
+
+    <!-- =====================================================
+       SIDEBAR MENU
+    ====================================================== -->
+
+    <ul class="sidebar-menu">
+
+
+        <!-- =================================================
+           MENU BUTTON
+        ================================================== -->
+
+        <li class="sidebar-item">
+
+            <button
+                type="button"
+                id="sidebarMenuButton"
+                class="sidebar-menu-button"
+                aria-label="Close navigation menu"
+                aria-expanded="true"
+            >
+
+                <span
+                    class="sidebar-menu-icon"
+                    aria-hidden="true"
+                >
+                    ☰
+                </span>
+
+                <span class="sidebar-label">
+                    Menu
+                </span>
+
+            </button>
+
+        </li>
+
+
+        <!-- =================================================
+           DASHBOARD
+        ================================================== -->
+
+        <li class="sidebar-item">
+
+            <a
+                href="<%= homeLink %>"
+                class="sidebar-link active"
+                title="Dashboard"
+            >
+
+                <span
+                    class="sidebar-icon"
+                    aria-hidden="true"
+                >
+                    🏠
+                </span>
+
+                <span class="sidebar-label">
+                    Dashboard
+                </span>
+
+            </a>
+
+        </li>
+
+
+        <% if (user && user.role === "admin") { %>
+
+        <!-- =================================================
+           MANAGEMENT ACTIVITIES
+           ADMIN ONLY
+        ================================================== -->
+
+        <li class="sidebar-item">
+
+            <button
+                type="button"
+                id="dairyActivitiesButton"
+                class="sidebar-section-button"
+                aria-expanded="false"
+                aria-controls="dairyActivitiesSubmenu"
+            >
+
+                <span
+                    class="sidebar-icon"
+                    aria-hidden="true"
+                >
+                    📒
+                </span>
+
+                <span class="sidebar-label">
+                    MANAGEMENT
+                </span>
+
+                <span
+                    class="sidebar-section-arrow"
+                    aria-hidden="true"
+                >
+                    ▶
+                </span>
+
+            </button>
+
+
+            <!-- =============================================
+               MANAGEMENT ACTIVITIES SUBMENU
+            ============================================== -->
+
+            <ul
+                id="dairyActivitiesSubmenu"
+                class="sidebar-submenu"
+            >
+
+
+                <!-- =========================================
+                   STOCK MANAGEMENT
+                ========================================== -->
+
+                <li class="sidebar-item">
+
+                    <a
+                        href="/stock"
+                        class="sidebar-link"
+                        title="Stock Management"
+                    >
+
+                        <span
+                            class="sidebar-icon"
+                            aria-hidden="true"
+                        >
+                            📦
+                        </span>
+
+                        <span class="sidebar-label">
+                            Stock Management
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- =========================================
+                   PACKAGES
+                ========================================== -->
+
+                <li class="sidebar-item">
+
+                    <a
+                        href="/packages/staff"
+                        class="sidebar-link"
+                        title="Packages"
+                    >
+
+                        <span
+                            class="sidebar-icon"
+                            aria-hidden="true"
+                        >
+                            🎁
+                        </span>
+
+                        <span class="sidebar-label">
+                            Packages
+                        </span>
+
+                    </a>
+
+                </li>
+        <!-- =================================================
+           DIRECT SALES
+        ================================================== -->
+
+        <%- include("sidebar/directSells") %>
+        <!-- =================================================
+           LIABILITIES 
+        ================================================== -->
+
+        <%- include("sidebar/liability") %>
+
+                <!-- =========================================
+                   SALES
+                ========================================== -->
+
+                <li class="sidebar-item">
+
+                    <a
+                        href="/sales"
+                        class="sidebar-link"
+                        title="Sales"
+                    >
+
+                        <span
+                            class="sidebar-icon"
+                            aria-hidden="true"
+                        >
+                            💱
+                        </span>
+
+                        <span class="sidebar-label">
+                            Financials
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- =========================================
+                   MILK STATISTICS
+                ========================================== -->
+
+                <!--
+                <li class="sidebar-item">
+
+                    <a
+                        href="/stats"
+                        class="sidebar-link"
+                        title="Milk Statistics"
+                    >
+
+                        <span
+                            class="sidebar-icon"
+                            aria-hidden="true"
+                        >
+                            📊
+                        </span>
+
+                        <span class="sidebar-label">
+                            Milk Statistics
+                        </span>
+
+                    </a>
+
+                </li>
+                -->
+
+            </ul>
+
+        </li>
+
+        <% } %>
+
+
+        <!-- =================================================
+           PRODUCTS / USER GUIDE
+        ================================================== -->
+
+        <%
+            const isStaff =
+                user &&
+                user.role === "staff";
+        %>
+
+        <li class="sidebar-item">
+
+            <% if (isStaff) { %>
+
+                <!-- =========================================
+                   USER GUIDE
+                   STAFF ONLY
+                ========================================== -->
+
+                <a
+                    href="/guide"
+                    class="sidebar-link"
+                    title="User Guide"
+                >
+
+                    <span
+                        class="sidebar-icon"
+                        aria-hidden="true"
+                    >
+                        📖
+                    </span>
+
+                    <span class="sidebar-label">
+                        User Guide
+                    </span>
+
+                </a>
+
+            <% } else { %>
+
+                <!-- =========================================
+                   PRODUCTS
+                   NON-STAFF
+                ========================================== -->
+
+                <a
+                    href="/products"
+                    class="sidebar-link"
+                    title="View Products"
+                >
+
+                    <span
+                        class="sidebar-icon"
+                        aria-hidden="true"
+                    >
+                        🛍️
+                    </span>
+
+                    <span class="sidebar-label">
+                        Products
+                    </span>
+
+                </a>
+
+            <% } %>
+
+        </li>
+
+
+        <!-- =================================================
+           CART
+        ================================================== -->
+
+        <%- include("sidebar/carts") %>
+
+
+        <!-- =================================================
+           CLIENT ORDERS
+           NON-STAFF ONLY
+        ================================================== -->
+
+        <% if (!user || user.role !== "staff") { %>
+
+        <li class="sidebar-item">
+
+            <a
+                href="/packages"
+                class="sidebar-link"
+                title="My Orders"
+            >
+
+                <span
+                    class="sidebar-icon"
+                    aria-hidden="true"
+                >
+                    🎁
+                </span>
+
+                <span class="sidebar-label">
+                    My Orders
+                </span>
+
+            </a>
+
+        </li>
+
+        <% } %>
+
+
+        <% if (
+            user &&
+            user.role === "staff"
+        ) { %>
+
+        <!-- =================================================
+           STAFF DELIVERIES
+        ================================================== -->
+
+        <li class="sidebar-item">
+
+            <a
+                href="/packages/staff"
+                class="sidebar-link"
+                title="Staff Deliveries"
+            >
+
+                <span
+                    class="sidebar-icon"
+                    aria-hidden="true"
+                >
+                    🚚
+                </span>
+
+                <span class="sidebar-label">
+                    Deliveries
+                </span>
+
+            </a>
+
+        </li>
+
+        <% } %>
+
+
+        <% if (
+            user &&
+            user.role === "admin"
+        ) { %>
+
+        <!-- =================================================
+           ADMIN USER GUIDE
+        ================================================== -->
+
+        <li class="sidebar-item">
+
+            <a
+                href="/guide"
+                class="sidebar-link"
+                title="Admin Guidelines"
+            >
+
+                <span
+                    class="sidebar-icon"
+                    aria-hidden="true"
+                >
+                    📝
+                </span>
+
+                <span class="sidebar-label">
+                    Admin User Guide
+                </span>
+
+            </a>
+
+        </li>
+
+
+        <% } %>
+<% if (isStaff) { %>
+
+        <!-- =================================================
+           DIRECT SALES
+        ================================================== -->
+
+        <%- include("sidebar/directSells") %>
+<% } %>
+
+
+    </ul>
+
+
+    <!-- =====================================================
+       SIDEBAR FOOTER
+    ====================================================== -->
+
+    <div class="sidebar-footer">
+
+        Verrah Cosmetics
+
+    </div>
+
+
+</aside>
+
+
+<!-- =========================================================
+   SIDEBAR OVERLAY
+========================================================= -->
+
+<div
+    id="sidebarOverlay"
+    class="overlay"
+    aria-hidden="true"
+></div>
