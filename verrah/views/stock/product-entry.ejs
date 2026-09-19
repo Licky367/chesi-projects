@@ -387,136 +387,6 @@
 
 
       <!-- =====================================================
-           DIRECTIONS OF USE
-      ====================================================== -->
-
-      <div class="directions-section">
-
-        <div class="section-heading">
-
-          <div>
-
-            <h2>
-              Directions of Use
-            </h2>
-
-            <p>
-              Add instructions for using this product.
-            </p>
-
-          </div>
-
-          <button
-            type="button"
-            class="secondary-btn"
-            id="addDirection"
-          >
-
-            <i class="fas fa-plus"></i>
-
-            Add Direction
-
-          </button>
-
-        </div>
-
-
-        <div
-          id="directionsContainer"
-          class="directions-container"
-        >
-
-          <% if (
-            old &&
-            Array.isArray(old.directions) &&
-            old.directions.length
-          ) { %>
-
-            <% old.directions.forEach((direction, index) => { %>
-
-              <div class="direction-row">
-
-                <div class="field">
-
-                  <label>
-                    Direction <%= index + 1 %>
-                  </label>
-
-                  <input
-                    type="text"
-                    name="directions[]"
-                    value="<%= direction %>"
-                    autocomplete="off"
-                  >
-
-                </div>
-
-                <button
-                  type="button"
-                  class="remove-direction"
-                  aria-label="Remove direction"
-                >
-
-                  <i class="fas fa-trash"></i>
-
-                </button>
-
-              </div>
-
-            <% }) %>
-
-          <% } else { %>
-
-            <div class="direction-row">
-
-              <div class="field">
-
-                <label>
-                  Direction 1
-                </label>
-
-                <input
-                  type="text"
-                  name="directions[]"
-                  value=""
-                  autocomplete="off"
-                  placeholder="Enter direction"
-                >
-
-              </div>
-
-              <button
-                type="button"
-                class="remove-direction"
-                aria-label="Remove direction"
-              >
-
-                <i class="fas fa-trash"></i>
-
-              </button>
-
-            </div>
-
-          <% } %>
-
-        </div>
-
-      </div>
-
-
-      <!-- =====================================================
-           CLEAR DIRECTIONS
-      ====================================================== -->
-
-      <input
-        type="hidden"
-        name="clearDirections"
-        id="clearDirections"
-        value="0"
-      >
-
-
-      <!-- =====================================================
            FORM ACTIONS
       ====================================================== -->
 
@@ -571,15 +441,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const buyPriceInput =
     document.getElementById("buyPrice");
 
-  const directionsContainer =
-    document.getElementById("directionsContainer");
-
-  const addDirectionButton =
-    document.getElementById("addDirection");
-
-  const clearDirectionsInput =
-    document.getElementById("clearDirections");
-
 
   /* ==========================================================
      EXISTING UNITS
@@ -612,12 +473,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const additionalUnitsElement =
         document.getElementById("additionalUnits");
 
+
       if (newUnitsElement) {
 
         newUnitsElement.textContent =
           newUnits.toLocaleString("en-KE");
 
       }
+
 
       if (additionalUnitsElement) {
 
@@ -639,172 +502,6 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
   }
-
-
-  /* ==========================================================
-     ADD DIRECTION
-  ========================================================== */
-
-  function addDirection() {
-
-    const rows =
-      directionsContainer.querySelectorAll(
-        ".direction-row"
-      );
-
-    const number =
-      rows.length + 1;
-
-
-    const row =
-      document.createElement("div");
-
-    row.className =
-      "direction-row";
-
-
-    row.innerHTML = `
-
-      <div class="field">
-
-        <label>
-          Direction ${number}
-        </label>
-
-        <input
-          type="text"
-          name="directions[]"
-          value=""
-          autocomplete="off"
-          placeholder="Enter direction"
-        >
-
-      </div>
-
-      <button
-        type="button"
-        class="remove-direction"
-        aria-label="Remove direction"
-      >
-
-        <i class="fas fa-trash"></i>
-
-      </button>
-
-    `;
-
-
-    directionsContainer.appendChild(row);
-
-    updateDirectionNumbers();
-
-  }
-
-
-  /* ==========================================================
-     REMOVE DIRECTION
-  ========================================================== */
-
-  function removeDirection(button) {
-
-    const rows =
-      directionsContainer.querySelectorAll(
-        ".direction-row"
-      );
-
-
-    if (rows.length <= 1) {
-
-      const input =
-        rows[0]?.querySelector(
-          'input[name="directions[]"]'
-        );
-
-      if (input) {
-
-        input.value = "";
-
-      }
-
-      clearDirectionsInput.value = "1";
-
-      return;
-
-    }
-
-
-    button
-      .closest(".direction-row")
-      .remove();
-
-
-    updateDirectionNumbers();
-
-  }
-
-
-  /* ==========================================================
-     UPDATE DIRECTION NUMBERS
-  ========================================================== */
-
-  function updateDirectionNumbers() {
-
-    const rows =
-      directionsContainer.querySelectorAll(
-        ".direction-row"
-      );
-
-
-    rows.forEach((row, index) => {
-
-      const label =
-        row.querySelector("label");
-
-      if (label) {
-
-        label.textContent =
-          `Direction ${index + 1}`;
-
-      }
-
-    });
-
-  }
-
-
-  /* ==========================================================
-     DIRECTION EVENTS
-  ========================================================== */
-
-  if (addDirectionButton) {
-
-    addDirectionButton.addEventListener(
-      "click",
-      addDirection
-    );
-
-  }
-
-
-  directionsContainer.addEventListener(
-    "click",
-    event => {
-
-      const button =
-        event.target.closest(
-          ".remove-direction"
-        );
-
-
-      if (!button) {
-        return;
-      }
-
-
-      removeDirection(button);
-
-    }
-  );
 
 
   /* ==========================================================
