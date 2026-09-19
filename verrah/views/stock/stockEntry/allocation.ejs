@@ -179,7 +179,11 @@
                         </th>
 
                         <th>
-                            Allocate Units
+                            Available Units
+                        </th>
+
+                        <th>
+                            Add Units
                         </th>
 
                     </tr>
@@ -217,6 +221,38 @@
                                             substationId
                                         ]
                                         : "";
+
+
+                                /* =================================
+                                   CURRENT PRODUCT INVENTORY
+                                ================================== */
+
+                                const substationInventory =
+                                    Array.isArray(
+                                        substation.productInventory
+                                    )
+                                        ? substation.productInventory.find(
+                                            function (inventory) {
+
+                                                return String(
+                                                    inventory.productId
+                                                ) === String(
+                                                    stockProduct &&
+                                                    stockProduct._id
+                                                );
+
+                                            }
+                                        )
+                                        : null;
+
+
+                                const availableUnits =
+                                    substationInventory &&
+                                    substationInventory.units != null
+                                        ? Number(
+                                            substationInventory.units
+                                        )
+                                        : 0;
                         %>
 
 
@@ -284,6 +320,19 @@
 
 
                                 <!-- =================================
+                                     AVAILABLE INVENTORY
+                                ================================== -->
+
+                                <td>
+
+                                    <strong>
+                                        <%= availableUnits.toLocaleString("en-KE") %>
+                                    </strong>
+
+                                </td>
+
+
+                                <!-- =================================
                                      FINAL ALLOCATION
                                 ================================== -->
 
@@ -316,7 +365,7 @@
                         <tr>
 
                             <td
-                                colspan="4"
+                                colspan="5"
                                 class="sales-empty"
                             >
                                 No active substations are available
