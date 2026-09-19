@@ -51,13 +51,6 @@
 
 /* ==========================================================
    PAGE HEADER
-   IMPORTANT:
-   ----------------------------------------------------------
-   Title, paragraph and search form MUST remain vertically
-   arranged.
-
-   This explicitly prevents global flex/grid rules from
-   placing the title and paragraph beside each other.
 ========================================================== */
 
 .products-heading {
@@ -442,21 +435,23 @@
 .category-section {
   width: 100%;
 
-  margin-top: 34px;
+  margin-top: 24px;
 }
 
 
 .category-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
 
-  gap: 15px;
+  gap: 10px;
 
-  margin-bottom: 14px;
-  padding-bottom: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
 
-  border-bottom: 2px solid var(--verrah-brown-soft);
+  border-bottom: 1.5px solid var(--verrah-brown-soft);
+
+  text-align: center;
 }
 
 
@@ -465,16 +460,29 @@
 
   color: var(--verrah-brown-dark);
 
-  font-size: 23px;
+  font-size: 21px;
   font-weight: 800;
+  line-height: 1.2;
 }
 
 
 .category-count {
-  color: var(--verrah-muted);
+  display: inline-flex;
+  align-items: center;
 
-  font-size: 13px;
-  font-weight: 600;
+  padding: 5px 10px;
+
+  border-radius: 999px;
+
+  background: var(--verrah-brown-soft);
+  color: var(--verrah-brown-dark);
+
+  font-size: 11px;
+  font-weight: 700;
+
+  line-height: 1.2;
+
+  white-space: nowrap;
 }
 
 
@@ -577,8 +585,7 @@
   position: relative;
 
   width: 100%;
-
-  aspect-ratio: 1 / 1;
+  height: 210px;
 
   overflow: hidden;
 
@@ -592,7 +599,8 @@
   width: 100%;
   height: 100%;
 
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
 }
 
 
@@ -637,9 +645,9 @@
   display: flex;
   flex-direction: column;
 
-  min-height: 155px;
+  min-height: 0;
 
-  padding: 14px;
+  padding: 12px;
 
   box-sizing: border-box;
 }
@@ -648,13 +656,13 @@
 .product-name {
   overflow: hidden;
 
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 
   color: var(--verrah-text);
 
   font-size: 15px;
   font-weight: 800;
-  line-height: 1.3;
+  line-height: 1.25;
 
   display: -webkit-box;
 
@@ -664,32 +672,38 @@
 
 
 .stock-meta-line {
-  margin-bottom: 9px;
+  overflow: hidden;
+
+  margin-bottom: 6px;
 
   color: var(--verrah-muted);
 
   font-size: 12px;
-  line-height: 1.3;
+  line-height: 1.25;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 
 .product-price {
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 
   color: var(--verrah-brown);
 
   font-size: 17px;
   font-weight: 800;
+  line-height: 1.25;
 }
 
 
 .stock-text {
-  margin-top: 5px;
+  margin-top: 3px;
 
   color: var(--verrah-muted);
 
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 
@@ -1351,12 +1365,33 @@
   -------------------------------------------------------- */
 
   .category-section {
-    margin-top: 28px;
+    margin-top: 22px;
   }
 
 
   .category-head {
-    gap: 10px;
+    justify-content: center;
+
+    gap: 8px;
+
+    margin-bottom: 9px;
+    padding-bottom: 7px;
+
+    text-align: center;
+  }
+
+
+  .category-head h2 {
+    font-size: 19px;
+
+    line-height: 1.2;
+  }
+
+
+  .category-count {
+    padding: 4px 9px;
+
+    font-size: 10px;
   }
 
 
@@ -1401,28 +1436,77 @@
     flex: 0 0 185px;
 
     scroll-snap-align: start;
+
+    border-radius: 15px;
   }
 
+
+  /* --------------------------------------------------------
+     MOBILE PRODUCT IMAGE
+  -------------------------------------------------------- */
 
   .product-image {
-    aspect-ratio: 0.9 / 1;
+    width: 100%;
+
+    height: 185px;
+
+    aspect-ratio: auto;
+
+    overflow: hidden;
   }
 
 
-  .product-info {
-    min-height: 150px;
+  .product-image img {
+    width: 100%;
+    height: 100%;
 
-    padding: 12px;
+    object-fit: contain;
+    object-position: center;
+  }
+
+
+  /* --------------------------------------------------------
+     MOBILE PRODUCT INFORMATION
+  -------------------------------------------------------- */
+
+  .product-info {
+    min-height: 0;
+
+    padding: 11px;
   }
 
 
   .product-name {
+    margin-bottom: 4px;
+
     font-size: 14px;
+    line-height: 1.25;
+
+    -webkit-line-clamp: 2;
+  }
+
+
+  .stock-meta-line {
+    margin-bottom: 6px;
+
+    font-size: 11px;
+    line-height: 1.25;
   }
 
 
   .product-price {
+    margin-bottom: 5px;
+
     font-size: 16px;
+    line-height: 1.25;
+  }
+
+
+  .stock-text {
+    margin-top: 3px;
+
+    font-size: 11px;
+    line-height: 1.3;
   }
 
 
@@ -1604,8 +1688,28 @@
      CATEGORIES
   -------------------------------------------------------- */
 
+  .category-section {
+    margin-top: 20px;
+  }
+
+
+  .category-head {
+    gap: 7px;
+
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+  }
+
+
   .category-head h2 {
-    font-size: 20px;
+    font-size: 18px;
+  }
+
+
+  .category-count {
+    padding: 4px 8px;
+
+    font-size: 10px;
   }
 
 
@@ -1621,14 +1725,51 @@
   .product-card {
     flex-basis: 170px;
 
-    border-radius: 15px;
+    border-radius: 14px;
+  }
+
+
+  .product-image {
+    height: 170px;
+
+    aspect-ratio: auto;
   }
 
 
   .product-info {
-    min-height: 145px;
+    min-height: 0;
 
-    padding: 11px;
+    padding: 10px;
+  }
+
+
+  .product-name {
+    margin-bottom: 4px;
+
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+
+  .stock-meta-line {
+    margin-bottom: 5px;
+
+    font-size: 11px;
+  }
+
+
+  .product-price {
+    margin-bottom: 4px;
+
+    font-size: 15px;
+  }
+
+
+  .stock-text {
+    margin-top: 3px;
+
+    font-size: 11px;
+    line-height: 1.25;
   }
 
 
