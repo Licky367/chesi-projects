@@ -43,7 +43,7 @@ function getCartErrorMessage(err, fallback) {
 // ==========================================================
 // PACKAGE REDIRECT HELPER
 //
-// Staff:
+// Staff or admin:
 //     /packages/staffDirect
 //
 // Everyone else:
@@ -62,7 +62,7 @@ function getPackageRedirect(req) {
 
 
     if (
-        role === "staff"
+        role === "staff" || role === "admin"
     ) {
 
         return "/packages/staffDirect";
