@@ -13,9 +13,7 @@
    - 7th product starts a new row
    - Each row scrolls horizontally
    - Product card: 112px × 155px
-   - Admin:
-       /substations/product/:id
-   - Other roles:
+   - All roles:
        /products/:id
 ========================================================== -->
 
@@ -48,17 +46,12 @@
 
   </div>
 
-<!--
-===========================================
-           SEARCH PRODUCTS
-=============================================
--->
 
+  <!-- ========================================================
+       SEARCH PRODUCTS
+  ========================================================= -->
 
-<%- include("./productSearch") %>
-
-
-
+  <%- include("./productSearch") %>
 
 
   <!-- ========================================================
@@ -91,7 +84,6 @@
   <% } else { %>
 
 
-
     <!-- ======================================================
          GROUP PRODUCTS BY CATEGORY
     ====================================================== -->
@@ -113,9 +105,7 @@
 
 
         if (!groupedProducts[categoryName]) {
-
           groupedProducts[categoryName] = [];
-
         }
 
 
@@ -127,7 +117,6 @@
       const categoryGroups =
         Object.entries(groupedProducts);
     %>
-
 
 
     <!-- ======================================================
@@ -164,7 +153,6 @@
         %>
 
 
-
         <!-- ==================================================
              CATEGORY
         ================================================== -->
@@ -183,7 +171,6 @@
             </h3>
 
           </div>
-
 
 
           <!-- ================================================
@@ -213,20 +200,11 @@
 
                     <%
                       /*
-                       * Admin users remain inside the
-                       * substation inventory interface.
-                       *
-                       * Other users go to the normal
-                       * product page.
+                       * All users use the normal product page.
                        */
 
                       const productLink =
-                        currentUser &&
-                        currentUser.role === "admin"
-
-                          ? `/branch/{branch._id}/products/${product._id}`
-
-                          : `/branch/${branch._id}/products/${product._id}`;
+                        `/products/${product._id}`;
 
 
                       /*
@@ -259,7 +237,6 @@
                         ) ||
                         "Other";
                     %>
-
 
 
                     <!-- ======================================
@@ -301,7 +278,6 @@
                       </div>
 
 
-
                       <!-- ==================================
                            PRODUCT DETAILS
                       =================================== -->
@@ -318,7 +294,6 @@
                           <%= product.name %>
 
                         </h4>
-
 
 
                         <!-- =================================
@@ -348,7 +323,6 @@
 
 
                         </div>
-
 
 
                         <!-- =================================
