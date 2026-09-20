@@ -4,17 +4,15 @@
 // VERRAH COSMETICS
 // ==========================================================
 //
-// Renders:
+// Routes:
 //
 //     GET /stock/:id/batches
 //         -> stock/batch/batches.ejs
 //
-//     GET /stock/:id/batch/:batchId
+//     GET /stock/:id/batches/:batchId
 //         -> stock/batch/edit.ejs
 //
-// Saves:
-//
-//     POST /stock/:id/batch/:batchId
+//     POST /stock/:id/batches/:batchId
 //         -> edits the selected FIFO batch
 //
 // The actual FIFO batch retrieval/editing logic remains in:
@@ -113,7 +111,7 @@ exports.batches =
 // VIEW / EDIT PARTICULAR FIFO BATCH
 // ==========================================================
 //
-// GET /stock/:id/batch/:batchId
+// GET /stock/:id/batches/:batchId
 //
 // Displays one particular FIFO batch.
 //
@@ -126,19 +124,31 @@ exports.batch =
         res
     ) => {
 
+        const stockId =
+            String(
+                req.params.id ||
+                ""
+            ).trim();
+
+        const batchId =
+            String(
+                req.params.batchId ||
+                ""
+            ).trim();
+
+
         try {
 
-            const stockId =
-                String(
-                    req.params.id ||
-                    ""
-                ).trim();
+            // ==================================================
+            // REQUIRE BATCH ID
+            // ==================================================
 
-            const batchId =
-                String(
-                    req.params.batchId ||
-                    ""
-                ).trim();
+            if (!batchId) {
+
+                throw new Error(
+                    "FIFO batch ID is required."
+                );
+            }
 
 
             // ==================================================
@@ -215,7 +225,7 @@ exports.batch =
             );
 
             return res.redirect(
-                `/stock/${req.params.id}/batches?error=${encodeURIComponent(
+                `/stock/${stockId}/batches?error=${encodeURIComponent(
                     error.message
                 )}`
             );
@@ -224,33 +234,32 @@ exports.batch =
 
 
 // ==========================================================
-// EDIT FIFO BATCHES
+// EDIT PARTICULAR FIFO BATCH
 // ==========================================================
 //
-// POST /stock/:id/batches
+// POST /stock/:id/batches/:batchId
 //
 // The edit form submits:
 //
-//     batchId
 //     units
 //     buyPrice
 //
+// The batch ID is NOT expected in req.body.
+//
+// It comes directly from:
+//
+//     req.params.batchId
+//
 // Example:
 //
-//     batchId = 68xxxxxxxxxxxxxxxxxxxxxx
-//     units = 80
-//     buyPrice = 1000
+//     POST /stock/68xxxxxxxxxxxxxxxxxxxxxx/batches/69xxxxxxxxxxxxxxxxxxxxxx
 //
-// The service then updates:
+// Body:
 //
-//     purchaseBatches.units
-//     purchaseBatches.buyPrice
+//     units=80
+//     buyPrice=1000
 //
-// and recalculates:
-//
-//     Stock.units
-//
-// from all remaining FIFO batches.
+// The service performs the actual database update.
 // ==========================================================
 
 exports.editBatches =
@@ -267,12 +276,24 @@ exports.editBatches =
 
         const batchId =
             String(
-                req.body.batchId ||
+                req.params.batchId ||
                 ""
             ).trim();
 
 
         try {
+
+            // ==================================================
+            // REQUIRE STOCK ID
+            // ==================================================
+
+            if (!stockId) {
+
+                throw new Error(
+                    "Stock ID is required."
+                );
+            }
+
 
             // ==================================================
             // REQUIRE BATCH ID
@@ -287,21 +308,61 @@ exports.editBatches =
 
 
             // ==================================================
+            // REQUIRE FORM VALUES
+            // ==================================================
+
+            const units =
+                req.body.units;
+
+            const buyPrice =
+                req.body.buyPrice;
+
+
+            if (
+                units === undefined ||
+                units === null ||
+                String(units).trim() === ""
+            ) {
+
+                throw new Error(
+                    "Units are required."
+                );
+            }
+
+
+            if (
+                buyPrice === undefined ||
+                buyPrice === null ||
+                String(buyPrice).trim() === ""
+            ) {
+
+                throw new Error(
+                    "Buy price is required."
+                );
+            }
+
+
+            // ==================================================
             // EDIT FIFO BATCH
             // ==================================================
             //
             // IMPORTANT:
             //
-            // The batch ID comes from the hidden input in the
-            // EJS form, while the stock ID comes from the URL.
+            // batchId comes from req.params.batchId because the
+            // form submits it as part of the URL:
             //
-            // The service performs the actual database update.
+            // /stock/:id/batches/:batchId
+            //
+            // units and buyPrice come from req.body.
             // ==================================================
 
             await service.editFifoBatch(
                 stockId,
                 batchId,
-                req.body
+                {
+                    units,
+                    buyPrice
+                }
             );
 
 
@@ -311,7 +372,7 @@ exports.editBatches =
             //
             // Return to the batch list.
             //
-            // ?saved=1 allows the batches page to display a
+            // ?saved=1 allows the batches page to display the
             // success message.
             // ==================================================
 
@@ -328,17 +389,16 @@ exports.editBatches =
 
 
             // ==================================================
-            // VALID STOCK ID + BATCH ID
-            // ==================================================
-            //
-            // If possible, return to the individual edit page
-            // so the user can see the error.
+            // RETURN TO EDIT PAGE
             // ==================================================
 
-            if (batchId) {
+            if (
+                stockId &&
+                batchId
+            ) {
 
                 return res.redirect(
-                    `/stock/${stockId}/batch/${batchId}?error=${encodeURIComponent(
+                    `/stock/${stockId}/batches/${batchId}?error=${encodeURIComponent(
                         error.message
                     )}`
                 );
@@ -346,7 +406,7 @@ exports.editBatches =
 
 
             // ==================================================
-            // NO BATCH ID
+            // FALLBACK
             // ==================================================
 
             return res.redirect(
