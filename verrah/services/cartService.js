@@ -297,13 +297,13 @@ async function getCart(req) {
 // ==========================================================
 //
 // isMobile = true
-//     -> M-Pesa / mobile payment
+//     -> M-Pesa
 //
 // isMobile = false
-//     -> Cash / staff sale
+//     -> Cash
 //
-// Both ADMIN and STAFF are allowed to change this.
-// Role authorization is handled by the controller.
+// Authorization is handled by the controller.
+// Both admin and staff are allowed.
 // ==========================================================
 
 async function updatePaymentMode(
@@ -416,15 +416,17 @@ async function removeItem(
 // }
 //
 // STAFF:
-//     salesSubstation is taken from
-//     user.assignedSubstation.
+//     Uses user.assignedSubstation.
 //
 // ADMIN:
-//     salesSubstation is taken from
-//     submitted salesSubstation.
+//     Uses submitted salesSubstation.
 //
-// The selected substation is stored on StaffSale
-// as salesSubstation.
+// The selected substation is used for:
+//
+//     1. productInventory
+//     2. productReductions
+//     3. StaffSale.salesSubstation
+//
 // ==========================================================
 
 async function createStaffSale(
@@ -444,18 +446,14 @@ async function createStaffSale(
     }
 
 
-    // ------------------------------------------------------
-    // NORMALIZE INPUT
-    // ------------------------------------------------------
+    // ======================================================
+    // SALES NAME
+    // ======================================================
 
     const salesName =
         String(
             saleData.salesName || ""
         ).trim();
-
-    let requestedSubstation =
-        saleData.salesSubstation;
-
 
     if (!salesName) {
 
@@ -465,7 +463,9 @@ async function createStaffSale(
 
     }
 
-    if (salesName.length > 150) {
+    if (
+        salesName.length > 150
+    ) {
 
         throw new Error(
             "Sales name cannot exceed 150 characters."
@@ -474,14 +474,23 @@ async function createStaffSale(
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
+    // REQUESTED SUBSTATION
+    // ======================================================
+
+    let requestedSubstation =
+        saleData.salesSubstation;
+
+
+    // ======================================================
     // START TRANSACTION
-    // ------------------------------------------------------
+    // ======================================================
 
     const session =
         await mongoose.startSession();
 
     let sale;
+
 
     try {
 
@@ -489,9 +498,9 @@ async function createStaffSale(
             async () => {
 
 
-                // ==========================================
+                // ==================================================
                 // LOAD USER
-                // ==========================================
+                // ==================================================
 
                 const user =
                     await User.findById(
@@ -507,9 +516,9 @@ async function createStaffSale(
                 }
 
 
-                // ==========================================
-                // NORMALIZE ROLE
-                // ==========================================
+                // ==================================================
+                // ROLE
+                // ==================================================
 
                 const role =
                     String(
@@ -529,20 +538,23 @@ async function createStaffSale(
                 }
 
 
-                // ==========================================
+                // ==================================================
                 // DETERMINE SALES SUBSTATION
-                // ==========================================
+                // ==================================================
                 //
                 // STAFF:
-                //     Always use assignedSubstation.
+                //     NEVER trust a submitted substation.
+                //
+                //     Always use:
+                //
+                //         user.assignedSubstation
                 //
                 // ADMIN:
-                //     Use the substation selected
-                //     in the sales modal.
+                //     Use:
                 //
-                // This prevents staff from changing their
-                // assigned sales location through the form.
-                // ==========================================
+                //         saleData.salesSubstation
+                //
+                // ==================================================
 
                 let salesSubstation;
 
@@ -560,9 +572,9 @@ async function createStaffSale(
                 }
 
 
-                // ------------------------------------------------
-                // Handle populated ObjectId/object values.
-                // ------------------------------------------------
+                // ==================================================
+                // HANDLE POPULATED SUBSTATION
+                // ==================================================
 
                 if (
                     salesSubstation &&
@@ -576,9 +588,9 @@ async function createStaffSale(
                 }
 
 
-                // ------------------------------------------------
-                // Validate ObjectId.
-                // ------------------------------------------------
+                // ==================================================
+                // VALIDATE SUBSTATION ID
+                // ==================================================
 
                 if (
                     !salesSubstation ||
@@ -608,9 +620,9 @@ async function createStaffSale(
                     );
 
 
-                // ==========================================
-                // LOAD SUBSTATION
-                // ==========================================
+                // ==================================================
+                // LOAD SELECTED SUBSTATION
+                // ==================================================
 
                 const substation =
                     await Substation.findById(
@@ -626,9 +638,9 @@ async function createStaffSale(
                 }
 
 
-                // ==========================================
+                // ==================================================
                 // LOAD CART
-                // ==========================================
+                // ==================================================
 
                 const cart =
                     await Cart.findOne({
@@ -657,9 +669,9 @@ async function createStaffSale(
                 }
 
 
-                // ==========================================
-                // PREPARE PRODUCT IDS
-                // ==========================================
+                // ==================================================
+                // PRODUCT IDS
+                // ==================================================
 
                 const productIds =
                     cart.items.map(
@@ -669,9 +681,9 @@ async function createStaffSale(
                     );
 
 
-                // ==========================================
+                // ==================================================
                 // LOAD PRODUCTS
-                // ==========================================
+                // ==================================================
 
                 const products =
                     await Product.find({
@@ -696,9 +708,9 @@ async function createStaffSale(
                     );
 
 
-                // ==========================================
-                // BUILD SALE PRODUCT SNAPSHOT
-                // ==========================================
+                // ==================================================
+                // SALE PRODUCT SNAPSHOT
+                // ==================================================
 
                 const saleProducts =
                     [];
@@ -706,6 +718,10 @@ async function createStaffSale(
                 let totalAmount =
                     0;
 
+
+                // ==================================================
+                // VALIDATE EVERYTHING BEFORE REDUCING STOCK
+                // ==================================================
 
                 for (
                     const cartItem
@@ -722,9 +738,9 @@ async function createStaffSale(
                         );
 
 
-                    // ------------------------------------------
-                    // PRODUCT MUST EXIST
-                    // ------------------------------------------
+                    // ----------------------------------------------
+                    // PRODUCT EXISTS
+                    // ----------------------------------------------
 
                     if (!product) {
 
@@ -735,9 +751,9 @@ async function createStaffSale(
                     }
 
 
-                    // ------------------------------------------
-                    // PRODUCT MUST BE ACTIVE
-                    // ------------------------------------------
+                    // ----------------------------------------------
+                    // PRODUCT ACTIVE
+                    // ----------------------------------------------
 
                     if (
                         product.isActive === false
@@ -750,9 +766,9 @@ async function createStaffSale(
                     }
 
 
-                    // ------------------------------------------
-                    // NORMALIZE QUANTITY
-                    // ------------------------------------------
+                    // ----------------------------------------------
+                    // QUANTITY
+                    // ----------------------------------------------
 
                     const qty =
                         normalizeRequestedQuantity(
@@ -768,9 +784,9 @@ async function createStaffSale(
                     }
 
 
-                    // ------------------------------------------
-                    // PRODUCT INVENTORY
-                    // ------------------------------------------
+                    // ----------------------------------------------
+                    // GLOBAL PRODUCT STOCK
+                    // ----------------------------------------------
 
                     if (
                         product.units !== undefined &&
@@ -784,26 +800,15 @@ async function createStaffSale(
                     }
 
 
-                    // ------------------------------------------
-                    // SUBSTATION INVENTORY
-                    // ------------------------------------------
-
-                    let hasSubstationUnits =
-                        false;
-
-                    let availableSubstationUnits =
-                        null;
-
+                    // ----------------------------------------------
+                    // SUBSTATION STOCK
+                    // ----------------------------------------------
 
                     if (
                         Array.isArray(
                             product.substationUnits
                         )
                     ) {
-
-                        hasSubstationUnits =
-                            true;
-
 
                         const substationStock =
                             product.substationUnits.find(
@@ -817,7 +822,7 @@ async function createStaffSale(
                             );
 
 
-                        availableSubstationUnits =
+                        const availableUnits =
                             substationStock
                                 ? Number(
                                     substationStock.units || 0
@@ -826,12 +831,12 @@ async function createStaffSale(
 
 
                         if (
-                            availableSubstationUnits <
+                            availableUnits <
                             qty
                         ) {
 
                             throw new Error(
-                                `Insufficient ${product.name} stock at ${substation.name}. Available: ${availableSubstationUnits}.`
+                                `Insufficient ${product.name} stock at ${substation.name}. Available: ${availableUnits}.`
                             );
 
                         }
@@ -839,18 +844,9 @@ async function createStaffSale(
                     }
 
 
-                    // ------------------------------------------
-                    // IMPORTANT:
-                    // USE CART PRICE SNAPSHOT
-                    // ------------------------------------------
-                    //
-                    // The sale price must come from the
-                    // cart snapshot rather than the current
-                    // product price.
-                    //
-                    // This protects historical sales records
-                    // when the product price changes later.
-                    // ------------------------------------------
+                    // ----------------------------------------------
+                    // CART PRICE SNAPSHOT
+                    // ----------------------------------------------
 
                     let price =
                         Number(
@@ -883,17 +879,17 @@ async function createStaffSale(
                     }
 
 
-                    // ------------------------------------------
+                    // ----------------------------------------------
                     // ITEM TOTAL
-                    // ------------------------------------------
+                    // ----------------------------------------------
 
                     const itemTotal =
                         price * qty;
 
 
-                    // ------------------------------------------
-                    // SNAPSHOT
-                    // ------------------------------------------
+                    // ----------------------------------------------
+                    // SALE SNAPSHOT
+                    // ----------------------------------------------
 
                     saleProducts.push({
 
@@ -930,9 +926,9 @@ async function createStaffSale(
                 }
 
 
-                // ==========================================
-                // REDUCE PRODUCT INVENTORY
-                // ==========================================
+                // ==================================================
+                // REDUCE GLOBAL PRODUCT STOCK
+                // ==================================================
 
                 for (
                     const cartItem
@@ -1002,9 +998,16 @@ async function createStaffSale(
                 }
 
 
-                // ==========================================
-                // REDUCE SUBSTATION INVENTORY
-                // ==========================================
+                // ==================================================
+                // REDUCE SELECTED SUBSTATION INVENTORY
+                // ==================================================
+                //
+                // This applies to:
+                //
+                // STAFF  -> assignedSubstation
+                // ADMIN  -> salesSubstation
+                //
+                // ==================================================
 
                 if (
                     Array.isArray(
@@ -1021,6 +1024,11 @@ async function createStaffSale(
                             cartItem.productId ||
                             cartItem.product;
 
+                        const product =
+                            productMap.get(
+                                String(productId)
+                            );
+
                         const qty =
                             normalizeRequestedQuantity(
                                 cartItem.qty
@@ -1031,7 +1039,7 @@ async function createStaffSale(
                             substation.productInventory.find(
                                 item =>
                                     String(
-                                        item.product
+                                        item.productId
                                     ) ===
                                     String(
                                         productId
@@ -1055,7 +1063,7 @@ async function createStaffSale(
                             ) {
 
                                 throw new Error(
-                                    `Insufficient ${inventoryItem.productName || "product"} stock at ${substation.name}.`
+                                    `Insufficient ${inventoryItem.productName || product?.name || "product"} stock at ${substation.name}. Available: ${currentUnits}.`
                                 );
 
                             }
@@ -1067,27 +1075,60 @@ async function createStaffSale(
 
 
                             inventoryItem.productName =
+                                product?.name ||
                                 inventoryItem.productName ||
-                                (
-                                    productMap.get(
-                                        String(productId)
-                                    )?.name || ""
-                                );
+                                "";
+
+
+                            inventoryItem.category =
+                                product?.category ||
+                                inventoryItem.category ||
+                                "";
+
+
+                            inventoryItem.subcategory =
+                                product?.subcategory ||
+                                inventoryItem.subcategory ||
+                                "";
 
 
                             inventoryItem.updatedAt =
                                 new Date();
 
+                        } else {
+
+                            throw new Error(
+                                `${product?.name || "Product"} is not available in ${substation.name} inventory.`
+                            );
+
                         }
 
                     }
 
+                } else {
+
+                    throw new Error(
+                        `${substation.name} has no product inventory.`
+                    );
+
                 }
 
 
-                // ==========================================
-                // UPDATE SUBSTATION PRODUCT REDUCTIONS
-                // ==========================================
+                // ==================================================
+                // UPDATE PRODUCT REDUCTIONS
+                // ==================================================
+                //
+                // IMPORTANT:
+                //
+                // Your schema requires:
+                //
+                //     productId
+                //     productName
+                //     category
+                //     unitsReduced
+                //     lastReducedAt
+                //
+                // ==================================================
 
                 if (
                     !Array.isArray(
@@ -1125,7 +1166,7 @@ async function createStaffSale(
                         substation.productReductions.find(
                             item =>
                                 String(
-                                    item.product
+                                    item.productId
                                 ) ===
                                 String(
                                     productId
@@ -1137,36 +1178,45 @@ async function createStaffSale(
                         reduction
                     ) {
 
-                        reduction.units =
+                        reduction.unitsReduced =
                             Number(
-                                reduction.units || 0
+                                reduction.unitsReduced || 0
                             ) +
                             qty;
 
-                        reduction.productName =
-                            reduction.productName ||
-                            (
-                                product?.name ||
-                                ""
-                            );
 
-                        reduction.updatedAt =
+                        reduction.productName =
+                            product?.name ||
+                            reduction.productName ||
+                            "";
+
+
+                        reduction.category =
+                            product?.category ||
+                            reduction.category ||
+                            "";
+
+
+                        reduction.lastReducedAt =
                             new Date();
 
                     } else {
 
                         substation.productReductions.push({
 
-                            product:
+                            productId:
                                 productId,
 
                             productName:
                                 product?.name || "",
 
-                            units:
+                            category:
+                                product?.category || "",
+
+                            unitsReduced:
                                 qty,
 
-                            updatedAt:
+                            lastReducedAt:
                                 new Date()
 
                         });
@@ -1176,29 +1226,28 @@ async function createStaffSale(
                 }
 
 
-                // ==========================================
+                // ==================================================
                 // SAVE SUBSTATION
-                // ==========================================
+                // ==================================================
 
                 await substation.save({
                     session
                 });
 
 
-                // ==========================================
-                // CREATE STAFF SALE RECORD
-                // ==========================================
-                //
-                // salesSubstation is intentionally saved here
-                // even though the field will be added to the
-                // StaffSale schema afterwards.
-                // ==========================================
+                // ==================================================
+                // CREATE STAFF SALE
+                // ==================================================
 
                 sale =
                     new StaffSale({
 
                         salesName:
                             salesName,
+
+                        // ------------------------------------------------
+                        // This field must be added to staff-sales.js
+                        // ------------------------------------------------
 
                         salesSubstation:
                             salesSubstation,
@@ -1220,9 +1269,9 @@ async function createStaffSale(
                 });
 
 
-                // ==========================================
+                // ==================================================
                 // CLEAR CART
-                // ==========================================
+                // ==================================================
 
                 cart.items =
                     [];
