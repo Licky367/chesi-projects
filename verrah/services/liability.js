@@ -44,7 +44,8 @@ exports.createLiability = async function ({
 exports.getLiabilities = async function ({
     user,
     date,
-    period
+    period,
+    substation
 }) {
 
     /*
@@ -104,24 +105,6 @@ exports.getLiabilities = async function ({
      * ------------------------------------------------------
      * DATE RANGE
      * ------------------------------------------------------
-     *
-     * The selected date is interpreted as a Kenya date.
-     *
-     * Kenya:
-     *     UTC+3
-     *
-     * We convert the beginning/end of the selected period
-     * into UTC Date objects before querying MongoDB.
-     *
-     * day:
-     *     selected date only
-     *
-     * month:
-     *     entire selected month
-     *
-     * year:
-     *     entire selected year
-     * ------------------------------------------------------
      */
 
     let startLocal;
@@ -131,9 +114,13 @@ exports.getLiabilities = async function ({
     if (period === "day") {
 
         startLocal = {
+
             year,
+
             month,
+
             day
+
         };
 
 
@@ -148,9 +135,16 @@ exports.getLiabilities = async function ({
 
 
         endLocal = {
-            year: nextDay.getUTCFullYear(),
-            month: nextDay.getUTCMonth() + 1,
-            day: nextDay.getUTCDate()
+
+            year:
+                nextDay.getUTCFullYear(),
+
+            month:
+                nextDay.getUTCMonth() + 1,
+
+            day:
+                nextDay.getUTCDate()
+
         };
 
     }
@@ -159,16 +153,25 @@ exports.getLiabilities = async function ({
     else if (period === "year") {
 
         startLocal = {
+
             year,
+
             month: 1,
+
             day: 1
+
         };
 
 
         endLocal = {
-            year: year + 1,
+
+            year:
+                year + 1,
+
             month: 1,
+
             day: 1
+
         };
 
     }
@@ -177,19 +180,17 @@ exports.getLiabilities = async function ({
     else {
 
         /*
-         * --------------------------------------------------
-         * MONTH
-         * --------------------------------------------------
-         *
-         * Month is also the default when an invalid period
-         * is supplied.
-         * --------------------------------------------------
+         * Default to month.
          */
 
         startLocal = {
+
             year,
+
             month,
+
             day: 1
+
         };
 
 
@@ -204,9 +205,15 @@ exports.getLiabilities = async function ({
 
 
         endLocal = {
-            year: nextMonth.getUTCFullYear(),
-            month: nextMonth.getUTCMonth() + 1,
+
+            year:
+                nextMonth.getUTCFullYear(),
+
+            month:
+                nextMonth.getUTCMonth() + 1,
+
             day: 1
+
         };
 
     }
@@ -215,20 +222,6 @@ exports.getLiabilities = async function ({
     /*
      * ------------------------------------------------------
      * CONVERT KENYA MIDNIGHT TO UTC
-     * ------------------------------------------------------
-     *
-     * Kenya is UTC+3.
-     *
-     * Example:
-     *
-     * Kenya:
-     *     2026-09-20 00:00
-     *
-     * UTC:
-     *     2026-09-19 21:00
-     *
-     * This gives MongoDB the correct boundaries for records
-     * created according to Kenya time.
      * ------------------------------------------------------
      */
 
@@ -263,7 +256,7 @@ exports.getLiabilities = async function ({
 
     /*
      * ------------------------------------------------------
-     * QUERY
+     * BASE QUERY
      * ------------------------------------------------------
      */
 
@@ -282,13 +275,21 @@ exports.getLiabilities = async function ({
 
     /*
      * ------------------------------------------------------
-     * STAFF ACCESS
+     * SUBSTATION FILTER
      * ------------------------------------------------------
      *
-     * Staff can only see liabilities belonging to their
-     * assigned substation.
+     * STAFF:
      *
-     * Admin can see liabilities from all substations.
+     * Always restricted to their assigned substation.
+     *
+     *
+     * ADMIN:
+     *
+     * If a substation was selected, filter by it.
+     *
+     * If no substation was selected, do NOT add a
+     * substation condition. Therefore all substations
+     * are returned.
      * ------------------------------------------------------
      */
 
@@ -303,6 +304,18 @@ exports.getLiabilities = async function ({
     }
 
 
+    else if (
+        user &&
+        user.role === "admin" &&
+        substation
+    ) {
+
+        query.substation =
+            substation;
+
+    }
+
+
     /*
      * ------------------------------------------------------
      * FETCH RECORDS
@@ -310,6 +323,7 @@ exports.getLiabilities = async function ({
      */
 
     return Liability
+
         .find(query)
 
         .populate(
