@@ -5,8 +5,10 @@
 ========================================================== -->
 
 <%
-    const isStaff =
-        String(user?.role || "").toLowerCase() === "staff";
+const isStaff =
+    ["admin", "staff"].includes(
+        String(user?.role || "").toLowerCase()
+    );
 
     const staffBranchUrl =
         isStaff && user?.assignedSubstation
