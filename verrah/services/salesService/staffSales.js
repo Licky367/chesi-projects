@@ -5,495 +5,593 @@
 // STAFF SALES / SALES REPORT SERVICE
 // ==========================================================
 
-const StaffSale =
-require("../../models/staff-sales");
 
-const filterService =
-require("./filter");
+const StaffSale =
+    require("../../models/staff-sales");
 
 const substationService =
-require("../substationService");
+    require("../substationService");
+
 
 // ==========================================================
 // CALCULATE TOTAL
 // ==========================================================
 
 function calculateTotal(
-sales
+    sales
 ) {
 
-return sales.reduce(
+    return sales.reduce(
 
-    (
-        total,
-        sale
-    ) => {
+        (
+            total,
+            sale
+        ) => {
 
-        return total +
-            Number(
-                sale.totalAmount || 0
-            );
+            return total +
+                Number(
+                    sale.totalAmount || 0
+                );
 
-    },
+        },
 
-    0
+        0
 
-);
+    );
 
 }
+
+
+// ==========================================================
+// BUILD SALES QUERY
+//
+// Uses:
+//
+//     startDate
+//     endDate
+//     substation
+//
+// The same query rules are used for:
+//
+//     Displayed Staff Sales
+//     Day total
+//     Month total
+//     Year total
+//
+// IMPORTANT:
+//
+// Staff substation restriction has already been resolved
+// by filterService.
+//
+// Therefore this service never trusts a query-string
+// substation value directly.
+// ==========================================================
+
+function buildSalesQuery(
+    filter,
+    startDate,
+    endDate
+) {
+
+    const query = {
+
+        createdAt: {
+
+            $gte:
+                startDate,
+
+            $lt:
+                endDate
+
+        }
+
+    };
+
+
+    // ======================================================
+    // SUBSTATION FILTER
+    // ======================================================
+
+    if (
+        filter &&
+        filter.substation
+    ) {
+
+        query.substation =
+            filter.substation;
+
+    }
+
+
+    return query;
+
+}
+
+
+// ==========================================================
+// GET SALES FOR DATE RANGE
+// ==========================================================
+
+async function getSalesForRange(
+    filter,
+    startDate,
+    endDate,
+    selectFields =
+        "totalAmount substation"
+) {
+
+    const query =
+        buildSalesQuery(
+            filter,
+            startDate,
+            endDate
+        );
+
+
+    return StaffSale.find(
+        query
+    )
+
+        .select(
+            selectFields
+        )
+
+        .lean();
+
+}
+
 
 // ==========================================================
 // CALCULATE TOTALS PER SUBSTATION
 // ==========================================================
 
 function calculateSubstationTotals(
-sales,
-substations
+    sales,
+    substations
 ) {
 
-const totals =
-    new Map();
+    const totals =
+        new Map();
 
 
-// ======================================================
-// ADD SALES TO SUBSTATION TOTALS
-// ======================================================
+    // ======================================================
+    // ADD SALES TO SUBSTATION TOTALS
+    // ======================================================
 
-sales.forEach(
+    sales.forEach(
 
-    sale => {
+        sale => {
 
-        if (
-            !sale.substation
-        ) {
+            if (
+                !sale.substation
+            ) {
 
-            return;
+                return;
 
-        }
+            }
 
-
-        const substationId =
-            String(
-                sale.substation
-            );
-
-
-        const currentTotal =
-            totals.get(
-                substationId
-            ) || 0;
-
-
-        totals.set(
-
-            substationId,
-
-            currentTotal +
-                Number(
-                    sale.totalAmount || 0
-                )
-
-        );
-
-    }
-
-);
-
-
-// ======================================================
-// ADD SUBSTATION NAMES
-// ======================================================
-
-return substations
-
-    .map(
-
-        substation => {
 
             const substationId =
                 String(
-                    substation._id
+                    sale.substation
                 );
 
 
-            return {
+            const currentTotal =
+                totals.get(
+                    substationId
+                ) || 0;
 
-                substationId:
-                    substation._id,
 
-                substationName:
-                    substation.name,
+            totals.set(
 
-                total:
+                substationId,
+
+                currentTotal +
                     Number(
-                        totals.get(
-                            substationId
-                        ) || 0
+                        sale.totalAmount || 0
                     )
 
-            };
+            );
 
         }
 
-    )
-
-    .filter(
-
-        item =>
-            item.total > 0
-
-    );
-
-}
-
-// ==========================================================
-// GET SALES FOR A PERIOD
-// ==========================================================
-//
-// This performs the same substation restriction used by
-// getStaffSales().
-//
-// The period is supplied independently so the service can
-// calculate:
-//
-//     day
-//     month
-//     year
-//
-// from the same selected date.
-// ==========================================================
-
-async function getPeriodSales(
-query,
-user,
-period
-) {
-
-const filter =
-    filterService.getFilterState(
-
-        {
-            ...query,
-
-            staffSalesPeriod:
-                period
-
-        },
-
-        "staff-sales",
-
-        user
-
     );
 
 
-const periodQuery = {
+    // ======================================================
+    // ADD SUBSTATION NAMES
+    //
+    // Only substations that actually have sales are returned.
+    // ======================================================
 
-    createdAt: {
+    return substations
 
-        $gte:
-            filter.startDate,
+        .map(
 
-        $lt:
-            filter.endDate
+            substation => {
 
-    }
+                const substationId =
+                    String(
+                        substation._id
+                    );
 
-};
 
+                return {
 
-// ======================================================
-// SUBSTATION FILTER
-// ======================================================
+                    substationId:
+                        substation._id,
 
-if (
-    filter &&
-    filter.substation
-) {
+                    substationName:
+                        substation.name,
 
-    periodQuery.substation =
-        filter.substation;
+                    total:
+                        Number(
+                            totals.get(
+                                substationId
+                            ) || 0
+                        )
+
+                };
+
+            }
+
+        )
+
+        .filter(
+
+            item =>
+                item.total > 0
+
+        );
 
 }
 
-
-return StaffSale.find(
-    periodQuery
-)
-
-    .select(
-        "totalAmount substation"
-    )
-
-    .lean();
-
-}
 
 // ==========================================================
 // GET STAFF SALES
 //
-// Uses:
+// DATE FILTER
+// ------------
 //
-//     staffSalesDate
-//     staffSalesPeriod
-//     substation
+// Uses the date range already calculated by filterService:
 //
-// Staff:
+//     filter.startDate
+//     filter.endDate
 //
-//     filter.substation is forced from assignedSubstation.
+// SUBSTATION FILTER
+// -----------------
 //
 // Admin:
 //
-//     filter.substation is optional.
-//     null = all substations.
+//     filter.substation
+//
+//     null = all substations
+//
+// Staff:
+//
+//     filter.substation
+//         = assignedSubstation
 //
 //
 //
-// ALSO CALCULATES:
+// TOTALS
+// ------
+//
+// The totals are calculated around the DATE SELECTED by
+// the Staff Sales filter:
 //
 //     totals.day
 //     totals.month
 //     totals.year
 //
-//     totals.bySubstation.day
-//     totals.bySubstation.month
-//     totals.bySubstation.year
+// Therefore:
+//
+//     Day filter
+//         -> day/month/year are based on selected date.
+//
+//     Month filter
+//         -> day/month/year are based on the first date
+//            inside the selected month.
+//
+//     Year filter
+//         -> day/month/year are based on the first date
+//            inside the selected year.
+//
 // ==========================================================
 
 async function getStaffSales(
-filter
+    filter
 ) {
 
-const query = {
+    // ======================================================
+    // LOAD SUBSTATIONS
+    //
+    // Used only to attach names to bySubstation totals.
+    // ======================================================
 
-    createdAt: {
+    const substations =
+        await substationService.list();
 
-        $gte:
+
+    // ======================================================
+    // FETCH DISPLAY SALES
+    //
+    // This is the currently selected Staff Sales period.
+    //
+    // Example:
+    //
+    // staffSalesDate   = 2026-09-20
+    // staffSalesPeriod = month
+    //
+    // filter.startDate/endDate therefore represent:
+    //
+    // 2026-09-01 -> 2026-10-01
+    // ======================================================
+
+    const sales =
+        await getSalesForRange(
+
+            filter,
+
             filter.startDate,
 
-        $lt:
-            filter.endDate
+            filter.endDate,
 
-    }
+            "totalAmount substation soldBy products createdAt"
 
-};
-
-
-// ======================================================
-// SUBSTATION FILTER
-// ======================================================
-
-if (
-    filter &&
-    filter.substation
-) {
-
-    query.substation =
-        filter.substation;
-
-}
+        );
 
 
-// ======================================================
-// FETCH DISPLAY SALES
-// ======================================================
+    // ======================================================
+    // POPULATE STAFF DETAILS
+    //
+    // The first query intentionally fetched the fields needed
+    // for the sales table. Populate soldBy separately so the
+    // returned structure remains compatible with the existing
+    // EJS.
+    // ======================================================
 
-const sales =
-    await StaffSale.find(
-        query
-    )
+    const populatedSales =
+        await StaffSale.find(
 
-        .populate({
+            buildSalesQuery(
 
-            path:
-                "soldBy",
+                filter,
 
-            select:
-                "name"
+                filter.startDate,
 
-        })
+                filter.endDate
 
-        .sort({
-
-            createdAt:
-                -1
-
-        })
-
-        .lean();
-
-
-// ======================================================
-// LOAD SUBSTATIONS
-//
-// Used to attach names to the totals.
-// ======================================================
-
-const substations =
-    await substationService.list();
-
-
-// ======================================================
-// THE FILTER ALREADY CONTAINS THE USER'S SELECTED DATE
-//
-// Reconstruct a query object using that date so the
-// service can independently calculate day/month/year.
-// ======================================================
-
-const baseQuery = {
-
-    staffSalesDate:
-        filter.date,
-
-    substation:
-        filter.substation
-
-};
-
-
-// ======================================================
-// FETCH DAY / MONTH / YEAR SALES
-// ======================================================
-
-const [
-
-    daySales,
-
-    monthSales,
-
-    yearSales
-
-] = await Promise.all([
-
-    getPeriodSales(
-        baseQuery,
-        filter.isSubstationRestricted
-            ? {
-                role:
-                    "staff",
-
-                assignedSubstation:
-                    filter.substation
-
-            }
-            : {
-                role:
-                    "admin"
-
-            },
-        "day"
-    ),
-
-    getPeriodSales(
-        baseQuery,
-        filter.isSubstationRestricted
-            ? {
-                role:
-                    "staff",
-
-                assignedSubstation:
-                    filter.substation
-
-            }
-            : {
-                role:
-                    "admin"
-
-            },
-        "month"
-    ),
-
-    getPeriodSales(
-        baseQuery,
-        filter.isSubstationRestricted
-            ? {
-                role:
-                    "staff",
-
-                assignedSubstation:
-                    filter.substation
-
-            }
-            : {
-                role:
-                    "admin"
-
-            },
-        "year"
-    )
-
-]);
-
-
-// ======================================================
-// CALCULATE TOTALS
-// ======================================================
-
-const totals = {
-
-    day:
-        calculateTotal(
-            daySales
-        ),
-
-    month:
-        calculateTotal(
-            monthSales
-        ),
-
-    year:
-        calculateTotal(
-            yearSales
-        ),
-
-
-    // ==================================================
-    // TOTALS PER SUBSTATION
-    // ==================================================
-
-    bySubstation: {
-
-        day:
-            calculateSubstationTotals(
-                daySales,
-                substations
-            ),
-
-        month:
-            calculateSubstationTotals(
-                monthSales,
-                substations
-            ),
-
-        year:
-            calculateSubstationTotals(
-                yearSales,
-                substations
             )
 
-    }
+        )
 
-};
+            .populate({
+
+                path:
+                    "soldBy",
+
+                select:
+                    "name"
+
+            })
+
+            .sort({
+
+                createdAt:
+                    -1
+
+            })
+
+            .lean();
 
 
-// ======================================================
-// ATTACH TOTALS TO SALES ARRAY
-//
-// This keeps the existing EJS compatible because
-// staffSales is still an array.
-// ======================================================
+    // ======================================================
+    // DAY RANGE
+    //
+    // IMPORTANT:
+    //
+    // This is calculated from filter.date, NOT from today's
+    // actual date.
+    //
+    // So if the user selects:
+    //
+    //     15 September 2026
+    //
+    // the Day total is for:
+    //
+    //     15 September 2026
+    //
+    // regardless of today's date.
+    // ======================================================
 
-sales.totals =
-    totals;
+    const dayRange =
+        require("./filter").getDateRange(
+
+            filter.date,
+
+            "day"
+
+        );
 
 
-// ======================================================
-// RETURN SALES
-// ======================================================
+    // ======================================================
+    // MONTH RANGE
+    //
+    // Based on the selected filter date.
+    // ======================================================
 
-return sales;
+    const monthRange =
+        require("./filter").getDateRange(
+
+            filter.date,
+
+            "month"
+
+        );
+
+
+    // ======================================================
+    // YEAR RANGE
+    //
+    // Based on the selected filter date.
+    // ======================================================
+
+    const yearRange =
+        require("./filter").getDateRange(
+
+            filter.date,
+
+            "year"
+
+        );
+
+
+    // ======================================================
+    // FETCH DAY / MONTH / YEAR SALES
+    //
+    // ALL THREE USE THE SAME SUBSTATION FILTER.
+    //
+    // This means an admin selecting a substation gets totals
+    // for that substation only.
+    //
+    // A staff user gets totals for their assigned substation
+    // only.
+    // ======================================================
+
+    const [
+
+        daySales,
+
+        monthSales,
+
+        yearSales
+
+    ] = await Promise.all([
+
+        getSalesForRange(
+
+            filter,
+
+            dayRange.startDate,
+
+            dayRange.endDate
+
+        ),
+
+        getSalesForRange(
+
+            filter,
+
+            monthRange.startDate,
+
+            monthRange.endDate
+
+        ),
+
+        getSalesForRange(
+
+            filter,
+
+            yearRange.startDate,
+
+            yearRange.endDate
+
+        )
+
+    ]);
+
+
+    // ======================================================
+    // CALCULATE TOTALS
+    // ======================================================
+
+    const totals = {
+
+        // --------------------------------------------------
+        // SELECTED DATE
+        // --------------------------------------------------
+
+        day:
+            calculateTotal(
+                daySales
+            ),
+
+
+        // --------------------------------------------------
+        // SELECTED MONTH
+        // --------------------------------------------------
+
+        month:
+            calculateTotal(
+                monthSales
+            ),
+
+
+        // --------------------------------------------------
+        // SELECTED YEAR
+        // --------------------------------------------------
+
+        year:
+            calculateTotal(
+                yearSales
+            ),
+
+
+        // --------------------------------------------------
+        // TOTALS PER SUBSTATION
+        // --------------------------------------------------
+
+        bySubstation: {
+
+            day:
+                calculateSubstationTotals(
+                    daySales,
+                    substations
+                ),
+
+            month:
+                calculateSubstationTotals(
+                    monthSales,
+                    substations
+                ),
+
+            year:
+                calculateSubstationTotals(
+                    yearSales,
+                    substations
+                )
+
+        }
+
+    };
+
+
+    // ======================================================
+    // ATTACH TOTALS TO ARRAY
+    //
+    // Keeps the existing EJS compatible:
+    //
+    //     staffSales.forEach(...)
+    //
+    // while also allowing:
+    //
+    //     staffSales.totals
+    // ======================================================
+
+    populatedSales.totals =
+        totals;
+
+
+    // ======================================================
+    // RETURN SALES
+    // ======================================================
+
+    return populatedSales;
 
 }
+
 
 // ==========================================================
 // EXPORTS
@@ -501,6 +599,6 @@ return sales;
 
 module.exports = {
 
-getStaffSales
+    getStaffSales
 
 };
