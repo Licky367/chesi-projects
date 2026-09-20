@@ -13,16 +13,22 @@ const confirm = require("./confirm");
 const deliver = require("./deliver");
 const recordPayment = require("./recordPayment");
 const clear = require("./clear");
+const cash = require("./cash");
+
 
 module.exports = {
   list: list.list,
   details: details.details,
   pay: pay.pay,
+
   staffList: staffList.staffList,
   staffDirectSells: staffDirectSells.staffDirectSells,
   staffDetails: staffDetails.staffDetails,
+
   confirm: confirm.confirm,
   deliver: deliver.deliver,
   recordPayment: recordPayment.recordPayment,
-  clear: clear.clear
+  clear: clear.clear,
+
+  markCash: cash.markCash
 };
