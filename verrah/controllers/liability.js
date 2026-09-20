@@ -12,6 +12,7 @@ exports.index = async function (req, res) {
 
         const user = req.user;
 
+
         if (!user) {
 
             return res.redirect("/auth/login");
@@ -34,19 +35,19 @@ exports.index = async function (req, res) {
         /*
          * --------------------------------------------------
          * DEFAULT FILTER
-         *
-         * The filter is only used when the records tab
-         * is displayed.
-         *
-         * Default:
-         * current date + month
          * --------------------------------------------------
          */
 
         const now = new Date();
 
+
         const defaultDate =
-            now.toISOString().slice(0, 10);
+            now.toLocaleDateString(
+                "en-CA",
+                {
+                    timeZone: "Africa/Nairobi"
+                }
+            );
 
 
         const activeFilterDate =
@@ -64,10 +65,31 @@ exports.index = async function (req, res) {
 
         /*
          * --------------------------------------------------
+         * SUBSTATION FILTER
+         * --------------------------------------------------
+         *
+         * Only admin can choose a substation.
+         *
+         * Empty string means:
+         *
+         *     ALL SUBSTATIONS
+         * --------------------------------------------------
+         */
+
+        const activeFilterSubstation =
+            user.role === "admin"
+                ? (req.query.liabilitySubstation || "")
+                : "";
+
+
+        /*
+         * --------------------------------------------------
          * SUBSTATIONS
          *
-         * Admin needs the complete list so the entry form
-         * can provide a substation selector.
+         * Admin gets the complete list for:
+         *
+         * 1. Liability entry
+         * 2. Liability filtering
          *
          * Staff do not need the complete list.
          * --------------------------------------------------
@@ -81,7 +103,9 @@ exports.index = async function (req, res) {
             substations =
                 await Substation
                     .find({})
-                    .sort({ name: 1 })
+                    .sort({
+                        name: 1
+                    })
                     .lean();
 
         }
@@ -90,8 +114,6 @@ exports.index = async function (req, res) {
         /*
          * --------------------------------------------------
          * LIABILITY RECORDS
-         *
-         * Only load records when the records tab is active.
          * --------------------------------------------------
          */
 
@@ -105,9 +127,14 @@ exports.index = async function (req, res) {
 
                     user,
 
-                    date: activeFilterDate,
+                    date:
+                        activeFilterDate,
 
-                    period: activeFilterPeriod
+                    period:
+                        activeFilterPeriod,
+
+                    substation:
+                        activeFilterSubstation
 
                 });
 
@@ -127,7 +154,10 @@ exports.index = async function (req, res) {
 
             filterLabel = "Day";
 
-        } else if (activeFilterPeriod === "year") {
+        }
+
+
+        else if (activeFilterPeriod === "year") {
 
             filterLabel = "Year";
 
@@ -156,12 +186,17 @@ exports.index = async function (req, res) {
 
                 activeFilterPeriod,
 
+                activeFilterSubstation,
+
                 filterLabel
 
             }
         );
 
-    } catch (error) {
+    }
+
+
+    catch (error) {
 
         console.error(
             "Liability page error:",
@@ -183,12 +218,22 @@ exports.index = async function (req, res) {
 
                 activeFilterDate:
                     new Date()
-                        .toISOString()
-                        .slice(0, 10),
+                        .toLocaleDateString(
+                            "en-CA",
+                            {
+                                timeZone:
+                                    "Africa/Nairobi"
+                            }
+                        ),
 
-                activeFilterPeriod: "month",
+                activeFilterPeriod:
+                    "month",
 
-                filterLabel: "Month",
+                activeFilterSubstation:
+                    "",
+
+                filterLabel:
+                    "Month",
 
                 error:
                     "Unable to load liabilities."
@@ -283,12 +328,6 @@ exports.create = async function (req, res) {
         /*
          * --------------------------------------------------
          * DETERMINE SUBSTATION
-         *
-         * STAFF:
-         * Always use their assigned substation.
-         *
-         * ADMIN:
-         * Use the substation selected in the form.
          * --------------------------------------------------
          */
 
@@ -300,7 +339,10 @@ exports.create = async function (req, res) {
             substation =
                 user.assignedSubstation;
 
-        } else if (user.role === "admin") {
+        }
+
+
+        else if (user.role === "admin") {
 
             substation =
                 req.body.substation;
@@ -339,6 +381,7 @@ exports.create = async function (req, res) {
                     substation
                 );
 
+
             if (!selectedSubstation) {
 
                 return res.redirect(
@@ -365,7 +408,8 @@ exports.create = async function (req, res) {
 
             amount,
 
-            recordedBy: user._id,
+            recordedBy:
+                user._id,
 
             substation
 
@@ -385,7 +429,10 @@ exports.create = async function (req, res) {
             )
         );
 
-    } catch (error) {
+    }
+
+
+    catch (error) {
 
         console.error(
             "Create liability error:",
