@@ -1,21 +1,22 @@
 <%
 /*
 
-* This partial filters ONLY the currently selected tab.
+* ==========================================================
+* LIABILITY FILTER
+* ==========================================================
 * 
-* The controller supplies:
+* Filters ONLY Liability Records.
+* 
+* Controller supplies:
 * activeTab
 * activeFilterDate
 * activeFilterPeriod
-* filterLabel
 * 
-* Query names are tab-specific:
-* summaryDate / summaryPeriod
-* productsDate / productsPeriod
-* arrearsDate / arrearsPeriod
+* Query names:
+* liabilityDate
+* liabilityPeriod
 * 
-* Therefore filtering Product Analytics cannot modify
-* Sales Summary or Customer Arrears.
+* ==========================================================
   */
   %>
 
@@ -38,8 +39,9 @@
 ><input
     type="hidden"
     name="tab"
-    value="<%= activeTab %>"
+    value="<%= activeTab || "liability" %>"
 >
+
 
 <div class="sales-filter-field">
 
@@ -50,8 +52,8 @@
     <input
         id="sales-filter-date"
         type="date"
-        name="<%= activeTab %>Date"
-        value="<%= activeFilterDate %>"
+        name="liabilityDate"
+        value="<%= activeFilterDate || "" %>"
         required
     >
 
@@ -66,12 +68,12 @@
 
     <select
         id="sales-filter-period"
-        name="<%= activeTab %>Period"
+        name="liabilityPeriod"
     >
 
         <option
             value="day"
-            <%= activeFilterPeriod === "day" ? "selected" : "" %>
+            <%= (activeFilterPeriod || "day") === "day" ? "selected" : "" %>
         >
             Day
         </option>
@@ -104,7 +106,7 @@
 
 
 <a
-    href="/liability?tab=<%= activeTab %>"
+    href="/liability?tab=<%= activeTab || "liability" %>"
     class="sales-filter-clear"
 >
     Reset
@@ -119,6 +121,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!toggle || !filter) {
         return;
     }
+
 
     toggle.addEventListener("click", function () {
 
