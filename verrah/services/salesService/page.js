@@ -38,6 +38,10 @@ const substationService =
 //
 // DATE/PERIOD:
 //     Remain independent for each tab.
+//
+// STAFF SALES TOTALS:
+//     Calculated inside staffSalesService.
+//     Passed separately to the EJS page.
 // ==========================================================
 
 async function getSalesPageData(
@@ -146,6 +150,32 @@ async function getSalesPageData(
         )
 
     ]);
+
+
+    // ======================================================
+    // STAFF SALES TOTALS
+    //
+    // staffSalesService calculates:
+    //
+    //     totals.day
+    //     totals.month
+    //     totals.year
+    //     totals.bySubstation
+    //
+    // The totals are attached to the returned staffSales
+    // array by staffSalesService.
+    // ======================================================
+
+    const staffSalesTotals =
+        staffSales &&
+        staffSales.totals
+            ? staffSales.totals
+            : {
+                day: 0,
+                month: 0,
+                year: 0,
+                bySubstation: []
+            };
 
 
     // ======================================================
@@ -407,11 +437,31 @@ async function getSalesPageData(
 
 
         // ==================================================
-        // OTHER TABS
+        // STAFF SALES
         // ==================================================
 
         staffSales,
 
+
+        // ==================================================
+        // STAFF SALES TOTALS
+        //
+        // Calculated by staffSalesService.
+        //
+        // Available in EJS as:
+        //
+        //     staffSalesTotals.day
+        //     staffSalesTotals.month
+        //     staffSalesTotals.year
+        //     staffSalesTotals.bySubstation
+        // ==================================================
+
+        staffSalesTotals,
+
+
+        // ==================================================
+        // OTHER TABS
+        // ==================================================
 
         productAnalytics,
 
