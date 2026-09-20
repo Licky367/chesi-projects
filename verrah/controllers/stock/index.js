@@ -2,7 +2,8 @@ const {list} = require("./list");
 const {newStockForm} = require("./forms");
 const {createOrUpdateStock} = require("./create-update");
 const {entry, createProduct} = require("./allocation");
-const {batches, batch} = require("./batch");
+const {batches} = require("./batch");
+const {batch} = require("./batch");
 
 exports.list = list;
 exports.newStockForm = newStockForm;
