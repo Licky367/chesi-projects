@@ -9,10 +9,12 @@
 // - Date validation
 // - Period normalization
 // - Date ranges
-// - Tab filter state
+// - Tab-specific date/period filter state
+// - Global substation filter
+// - Admin substation selection
+// - Staff assigned-substation enforcement
 // - Filter labels
 // ==========================================================
-
 
 const TIME_ZONE =
     "Africa/Nairobi";
@@ -34,7 +36,6 @@ const TAB_CONFIG = {
 
     },
 
-
     "staff-sales": {
 
         dateKey:
@@ -45,7 +46,6 @@ const TAB_CONFIG = {
 
     },
 
-
     products: {
 
         dateKey:
@@ -55,7 +55,6 @@ const TAB_CONFIG = {
             "productsPeriod"
 
     },
-
 
     arrears: {
 
@@ -77,11 +76,8 @@ const TAB_CONFIG = {
 function getCurrentNairobiDate() {
 
     return new Intl.DateTimeFormat(
-
         "en-CA",
-
         {
-
             timeZone:
                 TIME_ZONE,
 
@@ -93,9 +89,7 @@ function getCurrentNairobiDate() {
 
             day:
                 "2-digit"
-
         }
-
     ).format(
         new Date()
     );
@@ -107,7 +101,9 @@ function getCurrentNairobiDate() {
 // DATE VALIDATION
 // ==========================================================
 
-function isValidDateString(value) {
+function isValidDateString(
+    value
+) {
 
     return (
 
@@ -118,13 +114,9 @@ function isValidDateString(value) {
         ) &&
 
         !Number.isNaN(
-
             Date.parse(
-
                 `${value}T00:00:00+03:00`
-
             )
-
         )
 
     );
@@ -136,7 +128,9 @@ function isValidDateString(value) {
 // PERIOD NORMALIZATION
 // ==========================================================
 
-function normalizePeriod(value) {
+function normalizePeriod(
+    value
+) {
 
     return [
 
@@ -159,9 +153,13 @@ function normalizePeriod(value) {
 // DATE NORMALIZATION
 // ==========================================================
 
-function normalizeDate(value) {
+function normalizeDate(
+    value
+) {
 
-    return isValidDateString(value)
+    return isValidDateString(
+        value
+    )
 
         ? value
 
@@ -175,11 +173,8 @@ function normalizeDate(value) {
 // ==========================================================
 
 function kenyaDateToUtc(
-
     dateString,
-
     endOfDay = false
-
 ) {
 
     return new Date(
@@ -200,11 +195,8 @@ function kenyaDateToUtc(
 // ==========================================================
 
 function getDateRange(
-
     dateString,
-
     period
-
 ) {
 
     const date =
@@ -254,24 +246,21 @@ function getDateRange(
 
         const nextDay =
             new Date(
-
                 Date.UTC(
-
                     year,
-
                     month - 1,
-
                     day + 1
-
                 )
-
             );
 
 
         const nextDate =
             nextDay
                 .toISOString()
-                .slice(0, 10);
+                .slice(
+                    0,
+                    10
+                );
 
 
         endDate =
@@ -378,15 +367,189 @@ function getDateRange(
 
 
 // ==========================================================
+// NORMALIZE SUBSTATION ID
+//
+// The value may come from:
+// - Admin query: query.substation
+// - Staff account: user.assignedSubstation
+//
+// We deliberately keep the value as-is here because the
+// services querying MongoDB can use the ObjectId/string
+// directly with Mongoose.
+// ==========================================================
+
+function normalizeSubstationId(
+    value
+) {
+
+    if (
+        value === undefined ||
+        value === null
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        typeof value === "string"
+    ) {
+
+        const trimmed =
+            value.trim();
+
+
+        return trimmed
+            ? trimmed
+            : null;
+
+    }
+
+
+    return value;
+
+}
+
+
+// ==========================================================
+// GLOBAL SUBSTATION FILTER
+//
+// ADMIN
+// -----
+// Admins may choose:
+//     ?substation=<id>
+//
+// Empty value:
+//     All substations
+//
+// STAFF
+// -----
+// Staff do NOT control this through the query string.
+//
+// Their assignedSubstation is always used.
+//
+// This prevents a staff user from manually changing the
+// substation query parameter to access another substation.
+// ==========================================================
+
+function getSubstationFilter(
+    query = {},
+    user = {}
+) {
+
+    const role =
+        user &&
+        user.role;
+
+
+    // ======================================================
+    // STAFF
+    // ======================================================
+
+    if (
+        role === "staff"
+    ) {
+
+        return {
+
+            substation:
+                normalizeSubstationId(
+                    user.assignedSubstation
+                ),
+
+            isRestricted:
+                true,
+
+            isAdmin:
+                false
+
+        };
+
+    }
+
+
+    // ======================================================
+    // ADMIN
+    // ======================================================
+
+    if (
+        role === "admin"
+    ) {
+
+        return {
+
+            substation:
+                normalizeSubstationId(
+                    query.substation
+                ),
+
+            isRestricted:
+                false,
+
+            isAdmin:
+                true
+
+        };
+
+    }
+
+
+    // ======================================================
+    // OTHER ROLES
+    // ======================================================
+
+    return {
+
+        substation:
+            null,
+
+        isRestricted:
+            false,
+
+        isAdmin:
+            false
+
+    };
+
+}
+
+
+// ==========================================================
 // FILTER STATE
+//
+// IMPORTANT:
+//
+// Date/period remain TAB-SPECIFIC.
+//
+// Substation is GLOBAL and therefore does not depend on the
+// active tab.
+//
+// Example:
+//
+// summary:
+//     summaryDate
+//     summaryPeriod
+//
+// staff-sales:
+//     staffSalesDate
+//     staffSalesPeriod
+//
+// products:
+//     productsDate
+//     productsPeriod
+//
+// arrears:
+//     arrearsDate
+//     arrearsPeriod
+//
+// All four receive the same `substation` value.
 // ==========================================================
 
 function getFilterState(
-
     query = {},
-
-    tab
-
+    tab,
+    user = {}
 ) {
 
     const config =
@@ -402,29 +565,49 @@ function getFilterState(
     }
 
 
+    // ======================================================
+    // TAB-SPECIFIC DATE FILTER
+    // ======================================================
+
     const date =
         normalizeDate(
-            query[config.dateKey]
+            query[
+                config.dateKey
+            ]
         );
 
 
     const period =
         normalizePeriod(
-            query[config.periodKey]
+            query[
+                config.periodKey
+            ]
         );
 
 
     const range =
         getDateRange(
-
             date,
-
             period
+        );
 
+
+    // ======================================================
+    // GLOBAL SUBSTATION FILTER
+    // ======================================================
+
+    const substationFilter =
+        getSubstationFilter(
+            query,
+            user
         );
 
 
     return {
+
+        // --------------------------------------------------
+        // Date range
+        // --------------------------------------------------
 
         date:
             range.date,
@@ -436,7 +619,26 @@ function getFilterState(
             range.startDate,
 
         endDate:
-            range.endDate
+            range.endDate,
+
+
+        // --------------------------------------------------
+        // Global substation
+        // --------------------------------------------------
+
+        substation:
+            substationFilter.substation,
+
+
+        // --------------------------------------------------
+        // Access/filter state
+        // --------------------------------------------------
+
+        isSubstationRestricted:
+            substationFilter.isRestricted,
+
+        isAdmin:
+            substationFilter.isAdmin
 
     };
 
@@ -462,7 +664,9 @@ function getFilterLabel(
         year:
             "Year"
 
-    }[filter.period];
+    }[
+        filter.period
+    ];
 
 
     return `${periodName}: ${filter.date}`;
@@ -491,6 +695,10 @@ module.exports = {
     kenyaDateToUtc,
 
     getDateRange,
+
+    normalizeSubstationId,
+
+    getSubstationFilter,
 
     getFilterState,
 
