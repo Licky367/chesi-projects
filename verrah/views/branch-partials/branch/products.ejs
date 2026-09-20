@@ -224,7 +224,7 @@
                         currentUser &&
                         currentUser.role === "admin"
 
-                          ? `/substations/product/${product._id}`
+                          ? `/branch/{branch._id}/products/${product._id}`
 
                           : `/branch/${branch._id}/products/${product._id}`;
 
