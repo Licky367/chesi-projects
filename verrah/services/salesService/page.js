@@ -3,18 +3,30 @@
 // SALES PAGE SERVICE
 // ==========================================================
 
-const filterService = require("./filter");
-const summaryService = require("./summary");
-const staffSalesService = require("./staffSales");
-const productsService = require("./products");
-const arrearsService = require("./arrears");
+
+const filterService =
+    require("./filter");
+
+const summaryService =
+    require("./summary");
+
+const staffSalesService =
+    require("./staffSales");
+
+const productsService =
+    require("./products");
+
+const arrearsService =
+    require("./arrears");
 
 
 // ==========================================================
 // GET SALES PAGE DATA
 // ==========================================================
 
-async function getSalesPageData(query = {}) {
+async function getSalesPageData(
+    query = {}
+) {
 
     const allowedTabs = [
         "summary",
@@ -23,9 +35,13 @@ async function getSalesPageData(query = {}) {
         "arrears"
     ];
 
-    const activeTab = allowedTabs.includes(query.tab)
-        ? query.tab
-        : "summary";
+
+    const activeTab =
+        allowedTabs.includes(
+            query.tab
+        )
+            ? query.tab
+            : "summary";
 
 
     // ======================================================
@@ -33,16 +49,31 @@ async function getSalesPageData(query = {}) {
     // ======================================================
 
     const summaryFilter =
-        filterService.getFilterState(query, "summary");
+        filterService.getFilterState(
+            query,
+            "summary"
+        );
+
 
     const staffSalesFilter =
-        filterService.getFilterState(query, "staff-sales");
+        filterService.getFilterState(
+            query,
+            "staff-sales"
+        );
+
 
     const productsFilter =
-        filterService.getFilterState(query, "products");
+        filterService.getFilterState(
+            query,
+            "products"
+        );
+
 
     const arrearsFilter =
-        filterService.getFilterState(query, "arrears");
+        filterService.getFilterState(
+            query,
+            "arrears"
+        );
 
 
     // ======================================================
@@ -56,13 +87,21 @@ async function getSalesPageData(query = {}) {
         arrearsPackages
     ] = await Promise.all([
 
-        summaryService.getSummary(summaryFilter),
+        summaryService.getSummary(
+            summaryFilter
+        ),
 
-        staffSalesService.getStaffSales(staffSalesFilter),
+        staffSalesService.getStaffSales(
+            staffSalesFilter
+        ),
 
-        productsService.getProductAnalytics(productsFilter),
+        productsService.getProductAnalytics(
+            productsFilter
+        ),
 
-        arrearsService.getCustomerArrears(arrearsFilter)
+        arrearsService.getCustomerArrears(
+            arrearsFilter
+        )
 
     ]);
 
@@ -73,21 +112,35 @@ async function getSalesPageData(query = {}) {
 
     let activeFilter;
 
-    if (activeTab === "summary") {
 
-        activeFilter = summaryFilter;
+    if (
+        activeTab ===
+        "summary"
+    ) {
 
-    } else if (activeTab === "staff-sales") {
+        activeFilter =
+            summaryFilter;
 
-        activeFilter = staffSalesFilter;
+    } else if (
+        activeTab ===
+        "staff-sales"
+    ) {
 
-    } else if (activeTab === "products") {
+        activeFilter =
+            staffSalesFilter;
 
-        activeFilter = productsFilter;
+    } else if (
+        activeTab ===
+        "products"
+    ) {
+
+        activeFilter =
+            productsFilter;
 
     } else {
 
-        activeFilter = arrearsFilter;
+        activeFilter =
+            arrearsFilter;
 
     }
 
@@ -96,12 +149,15 @@ async function getSalesPageData(query = {}) {
     // PRESERVE ALL TAB FILTERS IN NAVIGATION
     // ======================================================
 
-    const params = new URLSearchParams();
+    const params =
+        new URLSearchParams();
+
 
     params.set(
         "summaryDate",
         summaryFilter.date
     );
+
 
     params.set(
         "summaryPeriod",
@@ -114,6 +170,7 @@ async function getSalesPageData(query = {}) {
         staffSalesFilter.date
     );
 
+
     params.set(
         "staffSalesPeriod",
         staffSalesFilter.period
@@ -125,6 +182,7 @@ async function getSalesPageData(query = {}) {
         productsFilter.date
     );
 
+
     params.set(
         "productsPeriod",
         productsFilter.period
@@ -135,6 +193,7 @@ async function getSalesPageData(query = {}) {
         "arrearsDate",
         arrearsFilter.date
     );
+
 
     params.set(
         "arrearsPeriod",
@@ -154,16 +213,22 @@ async function getSalesPageData(query = {}) {
 
         activeTab,
 
+
         activeFilter,
+
 
         activeFilterDate:
             activeFilter.date,
 
+
         activeFilterPeriod:
             activeFilter.period,
 
+
         filterLabel:
-            filterService.getFilterLabel(activeFilter),
+            filterService.getFilterLabel(
+                activeFilter
+            ),
 
 
         // ==================================================
@@ -173,35 +238,62 @@ async function getSalesPageData(query = {}) {
         totalRevenue:
             summary.totalRevenue,
 
+
         packageRevenue:
             summary.packageRevenue,
+
 
         staffSalesRevenue:
             summary.staffSalesRevenue,
 
+
         packageBuyingCost:
             summary.packageBuyingCost,
+
 
         staffSalesBuyingCost:
             summary.staffSalesBuyingCost,
 
+
         profit:
             summary.profit,
+
+
+        // ==================================================
+        // EXPENSES
+        // ==================================================
+
+        expenses:
+            summary.expenses,
+
+
+        // ==================================================
+        // NET PROFIT
+        // ==================================================
+
+        netProfit:
+            summary.netProfit,
+
 
         packageProfit:
             summary.packageProfit,
 
+
         staffSalesProfit:
             summary.staffSalesProfit,
+
 
         customerArrears:
             summary.customerArrears,
 
+
         assetCost:
             summary.assetCost,
 
+
         productAssetCost:
             summary.productAssetCost,
+
 
         stockAssetCost:
             summary.stockAssetCost,
@@ -213,7 +305,9 @@ async function getSalesPageData(query = {}) {
 
         staffSales,
 
+
         productAnalytics,
+
 
         arrearsPackages,
 
@@ -224,9 +318,12 @@ async function getSalesPageData(query = {}) {
 
         summaryFilter,
 
+
         staffSalesFilter,
 
+
         productsFilter,
+
 
         arrearsFilter,
 
@@ -236,16 +333,27 @@ async function getSalesPageData(query = {}) {
         // ==================================================
 
         summaryFilterLabel:
-            filterService.getFilterLabel(summaryFilter),
+            filterService.getFilterLabel(
+                summaryFilter
+            ),
+
 
         staffSalesFilterLabel:
-            filterService.getFilterLabel(staffSalesFilter),
+            filterService.getFilterLabel(
+                staffSalesFilter
+            ),
+
 
         productsFilterLabel:
-            filterService.getFilterLabel(productsFilter),
+            filterService.getFilterLabel(
+                productsFilter
+            ),
+
 
         arrearsFilterLabel:
-            filterService.getFilterLabel(arrearsFilter),
+            filterService.getFilterLabel(
+                arrearsFilter
+            ),
 
 
         // ==================================================
