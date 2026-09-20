@@ -19,6 +19,9 @@ const productsService =
 const arrearsService =
     require("./arrears");
 
+const substationService =
+    require("../substationService");
+
 
 // ==========================================================
 // GET SALES PAGE DATA
@@ -56,6 +59,19 @@ async function getSalesPageData(
         )
             ? query.tab
             : "summary";
+
+
+    // ======================================================
+    // LOAD ACTIVE SUBSTATIONS
+    //
+    // Used by the admin substation selector.
+    //
+    // Staff also receive the list in the page data, but the
+    // filter UI should remain hidden for staff.
+    // ======================================================
+
+    const substations =
+        await substationService.list();
 
 
     // ======================================================
@@ -280,6 +296,13 @@ async function getSalesPageData(
     return {
 
         activeTab,
+
+
+        // ==================================================
+        // SUBSTATIONS
+        // ==================================================
+
+        substations,
 
 
         activeFilter,
