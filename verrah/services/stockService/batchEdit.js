@@ -1,43 +1,23 @@
 // ==========================================================
-// controllers/stock/batchEdit.js
-// STOCK FIFO BATCH EDIT CONTROLLER
+// services/stockService/batchEdit.js
+// STOCK FIFO BATCH SERVICE
 // VERRAH COSMETICS
 // ==========================================================
 //
-// Allows an existing FIFO purchase batch to be edited.
+// Handles:
 //
-// Editable:
-//     purchaseBatches.units
-//     purchaseBatches.buyPrice
+//     1. Retrieving FIFO purchase batches
+//     2. Editing an existing FIFO batch
+//     3. Keeping Stock.units equal to the total remaining
+//        units across purchaseBatches
 //
-// Not editable:
-//     purchaseBatches.purchasedAt
+// purchaseBatches.units represents CURRENT REMAINING STOCK.
 //
-// IMPORTANT:
+// Therefore:
 //
-// Stock.units must always equal the sum of all remaining
-// purchaseBatches.units.
+//     Stock.units
+//         = SUM(purchaseBatches.units)
 //
-// Therefore, when a batch's units change, Stock.units is
-// adjusted by the difference.
-//
-// Example:
-//
-// Before:
-//
-// Batch A = 100 units @ 100
-// Batch B = 50 units @ 120
-// Stock.units = 150
-//
-// Edit Batch A:
-//
-// 100 -> 80 units
-//
-// After:
-//
-// Batch A = 80 units @ 100
-// Batch B = 50 units @ 120
-// Stock.units = 130
 // ==========================================================
 
 const mongoose =
@@ -51,14 +31,26 @@ const Stock =
 // GET FIFO BATCHES
 // ==========================================================
 //
-// Returns the stock together with its FIFO purchase batches.
+// Returns:
 //
-// The batches are ordered by purchasedAt from oldest to newest.
+// {
+//     stock,
+//     batches
+// }
+//
+// Batches are returned oldest-first so the service preserves
+// FIFO ordering.
+//
+// The EJS can sort them differently for display.
 // ==========================================================
 
 async function getFifoBatches(
     stockId
 ) {
+
+    // ======================================================
+    // VALIDATE STOCK ID
+    // ======================================================
 
     if (
         !mongoose.Types.ObjectId.isValid(
@@ -71,20 +63,31 @@ async function getFifoBatches(
         );
     }
 
+
+    // ======================================================
+    // FIND ACTIVE STOCK
+    // ======================================================
+
     const stock =
-        await Stock
-            .findOne({
-                _id: stockId,
-                isActive: true
-            })
-            .lean();
+        await Stock.findOne({
+            _id: stockId,
+            isActive: {
+                $ne: false
+            }
+        });
+
 
     if (!stock) {
 
         throw new Error(
-            "Stock entry not found."
+            "Stock not found."
         );
     }
+
+
+    // ======================================================
+    // GET PURCHASE BATCHES
+    // ======================================================
 
     const batches =
         Array.isArray(
@@ -93,22 +96,44 @@ async function getFifoBatches(
             ? [...stock.purchaseBatches]
             : [];
 
+
+    // ======================================================
+    // FIFO ORDER
+    // ======================================================
+    //
+    // Oldest purchase first.
+    //
+    // This is the natural order used when consuming stock
+    // through FIFO.
+    // ======================================================
+
     batches.sort(
-        (a, b) => {
+        (
+            a,
+            b
+        ) => {
 
-            const aDate =
-                new Date(
-                    a.purchasedAt
-                ).getTime();
+            const aTime =
+                a.purchasedAt
+                    ? new Date(
+                        a.purchasedAt
+                    ).getTime()
+                    : 0;
 
-            const bDate =
-                new Date(
-                    b.purchasedAt
-                ).getTime();
+            const bTime =
+                b.purchasedAt
+                    ? new Date(
+                        b.purchasedAt
+                    ).getTime()
+                    : 0;
 
-            return aDate - bDate;
+            return (
+                aTime -
+                bTime
+            );
         }
     );
+
 
     return {
         stock,
@@ -123,15 +148,38 @@ async function getFifoBatches(
 //
 // Updates:
 //
-//     batch.units
-//     batch.buyPrice
+//     purchaseBatches.units
+//     purchaseBatches.buyPrice
 //
-// The purchasedAt date remains unchanged.
+// purchasedAt is deliberately NOT changed.
 //
-// Stock.units is recalculated from the resulting FIFO
-// batches.
+// IMPORTANT:
 //
-// The operation is performed atomically using a transaction.
+// After changing the batch units:
+//
+//     Stock.units
+//         = SUM(all purchaseBatches.units)
+//
+// This means:
+//
+// Example:
+//
+// Batch A = 100
+// Batch B = 50
+//
+// Stock.units = 150
+//
+// Edit Batch A:
+//
+// 100 -> 80
+//
+// Result:
+//
+// Batch A = 80
+// Batch B = 50
+//
+// Stock.units = 130
+//
 // ==========================================================
 
 async function editFifoBatch(
@@ -139,6 +187,10 @@ async function editFifoBatch(
     batchId,
     body
 ) {
+
+    // ======================================================
+    // VALIDATE STOCK ID
+    // ======================================================
 
     if (
         !mongoose.Types.ObjectId.isValid(
@@ -150,6 +202,11 @@ async function editFifoBatch(
             "Invalid stock ID."
         );
     }
+
+
+    // ======================================================
+    // VALIDATE BATCH ID
+    // ======================================================
 
     if (
         !mongoose.Types.ObjectId.isValid(
@@ -164,7 +221,7 @@ async function editFifoBatch(
 
 
     // ======================================================
-    // VALIDATE UNITS
+    // READ UNITS
     // ======================================================
 
     const units =
@@ -172,20 +229,25 @@ async function editFifoBatch(
             body.units
         );
 
+
     if (
-        !Number.isFinite(units) ||
-        !Number.isInteger(units) ||
+        !Number.isFinite(
+            units
+        ) ||
+        !Number.isInteger(
+            units
+        ) ||
         units < 0
     ) {
 
         throw new Error(
-            "Batch units must be a whole number greater than or equal to zero."
+            "Units must be a whole number greater than or equal to 0."
         );
     }
 
 
     // ======================================================
-    // VALIDATE BUY PRICE
+    // READ BUY PRICE
     // ======================================================
 
     const buyPrice =
@@ -193,13 +255,16 @@ async function editFifoBatch(
             body.buyPrice
         );
 
+
     if (
-        !Number.isFinite(buyPrice) ||
+        !Number.isFinite(
+            buyPrice
+        ) ||
         buyPrice < 0
     ) {
 
         throw new Error(
-            "Batch buy price must be greater than or equal to zero."
+            "Buy price must be a valid number greater than or equal to 0."
         );
     }
 
@@ -211,29 +276,35 @@ async function editFifoBatch(
     const session =
         await mongoose.startSession();
 
+
     try {
 
-        let result;
+        let updatedStock;
+
 
         await session.withTransaction(
             async () => {
 
                 // ==========================================
-                // LOAD STOCK
+                // LOAD ACTIVE STOCK
                 // ==========================================
 
                 const stock =
-                    await Stock
-                        .findOne({
-                            _id: stockId,
-                            isActive: true
-                        })
-                        .session(session);
+                    await Stock.findOne({
+                        _id: stockId,
+                        isActive: {
+                            $ne: false
+                        }
+                    })
+                    .session(
+                        session
+                    );
+
 
                 if (!stock) {
 
                     throw new Error(
-                        "Stock entry not found."
+                        "Stock not found."
                     );
                 }
 
@@ -247,10 +318,11 @@ async function editFifoBatch(
                         batchId
                     );
 
+
                 if (!batch) {
 
                     throw new Error(
-                        "FIFO stock batch not found."
+                        "FIFO batch not found."
                     );
                 }
 
@@ -267,48 +339,69 @@ async function editFifoBatch(
 
 
                 // ==========================================
-                // RECALCULATE WAREHOUSE UNITS
+                // RECALCULATE TOTAL STOCK UNITS
                 // ==========================================
                 //
-                // This is important because the Stock model
-                // requires:
+                // Do NOT simply add/subtract from the old
+                // Stock.units value.
                 //
-                // Stock.units ===
-                // sum(purchaseBatches.units)
+                // Recalculate from the actual batches so
+                // Stock.units remains the source of the
+                // aggregate total.
                 // ==========================================
 
-                const totalUnits =
-                    stock.purchaseBatches.reduce(
-                        (
-                            total,
-                            currentBatch
-                        ) =>
-                            total +
-                            Number(
-                                currentBatch.units ||
-                                0
-                            ),
-                        0
-                    );
+                let totalUnits = 0;
+
+
+                for (
+                    const currentBatch
+                    of stock.purchaseBatches
+                ) {
+
+                    const currentUnits =
+                        Number(
+                            currentBatch.units
+                        );
+
+
+                    if (
+                        Number.isFinite(
+                            currentUnits
+                        ) &&
+                        currentUnits > 0
+                    ) {
+
+                        totalUnits +=
+                            currentUnits;
+                    }
+                }
+
+
+                // ==========================================
+                // UPDATE STOCK TOTAL
+                // ==========================================
 
                 stock.units =
                     totalUnits;
 
 
                 // ==========================================
-                // REMOVE EMPTY BATCHES
+                // REMOVE ZERO-UNIT BATCHES
                 // ==========================================
                 //
-                // A batch with zero remaining units is no
-                // longer part of the active FIFO queue.
+                // If the edited batch is set to zero,
+                // remove it from the embedded batch list.
+                //
+                // This matches the existing FIFO stock
+                // behaviour where consumed/empty batches are
+                // no longer retained as active batches.
                 // ==========================================
 
                 stock.purchaseBatches =
                     stock.purchaseBatches.filter(
                         currentBatch =>
                             Number(
-                                currentBatch.units ||
-                                0
+                                currentBatch.units
                             ) > 0
                     );
 
@@ -322,16 +415,13 @@ async function editFifoBatch(
                 });
 
 
-                // ==========================================
-                // RETURN UPDATED STOCK
-                // ==========================================
-
-                result =
-                    stock.toObject();
+                updatedStock =
+                    stock;
             }
         );
 
-        return result;
+
+        return updatedStock;
 
     } finally {
 
@@ -341,124 +431,13 @@ async function editFifoBatch(
 
 
 // ==========================================================
-// EXPRESS: GET FIFO BATCHES
-// ==========================================================
-//
-// Example route:
-//
-// GET /stock/:id/batches
+// EXPORTS
 // ==========================================================
 
-exports.getBatches =
-    async (
-        req,
-        res
-    ) => {
+module.exports = {
 
-        try {
+    getFifoBatches,
 
-            const {
-                stock,
-                batches
-            } =
-                await getFifoBatches(
-                    req.params.id
-                );
+    editFifoBatch
 
-            return res.render(
-                "stock/batches",
-                {
-                    title:
-                        "Stock FIFO Batches",
-
-                    stock,
-
-                    batches,
-
-                    error:
-                        req.query.error ||
-                        null,
-
-                    saved:
-                        req.query.saved ||
-                        ""
-                }
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Get FIFO batches error:",
-                error
-            );
-
-            return res.redirect(
-                `/stock?error=${encodeURIComponent(
-                    error.message
-                )}`
-            );
-        }
-    };
-
-
-// ==========================================================
-// EXPRESS: EDIT FIFO BATCH
-// ==========================================================
-//
-// Example route:
-//
-// POST /stock/:id/batches/:batchId/edit
-// ==========================================================
-
-exports.editBatch =
-    async (
-        req,
-        res
-    ) => {
-
-        try {
-
-            await editFifoBatch(
-                req.params.id,
-                req.params.batchId,
-                req.body
-            );
-
-
-            // ==============================================
-            // SUCCESS
-            // ==============================================
-
-            return res.redirect(
-                `/stock/${req.params.id}/batches?saved=1`
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Edit FIFO batch error:",
-                error
-            );
-
-            return res.redirect(
-                `/stock/${req.params.id}/batches?error=${encodeURIComponent(
-                    error.message
-                )}`
-            );
-        }
-    };
-
-
-// ==========================================================
-// EXPORT SERVICE FUNCTIONS
-// ==========================================================
-//
-// These are exported so the controller can also be used
-// directly from another controller if required.
-// ==========================================================
-
-exports.getFifoBatches =
-    getFifoBatches;
-
-exports.editFifoBatch =
-    editFifoBatch;
+};
