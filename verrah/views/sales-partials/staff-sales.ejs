@@ -11,77 +11,61 @@
 
     <div class="sales-header">
 
-        <h1>Staff Sales</h1>
+        <!-- ==================================================
+             HEADER ICON
+        =================================================== -->
 
-        <div class="sales-header-totals">
+        <div class="sales-header-icon">
 
-            <!-- ==================================================
-                 DAY TOTAL
-            =================================================== -->
+            <i class="fa-solid fa-cash-register"></i>
 
-            <div class="sales-total">
+        </div>
 
-                <span class="sales-total-label">
-                    Today
-                </span>
 
-                <strong class="sales-total-value">
+        <!-- ==================================================
+             HEADER CONTENT
+        =================================================== -->
 
+        <div>
+
+            <h1 class="sales-title">
+                Staff Sales
+            </h1>
+
+            <p class="sales-subtitle">
+
+                Today:
+                <strong>
                     KSh
                     <%= Number(
                         staffSalesTotals &&
                         staffSalesTotals.day || 0
                     ).toLocaleString("en-KE") %>
-
                 </strong>
 
-            </div>
+                &nbsp; | &nbsp;
 
-
-            <!-- ==================================================
-                 MONTH TOTAL
-            =================================================== -->
-
-            <div class="sales-total">
-
-                <span class="sales-total-label">
-                    This Month
-                </span>
-
-                <strong class="sales-total-value">
-
+                This Month:
+                <strong>
                     KSh
                     <%= Number(
                         staffSalesTotals &&
                         staffSalesTotals.month || 0
                     ).toLocaleString("en-KE") %>
-
                 </strong>
 
-            </div>
+                &nbsp; | &nbsp;
 
-
-            <!-- ==================================================
-                 YEAR TOTAL
-            =================================================== -->
-
-            <div class="sales-total">
-
-                <span class="sales-total-label">
-                    This Year
-                </span>
-
-                <strong class="sales-total-value">
-
+                This Year:
+                <strong>
                     KSh
                     <%= Number(
                         staffSalesTotals &&
                         staffSalesTotals.year || 0
                     ).toLocaleString("en-KE") %>
-
                 </strong>
 
-            </div>
+            </p>
 
         </div>
 
