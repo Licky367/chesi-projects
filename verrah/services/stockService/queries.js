@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
-const Stock = require("../models/stock");
-const Substation = require("../models/substations");
-const Category = require("../models/category");
+const Stock = require("../../models/stock");
+const Substation = require("../../models/substations");
+const Category = require("../../models/category");
 const { text, displayLabel } = require("./helpers");
 const { getCategoryByName } = require("./category");
 
