@@ -19,7 +19,7 @@ exports.index = async (req, res) => {
 
         const data =
             await salesService.getSalesPageData(
-                req.query || {}
+                req.query, req.user || {}
             );
 
 
