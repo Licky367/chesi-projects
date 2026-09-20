@@ -13,9 +13,77 @@
 
         <h1>Staff Sales</h1>
 
-        <p>
-            View sales paid in cash.
-        </p>
+        <div class="sales-header-totals">
+
+            <!-- ==================================================
+                 DAY TOTAL
+            =================================================== -->
+
+            <div class="sales-total">
+
+                <span class="sales-total-label">
+                    Today
+                </span>
+
+                <strong class="sales-total-value">
+
+                    KSh
+                    <%= Number(
+                        staffSalesTotals &&
+                        staffSalesTotals.day || 0
+                    ).toLocaleString("en-KE") %>
+
+                </strong>
+
+            </div>
+
+
+            <!-- ==================================================
+                 MONTH TOTAL
+            =================================================== -->
+
+            <div class="sales-total">
+
+                <span class="sales-total-label">
+                    This Month
+                </span>
+
+                <strong class="sales-total-value">
+
+                    KSh
+                    <%= Number(
+                        staffSalesTotals &&
+                        staffSalesTotals.month || 0
+                    ).toLocaleString("en-KE") %>
+
+                </strong>
+
+            </div>
+
+
+            <!-- ==================================================
+                 YEAR TOTAL
+            =================================================== -->
+
+            <div class="sales-total">
+
+                <span class="sales-total-label">
+                    This Year
+                </span>
+
+                <strong class="sales-total-value">
+
+                    KSh
+                    <%= Number(
+                        staffSalesTotals &&
+                        staffSalesTotals.year || 0
+                    ).toLocaleString("en-KE") %>
+
+                </strong>
+
+            </div>
+
+        </div>
 
     </div>
 
