@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Category = require("../models/category");
+const Category = require("../../models/category");
 const { text } = require("./helpers");
 
 async function getCategory(value, session = null) {
