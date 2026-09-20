@@ -1,40 +1,46 @@
 <!-- ==========================================================
      VERRAH COSMETICS
      STAFF SALES
-========================================================== -->
+========================================================== --><section class="sales-page"><!-- ======================================================
+     PAGE HEADER
+======================================================= -->
 
-<section class="sales-page">
+<div class="sales-header">
 
-    <!-- ======================================================
-         PAGE HEADER
-    ======================================================= -->
+    <!-- ==================================================
+         HEADER ICON
+    =================================================== -->
 
-    <div class="sales-header">
+    <div class="sales-header-icon">
+
+        <i class="fa-solid fa-cash-register"></i>
+
+    </div>
+
+
+    <!-- ==================================================
+         HEADER CONTENT
+    =================================================== -->
+
+    <div>
+
+        <h1 class="sales-title">
+            Staff Sales
+        </h1>
+
 
         <!-- ==================================================
-             HEADER ICON
+             FILTERED TOTAL
         =================================================== -->
 
-        <div class="sales-header-icon">
+        <p class="sales-subtitle">
 
-            <i class="fa-solid fa-cash-register"></i>
+            <% if (
+                staffSalesFilter &&
+                staffSalesFilter.period === "day"
+            ) { %>
 
-        </div>
-
-
-        <!-- ==================================================
-             HEADER CONTENT
-        =================================================== -->
-
-        <div>
-
-            <h1 class="sales-title">
-                Staff Sales
-            </h1>
-
-            <p class="sales-subtitle">
-
-                Today:
+                Day:
                 <strong>
                     KSh
                     <%= Number(
@@ -43,20 +49,12 @@
                     ).toLocaleString("en-KE") %>
                 </strong>
 
-                &nbsp; | &nbsp;
+            <% } else if (
+                staffSalesFilter &&
+                staffSalesFilter.period === "year"
+            ) { %>
 
-                This Month:
-                <strong>
-                    KSh
-                    <%= Number(
-                        staffSalesTotals &&
-                        staffSalesTotals.month || 0
-                    ).toLocaleString("en-KE") %>
-                </strong>
-
-                &nbsp; | &nbsp;
-
-                This Year:
+                Year:
                 <strong>
                     KSh
                     <%= Number(
@@ -65,234 +63,247 @@
                     ).toLocaleString("en-KE") %>
                 </strong>
 
-            </p>
+            <% } else { %>
 
-        </div>
+                Month:
+                <strong>
+                    KSh
+                    <%= Number(
+                        staffSalesTotals &&
+                        staffSalesTotals.month || 0
+                    ).toLocaleString("en-KE") %>
+                </strong>
+
+            <% } %>
+
+        </p>
 
     </div>
 
+</div>
 
-    <!-- ======================================================
-         SALES CONTENT
-    ======================================================= -->
 
-    <div class="sales-content">
+<!-- ======================================================
+     SALES CONTENT
+======================================================= -->
 
-        <section class="sales-panel">
+<div class="sales-content">
 
-            <div class="sales-section">
+    <section class="sales-panel">
 
-                <!-- ==================================================
-                     SALES TABLE
-                =================================================== -->
+        <div class="sales-section">
 
-                <% if (staffSales && staffSales.length > 0) { %>
+            <!-- ==================================================
+                 SALES TABLE
+            =================================================== -->
 
-                    <div class="sales-table-wrapper">
+            <% if (staffSales && staffSales.length > 0) { %>
 
-                        <table class="sales-table">
+                <div class="sales-table-wrapper">
 
-                            <thead>
+                    <table class="sales-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Staff
+                                </th>
+
+                                <th>
+                                    Items
+                                </th>
+
+                                <th>
+                                    Total Amount
+                                </th>
+
+                                <th>
+                                    Date
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            <% staffSales.forEach(function(sale) { %>
 
                                 <tr>
 
-                                    <th>
-                                        Staff
-                                    </th>
+                                    <!-- =================================
+                                         STAFF WHO MADE THE SALE
+                                    ================================== -->
 
-                                    <th>
-                                        Items
-                                    </th>
+                                    <td>
 
-                                    <th>
-                                        Total Amount
-                                    </th>
+                                        <strong>
 
-                                    <th>
-                                        Date
-                                    </th>
+                                            <%= sale.soldBy
+                                                ? (
+                                                    sale.soldBy.name ||
+                                                    sale.soldBy.fullName ||
+                                                    sale.soldBy.username ||
+                                                    "Unknown Staff"
+                                                )
+                                                : "Unknown Staff"
+                                            %>
 
-                                </tr>
+                                        </strong>
 
-                            </thead>
+                                    </td>
 
 
-                            <tbody>
+                                    <!-- =================================
+                                         PRODUCTS SOLD
+                                    ================================== -->
 
-                                <% staffSales.forEach(function(sale) { %>
+                                    <td>
 
-                                    <tr>
+                                        <% if (
+                                            sale.products &&
+                                            sale.products.length
+                                        ) { %>
 
-                                        <!-- =================================
-                                             STAFF WHO MADE THE SALE
-                                        ================================== -->
+                                            <div>
 
-                                        <td>
+                                                <% sale.products.forEach(
+                                                    function(product, index)
+                                                { %>
 
-                                            <strong>
+                                                    <span>
 
-                                                <%= sale.soldBy
-                                                    ? (
-                                                        sale.soldBy.name ||
-                                                        sale.soldBy.fullName ||
-                                                        sale.soldBy.username ||
-                                                        "Unknown Staff"
-                                                    )
-                                                    : "Unknown Staff"
-                                                %>
+                                                        <%= product.name || "Product" %>
 
-                                            </strong>
+                                                        ×
 
-                                        </td>
+                                                        <%= product.qty || 0 %>
 
+                                                    </span>
 
-                                        <!-- =================================
-                                             PRODUCTS SOLD
-                                        ================================== -->
 
-                                        <td>
+                                                    <% if (
+                                                        index <
+                                                        sale.products.length - 1
+                                                    ) { %>
 
-                                            <% if (
-                                                sale.products &&
-                                                sale.products.length
-                                            ) { %>
+                                                        <span>, </span>
 
-                                                <div>
+                                                    <% } %>
 
-                                                    <% sale.products.forEach(
-                                                        function(product, index)
-                                                    { %>
+                                                <% }); %>
 
-                                                        <span>
+                                            </div>
 
-                                                            <%= product.name || "Product" %>
+                                        <% } else { %>
 
-                                                            ×
+                                            <span class="sales-muted">
+                                                No products
+                                            </span>
 
-                                                            <%= product.qty || 0 %>
+                                        <% } %>
 
-                                                        </span>
+                                    </td>
 
 
-                                                        <% if (
-                                                            index <
-                                                            sale.products.length - 1
-                                                        ) { %>
+                                    <!-- =================================
+                                         TOTAL AMOUNT
+                                    ================================== -->
 
-                                                            <span>, </span>
+                                    <td>
 
-                                                        <% } %>
+                                        <strong class="sales-arrears-value">
 
-                                                    <% }); %>
+                                            KSh
+                                            <%= Number(
+                                                sale.totalAmount || 0
+                                            ).toLocaleString("en-KE") %>
 
-                                                </div>
+                                        </strong>
 
-                                            <% } else { %>
+                                    </td>
 
-                                                <span class="sales-muted">
-                                                    No products
-                                                </span>
 
-                                            <% } %>
+                                    <!-- =================================
+                                         SALE DATE
+                                    ================================== -->
 
-                                        </td>
+                                    <td>
 
+                                        <% if (sale.createdAt) { %>
 
-                                        <!-- =================================
-                                             TOTAL AMOUNT
-                                        ================================== -->
-
-                                        <td>
-
-                                            <strong class="sales-arrears-value">
-
-                                                KSh
-                                                <%= Number(
-                                                    sale.totalAmount || 0
-                                                ).toLocaleString("en-KE") %>
-
-                                            </strong>
-
-                                        </td>
-
-
-                                        <!-- =================================
-                                             SALE DATE
-                                        ================================== -->
-
-                                        <td>
-
-                                            <% if (sale.createdAt) { %>
-
-                                                <%= new Date(
-                                                    sale.createdAt
-                                                ).toLocaleDateString(
-                                                    "en-KE",
-                                                    {
-                                                        day: "2-digit",
-                                                        month: "short",
-                                                        year: "numeric"
-                                                    }
-                                                ) %>
-
-                                            <% } else { %>
-
-                                                <span class="sales-muted">
-                                                    —
-                                                </span>
-
-                                            <% } %>
-
-                                        </td>
-
-                                    </tr>
-
-                                <% }); %>
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                <% } else { %>
-
-
-                    <!-- ==================================================
-                         EMPTY STATE
-                    =================================================== -->
-
-                    <div class="sales-table-wrapper">
-
-                        <table class="sales-table">
-
-                            <tbody>
-
-                                <tr>
-
-                                    <td
-                                        colspan="4"
-                                        class="sales-empty"
-                                    >
-
-                                        No staff sales have been recorded yet.
+                                            <%= new Date(
+                                                sale.createdAt
+                                            ).toLocaleDateString(
+                                                "en-KE",
+                                                {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                    year: "numeric"
+                                                }
+                                            ) %>
+
+                                        <% } else { %>
+
+                                            <span class="sales-muted">
+                                                —
+                                            </span>
+
+                                        <% } %>
 
                                     </td>
 
                                 </tr>
 
-                            </tbody>
+                            <% }); %>
 
-                        </table>
+                        </tbody>
 
-                    </div>
+                    </table>
 
-                <% } %>
+                </div>
 
-            </div>
+            <% } else %>
 
-        </section>
 
-    </div>
+                <!-- ==================================================
+                     EMPTY STATE
+                =================================================== -->
+
+                <div class="sales-table-wrapper">
+
+                    <table class="sales-table">
+
+                        <tbody>
+
+                            <tr>
+
+                                <td
+                                    colspan="4"
+                                    class="sales-empty"
+                                >
+
+                                    No staff sales have been recorded yet.
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            <% } %>
+
+        </div>
+
+    </section>
+
+</div>
 
 </section>
