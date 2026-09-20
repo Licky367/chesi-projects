@@ -54,11 +54,11 @@ router.get(
     controller.batch
 );
 
-// POST /stock/:id/batches - save changes to FIFO batches.
+// POST /stock/:id/batches/:batchId - save changes to FIFO batches.
 router.post(
     "/:id/batches/:batchId",
     requireAdmin,
-    controller.batch
+    controller.editBatches
 );
 
 // ==========================================================
