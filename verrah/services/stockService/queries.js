@@ -24,7 +24,6 @@ async function listStock(options = {}) {
 
   return Stock.find(query)
     .populate("category")
-    .populate("substation")
     .sort({ createdAt: -1 })
     .lean();
 }
@@ -32,7 +31,6 @@ async function listStock(options = {}) {
 async function getStock(id, session) {
   return Stock.findById(id)
     .populate("category")
-    .populate("substation")
     .session(session || null);
 }
 
