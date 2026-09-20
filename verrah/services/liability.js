@@ -1,3 +1,9 @@
+// ==========================================================
+// services/liability.js
+// LIABILITY SERVICE
+// VERRAH COSMETICS
+// ==========================================================
+
 const Liability = require("../models/liability");
 
 
@@ -43,67 +49,127 @@ exports.getLiabilities = async function ({
 
     /*
      * ------------------------------------------------------
-     * DATE RANGE
-     * ------------------------------------------------------
-     *
-     * The filter works against Liability.createdAt.
-     *
-     * day:
-     *   only the selected date
-     *
-     * month:
-     *   the entire selected month
-     *
-     * year:
-     *   the entire selected year
+     * VALIDATE DATE
      * ------------------------------------------------------
      */
 
-    const selectedDate =
-        new Date(`${date}T00:00:00`);
-
-
-    if (Number.isNaN(selectedDate.getTime())) {
+    if (
+        typeof date !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(date)
+    ) {
 
         return [];
 
     }
 
 
-    let startDate;
-    let endDate;
+    const [
+        year,
+        month,
+        day
+    ] = date
+        .split("-")
+        .map(Number);
+
+
+    /*
+     * ------------------------------------------------------
+     * VALIDATE DATE VALUES
+     * ------------------------------------------------------
+     */
+
+    const testDate =
+        new Date(
+            Date.UTC(
+                year,
+                month - 1,
+                day
+            )
+        );
+
+
+    if (
+        Number.isNaN(testDate.getTime()) ||
+        testDate.getUTCFullYear() !== year ||
+        testDate.getUTCMonth() !== month - 1 ||
+        testDate.getUTCDate() !== day
+    ) {
+
+        return [];
+
+    }
+
+
+    /*
+     * ------------------------------------------------------
+     * DATE RANGE
+     * ------------------------------------------------------
+     *
+     * The selected date is interpreted as a Kenya date.
+     *
+     * Kenya:
+     *     UTC+3
+     *
+     * We convert the beginning/end of the selected period
+     * into UTC Date objects before querying MongoDB.
+     *
+     * day:
+     *     selected date only
+     *
+     * month:
+     *     entire selected month
+     *
+     * year:
+     *     entire selected year
+     * ------------------------------------------------------
+     */
+
+    let startLocal;
+    let endLocal;
 
 
     if (period === "day") {
 
-        startDate =
-            new Date(selectedDate);
+        startLocal = {
+            year,
+            month,
+            day
+        };
 
-        endDate =
-            new Date(selectedDate);
 
-        endDate.setDate(
-            endDate.getDate() + 1
-        );
+        const nextDay =
+            new Date(
+                Date.UTC(
+                    year,
+                    month - 1,
+                    day + 1
+                )
+            );
+
+
+        endLocal = {
+            year: nextDay.getUTCFullYear(),
+            month: nextDay.getUTCMonth() + 1,
+            day: nextDay.getUTCDate()
+        };
 
     }
 
 
     else if (period === "year") {
 
-        startDate =
-            new Date(
-                selectedDate.getFullYear(),
-                0,
-                1
-            );
+        startLocal = {
+            year,
+            month: 1,
+            day: 1
+        };
 
-        endDate =
-            new Date(
-                selectedDate.getFullYear() + 1,
-                0,
-                1
-            );
+
+        endLocal = {
+            year: year + 1,
+            month: 1,
+            day: 1
+        };
 
     }
 
@@ -111,24 +177,88 @@ exports.getLiabilities = async function ({
     else {
 
         /*
-         * Default to month.
+         * --------------------------------------------------
+         * MONTH
+         * --------------------------------------------------
+         *
+         * Month is also the default when an invalid period
+         * is supplied.
+         * --------------------------------------------------
          */
 
-        startDate =
+        startLocal = {
+            year,
+            month,
+            day: 1
+        };
+
+
+        const nextMonth =
             new Date(
-                selectedDate.getFullYear(),
-                selectedDate.getMonth(),
-                1
+                Date.UTC(
+                    year,
+                    month,
+                    1
+                )
             );
 
-        endDate =
-            new Date(
-                selectedDate.getFullYear(),
-                selectedDate.getMonth() + 1,
-                1
-            );
+
+        endLocal = {
+            year: nextMonth.getUTCFullYear(),
+            month: nextMonth.getUTCMonth() + 1,
+            day: 1
+        };
 
     }
+
+
+    /*
+     * ------------------------------------------------------
+     * CONVERT KENYA MIDNIGHT TO UTC
+     * ------------------------------------------------------
+     *
+     * Kenya is UTC+3.
+     *
+     * Example:
+     *
+     * Kenya:
+     *     2026-09-20 00:00
+     *
+     * UTC:
+     *     2026-09-19 21:00
+     *
+     * This gives MongoDB the correct boundaries for records
+     * created according to Kenya time.
+     * ------------------------------------------------------
+     */
+
+    function kenyaMidnightToUTC({
+        year,
+        month,
+        day
+    }) {
+
+        return new Date(
+            Date.UTC(
+                year,
+                month - 1,
+                day,
+                -3,
+                0,
+                0,
+                0
+            )
+        );
+
+    }
+
+
+    const startDate =
+        kenyaMidnightToUTC(startLocal);
+
+
+    const endDate =
+        kenyaMidnightToUTC(endLocal);
 
 
     /*
@@ -158,7 +288,7 @@ exports.getLiabilities = async function ({
      * Staff can only see liabilities belonging to their
      * assigned substation.
      *
-     * Admin sees liabilities from all substations.
+     * Admin can see liabilities from all substations.
      * ------------------------------------------------------
      */
 
@@ -181,17 +311,21 @@ exports.getLiabilities = async function ({
 
     return Liability
         .find(query)
+
         .populate(
             "recordedBy",
             "name phone"
         )
+
         .populate(
             "substation",
             "name location"
         )
+
         .sort({
             createdAt: -1
         })
+
         .lean();
 
 };
