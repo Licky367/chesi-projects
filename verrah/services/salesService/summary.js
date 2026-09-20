@@ -18,6 +18,9 @@ const Product =
 const Stock =
     require("../../models/stock");
 
+const Liability =
+    require("../../models/liability");
+
 
 // ==========================================================
 // GET SUMMARY
@@ -93,6 +96,41 @@ async function getSummary(
 
 
     // ======================================================
+    // LOAD LIABILITIES / EXPENSES
+    // ======================================================
+    //
+    // Every liability recorded within the selected period
+    // is treated as an expense.
+    //
+    // Total Expenses:
+    //
+    //     Sum of liability.amount
+    //
+    // ======================================================
+
+    const liabilities =
+        await Liability.find({
+
+            createdAt: {
+
+                $gte:
+                    filter.startDate,
+
+                $lt:
+                    filter.endDate
+
+            }
+
+        })
+
+            .select(
+                "name amount recordedBy substation createdAt"
+            )
+
+            .lean();
+
+
+    // ======================================================
     // VARIABLES
     // ======================================================
 
@@ -113,6 +151,10 @@ async function getSummary(
 
 
     let staffSalesBuyingCost =
+        0;
+
+
+    let expenses =
         0;
 
 
@@ -144,6 +186,23 @@ async function getSummary(
 
     const productIds =
         new Set();
+
+
+    // ======================================================
+    // PROCESS LIABILITIES / EXPENSES
+    // ======================================================
+
+    for (
+        const liability
+        of liabilities
+    ) {
+
+        expenses +=
+            Number(
+                liability.amount || 0
+            );
+
+    }
 
 
     // ======================================================
@@ -539,6 +598,21 @@ async function getSummary(
 
 
     // ======================================================
+    // NET PROFIT
+    // ======================================================
+    //
+    // Net Profit:
+    //
+    //     Profit - Total Expenses
+    //
+    // ======================================================
+
+    const netProfit =
+        profit -
+        expenses;
+
+
+    // ======================================================
     // RETURN
     // ======================================================
 
@@ -561,6 +635,15 @@ async function getSummary(
         totalRevenue,
 
         profit,
+
+
+        // ==================================================
+        // EXPENSES
+        // ==================================================
+
+        expenses,
+
+        netProfit,
 
 
         customerArrears,
