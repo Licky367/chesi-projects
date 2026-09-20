@@ -60,6 +60,14 @@ router.get(
 );
 
 
+// POST /stock/:id/batch/:batchId - save edited FIFO batch.
+router.post(
+    "/:id/batch/:batchId",
+    requireAdmin,
+    controller.editBatch
+);
+
+
 // ==========================================================
 // STOCK ENTRY / ALLOCATION
 // ==========================================================
