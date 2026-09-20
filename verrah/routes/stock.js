@@ -3,7 +3,6 @@ const router = require("express").Router();
 const controller = require("../controllers/stock");
 const requireAdmin = require("../middleware/requireAdmin");
 
-
 // ==========================================================
 // STOCK LIST
 // ==========================================================
@@ -14,7 +13,6 @@ router.get(
     requireAdmin,
     controller.list
 );
-
 
 // ==========================================================
 // NEW STOCK
@@ -27,7 +25,6 @@ router.get(
     controller.newStockForm
 );
 
-
 // ==========================================================
 // CREATE / UPDATE STOCK
 // ==========================================================
@@ -38,7 +35,6 @@ router.post(
     requireAdmin,
     controller.createOrUpdateStock
 );
-
 
 // ==========================================================
 // FIFO BATCHES
@@ -51,7 +47,6 @@ router.get(
     controller.batches
 );
 
-
 // GET /stock/:id/batch/:batchId - edit a specific FIFO batch.
 router.get(
     "/:id/batch/:batchId",
@@ -59,14 +54,12 @@ router.get(
     controller.batch
 );
 
-
-// POST /stock/:id/batch/:batchId - save edited FIFO batch.
+// POST /stock/:id/batches - save changes to FIFO batches.
 router.post(
-    "/:id/batch/:batchId",
+    "/:id/batches",
     requireAdmin,
-    controller.editBatch
+    controller.editBatches
 );
-
 
 // ==========================================================
 // STOCK ENTRY / ALLOCATION
@@ -79,13 +72,11 @@ router.get(
     controller.entry
 );
 
-
 // POST /stock/:id - create/allocate product from stock.
 router.post(
     "/:id",
     requireAdmin,
     controller.createProduct
 );
-
 
 module.exports = router;
