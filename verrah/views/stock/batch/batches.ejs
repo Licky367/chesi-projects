@@ -1,0 +1,292 @@
+<%
+/*
+==========================================================
+VERRAH COSMETICS
+STOCK FIFO BATCHES
+==========================================================
+
+Displays all purchase batches belonging to a stock entry.
+
+Columns:
+    Date
+    Units
+    Buy Price
+
+Latest batch appears first.
+
+Clicking a row opens:
+    /stock/:stockId/batch/:batchId
+==========================================================
+*/
+
+
+const stockId =
+    stock && stock._id
+        ? stock._id.toString()
+        : "";
+
+
+// ==========================================================
+// SORT BATCHES
+// ==========================================================
+
+const sortedBatches =
+    Array.isArray(batches)
+        ? [...batches].sort((a, b) => {
+
+            const aDate =
+                new Date(a.purchasedAt).getTime();
+
+            const bDate =
+                new Date(b.purchasedAt).getTime();
+
+            return bDate - aDate;
+        })
+        : [];
+
+%>
+
+
+<div class="sales-page">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="sales-header">
+
+        <div class="sales-header-icon">
+            <i class="fas fa-boxes-stacked"></i>
+        </div>
+
+        <div>
+
+            <h1 class="sales-title">
+                Stock Batches
+            </h1>
+
+            <p class="sales-subtitle">
+
+                <%= stock && stock.name
+                    ? stock.name
+                    : "Stock Purchase Batches" %>
+
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         NAVIGATION
+    ====================================================== -->
+
+    <div class="sales-navigation">
+
+        <a
+            href="/stock/<%= stockId %>"
+            class="sales-navigation-tab"
+        >
+            <i class="fas fa-box"></i>
+            Stock Details
+        </a>
+
+
+        <a
+            href="/stock/<%= stockId %>/batches"
+            class="sales-navigation-tab active"
+        >
+            <i class="fas fa-layer-group"></i>
+            Batches
+        </a>
+
+    </div>
+
+
+    <!-- =====================================================
+         CONTENT
+    ====================================================== -->
+
+    <div class="sales-content">
+
+        <section class="sales-section">
+
+            <div class="sales-section-heading">
+
+                <div>
+
+                    <h2>
+                        Purchase Batches
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 BATCH TABLE
+            ================================================== -->
+
+            <% if (sortedBatches.length > 0) { %>
+
+                <div class="sales-table-wrapper">
+
+                    <table class="sales-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Units
+                                </th>
+
+                                <th>
+                                    Buy Price
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            <% sortedBatches.forEach(batch => { %>
+
+                                <tr
+                                    class="sales-product-row"
+                                    tabindex="0"
+                                    role="link"
+                                    onclick="window.location.href='/stock/<%= stockId %>/batch/<%= batch._id %>'"
+                                    onkeydown="
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault();
+                                            window.location.href='/stock/<%= stockId %>/batch/<%= batch._id %>';
+                                        }
+                                    "
+                                >
+
+                                    <!-- =================================
+                                         DATE
+                                    ================================== -->
+
+                                    <td>
+
+                                        <%
+                                        const batchDate =
+                                            batch.purchasedAt
+                                                ? new Date(batch.purchasedAt)
+                                                : null;
+                                        %>
+
+                                        <% if (batchDate && !isNaN(batchDate.getTime())) { %>
+
+                                            <%= batchDate.toLocaleDateString(
+                                                "en-KE",
+                                                {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                    year: "numeric"
+                                                }
+                                            ) %>
+
+                                        <% } else { %>
+
+                                            <span class="sales-muted">
+                                                —
+                                            </span>
+
+                                        <% } %>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         UNITS
+                                    ================================== -->
+
+                                    <td>
+
+                                        <%= Number(batch.units || 0).toLocaleString() %>
+
+                                    </td>
+
+
+                                    <!-- =================================
+                                         BUY PRICE
+                                    ================================== -->
+
+                                    <td>
+
+                                        KSh
+                                        <%= Number(batch.buyPrice || 0).toLocaleString(
+                                            "en-KE",
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                            }
+                                        ) %>
+
+                                    </td>
+
+                                </tr>
+
+                            <% }) %>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+            <% } else { %>
+
+
+                <!-- =================================================
+                     EMPTY STATE
+                ================================================== -->
+
+                <div class="sales-table-wrapper">
+
+                    <table class="sales-table">
+
+                        <tbody>
+
+                            <tr>
+
+                                <td
+                                    colspan="3"
+                                    class="sales-empty"
+                                >
+
+                                    <i class="fas fa-box-open"></i>
+
+                                    <br>
+
+                                    No purchase batches found for this stock.
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            <% } %>
+
+        </section>
+
+    </div>
+
+</div>
