@@ -5,244 +5,277 @@
 // CUSTOMER ARREARS SERVICE
 // ==========================================================
 
-
 const Package =
-    require("../../models/package");
+require("../../models/package");
 
 const User =
-    require("../../models/user");
-
+require("../../models/user");
 
 // ==========================================================
 // GET CUSTOMER ARREARS
+//
+// Uses:
+//     arrearsDate
+//     arrearsPeriod
+//     substation
+//
+// Staff:
+//     filter.substation is forced from assignedSubstation.
+//
+// Admin:
+//     filter.substation is optional.
+//     null = all substations.
 // ==========================================================
 
 async function getCustomerArrears(
-    filter
+filter
 ) {
 
-    const packages =
-        await Package.find({
+const packageQuery = {
 
-            status:
-                "delivered",
+    status:
+        "delivered",
 
-            createdAt: {
+    createdAt: {
 
-                $gte:
-                    filter.startDate,
+        $gte:
+            filter.startDate,
 
-                $lt:
-                    filter.endDate
+        $lt:
+            filter.endDate
+
+    }
+
+};
+
+
+// ======================================================
+// SUBSTATION FILTER
+// ======================================================
+
+if (
+    filter &&
+    filter.substation
+) {
+
+    packageQuery.packageSubstation =
+        filter.substation;
+
+}
+
+
+// ======================================================
+// GET DELIVERED PACKAGES
+// ======================================================
+
+const packages =
+    await Package.find(
+        packageQuery
+    )
+
+        .select(
+            "_id clientId phoneNumber totalAmount paidAmount packageSubstation"
+        )
+
+        .lean();
+
+
+// ======================================================
+// CALCULATE ARREARS
+// ======================================================
+
+const arrearsPackages =
+    packages
+
+        .map(
+
+            pkg => ({
+
+                ...pkg,
+
+                arrears:
+                    Math.max(
+
+                        0,
+
+                        Number(
+                            pkg.totalAmount || 0
+                        ) -
+
+                        Number(
+                            pkg.paidAmount || 0
+                        )
+
+                    )
+
+            })
+
+        )
+
+        .filter(
+
+            pkg =>
+                pkg.arrears > 0
+
+        );
+
+
+if (
+    !arrearsPackages.length
+) {
+
+    return [];
+
+}
+
+
+// ======================================================
+// CLIENT IDS
+// ======================================================
+
+const clientIds = [
+
+    ...new Set(
+
+        arrearsPackages
+
+            .map(
+
+                pkg =>
+                    String(
+                        pkg.clientId || ""
+                    )
+
+            )
+
+            .filter(Boolean)
+
+    )
+
+];
+
+
+// ======================================================
+// LOAD CLIENTS
+//
+// phone is the phone field in User.
+// ======================================================
+
+const users =
+    clientIds.length
+
+        ? await User.find({
+
+            _id: {
+
+                $in:
+                    clientIds
 
             }
 
         })
 
             .select(
-                "_id clientId phoneNumber totalAmount paidAmount"
+                "_id name phone"
             )
 
-            .lean();
+            .lean()
+
+        : [];
 
 
-    // ======================================================
-    // CALCULATE ARREARS
-    // ======================================================
+// ======================================================
+// CLIENT MAP
+// ======================================================
 
-    const arrearsPackages =
-        packages
+const userMap =
+    new Map(
 
-            .map(
+        users.map(
 
-                pkg => ({
+            user => [
 
-                    ...pkg,
+                String(
+                    user._id
+                ),
 
-                    arrears:
-                        Math.max(
+                {
 
-                            0,
+                    name:
+                        user.name,
 
-                            Number(
-                                pkg.totalAmount || 0
-                            ) -
-
-                            Number(
-                                pkg.paidAmount || 0
-                            )
-
-                        )
-
-                })
-
-            )
-
-            .filter(
-
-                pkg =>
-                    pkg.arrears > 0
-
-            );
-
-
-    if (
-        !arrearsPackages.length
-    ) {
-
-        return [];
-
-    }
-
-
-    // ======================================================
-    // CLIENT IDS
-    // ======================================================
-
-    const clientIds = [
-
-        ...new Set(
-
-            arrearsPackages
-
-                .map(
-
-                    pkg =>
-                        String(
-                            pkg.clientId || ""
-                        )
-
-                )
-
-                .filter(Boolean)
-
-        )
-
-    ];
-
-
-    // ======================================================
-    // LOAD CLIENTS
-    //
-    // phone is the phone field in User.
-    // ======================================================
-
-    const users =
-        clientIds.length
-
-            ? await User.find({
-
-                _id: {
-
-                    $in:
-                        clientIds
+                    phone:
+                        user.phone || ""
 
                 }
 
-            })
-
-                .select(
-                    "_id name phone"
-                )
-
-                .lean()
-
-            : [];
-
-
-    // ======================================================
-    // CLIENT MAP
-    // ======================================================
-
-    const userMap =
-        new Map(
-
-            users.map(
-
-                user => [
-
-                    String(
-                        user._id
-                    ),
-
-                    {
-
-                        name:
-                            user.name,
-
-                        phone:
-                            user.phone || ""
-
-                    }
-
-                ]
-
-            )
-
-        );
-
-
-    // ======================================================
-    // RETURN ARREARS
-    // ======================================================
-
-    return arrearsPackages
-
-        .map(
-
-            pkg => {
-
-                const user =
-                    userMap.get(
-                        String(
-                            pkg.clientId
-                        )
-                    );
-
-
-                return {
-
-                    _id:
-                        pkg._id,
-
-                    clientName:
-                        user?.name ||
-                        "Unknown Client",
-
-                    // ------------------------------------------------
-                    // USE PACKAGE PHONE FIRST.
-                    // IF EMPTY, USE USER PHONE.
-                    // ------------------------------------------------
-
-                    phoneNumber:
-                        pkg.phoneNumber ||
-                        user?.phone ||
-                        "",
-
-                    packageName:
-                        String(
-                            pkg._id
-                        ),
-
-                    arrears:
-                        pkg.arrears
-
-                };
-
-            }
+            ]
 
         )
 
-        .sort(
+    );
 
-            (a, b) =>
-                b.arrears -
-                a.arrears
 
-        );
+// ======================================================
+// RETURN ARREARS
+// ======================================================
+
+return arrearsPackages
+
+    .map(
+
+        pkg => {
+
+            const user =
+                userMap.get(
+                    String(
+                        pkg.clientId
+                    )
+                );
+
+
+            return {
+
+                _id:
+                    pkg._id,
+
+                clientName:
+                    user?.name ||
+                    "Unknown Client",
+
+                // ------------------------------------------------
+                // USE PACKAGE PHONE FIRST.
+                // IF EMPTY, USE USER PHONE.
+                // ------------------------------------------------
+
+                phoneNumber:
+                    pkg.phoneNumber ||
+                    user?.phone ||
+                    "",
+
+                packageName:
+                    String(
+                        pkg._id
+                    ),
+
+                arrears:
+                    pkg.arrears
+
+            };
+
+        }
+
+    )
+
+    .sort(
+
+        (a, b) =>
+            b.arrears -
+            a.arrears
+
+    );
 
 }
-
 
 // ==========================================================
 // EXPORTS
@@ -250,6 +283,6 @@ async function getCustomerArrears(
 
 module.exports = {
 
-    getCustomerArrears
+getCustomerArrears
 
 };
