@@ -3,6 +3,23 @@
 //
 // VERRAH COSMETICS
 // SALES SUMMARY SERVICE
+//
+// GLOBAL SUBSTATION FILTER
+//
+// When filter.substation is provided:
+//
+//     Packages
+//         -> packageSubstation
+//
+//     Staff Sales
+//         -> substation
+//
+//     Liabilities / Expenses
+//         -> substation
+//
+// When filter.substation is null:
+//
+//     All substations are included.
 // ==========================================================
 
 
@@ -23,6 +40,46 @@ const Liability =
 
 
 // ==========================================================
+// BUILD SUBSTATION QUERY
+// ==========================================================
+//
+// Returns an empty object when no substation is selected.
+//
+// This allows:
+//
+//     { ...dateQuery, ...substationQuery }
+//
+// to work for both:
+//     - All substations
+//     - One selected substation
+// ==========================================================
+
+function getSubstationQuery(
+    filter,
+    field
+) {
+
+    if (
+        !filter ||
+        !filter.substation
+    ) {
+
+        return {};
+
+    }
+
+
+    return {
+
+        [field]:
+            filter.substation
+
+    };
+
+}
+
+
+// ==========================================================
 // GET SUMMARY
 // ==========================================================
 
@@ -31,29 +88,67 @@ async function getSummary(
 ) {
 
     // ======================================================
+    // PACKAGE QUERY
+    // ======================================================
+
+    const packageQuery = {
+
+        createdAt: {
+
+            $gte:
+                filter.startDate,
+
+            $lt:
+                filter.endDate
+
+        },
+
+        ...getSubstationQuery(
+            filter,
+            "packageSubstation"
+        )
+
+    };
+
+
+    // ======================================================
     // LOAD PACKAGES
     // ======================================================
 
     const packages =
-        await Package.find({
-
-            createdAt: {
-
-                $gte:
-                    filter.startDate,
-
-                $lt:
-                    filter.endDate
-
-            }
-
-        })
+        await Package.find(
+            packageQuery
+        )
 
             .select(
-                "items totalAmount paidAmount status"
+                "items totalAmount paidAmount status packageSubstation"
             )
 
             .lean();
+
+
+    // ======================================================
+    // STAFF SALES QUERY
+    // ======================================================
+
+    const staffSalesQuery = {
+
+        createdAt: {
+
+            $gte:
+                filter.startDate,
+
+            $lt:
+                filter.endDate
+
+        },
+
+        ...getSubstationQuery(
+            filter,
+            "substation"
+        )
+
+    };
 
 
     // ======================================================
@@ -61,19 +156,9 @@ async function getSummary(
     // ======================================================
 
     const staffSales =
-        await StaffSale.find({
-
-            createdAt: {
-
-                $gte:
-                    filter.startDate,
-
-                $lt:
-                    filter.endDate
-
-            }
-
-        })
+        await StaffSale.find(
+            staffSalesQuery
+        )
 
             .populate({
 
@@ -96,32 +181,44 @@ async function getSummary(
 
 
     // ======================================================
+    // LIABILITY / EXPENSE QUERY
+    // ======================================================
+
+    const liabilityQuery = {
+
+        createdAt: {
+
+            $gte:
+                filter.startDate,
+
+            $lt:
+                filter.endDate
+
+        },
+
+        ...getSubstationQuery(
+            filter,
+            "substation"
+        )
+
+    };
+
+
+    // ======================================================
     // LOAD LIABILITIES / EXPENSES
     // ======================================================
     //
     // Every liability recorded within the selected period
-    // is treated as an expense.
+    // and selected substation is treated as an expense.
     //
-    // Total Expenses:
-    //
-    //     Sum of liability.amount
-    //
+    // When no substation is selected, all liabilities in the
+    // selected period are included.
     // ======================================================
 
     const liabilities =
-        await Liability.find({
-
-            createdAt: {
-
-                $gte:
-                    filter.startDate,
-
-                $lt:
-                    filter.endDate
-
-            }
-
-        })
+        await Liability.find(
+            liabilityQuery
+        )
 
             .select(
                 "name amount recordedBy substation createdAt"
@@ -160,20 +257,6 @@ async function getSummary(
 
     // ======================================================
     // ASSET COST
-    // ======================================================
-    //
-    // Product asset cost:
-    //
-    //     buyPrice × units
-    //
-    // Stock asset cost:
-    //
-    //     buyPrice × units
-    //
-    // Total:
-    //
-    //     Product asset cost + Stock asset cost
-    //
     // ======================================================
 
     let productAssetCost =
@@ -461,13 +544,14 @@ async function getSummary(
 
 
     // ======================================================
-    // LOAD ALL PRODUCTS FOR ASSET COST
+    // LOAD PRODUCTS FOR ASSET COST
     // ======================================================
     //
-    // Every Product contributes:
+    // Product asset cost is calculated from the active
+    // product inventory.
     //
-    //     buyPrice × units
-    //
+    // Products are global product records, so they are not
+    // restricted by substation here.
     // ======================================================
 
     const allProducts =
@@ -513,25 +597,33 @@ async function getSummary(
 
 
     // ======================================================
-    // LOAD ALL STOCK FOR ASSET COST
+    // LOAD STOCK FOR ASSET COST
     // ======================================================
     //
-    // Every Stock record contributes:
-    //
-    //     buyPrice × units
-    //
+    // Stock records are substation-specific when a
+    // substation filter is selected.
     // ======================================================
+
+    const stockQuery = {
+
+        isActive:
+            true,
+
+        ...getSubstationQuery(
+            filter,
+            "substation"
+        )
+
+    };
+
 
     const allStock =
-        await Stock.find({
-
-            isActive:
-                true
-
-        })
+        await Stock.find(
+            stockQuery
+        )
 
             .select(
-                "buyPrice units"
+                "buyPrice units substation"
             )
 
             .lean();
@@ -604,7 +696,6 @@ async function getSummary(
     // Net Profit:
     //
     //     Profit - Total Expenses
-    //
     // ======================================================
 
     const netProfit =
