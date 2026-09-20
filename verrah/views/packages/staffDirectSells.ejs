@@ -33,8 +33,9 @@ const tabCounts = counts || {
 
       <p>
         <%= role === "admin"
-          ? "Manage all client packages."
-          : "Manage sells made within <%= user.assignedSubstation %>." %>
+  ? "Manage all client packages."
+  : `Manage sells made within ${user.assignedSubstation}.`
+%>
       </p>
 
     </div>
