@@ -298,10 +298,6 @@ exports.updatePaymentMode = async (
 
         // --------------------------------------------------
         // UPDATE THROUGH CART SERVICE
-        //
-        // cartService.getCart() returns a lean object.
-        // Therefore use updatePaymentMode(), which retrieves
-        // the actual Mongoose document and saves it.
         // --------------------------------------------------
 
         const cart =
@@ -639,19 +635,26 @@ exports.remove = async (
 // CHECKOUT PROCESS
 // POST /carts/checkout
 //
-// checkoutSubstation.saveSelection runs before this
-// controller.
+// Internal users:
+//     staff
+//     admin
 //
-// Staff cash:
-//     isMobile = false
+// Both staff and admin:
+//     salesName is required
+//
+// Staff:
+//     assignedSubstation determines the substation.
+//
+// Admin:
+//     selected package substation is handled by the
+//     checkout flow.
+//
+// Cash:
 //     handled by /carts/staff-sale
 //
-// Staff M-PESA:
-//     isMobile = true
-//     normal M-PESA/package flow
-//
-// Clients:
-//     existing checkout flow
+// M-PESA:
+//     normal M-PESA/payment flow, with salesName retained
+//     for internal users.
 // ==========================================================
 
 exports.checkout = async (
@@ -690,28 +693,46 @@ exports.checkout = async (
                 .toLowerCase();
 
 
+        // --------------------------------------------------
+        // INTERNAL USERS
+        //
+        // BOTH STAFF AND ADMIN
+        // --------------------------------------------------
+
+        const isInternalSale =
+            role === "staff" ||
+            role === "admin";
+
+
         const isStaff =
             role === "staff";
 
 
+        const isAdmin =
+            role === "admin";
+
+
         const isMobile =
-            isStaff &&
+            isInternalSale &&
             cart &&
             cart.isMobile === true;
 
+
+        // --------------------------------------------------
+        // SALES NAME
+        //
+        // BOTH STAFF AND ADMIN
+        //
+        // This is intentionally not restricted to staff.
+        // The checkout EJS already displays salesName for
+        // both roles.
+        // --------------------------------------------------
 
         let salesName =
             "";
 
 
-        // --------------------------------------------------
-        // STAFF + M-PESA
-        // --------------------------------------------------
-
-        if (
-            isStaff &&
-            isMobile
-        ) {
+        if (isInternalSale) {
 
             salesName =
                 String(
@@ -767,10 +788,15 @@ exports.checkout = async (
             };
 
 
-            if (
-                isStaff &&
-                isMobile
-            ) {
+            // ------------------------------------------------
+            // INTERNAL USERS
+            //
+            // BOTH STAFF + ADMIN
+            //
+            // Preserve salesName.
+            // ------------------------------------------------
+
+            if (isInternalSale) {
 
                 packageOptions.salesName =
                     salesName;
@@ -797,6 +823,22 @@ exports.checkout = async (
             method ===
             "mpesa"
         ) {
+
+            // ------------------------------------------------
+            // For staff + admin, salesName has already been
+            // validated above.
+            //
+            // Keep it on req.body so the existing payment
+            // service receives the same checkout request
+            // containing salesName.
+            // ------------------------------------------------
+
+            if (isInternalSale) {
+
+                req.body.salesName =
+                    salesName;
+            }
+
 
             const result =
                 await paymentService.initiateStkPush(
@@ -940,6 +982,8 @@ exports.staffSale = async (
 
         // --------------------------------------------------
         // SALES NAME
+        //
+        // BOTH STAFF + ADMIN
         // --------------------------------------------------
 
         const salesName =
@@ -977,9 +1021,6 @@ exports.staffSale = async (
         //
         // ADMIN:
         //     Use the substation selected in the modal.
-        //
-        // This prevents a staff member from submitting an
-        // arbitrary substation through the browser.
         // --------------------------------------------------
 
         let salesSubstation;
@@ -1017,20 +1058,11 @@ exports.staffSale = async (
                     "Please select a substation."
                 );
             }
-
         }
 
 
         // --------------------------------------------------
         // NORMALIZE SUBSTATION ID
-        //
-        // Handles either:
-        //
-        //     ObjectId/string
-        //
-        // or:
-        //
-        //     populated substation object
         // --------------------------------------------------
 
         if (
@@ -1063,9 +1095,6 @@ exports.staffSale = async (
 
         // --------------------------------------------------
         // VERIFY SUBSTATION EXISTS
-        //
-        // This is especially important for admin because
-        // salesSubstation comes from the browser.
         // --------------------------------------------------
 
         const substations =
@@ -1097,14 +1126,7 @@ exports.staffSale = async (
         // --------------------------------------------------
         // CREATE SALE
         //
-        // The cart service receives BOTH values.
-        //
-        // It should save:
-        //
-        //     salesName
-        //     salesSubstation
-        //
-        // into StaffSale.
+        // BOTH VALUES ARE PASSED TO THE CART SERVICE.
         // --------------------------------------------------
 
         await cartService.createStaffSale(
@@ -1118,12 +1140,6 @@ exports.staffSale = async (
 
         // --------------------------------------------------
         // REDIRECT
-        //
-        // STAFF:
-        //     Return to assigned branch.
-        //
-        // ADMIN:
-        //     Return to selected sales branch.
         // --------------------------------------------------
 
         return res.redirect(
