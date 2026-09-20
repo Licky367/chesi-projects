@@ -5,24 +5,21 @@
 // STAFF SALES / SALES REPORT SERVICE
 // ==========================================================
 //
-// STAFF SALE SUBSTATION RELATIONSHIP:
+// SUBSTATION SOURCE:
 //
-//     StaffSale
-//         soldBy
-//             ↓
-//         VerrahUser
-//             assignedSubstation
+//     StaffSale.salesSubstation
 //
-// IMPORTANT:
+// FALLBACK:
 //
-// StaffSale DOES NOT have a substation field.
+//     StaffSale.soldBy.assignedSubstation
 //
-// Therefore, substation filtering is performed through:
+// RULE:
 //
-//     StaffSale.soldBy
-//             ↓
-//     VerrahUser.assignedSubstation
+//     If salesSubstation exists, use it.
+//     If salesSubstation is missing, use assignedSubstation.
 //
+// This rule is used consistently for filtering, grouping,
+// and displaying staff sales.
 // ==========================================================
 
 
@@ -35,24 +32,99 @@ const StaffSale =
 const substationService =
     require("../substationService");
 
+const filterService =
+    require("./filter");
+
 
 // ==========================================================
 // USER MODEL
-// ==========================================================
-//
-// StaffSale.soldBy references:
-//
-//     "VerrahUser"
-//
-// We retrieve the registered Mongoose model directly so this
-// service does not depend on whether models/user.js exports
-// the model under the name User or VerrahUser.
 // ==========================================================
 
 const VerrahUser =
     mongoose.model(
         "VerrahUser"
     );
+
+
+// ==========================================================
+// GET SALE SUBSTATION
+// ==========================================================
+//
+// Priority:
+//
+//     1. salesSubstation
+//     2. soldBy.assignedSubstation
+//
+// ==========================================================
+
+function getSaleSubstation(
+    sale
+) {
+
+    if (
+        sale &&
+        sale.salesSubstation
+    ) {
+
+        return sale.salesSubstation;
+
+    }
+
+
+    if (
+        sale &&
+        sale.soldBy &&
+        sale.soldBy.assignedSubstation
+    ) {
+
+        return sale.soldBy.assignedSubstation;
+
+    }
+
+
+    return null;
+
+}
+
+
+// ==========================================================
+// GET SALE SUBSTATION ID
+// ==========================================================
+
+function getSaleSubstationId(
+    sale
+) {
+
+    const substation =
+        getSaleSubstation(
+            sale
+        );
+
+
+    if (!substation) {
+
+        return null;
+
+    }
+
+
+    if (
+        typeof substation === "object" &&
+        substation._id
+    ) {
+
+        return String(
+            substation._id
+        );
+
+    }
+
+
+    return String(
+        substation
+    );
+
+}
 
 
 // ==========================================================
@@ -88,15 +160,9 @@ function calculateTotal(
 // GET STAFF IDS FOR SUBSTATION
 // ==========================================================
 //
-// Finds users whose:
+// This remains useful for resolving the fallback:
 //
-//     assignedSubstation
-//
-// matches the requested substation.
-//
-// The returned IDs are then used against:
-//
-//     StaffSale.soldBy
+//     soldBy.assignedSubstation
 //
 // ==========================================================
 
@@ -108,7 +174,7 @@ async function getStaffIdsForSubstation(
         !substationId
     ) {
 
-        return null;
+        return [];
 
     }
 
@@ -142,15 +208,13 @@ async function getStaffIdsForSubstation(
 // BUILD SALES QUERY
 // ==========================================================
 //
-// Date filtering:
+// Substation filter:
 //
-//     createdAt >= startDate
-//     createdAt <  endDate
+//     salesSubstation
 //
-// Substation filtering:
+// OR, when salesSubstation is missing:
 //
-//     StaffSale.soldBy
-//         IN users assigned to selected substation
+//     soldBy.assignedSubstation
 //
 // ==========================================================
 
@@ -178,61 +242,57 @@ async function buildSalesQuery(
     // ======================================================
     // SUBSTATION FILTER
     // ======================================================
-    //
-    // filter.substation is already resolved by filter.js:
-    //
-    // ADMIN:
-    //     selected substation ID
-    //
-    // STAFF:
-    //     assigned substation ID
-    //
-    // ADMIN WITH ALL SUBSTATIONS:
-    //     null
-    //
-    // ======================================================
 
     if (
         filter &&
         filter.substation
     ) {
 
+        const substationId =
+            filter.substation;
+
+
         const staffIds =
             await getStaffIdsForSubstation(
 
-                filter.substation
+                substationId
 
             );
 
 
         // ==================================================
-        // NO STAFF ASSIGNED TO THIS SUBSTATION
+        // MATCH EITHER:
         //
-        // Return an impossible StaffSale query rather than
-        // accidentally returning all sales.
+        //     salesSubstation
+        //
+        // OR:
+        //
+        //     soldBy.assignedSubstation
+        //
         // ==================================================
 
-        if (
-            !staffIds ||
-            staffIds.length === 0
-        ) {
+        query.$or = [
 
-            query.soldBy = {
+            {
+                salesSubstation:
+                    substationId
+            },
 
-                $in: []
+            {
+                salesSubstation:
+                    {
+                        $exists:
+                            false
+                    },
 
-            };
+                soldBy:
+                    {
+                        $in:
+                            staffIds
+                    }
+            }
 
-        } else {
-
-            query.soldBy = {
-
-                $in:
-                    staffIds
-
-            };
-
-        }
+        ];
 
     }
 
@@ -269,7 +329,7 @@ async function getSalesForRange(
     )
 
         .select(
-            "totalAmount soldBy createdAt products salesName"
+            "totalAmount soldBy createdAt products salesName salesSubstation"
         )
 
         .populate({
@@ -279,6 +339,16 @@ async function getSalesForRange(
 
             select:
                 "name fullName username assignedSubstation"
+
+        })
+
+        .populate({
+
+            path:
+                "salesSubstation",
+
+            select:
+                "name"
 
         })
 
@@ -298,13 +368,13 @@ async function getSalesForRange(
 // CALCULATE TOTALS PER SUBSTATION
 // ==========================================================
 //
-// The substation comes from:
+// Uses:
+//
+//     sale.salesSubstation
+//
+// and falls back to:
 //
 //     sale.soldBy.assignedSubstation
-//
-// NOT:
-//
-//     sale.substation
 //
 // ==========================================================
 
@@ -318,31 +388,26 @@ function calculateSubstationTotals(
 
 
     // ======================================================
-    // GROUP SALES USING STAFF ASSIGNED SUBSTATION
+    // GROUP SALES
     // ======================================================
 
     sales.forEach(
 
         sale => {
 
+            const substationId =
+                getSaleSubstationId(
+                    sale
+                );
+
+
             if (
-                !sale.soldBy ||
-                !sale.soldBy.assignedSubstation
+                !substationId
             ) {
 
                 return;
 
             }
-
-
-            const substationId =
-                String(
-
-                    sale
-                        .soldBy
-                        .assignedSubstation
-
-                );
 
 
             const currentTotal =
@@ -417,25 +482,6 @@ function calculateSubstationTotals(
 // ==========================================================
 // GET STAFF SALES
 // ==========================================================
-//
-// Uses:
-//
-//     staffSalesDate
-//     staffSalesPeriod
-//
-// Substation:
-//
-//     ADMIN
-//         no selection
-//             -> all substations
-//
-//         selected substation
-//             -> staff whose assignedSubstation matches
-//
-//     STAFF
-//         -> staff user's assigned substation
-//
-// ==========================================================
 
 async function getStaffSales(
     filter
@@ -443,8 +489,6 @@ async function getStaffSales(
 
     // ======================================================
     // LOAD SUBSTATIONS
-    //
-    // Used for bySubstation totals.
     // ======================================================
 
     const substations =
@@ -453,9 +497,6 @@ async function getStaffSales(
 
     // ======================================================
     // FETCH DISPLAY SALES
-    //
-    // Uses the exact date range selected in the Staff Sales
-    // filter.
     // ======================================================
 
     const salesQuery =
@@ -485,6 +526,16 @@ async function getStaffSales(
 
             })
 
+            .populate({
+
+                path:
+                    "salesSubstation",
+
+                select:
+                    "name"
+
+            })
+
             .sort({
 
                 createdAt:
@@ -496,14 +547,8 @@ async function getStaffSales(
 
 
     // ======================================================
-    // DAY RANGE
-    //
-    // Based on the selected staff-sales date.
+    // DATE RANGES
     // ======================================================
-
-    const filterService =
-        require("./filter");
-
 
     const dayRange =
         filterService.getDateRange(
@@ -515,12 +560,6 @@ async function getStaffSales(
         );
 
 
-    // ======================================================
-    // MONTH RANGE
-    //
-    // Based on the selected staff-sales date.
-    // ======================================================
-
     const monthRange =
         filterService.getDateRange(
 
@@ -530,12 +569,6 @@ async function getStaffSales(
 
         );
 
-
-    // ======================================================
-    // YEAR RANGE
-    //
-    // Based on the selected staff-sales date.
-    // ======================================================
 
     const yearRange =
         filterService.getDateRange(
@@ -548,14 +581,7 @@ async function getStaffSales(
 
 
     // ======================================================
-    // FETCH FILTERED TOTALS
-    //
-    // ALL THREE USE THE SAME SUBSTATION FILTER.
-    //
-    // The selected substation is resolved through:
-    //
-    //     User.assignedSubstation
-    //
+    // FETCH PERIOD TOTALS
     // ======================================================
 
     const [
@@ -607,39 +633,20 @@ async function getStaffSales(
 
     const totals = {
 
-        // --------------------------------------------------
-        // SELECTED DATE
-        // --------------------------------------------------
-
         day:
             calculateTotal(
                 daySales
             ),
-
-
-        // --------------------------------------------------
-        // SELECTED MONTH
-        // --------------------------------------------------
 
         month:
             calculateTotal(
                 monthSales
             ),
 
-
-        // --------------------------------------------------
-        // SELECTED YEAR
-        // --------------------------------------------------
-
         year:
             calculateTotal(
                 yearSales
             ),
-
-
-        // --------------------------------------------------
-        // TOTALS PER SUBSTATION
-        // --------------------------------------------------
 
         bySubstation: {
 
@@ -667,15 +674,7 @@ async function getStaffSales(
 
 
     // ======================================================
-    // ATTACH TOTALS TO SALES ARRAY
-    //
-    // Keeps compatibility with the existing page.js:
-    //
-    //     staffSales
-    //
-    // and:
-    //
-    //     staffSales.totals
+    // ATTACH TOTALS
     // ======================================================
 
     sales.totals =
