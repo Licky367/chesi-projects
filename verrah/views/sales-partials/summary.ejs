@@ -16,6 +16,7 @@ maximumFractionDigits: 2
     </div>
 </div>
 
+
 <div class="sales-summary-grid">
 
     <!-- ==================================================
@@ -23,7 +24,10 @@ maximumFractionDigits: 2
     =================================================== -->
 
     <article class="sales-summary-card">
-        <span class="sales-summary-label">Current Asset Value</span>
+        <span class="sales-summary-label">
+            Current Asset Value
+        </span>
+
         <strong class="sales-summary-value">
             KSh <%= money(assetCost) %>
         </strong>
@@ -35,7 +39,10 @@ maximumFractionDigits: 2
     =================================================== -->
 
     <article class="sales-summary-card">
-        <span class="sales-summary-label">Total Revenue Collected</span>
+        <span class="sales-summary-label">
+            Total Revenue Collected
+        </span>
+
         <strong class="sales-summary-value">
             KSh <%= money(totalRevenue) %>
         </strong>
@@ -47,9 +54,27 @@ maximumFractionDigits: 2
     =================================================== -->
 
     <article class="sales-summary-card">
-        <span class="sales-summary-label">Customer Arrears</span>
+        <span class="sales-summary-label">
+            Customer Arrears
+        </span>
+
         <strong class="sales-summary-value">
             KSh <%= money(customerArrears) %>
+        </strong>
+    </article>
+
+
+    <!-- ==================================================
+         TOTAL EXPENSES
+    =================================================== -->
+
+    <article class="sales-summary-card">
+        <span class="sales-summary-label">
+            Total Expenses
+        </span>
+
+        <strong class="sales-summary-value">
+            KSh <%= money(expenses) %>
         </strong>
     </article>
 
@@ -59,9 +84,27 @@ maximumFractionDigits: 2
     =================================================== -->
 
     <article class="sales-summary-card">
-        <span class="sales-summary-label">Profit</span>
+        <span class="sales-summary-label">
+            Profit
+        </span>
+
         <strong class="sales-summary-value">
             KSh <%= money(profit) %>
+        </strong>
+    </article>
+
+
+    <!-- ==================================================
+         NET PROFIT
+    =================================================== -->
+
+    <article class="sales-summary-card">
+        <span class="sales-summary-label">
+            Net Profit
+        </span>
+
+        <strong class="sales-summary-value">
+            KSh <%= money(netProfit) %>
         </strong>
     </article>
 
