@@ -1,144 +1,345 @@
-<%
-/*
+// ==========================================================
+// services/liability.js
+// LIABILITY SERVICE
+// VERRAH COSMETICS
+// ==========================================================
 
-* ==========================================================
-* LIABILITY FILTER
-* ==========================================================
-* 
-* Filters ONLY Liability Records.
-* 
-* Controller supplies:
-* activeTab
-* activeFilterDate
-* activeFilterPeriod
-* 
-* Query names:
-* liabilityDate
-* liabilityPeriod
-* 
-* ==========================================================
-  */
-  %>
-
-<div class="sales-filter-toggle-wrapper"><button
-    type="button"
-    id="sales-filter-toggle"
-    class="sales-filter-toggle"
-    aria-expanded="false"
-    aria-controls="sales-filter-form"
->
-    filter date?
-</button>
-
-</div><form
-    id="sales-filter-form"
-    class="sales-filter"
-    method="GET"
-    action="/liability"
-    hidden
-><input
-    type="hidden"
-    name="tab"
-    value="<%= activeTab || "liability" %>"
->
+const Liability = require("../models/liability");
 
 
-<div class="sales-filter-field">
+// ==========================================================
+// CREATE LIABILITY
+// ==========================================================
 
-    <label for="sales-filter-date">
-        Date
-    </label>
+exports.createLiability = async function ({
+    name,
+    amount,
+    recordedBy,
+    substation
+}) {
 
-    <input
-        id="sales-filter-date"
-        type="date"
-        name="liabilityDate"
-        value="<%= activeFilterDate || "" %>"
-        required
-    >
+    const liability =
+        new Liability({
 
-</div>
+            name,
 
+            amount,
 
-<div class="sales-filter-field">
+            recordedBy,
 
-    <label for="sales-filter-period">
-        Period
-    </label>
+            substation
 
-    <select
-        id="sales-filter-period"
-        name="liabilityPeriod"
-    >
-
-        <option
-            value="day"
-            <%= (activeFilterPeriod || "day") === "day" ? "selected" : "" %>
-        >
-            Day
-        </option>
-
-        <option
-            value="month"
-            <%= activeFilterPeriod === "month" ? "selected" : "" %>
-        >
-            Month
-        </option>
-
-        <option
-            value="year"
-            <%= activeFilterPeriod === "year" ? "selected" : "" %>
-        >
-            Year
-        </option>
-
-    </select>
-
-</div>
+        });
 
 
-<button
-    type="submit"
-    class="sales-filter-button"
->
-    Apply Filter
-</button>
+    return liability.save();
+
+};
 
 
-<a
-    href="/liability?tab=<%= activeTab || "liability" %>"
-    class="sales-filter-clear"
->
-    Reset
-</a>
+// ==========================================================
+// GET LIABILITY RECORDS
+// ==========================================================
 
-</form><script>
-document.addEventListener("DOMContentLoaded", function () {
+exports.getLiabilities = async function ({
+    user,
+    date,
+    period,
+    substation
+}) {
 
-    const toggle = document.getElementById("sales-filter-toggle");
-    const filter = document.getElementById("sales-filter-form");
+    /*
+     * ------------------------------------------------------
+     * VALIDATE DATE
+     * ------------------------------------------------------
+     */
 
-    if (!toggle || !filter) {
-        return;
+    if (
+        typeof date !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(date)
+    ) {
+
+        return [];
+
     }
 
 
-    toggle.addEventListener("click", function () {
+    const [
+        year,
+        month,
+        day
+    ] = date
+        .split("-")
+        .map(Number);
 
-        const isHidden = filter.hidden;
 
-        filter.hidden = !isHidden;
+    /*
+     * ------------------------------------------------------
+     * VALIDATE DATE VALUES
+     * ------------------------------------------------------
+     */
 
-        toggle.textContent = isHidden
-            ? "hide filter"
-            : "filter date?";
-
-        toggle.setAttribute(
-            "aria-expanded",
-            isHidden ? "true" : "false"
+    const testDate =
+        new Date(
+            Date.UTC(
+                year,
+                month - 1,
+                day
+            )
         );
 
-    });
 
-});
-</script>
+    if (
+        Number.isNaN(testDate.getTime()) ||
+        testDate.getUTCFullYear() !== year ||
+        testDate.getUTCMonth() !== month - 1 ||
+        testDate.getUTCDate() !== day
+    ) {
+
+        return [];
+
+    }
+
+
+    /*
+     * ------------------------------------------------------
+     * DATE RANGE
+     * ------------------------------------------------------
+     */
+
+    let startLocal;
+    let endLocal;
+
+
+    if (period === "day") {
+
+        startLocal = {
+
+            year,
+
+            month,
+
+            day
+
+        };
+
+
+        const nextDay =
+            new Date(
+                Date.UTC(
+                    year,
+                    month - 1,
+                    day + 1
+                )
+            );
+
+
+        endLocal = {
+
+            year:
+                nextDay.getUTCFullYear(),
+
+            month:
+                nextDay.getUTCMonth() + 1,
+
+            day:
+                nextDay.getUTCDate()
+
+        };
+
+    }
+
+
+    else if (period === "year") {
+
+        startLocal = {
+
+            year,
+
+            month: 1,
+
+            day: 1
+
+        };
+
+
+        endLocal = {
+
+            year:
+                year + 1,
+
+            month: 1,
+
+            day: 1
+
+        };
+
+    }
+
+
+    else {
+
+        /*
+         * Default to month.
+         */
+
+        startLocal = {
+
+            year,
+
+            month,
+
+            day: 1
+
+        };
+
+
+        const nextMonth =
+            new Date(
+                Date.UTC(
+                    year,
+                    month,
+                    1
+                )
+            );
+
+
+        endLocal = {
+
+            year:
+                nextMonth.getUTCFullYear(),
+
+            month:
+                nextMonth.getUTCMonth() + 1,
+
+            day: 1
+
+        };
+
+    }
+
+
+    /*
+     * ------------------------------------------------------
+     * CONVERT KENYA MIDNIGHT TO UTC
+     * ------------------------------------------------------
+     */
+
+    function kenyaMidnightToUTC({
+        year,
+        month,
+        day
+    }) {
+
+        return new Date(
+            Date.UTC(
+                year,
+                month - 1,
+                day,
+                -3,
+                0,
+                0,
+                0
+            )
+        );
+
+    }
+
+
+    const startDate =
+        kenyaMidnightToUTC(startLocal);
+
+
+    const endDate =
+        kenyaMidnightToUTC(endLocal);
+
+
+    /*
+     * ------------------------------------------------------
+     * BASE QUERY
+     * ------------------------------------------------------
+     */
+
+    const query = {
+
+        createdAt: {
+
+            $gte: startDate,
+
+            $lt: endDate
+
+        }
+
+    };
+
+
+    /*
+     * ------------------------------------------------------
+     * SUBSTATION FILTER
+     * ------------------------------------------------------
+     *
+     * STAFF:
+     *
+     * Always restricted to their assigned substation.
+     *
+     *
+     * ADMIN:
+     *
+     * If a substation was selected, filter by it.
+     *
+     * If no substation was selected, do NOT add a
+     * substation condition. Therefore all substations
+     * are returned.
+     * ------------------------------------------------------
+     */
+
+    if (
+        user &&
+        user.role === "staff"
+    ) {
+
+        query.substation =
+            user.assignedSubstation;
+
+    }
+
+
+    else if (
+        user &&
+        user.role === "admin" &&
+        substation
+    ) {
+
+        query.substation =
+            substation;
+
+    }
+
+
+    /*
+     * ------------------------------------------------------
+     * FETCH RECORDS
+     * ------------------------------------------------------
+     */
+
+    return Liability
+
+        .find(query)
+
+        .populate(
+            "recordedBy",
+            "name phone"
+        )
+
+        .populate(
+            "substation",
+            "name location"
+        )
+
+        .sort({
+            createdAt: -1
+        })
+
+        .lean();
+
+};
