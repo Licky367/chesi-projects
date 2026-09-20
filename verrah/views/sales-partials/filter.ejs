@@ -4,7 +4,7 @@
  * SALES FILTER
  * ==========================================================
  *
- * Filters ONLY the currently selected sales tab.
+ * Filters ONLY the currently selected tab.
  *
  * Controller supplies:
  *
@@ -31,9 +31,7 @@
  *         arrearsDate
  *         arrearsPeriod
  *
- * These names must match TAB_CONFIG in:
- *
- *     services/salesService/filter.js
+ * Admin users can additionally filter by substation.
  *
  * ==========================================================
  */
@@ -174,21 +172,29 @@ const activeKeys =
 
             <option
                 value="day"
-                <%= activeFilterPeriod === "day" ? "selected" : "" %>
+                <%= activeFilterPeriod === "day"
+                    ? "selected"
+                    : "" %>
             >
                 Day
             </option>
 
+
             <option
                 value="month"
-                <%= activeFilterPeriod === "month" ? "selected" : "" %>
+                <%= activeFilterPeriod === "month"
+                    ? "selected"
+                    : "" %>
             >
                 Month
             </option>
 
+
             <option
                 value="year"
-                <%= activeFilterPeriod === "year" ? "selected" : "" %>
+                <%= activeFilterPeriod === "year"
+                    ? "selected"
+                    : "" %>
             >
                 Year
             </option>
@@ -196,6 +202,53 @@ const activeKeys =
         </select>
 
     </div>
+
+
+    <!-- ====================================================
+         SUBSTATION
+         ADMIN ONLY
+    ===================================================== -->
+
+    <% if (user && user.role === "admin") { %>
+
+        <div class="sales-filter-field">
+
+            <label for="sales-filter-substation">
+                Substation
+            </label>
+
+            <select
+                id="sales-filter-substation"
+                name="substation"
+            >
+
+                <option value="">
+                    All Substations
+                </option>
+
+
+                <% if (Array.isArray(substations)) { %>
+
+                    <% substations.forEach(function (substation) { %>
+
+                        <option
+                            value="<%= substation._id %>"
+                            <%= String(activeSubstationId || "") === String(substation._id)
+                                ? "selected"
+                                : "" %>
+                        >
+                            <%= substation.name %>
+                        </option>
+
+                    <% }); %>
+
+                <% } %>
+
+            </select>
+
+        </div>
+
+    <% } %>
 
 
     <!-- ====================================================
