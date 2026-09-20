@@ -3,6 +3,20 @@
 //
 // VERRAH COSMETICS
 // PRODUCT ANALYTICS SERVICE
+//
+// GLOBAL SUBSTATION FILTER
+//
+// When filter.substation is provided:
+//
+//     Stock
+//         -> filtered by substation
+//
+//     Delivered Packages
+//         -> filtered by packageSubstation
+//
+// Products themselves remain global product records.
+// Their available stock/market figures are calculated from
+// the selected substation where applicable.
 // ==========================================================
 
 
@@ -17,12 +31,48 @@ const Package =
 
 
 // ==========================================================
+// BUILD SUBSTATION QUERY
+// ==========================================================
+
+function getSubstationQuery(
+    filter,
+    field
+) {
+
+    if (
+        !filter ||
+        !filter.substation
+    ) {
+
+        return {};
+
+    }
+
+
+    return {
+
+        [field]:
+            filter.substation
+
+    };
+
+}
+
+
+// ==========================================================
 // GET PRODUCT ANALYTICS
 // ==========================================================
 
 async function getProductAnalytics(
     filter
 ) {
+
+    // ======================================================
+    // LOAD ACTIVE PRODUCTS
+    //
+    // Products are global records and therefore are not
+    // filtered by substation.
+    // ======================================================
 
     const products =
         await Product.find({
@@ -39,16 +89,35 @@ async function getProductAnalytics(
             .lean();
 
 
+    // ======================================================
+    // LOAD STOCK
+    //
+    // When a substation is selected, only stock belonging
+    // to that substation is included.
+    //
+    // When no substation is selected, all stock is included.
+    // ======================================================
+
+    const stockQuery = {
+
+        isActive:
+            true,
+
+        ...getSubstationQuery(
+            filter,
+            "substation"
+        )
+
+    };
+
+
     const stockRecords =
-        await Stock.find({
-
-            isActive:
-                true
-
-        })
+        await Stock.find(
+            stockQuery
+        )
 
             .select(
-                "subcategory units"
+                "subcategory units substation"
             )
 
             .lean();
@@ -104,28 +173,42 @@ async function getProductAnalytics(
 
     // ======================================================
     // DELIVERED PACKAGES
+    //
+    // Packages are filtered by their packageSubstation.
+    //
+    // The date filter remains active exactly as before.
     // ======================================================
 
+    const deliveredPackageQuery = {
+
+        status:
+            "delivered",
+
+        createdAt: {
+
+            $gte:
+                filter.startDate,
+
+            $lt:
+                filter.endDate
+
+        },
+
+        ...getSubstationQuery(
+            filter,
+            "packageSubstation"
+        )
+
+    };
+
+
     const deliveredPackages =
-        await Package.find({
-
-            status:
-                "delivered",
-
-            createdAt: {
-
-                $gte:
-                    filter.startDate,
-
-                $lt:
-                    filter.endDate
-
-            }
-
-        })
+        await Package.find(
+            deliveredPackageQuery
+        )
 
             .select(
-                "items"
+                "items packageSubstation"
             )
 
             .lean();
