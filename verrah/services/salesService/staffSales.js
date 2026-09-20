@@ -45,26 +45,20 @@ function calculateTotal(
 // ==========================================================
 // BUILD SALES QUERY
 //
-// Uses:
+// The filter object has already been resolved by filter.js.
 //
-//     startDate
-//     endDate
-//     substation
+// ADMIN:
+//     filter.substation === null
+//         -> all substations
 //
-// The same query rules are used for:
+//     filter.substation === selected ID
+//         -> selected substation
 //
-//     Displayed Staff Sales
-//     Day total
-//     Month total
-//     Year total
+// STAFF:
+//     filter.substation === assignedSubstation
+//         -> assigned substation only
 //
-// IMPORTANT:
-//
-// Staff substation restriction has already been resolved
-// by filterService.
-//
-// Therefore this service never trusts a query-string
-// substation value directly.
+// The staff user cannot override this through the query string.
 // ==========================================================
 
 function buildSalesQuery(
@@ -89,7 +83,7 @@ function buildSalesQuery(
 
 
     // ======================================================
-    // SUBSTATION FILTER
+    // APPLY RESOLVED SUBSTATION RESTRICTION
     // ======================================================
 
     if (
@@ -109,15 +103,13 @@ function buildSalesQuery(
 
 
 // ==========================================================
-// GET SALES FOR DATE RANGE
+// GET SALES FOR RANGE
 // ==========================================================
 
 async function getSalesForRange(
     filter,
     startDate,
-    endDate,
-    selectFields =
-        "totalAmount substation"
+    endDate
 ) {
 
     const query =
@@ -133,7 +125,7 @@ async function getSalesForRange(
     )
 
         .select(
-            selectFields
+            "totalAmount substation"
         )
 
         .lean();
@@ -155,7 +147,7 @@ function calculateSubstationTotals(
 
 
     // ======================================================
-    // ADD SALES TO SUBSTATION TOTALS
+    // GROUP SALES BY SUBSTATION
     // ======================================================
 
     sales.forEach(
@@ -200,9 +192,7 @@ function calculateSubstationTotals(
 
 
     // ======================================================
-    // ADD SUBSTATION NAMES
-    //
-    // Only substations that actually have sales are returned.
+    // ATTACH SUBSTATION NAMES
     // ======================================================
 
     return substations
@@ -251,53 +241,23 @@ function calculateSubstationTotals(
 // ==========================================================
 // GET STAFF SALES
 //
-// DATE FILTER
-// ------------
+// The DATE/PERIOD filter controls the displayed sales.
 //
-// Uses the date range already calculated by filterService:
+// The selected date is also used as the reference date for:
 //
-//     filter.startDate
-//     filter.endDate
+//     day
+//     month
+//     year
 //
-// SUBSTATION FILTER
-// -----------------
+// The SUBSTATION restriction comes entirely from filter.js.
+//
+// There is NO substation selector for staff in the EJS.
 //
 // Admin:
-//
-//     filter.substation
-//
-//     null = all substations
+//     no selected substation -> all substations
 //
 // Staff:
-//
-//     filter.substation
-//         = assignedSubstation
-//
-//
-//
-// TOTALS
-// ------
-//
-// The totals are calculated around the DATE SELECTED by
-// the Staff Sales filter:
-//
-//     totals.day
-//     totals.month
-//     totals.year
-//
-// Therefore:
-//
-//     Day filter
-//         -> day/month/year are based on selected date.
-//
-//     Month filter
-//         -> day/month/year are based on the first date
-//            inside the selected month.
-//
-//     Year filter
-//         -> day/month/year are based on the first date
-//            inside the selected year.
-//
+//     assignedSubstation -> assigned substation only
 // ==========================================================
 
 async function getStaffSales(
@@ -307,64 +267,34 @@ async function getStaffSales(
     // ======================================================
     // LOAD SUBSTATIONS
     //
-    // Used only to attach names to bySubstation totals.
-    // ======================================================
+// Used for the bySubstation totals.
+// ======================================================
 
     const substations =
         await substationService.list();
 
 
     // ======================================================
-    // FETCH DISPLAY SALES
+    // DISPLAY SALES
     //
-    // This is the currently selected Staff Sales period.
-    //
-    // Example:
-    //
-    // staffSalesDate   = 2026-09-20
-    // staffSalesPeriod = month
-    //
-    // filter.startDate/endDate therefore represent:
-    //
-    // 2026-09-01 -> 2026-10-01
-    // ======================================================
+// Uses the currently selected Staff Sales date + period.
+// ======================================================
 
-    const sales =
-        await getSalesForRange(
+    const salesQuery =
+        buildSalesQuery(
 
             filter,
 
             filter.startDate,
 
-            filter.endDate,
-
-            "totalAmount substation soldBy products createdAt"
+            filter.endDate
 
         );
 
 
-    // ======================================================
-    // POPULATE STAFF DETAILS
-    //
-    // The first query intentionally fetched the fields needed
-    // for the sales table. Populate soldBy separately so the
-    // returned structure remains compatible with the existing
-    // EJS.
-    // ======================================================
-
-    const populatedSales =
+    const sales =
         await StaffSale.find(
-
-            buildSalesQuery(
-
-                filter,
-
-                filter.startDate,
-
-                filter.endDate
-
-            )
-
+            salesQuery
         )
 
             .populate({
@@ -390,21 +320,8 @@ async function getStaffSales(
     // ======================================================
     // DAY RANGE
     //
-    // IMPORTANT:
-    //
-    // This is calculated from filter.date, NOT from today's
-    // actual date.
-    //
-    // So if the user selects:
-    //
-    //     15 September 2026
-    //
-    // the Day total is for:
-    //
-    //     15 September 2026
-    //
-    // regardless of today's date.
-    // ======================================================
+// Based on the selected staff-sales date.
+// ======================================================
 
     const dayRange =
         require("./filter").getDateRange(
@@ -419,8 +336,8 @@ async function getStaffSales(
     // ======================================================
     // MONTH RANGE
     //
-    // Based on the selected filter date.
-    // ======================================================
+// Based on the selected staff-sales date.
+// ======================================================
 
     const monthRange =
         require("./filter").getDateRange(
@@ -434,9 +351,9 @@ async function getStaffSales(
 
     // ======================================================
     // YEAR RANGE
-    //
-    // Based on the selected filter date.
-    // ======================================================
+//
+// Based on the selected staff-sales date.
+// ======================================================
 
     const yearRange =
         require("./filter").getDateRange(
@@ -449,16 +366,17 @@ async function getStaffSales(
 
 
     // ======================================================
-    // FETCH DAY / MONTH / YEAR SALES
-    //
-    // ALL THREE USE THE SAME SUBSTATION FILTER.
-    //
-    // This means an admin selecting a substation gets totals
-    // for that substation only.
-    //
-    // A staff user gets totals for their assigned substation
-    // only.
-    // ======================================================
+    // FETCH FILTERED TOTALS
+//
+// IMPORTANT:
+//
+// Every range uses the SAME resolved filter.
+//
+// Therefore staff assigned-substation restrictions remain
+// applied to all totals.
+//
+// Admin with no selected substation gets all substations.
+// ======================================================
 
     const [
 
@@ -509,29 +427,15 @@ async function getStaffSales(
 
     const totals = {
 
-        // --------------------------------------------------
-        // SELECTED DATE
-        // --------------------------------------------------
-
         day:
             calculateTotal(
                 daySales
             ),
 
-
-        // --------------------------------------------------
-        // SELECTED MONTH
-        // --------------------------------------------------
-
         month:
             calculateTotal(
                 monthSales
             ),
-
-
-        // --------------------------------------------------
-        // SELECTED YEAR
-        // --------------------------------------------------
 
         year:
             calculateTotal(
@@ -539,9 +443,11 @@ async function getStaffSales(
             ),
 
 
-        // --------------------------------------------------
-        // TOTALS PER SUBSTATION
-        // --------------------------------------------------
+        // ==================================================
+        // SUBSTATION TOTALS
+        //
+        // These are available to the page if needed.
+        // ==================================================
 
         bySubstation: {
 
@@ -569,26 +475,18 @@ async function getStaffSales(
 
 
     // ======================================================
-    // ATTACH TOTALS TO ARRAY
-    //
-    // Keeps the existing EJS compatible:
-    //
-    //     staffSales.forEach(...)
-    //
-    // while also allowing:
-    //
-    //     staffSales.totals
+    // ATTACH TOTALS TO SALES ARRAY
     // ======================================================
 
-    populatedSales.totals =
+    sales.totals =
         totals;
 
 
     // ======================================================
-    // RETURN SALES
+    // RETURN
     // ======================================================
 
-    return populatedSales;
+    return sales;
 
 }
 
