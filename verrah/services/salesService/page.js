@@ -22,10 +22,24 @@ const arrearsService =
 
 // ==========================================================
 // GET SALES PAGE DATA
+//
+// GLOBAL SUBSTATION FILTER
+//
+// ADMIN:
+//     query.substation is used.
+//     Empty substation = all substations.
+//
+// STAFF:
+//     user.assignedSubstation is always used.
+//     The query string cannot override it.
+//
+// DATE/PERIOD:
+//     Remain independent for each tab.
 // ==========================================================
 
 async function getSalesPageData(
-    query = {}
+    query = {},
+    user = {}
 ) {
 
     const allowedTabs = [
@@ -45,39 +59,51 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // INDEPENDENT FILTERS FOR EACH TAB
+    // INDEPENDENT DATE/PERIOD FILTERS FOR EACH TAB
+    //
+    // The substation filter is global.
+    // It is therefore resolved from the same user/query
+    // state for every tab.
     // ======================================================
 
     const summaryFilter =
         filterService.getFilterState(
             query,
-            "summary"
+            "summary",
+            user
         );
 
 
     const staffSalesFilter =
         filterService.getFilterState(
             query,
-            "staff-sales"
+            "staff-sales",
+            user
         );
 
 
     const productsFilter =
         filterService.getFilterState(
             query,
-            "products"
+            "products",
+            user
         );
 
 
     const arrearsFilter =
         filterService.getFilterState(
             query,
-            "arrears"
+            "arrears",
+            user
         );
 
 
     // ======================================================
     // LOAD ALL TAB DATA
+    //
+    // Each service receives its own date/period filter,
+    // while all four filters contain the same global
+    // substation restriction.
     // ======================================================
 
     const [
@@ -147,11 +173,17 @@ async function getSalesPageData(
 
     // ======================================================
     // PRESERVE ALL TAB FILTERS IN NAVIGATION
+    //
+    // Substation is GLOBAL, so it is stored only once.
     // ======================================================
 
     const params =
         new URLSearchParams();
 
+
+    // ======================================================
+    // SUMMARY FILTER
+    // ======================================================
 
     params.set(
         "summaryDate",
@@ -165,6 +197,10 @@ async function getSalesPageData(
     );
 
 
+    // ======================================================
+    // STAFF SALES FILTER
+    // ======================================================
+
     params.set(
         "staffSalesDate",
         staffSalesFilter.date
@@ -176,6 +212,10 @@ async function getSalesPageData(
         staffSalesFilter.period
     );
 
+
+    // ======================================================
+    // PRODUCTS FILTER
+    // ======================================================
 
     params.set(
         "productsDate",
@@ -189,6 +229,10 @@ async function getSalesPageData(
     );
 
 
+    // ======================================================
+    // ARREARS FILTER
+    // ======================================================
+
     params.set(
         "arrearsDate",
         arrearsFilter.date
@@ -199,6 +243,30 @@ async function getSalesPageData(
         "arrearsPeriod",
         arrearsFilter.period
     );
+
+
+    // ======================================================
+    // GLOBAL SUBSTATION FILTER
+    //
+    // For admin:
+    //     selected substation is preserved.
+    //
+    // For staff:
+    //     assignedSubstation is preserved.
+    // ======================================================
+
+    if (
+        activeFilter.substation
+    ) {
+
+        params.set(
+            "substation",
+            String(
+                activeFilter.substation
+            )
+        );
+
+    }
 
 
     const salesQuerySuffix =
@@ -223,6 +291,22 @@ async function getSalesPageData(
 
         activeFilterPeriod:
             activeFilter.period,
+
+
+        // ==================================================
+        // GLOBAL SUBSTATION FILTER STATE
+        // ==================================================
+
+        activeSubstationId:
+            activeFilter.substation,
+
+
+        isSubstationRestricted:
+            activeFilter.isSubstationRestricted,
+
+
+        isAdmin:
+            activeFilter.isAdmin,
 
 
         filterLabel:
