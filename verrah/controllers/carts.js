@@ -179,7 +179,7 @@ exports.list = async (req, res) => {
 // UPDATE PAYMENT MODE
 // POST /carts/payment-mode
 //
-// STAFF ONLY
+// ADMIN + STAFF
 //
 // Cash:
 //     isMobile = false
@@ -213,7 +213,7 @@ exports.updatePaymentMode = async (
 
 
         // --------------------------------------------------
-        // STAFF ONLY
+        // USER ROLE
         // --------------------------------------------------
 
         const role =
@@ -225,8 +225,13 @@ exports.updatePaymentMode = async (
                 .toLowerCase();
 
 
+        // --------------------------------------------------
+        // ADMIN + STAFF ONLY
+        // --------------------------------------------------
+
         if (
-            role !== "staff"
+            role !== "staff" &&
+            role !== "admin"
         ) {
 
             return res.status(403).json({
@@ -235,7 +240,7 @@ exports.updatePaymentMode = async (
                     false,
 
                 error:
-                    "Only staff can change payment mode."
+                    "Only admin or staff can change payment mode."
             });
         }
 
@@ -294,11 +299,9 @@ exports.updatePaymentMode = async (
         // --------------------------------------------------
         // UPDATE THROUGH CART SERVICE
         //
-        // IMPORTANT:
-        //
         // cartService.getCart() returns a lean object.
-        // Therefore we use updatePaymentMode(), which
-        // retrieves the real Mongoose document and saves it.
+        // Therefore use updatePaymentMode(), which retrieves
+        // the actual Mongoose document and saves it.
         // --------------------------------------------------
 
         const cart =
@@ -400,12 +403,6 @@ exports.checkoutPage = async (
 
         // --------------------------------------------------
         // CHECKOUT SUBSTATIONS
-        //
-        // checkoutSubstation.load normally places these
-        // inside res.locals.substations.
-        //
-        // If available, use them.
-        // Otherwise load them directly from the service.
         // --------------------------------------------------
 
         let substations =
@@ -786,14 +783,6 @@ exports.checkout = async (
             );
 
 
-            /*
-             * STAFF:
-             *     /packages/staffDirect
-             *
-             * NON-STAFF:
-             *     /packages
-             */
-
             return res.redirect(
                 getPackageRedirect(req)
             );
@@ -815,17 +804,6 @@ exports.checkout = async (
                     req.body?.phoneNumber
                 );
 
-
-            /*
-             * Do NOT redirect staff directly to
-             * /packages/staffDirect here.
-             *
-             * The STK push has only been initiated.
-             * The payment still needs to be confirmed.
-             *
-             * payment-status handles the confirmation
-             * process before the package is created.
-             */
 
             return res.redirect(
                 `/carts/payment/${result.paymentId}`
@@ -888,10 +866,21 @@ exports.checkout = async (
 
 
 // ==========================================================
-// STAFF SALE
+// STAFF / ADMIN SALE
 // POST /carts/staff-sale
 //
 // CASH PAYMENT
+//
+// STAFF:
+//     salesName
+//     user.assignedSubstation
+//
+// ADMIN:
+//     salesName
+//     req.body.salesSubstation
+//
+// DATABASE:
+//     salesSubstation
 // ==========================================================
 
 exports.staffSale = async (
@@ -901,6 +890,10 @@ exports.staffSale = async (
 
     try {
 
+        // --------------------------------------------------
+        // USER MUST BE LOGGED IN
+        // --------------------------------------------------
+
         if (!req.user) {
 
             return res.redirect(
@@ -908,6 +901,10 @@ exports.staffSale = async (
             );
         }
 
+
+        // --------------------------------------------------
+        // USER ROLE
+        // --------------------------------------------------
 
         const role =
             String(
@@ -918,30 +915,25 @@ exports.staffSale = async (
                 .toLowerCase();
 
 
+        const isStaff =
+            role === "staff";
+
+
+        const isAdmin =
+            role === "admin";
+
+
+        // --------------------------------------------------
+        // ADMIN + STAFF ONLY
+        // --------------------------------------------------
+
         if (
-            role !== "staff"
+            !isStaff &&
+            !isAdmin
         ) {
 
             return res.status(403).send(
-                "Only staff can complete staff sales."
-            );
-        }
-
-
-        // --------------------------------------------------
-        // ASSIGNED SUBSTATION
-        // --------------------------------------------------
-
-        const assignedSubstation =
-            req.user.assignedSubstation;
-
-
-        if (
-            !assignedSubstation
-        ) {
-
-            return res.status(400).send(
-                "You are not assigned to a substation."
+                "Only admin or staff can complete this sale."
             );
         }
 
@@ -971,44 +963,179 @@ exports.staffSale = async (
         ) {
 
             return res.status(400).send(
-                "Sales name is too long."
+                "Sales name cannot exceed 150 characters."
             );
         }
 
 
+        // --------------------------------------------------
+        // SALES SUBSTATION
+        // --------------------------------------------------
+        //
+        // STAFF:
+        //     Always use assignedSubstation from user.
+        //
+        // ADMIN:
+        //     Use the substation selected in the modal.
+        //
+        // This prevents a staff member from submitting an
+        // arbitrary substation through the browser.
+        // --------------------------------------------------
+
+        let salesSubstation;
+
+
+        if (isStaff) {
+
+            salesSubstation =
+                req.user.assignedSubstation;
+
+
+            if (
+                !salesSubstation
+            ) {
+
+                return res.status(400).send(
+                    "You are not assigned to a substation."
+                );
+            }
+
+        } else if (isAdmin) {
+
+            salesSubstation =
+                String(
+                    req.body?.salesSubstation ||
+                    ""
+                ).trim();
+
+
+            if (
+                !salesSubstation
+            ) {
+
+                return res.status(400).send(
+                    "Please select a substation."
+                );
+            }
+
+        }
+
+
+        // --------------------------------------------------
+        // NORMALIZE SUBSTATION ID
+        //
+        // Handles either:
+        //
+        //     ObjectId/string
+        //
+        // or:
+        //
+        //     populated substation object
+        // --------------------------------------------------
+
+        if (
+            typeof salesSubstation ===
+            "object"
+        ) {
+
+            salesSubstation =
+                salesSubstation._id ||
+                salesSubstation.id ||
+                "";
+        }
+
+
+        salesSubstation =
+            String(
+                salesSubstation
+            ).trim();
+
+
+        if (
+            !salesSubstation
+        ) {
+
+            return res.status(400).send(
+                "A valid sales substation is required."
+            );
+        }
+
+
+        // --------------------------------------------------
+        // VERIFY SUBSTATION EXISTS
+        //
+        // This is especially important for admin because
+        // salesSubstation comes from the browser.
+        // --------------------------------------------------
+
+        const substations =
+            await getSubstations();
+
+
+        const selectedSubstation =
+            substations.find(
+                substation =>
+                    String(
+                        substation?._id ||
+                        substation?.id ||
+                        ""
+                    ) ===
+                    salesSubstation
+            );
+
+
+        if (
+            !selectedSubstation
+        ) {
+
+            return res.status(400).send(
+                "Selected substation was not found."
+            );
+        }
+
+
+        // --------------------------------------------------
+        // CREATE SALE
+        //
+        // The cart service receives BOTH values.
+        //
+        // It should save:
+        //
+        //     salesName
+        //     salesSubstation
+        //
+        // into StaffSale.
+        // --------------------------------------------------
+
         await cartService.createStaffSale(
             req,
-            salesName
+            {
+                salesName,
+                salesSubstation
+            }
         );
 
 
         // --------------------------------------------------
-        // HANDLE BOTH:
+        // REDIRECT
         //
-        // assignedSubstation = ObjectId/string
+        // STAFF:
+        //     Return to assigned branch.
         //
-        // OR
-        //
-        // assignedSubstation = populated object
+        // ADMIN:
+        //     Return to selected sales branch.
         // --------------------------------------------------
 
-        const assignedSubstationId =
-            typeof assignedSubstation === "object"
-                ? (
-                    assignedSubstation._id ||
-                    assignedSubstation.id
-                )
-                : assignedSubstation;
-
-
         return res.redirect(
-            `/branch/${assignedSubstationId}`
+            `/branch/${encodeURIComponent(
+                salesSubstation
+            )}`
         );
 
     } catch (err) {
 
         console.error(
-            "Staff sale error:",
+            "Staff/admin sale error:",
             err
         );
 
@@ -1016,7 +1143,7 @@ exports.staffSale = async (
         return res.status(400).send(
             getCartErrorMessage(
                 err,
-                "Unable to complete staff sale."
+                "Unable to complete sale."
             )
         );
     }
