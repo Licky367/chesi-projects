@@ -1,0 +1,336 @@
+<%
+/*
+==========================================================
+VERRAH COSMETICS
+STOCK FIFO BATCH
+EDIT PAGE
+==========================================================
+
+Expected variables:
+
+    stock
+    batch
+    error
+    saved
+
+Editable:
+
+    units
+    buyPrice
+
+Read-only:
+
+    purchasedAt
+==========================================================
+*/
+
+
+const stockId =
+    stock && stock._id
+        ? stock._id.toString()
+        : "";
+
+const batchId =
+    batch && batch._id
+        ? batch._id.toString()
+        : "";
+
+
+const batchDate =
+    batch && batch.purchasedAt
+        ? new Date(batch.purchasedAt)
+        : null;
+
+%>
+
+
+<div class="sales-page">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="sales-header">
+
+        <div class="sales-header-icon">
+            <i class="fas fa-layer-group"></i>
+        </div>
+
+        <div>
+
+            <h1 class="sales-title">
+                Edit Stock Batch
+            </h1>
+
+            <p class="sales-subtitle">
+
+                <%= stock && stock.name
+                    ? stock.name
+                    : "Stock Batch" %>
+
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         NAVIGATION
+    ====================================================== -->
+
+    <div class="sales-navigation">
+
+        <a
+            href="/stock/<%= stockId %>/batches"
+            class="sales-navigation-tab"
+        >
+            <i class="fas fa-layer-group"></i>
+            Batches
+        </a>
+
+        <a
+            href="/stock/<%= stockId %>"
+            class="sales-navigation-tab"
+        >
+            <i class="fas fa-box"></i>
+            Stock Details
+        </a>
+
+    </div>
+
+
+    <!-- =====================================================
+         ERROR
+    ====================================================== -->
+
+    <% if (error) { %>
+
+        <div class="sales-liability-entry">
+
+            <div style="
+                color:#8a2f2f;
+                font-weight:700;
+            ">
+
+                <i class="fas fa-circle-exclamation"></i>
+
+                <%= error %>
+
+            </div>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- =====================================================
+         SAVED
+    ====================================================== -->
+
+    <% if (saved) { %>
+
+        <div class="sales-liability-entry">
+
+            <div style="
+                color:#356b35;
+                font-weight:700;
+            ">
+
+                <i class="fas fa-circle-check"></i>
+
+                Stock batch updated successfully.
+
+            </div>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- =====================================================
+         BATCH FORM
+    ====================================================== -->
+
+    <div class="sales-content">
+
+        <section class="sales-section">
+
+            <div class="sales-liability-entry">
+
+                <div class="sales-section-heading">
+
+                    <div>
+
+                        <h2>
+                            Batch Details
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <form
+                    method="POST"
+                    action="/stock/<%= stockId %>/batch/<%= batchId %>"
+                    class="sales-liability-form"
+                >
+
+
+                    <!-- =====================================
+                         PURCHASE DATE
+                    ====================================== -->
+
+                    <div class="sales-liability-field">
+
+                        <label>
+                            Purchase Date
+                        </label>
+
+                        <div class="sales-liability-assigned">
+
+                            <span class="sales-liability-assigned-label">
+                                Purchased
+                            </span>
+
+                            <strong>
+
+                                <% if (
+                                    batchDate &&
+                                    !isNaN(batchDate.getTime())
+                                ) { %>
+
+                                    <%= batchDate.toLocaleDateString(
+                                        "en-KE",
+                                        {
+                                            day: "2-digit",
+                                            month: "short",
+                                            year: "numeric"
+                                        }
+                                    ) %>
+
+                                <% } else { %>
+
+                                    —
+
+                                <% } %>
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =====================================
+                         BATCH ID
+                    ====================================== -->
+
+                    <div class="sales-liability-field">
+
+                        <label>
+                            Batch ID
+                        </label>
+
+                        <div class="sales-liability-assigned">
+
+                            <span class="sales-liability-assigned-label">
+                                FIFO Batch
+                            </span>
+
+                            <strong>
+                                <%= batchId %>
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =====================================
+                         UNITS
+                    ====================================== -->
+
+                    <div class="sales-liability-field">
+
+                        <label for="units">
+                            Units
+                        </label>
+
+                        <input
+                            type="number"
+                            id="units"
+                            name="units"
+                            value="<%= Number(batch.units || 0) %>"
+                            min="0"
+                            step="1"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- =====================================
+                         BUY PRICE
+                    ====================================== -->
+
+                    <div class="sales-liability-field">
+
+                        <label for="buyPrice">
+                            Buy Price
+                        </label>
+
+                        <input
+                            type="number"
+                            id="buyPrice"
+                            name="buyPrice"
+                            value="<%= Number(batch.buyPrice || 0) %>"
+                            min="0"
+                            step="0.01"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- =====================================
+                         ACTIONS
+                    ====================================== -->
+
+                    <div class="sales-liability-form-actions">
+
+                        <button
+                            type="submit"
+                            class="sales-liability-submit"
+                        >
+
+                            <i class="fas fa-save"></i>
+
+                            Save Changes
+
+                        </button>
+
+
+                        <a
+                            href="/stock/<%= stockId %>/batches"
+                            class="sales-filter-clear"
+                        >
+
+                            <i class="fas fa-arrow-left"></i>
+
+                            Cancel
+
+                        </a>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>
