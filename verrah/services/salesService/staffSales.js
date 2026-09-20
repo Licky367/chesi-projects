@@ -5,60 +5,87 @@
 // STAFF SALES / SALES REPORT SERVICE
 // ==========================================================
 
-
 const StaffSale =
-    require("../../models/staff-sales");
-
+require("../../models/staff-sales");
 
 // ==========================================================
 // GET STAFF SALES
 //
-// IMPORTANT:
-// Uses ONLY the Staff Sales filter.
+// Uses:
+//     staffSalesDate
+//     staffSalesPeriod
+//     substation
 //
-// staffSalesDate
-// staffSalesPeriod
+// Staff:
+//     filter.substation is forced from assignedSubstation.
+//
+// Admin:
+//     filter.substation is optional.
+//     null = all substations.
 // ==========================================================
 
 async function getStaffSales(
-    filter
+filter
 ) {
 
-    return StaffSale.find({
+const query = {
 
-        createdAt: {
+    createdAt: {
 
-            $gte:
-                filter.startDate,
+        $gte:
+            filter.startDate,
 
-            $lt:
-                filter.endDate
+        $lt:
+            filter.endDate
 
-        }
+    }
 
-    })
+};
 
-        .populate({
 
-            path:
-                "soldBy",
+// ======================================================
+// SUBSTATION FILTER
+// ======================================================
 
-            select:
-                "name"
+if (
+    filter &&
+    filter.substation
+) {
 
-        })
-
-        .sort({
-
-            createdAt:
-                -1
-
-        })
-
-        .lean();
+    query.substation =
+        filter.substation;
 
 }
 
+
+// ======================================================
+// FETCH STAFF SALES
+// ======================================================
+
+return StaffSale.find(
+    query
+)
+
+    .populate({
+
+        path:
+            "soldBy",
+
+        select:
+            "name"
+
+    })
+
+    .sort({
+
+        createdAt:
+            -1
+
+    })
+
+    .lean();
+
+}
 
 // ==========================================================
 // EXPORTS
@@ -66,6 +93,6 @@ async function getStaffSales(
 
 module.exports = {
 
-    getStaffSales
+getStaffSales
 
 };
