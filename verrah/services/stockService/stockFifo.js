@@ -1,4 +1,4 @@
-const Stock = require("../models/stock");
+const Stock = require("../../models/stock");
 const {
     number, wholeNumber, batchUnits, batchBuyPrice, totalBatchUnits,
     calculateFifoValue, calculateUnitBuyPrice, setCalculatedUnitBuyPrice,
