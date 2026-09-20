@@ -48,8 +48,8 @@ async function getEnrichedStaffPackages(req, status) {
       const clientRole =
         roleMap.get(String(pkg.clientId)) || "";
 
-      const isDirectSell =
-        clientRole === "staff";
+const isDirectSell =
+    clientRole === "staff" || clientRole === "admin";
 
       const confirmationState =
         pkg.status === "pending"
