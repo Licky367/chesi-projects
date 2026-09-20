@@ -17,10 +17,6 @@ const requireStaff =
 const packageSubstationAccess =
     require("../middleware/packageSubstationAccess");
 
-// IMPORTANT:
-// Staff routes must be declared before /:id.
-// The direct-sell route is also declared before /:id
-// so "staffDirect" is not treated as a package ID.
 
 // =========================================================
 // STAFF PACKAGE LIST
@@ -39,6 +35,7 @@ router.get(
     packageSubstationAccess.filterStaffList,
     controller.staffList
 );
+
 
 // =========================================================
 // STAFF DIRECT SELL PACKAGE LIST
@@ -60,6 +57,25 @@ router.get(
     controller.staffDirectSells
 );
 
+
+// =========================================================
+// CHANGE PACKAGE TO CASH
+// POST /packages/staff/cash
+//
+// Changes a package with arrears to:
+//     isCash = true
+//
+// This route MUST be declared before /staff/:id.
+// Otherwise "cash" could be interpreted as a package ID.
+// =========================================================
+
+router.post(
+    "/staff/cash",
+    requireStaffOrAdmin,
+    controller.markCash
+);
+
+
 // =========================================================
 // STAFF PACKAGE DETAILS
 // GET /packages/staff/:id
@@ -75,11 +91,13 @@ router.get(
     controller.staffDetails
 );
 
+
 router.post(
     "/staff/:id/confirm",
     requireStaff,
     controller.confirm
 );
+
 
 router.post(
     "/staff/:id/deliver",
@@ -87,17 +105,20 @@ router.post(
     controller.deliver
 );
 
+
 router.post(
     "/staff/:id/payment",
     requireStaffOrAdmin,
     controller.recordPayment
 );
 
+
 router.post(
     "/staff/:id/clear",
     requireStaffOrAdmin,
     controller.clear
 );
+
 
 // =========================================================
 // CLIENT PACKAGE HISTORY
@@ -109,16 +130,19 @@ router.get(
     controller.list
 );
 
+
 router.get(
     "/:id",
     requireLogin,
     controller.details
 );
 
+
 router.post(
     "/:id/pay",
     requireLogin,
     controller.pay
 );
+
 
 module.exports = router;
