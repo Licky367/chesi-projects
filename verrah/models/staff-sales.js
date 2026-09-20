@@ -164,6 +164,13 @@ const staffSaleSchema =
             },
 
 
+salesSubstation: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Substation",
+    required: true
+},
+
+
             // ------------------------------------------------
             // PRODUCTS SOLD
             // ------------------------------------------------
