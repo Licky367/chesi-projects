@@ -1,141 +1,291 @@
 <%
 /*
+ * ==========================================================
+ * SALES FILTER
+ * ==========================================================
+ *
+ * Filters ONLY the currently selected sales tab.
+ *
+ * Controller supplies:
+ *
+ *     activeTab
+ *     activeFilterDate
+ *     activeFilterPeriod
+ *     filterLabel
+ *
+ * Query names:
+ *
+ *     summary:
+ *         summaryDate
+ *         summaryPeriod
+ *
+ *     staff-sales:
+ *         staffSalesDate
+ *         staffSalesPeriod
+ *
+ *     products:
+ *         productsDate
+ *         productsPeriod
+ *
+ *     arrears:
+ *         arrearsDate
+ *         arrearsPeriod
+ *
+ * These names must match TAB_CONFIG in:
+ *
+ *     services/salesService/filter.js
+ *
+ * ==========================================================
+ */
 
-* This partial filters ONLY the currently selected tab.
-* 
-* The controller supplies:
-* activeTab
-* activeFilterDate
-* activeFilterPeriod
-* filterLabel
-* 
-* Query names are tab-specific:
-* summaryDate / summaryPeriod
-* productsDate / productsPeriod
-* arrearsDate / arrearsPeriod
-* 
-* Therefore filtering Product Analytics cannot modify
-* Sales Summary or Customer Arrears.
-  */
-  %>
 
-<div class="sales-filter-toggle-wrapper"><button
-    type="button"
-    id="sales-filter-toggle"
-    class="sales-filter-toggle"
-    aria-expanded="false"
-    aria-controls="sales-filter-form"
->
-    filter date?
-</button>
+const filterKeys = {
 
-</div><form
+    summary: {
+
+        date:
+            "summaryDate",
+
+        period:
+            "summaryPeriod"
+
+    },
+
+
+    "staff-sales": {
+
+        date:
+            "staffSalesDate",
+
+        period:
+            "staffSalesPeriod"
+
+    },
+
+
+    products: {
+
+        date:
+            "productsDate",
+
+        period:
+            "productsPeriod"
+
+    },
+
+
+    arrears: {
+
+        date:
+            "arrearsDate",
+
+        period:
+            "arrearsPeriod"
+
+    }
+
+};
+
+
+const activeKeys =
+    filterKeys[activeTab] || filterKeys.summary;
+
+%>
+
+
+<!-- ========================================================
+     FILTER TOGGLE
+========================================================= -->
+
+<div class="sales-filter-toggle-wrapper">
+
+    <button
+        type="button"
+        id="sales-filter-toggle"
+        class="sales-filter-toggle"
+        aria-expanded="false"
+        aria-controls="sales-filter-form"
+    >
+        filter date?
+    </button>
+
+</div>
+
+
+<!-- ========================================================
+     FILTER FORM
+========================================================= -->
+
+<form
     id="sales-filter-form"
     class="sales-filter"
     method="GET"
     action="/sales"
     hidden
-><input
-    type="hidden"
-    name="tab"
-    value="<%= activeTab %>"
 >
 
-<div class="sales-filter-field">
 
-    <label for="sales-filter-date">
-        Date
-    </label>
+    <!-- ====================================================
+         ACTIVE TAB
+    ===================================================== -->
 
     <input
-        id="sales-filter-date"
-        type="date"
-        name="<%= activeTab %>Date"
-        value="<%= activeFilterDate %>"
-        required
+        type="hidden"
+        name="tab"
+        value="<%= activeTab %>"
     >
 
-</div>
+
+    <!-- ====================================================
+         DATE
+    ===================================================== -->
+
+    <div class="sales-filter-field">
+
+        <label for="sales-filter-date">
+            Date
+        </label>
+
+        <input
+            id="sales-filter-date"
+            type="date"
+            name="<%= activeKeys.date %>"
+            value="<%= activeFilterDate %>"
+            required
+        >
+
+    </div>
 
 
-<div class="sales-filter-field">
+    <!-- ====================================================
+         PERIOD
+    ===================================================== -->
 
-    <label for="sales-filter-period">
-        Period
-    </label>
+    <div class="sales-filter-field">
 
-    <select
-        id="sales-filter-period"
-        name="<%= activeTab %>Period"
+        <label for="sales-filter-period">
+            Period
+        </label>
+
+        <select
+            id="sales-filter-period"
+            name="<%= activeKeys.period %>"
+        >
+
+            <option
+                value="day"
+                <%= activeFilterPeriod === "day" ? "selected" : "" %>
+            >
+                Day
+            </option>
+
+            <option
+                value="month"
+                <%= activeFilterPeriod === "month" ? "selected" : "" %>
+            >
+                Month
+            </option>
+
+            <option
+                value="year"
+                <%= activeFilterPeriod === "year" ? "selected" : "" %>
+            >
+                Year
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <!-- ====================================================
+         APPLY
+    ===================================================== -->
+
+    <button
+        type="submit"
+        class="sales-filter-button"
     >
-
-        <option
-            value="day"
-            <%= activeFilterPeriod === "day" ? "selected" : "" %>
-        >
-            Day
-        </option>
-
-        <option
-            value="month"
-            <%= activeFilterPeriod === "month" ? "selected" : "" %>
-        >
-            Month
-        </option>
-
-        <option
-            value="year"
-            <%= activeFilterPeriod === "year" ? "selected" : "" %>
-        >
-            Year
-        </option>
-
-    </select>
-
-</div>
+        Apply Filter
+    </button>
 
 
-<button
-    type="submit"
-    class="sales-filter-button"
->
-    Apply Filter
-</button>
+    <!-- ====================================================
+         RESET
+    ===================================================== -->
+
+    <a
+        href="/sales?tab=<%= activeTab %>"
+        class="sales-filter-clear"
+    >
+        Reset
+    </a>
 
 
-<a
-    href="/sales?tab=<%= activeTab %>"
-    class="sales-filter-clear"
->
-    Reset
-</a>
+</form>
 
-</form><script>
-document.addEventListener("DOMContentLoaded", function () {
 
-    const toggle = document.getElementById("sales-filter-toggle");
-    const filter = document.getElementById("sales-filter-form");
+<!-- ========================================================
+     FILTER TOGGLE SCRIPT
+========================================================= -->
 
-    if (!toggle || !filter) {
-        return;
-    }
+<script>
 
-    toggle.addEventListener("click", function () {
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-        const isHidden = filter.hidden;
+        const toggle =
+            document.getElementById(
+                "sales-filter-toggle"
+            );
 
-        filter.hidden = !isHidden;
 
-        toggle.textContent = isHidden
-            ? "hide filter"
-            : "filter date?";
+        const filter =
+            document.getElementById(
+                "sales-filter-form"
+            );
 
-        toggle.setAttribute(
-            "aria-expanded",
-            isHidden ? "true" : "false"
+
+        if (
+            !toggle ||
+            !filter
+        ) {
+
+            return;
+
+        }
+
+
+        toggle.addEventListener(
+            "click",
+            function () {
+
+                const isHidden =
+                    filter.hidden;
+
+
+                filter.hidden =
+                    !isHidden;
+
+
+                toggle.textContent =
+                    isHidden
+                        ? "hide filter"
+                        : "filter date?";
+
+
+                toggle.setAttribute(
+                    "aria-expanded",
+                    isHidden
+                        ? "true"
+                        : "false"
+                );
+
+            }
         );
 
-    });
+    }
+);
 
-});
 </script>
