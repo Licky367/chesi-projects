@@ -68,7 +68,7 @@ exports.batches =
             // ==================================================
 
             return res.render(
-                "stock/batches",
+                "stock/batch/batches",
                 {
                     title:
                         "Stock Batches",
@@ -190,7 +190,7 @@ exports.batch =
             // ==================================================
 
             return res.render(
-                "stock/batch",
+                "stock/batch/edit",
                 {
                     title:
                         "Edit Stock Batch",
