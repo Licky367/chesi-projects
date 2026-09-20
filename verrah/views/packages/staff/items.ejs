@@ -1,353 +1,466 @@
 <%
 const totalAmount =
-Number(packageDoc?.totalAmount || 0);
+  Number(packageDoc?.totalAmount || 0);
 
 const totalPaid =
-Number(
-packageDoc?.totalPaid ||
-packageDoc?.paidAmount ||
-0
-);
+  Number(
+    packageDoc?.totalPaid ||
+    packageDoc?.paidAmount ||
+    0
+  );
 
 const arrears =
-Math.max(
-0,
-totalAmount - totalPaid
-);
+  Math.max(
+    0,
+    totalAmount - totalPaid
+  );
+
+const isCash =
+  packageDoc?.isCash === true;
 
 const isDelivered =
-packageDoc?.status === "delivered";
+  packageDoc?.status === "delivered";
 
 const canClear =
-isDelivered &&
-arrears === 0 &&
-!cleared;
+  isDelivered &&
+  arrears === 0 &&
+  !cleared;
 %>
 
-<div class="staff-items-card">  <div class="staff-items-heading">
+
+<div class="staff-items-card">
+
+  <div class="staff-items-heading">
     ITEMS
-  </div><% (packageDoc?.items || []).forEach(function(item) { %>
+  </div>
 
-<div class="staff-item-row">
 
-  <div class="staff-item-image">
+  <% (packageDoc?.items || []).forEach(function(item) { %>
 
-    <% if (item.image) { %>
+    <div class="staff-item-row">
 
-      <img
-        src="<%= item.image %>"
-        alt="<%= item.name %>"
-      >
+      <div class="staff-item-image">
 
-    <% } else { %>
+        <% if (item.image) { %>
 
-      <i class="fas fa-box"></i>
+          <img
+            src="<%= item.image %>"
+            alt="<%= item.name %>"
+          >
 
-    <% } %>
+        <% } else { %>
+
+          <i class="fas fa-box"></i>
+
+        <% } %>
+
+      </div>
+
+
+      <div class="staff-item-main">
+
+        <div class="staff-item-name">
+          <%= item.name %>
+        </div>
+
+        <div class="staff-item-meta">
+
+          Qty
+          <%= item.qty %>
+
+          · KSh
+
+          <%= Number(
+            item.price || 0
+          ).toLocaleString() %>
+
+          each
+
+        </div>
+
+      </div>
+
+
+      <strong class="staff-item-total">
+
+        KSh
+
+        <%= Number(
+          (item.price || 0) *
+          (item.qty || 0)
+        ).toLocaleString() %>
+
+      </strong>
+
+    </div>
+
+  <% }); %>
+
+
+  <div class="staff-total-line">
+
+    <span>
+      Total
+    </span>
+
+    <strong>
+
+      KSh
+      <%= totalAmount.toLocaleString() %>
+
+    </strong>
 
   </div>
 
 
-  <div class="staff-item-main">
-
-    <div class="staff-item-name">
-      <%= item.name %>
-    </div>
-
-    <div class="staff-item-meta">
-
-      Qty
-      <%= item.qty %>
-
-      · KSh
-
-      <%= Number(
-        item.price || 0
-      ).toLocaleString() %>
-
-      each
-
-    </div>
-
-  </div>
-
-
-  <strong class="staff-item-total">
-
-    KSh
-
-    <%= Number(
-      (item.price || 0) *
-      (item.qty || 0)
-    ).toLocaleString() %>
-
-  </strong>
-
-</div>
-
-<% }); %>
-
-  <div class="staff-total-line"><span>
-  Total
-</span>
-
-<strong>
-
-  KSh
-  <%= totalAmount.toLocaleString() %>
-
-</strong>
-
-  </div>  <!-- ===================================================
+  <!-- ===================================================
        CONFIRM PACKAGE
-  ==================================================== --><% if (
-role === "staff" &&
-packageDoc.status === "pending"
-) { %>
+  ==================================================== -->
 
-<div class="staff-action-card">
+  <% if (
+    role === "staff" &&
+    packageDoc.status === "pending"
+  ) { %>
 
-  <div class="staff-action-title">
-    Confirm package
-  </div>
+    <div class="staff-action-card">
 
-
-  <% if (canConfirm) { %>
-
-    <p>
-      All package quantities are available at your
-      assigned substation.
-    </p>
-
-
-    <form
-      method="POST"
-      action="/packages/staff/<%= packageDoc._id %>/confirm"
-    >
-
-      <button
-        type="submit"
-        class="staff-action-btn"
-      >
-
-        <i class="fas fa-circle-check"></i>
-
+      <div class="staff-action-title">
         Confirm package
-
-      </button>
-
-    </form>
+      </div>
 
 
-  <% } else { %>
+      <% if (canConfirm) { %>
 
-    <div class="staff-action-error">
+        <p>
+          All package quantities are available at your
+          assigned substation.
+        </p>
 
-      <%= confirmationError ||
-        "This package cannot be confirmed because one or more products exceed the assigned substation balance."
-      %>
+
+        <form
+          method="POST"
+          action="/packages/staff/<%= packageDoc._id %>/confirm"
+        >
+
+          <button
+            type="submit"
+            class="staff-action-btn"
+          >
+
+            <i class="fas fa-circle-check"></i>
+
+            Confirm package
+
+          </button>
+
+        </form>
+
+
+      <% } else { %>
+
+        <div class="staff-action-error">
+
+          <%= confirmationError ||
+            "This package cannot be confirmed because one or more products exceed the assigned substation balance."
+          %>
+
+        </div>
+
+      <% } %>
 
     </div>
 
   <% } %>
 
-</div>
-
-<% } %>
 
   <!-- ===================================================
        DELIVER PACKAGE
-  ==================================================== --><% if (
-role === "staff" &&
-packageDoc.status === "confirmed" &&
-String(packageDoc.confirmedByStaffId) ===
-String(user?._id || "")
-) { %>
+  ==================================================== -->
 
-<div class="staff-action-card">
+  <% if (
+    role === "staff" &&
+    packageDoc.status === "confirmed" &&
+    String(packageDoc.confirmedByStaffId) ===
+    String(user?._id || "")
+  ) { %>
 
-  <div class="staff-action-title">
-    Ready for delivery
-  </div>
+    <div class="staff-action-card">
+
+      <div class="staff-action-title">
+        Ready for delivery
+      </div>
 
 
-  <form
-    method="POST"
-    action="/packages/staff/<%= packageDoc._id %>/deliver"
-  >
+      <form
+        method="POST"
+        action="/packages/staff/<%= packageDoc._id %>/deliver"
+      >
 
-    <button
-      type="submit"
-      class="staff-action-btn"
-    >
+        <button
+          type="submit"
+          class="staff-action-btn"
+        >
 
-      <i class="fas fa-truck"></i>
+          <i class="fas fa-truck"></i>
 
-      Mark as delivered
+          Mark as delivered
 
-    </button>
+        </button>
 
-  </form>
+      </form>
 
-</div>
+    </div>
 
-<% } %>
+  <% } %>
+
 
   <!-- ===================================================
-       PAYMENT
-  ==================================================== --><% if (
-isDelivered &&
-!cleared &&
-arrears > 0 &&
-(
-role === "admin" ||
-String(packageDoc.deliveredByStaffId) ===
-String(user?._id || "")
-)
-) { %>
+       CASH PAYMENT SELECTION
+       
+       Only appears when:
+       
+       - Package has arrears
+       - Package is not already cash
+       - Package has been delivered
+       - User is admin OR delivered staff
+  ==================================================== -->
 
-<div class="staff-action-card staff-payment-action-card">
+  <% if (
+    isDelivered &&
+    !cleared &&
+    arrears > 0 &&
+    !isCash &&
+    (
+      role === "admin" ||
+      String(packageDoc.deliveredByStaffId) ===
+      String(user?._id || "")
+    )
+  ) { %>
 
-  <div class="staff-action-title">
-    Record amount actually paid
-  </div>
+    <div class="staff-action-card staff-payment-action-card">
 
-
-  <form
-    method="POST"
-    action="/packages/staff/<%= packageDoc._id %>/payment"
-    class="staff-payment-form"
-  >
-
-    <label for="amountPaid">
-      Amount paid (KSh)
-    </label>
-
-    <input
-      id="amountPaid"
-      name="amountPaid"
-      type="number"
-      min="<%= totalPaid %>"
-      max="<%= totalAmount %>"
-      step="0.01"
-      value="<%= totalPaid %>"
-      required
-    >
+      <div class="staff-action-title">
+        Cash payment
+      </div>
 
 
-    <button
-      type="submit"
-      class="staff-action-btn"
-    >
+      <p>
+        This package has an outstanding balance of
+        <strong>
+          KSh <%= arrears.toLocaleString() %>
+        </strong>.
+      </p>
 
-      <i class="fas fa-floppy-disk"></i>
 
-      Save payment
+      <p>
+        Change this package to cash to record the
+        amount actually paid.
+      </p>
 
-    </button>
 
-  </form>
+      <form
+        method="POST"
+        action="/packages/staff/cash"
+        class="staff-payment-form"
+      >
 
-</div>
+        <input
+          type="hidden"
+          name="packageId"
+          value="<%= packageDoc._id %>"
+        >
 
-<% } %>
+
+        <button
+          type="submit"
+          class="staff-action-btn"
+        >
+
+          <i class="fas fa-money-bill-wave"></i>
+
+          Change to cash
+
+        </button>
+
+      </form>
+
+    </div>
+
+  <% } %>
+
+
+  <!-- ===================================================
+       RECORD CASH PAYMENT
+       
+       Only appears when:
+       
+       - Package has arrears
+       - isCash === true
+       - Package has been delivered
+       - User is admin OR delivered staff
+  ==================================================== -->
+
+  <% if (
+    isDelivered &&
+    !cleared &&
+    arrears > 0 &&
+    isCash &&
+    (
+      role === "admin" ||
+      String(packageDoc.deliveredByStaffId) ===
+      String(user?._id || "")
+    )
+  ) { %>
+
+    <div class="staff-action-card staff-payment-action-card">
+
+      <div class="staff-action-title">
+        Record amount actually paid
+      </div>
+
+
+      <form
+        method="POST"
+        action="/packages/staff/<%= packageDoc._id %>/payment"
+        class="staff-payment-form"
+      >
+
+        <label for="amountPaid">
+          Amount paid (KSh)
+        </label>
+
+
+        <input
+          id="amountPaid"
+          name="amountPaid"
+          type="number"
+          min="<%= totalPaid %>"
+          max="<%= totalAmount %>"
+          step="0.01"
+          value="<%= totalPaid %>"
+          required
+        >
+
+
+        <button
+          type="submit"
+          class="staff-action-btn"
+        >
+
+          <i class="fas fa-floppy-disk"></i>
+
+          Save payment
+
+        </button>
+
+      </form>
+
+    </div>
+
+  <% } %>
+
 
   <!-- ===================================================
        CLEAR PACKAGE
-  ==================================================== --><% if (canClear) { %>
+  ==================================================== -->
 
-<div class="staff-clear-card">
+  <% if (canClear) { %>
 
-  <div class="staff-clear-icon">
+    <div class="staff-clear-card">
 
-    <i class="fas fa-circle-check"></i>
+      <div class="staff-clear-icon">
 
-  </div>
+        <i class="fas fa-circle-check"></i>
+
+      </div>
 
 
-  <div class="staff-clear-content">
+      <div class="staff-clear-content">
 
-    <div class="staff-clear-title">
-      Package ready to be cleared
+        <div class="staff-clear-title">
+          Package ready to be cleared
+        </div>
+
+        <p>
+          This package has been delivered and has no
+          outstanding arrears. Mark it as cleared to close
+          its payment handling.
+        </p>
+
+
+        <form
+          method="POST"
+          action="/packages/staff/<%= packageDoc._id %>/clear"
+        >
+
+          <button
+            type="submit"
+            class="staff-clear-btn"
+          >
+
+            <i class="fas fa-check-double"></i>
+
+            Mark as cleared
+
+          </button>
+
+        </form>
+
+      </div>
+
     </div>
 
-    <p>
-      This package has been delivered and has no
-      outstanding arrears. Mark it as cleared to close
-      its payment handling.
-    </p>
+  <% } %>
 
-
-    <form
-      method="POST"
-      action="/packages/staff/<%= packageDoc._id %>/clear"
-    >
-
-      <button
-        type="submit"
-        class="staff-clear-btn"
-      >
-
-        <i class="fas fa-check-double"></i>
-
-        Mark as cleared
-
-      </button>
-
-    </form>
-
-  </div>
-
-</div>
-
-<% } %>
 
   <!-- ===================================================
        ALREADY CLEARED
-  ==================================================== --><% if (cleared) { %>
+  ==================================================== -->
 
-<div class="staff-cleared-card">
+  <% if (cleared) { %>
 
-  <div class="staff-cleared-icon">
+    <div class="staff-cleared-card">
 
-    <i class="fas fa-check-double"></i>
+      <div class="staff-cleared-icon">
 
-  </div>
+        <i class="fas fa-check-double"></i>
 
-
-  <div>
-
-    <strong>
-      Package cleared
-    </strong>
-
-    <p>
-
-      Cleared
-
-      <% if (clearedAt) { %>
-
-        on
-        <%= new Date(
-          clearedAt
-        ).toLocaleString() %>
-
-      <% } %>
+      </div>
 
 
-      <% if (clearedByStaffName) { %>
+      <div>
 
-        by
-        <%= clearedByStaffName %>
+        <strong>
+          Package cleared
+        </strong>
 
-      <% } %>
+        <p>
 
-    </p>
+          Cleared
 
-  </div>
+          <% if (clearedAt) { %>
 
-</div>
+            on
+            <%= new Date(
+              clearedAt
+            ).toLocaleString() %>
 
-<% } %>
+          <% } %>
+
+
+          <% if (clearedByStaffName) { %>
+
+            by
+            <%= clearedByStaffName %>
+
+          <% } %>
+
+        </p>
+
+      </div>
+
+    </div>
+
+  <% } %>
 
 </div>
