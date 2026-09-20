@@ -11,5 +11,6 @@
 module.exports = {
     ...require("./queries"),
     ...require("./stockCrud"),
-    ...require("./allocation")
+    ...require("./allocation"),
+    ...require("./batchEdit")
 };
