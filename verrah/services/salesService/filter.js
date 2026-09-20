@@ -16,6 +16,7 @@
 // - Filter labels
 // ==========================================================
 
+
 const TIME_ZONE =
     "Africa/Nairobi";
 
@@ -105,19 +106,50 @@ function isValidDateString(
     value
 ) {
 
+    if (
+        typeof value !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(value)
+    ) {
+
+        return false;
+
+    }
+
+
+    const [
+        year,
+        month,
+        day
+    ] =
+        value
+            .split("-")
+            .map(Number);
+
+
+    // ======================================================
+    // BASIC CALENDAR VALIDATION
+    //
+    // Prevents JavaScript Date.parse() from accepting
+    // invalid dates such as 2026-02-31.
+    // ======================================================
+
+    const date =
+        new Date(
+            Date.UTC(
+                year,
+                month - 1,
+                day
+            )
+        );
+
+
     return (
 
-        typeof value === "string" &&
+        date.getUTCFullYear() === year &&
 
-        /^\d{4}-\d{2}-\d{2}$/.test(
-            value
-        ) &&
+        date.getUTCMonth() === month - 1 &&
 
-        !Number.isNaN(
-            Date.parse(
-                `${value}T00:00:00+03:00`
-            )
-        )
+        date.getUTCDate() === day
 
     );
 
@@ -170,6 +202,22 @@ function normalizeDate(
 
 // ==========================================================
 // CONVERT KENYA LOCAL DATE TO UTC
+// ==========================================================
+//
+// Kenya uses UTC+03:00.
+//
+// The returned Date represents the corresponding UTC
+// instant for the supplied Nairobi calendar date.
+//
+// IMPORTANT:
+// The end boundary is intentionally treated as the START
+// of the next period rather than 23:59:59.999.
+//
+// This works correctly with MongoDB:
+//
+//     createdAt >= startDate
+//     createdAt <  endDate
+//
 // ==========================================================
 
 function kenyaDateToUtc(
@@ -369,13 +417,21 @@ function getDateRange(
 // ==========================================================
 // NORMALIZE SUBSTATION ID
 //
-// The value may come from:
-// - Admin query: query.substation
-// - Staff account: user.assignedSubstation
+// Values may come from:
 //
-// We deliberately keep the value as-is here because the
-// services querying MongoDB can use the ObjectId/string
-// directly with Mongoose.
+// ADMIN:
+//     query.substation
+//
+// STAFF:
+//     user.assignedSubstation
+//
+// assignedSubstation may be:
+//
+//     ObjectId
+//     string
+//     populated object containing _id
+//
+// Always return the actual ID value.
 // ==========================================================
 
 function normalizeSubstationId(
@@ -384,13 +440,56 @@ function normalizeSubstationId(
 
     if (
         value === undefined ||
-        value === null
+        value === null ||
+        value === ""
     ) {
 
         return null;
 
     }
 
+
+    // ======================================================
+    // POPULATED MONGOOSE DOCUMENT / OBJECT
+    // ======================================================
+
+    if (
+        typeof value === "object" &&
+        value._id
+    ) {
+
+        return String(
+            value._id
+        ).trim();
+
+    }
+
+
+    // ======================================================
+    // MONGOOSE OBJECTID
+    // ======================================================
+
+    if (
+        typeof value === "object" &&
+        typeof value.toString === "function"
+    ) {
+
+        const id =
+            value
+                .toString()
+                .trim();
+
+
+        return id
+            ? id
+            : null;
+
+    }
+
+
+    // ======================================================
+    // STRING
+    // ======================================================
 
     if (
         typeof value === "string"
@@ -407,7 +506,7 @@ function normalizeSubstationId(
     }
 
 
-    return value;
+    return null;
 
 }
 
@@ -418,16 +517,18 @@ function normalizeSubstationId(
 // ADMIN
 // -----
 // Admins may choose:
+//
 //     ?substation=<id>
 //
 // Empty value:
+//
 //     All substations
 //
 // STAFF
 // -----
 // Staff do NOT control this through the query string.
 //
-// Their assignedSubstation is always used.
+// Their assignedSubstation is ALWAYS used.
 //
 // This prevents a staff user from manually changing the
 // substation query parameter to access another substation.
@@ -518,12 +619,9 @@ function getSubstationFilter(
 // ==========================================================
 // FILTER STATE
 //
-// IMPORTANT:
-//
 // Date/period remain TAB-SPECIFIC.
 //
-// Substation is GLOBAL and therefore does not depend on the
-// active tab.
+// Substation is GLOBAL.
 //
 // Example:
 //
@@ -543,7 +641,7 @@ function getSubstationFilter(
 //     arrearsDate
 //     arrearsPeriod
 //
-// All four receive the same `substation` value.
+// All four receive the same global substation value.
 // ==========================================================
 
 function getFilterState(
