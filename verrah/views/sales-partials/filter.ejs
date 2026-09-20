@@ -1,101 +1,48 @@
 <%
 /*
- * ==========================================================
- * SALES FILTER
- * ==========================================================
+ * This partial filters ONLY the currently selected tab.
  *
- * Filters ONLY the currently selected sales tab.
+ * The controller supplies:
+ * activeTab
+ * activeFilterDate
+ * activeFilterPeriod
+ * filterLabel
  *
- * Controller supplies:
+ * Query names are tab-specific:
+ * summaryDate / summaryPeriod
+ * staffSalesDate / staffSalesPeriod
+ * productsDate / productsPeriod
+ * arrearsDate / arrearsPeriod
  *
- *     activeTab
- *     activeFilterDate
- *     activeFilterPeriod
- *     filterLabel
- *
- * Query names:
- *
- *     summary:
- *         summaryDate
- *         summaryPeriod
- *
- *     staff-sales:
- *         staffSalesDate
- *         staffSalesPeriod
- *
- *     products:
- *         productsDate
- *         productsPeriod
- *
- *     arrears:
- *         arrearsDate
- *         arrearsPeriod
- *
- * These names must match TAB_CONFIG in:
- *
- *     services/salesService/filter.js
- *
- * ==========================================================
+ * Therefore filtering one tab cannot modify another tab.
  */
 
+const filterPrefix = {
 
-const filterKeys = {
+    summary:
+        "summary",
 
-    summary: {
+    "staff-sales":
+        "staffSales",
 
-        date:
-            "summaryDate",
+    products:
+        "products",
 
-        period:
-            "summaryPeriod"
+    arrears:
+        "arrears"
 
-    },
-
-
-    "staff-sales": {
-
-        date:
-            "staffSalesDate",
-
-        period:
-            "staffSalesPeriod"
-
-    },
+}[activeTab] || "summary";
 
 
-    products: {
-
-        date:
-            "productsDate",
-
-        period:
-            "productsPeriod"
-
-    },
+const dateKey =
+    `${filterPrefix}Date`;
 
 
-    arrears: {
-
-        date:
-            "arrearsDate",
-
-        period:
-            "arrearsPeriod"
-
-    }
-
-};
-
-
-const activeKeys =
-    filterKeys[activeTab] || filterKeys.summary;
+const periodKey =
+    `${filterPrefix}Period`;
 
 %>
 
-
-<!-- ========================================================
-     FILTER TOGGLE
-========================================================= -->
 
 <div class="sales-filter-toggle-wrapper">
 
@@ -112,10 +59,6 @@ const activeKeys =
 </div>
 
 
-<!-- ========================================================
-     FILTER FORM
-========================================================= -->
-
 <form
     id="sales-filter-form"
     class="sales-filter"
@@ -124,21 +67,12 @@ const activeKeys =
     hidden
 >
 
-
-    <!-- ====================================================
-         ACTIVE TAB
-    ===================================================== -->
-
     <input
         type="hidden"
         name="tab"
         value="<%= activeTab %>"
     >
 
-
-    <!-- ====================================================
-         DATE
-    ===================================================== -->
 
     <div class="sales-filter-field">
 
@@ -149,17 +83,13 @@ const activeKeys =
         <input
             id="sales-filter-date"
             type="date"
-            name="<%= activeKeys.date %>"
+            name="<%= dateKey %>"
             value="<%= activeFilterDate %>"
             required
         >
 
     </div>
 
-
-    <!-- ====================================================
-         PERIOD
-    ===================================================== -->
 
     <div class="sales-filter-field">
 
@@ -169,26 +99,34 @@ const activeKeys =
 
         <select
             id="sales-filter-period"
-            name="<%= activeKeys.period %>"
+            name="<%= periodKey %>"
         >
 
             <option
                 value="day"
-                <%= activeFilterPeriod === "day" ? "selected" : "" %>
+                <%= activeFilterPeriod === "day"
+                    ? "selected"
+                    : "" %>
             >
                 Day
             </option>
 
+
             <option
                 value="month"
-                <%= activeFilterPeriod === "month" ? "selected" : "" %>
+                <%= activeFilterPeriod === "month"
+                    ? "selected"
+                    : "" %>
             >
                 Month
             </option>
 
+
             <option
                 value="year"
-                <%= activeFilterPeriod === "year" ? "selected" : "" %>
+                <%= activeFilterPeriod === "year"
+                    ? "selected"
+                    : "" %>
             >
                 Year
             </option>
@@ -198,10 +136,6 @@ const activeKeys =
     </div>
 
 
-    <!-- ====================================================
-         APPLY
-    ===================================================== -->
-
     <button
         type="submit"
         class="sales-filter-button"
@@ -210,10 +144,6 @@ const activeKeys =
     </button>
 
 
-    <!-- ====================================================
-         RESET
-    ===================================================== -->
-
     <a
         href="/sales?tab=<%= activeTab %>"
         class="sales-filter-clear"
@@ -221,13 +151,8 @@ const activeKeys =
         Reset
     </a>
 
-
 </form>
 
-
-<!-- ========================================================
-     FILTER TOGGLE SCRIPT
-========================================================= -->
 
 <script>
 
@@ -253,7 +178,6 @@ document.addEventListener(
         ) {
 
             return;
-
         }
 
 
