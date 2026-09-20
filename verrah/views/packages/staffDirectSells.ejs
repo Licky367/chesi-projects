@@ -28,13 +28,13 @@ const tabCounts = counts || {
       </span>
 
       <h1>
-        Package Management
+        INTERNAL SELLS
       </h1>
 
       <p>
         <%= role === "admin"
           ? "Manage all client packages."
-          : "Claim and process pending packages." %>
+          : "Manage sells made within <%= user.assignedSubstation %>." %>
       </p>
 
     </div>
