@@ -1,15 +1,47 @@
-const {list} = require("./list");
-const {newStockForm} = require("./forms");
-const {createOrUpdateStock} = require("./create-update");
-const {entry, createProduct} = require("./allocation");
-const {batches} = require("./batch");
-const {batch} = require("./batch");
+const {
+    list
+} = require("./list");
 
-exports.list = list;
-exports.newStockForm = newStockForm;
-exports.createOrUpdateStock = createOrUpdateStock;
-exports.entry = entry;
-exports.createProduct = createProduct;
+const {
+    newStockForm
+} = require("./forms");
 
-exports.batches = batches;
-exports.batch = batch;
+const {
+    createOrUpdateStock
+} = require("./create-update");
+
+const {
+    entry,
+    createProduct
+} = require("./allocation");
+
+const {
+    batches,
+    batch,
+    editBatches
+} = require("./batch");
+
+
+exports.list =
+    list;
+
+exports.newStockForm =
+    newStockForm;
+
+exports.createOrUpdateStock =
+    createOrUpdateStock;
+
+exports.entry =
+    entry;
+
+exports.createProduct =
+    createProduct;
+
+exports.batches =
+    batches;
+
+exports.batch =
+    batch;
+
+exports.editBatches =
+    editBatches;
