@@ -101,6 +101,20 @@ const packageSchema = new mongoose.Schema(
 
 
     // --------------------------------------------------------
+    // CASH PACKAGE
+    //
+    // false = normal / non-cash package
+    // true  = cash package
+    // --------------------------------------------------------
+
+    isCash: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+
+
+    // --------------------------------------------------------
     // CUSTOMER-SELECTED PICKUP SUBSTATION
     // --------------------------------------------------------
 
