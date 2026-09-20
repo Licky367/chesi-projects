@@ -13,30 +13,39 @@ const salesService =
 // SALES PAGE
 // ==========================================================
 
-exports.index = async (req, res) => {
+exports.index = async (
+    req,
+    res
+) => {
 
     try {
 
         const data =
             await salesService.getSalesPageData(
-                req.query, req.user || {}
+                req.query,
+                req.user || {}
             );
 
 
-        return res.render("sales", {
+        return res.render(
+            "sales",
+            {
 
-            title:
-                "Sales | Verrah Cosmetics",
+                title:
+                    "Sales | Verrah Cosmetics",
 
-            ...data,
+                ...data,
 
-            assetCost:
-                Number(data.assetCost || 0),
+                assetCost:
+                    Number(
+                        data.assetCost || 0
+                    ),
 
-            error:
-                null
+                error:
+                    null
 
-        });
+            }
+        );
 
     } catch (err) {
 
@@ -46,25 +55,34 @@ exports.index = async (req, res) => {
         );
 
 
-        // --------------------------------------------------
+        // ==================================================
         // SAFE ACTIVE TAB
-        // --------------------------------------------------
+        // ==================================================
+
+        const allowedTabs = [
+
+            "summary",
+
+            "staff-sales",
+
+            "products",
+
+            "arrears"
+
+        ];
+
 
         const activeTab =
-            [
-                "summary",
-                "products",
-                "arrears"
-            ].includes(
+            allowedTabs.includes(
                 req.query?.tab
             )
                 ? req.query.tab
                 : "summary";
 
 
-        // --------------------------------------------------
+        // ==================================================
         // ERROR FALLBACK
-        // --------------------------------------------------
+        // ==================================================
 
         return res.status(500).render(
             "sales",
@@ -73,7 +91,26 @@ exports.index = async (req, res) => {
                 title:
                     "Sales | Verrah Cosmetics",
 
+
+                // ==================================================
+                // TAB
+                // ==================================================
+
                 activeTab,
+
+
+                // ==================================================
+                // GLOBAL SUBSTATION FILTER
+                // ==================================================
+
+                activeSubstationId:
+                    null,
+
+                isSubstationRestricted:
+                    req.user?.role === "staff",
+
+                isAdmin:
+                    req.user?.role === "admin",
 
 
                 // ==================================================
@@ -102,6 +139,14 @@ exports.index = async (req, res) => {
 
                 stockAssetCost:
                     0,
+
+
+                // ==================================================
+                // EXPENSES
+                // ==================================================
+
+                expenses:
+                    [],
 
 
                 // ==================================================
@@ -146,8 +191,45 @@ exports.index = async (req, res) => {
 
 
                 // ==================================================
-                // FILTER
+                // FILTER STATES
                 // ==================================================
+
+                summaryFilter:
+                    null,
+
+                staffSalesFilter:
+                    null,
+
+                productsFilter:
+                    null,
+
+                arrearsFilter:
+                    null,
+
+
+                // ==================================================
+                // FILTER LABELS
+                // ==================================================
+
+                summaryFilterLabel:
+                    "Unable to load sales data.",
+
+                staffSalesFilterLabel:
+                    "Unable to load sales data.",
+
+                productsFilterLabel:
+                    "Unable to load sales data.",
+
+                arrearsFilterLabel:
+                    "Unable to load sales data.",
+
+
+                // ==================================================
+                // ACTIVE FILTER
+                // ==================================================
+
+                activeFilter:
+                    null,
 
                 activeFilterDate:
                     salesService.getCurrentNairobiDate(),
@@ -157,6 +239,11 @@ exports.index = async (req, res) => {
 
                 filterLabel:
                     "Unable to load sales data.",
+
+
+                // ==================================================
+                // NAVIGATION QUERY STRING
+                // ==================================================
 
                 salesQuerySuffix:
                     "",
