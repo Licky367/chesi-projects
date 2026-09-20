@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const Stock = require("../models/stock");
-const Product = require("../models/products");
+const Stock = require("../../models/stock");
+const Product = require("../../models/products");
 const {
     text, cleanSubcategory, productNameFromStock, number, wholeNumber,
     calculateUnitBuyPrice, sortFifoBatches, calculateFifoValue
