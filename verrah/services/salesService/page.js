@@ -19,6 +19,9 @@ const productsService =
 const arrearsService =
     require("./arrears");
 
+const dailyCashSalesService =
+    require("./dailyCashSales");
+
 const substationService =
     require("../substationService");
 
@@ -39,7 +42,8 @@ async function getSalesPageData(
         "summary",
         "staff-sales",
         "products",
-        "arrears"
+        "arrears",
+        "daily-cash-sales"
     ];
 
 
@@ -95,6 +99,14 @@ async function getSalesPageData(
         );
 
 
+    const dailyCashSalesFilter =
+        filterService.getFilterState(
+            query,
+            "daily-cash-sales",
+            user
+        );
+
+
     // ======================================================
     // LOAD ALL TAB DATA
     // ======================================================
@@ -103,7 +115,8 @@ async function getSalesPageData(
         summary,
         staffSales,
         productAnalytics,
-        arrearsPackages
+        arrearsPackages,
+        dailyCashSales
     ] = await Promise.all([
 
         summaryService.getSummary(
@@ -120,6 +133,10 @@ async function getSalesPageData(
 
         arrearsService.getCustomerArrears(
             arrearsFilter
+        ),
+
+        dailyCashSalesService.getDailyCashSales(
+            dailyCashSalesFilter
         )
 
     ]);
@@ -127,15 +144,6 @@ async function getSalesPageData(
 
     // ======================================================
     // ADD PRODUCT UNIT SELL PRICE TO ANALYTICS
-    //
-    // productAnalytics contains the analytics records.
-    //
-    // The actual product documents contain:
-    //
-    //     unitSellPrice
-    //
-    // Match each analytics record to its product using
-    // the product _id.
     // ======================================================
 
     if (
@@ -228,10 +236,17 @@ async function getSalesPageData(
         activeFilter =
             productsFilter;
 
-    } else {
+    } else if (
+        activeTab === "arrears"
+    ) {
 
         activeFilter =
             arrearsFilter;
+
+    } else {
+
+        activeFilter =
+            dailyCashSalesFilter;
 
     }
 
@@ -285,6 +300,17 @@ async function getSalesPageData(
     params.set(
         "arrearsPeriod",
         arrearsFilter.period
+    );
+
+
+    params.set(
+        "dailyCashSalesDate",
+        dailyCashSalesFilter.date
+    );
+
+    params.set(
+        "dailyCashSalesPeriod",
+        dailyCashSalesFilter.period
     );
 
 
@@ -411,15 +437,6 @@ async function getSalesPageData(
 
         // ==================================================
         // PRODUCT ANALYTICS
-        //
-        // Each product now contains:
-        //
-        //     product.name
-        //     product.unitSellPrice
-        //     product.stockAvailable
-        //     product.marketAvailable
-        //     product.sales
-        //
         // ==================================================
 
         productAnalytics,
@@ -433,6 +450,13 @@ async function getSalesPageData(
 
 
         // ==================================================
+        // DAILY CASH SALES
+        // ==================================================
+
+        dailyCashSales,
+
+
+        // ==================================================
         // FILTER STATES
         // ==================================================
 
@@ -443,6 +467,8 @@ async function getSalesPageData(
         productsFilter,
 
         arrearsFilter,
+
+        dailyCashSalesFilter,
 
 
         // ==================================================
@@ -467,6 +493,11 @@ async function getSalesPageData(
         arrearsFilterLabel:
             filterService.getFilterLabel(
                 arrearsFilter
+            ),
+
+        dailyCashSalesFilterLabel:
+            filterService.getFilterLabel(
+                dailyCashSalesFilter
             ),
 
 
