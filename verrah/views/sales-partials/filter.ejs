@@ -1,301 +1,345 @@
 <%
-/*
- * ==========================================================
- * SALES FILTER
- * ==========================================================
- *
- * Filters ONLY the currently selected tab.
- *
- * Controller supplies:
- *
- *     activeTab
- *     activeFilterDate
- *     activeFilterPeriod
- *     filterLabel
- *
- * Query names:
- *
- *     summary:
- *         summaryDate
- *         summaryPeriod
- *
- *     staff-sales:
- *         staffSalesDate
- *         staffSalesPeriod
- *
- *     products:
- *         productsDate
- *         productsPeriod
- *
- *     arrears:
- *         arrearsDate
- *         arrearsPeriod
- *
- *     daily-cash-sales:
- *         dailyCashSalesDate
- *         dailyCashSalesPeriod
- *
- * Admin users can additionally filter by substation.
- *
- * ==========================================================
- */
-
-
-const filterKeys = {
-
-    summary: {
-
-        date:
-            "summaryDate",
-
-        period:
-            "summaryPeriod"
-
-    },
-
-
-    "staff-sales": {
-
-        date:
-            "staffSalesDate",
-
-        period:
-            "staffSalesPeriod"
-
-    },
-
-
-    products: {
-
-        date:
-            "productsDate",
-
-        period:
-            "productsPeriod"
-
-    },
-
-
-    arrears: {
-
-        date:
-            "arrearsDate",
-
-        period:
-            "arrearsPeriod"
-
-    },
-
-
-    "daily-cash-sales": {
-
-        date:
-            "dailyCashSalesDate",
-
-        period:
-            "dailyCashSalesPeriod"
-
-    }
-
-};
-
-
-const activeKeys =
-    filterKeys[activeTab] || filterKeys.summary;
-
+function number(value) {
+    return Number(value || 0).toLocaleString("en-KE");
+}
 %>
 
 
-<!-- ========================================================
-     FILTER TOGGLE
-========================================================= -->
+<div class="sales-section-heading">
 
-<div class="sales-filter-toggle-wrapper">
+    <div>
 
-    <button
-        type="button"
-        id="sales-filter-toggle"
-        class="sales-filter-toggle"
-        aria-expanded="false"
-        aria-controls="sales-filter-form"
-    >
-        filter date?
-    </button>
+        <h2>
+            Product Analytics
+        </h2>
+
+        <p>
+            <%= filterLabel %>
+        </p>
+
+    </div>
 
 </div>
 
 
-<!-- ========================================================
-     FILTER FORM
-========================================================= -->
+<!-- ======================================================
+     ADD MANY PRODUCTS TO CART
+======================================================= -->
 
 <form
-    id="sales-filter-form"
-    class="sales-filter"
-    method="GET"
-    action="/sales"
-    hidden
+    action="/products/addManyToCart"
+    method="POST"
+    id="addManyToCartForm"
 >
 
 
-    <!-- ====================================================
-         ACTIVE TAB
-    ===================================================== -->
+    <!-- ==================================================
+         ADD TO CART BUTTON
 
-    <input
-        type="hidden"
-        name="tab"
-        value="<%= activeTab %>"
+         Hidden until at least one product quantity
+         has been entered.
+    =================================================== -->
+
+    <div
+        id="addManyToCartActions"
+        style="
+            display:none;
+            margin-bottom:12px;
+        "
     >
 
-
-    <!-- ====================================================
-         DATE
-    ===================================================== -->
-
-    <div class="sales-filter-field">
-
-        <label for="sales-filter-date">
-            Date
-        </label>
-
-        <input
-            id="sales-filter-date"
-            type="date"
-            name="<%= activeKeys.date %>"
-            value="<%= activeFilterDate %>"
-            required
+        <button
+            type="submit"
+            class="sales-filter-button"
         >
+
+            <i class="fas fa-cart-plus"></i>
+
+            Add Selected Products to Cart
+
+        </button>
 
     </div>
 
 
-    <!-- ====================================================
-         PERIOD
-    ===================================================== -->
+    <!-- ==================================================
+         PRODUCT TABLE
+    =================================================== -->
 
-    <div class="sales-filter-field">
+    <div class="sales-table-wrapper">
 
-        <label for="sales-filter-period">
-            Period
-        </label>
-
-        <select
-            id="sales-filter-period"
-            name="<%= activeKeys.period %>"
-        >
-
-            <option
-                value="day"
-                <%= activeFilterPeriod === "day"
-                    ? "selected"
-                    : "" %>
-            >
-                Day
-            </option>
+        <table class="sales-table">
 
 
-            <option
-                value="month"
-                <%= activeFilterPeriod === "month"
-                    ? "selected"
-                    : "" %>
-            >
-                Month
-            </option>
+            <!-- ==================================================
+                 TABLE HEADER
+            =================================================== -->
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        #
+                    </th>
+
+                    <th>
+                        Product Name
+                    </th>
+
+                    <th>
+                        Items Available in Stock
+                    </th>
+
+                    <th>
+                        Items Available in Market
+                    </th>
+
+                    <th>
+                        Number of Sales
+                    </th>
+
+                </tr>
+
+            </thead>
 
 
-            <option
-                value="year"
-                <%= activeFilterPeriod === "year"
-                    ? "selected"
-                    : "" %>
-            >
-                Year
-            </option>
+            <!-- ==================================================
+                 TABLE BODY
+            =================================================== -->
 
-        </select>
-
-    </div>
+            <tbody>
 
 
-    <!-- ====================================================
-         SUBSTATION
-         ADMIN ONLY
-    ===================================================== -->
-
-    <% if (user && user.role === "admin") { %>
-
-        <div class="sales-filter-field">
-
-            <label for="sales-filter-substation">
-                Substation
-            </label>
-
-            <select
-                id="sales-filter-substation"
-                name="substation"
-            >
-
-                <option value="">
-                    All Substations
-                </option>
+                <% if (
+                    Array.isArray(productAnalytics) &&
+                    productAnalytics.length
+                ) { %>
 
 
-                <% if (Array.isArray(substations)) { %>
+                    <% productAnalytics.forEach(
+                        function(product, index)
+                    { %>
 
-                    <% substations.forEach(function (substation) { %>
 
-                        <option
-                            value="<%= substation._id %>"
-                            <%= String(activeSubstationId || "") === String(substation._id)
-                                ? "selected"
-                                : "" %>
+                        <tr
+                            class="sales-product-row"
+
+                            onclick="
+                                window.location.href =
+                                '/substations/product/<%= product._id %>'
+                            "
+
+                            onkeydown="
+                                if (
+                                    event.key === 'Enter' ||
+                                    event.key === ' '
+                                ) {
+                                    event.preventDefault();
+
+                                    window.location.href =
+                                    '/substations/product/<%= product._id %>';
+                                }
+                            "
+
+                            tabindex="0"
+
+                            role="link"
                         >
-                            <%= substation.name %>
-                        </option>
+
+
+                            <!-- ==================================
+                                 NUMBER
+                            =================================== -->
+
+                            <td>
+
+                                <%= index + 1 %>
+
+                            </td>
+
+
+                            <!-- ==================================
+                                 PRODUCT NAME
+                                 SELL PRICE
+                                 UNITS INPUT
+                            =================================== -->
+
+                            <td>
+
+                                <div
+                                    style="
+                                        display:flex;
+                                        align-items:center;
+                                        justify-content:space-between;
+                                        gap:15px;
+                                    "
+                                >
+
+
+                                    <!-- ==========================
+                                         PRODUCT INFORMATION
+                                    =========================== -->
+
+                                    <div>
+
+                                        <strong>
+
+                                            <%= product.name %>
+
+                                        </strong>
+
+
+                                        <small
+                                            style="
+                                                display:block;
+                                                margin-top:3px;
+                                                font-size:0.75rem;
+                                                opacity:0.7;
+                                            "
+                                        >
+
+                                            KSh
+                                            <%= number(
+                                                product.unitSellPrice
+                                            ) %>
+
+                                        </small>
+
+                                    </div>
+
+
+                                    <!-- ==========================
+                                         UNITS INPUT
+                                    =========================== -->
+
+                                    <div
+                                        onclick="
+                                            event.stopPropagation();
+                                        "
+
+                                        onkeydown="
+                                            event.stopPropagation();
+                                        "
+                                    >
+
+                                        <input
+                                            type="number"
+
+                                            name="products[<%= index %>][qty]"
+
+                                            min="1"
+
+                                            max="<%= Number(product.units || 0) %>"
+
+                                            step="1"
+
+                                            placeholder="Units"
+
+                                            class="product-cart-qty"
+
+                                            aria-label="Units for <%= product.name %>"
+                                        >
+
+
+                                        <input
+                                            type="hidden"
+
+                                            name="products[<%= index %>][productId]"
+
+                                            value="<%= product._id %>"
+                                        >
+
+                                    </div>
+
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- ==================================
+                                 STOCK
+                            =================================== -->
+
+                            <td>
+
+                                <%= number(
+                                    product.stockAvailable
+                                ) %>
+
+                            </td>
+
+
+                            <!-- ==================================
+                                 MARKET
+                            =================================== -->
+
+                            <td>
+
+                                <%= number(
+                                    product.marketAvailable
+                                ) %>
+
+                            </td>
+
+
+                            <!-- ==================================
+                                 SALES
+                            =================================== -->
+
+                            <td>
+
+                                <%= number(
+                                    product.sales
+                                ) %>
+
+                            </td>
+
+
+                        </tr>
+
 
                     <% }); %>
 
+
+                <% } else { %>
+
+
+                    <!-- ==================================
+                         EMPTY STATE
+                    =================================== -->
+
+                    <tr>
+
+                        <td
+                            colspan="5"
+                            class="sales-empty"
+                        >
+
+                            No product analytics found
+                            for this period.
+
+                        </td>
+
+                    </tr>
+
+
                 <% } %>
 
-            </select>
 
-        </div>
+            </tbody>
 
-    <% } %>
+        </table>
 
-
-    <!-- ====================================================
-         APPLY
-    ===================================================== -->
-
-    <button
-        type="submit"
-        class="sales-filter-button"
-    >
-        Apply Filter
-    </button>
-
-
-    <!-- ====================================================
-         RESET
-    ===================================================== -->
-
-    <a
-        href="/sales?tab=<%= activeTab %>"
-        class="sales-filter-clear"
-    >
-        Reset
-    </a>
-
+    </div>
 
 </form>
 
 
-<!-- ========================================================
-     FILTER TOGGLE SCRIPT
-========================================================= -->
+<!-- ======================================================
+     ADD MANY TO CART SCRIPT
+======================================================= -->
 
 <script>
 
@@ -303,21 +347,21 @@ document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-        const toggle =
+        const form =
             document.getElementById(
-                "sales-filter-toggle"
+                "addManyToCartForm"
             );
 
 
-        const filter =
+        const actions =
             document.getElementById(
-                "sales-filter-form"
+                "addManyToCartActions"
             );
 
 
         if (
-            !toggle ||
-            !filter
+            !form ||
+            !actions
         ) {
 
             return;
@@ -325,33 +369,67 @@ document.addEventListener(
         }
 
 
-        toggle.addEventListener(
-            "click",
-            function () {
-
-                const isHidden =
-                    filter.hidden;
+        const quantityInputs =
+            form.querySelectorAll(
+                ".product-cart-qty"
+            );
 
 
-                filter.hidden =
-                    !isHidden;
+        function updateAddToCartButton() {
+
+            let hasQuantity =
+                false;
 
 
-                toggle.textContent =
-                    isHidden
-                        ? "hide filter"
-                        : "filter date?";
+            quantityInputs.forEach(
+                function (input) {
+
+                    const quantity =
+                        Number(
+                            input.value
+                        );
 
 
-                toggle.setAttribute(
-                    "aria-expanded",
-                    isHidden
-                        ? "true"
-                        : "false"
+                    if (
+                        Number.isFinite(quantity) &&
+                        quantity > 0
+                    ) {
+
+                        hasQuantity =
+                            true;
+
+                    }
+
+                }
+            );
+
+
+            actions.style.display =
+                hasQuantity
+                    ? "block"
+                    : "none";
+
+        }
+
+
+        quantityInputs.forEach(
+            function (input) {
+
+                input.addEventListener(
+                    "input",
+                    updateAddToCartButton
+                );
+
+                input.addEventListener(
+                    "change",
+                    updateAddToCartButton
                 );
 
             }
         );
+
+
+        updateAddToCartButton();
 
     }
 );
