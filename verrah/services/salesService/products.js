@@ -81,7 +81,7 @@ async function getProductAnalytics(
         })
 
             .select(
-                "_id name subcategory units buyPrice stock"
+                "_id name subcategory units buyPrice stock unitSellPrice"
             )
 
             .lean();
@@ -276,23 +276,75 @@ async function getProductAnalytics(
                         .toLowerCase();
 
 
+                const units =
+                    Number(
+                        product.units || 0
+                    );
+
+
                 return {
+
+                    // --------------------------------------
+                    // PRODUCT ID
+                    // --------------------------------------
 
                     _id:
                         product._id,
 
+
+                    // --------------------------------------
+                    // PRODUCT NAME
+                    // --------------------------------------
+
                     name:
                         product.name,
+
+
+                    // --------------------------------------
+                    // PRODUCT UNITS
+                    //
+                    // Passed directly to the EJS so it can
+                    // be used as the units value for the
+                    // add-to-cart input.
+                    // --------------------------------------
+
+                    units:
+                        units,
+
+
+                    // --------------------------------------
+                    // SELL PRICE
+                    // --------------------------------------
+
+                    unitSellPrice:
+                        Number(
+                            product.unitSellPrice || 0
+                        ),
+
+
+                    // --------------------------------------
+                    // STOCK AVAILABLE
+                    // --------------------------------------
 
                     stockAvailable:
                         stockBySubcategory.get(
                             subcategory
                         ) || 0,
 
+
+                    // --------------------------------------
+                    // MARKET AVAILABLE
+                    //
+                    // Same product.units value.
+                    // --------------------------------------
+
                     marketAvailable:
-                        Number(
-                            product.units || 0
-                        ),
+                        units,
+
+
+                    // --------------------------------------
+                    // SALES
+                    // --------------------------------------
 
                     sales:
                         salesByProduct.get(
@@ -336,3 +388,4 @@ module.exports = {
     getProductAnalytics
 
 };
+
