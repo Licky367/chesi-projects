@@ -1,68 +1,382 @@
 <%
 function number(value) {
-  return Number(value || 0).toLocaleString("en-KE");
+    return Number(value || 0).toLocaleString("en-KE");
 }
 %>
 
-<div class="sales-section-heading">
-  <div>
-    <h2>Product Analytics</h2>
-    <p>
-      <%= filterLabel %>
-    </p>
-  </div>
+<div class="sales-section">
+
+    <div class="sales-section-heading">
+
+        <div>
+
+            <h2>
+                Product Analytics
+            </h2>
+
+            <p>
+                <%= filterLabel %>
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- ======================================================
+         ADD MANY PRODUCTS TO CART
+    ======================================================= -->
+
+    <form
+        action="/products/addManyToCart"
+        method="POST"
+        id="addManyToCartForm"
+    >
+
+        <!-- ==================================================
+             ADD TO CART BUTTON
+             Hidden until units are entered.
+        =================================================== -->
+
+        <div
+            id="addManyToCartActions"
+            style="
+                display:none;
+                margin-bottom:12px;
+            "
+        >
+
+            <button
+                type="submit"
+                class="sales-filter-button"
+            >
+
+                <i class="fas fa-cart-plus"></i>
+
+                Add Selected Products to Cart
+
+            </button>
+
+        </div>
+
+
+        <!-- ==================================================
+             PRODUCT TABLE
+        =================================================== -->
+
+        <div class="sales-table-wrapper">
+
+            <table class="sales-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            #
+                        </th>
+
+                        <th>
+                            Product Name
+                        </th>
+
+                        <th>
+                            Items Available in Stock
+                        </th>
+
+                        <th>
+                            Items Available in Market
+                        </th>
+
+                        <th>
+                            Number of Sales
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    <% if (
+                        Array.isArray(productAnalytics) &&
+                        productAnalytics.length
+                    ) { %>
+
+
+                        <% productAnalytics.forEach(
+                            function(product, index)
+                        { %>
+
+
+                            <tr
+                                class="sales-product-row"
+
+                                onclick="
+                                    window.location.href =
+                                    '/substations/product/<%= product._id %>'
+                                "
+
+                                onkeydown="
+                                    if (
+                                        event.key === 'Enter' ||
+                                        event.key === ' '
+                                    ) {
+                                        event.preventDefault();
+
+                                        window.location.href =
+                                        '/substations/product/<%= product._id %>';
+                                    }
+                                "
+
+                                tabindex="0"
+
+                                role="link"
+                            >
+
+                                <td>
+
+                                    <%= index + 1 %>
+
+                                </td>
+
+
+                                <td>
+
+                                    <div
+                                        style="
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:space-between;
+                                            gap:15px;
+                                        "
+                                    >
+
+                                        <div>
+
+                                            <strong>
+                                                <%= product.name %>
+                                            </strong>
+
+                                            <small
+                                                style="
+                                                    display:block;
+                                                    margin-top:3px;
+                                                    font-size:0.75rem;
+                                                    opacity:0.7;
+                                                "
+                                            >
+
+                                                KSh
+
+                                                <%= number(
+                                                    product.unitSellPrice
+                                                ) %>
+
+                                            </small>
+
+                                        </div>
+
+
+                                        <div
+                                            onclick="
+                                                event.stopPropagation();
+                                            "
+
+                                            onkeydown="
+                                                event.stopPropagation();
+                                            "
+                                        >
+
+                                            <input
+                                                type="number"
+
+                                                name="products[<%= index %>][qty]"
+
+                                                min="1"
+
+                                                max="<%= product.marketAvailable || 0 %>"
+
+                                                step="1"
+
+                                                placeholder="Units"
+
+                                                class="product-cart-qty"
+
+                                                aria-label="Units for <%= product.name %>"
+                                            >
+
+
+                                            <input
+                                                type="hidden"
+
+                                                name="products[<%= index %>][productId]"
+
+                                                value="<%= product._id %>"
+                                            >
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    <%= number(
+                                        product.stockAvailable
+                                    ) %>
+
+                                </td>
+
+
+                                <td>
+
+                                    <%= number(
+                                        product.marketAvailable
+                                    ) %>
+
+                                </td>
+
+
+                                <td>
+
+                                    <%= number(
+                                        product.sales
+                                    ) %>
+
+                                </td>
+
+                            </tr>
+
+
+                        <% }); %>
+
+
+                    <% } else { %>
+
+
+                        <tr>
+
+                            <td
+                                colspan="5"
+                                class="sales-empty"
+                            >
+
+                                No product analytics found
+                                for this period.
+
+                            </td>
+
+                        </tr>
+
+
+                    <% } %>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </form>
+
 </div>
 
-<div class="sales-table-wrapper">
-  <table class="sales-table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Product Name</th>
-        <th>Items Available in Stock</th>
-        <th>Items Available in Market</th>
-        <th>Number of Sales</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (Array.isArray(productAnalytics) && productAnalytics.length) { %>
-        <% productAnalytics.forEach(function(product, index) { %>
-          <tr
-            class="sales-product-row"
-            onclick="window.location.href='/substations/product/<%= product._id %>'"
-            onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='/substations/product/<%= product._id %>'; }"
-            tabindex="0"
-            role="link"
-          >
-            <td>
-              <%= index + 1 %>
-            </td>
-            <td>
-              <strong>
-                <%= product.name %>
-              </strong>
-              <small style="display:block; margin-top:3px; font-size:0.75rem; opacity:0.7;">
-                KSh <%= number(product.unitSellPrice) %>
-              </small>
-            </td>
-            <td>
-              <%= number(product.stockAvailable) %>
-            </td>
-            <td>
-              <%= number(product.marketAvailable) %>
-            </td>
-            <td>
-              <%= number(product.sales) %>
-            </td>
-          </tr>
-        <% }); %>
-      } else { 
-        <tr>
-          <td colspan="5" class="sales-empty">
-            No product analytics found for this period.
-          </td>
-        </tr>
-      <% } %>
-    </tbody>
-  </table>
-</div>
+
+<!-- ======================================================
+     ADD MANY TO CART SCRIPT
+======================================================= -->
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const form =
+            document.getElementById(
+                "addManyToCartForm"
+            );
+
+
+        if (!form) {
+
+            return;
+
+        }
+
+
+        const actions =
+            form.querySelector(
+                "#addManyToCartActions"
+            );
+
+
+        const inputs =
+            form.querySelectorAll(
+                ".product-cart-qty"
+            );
+
+
+        if (
+            !actions
+        ) {
+
+            return;
+
+        }
+
+
+        function updateButton() {
+
+            let hasQuantity =
+                false;
+
+
+            inputs.forEach(
+                function (input) {
+
+                    if (
+                        Number(
+                            input.value || 0
+                        ) > 0
+                    ) {
+
+                        hasQuantity =
+                            true;
+
+                    }
+
+                }
+            );
+
+
+            actions.style.display =
+                hasQuantity
+                    ? "block"
+                    : "none";
+
+        }
+
+
+        inputs.forEach(
+            function (input) {
+
+                input.addEventListener(
+                    "input",
+                    updateButton
+                );
+
+            }
+        );
+
+
+        updateButton();
+
+    }
+);
+
+</script>
