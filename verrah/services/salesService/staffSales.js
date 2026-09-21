@@ -495,12 +495,7 @@ function calculateSubstationTotals(
 //
 // For each substation:
 //
-//     dailyCashSales = [
-//         {
-//             amount: sale.totalAmount,
-//             date: sale.createdAt
-//         }
-//     ]
+//     dailyCashSales = cumulative total of sale.totalAmount
 //
 // The same substation-resolution rule is used:
 //
@@ -548,38 +543,22 @@ async function updateDailyCashSales(
             }
 
 
-            if (
-                !dailySalesBySubstation.has(
+            const currentTotal =
+                dailySalesBySubstation.get(
                     substationId
-                )
-            ) {
-
-                dailySalesBySubstation.set(
-
-                    substationId,
-
-                    []
-
-                );
-
-            }
+                ) || 0;
 
 
-            dailySalesBySubstation
-                .get(
-                    substationId
-                )
-                .push({
+            dailySalesBySubstation.set(
 
-                    amount:
-                        Number(
-                            sale.totalAmount || 0
-                        ),
+                substationId,
 
-                    date:
-                        sale.createdAt
+                currentTotal +
+                    Number(
+                        sale.totalAmount || 0
+                    )
 
-                });
+            );
 
         }
 
@@ -635,9 +614,11 @@ async function updateDailyCashSales(
 
 
                 const dailyCashSales =
-                    dailySalesBySubstation.get(
-                        substationId
-                    ) || [];
+                    Number(
+                        dailySalesBySubstation.get(
+                            substationId
+                        ) || 0
+                    );
 
 
                 return Substation.updateOne(
