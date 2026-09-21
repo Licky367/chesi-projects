@@ -378,6 +378,16 @@ const liabilityRoutes =
         "liabilityRoutes",
         "./verrah/routes/liability"
     );
+// ----------------------------------------------------------
+// DEPOSIT 
+// ----------------------------------------------------------
+
+const depositRoutes =
+    safeLoad(
+        "depositRoutes",
+        "./verrah/routes/deposit"
+    );
+
 
 
 
