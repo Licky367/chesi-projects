@@ -13,5 +13,6 @@ module.exports = {
     ...require("./update"),
     ...require("./updateIcon"),
     ...require("./updateImages"),
-    ...require("./updateProductUnits")
+    ...require("./updateProductUnits"),
+    ...require("./updateMultipleProductUnits")
 };
