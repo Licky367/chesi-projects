@@ -106,6 +106,10 @@ const activeKeys =
 %>
 
 
+<!-- ========================================================
+     FILTER TOGGLE
+========================================================= -->
+
 <button
     type="button"
     id="sales-filter-toggle"
@@ -116,6 +120,10 @@ const activeKeys =
     Filter Date?
 </button>
 
+
+<!-- ========================================================
+     FILTER FORM
+========================================================= -->
 
 <form
     id="sales-filter-form"
@@ -327,6 +335,12 @@ document.addEventListener(
                         ? "true"
                         : "false"
                 );
+
+
+                toggle.textContent =
+                    isOpen
+                        ? "Close Filter"
+                        : "Filter Date?";
 
             }
         );
