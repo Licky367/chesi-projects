@@ -17,7 +17,6 @@
 // Products themselves remain global product records.
 // ==========================================================
 
-
 const Product =
     require("../../models/products");
 
@@ -45,7 +44,6 @@ function getSubstationQuery(
         return {};
 
     }
-
 
     return {
 
@@ -81,7 +79,7 @@ async function getProductAnalytics(
         })
 
             .select(
-                "_id name subcategory units buyPrice stock unitSellPrice"
+                "_id name subcategory units buyPrice stock"
             )
 
             .lean();
@@ -260,6 +258,13 @@ async function getProductAnalytics(
 
     // ======================================================
     // RETURN PRODUCT ANALYTICS
+    //
+    // product.units is explicitly passed through as
+    // "units" so the EJS can use:
+    //
+    //     product.units
+    //
+    // marketAvailable continues to use the same value.
     // ======================================================
 
     return products
@@ -284,67 +289,22 @@ async function getProductAnalytics(
 
                 return {
 
-                    // --------------------------------------
-                    // PRODUCT ID
-                    // --------------------------------------
-
                     _id:
                         product._id,
-
-
-                    // --------------------------------------
-                    // PRODUCT NAME
-                    // --------------------------------------
 
                     name:
                         product.name,
 
-
-                    // --------------------------------------
-                    // PRODUCT UNITS
-                    //
-                    // Passed directly to the EJS so it can
-                    // be used as the units value for the
-                    // add-to-cart input.
-                    // --------------------------------------
-
                     units:
                         units,
-
-
-                    // --------------------------------------
-                    // SELL PRICE
-                    // --------------------------------------
-
-                    unitSellPrice:
-                        Number(
-                            product.unitSellPrice || 0
-                        ),
-
-
-                    // --------------------------------------
-                    // STOCK AVAILABLE
-                    // --------------------------------------
 
                     stockAvailable:
                         stockBySubcategory.get(
                             subcategory
                         ) || 0,
 
-
-                    // --------------------------------------
-                    // MARKET AVAILABLE
-                    //
-                    // Same product.units value.
-                    // --------------------------------------
-
                     marketAvailable:
                         units,
-
-
-                    // --------------------------------------
-                    // SALES
-                    // --------------------------------------
 
                     sales:
                         salesByProduct.get(
@@ -388,4 +348,3 @@ module.exports = {
     getProductAnalytics
 
 };
-
