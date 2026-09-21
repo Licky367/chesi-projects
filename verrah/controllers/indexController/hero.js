@@ -72,7 +72,7 @@ exports.getHome = async function (req, res) {
         ) {
 
             return res.redirect(
-                `/branch/${currentUser.assignedSubstation}`
+                `/sales`
             );
 
         }
