@@ -4,15 +4,16 @@
 // ==========================================================
 
 module.exports = {
-    ...require("./helpers"),
-    ...require("./list"),
-    ...require("./create"),
-    ...require("./detail"),
-    ...require("./productDetail"),
-    ...require("./updateProductUnits"),
-    ...require("./edit"),
-    ...require("./update"),
-    ...require("./icon"),
-    ...require("./images"),
-    ...require("./search")
+...require("./helpers"),
+...require("./list"),
+...require("./create"),
+...require("./detail"),
+...require("./productDetail"),
+...require("./updateProductUnits"),
+...require("./updateMultipleProductUnits"),
+...require("./edit"),
+...require("./update"),
+...require("./icon"),
+...require("./images"),
+...require("./search")
 };
