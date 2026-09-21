@@ -1,125 +1,127 @@
 <%
 /*
- * ==========================================================
- * SALES FILTER
- * ==========================================================
- *
- * Filters ONLY the currently selected tab.
- *
- * Controller supplies:
- *
- *     activeTab
- *     activeFilterDate
- *     activeFilterPeriod
- *     filterLabel
- *
- * Query names:
- *
- *     summary:
- *         summaryDate
- *         summaryPeriod
- *
- *     staff-sales:
- *         staffSalesDate
- *         staffSalesPeriod
- *
- *     products:
- *         productsDate
- *         productsPeriod
- *
- *     arrears:
- *         arrearsDate
- *         arrearsPeriod
- *
- *     daily-cash-sales:
- *         dailyCashSalesDate
- *         dailyCashSalesPeriod
- *
- * Admin users can additionally filter by substation.
- *
- * ==========================================================
- */
+
+* ==========================================================
+* SALES FILTER
+* ==========================================================
+* 
+* Filters ONLY the currently selected tab.
+* 
+* Controller supplies:
+* 
+* activeTab
+* activeFilterDate
+* activeFilterPeriod
+* filterLabel
+* 
+* Query names:
+* 
+* summary:
+*     summaryDate
+*     summaryPeriod
+* 
+* staff-sales:
+*     staffSalesDate
+*     staffSalesPeriod
+* 
+* products:
+*     productsDate
+*     productsPeriod
+* 
+* arrears:
+*     arrearsDate
+*     arrearsPeriod
+* 
+* daily-cash-sales:
+*     dailyCashSalesDate
+*     dailyCashSalesPeriod
+* 
+* Admin users can additionally filter by substation.
+* 
+* ==========================================================
+  */
 
 const filterKeys = {
 
-    summary: {
+summary: {
 
-        date:
-            "summaryDate",
+    date:
+        "summaryDate",
 
-        period:
-            "summaryPeriod"
+    period:
+        "summaryPeriod"
 
-    },
+},
 
+"staff-sales": {
 
-    "staff-sales": {
+    date:
+        "staffSalesDate",
 
-        date:
-            "staffSalesDate",
+    period:
+        "staffSalesPeriod"
 
-        period:
-            "staffSalesPeriod"
+},
 
-    },
+products: {
 
+    date:
+        "productsDate",
 
-    products: {
+    period:
+        "productsPeriod"
 
-        date:
-            "productsDate",
+},
 
-        period:
-            "productsPeriod"
+arrears: {
 
-    },
+    date:
+        "arrearsDate",
 
+    period:
+        "arrearsPeriod"
 
-    arrears: {
+},
 
-        date:
-            "arrearsDate",
+"daily-cash-sales": {
 
-        period:
-            "arrearsPeriod"
+    date:
+        "dailyCashSalesDate",
 
-    },
+    period:
+        "dailyCashSalesPeriod"
 
-
-    "daily-cash-sales": {
-
-        date:
-            "dailyCashSalesDate",
-
-        period:
-            "dailyCashSalesPeriod"
-
-    }
+}
 
 };
 
-
 const activeKeys =
-    filterKeys[activeTab] ||
-    filterKeys.summary;
+filterKeys[activeTab] || filterKeys.summary;
 
 %>
 
+<!-- ======================================================
+     FILTER TOGGLE
+======================================================= --><button
+type="button"
+id="sales-filter-toggle"
+class="sales-filter-toggle"
+aria-expanded="false"
+aria-controls="sales-filter-form"
 
-<button
-    type="button"
-    id="sales-filter-toggle"
-    class="sales-filter-toggle"
-    aria-expanded="false"
-    aria-controls="sales-filter-form"
->
-    filter date?
-</button>
+«»
 
+Filter Date?
 
-<!-- ====================================================
+</button><!-- ======================================================
+     FILTER FORM CONTENT
+======================================================= --><div
+    id="sales-filter-form"
+    class="sales-filter-form"
+    hidden
+><!-- ==================================================
      ACTIVE TAB
-===================================================== -->
+=================================================== -->
 
 <input
     type="hidden"
@@ -128,9 +130,9 @@ const activeKeys =
 >
 
 
-<!-- ====================================================
+<!-- ==================================================
      DATE
-===================================================== -->
+=================================================== -->
 
 <div class="sales-filter-field">
 
@@ -149,9 +151,9 @@ const activeKeys =
 </div>
 
 
-<!-- ====================================================
+<!-- ==================================================
      PERIOD
-===================================================== -->
+=================================================== -->
 
 <div class="sales-filter-field">
 
@@ -198,10 +200,10 @@ const activeKeys =
 </div>
 
 
-<!-- ====================================================
+<!-- ==================================================
      SUBSTATION
      ADMIN ONLY
-===================================================== -->
+=================================================== -->
 
 <% if (user && user.role === "admin") { %>
 
@@ -245,9 +247,9 @@ const activeKeys =
 <% } %>
 
 
-<!-- ====================================================
+<!-- ==================================================
      APPLY
-===================================================== -->
+=================================================== -->
 
 <button
     type="submit"
@@ -257,9 +259,9 @@ const activeKeys =
 </button>
 
 
-<!-- ====================================================
+<!-- ==================================================
      RESET
-===================================================== -->
+=================================================== -->
 
 <a
     href="/sales?tab=<%= activeTab %>"
@@ -267,3 +269,53 @@ const activeKeys =
 >
     Reset
 </a>
+
+</div><!-- ======================================================
+     FILTER TOGGLE SCRIPT
+======================================================= --><script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const toggle =
+            document.getElementById("sales-filter-toggle");
+
+        const filterForm =
+            document.getElementById("sales-filter-form");
+
+
+        if (!toggle || !filterForm) {
+            return;
+        }
+
+
+        toggle.addEventListener("click", function () {
+
+            const isOpen =
+                toggle.getAttribute("aria-expanded") === "true";
+
+
+            if (isOpen) {
+
+                filterForm.hidden = true;
+
+                toggle.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+            } else {
+
+                filterForm.hidden = false;
+
+                toggle.setAttribute(
+                    "aria-expanded",
+                    "true"
+                );
+
+            }
+
+        });
+
+    });
+
+</script>
