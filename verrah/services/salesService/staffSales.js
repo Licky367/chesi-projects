@@ -4,129 +4,71 @@
 // VERRAH COSMETICS
 // STAFF SALES / SALES REPORT SERVICE
 // ==========================================================
-//
-// SUBSTATION SOURCE:
-//
-//     StaffSale.salesSubstation
-//
-// FALLBACK:
-//
-//     StaffSale.soldBy.assignedSubstation
-//
-// RULE:
-//
-//     If salesSubstation exists, use it.
-//     If salesSubstation is missing, use assignedSubstation.
-//
-// This rule is used consistently for filtering, grouping,
-// and displaying staff sales.
-// ==========================================================
 
-
-const mongoose =
-    require("mongoose");
+const mongoose = require("mongoose");
 
 const StaffSale =
-    require("../../models/staff-sales");
+  require("../../models/staff-sales");
 
 const Substation =
-    require("../../models/substations");
-
-const substationService =
-    require("../substationService");
+  require("../../models/substations");
 
 const filterService =
-    require("./filter");
-
-
-// ==========================================================
-// USER MODEL
-// ==========================================================
+  require("./filter");
 
 const VerrahUser =
-    mongoose.model(
-        "VerrahUser"
-    );
+  mongoose.model("VerrahUser");
 
 
 // ==========================================================
-// GET SALE SUBSTATION
-// ==========================================================
-//
-// Priority:
-//
-//     1. salesSubstation
-//     2. soldBy.assignedSubstation
-//
+// SALE SUBSTATION
 // ==========================================================
 
-function getSaleSubstation(
-    sale
-) {
+function getSaleSubstation(sale) {
 
-    if (
-        sale &&
-        sale.salesSubstation
-    ) {
+  // --------------------------------------------------------
+  // PRIORITY:
+  //
+  // 1. salesSubstation
+  // 2. soldBy.assignedSubstation
+  // --------------------------------------------------------
 
-        return sale.salesSubstation;
+  if (sale.salesSubstation) {
+    return sale.salesSubstation;
+  }
 
-    }
+  if (
+    sale.soldBy &&
+    sale.soldBy.assignedSubstation
+  ) {
+    return sale.soldBy.assignedSubstation;
+  }
 
-
-    if (
-        sale &&
-        sale.soldBy &&
-        sale.soldBy.assignedSubstation
-    ) {
-
-        return sale.soldBy.assignedSubstation;
-
-    }
-
-
-    return null;
-
+  return null;
 }
 
 
 // ==========================================================
-// GET SALE SUBSTATION ID
+// SALE SUBSTATION ID
 // ==========================================================
 
-function getSaleSubstationId(
-    sale
-) {
+function getSaleSubstationId(sale) {
 
-    const substation =
-        getSaleSubstation(
-            sale
-        );
+  const substation =
+    getSaleSubstation(sale);
 
+  if (!substation) {
+    return null;
+  }
 
-    if (!substation) {
+  if (
+    typeof substation === "object" &&
+    substation._id
+  ) {
+    return String(substation._id);
+  }
 
-        return null;
-
-    }
-
-
-    if (
-        typeof substation === "object" &&
-        substation._id
-    ) {
-
-        return String(
-            substation._id
-        );
-
-    }
-
-
-    return String(
-        substation
-    );
-
+  return String(substation);
 }
 
 
@@ -134,507 +76,276 @@ function getSaleSubstationId(
 // CALCULATE TOTAL
 // ==========================================================
 
-function calculateTotal(
-    sales
-) {
+function calculateTotal(sales) {
 
-    return sales.reduce(
-
-        (
-            total,
-            sale
-        ) => {
-
-            return total +
-                Number(
-                    sale.totalAmount || 0
-                );
-
-        },
-
-        0
-
-    );
-
+  return sales.reduce(
+    (total, sale) =>
+      total + Number(sale.totalAmount || 0),
+    0
+  );
 }
 
 
 // ==========================================================
 // GET STAFF IDS FOR SUBSTATION
 // ==========================================================
-//
-// Used for resolving the fallback:
-//
-//     soldBy.assignedSubstation
-//
-// ==========================================================
 
 async function getStaffIdsForSubstation(
-    substationId
+  substationId
 ) {
 
-    if (
-        !substationId
-    ) {
+  const staff = await VerrahUser
+    .find({
+      assignedSubstation: substationId
+    })
+    .select("_id");
 
-        return [];
-
-    }
-
-
-    const users =
-        await VerrahUser.find({
-
-            assignedSubstation:
-                substationId
-
-        })
-
-            .select(
-                "_id"
-            )
-
-            .lean();
-
-
-    return users.map(
-
-        user =>
-            user._id
-
-    );
-
+  return staff.map(
+    user => user._id
+  );
 }
 
 
 // ==========================================================
 // BUILD SALES QUERY
 // ==========================================================
-//
-// Substation filter:
-//
-//     salesSubstation
-//
-// OR, when salesSubstation is missing:
-//
-//     soldBy.assignedSubstation
-//
-// ==========================================================
 
 async function buildSalesQuery(
-    filter,
-    startDate,
-    endDate
+  filter,
+  startDate,
+  endDate
 ) {
 
-    const query = {
-
-        createdAt: {
-
-            $gte:
-                startDate,
-
-            $lt:
-                endDate
-
-        }
-
-    };
-
-
-    // ======================================================
-    // SUBSTATION FILTER
-    // ======================================================
-
-    if (
-        filter &&
-        filter.substation
-    ) {
-
-        const substationId =
-            filter.substation;
-
-
-        const staffIds =
-            await getStaffIdsForSubstation(
-                substationId
-            );
-
-
-        query.$or = [
-
-            {
-                salesSubstation:
-                    substationId
-            },
-
-            {
-                salesSubstation: {
-
-                    $exists:
-                        false
-
-                },
-
-                soldBy: {
-
-                    $in:
-                        staffIds
-
-                }
-
-            }
-
-        ];
-
+  const query = {
+    createdAt: {
+      $gte: startDate,
+      $lte: endDate
     }
+  };
 
+  // --------------------------------------------------------
+  // SUBSTATION FILTER
+  // --------------------------------------------------------
 
-    return query;
+  if (filter.substation) {
 
+    const staffIds =
+      await getStaffIdsForSubstation(
+        filter.substation
+      );
+
+    query.$or = [
+
+      {
+        salesSubstation:
+          filter.substation
+      },
+
+      {
+        salesSubstation: {
+          $exists: false
+        },
+
+        soldBy: {
+          $in: staffIds
+        }
+      }
+
+    ];
+  }
+
+  return query;
 }
 
 
 // ==========================================================
-// GET SALES FOR DATE RANGE
+// GET SALES FOR RANGE
 // ==========================================================
 
 async function getSalesForRange(
-    filter,
-    startDate,
-    endDate
+  filter,
+  startDate,
+  endDate
 ) {
 
-    const query =
-        await buildSalesQuery(
+  const query =
+    await buildSalesQuery(
+      filter,
+      startDate,
+      endDate
+    );
 
-            filter,
+  return StaffSale
+    .find(query)
 
-            startDate,
-
-            endDate
-
-        );
-
-
-    return StaffSale.find(
-        query
+    .select(
+      "totalAmount soldBy createdAt products salesName salesSubstation"
     )
 
-        .select(
-            "totalAmount soldBy createdAt products salesName salesSubstation"
-        )
+    .populate({
+      path: "soldBy",
+      select:
+        "name fullName username assignedSubstation"
+    })
 
-        .populate({
+    .populate({
+      path: "salesSubstation",
+      select: "name"
+    })
 
-            path:
-                "soldBy",
-
-            select:
-                "name fullName username assignedSubstation"
-
-        })
-
-        .populate({
-
-            path:
-                "salesSubstation",
-
-            select:
-                "name"
-
-        })
-
-        .sort({
-
-            createdAt:
-                -1
-
-        })
-
-        .lean();
-
+    .sort({
+      createdAt: -1
+    });
 }
 
 
 // ==========================================================
-// CALCULATE TOTALS PER SUBSTATION
-// ==========================================================
-//
-// Uses:
-//
-//     sale.salesSubstation
-//
-// and falls back to:
-//
-//     sale.soldBy.assignedSubstation
-//
+// CALCULATE SUBSTATION TOTALS
 // ==========================================================
 
 function calculateSubstationTotals(
-    sales,
-    substations
+  sales,
+  substations
 ) {
 
-    const totals =
-        new Map();
+  const totals = {};
+
+  sales.forEach(sale => {
+
+    const substationId =
+      getSaleSubstationId(sale);
+
+    if (!substationId) {
+      return;
+    }
+
+    if (!totals[substationId]) {
+      totals[substationId] = 0;
+    }
+
+    totals[substationId] +=
+      Number(sale.totalAmount || 0);
+  });
 
 
-    // ======================================================
-    // GROUP SALES
-    // ======================================================
+  return substations
+    .map(substation => {
 
-    sales.forEach(
+      const id =
+        String(substation._id);
 
-        sale => {
+      return {
+        substation,
+        total:
+          Number(totals[id] || 0)
+      };
+    })
 
-            const substationId =
-                getSaleSubstationId(
-                    sale
-                );
-
-
-            if (
-                !substationId
-            ) {
-
-                return;
-
-            }
-
-
-            const currentTotal =
-                totals.get(
-                    substationId
-                ) || 0;
-
-
-            totals.set(
-
-                substationId,
-
-                currentTotal +
-                    Number(
-                        sale.totalAmount || 0
-                    )
-
-            );
-
-        }
-
+    .filter(item =>
+      item.total > 0
     );
-
-
-    // ======================================================
-    // ATTACH SUBSTATION NAMES
-    // ======================================================
-
-    return substations
-
-        .map(
-
-            substation => {
-
-                const substationId =
-                    String(
-                        substation._id
-                    );
-
-
-                return {
-
-                    substationId:
-                        substation._id,
-
-                    substationName:
-                        substation.name,
-
-                    total:
-                        Number(
-                            totals.get(
-                                substationId
-                            ) || 0
-                        )
-
-                };
-
-            }
-
-        )
-
-        .filter(
-
-            item =>
-                item.total > 0
-
-        );
-
 }
 
 
 // ==========================================================
 // UPDATE DAILY CASH SALES
-// ==========================================================
 //
-// dailyCashSales is a CUMULATIVE DAILY TOTAL.
+// dailyCashSales is a CUMULATIVE daily total.
 //
-// For each substation:
-//
-//     dailyCashSales = total of all StaffSale amounts
-//                      recorded during the current day.
-//
-// It is stored as a number, NOT as an array of sales.
-//
-// The total is recalculated from the day's sales so repeated
-// calls do not double-count the same sales.
-//
-// The same substation-resolution rule is used:
-//
-//     salesSubstation
-//
-// fallback:
-//
-//     soldBy.assignedSubstation
-//
-// When filter.substation is supplied, only that substation
-// is updated.
+// It is recalculated from all sales for the day and SET,
+// rather than incremented, so refreshing the sales page does
+// not double-count the same sales.
 // ==========================================================
 
 async function updateDailyCashSales(
-    daySales,
-    filter,
-    substations
+  daySales,
+  filter,
+  substations
 ) {
 
-    const dailySalesBySubstation =
-        new Map();
+  const dailySalesBySubstation = {};
 
 
-    // ======================================================
-    // GROUP AND ACCUMULATE DAY SALES BY SUBSTATION
-    // ======================================================
+  // --------------------------------------------------------
+  // CALCULATE THE CUMULATIVE TOTAL FOR EACH SUBSTATION
+  // --------------------------------------------------------
 
-    daySales.forEach(
+  daySales.forEach(sale => {
 
-        sale => {
+    const substationId =
+      getSaleSubstationId(sale);
 
-            const substationId =
-                getSaleSubstationId(
-                    sale
-                );
-
-
-            if (
-                !substationId
-            ) {
-
-                return;
-
-            }
-
-
-            const currentTotal =
-                dailySalesBySubstation.get(
-                    substationId
-                ) || 0;
-
-
-            dailySalesBySubstation.set(
-
-                substationId,
-
-                currentTotal +
-                    Number(
-                        sale.totalAmount || 0
-                    )
-
-            );
-
-        }
-
-    );
-
-
-    // ======================================================
-    // DETERMINE SUBSTATIONS TO UPDATE
-    // ======================================================
-
-    let substationsToUpdate =
-        substations;
-
-
-    if (
-        filter &&
-        filter.substation
-    ) {
-
-        const selectedId =
-            String(
-                filter.substation
-            );
-
-
-        substationsToUpdate =
-            substations.filter(
-
-                substation =>
-                    String(
-                        substation._id
-                    ) === selectedId
-
-            );
-
+    if (!substationId) {
+      return;
     }
 
+    // When a substation filter is active,
+    // only update that selected substation.
+    if (
+      filter.substation &&
+      String(filter.substation) !==
+        String(substationId)
+    ) {
+      return;
+    }
 
-    // ======================================================
-    // UPDATE DAILY CUMULATIVE TOTAL
-    // ======================================================
+    if (
+      dailySalesBySubstation[substationId] ===
+      undefined
+    ) {
+      dailySalesBySubstation[substationId] = 0;
+    }
 
-    await Promise.all(
-
-        substationsToUpdate.map(
-
-            substation => {
-
-                const substationId =
-                    String(
-                        substation._id
-                    );
-
-
-                const dailyCashSales =
-                    Number(
-                        dailySalesBySubstation.get(
-                            substationId
-                        ) || 0
-                    );
+    dailySalesBySubstation[substationId] +=
+      Number(sale.totalAmount || 0);
+  });
 
 
-                return Substation.updateOne(
+  // --------------------------------------------------------
+  // UPDATE SUBSTATIONS
+  // --------------------------------------------------------
 
-                    {
-                        _id:
-                            substation._id
-                    },
+  const updates = [];
 
-                    {
-                        $set: {
 
-                            dailyCashSales
+  for (const substation of substations) {
 
-                        }
+    const substationId =
+      String(substation._id);
 
-                    }
+    // If a specific substation was selected,
+    // update only that substation.
+    if (
+      filter.substation &&
+      String(filter.substation) !==
+        substationId
+    ) {
+      continue;
+    }
 
-                );
+    const dailyTotal =
+      Number(
+        dailySalesBySubstation[substationId] || 0
+      );
 
-            }
 
-        )
-
+    updates.push(
+      Substation.findByIdAndUpdate(
+        substation._id,
+        {
+          $set: {
+            dailyCashSales: dailyTotal
+          }
+        },
+        {
+          new: true
+        }
+      )
     );
+  }
 
+
+  await Promise.all(updates);
 }
 
 
@@ -642,242 +353,161 @@ async function updateDailyCashSales(
 // GET STAFF SALES
 // ==========================================================
 
-async function getStaffSales(
-    filter
-) {
-
-    // ======================================================
-    // LOAD SUBSTATIONS
-    // ======================================================
-
-    const substations =
-        await substationService.list();
-
-
-    // ======================================================
-    // FETCH DISPLAY SALES
-    // ======================================================
-
-    const salesQuery =
-        await buildSalesQuery(
-
-            filter,
-
-            filter.startDate,
-
-            filter.endDate
-
-        );
-
-
-    const sales =
-        await StaffSale.find(
-            salesQuery
-        )
-
-            .populate({
-
-                path:
-                    "soldBy",
-
-                select:
-                    "name fullName username assignedSubstation"
-
-            })
-
-            .populate({
-
-                path:
-                    "salesSubstation",
-
-                select:
-                    "name"
-
-            })
-
-            .sort({
-
-                createdAt:
-                    -1
-
-            })
-
-            .lean();
-
-
-    // ======================================================
-    // DATE RANGES
-    // ======================================================
-
-    const dayRange =
-        filterService.getDateRange(
-
-            filter.date,
-
-            "day"
-
-        );
-
-
-    const monthRange =
-        filterService.getDateRange(
-
-            filter.date,
-
-            "month"
-
-        );
-
-
-    const yearRange =
-        filterService.getDateRange(
-
-            filter.date,
-
-            "year"
-
-        );
-
-
-    // ======================================================
-    // FETCH PERIOD TOTALS
-    // ======================================================
-
-    const [
-
-        daySales,
-
-        monthSales,
-
-        yearSales
-
-    ] = await Promise.all([
-
-        getSalesForRange(
-
-            filter,
-
-            dayRange.startDate,
-
-            dayRange.endDate
-
-        ),
-
-        getSalesForRange(
-
-            filter,
-
-            monthRange.startDate,
-
-            monthRange.endDate
-
-        ),
-
-        getSalesForRange(
-
-            filter,
-
-            yearRange.startDate,
-
-            yearRange.endDate
-
-        )
-
-    ]);
-
-
-    // ======================================================
-    // UPDATE DAILY CASH SALES
-    // ======================================================
-    //
-    // daySales contains ALL sales for the current day
-    // according to the active substation restriction.
-    //
-    // dailyCashSales is therefore the cumulative total
-    // for the day.
-    //
-    // ======================================================
-
-    await updateDailyCashSales(
-
-        daySales,
-
-        filter,
-
-        substations
-
+async function getStaffSales(filter) {
+
+  // --------------------------------------------------------
+  // LOAD SUBSTATIONS
+  // --------------------------------------------------------
+
+  const substations =
+    await Substation
+      .find()
+      .sort({
+        name: 1
+      });
+
+
+  // --------------------------------------------------------
+  // DISPLAY RANGE
+  // --------------------------------------------------------
+
+  const displayRange =
+    filterService.getDateRange(
+      filter.range
     );
 
 
-    // ======================================================
-    // CALCULATE TOTALS
-    // ======================================================
-
-    const totals = {
-
-        day:
-            calculateTotal(
-                daySales
-            ),
-
-        month:
-            calculateTotal(
-                monthSales
-            ),
-
-        year:
-            calculateTotal(
-                yearSales
-            ),
-
-        bySubstation: {
-
-            day:
-                calculateSubstationTotals(
-                    daySales,
-                    substations
-                ),
-
-            month:
-                calculateSubstationTotals(
-                    monthSales,
-                    substations
-                ),
-
-            year:
-                calculateSubstationTotals(
-                    yearSales,
-                    substations
-                )
-
-        }
-
-    };
+  const sales =
+    await getSalesForRange(
+      filter,
+      displayRange.startDate,
+      displayRange.endDate
+    );
 
 
-    // ======================================================
-    // ATTACH TOTALS
-    // ======================================================
+  // --------------------------------------------------------
+  // DAY
+  // --------------------------------------------------------
 
-    sales.totals =
-        totals;
+  const dayRange =
+    filterService.getDateRange(
+      "day"
+    );
 
 
-    // ======================================================
-    // RETURN
-    // ======================================================
+  const daySales =
+    await getSalesForRange(
+      filter,
+      dayRange.startDate,
+      dayRange.endDate
+    );
 
-    return sales;
 
+  // --------------------------------------------------------
+  // MONTH
+  // --------------------------------------------------------
+
+  const monthRange =
+    filterService.getDateRange(
+      "month"
+    );
+
+
+  const monthSales =
+    await getSalesForRange(
+      filter,
+      monthRange.startDate,
+      monthRange.endDate
+    );
+
+
+  // --------------------------------------------------------
+  // YEAR
+  // --------------------------------------------------------
+
+  const yearRange =
+    filterService.getDateRange(
+      "year"
+    );
+
+
+  const yearSales =
+    await getSalesForRange(
+      filter,
+      yearRange.startDate,
+      yearRange.endDate
+    );
+
+
+  // --------------------------------------------------------
+  // UPDATE DAILY CASH SALES
+  //
+  // This uses the complete day's sales and stores the
+  // cumulative total for each substation.
+  // --------------------------------------------------------
+
+  await updateDailyCashSales(
+    daySales,
+    filter,
+    substations
+  );
+
+
+  // --------------------------------------------------------
+  // TOTALS
+  // --------------------------------------------------------
+
+  const totals = {
+
+    day:
+      calculateTotal(daySales),
+
+    month:
+      calculateTotal(monthSales),
+
+    year:
+      calculateTotal(yearSales),
+
+    displayed:
+      calculateTotal(sales)
+  };
+
+
+  // --------------------------------------------------------
+  // SUBSTATION TOTALS
+  // --------------------------------------------------------
+
+  const bySubstation =
+    calculateSubstationTotals(
+      sales,
+      substations
+    );
+
+
+  // --------------------------------------------------------
+  // ATTACH TOTALS
+  // --------------------------------------------------------
+
+  sales.totals =
+    totals;
+
+  sales.bySubstation =
+    bySubstation;
+
+
+  return sales;
 }
 
 
 // ==========================================================
-// EXPORTS
+// EXPORT
 // ==========================================================
 
 module.exports = {
-
-    getStaffSales
-
+  getStaffSales,
+  getSalesForRange,
+  calculateTotal,
+  calculateSubstationTotals,
+  getSaleSubstation,
+  getSaleSubstationId
 };
