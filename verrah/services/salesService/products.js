@@ -8,303 +8,227 @@
 //
 // When filter.substation is provided:
 //
-//     Stock
-//         -> NOT filtered by substation
+// Stock
+// -> NOT filtered by substation
 //
-//     Delivered Packages
-//         -> filtered by packageSubstation
+// Delivered Packages
+// -> filtered by packageSubstation
 //
 // Products themselves remain global product records.
 // ==========================================================
 
-const Product =
-    require("../../models/products");
+const Product = require("../../models/products");
 
-const Stock =
-    require("../../models/stock");
+const Stock = require("../../models/stock");
 
-const Package =
-    require("../../models/package");
+const Package = require("../../models/package");
 
 // ==========================================================
 // BUILD SUBSTATION QUERY
 // ==========================================================
 
-function getSubstationQuery(
-    filter,
-    field
-) {
+function getSubstationQuery(filter, field) {
+  if (
+   !filter ||
+   !filter.substation
+  ) {
+    return {};
+  }
 
-    if (
-        !filter ||
-        !filter.substation
-    ) {
-
-        return {};
-
-    }
-
-    return {
-
-        [field]:
-            filter.substation
-
-    };
-
+  return {
+    [field]: filter.substation
+  };
 }
 
 // ==========================================================
 // GET PRODUCT ANALYTICS
 // ==========================================================
 
-async function getProductAnalytics(
-    filter
-) {
+async function getProductAnalytics(filter) {
 
-    // ======================================================
-    // LOAD ACTIVE PRODUCTS
-    //
-    // Products are global records and therefore are not
-    // filtered by substation.
-    // ======================================================
+  // ======================================================
+  // LOAD ACTIVE PRODUCTS
+  //
+  // Products are global records and therefore are not
+  // filtered by substation.
+  // ======================================================
 
-    const products =
-        await Product.find({
+  const products =
+    await Product.find({
+      isActive: true
+    })
+     .select(
+        "_id name subcategory units buyPrice stock"
+      )
+     .lean();
 
-            isActive:
-                true
+  // ======================================================
+  // LOAD ALL ACTIVE STOCK
+  //
+  // Stock is global.
+  //
+  // DO NOT filter stock by substation because there is
+  // no substation-specific stock inventory model.
+  // ======================================================
 
-        })
+  const stockRecords =
+    await Stock.find({
+      isActive: true
+    })
+     .select(
+        "subcategory units substation"
+      )
+     .lean();
 
-            .select(
-                "_id name subcategory units buyPrice stock"
-            )
+  // ======================================================
+  // STOCK BY SUBCATEGORY
+  // ======================================================
 
-            .lean();
+  const stockBySubcategory =
+    new Map();
 
-    // ======================================================
-    // LOAD ALL ACTIVE STOCK
-    //
-    // Stock is global.
-    //
-    // DO NOT filter stock by substation because there is
-    // no substation-specific stock inventory model.
-    // ======================================================
+  for (
+    const stock
+    of stockRecords
+  ) {
+    const key =
+      String(
+        stock.subcategory || ""
+      )
+       .trim()
+       .toLowerCase();
 
-    const stockRecords =
-        await Stock.find({
+    if (!key) {
+      continue;
+    }
 
-            isActive:
-                true
+    const existing =
+      stockBySubcategory.get(
+        key
+      ) || 0;
 
-        })
+    stockBySubcategory.set(
+      key,
+      existing +
+      Number(
+        stock.units || 0
+      )
+    );
+  }
 
-            .select(
-                "subcategory units substation"
-            )
+  // ======================================================
+  // DELIVERED PACKAGES
+  //
+  // Packages are filtered by their packageSubstation.
+  //
+  // The date filter remains active exactly as before.
+  // ======================================================
 
-            .lean();
+  const deliveredPackageQuery = {
+    status: "delivered",
+    createdAt: {
+      $gte: filter.startDate,
+      $lt: filter.endDate
+    },
+   ...getSubstationQuery(
+      filter,
+      "packageSubstation"
+    )
+  };
 
-    // ======================================================
-    // STOCK BY SUBCATEGORY
-    // ======================================================
+  const deliveredPackages =
+    await Package.find(
+      deliveredPackageQuery
+    )
+     .select(
+        "items packageSubstation"
+      )
+     .lean();
 
-    const stockBySubcategory =
-        new Map();
+  // ======================================================
+  // SALES BY PRODUCT
+  // ======================================================
 
+  const salesByProduct =
+    new Map();
+
+  for (
+    const pkg
+    of deliveredPackages
+  ) {
     for (
-        const stock
-        of stockRecords
+      const item
+      of pkg.items || []
     ) {
+      if (
+       !item.productId
+      ) {
+        continue;
+      }
 
-        const key =
-            String(
-                stock.subcategory || ""
-            )
-                .trim()
-                .toLowerCase();
+      const key =
+        String(
+          item.productId
+        );
 
-        if (!key) {
+      salesByProduct.set(
+        key,
+        (
+          salesByProduct.get(
+            key
+          ) || 0
+        ) +
+        Number(
+          item.qty || 0
+        )
+      );
+    }
+  }
 
-            continue;
+  // ======================================================
+  // RETURN PRODUCT ANALYTICS
+  // ======================================================
 
-        }
+  return products
+   .map(
+      product => {
+        const subcategory =
+          String(
+            product.subcategory || ""
+          )
+           .trim()
+           .toLowerCase();
 
-        const existing =
+        return {
+          _id: product._id,
+          name: product.name,
+          stockAvailable:
             stockBySubcategory.get(
-                key
-            ) || 0;
-
-        stockBySubcategory.set(
-
-            key,
-
-            existing +
+              subcategory
+            ) || 0,
+          marketAvailable:
             Number(
-                stock.units || 0
-            )
-
-        );
-
-    }
-
-    // ======================================================
-    // DELIVERED PACKAGES
-    //
-    // Packages are filtered by their packageSubstation.
-    //
-    // The date filter remains active exactly as before.
-    // ======================================================
-
-    const deliveredPackageQuery = {
-
-        status:
-            "delivered",
-
-        createdAt: {
-
-            $gte:
-                filter.startDate,
-
-            $lt:
-                filter.endDate
-
-        },
-
-        ...getSubstationQuery(
-            filter,
-            "packageSubstation"
+              product.units || 0
+            ),
+          sales:
+            salesByProduct.get(
+              String(
+                product._id
+              )
+            ) || 0
+        };
+      }
+    )
+   .sort(
+      (a, b) =>
+        String(
+          a.name
+        ).localeCompare(
+          String(
+            b.name
+          )
         )
-
-    };
-
-    const deliveredPackages =
-        await Package.find(
-            deliveredPackageQuery
-        )
-
-            .select(
-                "items packageSubstation"
-            )
-
-            .lean();
-
-    // ======================================================
-    // SALES BY PRODUCT
-    // ======================================================
-
-    const salesByProduct =
-        new Map();
-
-    for (
-        const pkg
-        of deliveredPackages
-    ) {
-
-        for (
-            const item
-            of pkg.items || []
-        ) {
-
-            if (
-                !item.productId
-            ) {
-
-                continue;
-
-            }
-
-            const key =
-                String(
-                    item.productId
-                );
-
-            salesByProduct.set(
-
-                key,
-
-                (
-
-                    salesByProduct.get(
-                        key
-                    ) || 0
-
-                ) +
-
-                Number(
-                    item.qty || 0
-                )
-
-            );
-
-        }
-
-    }
-
-    // ======================================================
-    // RETURN PRODUCT ANALYTICS
-    // ======================================================
-
-    return products
-
-        .map(
-
-            product => {
-
-                const subcategory =
-                    String(
-                        product.subcategory || ""
-                    )
-                        .trim()
-                        .toLowerCase();
-
-                return {
-
-                    _id:
-                        product._id,
-
-                    name:
-                        product.name,
-
-                    stockAvailable:
-                        stockBySubcategory.get(
-                            subcategory
-                        ) || 0,
-
-                    marketAvailable:
-                        Number(
-                            product.units || 0
-                        ),
-
-                    sales:
-                        salesByProduct.get(
-
-                            String(
-                                product._id
-                            )
-
-                        ) || 0
-
-                };
-
-            }
-
-        )
-
-        .sort(
-
-            (a, b) =>
-                String(
-                    a.name
-                ).localeCompare(
-
-                    String(
-                        b.name
-                    )
-
-                )
-
-        );
+    );
 }
 
 // ==========================================================
@@ -312,7 +236,5 @@ async function getProductAnalytics(
 // ==========================================================
 
 module.exports = {
-
-    getProductAnalytics
-
+  getProductAnalytics
 };
