@@ -48,7 +48,7 @@ async function getDailyCashSales(
         !filter.substation
     ) {
 
-        return [];
+        return 0;
 
     }
 
@@ -63,7 +63,7 @@ async function getDailyCashSales(
         )
     ) {
 
-        return [];
+        return 0;
 
     }
 
@@ -86,7 +86,7 @@ async function getDailyCashSales(
         !substation
     ) {
 
-        return [];
+        return 0;
 
     }
 
@@ -94,104 +94,22 @@ async function getDailyCashSales(
     // ======================================================
     // DAILY CASH SALES
     // ======================================================
-
-    const dailyCashSales =
-        Array.isArray(
-            substation.dailyCashSales
-        )
-            ? substation.dailyCashSales
-            : [];
-
-
-    // ======================================================
-    // DATE FILTER
-    // ======================================================
-
-    const startDate =
-        filter.startDate;
-
-    const endDate =
-        filter.endDate;
-
-
-    const filteredSales =
-        dailyCashSales.filter(
-            sale => {
-
-                if (
-                    !sale ||
-                    !sale.date
-                ) {
-
-                    return false;
-
-                }
-
-
-                const saleDate =
-                    new Date(
-                        sale.date
-                    );
-
-
-                if (
-                    Number.isNaN(
-                        saleDate.getTime()
-                    )
-                ) {
-
-                    return false;
-
-                }
-
-
-                return (
-
-                    saleDate >=
-                        startDate &&
-
-                    saleDate <
-                        endDate
-
-                );
-
-            }
-        );
-
-
-    // ======================================================
-    // NEWEST FIRST
+    //
+    // dailyCashSales is a cumulative total for the day.
+    //
+    // Example:
+    //
+    //     Today's cash sales = 15,500
+    //
+    // The value stored in the substation is simply:
+    //
+    //     dailyCashSales: 15500
+    //
     // ======================================================
 
-    filteredSales.sort(
-        (
-            first,
-            second
-        ) => {
-
-            return (
-
-                new Date(
-                    second.date
-                ).getTime()
-
-                -
-
-                new Date(
-                    first.date
-                ).getTime()
-
-            );
-
-        }
+    return Number(
+        substation.dailyCashSales || 0
     );
-
-
-    // ======================================================
-    // RETURN
-    // ======================================================
-
-    return filteredSales;
 
 }
 
