@@ -22,26 +22,12 @@ const arrearsService =
 const substationService =
     require("../substationService");
 
+const products =
+    require("../../models/products");
+
 
 // ==========================================================
 // GET SALES PAGE DATA
-//
-// GLOBAL SUBSTATION FILTER
-//
-// ADMIN:
-//     query.substation is used.
-//     Empty substation = all substations.
-//
-// STAFF:
-//     user.assignedSubstation is always used.
-//     The query string cannot override it.
-//
-// DATE/PERIOD:
-//     Remain independent for each tab.
-//
-// STAFF SALES TOTALS:
-//     Calculated inside staffSalesService.
-//     Passed separately to the EJS page.
 // ==========================================================
 
 async function getSalesPageData(
@@ -67,11 +53,6 @@ async function getSalesPageData(
 
     // ======================================================
     // LOAD ACTIVE SUBSTATIONS
-    //
-    // Used by the admin substation selector.
-    //
-    // Staff also receive the list in the page data, but the
-    // filter UI should remain hidden for staff.
     // ======================================================
 
     const substations =
@@ -79,11 +60,7 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // INDEPENDENT DATE/PERIOD FILTERS FOR EACH TAB
-    //
-    // The substation filter is global.
-    // It is therefore resolved from the same user/query
-    // state for every tab.
+    // INDEPENDENT FILTERS
     // ======================================================
 
     const summaryFilter =
@@ -119,18 +96,15 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // LOAD ALL TAB DATA
-    //
-    // Each service receives its own date/period filter,
-    // while all four filters contain the same global
-    // substation restriction.
+    // LOAD PAGE DATA
     // ======================================================
 
     const [
         summary,
         staffSales,
         productAnalytics,
-        arrearsPackages
+        arrearsPackages,
+        productRecords
     ] = await Promise.all([
 
         summaryService.getSummary(
@@ -147,23 +121,15 @@ async function getSalesPageData(
 
         arrearsService.getCustomerArrears(
             arrearsFilter
-        )
+        ),
+
+        products.find({}).lean()
 
     ]);
 
 
     // ======================================================
     // STAFF SALES TOTALS
-    //
-    // staffSalesService calculates:
-    //
-    //     totals.day
-    //     totals.month
-    //     totals.year
-    //     totals.bySubstation
-    //
-    // The totals are attached to the returned staffSales
-    // array by staffSalesService.
     // ======================================================
 
     const staffSalesTotals =
@@ -179,31 +145,28 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // ACTIVE TAB FILTER
+    // ACTIVE FILTER
     // ======================================================
 
     let activeFilter;
 
 
     if (
-        activeTab ===
-        "summary"
+        activeTab === "summary"
     ) {
 
         activeFilter =
             summaryFilter;
 
     } else if (
-        activeTab ===
-        "staff-sales"
+        activeTab === "staff-sales"
     ) {
 
         activeFilter =
             staffSalesFilter;
 
     } else if (
-        activeTab ===
-        "products"
+        activeTab === "products"
     ) {
 
         activeFilter =
@@ -218,24 +181,17 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // PRESERVE ALL TAB FILTERS IN NAVIGATION
-    //
-    // Substation is GLOBAL, so it is stored only once.
+    // PRESERVE ALL TAB FILTERS
     // ======================================================
 
     const params =
         new URLSearchParams();
 
 
-    // ======================================================
-    // SUMMARY FILTER
-    // ======================================================
-
     params.set(
         "summaryDate",
         summaryFilter.date
     );
-
 
     params.set(
         "summaryPeriod",
@@ -243,15 +199,10 @@ async function getSalesPageData(
     );
 
 
-    // ======================================================
-    // STAFF SALES FILTER
-    // ======================================================
-
     params.set(
         "staffSalesDate",
         staffSalesFilter.date
     );
-
 
     params.set(
         "staffSalesPeriod",
@@ -259,15 +210,10 @@ async function getSalesPageData(
     );
 
 
-    // ======================================================
-    // PRODUCTS FILTER
-    // ======================================================
-
     params.set(
         "productsDate",
         productsFilter.date
     );
-
 
     params.set(
         "productsPeriod",
@@ -275,15 +221,10 @@ async function getSalesPageData(
     );
 
 
-    // ======================================================
-    // ARREARS FILTER
-    // ======================================================
-
     params.set(
         "arrearsDate",
         arrearsFilter.date
     );
-
 
     params.set(
         "arrearsPeriod",
@@ -293,12 +234,6 @@ async function getSalesPageData(
 
     // ======================================================
     // GLOBAL SUBSTATION FILTER
-    //
-    // For admin:
-    //     selected substation is preserved.
-    //
-    // For staff:
-    //     assignedSubstation is preserved.
     // ======================================================
 
     if (
@@ -320,7 +255,7 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // RETURN DATA FOR SALES.EJS
+    // RETURN SALES PAGE DATA
     // ======================================================
 
     return {
@@ -335,6 +270,25 @@ async function getSalesPageData(
         substations,
 
 
+        // ==================================================
+        // FULL PRODUCT RECORDS
+        //
+        // Available in EJS as:
+        //
+        //     products
+        //
+        // Includes:
+        //
+        //     product.name
+        //     product.unitSellPrice
+        //
+        // and all other fields defined in models/products.js.
+        // ==================================================
+
+        products:
+            productRecords,
+
+
         activeFilter,
 
 
@@ -347,7 +301,7 @@ async function getSalesPageData(
 
 
         // ==================================================
-        // GLOBAL SUBSTATION FILTER STATE
+        // GLOBAL SUBSTATION FILTER
         // ==================================================
 
         activeSubstationId:
@@ -443,34 +397,25 @@ async function getSalesPageData(
         staffSales,
 
 
-        // ==================================================
-        // STAFF SALES TOTALS
-        //
-        // Calculated by staffSalesService.
-        //
-        // Available in EJS as:
-        //
-        //     staffSalesTotals.day
-        //     staffSalesTotals.month
-        //     staffSalesTotals.year
-        //     staffSalesTotals.bySubstation
-        // ==================================================
-
         staffSalesTotals,
 
 
         // ==================================================
-        // OTHER TABS
+        // PRODUCT ANALYTICS
         // ==================================================
 
         productAnalytics,
 
 
+        // ==================================================
+        // ARREARS
+        // ==================================================
+
         arrearsPackages,
 
 
         // ==================================================
-        // INDIVIDUAL FILTER STATES
+        // FILTER STATES
         // ==================================================
 
         summaryFilter,
@@ -486,7 +431,7 @@ async function getSalesPageData(
 
 
         // ==================================================
-        // INDIVIDUAL FILTER LABELS
+        // FILTER LABELS
         // ==================================================
 
         summaryFilterLabel:
