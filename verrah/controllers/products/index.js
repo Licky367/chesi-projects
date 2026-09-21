@@ -14,7 +14,7 @@ const updateController =
     require("./details");
 
 const addToCartController =
-    require("./addToCart");
+    require("./addManyToCart");
 
 
 const searchController =
@@ -57,7 +57,7 @@ module.exports = {
     // --------------------------------------------------------
 
     addToCart:
-        addToCartController.addToCart,
+        addToCartController.addManyToCart,
 
 
     // --------------------------------------------------------
