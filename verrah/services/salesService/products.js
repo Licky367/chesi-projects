@@ -26,7 +26,6 @@ const Stock =
 const Package =
     require("../../models/package");
 
-
 // ==========================================================
 // BUILD SUBSTATION QUERY
 // ==========================================================
@@ -45,7 +44,6 @@ function getSubstationQuery(
 
     }
 
-
     return {
 
         [field]:
@@ -54,7 +52,6 @@ function getSubstationQuery(
     };
 
 }
-
 
 // ==========================================================
 // GET PRODUCT ANALYTICS
@@ -85,7 +82,6 @@ async function getProductAnalytics(
 
             .lean();
 
-
     // ======================================================
     // LOAD ALL ACTIVE STOCK
     //
@@ -109,14 +105,12 @@ async function getProductAnalytics(
 
             .lean();
 
-
     // ======================================================
     // STOCK BY SUBCATEGORY
     // ======================================================
 
     const stockBySubcategory =
         new Map();
-
 
     for (
         const stock
@@ -130,19 +124,16 @@ async function getProductAnalytics(
                 .trim()
                 .toLowerCase();
 
-
         if (!key) {
 
             continue;
 
         }
 
-
         const existing =
             stockBySubcategory.get(
                 key
             ) || 0;
-
 
         stockBySubcategory.set(
 
@@ -156,7 +147,6 @@ async function getProductAnalytics(
         );
 
     }
-
 
     // ======================================================
     // DELIVERED PACKAGES
@@ -188,7 +178,6 @@ async function getProductAnalytics(
 
     };
 
-
     const deliveredPackages =
         await Package.find(
             deliveredPackageQuery
@@ -200,14 +189,12 @@ async function getProductAnalytics(
 
             .lean();
 
-
     // ======================================================
     // SALES BY PRODUCT
     // ======================================================
 
     const salesByProduct =
         new Map();
-
 
     for (
         const pkg
@@ -227,12 +214,10 @@ async function getProductAnalytics(
 
             }
 
-
             const key =
                 String(
                     item.productId
                 );
-
 
             salesByProduct.set(
 
@@ -256,7 +241,6 @@ async function getProductAnalytics(
 
     }
 
-
     // ======================================================
     // RETURN PRODUCT ANALYTICS
     // ======================================================
@@ -273,7 +257,6 @@ async function getProductAnalytics(
                     )
                         .trim()
                         .toLowerCase();
-
 
                 return {
 
@@ -322,9 +305,7 @@ async function getProductAnalytics(
                 )
 
         );
-
 }
-
 
 // ==========================================================
 // EXPORTS
