@@ -99,6 +99,21 @@ const substationProductReductionSchema = new mongoose.Schema(
 // ==========================================================
 // DAILY CASH SALES SCHEMA
 // ==========================================================
+//
+// Each record represents one day's cumulative cash sales.
+//
+// Mongoose automatically creates an _id for every record.
+//
+// Example:
+//
+// {
+//     _id: ObjectId("..."),
+//     amount: 18500,
+//     date: Date("2026-09-21"),
+//     isDeposited: false
+// }
+//
+// ==========================================================
 
 const dailyCashSaleSchema = new mongoose.Schema(
     {
@@ -257,6 +272,15 @@ const substationSchema = new mongoose.Schema(
 
         // ------------------------------------------------
         // DAILY CASH SALES
+        // ------------------------------------------------
+        //
+        // Each item represents one day.
+        //
+        // The amount is the cumulative cash sales total
+        // for that particular date.
+        //
+        // Each item automatically receives an _id.
+        //
         // ------------------------------------------------
 
         dailyCashSales: {
