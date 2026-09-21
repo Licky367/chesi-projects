@@ -40,6 +40,7 @@
  * ==========================================================
  */
 
+
 const filterKeys = {
 
     summary: {
@@ -107,7 +108,7 @@ const activeKeys =
 
 
 <!-- ========================================================
-     FILTER TOGGLE
+     FILTER TOGGLE BUTTON
 ========================================================= -->
 
 <button
@@ -123,6 +124,9 @@ const activeKeys =
 
 <!-- ========================================================
      FILTER FORM
+     
+     hidden attribute ensures that the filter is hidden
+     by default, even before JavaScript executes.
 ========================================================= -->
 
 <form
@@ -130,6 +134,7 @@ const activeKeys =
     class="sales-filter"
     action="/sales"
     method="GET"
+    hidden
 >
 
 
@@ -309,6 +314,12 @@ document.addEventListener(
             );
 
 
+        /*
+         * ======================================================
+         * SAFETY CHECK
+         * ======================================================
+         */
+
         if (
             !toggle ||
             !form
@@ -319,28 +330,73 @@ document.addEventListener(
         }
 
 
+        /*
+         * ======================================================
+         * DEFAULT STATE
+         * ======================================================
+         *
+         * The form is ALWAYS closed when the page loads.
+         *
+         */
+
+        form.hidden = true;
+
+        toggle.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+
+        /*
+         * ======================================================
+         * OPEN / CLOSE
+         * ======================================================
+         *
+         * First tap:
+         *     hidden = false
+         *     Filter opens
+         *
+         * Second tap:
+         *     hidden = true
+         *     Filter closes
+         *
+         */
+
         toggle.addEventListener(
             "click",
             function () {
 
-                const isOpen =
-                    form.classList.toggle(
-                        "active"
+                const shouldOpen =
+                    form.hidden;
+
+
+                if (shouldOpen) {
+
+                    /*
+                     * OPEN FILTER
+                     */
+
+                    form.hidden = false;
+
+                    toggle.setAttribute(
+                        "aria-expanded",
+                        "true"
                     );
 
+                } else {
 
-                toggle.setAttribute(
-                    "aria-expanded",
-                    isOpen
-                        ? "true"
-                        : "false"
-                );
+                    /*
+                     * CLOSE FILTER
+                     */
 
+                    form.hidden = true;
 
-                toggle.textContent =
-                    isOpen
-                        ? "Close Filter"
-                        : "Filter Date?";
+                    toggle.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+
+                }
 
             }
         );
