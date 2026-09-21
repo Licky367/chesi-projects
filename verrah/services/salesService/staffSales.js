@@ -29,6 +29,9 @@ const mongoose =
 const StaffSale =
     require("../../models/staff-sales");
 
+const Substation =
+    require("../../models/substations");
+
 const substationService =
     require("../substationService");
 
@@ -480,6 +483,183 @@ function calculateSubstationTotals(
 
 
 // ==========================================================
+// UPDATE DAILY CASH SALES
+// ==========================================================
+//
+// Uses ONLY the day period.
+//
+// For each substation:
+//
+//     dailyCashSales = [
+//         {
+//             amount: sale.totalAmount,
+//             date: sale.createdAt
+//         }
+//     ]
+//
+// The same substation-resolution rule is used:
+//
+//     salesSubstation
+//
+// fallback:
+//
+//     soldBy.assignedSubstation
+//
+// When filter.substation is supplied, only that substation
+// is updated.
+//
+// ==========================================================
+
+async function updateDailyCashSales(
+    daySales,
+    filter,
+    substations
+) {
+
+    const dailySalesBySubstation =
+        new Map();
+
+
+    // ======================================================
+    // GROUP DAY SALES BY SUBSTATION
+    // ======================================================
+
+    daySales.forEach(
+
+        sale => {
+
+            const substationId =
+                getSaleSubstationId(
+                    sale
+                );
+
+
+            if (
+                !substationId
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                !dailySalesBySubstation.has(
+                    substationId
+                )
+            ) {
+
+                dailySalesBySubstation.set(
+
+                    substationId,
+
+                    []
+
+                );
+
+            }
+
+
+            dailySalesBySubstation
+                .get(
+                    substationId
+                )
+                .push({
+
+                    amount:
+                        Number(
+                            sale.totalAmount || 0
+                        ),
+
+                    date:
+                        sale.createdAt
+
+                });
+
+        }
+
+    );
+
+
+    // ======================================================
+    // DETERMINE SUBSTATIONS TO UPDATE
+    // ======================================================
+
+    let substationsToUpdate =
+        substations;
+
+
+    if (
+        filter &&
+        filter.substation
+    ) {
+
+        const selectedId =
+            String(
+                filter.substation
+            );
+
+
+        substationsToUpdate =
+            substations.filter(
+
+                substation =>
+                    String(
+                        substation._id
+                    ) === selectedId
+
+            );
+
+    }
+
+
+    // ======================================================
+    // UPDATE DAILY CASH SALES
+    // ======================================================
+
+    await Promise.all(
+
+        substationsToUpdate.map(
+
+            substation => {
+
+                const substationId =
+                    String(
+                        substation._id
+                    );
+
+
+                const dailyCashSales =
+                    dailySalesBySubstation.get(
+                        substationId
+                    ) || [];
+
+
+                return Substation.updateOne(
+
+                    {
+                        _id:
+                            substation._id
+                    },
+
+                    {
+                        $set: {
+                            dailyCashSales
+                        }
+                    }
+
+                );
+
+            }
+
+        )
+
+    );
+
+}
+
+
+// ==========================================================
 // GET STAFF SALES
 // ==========================================================
 
@@ -625,6 +805,27 @@ async function getStaffSales(
         )
 
     ]);
+
+
+    // ======================================================
+    // UPDATE DAILY CASH SALES
+    // ======================================================
+    //
+    // Only the "day" period is used here.
+    //
+    // Existing month/year calculations remain untouched.
+    //
+    // ======================================================
+
+    await updateDailyCashSales(
+
+        daySales,
+
+        filter,
+
+        substations
+
+    );
 
 
     // ======================================================
