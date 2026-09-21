@@ -163,7 +163,7 @@ function calculateTotal(
 // GET STAFF IDS FOR SUBSTATION
 // ==========================================================
 //
-// This remains useful for resolving the fallback:
+// Used for resolving the fallback:
 //
 //     soldBy.assignedSubstation
 //
@@ -257,22 +257,9 @@ async function buildSalesQuery(
 
         const staffIds =
             await getStaffIdsForSubstation(
-
                 substationId
-
             );
 
-
-        // ==================================================
-        // MATCH EITHER:
-        //
-        //     salesSubstation
-        //
-        // OR:
-        //
-        //     soldBy.assignedSubstation
-        //
-        // ==================================================
 
         query.$or = [
 
@@ -282,17 +269,20 @@ async function buildSalesQuery(
             },
 
             {
-                salesSubstation:
-                    {
-                        $exists:
-                            false
-                    },
+                salesSubstation: {
 
-                soldBy:
-                    {
-                        $in:
-                            staffIds
-                    }
+                    $exists:
+                        false
+
+                },
+
+                soldBy: {
+
+                    $in:
+                        staffIds
+
+                }
+
             }
 
         ];
@@ -486,16 +476,17 @@ function calculateSubstationTotals(
 // UPDATE DAILY CASH SALES
 // ==========================================================
 //
-// Uses ONLY the day period.
+// dailyCashSales is a CUMULATIVE DAILY TOTAL.
 //
 // For each substation:
 //
-//     dailyCashSales = [
-//         {
-//             amount: sale.totalAmount,
-//             date: sale.createdAt
-//         }
-//     ]
+//     dailyCashSales = total of all StaffSale amounts
+//                      recorded during the current day.
+//
+// It is stored as a number, NOT as an array of sales.
+//
+// The total is recalculated from the day's sales so repeated
+// calls do not double-count the same sales.
 //
 // The same substation-resolution rule is used:
 //
@@ -507,7 +498,6 @@ function calculateSubstationTotals(
 //
 // When filter.substation is supplied, only that substation
 // is updated.
-//
 // ==========================================================
 
 async function updateDailyCashSales(
@@ -521,7 +511,7 @@ async function updateDailyCashSales(
 
 
     // ======================================================
-    // GROUP DAY SALES BY SUBSTATION
+    // GROUP AND ACCUMULATE DAY SALES BY SUBSTATION
     // ======================================================
 
     daySales.forEach(
@@ -543,38 +533,22 @@ async function updateDailyCashSales(
             }
 
 
-            if (
-                !dailySalesBySubstation.has(
+            const currentTotal =
+                dailySalesBySubstation.get(
                     substationId
-                )
-            ) {
-
-                dailySalesBySubstation.set(
-
-                    substationId,
-
-                    []
-
-                );
-
-            }
+                ) || 0;
 
 
-            dailySalesBySubstation
-                .get(
-                    substationId
-                )
-                .push({
+            dailySalesBySubstation.set(
 
-                    amount:
-                        Number(
-                            sale.totalAmount || 0
-                        ),
+                substationId,
 
-                    date:
-                        sale.createdAt
+                currentTotal +
+                    Number(
+                        sale.totalAmount || 0
+                    )
 
-                });
+            );
 
         }
 
@@ -614,7 +588,7 @@ async function updateDailyCashSales(
 
 
     // ======================================================
-    // UPDATE DAILY CASH SALES
+    // UPDATE DAILY CUMULATIVE TOTAL
     // ======================================================
 
     await Promise.all(
@@ -630,9 +604,11 @@ async function updateDailyCashSales(
 
 
                 const dailyCashSales =
-                    dailySalesBySubstation.get(
-                        substationId
-                    ) || [];
+                    Number(
+                        dailySalesBySubstation.get(
+                            substationId
+                        ) || 0
+                    );
 
 
                 return Substation.updateOne(
@@ -644,8 +620,11 @@ async function updateDailyCashSales(
 
                     {
                         $set: {
+
                             dailyCashSales
+
                         }
+
                     }
 
                 );
@@ -811,9 +790,11 @@ async function getStaffSales(
     // UPDATE DAILY CASH SALES
     // ======================================================
     //
-    // Only the "day" period is used here.
+    // daySales contains ALL sales for the current day
+    // according to the active substation restriction.
     //
-    // Existing month/year calculations remain untouched.
+    // dailyCashSales is therefore the cumulative total
+    // for the day.
     //
     // ======================================================
 
