@@ -58,6 +58,10 @@ const canEditMarketAvailable =
 <div class="sales-section">
 
 
+    <!-- ======================================================
+         SECTION HEADING
+    ======================================================= -->
+
     <div class="sales-section-heading">
 
         <div>
@@ -76,7 +80,7 @@ const canEditMarketAvailable =
 
 
     <!-- ======================================================
-         ADD MANY PRODUCTS TO CART
+         ADD MANY PRODUCTS TO CART FORM
     ======================================================= -->
 
     <% if (!hideSellInput) { %>
@@ -115,7 +119,7 @@ const canEditMarketAvailable =
 
 
     <!-- ======================================================
-         UPDATE MARKET AVAILABLE
+         UPDATE MARKET AVAILABLE FORM
     ======================================================= -->
 
     <% if (canEditMarketAvailable) { %>
@@ -236,7 +240,7 @@ const canEditMarketAvailable =
 
 
                             <!-- ==================================================
-                                 NUMBER
+                                 #
                             =================================================== -->
 
                             <td>
@@ -260,7 +264,6 @@ const canEditMarketAvailable =
                                         gap: 15px;
                                     "
                                 >
-
 
                                     <div>
 
@@ -288,6 +291,10 @@ const canEditMarketAvailable =
 
                                     </div>
 
+
+                                    <!-- ==================================================
+                                         SELL INPUT
+                                    =================================================== -->
 
                                     <% if (!hideSellInput) { %>
 
@@ -351,6 +358,7 @@ const canEditMarketAvailable =
                                             align-items: center;
                                             justify-content: flex-end;
                                             gap: 8px;
+                                            width: 100%;
                                         "
                                     >
 
@@ -470,15 +478,15 @@ document.addEventListener(
             );
 
 
-        const form =
-            document.getElementById(
-                "addManyToCartForm"
+        const sellInputs =
+            document.querySelectorAll(
+                '[form="addManyToCartForm"].product-cart-qty'
             );
 
 
         if (
             !actions ||
-            !form
+            !sellInputs.length
         ) {
 
             return;
@@ -486,28 +494,57 @@ document.addEventListener(
         }
 
 
-        const inputs =
-            form.querySelectorAll(
-                ".product-cart-qty"
+        function isValidSellValue(
+            value
+        ) {
+
+            const trimmed =
+                value.trim();
+
+
+            if (
+                trimmed === ""
+            ) {
+
+                return false;
+
+            }
+
+
+            if (
+                !/^\d+$/.test(
+                    trimmed
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            return (
+                Number(trimmed) >= 1
             );
+
+        }
 
 
         function updateCartButton() {
 
-            let hasQuantity =
+            let hasValidQuantity =
                 false;
 
 
-            inputs.forEach(
+            sellInputs.forEach(
                 function (input) {
 
                     if (
-                        Number(
-                            input.value || 0
-                        ) > 0
+                        isValidSellValue(
+                            input.value
+                        )
                     ) {
 
-                        hasQuantity =
+                        hasValidQuantity =
                             true;
 
                     }
@@ -517,18 +554,24 @@ document.addEventListener(
 
 
             actions.style.display =
-                hasQuantity
+                hasValidQuantity
                     ? "block"
                     : "none";
 
         }
 
 
-        inputs.forEach(
+        sellInputs.forEach(
             function (input) {
 
                 input.addEventListener(
                     "input",
+                    updateCartButton
+                );
+
+
+                input.addEventListener(
+                    "change",
                     updateCartButton
                 );
 
@@ -564,15 +607,15 @@ document.addEventListener(
             );
 
 
-        const form =
-            document.getElementById(
-                "updateMarketAvailableForm"
+        const marketInputs =
+            document.querySelectorAll(
+                '[form="updateMarketAvailableForm"].market-units-input'
             );
 
 
         if (
             !actions ||
-            !form
+            !marketInputs.length
         ) {
 
             return;
@@ -580,30 +623,70 @@ document.addEventListener(
         }
 
 
-        const inputs =
-            form.querySelectorAll(
-                ".market-units-input"
+        function isValidMarketValue(
+            value
+        ) {
+
+            const trimmed =
+                value.trim();
+
+
+            if (
+                trimmed === ""
+            ) {
+
+                return false;
+
+            }
+
+
+            if (
+                !/^\d+$/.test(
+                    trimmed
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            return (
+                Number(trimmed) >= 0
             );
+
+        }
 
 
         function updateMarketButton() {
 
-            let hasChanges =
+            let hasValidChange =
                 false;
 
 
-            inputs.forEach(
+            marketInputs.forEach(
                 function (input) {
 
-                    const originalValue =
-                        Number(
-                            input.dataset.originalValue || 0
-                        );
+                    if (
+                        !isValidMarketValue(
+                            input.value
+                        )
+                    ) {
+
+                        return;
+
+                    }
 
 
                     const currentValue =
                         Number(
-                            input.value || 0
+                            input.value
+                        );
+
+
+                    const originalValue =
+                        Number(
+                            input.dataset.originalValue
                         );
 
 
@@ -612,7 +695,7 @@ document.addEventListener(
                         originalValue
                     ) {
 
-                        hasChanges =
+                        hasValidChange =
                             true;
 
                     }
@@ -622,14 +705,14 @@ document.addEventListener(
 
 
             actions.style.display =
-                hasChanges
+                hasValidChange
                     ? "block"
                     : "none";
 
         }
 
 
-        inputs.forEach(
+        marketInputs.forEach(
             function (input) {
 
                 input.addEventListener(
