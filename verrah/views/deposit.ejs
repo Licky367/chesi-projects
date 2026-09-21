@@ -1,0 +1,292 @@
+<link rel="stylesheet" href="/css/sales.css">
+
+<div class="sales-page">
+
+  <!-- ======================================================
+       HEADER
+  ======================================================= -->
+
+  <div class="sales-header">
+
+    <div class="sales-header-icon">
+      <i class="fas fa-money-bill-transfer"></i>
+    </div>
+
+    <div>
+
+      <h1 class="sales-title">
+        Deposit Funds
+      </h1>
+
+      <p class="sales-subtitle">
+        Deposit the daily cash sale through M-Pesa.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- ======================================================
+       DEPOSIT CONTENT
+  ======================================================= -->
+
+  <div class="sales-content">
+
+    <section class="sales-section">
+
+      <div class="sales-section-heading">
+
+        <div>
+
+          <h2>
+            Cash Sale Deposit
+          </h2>
+
+        </div>
+
+      </div>
+
+
+      <!-- ==================================================
+           DEPOSIT CARD
+      =================================================== -->
+
+      <div class="sales-liability-entry">
+
+        <form
+          id="deposit-form"
+          class="sales-liability-form"
+          method="POST"
+          action="/deposit/<%= deposit.saleId %>/pay"
+        >
+
+          <!-- ==============================================
+               AMOUNT
+          =============================================== -->
+
+          <div class="sales-liability-field">
+
+            <label for="deposit-amount">
+              Deposit Amount
+            </label>
+
+            <input
+              id="deposit-amount"
+              type="number"
+              name="amount"
+              value="<%= deposit.amount %>"
+              min="1"
+              step="1"
+              readonly
+              required
+            >
+
+          </div>
+
+
+          <!-- ==============================================
+               PHONE NUMBER
+          =============================================== -->
+
+          <div class="sales-liability-field">
+
+            <label for="deposit-phone">
+              M-Pesa Phone Number
+            </label>
+
+            <input
+              id="deposit-phone"
+              type="tel"
+              name="phone"
+              value="<%= user && user.phone ? user.phone : '' %>"
+              placeholder="07XXXXXXXX"
+              autocomplete="tel"
+              required
+            >
+
+          </div>
+
+
+          <!-- ==============================================
+               SALE DATE
+          =============================================== -->
+
+          <div class="sales-liability-field">
+
+            <label>
+              Cash Sale Date
+            </label>
+
+            <div class="sales-liability-assigned">
+
+              <span class="sales-liability-assigned-label">
+                DATE
+              </span>
+
+              <strong>
+                <%= new Date(deposit.date).toLocaleDateString(
+                  "en-KE",
+                  {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric"
+                  }
+                ) %>
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <!-- ==============================================
+               STATUS
+          =============================================== -->
+
+          <div class="sales-liability-field">
+
+            <label>
+              Deposit Status
+            </label>
+
+            <div class="sales-liability-assigned">
+
+              <span class="sales-liability-assigned-label">
+                STATUS
+              </span>
+
+              <strong>
+                Awaiting Deposit
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <!-- ==============================================
+               ACTION
+          =============================================== -->
+
+          <div class="sales-liability-form-actions">
+
+            <button
+              type="submit"
+              class="sales-liability-submit"
+              id="deposit-submit"
+            >
+
+              <i class="fas fa-mobile-screen-button"></i>
+
+              Pay with M-Pesa
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </section>
+
+  </div>
+
+</div>
+
+
+<!-- ========================================================
+     STK PUSH HANDLER
+========================================================= -->
+
+<script>
+
+(function () {
+
+  const form =
+    document.getElementById("deposit-form");
+
+  const button =
+    document.getElementById("deposit-submit");
+
+  if (!form || !button) {
+    return;
+  }
+
+
+  form.addEventListener(
+    "submit",
+    async function (event) {
+
+      event.preventDefault();
+
+      button.disabled = true;
+
+      button.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> Sending STK Push...';
+
+
+      try {
+
+        const formData =
+          new FormData(form);
+
+        const response =
+          await fetch(
+            form.action,
+            {
+              method: "POST",
+
+              headers: {
+                "Accept": "application/json"
+              },
+
+              body: formData
+            }
+          );
+
+        const result =
+          await response.json();
+
+
+        if (!response.ok || !result.success) {
+
+          throw new Error(
+            result.message ||
+            "Unable to initiate M-Pesa payment."
+          );
+
+        }
+
+
+        button.innerHTML =
+          '<i class="fas fa-mobile-screen-button"></i> STK Sent';
+
+
+        alert(
+          result.customerMessage ||
+          "An M-Pesa payment prompt has been sent to your phone."
+        );
+
+
+      } catch (error) {
+
+        alert(
+          error.message ||
+          "Unable to initiate M-Pesa payment."
+        );
+
+        button.disabled = false;
+
+        button.innerHTML =
+          '<i class="fas fa-mobile-screen-button"></i> Pay with M-Pesa';
+
+      }
+
+    }
+  );
+
+})();
+
+</script>
