@@ -270,7 +270,6 @@ async function buildSalesQuery(
         // OR:
         //
         //     soldBy.assignedSubstation
-        //
         // ==================================================
 
         query.$or = [
@@ -495,7 +494,8 @@ function calculateSubstationTotals(
 //
 // For each substation:
 //
-//     dailyCashSales = cumulative total of sale.totalAmount
+//     dailyCashSales = cumulative total of all
+//     sale.totalAmount values for that day.
 //
 // The same substation-resolution rule is used:
 //
@@ -892,3 +892,4 @@ module.exports = {
     getStaffSales
 
 };
+
