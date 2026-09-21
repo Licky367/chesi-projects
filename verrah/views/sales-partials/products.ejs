@@ -1,33 +1,35 @@
 <%
 function number(value) {
-    return Number(value || 0).toLocaleString("en-KE");
+return Number(value || 0).toLocaleString("en-KE");
 }
+
+const hideSellInput =
+role === "admin" &&
+!activeSubstation;
 %>
 
+<div class="sales-section"><div class="sales-section-heading">
 
-<div class="sales-section">
+    <div>
 
+        <h2>
+            Product Analytics
+        </h2>
 
-    <div class="sales-section-heading">
-
-        <div>
-
-            <h2>
-                Product Analytics
-            </h2>
-
-            <p>
-                <%= filterLabel %>
-            </p>
-
-        </div>
+        <p>
+            <%= filterLabel %>
+        </p>
 
     </div>
 
+</div>
 
-    <!-- ======================================================
-         ADD MANY PRODUCTS TO CART
-    ======================================================= -->
+
+<!-- ======================================================
+     ADD MANY PRODUCTS TO CART
+======================================================= -->
+
+<% if (!hideSellInput) { %>
 
     <form
         action="/products/addManyToCart"
@@ -60,127 +62,132 @@ function number(value) {
         </div>
 
 
-        <!-- ==================================================
-             PRODUCT TABLE
-        =================================================== -->
-
-        <div class="sales-table-wrapper">
+<% } %>
 
 
-            <table class="sales-table">
+    <!-- ==================================================
+         PRODUCT TABLE
+    =================================================== -->
+
+    <div class="sales-table-wrapper">
 
 
-                <thead>
-
-                    <tr>
-
-                        <th>
-                            #
-                        </th>
-
-                        <th>
-                            Product Name
-                        </th>
-
-                        <th>
-                            Items Available in Stock
-                        </th>
-
-                        <th>
-                            Items Available in Market
-                        </th>
-
-                        <th>
-                            Number of Sales
-                        </th>
-
-                    </tr>
-
-                </thead>
+        <table class="sales-table">
 
 
-                <tbody>
+            <thead>
+
+                <tr>
+
+                    <th>
+                        #
+                    </th>
+
+                    <th>
+                        Product Name
+                    </th>
+
+                    <th>
+                        Items Available in Stock
+                    </th>
+
+                    <th>
+                        Items Available in Market
+                    </th>
+
+                    <th>
+                        Number of Sales
+                    </th>
+
+                </tr>
+
+            </thead>
 
 
-                    <% if (
-                        Array.isArray(productAnalytics) &&
-                        productAnalytics.length
-                    ) { %>
+            <tbody>
 
 
-                        <% productAnalytics.forEach(
-                            function(product, index)
-                        { %>
+                <% if (
+                    Array.isArray(productAnalytics) &&
+                    productAnalytics.length
+                ) { %>
 
 
-                            <tr
-                                class="sales-product-row"
-                                onclick="
+                    <% productAnalytics.forEach(
+                        function(product, index)
+                    { %>
+
+
+                        <tr
+                            class="sales-product-row"
+                            onclick="
+                                window.location.href =
+                                '/substations/product/<%= product._id %>'
+                            "
+                            onkeydown="
+                                if (
+                                    event.key === 'Enter' ||
+                                    event.key === ' '
+                                ) {
+                                    event.preventDefault();
+
                                     window.location.href =
-                                    '/substations/product/<%= product._id %>'
-                                "
-                                onkeydown="
-                                    if (
-                                        event.key === 'Enter' ||
-                                        event.key === ' '
-                                    ) {
-                                        event.preventDefault();
-
-                                        window.location.href =
-                                        '/substations/product/<%= product._id %>';
-                                    }
-                                "
-                                tabindex="0"
-                                role="link"
-                            >
+                                    '/substations/product/<%= product._id %>';
+                                }
+                            "
+                            tabindex="0"
+                            role="link"
+                        >
 
 
-                                <td>
+                            <td>
 
-                                    <%= index + 1 %>
+                                <%= index + 1 %>
 
-                                </td>
-
-
-                                <td>
+                            </td>
 
 
-                                    <div
-                                        style="
-                                            display: flex;
-                                            align-items: center;
-                                            justify-content: space-between;
-                                            gap: 15px;
-                                        "
-                                    >
+                            <td>
 
 
-                                        <div>
+                                <div
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: space-between;
+                                        gap: 15px;
+                                    "
+                                >
 
-                                            <strong>
-                                                <%= product.name %>
-                                            </strong>
+
+                                    <div>
+
+                                        <strong>
+                                            <%= product.name %>
+                                        </strong>
 
 
-                                            <small
-                                                style="
-                                                    display: block;
-                                                    margin-top: 3px;
-                                                    font-size: 0.75rem;
-                                                    opacity: 0.7;
-                                                "
-                                            >
+                                        <small
+                                            style="
+                                                display: block;
+                                                margin-top: 3px;
+                                                font-size: 0.75rem;
+                                                opacity: 0.7;
+                                            "
+                                        >
 
-                                                KSh
+                                            KSh
 
-                                                <%= number(
-                                                    product.unitSellPrice
-                                                ) %>
+                                            <%= number(
+                                                product.unitSellPrice
+                                            ) %>
 
-                                            </small>
+                                        </small>
 
-                                        </div>
+                                    </div>
 
+
+                                    <% if (!hideSellInput) { %>
 
                                         <div
                                             onclick="
@@ -213,85 +220,87 @@ function number(value) {
 
                                         </div>
 
-
-                                    </div>
-
-
-                                </td>
+                                    <% } %>
 
 
-                                <td>
+                                </div>
 
-                                    <%= number(
-                                        product.stockAvailable
-                                    ) %>
-
-                                </td>
-
-
-                                <td>
-
-                                    <%= number(
-                                        product.marketAvailable
-                                    ) %>
-
-                                </td>
-
-
-                                <td>
-
-                                    <%= number(
-                                        product.sales
-                                    ) %>
-
-                                </td>
-
-
-                            </tr>
-
-
-                        <% }); %>
-
-
-                    <% } else { %>
-
-
-                        <tr>
-
-                            <td
-                                colspan="5"
-                                class="sales-empty"
-                            >
-
-                                No product analytics found
-                                for this period.
 
                             </td>
+
+
+                            <td>
+
+                                <%= number(
+                                    product.stockAvailable
+                                ) %>
+
+                            </td>
+
+
+                            <td>
+
+                                <%= number(
+                                    product.marketAvailable
+                                ) %>
+
+                            </td>
+
+
+                            <td>
+
+                                <%= number(
+                                    product.sales
+                                ) %>
+
+                            </td>
+
 
                         </tr>
 
 
-                    <% } %>
+                    <% }); %>
 
 
-                </tbody>
+                <% } else { %>
 
 
-            </table>
+                    <tr>
+
+                        <td
+                            colspan="5"
+                            class="sales-empty"
+                        >
+
+                            No product analytics found
+                            for this period.
+
+                        </td>
+
+                    </tr>
 
 
-        </div>
+                <% } %>
 
+
+            </tbody>
+
+
+        </table>
+
+
+    </div>
+
+
+<% if (!hideSellInput) { %>
 
     </form>
 
+<% } %>
 
-</div>
-
-
-<!-- ======================================================
+</div><!-- ======================================================
      ADD MANY TO CART SCRIPT
-======================================================= -->
+======================================================= --><% if (!hideSellInput) { %>
 
 <script>
 
@@ -381,3 +390,5 @@ document.addEventListener(
 );
 
 </script>
+
+<% } %>
