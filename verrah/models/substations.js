@@ -53,9 +53,6 @@ const productInventorySchema = new mongoose.Schema(
             default: Date.now
         }
     },
-    {
-        _id: false
-    }
 );
 
 // ==========================================================
