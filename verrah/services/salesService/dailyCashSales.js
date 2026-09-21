@@ -12,7 +12,6 @@
 // - Staff assigned-substation access
 // ==========================================================
 
-
 const mongoose =
     require("mongoose");
 
@@ -48,7 +47,7 @@ async function getDailyCashSales(
         !filter.substation
     ) {
 
-        return 0;
+        return [];
 
     }
 
@@ -63,7 +62,7 @@ async function getDailyCashSales(
         )
     ) {
 
-        return 0;
+        return [];
 
     }
 
@@ -86,7 +85,7 @@ async function getDailyCashSales(
         !substation
     ) {
 
-        return 0;
+        return [];
 
     }
 
@@ -94,22 +93,104 @@ async function getDailyCashSales(
     // ======================================================
     // DAILY CASH SALES
     // ======================================================
-    //
-    // dailyCashSales is a cumulative total for the day.
-    //
-    // Example:
-    //
-    //     Today's cash sales = 15,500
-    //
-    // The value stored in the substation is simply:
-    //
-    //     dailyCashSales: 15500
-    //
+
+    const dailyCashSales =
+        Array.isArray(
+            substation.dailyCashSales
+        )
+            ? substation.dailyCashSales
+            : [];
+
+
+    // ======================================================
+    // DATE FILTER
     // ======================================================
 
-    return Number(
-        substation.dailyCashSales || 0
+    const startDate =
+        filter.startDate;
+
+    const endDate =
+        filter.endDate;
+
+
+    const filteredSales =
+        dailyCashSales.filter(
+            sale => {
+
+                if (
+                    !sale ||
+                    !sale.date
+                ) {
+
+                    return false;
+
+                }
+
+
+                const saleDate =
+                    new Date(
+                        sale.date
+                    );
+
+
+                if (
+                    Number.isNaN(
+                        saleDate.getTime()
+                    )
+                ) {
+
+                    return false;
+
+                }
+
+
+                return (
+
+                    saleDate >=
+                        startDate &&
+
+                    saleDate <
+                        endDate
+
+                );
+
+            }
+        );
+
+
+    // ======================================================
+    // NEWEST FIRST
+    // ======================================================
+
+    filteredSales.sort(
+        (
+            first,
+            second
+        ) => {
+
+            return (
+
+                new Date(
+                    second.date
+                ).getTime()
+
+                -
+
+                new Date(
+                    first.date
+                ).getTime()
+
+            );
+
+        }
     );
+
+
+    // ======================================================
+    // RETURN
+    // ======================================================
+
+    return filteredSales;
 
 }
 
