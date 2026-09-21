@@ -15,13 +15,41 @@
 //         -> filtered by packageSubstation
 //
 // Products themselves remain global product records.
+//
+// IMPORTANT:
+//
+//     product
+//         -> passed through to the result
+//
+//     product.units
+//         -> passed through as units
+//         -> NOT filtered
+//
+//     stock.units
+//         -> aggregated and passed as stockUnits
+//         -> NOT filtered
+//
+//     stockAvailable
+//         -> displayed stock quantity
+//         -> NOT filtered
+//
+//     marketAvailable
+//         -> displayed product market quantity
+//         -> product.units
+//
+//     sales
+//         -> delivered package quantities
+//         -> filtered by packageSubstation
 // ==========================================================
+
 
 const Product =
     require("../../models/products");
 
+
 const Stock =
     require("../../models/stock");
+
 
 const Package =
     require("../../models/package");
@@ -44,6 +72,7 @@ function getSubstationQuery(
         return {};
 
     }
+
 
     return {
 
@@ -68,6 +97,9 @@ async function getProductAnalytics(
     //
     // Products are global records and therefore are not
     // filtered by substation.
+    //
+    // The complete product object is retained so that
+    // product and product.units can be passed forward.
     // ======================================================
 
     const products =
@@ -79,7 +111,7 @@ async function getProductAnalytics(
         })
 
             .select(
-                "_id name subcategory units buyPrice stock"
+                "_id name subcategory units buyPrice stock unitSellPrice"
             )
 
             .lean();
@@ -90,8 +122,7 @@ async function getProductAnalytics(
     //
     // Stock is global.
     //
-    // DO NOT filter stock by substation because there is
-    // no substation-specific stock inventory model.
+    // DO NOT filter stock by substation.
     // ======================================================
 
     const stockRecords =
@@ -111,6 +142,11 @@ async function getProductAnalytics(
 
     // ======================================================
     // STOCK BY SUBCATEGORY
+    //
+    // This remains GLOBAL.
+    //
+    // Every active stock record contributes to the
+    // subcategory total regardless of substation.
     // ======================================================
 
     const stockBySubcategory =
@@ -160,9 +196,9 @@ async function getProductAnalytics(
     // ======================================================
     // DELIVERED PACKAGES
     //
-    // Packages are filtered by their packageSubstation.
+    // Packages ARE filtered by packageSubstation.
     //
-    // The date filter remains active exactly as before.
+    // The date filter remains exactly as before.
     // ======================================================
 
     const deliveredPackageQuery = {
@@ -258,13 +294,6 @@ async function getProductAnalytics(
 
     // ======================================================
     // RETURN PRODUCT ANALYTICS
-    //
-    // product.units is explicitly passed through as
-    // "units" so the EJS can use:
-    //
-    //     product.units
-    //
-    // marketAvailable continues to use the same value.
     // ======================================================
 
     return products
@@ -281,13 +310,45 @@ async function getProductAnalytics(
                         .toLowerCase();
 
 
+                // ==========================================
+                // RAW PRODUCT UNITS
+                //
+                // Passed through unchanged.
+                // ==========================================
+
                 const units =
                     Number(
                         product.units || 0
                     );
 
 
+                // ==========================================
+                // GLOBAL STOCK UNITS
+                //
+                // Passed through unchanged.
+                // ==========================================
+
+                const stockUnits =
+                    stockBySubcategory.get(
+                        subcategory
+                    ) || 0;
+
+
                 return {
+
+                    // ======================================
+                    // COMPLETE PRODUCT
+                    // ======================================
+
+                    product:
+
+
+                        product,
+
+
+                    // ======================================
+                    // PRODUCT IDENTIFICATION
+                    // ======================================
 
                     _id:
                         product._id,
@@ -295,16 +356,54 @@ async function getProductAnalytics(
                     name:
                         product.name,
 
+
+                    // ======================================
+                    // RAW PRODUCT UNITS
+                    //
+                    // Passed, not displayed directly.
+                    // ======================================
+
                     units:
                         units,
 
+
+                    // ======================================
+                    // RAW STOCK UNITS
+                    //
+                    // Passed, not displayed directly.
+                    // NOT filtered by substation.
+                    // ======================================
+
+                    stockUnits:
+                        stockUnits,
+
+
+                    // ======================================
+                    // DISPLAYED STOCK
+                    //
+                    // Global stock.
+                    // ======================================
+
                     stockAvailable:
-                        stockBySubcategory.get(
-                            subcategory
-                        ) || 0,
+                        stockUnits,
+
+
+                    // ======================================
+                    // DISPLAYED MARKET
+                    //
+                    // Product.units.
+                    // ======================================
 
                     marketAvailable:
                         units,
+
+
+                    // ======================================
+                    // DISPLAYED SALES
+                    //
+                    // Filtered through packageSubstation
+                    // above.
+                    // ======================================
 
                     sales:
                         salesByProduct.get(
