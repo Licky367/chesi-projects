@@ -3,9 +3,20 @@ function number(value) {
 return Number(value || 0).toLocaleString("en-KE");
 }
 
+const isAdmin =
+user &&
+user.role === "admin";
+
+const selectedSubstation =
+typeof filter !== "undefined" &&
+filter &&
+filter.substation
+? filter.substation
+: "";
+
 const hideSellInput =
-role === "admin" &&
-!activeSubstation;
+isAdmin &&
+!selectedSubstation;
 %>
 
 <div class="sales-section"><div class="sales-section-heading">
@@ -61,235 +72,234 @@ role === "admin" &&
 
         </div>
 
-
 <% } %>
 
 
-    <!-- ==================================================
-         PRODUCT TABLE
-    =================================================== -->
+<!-- ======================================================
+     PRODUCT TABLE
+======================================================= -->
 
-    <div class="sales-table-wrapper">
-
-
-        <table class="sales-table">
+<div class="sales-table-wrapper">
 
 
-            <thead>
-
-                <tr>
-
-                    <th>
-                        #
-                    </th>
-
-                    <th>
-                        Product Name
-                    </th>
-
-                    <th>
-                        Items Available in Stock
-                    </th>
-
-                    <th>
-                        Items Available in Market
-                    </th>
-
-                    <th>
-                        Number of Sales
-                    </th>
-
-                </tr>
-
-            </thead>
+    <table class="sales-table">
 
 
-            <tbody>
+        <thead>
+
+            <tr>
+
+                <th>
+                    #
+                </th>
+
+                <th>
+                    Product Name
+                </th>
+
+                <th>
+                    Items Available in Stock
+                </th>
+
+                <th>
+                    Items Available in Market
+                </th>
+
+                <th>
+                    Number of Sales
+                </th>
+
+            </tr>
+
+        </thead>
 
 
-                <% if (
-                    Array.isArray(productAnalytics) &&
-                    productAnalytics.length
-                ) { %>
+        <tbody>
 
 
-                    <% productAnalytics.forEach(
-                        function(product, index)
-                    { %>
+            <% if (
+                Array.isArray(productAnalytics) &&
+                productAnalytics.length
+            ) { %>
 
 
-                        <tr
-                            class="sales-product-row"
-                            onclick="
+                <% productAnalytics.forEach(
+                    function(product, index)
+                { %>
+
+
+                    <tr
+                        class="sales-product-row"
+                        onclick="
+                            window.location.href =
+                            '/substations/product/<%= product._id %>'
+                        "
+                        onkeydown="
+                            if (
+                                event.key === 'Enter' ||
+                                event.key === ' '
+                            ) {
+                                event.preventDefault();
+
                                 window.location.href =
-                                '/substations/product/<%= product._id %>'
-                            "
-                            onkeydown="
-                                if (
-                                    event.key === 'Enter' ||
-                                    event.key === ' '
-                                ) {
-                                    event.preventDefault();
-
-                                    window.location.href =
-                                    '/substations/product/<%= product._id %>';
-                                }
-                            "
-                            tabindex="0"
-                            role="link"
-                        >
+                                '/substations/product/<%= product._id %>';
+                            }
+                        "
+                        tabindex="0"
+                        role="link"
+                    >
 
 
-                            <td>
+                        <td>
 
-                                <%= index + 1 %>
+                            <%= index + 1 %>
 
-                            </td>
-
-
-                            <td>
+                        </td>
 
 
-                                <div
-                                    style="
-                                        display: flex;
-                                        align-items: center;
-                                        justify-content: space-between;
-                                        gap: 15px;
-                                    "
-                                >
+                        <td>
 
 
-                                    <div>
-
-                                        <strong>
-                                            <%= product.name %>
-                                        </strong>
-
-
-                                        <small
-                                            style="
-                                                display: block;
-                                                margin-top: 3px;
-                                                font-size: 0.75rem;
-                                                opacity: 0.7;
-                                            "
-                                        >
-
-                                            KSh
-
-                                            <%= number(
-                                                product.unitSellPrice
-                                            ) %>
-
-                                        </small>
-
-                                    </div>
+                            <div
+                                style="
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: space-between;
+                                    gap: 15px;
+                                "
+                            >
 
 
-                                    <% if (!hideSellInput) { %>
+                                <div>
 
-                                        <div
-                                            onclick="
-                                                event.stopPropagation();
-                                            "
-                                            onkeydown="
-                                                event.stopPropagation();
-                                            "
-                                        >
+                                    <strong>
+                                        <%= product.name %>
+                                    </strong>
 
 
-                                            <input
-                                                type="number"
-                                                name="products[<%= index %>][qty]"
-                                                min="1"
-                                                max="<%= product.marketAvailable || 0 %>"
-                                                step="1"
-                                                placeholder="Sell"
-                                                class="product-cart-qty"
-                                                aria-label="Units for <%= product.name %>"
-                                            >
+                                    <small
+                                        style="
+                                            display: block;
+                                            margin-top: 3px;
+                                            font-size: 0.75rem;
+                                            opacity: 0.7;
+                                        "
+                                    >
 
+                                        KSh
 
-                                            <input
-                                                type="hidden"
-                                                name="products[<%= index %>][productId]"
-                                                value="<%= product._id %>"
-                                            >
+                                        <%= number(
+                                            product.unitSellPrice
+                                        ) %>
 
-
-                                        </div>
-
-                                    <% } %>
-
+                                    </small>
 
                                 </div>
 
 
-                            </td>
+                                <% if (!hideSellInput) { %>
+
+                                    <div
+                                        onclick="
+                                            event.stopPropagation();
+                                        "
+                                        onkeydown="
+                                            event.stopPropagation();
+                                        "
+                                    >
 
 
-                            <td>
-
-                                <%= number(
-                                    product.stockAvailable
-                                ) %>
-
-                            </td>
-
-
-                            <td>
-
-                                <%= number(
-                                    product.marketAvailable
-                                ) %>
-
-                            </td>
+                                        <input
+                                            type="number"
+                                            name="products[<%= index %>][qty]"
+                                            min="1"
+                                            max="<%= product.marketAvailable || 0 %>"
+                                            step="1"
+                                            placeholder="Sell"
+                                            class="product-cart-qty"
+                                            aria-label="Units for <%= product.name %>"
+                                        >
 
 
-                            <td>
-
-                                <%= number(
-                                    product.sales
-                                ) %>
-
-                            </td>
+                                        <input
+                                            type="hidden"
+                                            name="products[<%= index %>][productId]"
+                                            value="<%= product._id %>"
+                                        >
 
 
-                        </tr>
+                                    </div>
+
+                                <% } %>
 
 
-                    <% }); %>
+                            </div>
 
-
-                <% } else { %>
-
-
-                    <tr>
-
-                        <td
-                            colspan="5"
-                            class="sales-empty"
-                        >
-
-                            No product analytics found
-                            for this period.
 
                         </td>
+
+
+                        <td>
+
+                            <%= number(
+                                product.stockAvailable
+                            ) %>
+
+                        </td>
+
+
+                        <td>
+
+                            <%= number(
+                                product.marketAvailable
+                            ) %>
+
+                        </td>
+
+
+                        <td>
+
+                            <%= number(
+                                product.sales
+                            ) %>
+
+                        </td>
+
 
                     </tr>
 
 
-                <% } %>
+                <% }); %>
 
 
-            </tbody>
+            <% } else { %>
 
 
-        </table>
+                <tr>
+
+                    <td
+                        colspan="5"
+                        class="sales-empty"
+                    >
+
+                        No product analytics found
+                        for this period.
+
+                    </td>
+
+                </tr>
 
 
-    </div>
+            <% } %>
+
+
+        </tbody>
+
+
+    </table>
+
+
+</div>
 
 
 <% if (!hideSellInput) { %>
