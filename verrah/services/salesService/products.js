@@ -9,14 +9,12 @@
 // When filter.substation is provided:
 //
 //     Stock
-//         -> filtered by substation
+//         -> NOT filtered by substation
 //
 //     Delivered Packages
 //         -> filtered by packageSubstation
 //
 // Products themselves remain global product records.
-// Their available stock/market figures are calculated from
-// the selected substation where applicable.
 // ==========================================================
 
 
@@ -90,31 +88,21 @@ async function getProductAnalytics(
 
 
     // ======================================================
-    // LOAD STOCK
+    // LOAD ALL ACTIVE STOCK
     //
-    // When a substation is selected, only stock belonging
-    // to that substation is included.
+    // Stock is global.
     //
-    // When no substation is selected, all stock is included.
+    // DO NOT filter stock by substation because there is
+    // no substation-specific stock inventory model.
     // ======================================================
 
-    const stockQuery = {
-
-        isActive:
-            true,
-
-        ...getSubstationQuery(
-            filter,
-            "substation"
-        )
-
-    };
-
-
     const stockRecords =
-        await Stock.find(
-            stockQuery
-        )
+        await Stock.find({
+
+            isActive:
+                true
+
+        })
 
             .select(
                 "subcategory units substation"
