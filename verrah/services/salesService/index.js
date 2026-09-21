@@ -15,6 +15,8 @@ module.exports = {
 
     ...require("./products"),
 
+    ...require("./dailyCashSales"),
+
     ...require("./arrears")
 
 };
