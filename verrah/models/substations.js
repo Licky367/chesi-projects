@@ -117,9 +117,6 @@ const dailyCashSaleSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         }
-    },
-    {
-        _id: false
     }
 );
 
