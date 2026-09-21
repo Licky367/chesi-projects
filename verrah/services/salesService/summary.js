@@ -6,16 +6,21 @@
 //
 // GLOBAL SUBSTATION FILTER
 //
-// When filter.substation is provided:
+// SALES LOCATION RULES:
 //
-//     Packages
-//         -> packageSubstation
+// Staff Sales
+//     -> salesSubstation
 //
-//     Staff Sales
-//         -> substation
+// Packages
+//     -> Staff associated with the package
+//     -> User.assignedSubstation determines the sales location
 //
-//     Liabilities / Expenses
-//         -> substation
+// Package staff association:
+//     1. confirmedByStaffId
+//     2. deliveredByStaffId
+//
+// packageSubstation is the CUSTOMER PICKUP SUBSTATION.
+// It is NOT used as the staff sales-location filter.
 //
 // When filter.substation is null:
 //
@@ -38,20 +43,220 @@ const Stock =
 const Liability =
     require("../../models/liability");
 
+const User =
+    require("../../models/user");
+
+
+// ==========================================================
+// GET STAFF IDS ASSIGNED TO SUBSTATION
+// ==========================================================
+//
+// User.assignedSubstation identifies the substation where
+// the staff member operates.
+//
+// The returned IDs are strings because:
+//
+//     confirmedByStaffId
+//     deliveredByStaffId
+//
+// are stored as String fields in Package.
+//
+// ==========================================================
+
+async function getStaffIdsForSubstation(
+    substation
+) {
+
+    if (!substation) {
+
+        return [];
+
+    }
+
+
+    const users =
+        await User.find({
+
+            assignedSubstation:
+                substation
+
+        })
+
+            .select(
+                "_id"
+            )
+
+            .lean();
+
+
+    return users.map(
+        user =>
+            String(
+                user._id
+            )
+    );
+
+}
+
+
+// ==========================================================
+// BUILD PACKAGE QUERY
+// ==========================================================
+//
+// When no substation is selected:
+//
+//     All packages in the date range are included.
+//
+// When a substation is selected:
+//
+//     A package belongs to that substation when the staff
+//     member associated with the package is assigned to the
+//     selected substation.
+//
+// confirmedByStaffId is preferred because confirmation is
+// the staff package workflow event.
+//
+// deliveredByStaffId is also supported so packages that have
+// reached delivery without a matching confirmation record
+// can still be attributed to the staff member's substation.
+//
+// IMPORTANT:
+//
+// packageSubstation is deliberately NOT used here.
+//
+// It represents the customer's pickup station, not the
+// staff sales location.
+// ==========================================================
+
+async function getPackageQuery(
+    filter
+) {
+
+    const dateQuery = {
+
+        createdAt: {
+
+            $gte:
+                filter.startDate,
+
+            $lt:
+                filter.endDate
+
+        }
+
+    };
+
+
+    // ------------------------------------------------------
+    // NO SUBSTATION FILTER
+    // ------------------------------------------------------
+
+    if (
+        !filter ||
+        !filter.substation
+    ) {
+
+        return dateQuery;
+
+    }
+
+
+    // ------------------------------------------------------
+    // FIND STAFF ASSIGNED TO SELECTED SUBSTATION
+    // ------------------------------------------------------
+
+    const staffIds =
+        await getStaffIdsForSubstation(
+            filter.substation
+        );
+
+
+    // ------------------------------------------------------
+    // NO STAFF ASSIGNED TO THIS SUBSTATION
+    // ------------------------------------------------------
+    //
+    // Return a query that cannot match a normal package.
+    //
+    // Using an impossible staff ID avoids accidentally
+    // including packages from other substations.
+    // ------------------------------------------------------
+
+    if (
+        !staffIds.length
+    ) {
+
+        return {
+
+            ...dateQuery,
+
+            $or: [
+
+                {
+                    confirmedByStaffId:
+                        "__NO_MATCHING_STAFF__"
+                },
+
+                {
+                    deliveredByStaffId:
+                        "__NO_MATCHING_STAFF__"
+                }
+
+            ]
+
+        };
+
+    }
+
+
+    // ------------------------------------------------------
+    // FILTER PACKAGES BY STAFF'S ASSIGNED SUBSTATION
+    // ------------------------------------------------------
+
+    return {
+
+        ...dateQuery,
+
+        $or: [
+
+            {
+                confirmedByStaffId: {
+
+                    $in:
+                        staffIds
+
+                }
+
+            },
+
+            {
+                deliveredByStaffId: {
+
+                    $in:
+                        staffIds
+
+                }
+
+            }
+
+        ]
+
+    };
+
+}
+
 
 // ==========================================================
 // BUILD SUBSTATION QUERY
 // ==========================================================
 //
-// Returns an empty object when no substation is selected.
+// Used for models where the actual sales/expense record
+// contains the substation directly.
 //
-// This allows:
+// Example:
 //
-//     { ...dateQuery, ...substationQuery }
+//     StaffSale.salesSubstation
+//     Liability.substation
 //
-// to work for both:
-//     - All substations
-//     - One selected substation
 // ==========================================================
 
 function getSubstationQuery(
@@ -91,24 +296,10 @@ async function getSummary(
     // PACKAGE QUERY
     // ======================================================
 
-    const packageQuery = {
-
-        createdAt: {
-
-            $gte:
-                filter.startDate,
-
-            $lt:
-                filter.endDate
-
-        },
-
-        ...getSubstationQuery(
-            filter,
-            "packageSubstation"
-        )
-
-    };
+    const packageQuery =
+        await getPackageQuery(
+            filter
+        );
 
 
     // ======================================================
@@ -121,7 +312,17 @@ async function getSummary(
         )
 
             .select(
-                "items totalAmount paidAmount status packageSubstation"
+                [
+                    "items",
+                    "totalAmount",
+                    "paidAmount",
+                    "status",
+                    "packageSubstation",
+                    "confirmedByStaffId",
+                    "deliveredByStaffId",
+                    "confirmedSubstationId",
+                    "deliveredSubstationId"
+                ].join(" ")
             )
 
             .lean();
@@ -129,6 +330,12 @@ async function getSummary(
 
     // ======================================================
     // STAFF SALES QUERY
+    // ======================================================
+    //
+    // Staff sales use salesSubstation as the authoritative
+    // sales location.
+    //
+    // Do NOT use "substation" here.
     // ======================================================
 
     const staffSalesQuery = {
@@ -145,7 +352,7 @@ async function getSummary(
 
         ...getSubstationQuery(
             filter,
-            "substation"
+            "salesSubstation"
         )
 
     };
@@ -166,7 +373,7 @@ async function getSummary(
                     "soldBy",
 
                 select:
-                    "name"
+                    "name assignedSubstation"
 
             })
 
@@ -206,13 +413,6 @@ async function getSummary(
 
     // ======================================================
     // LOAD LIABILITIES / EXPENSES
-    // ======================================================
-    //
-    // Every liability recorded within the selected period
-    // and selected substation is treated as an expense.
-    //
-    // When no substation is selected, all liabilities in the
-    // selected period are included.
     // ======================================================
 
     const liabilities =
@@ -547,11 +747,11 @@ async function getSummary(
     // LOAD PRODUCTS FOR ASSET COST
     // ======================================================
     //
-    // Product asset cost is calculated from the active
+    // Product asset cost is calculated from active global
     // product inventory.
     //
-    // Products are global product records, so they are not
-    // restricted by substation here.
+    // Products remain global product records and therefore
+    // are not restricted by substation.
     // ======================================================
 
     const allProducts =
@@ -600,8 +800,8 @@ async function getSummary(
     // LOAD STOCK FOR ASSET COST
     // ======================================================
     //
-    // Stock records are substation-specific when a
-    // substation filter is selected.
+    // Stock is substation-specific when a substation filter
+    // is selected.
     // ======================================================
 
     const stockQuery = {
@@ -728,10 +928,6 @@ async function getSummary(
         profit,
 
 
-        // ==================================================
-        // EXPENSES
-        // ==================================================
-
         expenses,
 
         netProfit,
@@ -739,10 +935,6 @@ async function getSummary(
 
         customerArrears,
 
-
-        // ==================================================
-        // ASSET COST
-        // ==================================================
 
         assetCost,
 
