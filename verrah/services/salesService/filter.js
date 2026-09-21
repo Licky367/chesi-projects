@@ -65,6 +65,16 @@ const TAB_CONFIG = {
         periodKey:
             "arrearsPeriod"
 
+    },
+
+    "daily-cash-sales": {
+
+        dateKey:
+            "dailyCashSalesDate",
+
+        periodKey:
+            "dailyCashSalesPeriod"
+
     }
 
 };
@@ -202,22 +212,6 @@ function normalizeDate(
 
 // ==========================================================
 // CONVERT KENYA LOCAL DATE TO UTC
-// ==========================================================
-//
-// Kenya uses UTC+03:00.
-//
-// The returned Date represents the corresponding UTC
-// instant for the supplied Nairobi calendar date.
-//
-// IMPORTANT:
-// The end boundary is intentionally treated as the START
-// of the next period rather than 23:59:59.999.
-//
-// This works correctly with MongoDB:
-//
-//     createdAt >= startDate
-//     createdAt <  endDate
-//
 // ==========================================================
 
 function kenyaDateToUtc(
@@ -416,22 +410,6 @@ function getDateRange(
 
 // ==========================================================
 // NORMALIZE SUBSTATION ID
-//
-// Values may come from:
-//
-// ADMIN:
-//     query.substation
-//
-// STAFF:
-//     user.assignedSubstation
-//
-// assignedSubstation may be:
-//
-//     ObjectId
-//     string
-//     populated object containing _id
-//
-// Always return the actual ID value.
 // ==========================================================
 
 function normalizeSubstationId(
@@ -513,25 +491,6 @@ function normalizeSubstationId(
 
 // ==========================================================
 // GLOBAL SUBSTATION FILTER
-//
-// ADMIN
-// -----
-// Admins may choose:
-//
-//     ?substation=<id>
-//
-// Empty value:
-//
-//     All substations
-//
-// STAFF
-// -----
-// Staff do NOT control this through the query string.
-//
-// Their assignedSubstation is ALWAYS used.
-//
-// This prevents a staff user from manually changing the
-// substation query parameter to access another substation.
 // ==========================================================
 
 function getSubstationFilter(
@@ -618,30 +577,6 @@ function getSubstationFilter(
 
 // ==========================================================
 // FILTER STATE
-//
-// Date/period remain TAB-SPECIFIC.
-//
-// Substation is GLOBAL.
-//
-// Example:
-//
-// summary:
-//     summaryDate
-//     summaryPeriod
-//
-// staff-sales:
-//     staffSalesDate
-//     staffSalesPeriod
-//
-// products:
-//     productsDate
-//     productsPeriod
-//
-// arrears:
-//     arrearsDate
-//     arrearsPeriod
-//
-// All four receive the same global substation value.
 // ==========================================================
 
 function getFilterState(
@@ -703,10 +638,6 @@ function getFilterState(
 
     return {
 
-        // --------------------------------------------------
-        // Date range
-        // --------------------------------------------------
-
         date:
             range.date,
 
@@ -719,18 +650,8 @@ function getFilterState(
         endDate:
             range.endDate,
 
-
-        // --------------------------------------------------
-        // Global substation
-        // --------------------------------------------------
-
         substation:
             substationFilter.substation,
-
-
-        // --------------------------------------------------
-        // Access/filter state
-        // --------------------------------------------------
 
         isSubstationRestricted:
             substationFilter.isRestricted,
