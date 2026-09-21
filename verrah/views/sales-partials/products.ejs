@@ -1,213 +1,296 @@
 <%
 function number(value) {
-return Number(value || 0).toLocaleString("en-KE");
+    return Number(value || 0).toLocaleString("en-KE");
 }
 %>
 
-<div class="sales-section"><div class="sales-section-heading">
-    <div>
-        <h2>Product Analytics</h2>
-        <p>
-            <%= filterLabel %>
-        </p>
+<div class="sales-section">
+
+    <div class="sales-section-heading">
+
+        <div>
+
+            <h2>
+                Product Analytics
+            </h2>
+
+            <p>
+                <%= filterLabel %>
+            </p>
+
+        </div>
+
     </div>
-</div>
 
 
-<!-- ======================================================
-     ADD MANY PRODUCTS TO CART
-======================================================= -->
+    <!-- ======================================================
+         ADD MANY PRODUCTS TO CART
+    ======================================================= -->
 
-<form
-    action="/products/addManyToCart"
-    method="POST"
-    id="addManyToCartForm"
->
-
-    <!-- ==================================================
-         ADD TO CART BUTTON
-         Hidden until units are entered.
-    =================================================== -->
-
-    <div
-        id="addManyToCartActions"
-        style="
-            display:none;
-            margin-bottom:12px;
-        "
+    <form
+        action="/products/addManyToCart"
+        method="POST"
+        id="addManyToCartForm"
     >
 
-        <button
-            type="submit"
-            class="sales-filter-button"
+        <!-- ==================================================
+             ADD TO CART BUTTON
+             Hidden until units are entered.
+        =================================================== -->
+
+        <div
+            id="addManyToCartActions"
+            style="
+                display:none;
+                margin-bottom:12px;
+            "
         >
-            <i class="fas fa-cart-plus"></i>
-            Add Selected Products to Cart
-        </button>
 
-    </div>
+            <button
+                type="submit"
+                class="sales-filter-button"
+            >
 
+                <i class="fas fa-cart-plus"></i>
 
-    <div class="sales-table-wrapper">
+                Add Selected Products to Cart
 
-        <table class="sales-table">
+            </button>
 
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Product Name</th>
-                    <th>Items Available in Stock</th>
-                    <th>Items Available in Market</th>
-                    <th>Number of Sales</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                <% if (Array.isArray(productAnalytics) && productAnalytics.length) { %>
-
-                    <% productAnalytics.forEach(function(product, index) { %>
-
-                        <tr
-                            class="sales-product-row"
-                            onclick="window.location.href='/substations/product/<%= product._id %>'"
-                            onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='/substations/product/<%= product._id %>'; }"
-                            tabindex="0"
-                            role="link"
-                        >
-
-                            <!-- ==================================
-                                 NUMBER
-                            =================================== -->
-
-                            <td>
-                                <%= index + 1 %>
-                            </td>
+        </div>
 
 
-                            <!-- ==================================
-                                 PRODUCT NAME + PRICE + UNITS
-                            =================================== -->
+        <!-- ==================================================
+             PRODUCT TABLE
+        =================================================== -->
 
-                            <td>
+        <div class="sales-table-wrapper">
 
-                                <div
-                                    style="
-                                        display:flex;
-                                        align-items:center;
-                                        justify-content:space-between;
-                                        gap:15px;
-                                    "
-                                >
+            <table class="sales-table">
 
-                                    <!-- PRODUCT INFORMATION -->
+                <thead>
 
-                                    <div>
+                    <tr>
 
-                                        <strong>
-                                            <%= product.name %>
-                                        </strong>
+                        <th>
+                            #
+                        </th>
 
-                                        <small
-                                            style="
-                                                display:block;
-                                                margin-top:3px;
-                                                font-size:0.75rem;
-                                                opacity:0.7;
-                                            "
-                                        >
-                                            KSh
-                                            <%= number(product.unitSellPrice) %>
-                                        </small>
+                        <th>
+                            Product Name
+                        </th>
 
-                                    </div>
+                        <th>
+                            Items Available in Stock
+                        </th>
+
+                        <th>
+                            Items Available in Market
+                        </th>
+
+                        <th>
+                            Number of Sales
+                        </th>
+
+                    </tr>
+
+                </thead>
 
 
-                                    <!-- UNITS INPUT -->
+                <tbody>
+
+                    <% if (
+                        Array.isArray(productAnalytics) &&
+                        productAnalytics.length
+                    ) { %>
+
+
+                        <% productAnalytics.forEach(
+                            function(product, index)
+                        { %>
+
+
+                            <tr
+                                class="sales-product-row"
+
+                                onclick="
+                                    window.location.href =
+                                    '/substations/product/<%= product._id %>'
+                                "
+
+                                onkeydown="
+                                    if (
+                                        event.key === 'Enter' ||
+                                        event.key === ' '
+                                    ) {
+                                        event.preventDefault();
+
+                                        window.location.href =
+                                        '/substations/product/<%= product._id %>';
+                                    }
+                                "
+
+                                tabindex="0"
+
+                                role="link"
+                            >
+
+                                <td>
+
+                                    <%= index + 1 %>
+
+                                </td>
+
+
+                                <td>
 
                                     <div
-                                        onclick="event.stopPropagation();"
-                                        onkeydown="event.stopPropagation();"
+                                        style="
+                                            display:flex;
+                                            align-items:center;
+                                            justify-content:space-between;
+                                            gap:15px;
+                                        "
                                     >
 
-                                        <input
-                                            type="number"
-                                            name="products[<%= index %>][qty]"
-                                            min="1"
-                                            max="<%= product.units || 0 %>"
-                                            step="1"
-                                            placeholder="Units"
-                                            class="product-cart-qty"
-                                            aria-label="Units for <%= product.name %>"
+                                        <div>
+
+                                            <strong>
+                                                <%= product.name %>
+                                            </strong>
+
+                                            <small
+                                                style="
+                                                    display:block;
+                                                    margin-top:3px;
+                                                    font-size:0.75rem;
+                                                    opacity:0.7;
+                                                "
+                                            >
+
+                                                KSh
+
+                                                <%= number(
+                                                    product.unitSellPrice
+                                                ) %>
+
+                                            </small>
+
+                                        </div>
+
+
+                                        <div
+                                            onclick="
+                                                event.stopPropagation();
+                                            "
+
+                                            onkeydown="
+                                                event.stopPropagation();
+                                            "
                                         >
 
-                                        <input
-                                            type="hidden"
-                                            name="products[<%= index %>][productId]"
-                                            value="<%= product._id %>"
-                                        >
+                                            <input
+                                                type="number"
+
+                                                name="products[<%= index %>][qty]"
+
+                                                min="1"
+
+                                                max="<%= product.marketAvailable || 0 %>"
+
+                                                step="1"
+
+                                                placeholder="Units"
+
+                                                class="product-cart-qty"
+
+                                                aria-label="Units for <%= product.name %>"
+                                            >
+
+
+                                            <input
+                                                type="hidden"
+
+                                                name="products[<%= index %>][productId]"
+
+                                                value="<%= product._id %>"
+                                            >
+
+                                        </div>
 
                                     </div>
 
-                                </div>
-
-                            </td>
+                                </td>
 
 
-                            <!-- ==================================
-                                 STOCK
-                            =================================== -->
+                                <td>
 
-                            <td>
-                                <%= number(product.stockAvailable) %>
-                            </td>
+                                    <%= number(
+                                        product.stockAvailable
+                                    ) %>
 
-
-                            <!-- ==================================
-                                 MARKET
-                            =================================== -->
-
-                            <td>
-                                <%= number(product.marketAvailable) %>
-                            </td>
+                                </td>
 
 
-                            <!-- ==================================
-                                 SALES
-                            =================================== -->
+                                <td>
 
-                            <td>
-                                <%= number(product.sales) %>
+                                    <%= number(
+                                        product.marketAvailable
+                                    ) %>
+
+                                </td>
+
+
+                                <td>
+
+                                    <%= number(
+                                        product.sales
+                                    ) %>
+
+                                </td>
+
+                            </tr>
+
+
+                        <% }); %>
+
+
+                    <% } else { %>
+
+
+                        <tr>
+
+                            <td
+                                colspan="5"
+                                class="sales-empty"
+                            >
+
+                                No product analytics found
+                                for this period.
+
                             </td>
 
                         </tr>
 
-                    <% }); %>
 
-                <% } else { %>
+                    <% } %>
 
-                    <tr>
+                </tbody>
 
-                        <td
-                            colspan="5"
-                            class="sales-empty"
-                        >
-                            No product analytics found for this period.
-                        </td>
+            </table>
 
-                    </tr>
+        </div>
 
-                <% } %>
+    </form>
 
-            </tbody>
+</div>
 
-        </table>
 
-    </div>
+<!-- ======================================================
+     ADD MANY TO CART SCRIPT
+======================================================= -->
 
-</form>
-
-</div><script>
+<script>
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -218,10 +301,19 @@ document.addEventListener(
                 "addManyToCartForm"
             );
 
+
+        if (!form) {
+
+            return;
+
+        }
+
+
         const actions =
-            document.getElementById(
-                "addManyToCartActions"
+            form.querySelector(
+                "#addManyToCartActions"
             );
+
 
         const inputs =
             form.querySelectorAll(
@@ -229,22 +321,37 @@ document.addEventListener(
             );
 
 
+        if (
+            !actions
+        ) {
+
+            return;
+
+        }
+
+
         function updateButton() {
 
-            let hasQuantity = false;
+            let hasQuantity =
+                false;
 
 
-            inputs.forEach(function (input) {
+            inputs.forEach(
+                function (input) {
 
-                if (
-                    Number(input.value || 0) > 0
-                ) {
+                    if (
+                        Number(
+                            input.value || 0
+                        ) > 0
+                    ) {
 
-                    hasQuantity = true;
+                        hasQuantity =
+                            true;
+
+                    }
 
                 }
-
-            });
+            );
 
 
             actions.style.display =
@@ -255,14 +362,19 @@ document.addEventListener(
         }
 
 
-        inputs.forEach(function (input) {
+        inputs.forEach(
+            function (input) {
 
-            input.addEventListener(
-                "input",
-                updateButton
-            );
+                input.addEventListener(
+                    "input",
+                    updateButton
+                );
 
-        });
+            }
+        );
+
+
+        updateButton();
 
     }
 );
