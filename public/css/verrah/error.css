@@ -1,0 +1,310 @@
+/* ==========================================================
+VERRAH COSMETICS
+ERROR PAGE STYLES
+Brown Theme
+========================================================== */
+
+/* ==========================================================
+PAGE
+========================================================== */
+
+.page-error {
+min-height: calc(100vh - var(--header-height, 0px) - var(--footer-height, 0px));
+
+display: flex;
+align-items: center;
+justify-content: center;
+
+padding: 30px 18px;
+
+background: #faf7f4;
+
+box-sizing: border-box;
+}
+
+/* ==========================================================
+ERROR CARD
+========================================================== */
+
+.error-card {
+width: 100%;
+max-width: 620px;
+
+padding: 38px 30px;
+
+text-align: center;
+
+background: #ffffff;
+
+border: 1px solid #e5d6ca;
+border-radius: 18px;
+
+box-shadow:
+0 10px 30px rgba(74, 45, 30, 0.10);
+
+box-sizing: border-box;
+}
+
+/* ==========================================================
+ERROR ICON
+========================================================== */
+
+.error-icon {
+width: 68px;
+height: 68px;
+
+margin: 0 auto 18px;
+
+display: flex;
+align-items: center;
+justify-content: center;
+
+border-radius: 50%;
+
+background: #f5e8dd;
+
+color: #7a4528;
+
+font-size: 30px;
+
+box-shadow:
+inset 0 0 0 1px #e7d2c3;
+}
+
+/* ==========================================================
+ERROR CODE
+========================================================== */
+
+.error-code {
+margin-bottom: 6px;
+
+color: #8b4f2c !important;
+
+font-size: clamp(42px, 10vw, 64px);
+font-weight: 800;
+
+line-height: 1;
+
+letter-spacing: 1px;
+}
+
+/* ==========================================================
+TITLE
+========================================================== */
+
+.error-title {
+margin: 10px 0 12px;
+
+color: #4b2e20;
+
+font-size: clamp(24px, 5vw, 32px);
+font-weight: 700;
+
+line-height: 1.2;
+}
+
+/* ==========================================================
+ERROR MESSAGE
+========================================================== */
+
+.error-text {
+max-width: 520px;
+
+margin: 0 auto;
+
+color: #6b5143;
+
+font-size: 15px;
+line-height: 1.7;
+
+overflow-wrap: anywhere;
+}
+
+/* ==========================================================
+BUTTON GROUP
+========================================================== */
+
+.button-group {
+display: flex;
+
+justify-content: center;
+align-items: center;
+
+gap: 12px;
+
+margin-top: 28px;
+
+flex-wrap: wrap;
+}
+
+/* ==========================================================
+BUTTONS
+========================================================== */
+
+.btn-action {
+min-height: 46px;
+
+display: inline-flex;
+align-items: center;
+justify-content: center;
+
+padding: 11px 20px;
+
+border-radius: 9px;
+
+font-family: inherit;
+font-size: 14px;
+font-weight: 700;
+
+text-decoration: none;
+
+cursor: pointer;
+
+box-sizing: border-box;
+
+transition:
+background-color 0.2s ease,
+color 0.2s ease,
+border-color 0.2s ease,
+transform 0.2s ease,
+box-shadow 0.2s ease;
+}
+
+/* ==========================================================
+BACK BUTTON
+========================================================== */
+
+.btn-back {
+border: 1px solid #cdb5a5;
+
+background: #ffffff;
+
+color: #68422f;
+}
+
+.btn-back:hover {
+background: #f5ebe4;
+
+border-color: #a9785b;
+
+transform: translateY(-1px);
+}
+
+/* ==========================================================
+HOME BUTTON
+========================================================== */
+
+.btn-home {
+border: 1px solid #704126;
+
+background: #704126;
+
+color: #ffffff;
+}
+
+.btn-home:hover {
+background: #542e1d;
+
+border-color: #542e1d;
+
+transform: translateY(-1px);
+
+box-shadow:
+0 5px 14px rgba(112, 65, 38, 0.20);
+}
+
+/* ==========================================================
+HELP BOX
+========================================================== */
+
+.help-box {
+margin-top: 28px;
+
+padding: 14px 16px;
+
+border-left: 4px solid #a96842;
+border-radius: 8px;
+
+background: #fbf4ef;
+
+color: #705546;
+
+font-size: 13px;
+
+line-height: 1.6;
+
+text-align: left;
+
+box-sizing: border-box;
+}
+
+/* ==========================================================
+MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+.page-error {
+min-height: calc(100vh - var(--footer-height, 0px));
+
+padding: 22px 14px;
+
+}
+
+.error-card {
+padding: 30px 20px;
+
+border-radius: 15px;
+
+}
+
+.error-icon {
+width: 60px;
+height: 60px;
+
+font-size: 26px;
+
+}
+
+.error-title {
+font-size: 25px;
+}
+
+.error-text {
+font-size: 14px;
+}
+
+.button-group {
+flex-direction: column;
+
+width: 100%;
+
+}
+
+.btn-action {
+width: 100%;
+}
+
+.help-box {
+font-size: 12.5px;
+}
+}
+
+/* ==========================================================
+VERY SMALL SCREENS
+========================================================== */
+
+@media (max-width: 360px) {
+
+.error-card {
+padding: 26px 16px;
+}
+
+.error-code {
+font-size: 46px;
+}
+
+.error-title {
+font-size: 22px;
+}
+}
