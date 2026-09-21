@@ -4,170 +4,109 @@
 // VERRAH COSMETICS
 // PRODUCT ANALYTICS SERVICE
 //
-// SUBSTATION-AWARE PRODUCT ANALYTICS
+// MARKET AVAILABILITY + SALES
 //
-// marketAvailable:
+// MARKET AVAILABLE
 //
-//     Staff
-//         -> Substation.productInventory.units
-//            for their assigned substation
+// Staff
+//     -> Uses inventory from assigned substation.
 //
-//     Admin + no substation filter
-//         -> Product.units
+// Admin + substation filter
+//     -> Uses inventory from selected substation.
 //
-//     Admin + substation filter
-//         -> Substation.productInventory.units
-//            for the selected substation
+// Admin + no substation filter
+//     -> Uses global Product.units.
 //
-// sales:
+// SALES
 //
-//     Delivered packages
-//         -> filtered by packageSubstation when a
-//            substation is active
+// Staff
+//     -> Sales from delivered packages belonging to the
+//        staff member's assigned substation.
 //
-// stockAvailable:
+// Admin + substation filter
+//     -> Sales from delivered packages belonging to the
+//        selected substation.
 //
-//     Remains GLOBAL and unchanged.
+// Admin + no substation filter
+//     -> Sales from all delivered packages.
+//
+// STOCK AVAILABLE
+//
+//     -> Remains global and unchanged.
 // ==========================================================
-
 
 const Product =
     require("../../models/products");
 
-
 const Stock =
     require("../../models/stock");
-
 
 const Package =
     require("../../models/package");
 
-
 const Substation =
     require("../../models/substations");
 
+// ==========================================================
+// GET EFFECTIVE SUBSTATION
+// ==========================================================
+
+function getEffectiveSubstation(filter) {
+
+    if (
+        !filter
+    ) {
+
+        return null;
+
+    }
+
+    if (
+        filter.substation
+    ) {
+
+        return filter.substation;
+
+    }
+
+    if (
+        filter.role === "staff" &&
+        filter.assignedSubstation
+    ) {
+
+        return filter.assignedSubstation;
+
+    }
+
+    return null;
+
+}
 
 // ==========================================================
 // BUILD SUBSTATION QUERY
 // ==========================================================
 
 function getSubstationQuery(
-    filter,
+    substation,
     field
 ) {
 
     if (
-        !filter ||
-        !filter.substation
+        !substation
     ) {
 
         return {};
 
     }
 
-
     return {
 
         [field]:
-            filter.substation
+            substation
 
     };
 
 }
-
-
-// ==========================================================
-// GET SUBSTATION PRODUCT INVENTORY
-// ==========================================================
-//
-// Returns:
-//
-//     Map {
-//         productId -> units
-//     }
-//
-// The inventory belongs to the selected substation.
-//
-// ==========================================================
-
-async function getSubstationProductInventory(
-    substationId
-) {
-
-    if (!substationId) {
-
-        return new Map();
-
-    }
-
-
-    const substation =
-        await Substation.findOne({
-
-            _id:
-                substationId,
-
-            isActive:
-                true
-
-        })
-
-            .select(
-                "productInventory"
-            )
-
-            .lean();
-
-
-    const inventoryByProduct =
-        new Map();
-
-
-    if (
-        !substation ||
-        !Array.isArray(
-            substation.productInventory
-        )
-    ) {
-
-        return inventoryByProduct;
-
-    }
-
-
-    for (
-        const inventory
-        of substation.productInventory
-    ) {
-
-        if (
-            !inventory.productId
-        ) {
-
-            continue;
-
-        }
-
-
-        inventoryByProduct.set(
-
-            String(
-                inventory.productId
-            ),
-
-            Number(
-                inventory.units || 0
-            )
-
-        );
-
-    }
-
-
-    return inventoryByProduct;
-
-}
-
 
 // ==========================================================
 // GET PRODUCT ANALYTICS
@@ -178,9 +117,30 @@ async function getProductAnalytics(
 ) {
 
     // ======================================================
+    // EFFECTIVE SUBSTATION
+    //
+    // This is used ONLY for:
+    //
+    //     marketAvailable
+    //     sales
+    //
+    // ======================================================
+
+    const effectiveSubstation =
+        getEffectiveSubstation(
+            filter
+        );
+
+
+    // ======================================================
     // LOAD ACTIVE PRODUCTS
     //
-    // Products remain global records.
+    // Products are global records and therefore are not
+    // filtered by substation.
+    //
+    // Keep buyPrice and stock selected because other
+    // analytics calculations depend on the complete
+    // product data.
     // ======================================================
 
     const products =
@@ -192,7 +152,7 @@ async function getProductAnalytics(
         })
 
             .select(
-                "_id name subcategory units stock"
+                "_id name subcategory units buyPrice stock"
             )
 
             .lean();
@@ -201,7 +161,7 @@ async function getProductAnalytics(
     // ======================================================
     // LOAD ALL ACTIVE STOCK
     //
-    // STOCK REMAINS GLOBAL.
+    // Stock remains global.
     //
     // DO NOT filter stock by substation.
     // ======================================================
@@ -242,7 +202,9 @@ async function getProductAnalytics(
                 .toLowerCase();
 
 
-        if (!key) {
+        if (
+            !key
+        ) {
 
             continue;
 
@@ -270,34 +232,77 @@ async function getProductAnalytics(
 
 
     // ======================================================
-    // MARKET INVENTORY
-    // ======================================================
+    // MARKET INVENTORY BY PRODUCT
     //
-    // NO SUBSTATION:
+    // Only load substation inventory when an effective
+    // substation exists.
     //
-    //     Use global Product.units.
+    // The inventory is embedded in:
     //
-    // SUBSTATION SELECTED:
+    //     Substation.productInventory[]
     //
-    //     Use Substation.productInventory.units.
-    //
-    // For staff, filter.substation must contain their
-    // assigned substation.
+    // and matched using productId.
     // ======================================================
 
-    let marketInventoryByProduct =
+    const marketInventoryByProduct =
         new Map();
 
 
     if (
-        filter &&
-        filter.substation
+        effectiveSubstation
     ) {
 
-        marketInventoryByProduct =
-            await getSubstationProductInventory(
-                filter.substation
-            );
+        const substation =
+            await Substation.findOne({
+
+                name:
+                    effectiveSubstation
+
+            })
+
+                .select(
+                    "productInventory"
+                )
+
+                .lean();
+
+
+        if (
+            substation &&
+            Array.isArray(
+                substation.productInventory
+            )
+        ) {
+
+            for (
+                const inventory
+                of substation.productInventory
+            ) {
+
+                if (
+                    !inventory.productId
+                ) {
+
+                    continue;
+
+                }
+
+
+                marketInventoryByProduct.set(
+
+                    String(
+                        inventory.productId
+                    ),
+
+                    Number(
+                        inventory.units || 0
+                    )
+
+                );
+
+            }
+
+        }
 
     }
 
@@ -305,10 +310,13 @@ async function getProductAnalytics(
     // ======================================================
     // DELIVERED PACKAGES
     //
-    // The existing date filtering remains unchanged.
+    // The date filter remains active.
     //
-    // If a substation is active, packages are filtered by
-    // packageSubstation.
+    // If an effective substation exists:
+    //     -> only that substation's packages are included.
+    //
+    // Otherwise:
+    //     -> all delivered packages are included.
     // ======================================================
 
     const deliveredPackageQuery = {
@@ -327,8 +335,11 @@ async function getProductAnalytics(
         },
 
         ...getSubstationQuery(
-            filter,
+
+            effectiveSubstation,
+
             "packageSubstation"
+
         )
 
     };
@@ -348,6 +359,11 @@ async function getProductAnalytics(
 
     // ======================================================
     // SALES BY PRODUCT
+    //
+    // Sales are calculated from delivered package items.
+    //
+    // The package query above already limits the sales to
+    // the effective substation when one is selected.
     // ======================================================
 
     const salesByProduct =
@@ -428,40 +444,39 @@ async function getProductAnalytics(
 
                 // ==================================================
                 // MARKET AVAILABLE
-                // ==================================================
                 //
-                // With a substation:
-                //
-                //     Substation.productInventory.units
-                //
-                // Without a substation:
-                //
+                // Admin with NO substation:
                 //     Product.units
                 //
-                // Missing substation inventory means 0.
+                // Staff / Admin with substation:
+                //     Substation.productInventory.units
                 // ==================================================
 
-                let marketAvailable;
+                const marketAvailable =
+                    effectiveSubstation
 
+                        ? (
+                            marketInventoryByProduct.get(
+                                productId
+                            ) || 0
+                        )
 
-                if (
-                    filter &&
-                    filter.substation
-                ) {
-
-                    marketAvailable =
-                        marketInventoryByProduct.get(
-                            productId
-                        ) || 0;
-
-                } else {
-
-                    marketAvailable =
-                        Number(
+                        : Number(
                             product.units || 0
                         );
 
-                }
+
+                // ==================================================
+                // SALES
+                //
+                // Uses delivered package quantities for the
+                // applicable date/substation scope.
+                // ==================================================
+
+                const sales =
+                    salesByProduct.get(
+                        productId
+                    ) || 0;
 
 
                 return {
@@ -481,9 +496,7 @@ async function getProductAnalytics(
                         marketAvailable,
 
                     sales:
-                        salesByProduct.get(
-                            productId
-                        ) || 0
+                        sales
 
                 };
 
@@ -494,7 +507,6 @@ async function getProductAnalytics(
         .sort(
 
             (a, b) =>
-
                 String(
                     a.name
                 ).localeCompare(
