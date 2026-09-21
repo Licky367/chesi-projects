@@ -22,7 +22,7 @@ const arrearsService =
 const substationService =
     require("../substationService");
 
-const products =
+const Product =
     require("../../models/products");
 
 
@@ -60,7 +60,7 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // INDEPENDENT FILTERS
+    // FILTERS
     // ======================================================
 
     const summaryFilter =
@@ -96,15 +96,14 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // LOAD PAGE DATA
+    // LOAD ALL TAB DATA
     // ======================================================
 
-    const [
+    let [
         summary,
         staffSales,
         productAnalytics,
-        arrearsPackages,
-        productRecords
+        arrearsPackages
     ] = await Promise.all([
 
         summaryService.getSummary(
@@ -121,11 +120,68 @@ async function getSalesPageData(
 
         arrearsService.getCustomerArrears(
             arrearsFilter
-        ),
-
-        products.find({}).lean()
+        )
 
     ]);
+
+
+    // ======================================================
+    // ADD PRODUCT UNIT SELL PRICE TO ANALYTICS
+    //
+    // productAnalytics contains the analytics records.
+    //
+    // The actual product documents contain:
+    //
+    //     unitSellPrice
+    //
+    // Match each analytics record to its product using
+    // the product _id.
+    // ======================================================
+
+    if (
+        Array.isArray(productAnalytics) &&
+        productAnalytics.length
+    ) {
+
+        const productIds =
+            productAnalytics
+                .map(product => product._id)
+                .filter(Boolean);
+
+
+        const productRecords =
+            await Product.find(
+                {
+                    _id: {
+                        $in: productIds
+                    }
+                },
+                {
+                    unitSellPrice: 1
+                }
+            ).lean();
+
+
+        const productPriceMap =
+            new Map(
+                productRecords.map(product => [
+                    String(product._id),
+                    product.unitSellPrice
+                ])
+            );
+
+
+        productAnalytics =
+            productAnalytics.map(product => ({
+                ...product,
+
+                unitSellPrice:
+                    productPriceMap.get(
+                        String(product._id)
+                    ) || 0
+            }));
+
+    }
 
 
     // ======================================================
@@ -255,66 +311,31 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // RETURN SALES PAGE DATA
+    // RETURN DATA
     // ======================================================
 
     return {
 
         activeTab,
 
-
-        // ==================================================
-        // SUBSTATIONS
-        // ==================================================
-
         substations,
 
-
-        // ==================================================
-        // FULL PRODUCT RECORDS
-        //
-        // Available in EJS as:
-        //
-        //     products
-        //
-        // Includes:
-        //
-        //     product.name
-        //     product.unitSellPrice
-        //
-        // and all other fields defined in models/products.js.
-        // ==================================================
-
-        products:
-            productRecords,
-
-
         activeFilter,
-
 
         activeFilterDate:
             activeFilter.date,
 
-
         activeFilterPeriod:
             activeFilter.period,
-
-
-        // ==================================================
-        // GLOBAL SUBSTATION FILTER
-        // ==================================================
 
         activeSubstationId:
             activeFilter.substation,
 
-
         isSubstationRestricted:
             activeFilter.isSubstationRestricted,
 
-
         isAdmin:
             activeFilter.isAdmin,
-
 
         filterLabel:
             filterService.getFilterLabel(
@@ -329,22 +350,17 @@ async function getSalesPageData(
         totalRevenue:
             summary.totalRevenue,
 
-
         packageRevenue:
             summary.packageRevenue,
-
 
         staffSalesRevenue:
             summary.staffSalesRevenue,
 
-
         packageBuyingCost:
             summary.packageBuyingCost,
 
-
         staffSalesBuyingCost:
             summary.staffSalesBuyingCost,
-
 
         profit:
             summary.profit,
@@ -365,26 +381,20 @@ async function getSalesPageData(
         netProfit:
             summary.netProfit,
 
-
         packageProfit:
             summary.packageProfit,
-
 
         staffSalesProfit:
             summary.staffSalesProfit,
 
-
         customerArrears:
             summary.customerArrears,
-
 
         assetCost:
             summary.assetCost,
 
-
         productAssetCost:
             summary.productAssetCost,
-
 
         stockAssetCost:
             summary.stockAssetCost,
@@ -396,12 +406,20 @@ async function getSalesPageData(
 
         staffSales,
 
-
         staffSalesTotals,
 
 
         // ==================================================
         // PRODUCT ANALYTICS
+        //
+        // Each product now contains:
+        //
+        //     product.name
+        //     product.unitSellPrice
+        //     product.stockAvailable
+        //     product.marketAvailable
+        //     product.sales
+        //
         // ==================================================
 
         productAnalytics,
@@ -420,12 +438,9 @@ async function getSalesPageData(
 
         summaryFilter,
 
-
         staffSalesFilter,
 
-
         productsFilter,
-
 
         arrearsFilter,
 
@@ -439,18 +454,15 @@ async function getSalesPageData(
                 summaryFilter
             ),
 
-
         staffSalesFilterLabel:
             filterService.getFilterLabel(
                 staffSalesFilter
             ),
 
-
         productsFilterLabel:
             filterService.getFilterLabel(
                 productsFilter
             ),
-
 
         arrearsFilterLabel:
             filterService.getFilterLabel(
