@@ -7,18 +7,6 @@ function number(value) {
  * ==========================================================
  * SELL INPUT VISIBILITY
  * ==========================================================
- *
- * Admin:
- * No substation selected
- *     -> Hide Sell input
- *
- * Specific substation selected
- *     -> Show Sell input
- *
- * Non-admin:
- * -> Always show Sell input
- *
- * ==========================================================
  */
 
 const isAdmin =
@@ -37,19 +25,6 @@ const hideSellInput =
 /*
  * ==========================================================
  * MARKET AVAILABLE EDIT VISIBILITY
- * ==========================================================
- *
- * Admin:
- * Specific substation selected
- *     -> Market Available is editable
- *
- * Admin:
- * No substation selected
- *     -> Market Available is read-only
- *
- * Non-admin:
- * -> Market Available is read-only
- *
  * ==========================================================
  */
 
@@ -91,10 +66,9 @@ const canEditMarketAvailable =
             id="addManyToCartForm"
         >
 
-
             <!-- ==================================================
                  ADD TO CART BUTTON
-                 Hidden until units are entered.
+                 Hidden until a Sell input contains a quantity.
             =================================================== -->
 
             <div
@@ -140,11 +114,15 @@ const canEditMarketAvailable =
                 value="<%= activeSubstationId %>"
             >
 
+            <!-- ==================================================
+                 UPDATE BUTTON
+                 Hidden until a Market Available value changes.
+            =================================================== -->
 
             <div
+                id="updateMarketAvailableActions"
                 style="
-                    display: flex;
-                    justify-content: flex-end;
+                    display: none;
                     margin-bottom: 12px;
                 "
             >
@@ -299,7 +277,6 @@ const canEditMarketAvailable =
                                             "
                                         >
 
-
                                             <input
                                                 type="number"
                                                 name="products[<%= index %>][qty]"
@@ -317,7 +294,6 @@ const canEditMarketAvailable =
                                                 name="products[<%= index %>][productId]"
                                                 value="<%= product._id %>"
                                             >
-
 
                                         </div>
 
@@ -351,9 +327,11 @@ const canEditMarketAvailable =
                                         value="<%= product.marketAvailable || 0 %>"
                                         min="0"
                                         step="1"
-                                        class="product-cart-qty"
+                                        class="market-units-input"
+                                        data-original-value="<%= product.marketAvailable || 0 %>"
                                         aria-label="Market units for <%= product.name %>"
                                     >
+
 
                                     <input
                                         type="hidden"
@@ -470,15 +448,13 @@ document.addEventListener(
 
 
         if (!form) {
-
             return;
-
         }
 
 
         const actions =
-            form.querySelector(
-                "#addManyToCartActions"
+            document.getElementById(
+                "addManyToCartActions"
             );
 
 
@@ -489,9 +465,7 @@ document.addEventListener(
 
 
         if (!actions) {
-
             return;
-
         }
 
 
@@ -532,6 +506,115 @@ document.addEventListener(
 
                 input.addEventListener(
                     "input",
+                    updateButton
+                );
+
+            }
+        );
+
+
+        updateButton();
+
+    }
+);
+
+</script>
+
+<% } %>
+
+
+<!-- ======================================================
+     UPDATE MARKET AVAILABLE SCRIPT
+======================================================= -->
+
+<% if (canEditMarketAvailable) { %>
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const form =
+            document.getElementById(
+                "updateMarketAvailableForm"
+            );
+
+
+        if (!form) {
+            return;
+        }
+
+
+        const actions =
+            document.getElementById(
+                "updateMarketAvailableActions"
+            );
+
+
+        const inputs =
+            form.querySelectorAll(
+                ".market-units-input"
+            );
+
+
+        if (!actions) {
+            return;
+        }
+
+
+        function updateButton() {
+
+            let hasChanges =
+                false;
+
+
+            inputs.forEach(
+                function (input) {
+
+                    const originalValue =
+                        Number(
+                            input.dataset.originalValue || 0
+                        );
+
+                    const currentValue =
+                        Number(
+                            input.value || 0
+                        );
+
+
+                    if (
+                        currentValue !==
+                        originalValue
+                    ) {
+
+                        hasChanges =
+                            true;
+
+                    }
+
+                }
+            );
+
+
+            actions.style.display =
+                hasChanges
+                    ? "block"
+                    : "none";
+
+        }
+
+
+        inputs.forEach(
+            function (input) {
+
+                input.addEventListener(
+                    "input",
+                    updateButton
+                );
+
+                input.addEventListener(
+                    "change",
                     updateButton
                 );
 
