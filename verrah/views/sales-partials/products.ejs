@@ -3,20 +3,36 @@ function number(value) {
 return Number(value || 0).toLocaleString("en-KE");
 }
 
+/*
+
+* ==========================================================
+* SELL INPUT VISIBILITY
+* ==========================================================
+* 
+* Admin:
+* No substation selected
+*     -> Hide Sell input
+* 
+* Specific substation selected
+*     -> Show Sell input
+* 
+* Non-admin:
+* -> Always show Sell input
+* 
+* ==========================================================
+  */
+
 const isAdmin =
 user &&
 user.role === "admin";
 
-const selectedSubstation =
-typeof filter !== "undefined" &&
-filter &&
-filter.substation
-? filter.substation
-: "";
+const hasSelectedSubstation =
+activeSubstationId &&
+String(activeSubstationId).trim() !== "";
 
 const hideSellInput =
 isAdmin &&
-!selectedSubstation;
+!hasSelectedSubstation;
 %>
 
 <div class="sales-section"><div class="sales-section-heading">
@@ -98,11 +114,11 @@ isAdmin &&
                 </th>
 
                 <th>
-                    Items Available in Stock
+                    Items Available in Market
                 </th>
 
                 <th>
-                    Items Available in Market
+                    Items Available in Stock
                 </th>
 
                 <th>
@@ -239,14 +255,9 @@ isAdmin &&
                         </td>
 
 
-                        <td>
-
-                            <%= number(
-                                product.stockAvailable
-                            ) %>
-
-                        </td>
-
+                        <!-- ==================================================
+                             MARKET AVAILABLE
+                        =================================================== -->
 
                         <td>
 
@@ -256,6 +267,23 @@ isAdmin &&
 
                         </td>
 
+
+                        <!-- ==================================================
+                             STOCK AVAILABLE
+                        =================================================== -->
+
+                        <td>
+
+                            <%= number(
+                                product.stockAvailable
+                            ) %>
+
+                        </td>
+
+
+                        <!-- ==================================================
+                             SALES
+                        =================================================== -->
 
                         <td>
 
