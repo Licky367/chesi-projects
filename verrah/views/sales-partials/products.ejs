@@ -1,19 +1,52 @@
 <%
 function number(value) {
-    return Number(value || 0).toLocaleString("en-KE");
+return Number(value || 0).toLocaleString("en-KE");
 }
 %>
 
-<div class="sales-section">
-
-    <div class="sales-section-heading">
-        <div>
-            <h2>Product Analytics</h2>
-            <p>
-                <%= filterLabel %>
-            </p>
-        </div>
+<div class="sales-section"><div class="sales-section-heading">
+    <div>
+        <h2>Product Analytics</h2>
+        <p>
+            <%= filterLabel %>
+        </p>
     </div>
+</div>
+
+
+<!-- ======================================================
+     ADD MANY PRODUCTS TO CART
+======================================================= -->
+
+<form
+    action="/products/addManyToCart"
+    method="POST"
+    id="addManyToCartForm"
+>
+
+    <!-- ==================================================
+         ADD TO CART BUTTON
+         Hidden until units are entered.
+    =================================================== -->
+
+    <div
+        id="addManyToCartActions"
+        style="
+            display:none;
+            margin-bottom:12px;
+        "
+    >
+
+        <button
+            type="submit"
+            class="sales-filter-button"
+        >
+            <i class="fas fa-cart-plus"></i>
+            Add Selected Products to Cart
+        </button>
+
+    </div>
+
 
     <div class="sales-table-wrapper">
 
@@ -43,34 +76,105 @@ function number(value) {
                             role="link"
                         >
 
+                            <!-- ==================================
+                                 NUMBER
+                            =================================== -->
+
                             <td>
                                 <%= index + 1 %>
                             </td>
 
-                            <td>
-                                <strong>
-                                    <%= product.name %>
-                                </strong>
 
-                                <small
+                            <!-- ==================================
+                                 PRODUCT NAME + PRICE + UNITS
+                            =================================== -->
+
+                            <td>
+
+                                <div
                                     style="
-                                        display:block;
-                                        margin-top:3px;
-                                        font-size:0.75rem;
-                                        opacity:0.7;
+                                        display:flex;
+                                        align-items:center;
+                                        justify-content:space-between;
+                                        gap:15px;
                                     "
                                 >
-                                    KSh <%= number(product.unitSellPrice) %>
-                                </small>
+
+                                    <!-- PRODUCT INFORMATION -->
+
+                                    <div>
+
+                                        <strong>
+                                            <%= product.name %>
+                                        </strong>
+
+                                        <small
+                                            style="
+                                                display:block;
+                                                margin-top:3px;
+                                                font-size:0.75rem;
+                                                opacity:0.7;
+                                            "
+                                        >
+                                            KSh
+                                            <%= number(product.unitSellPrice) %>
+                                        </small>
+
+                                    </div>
+
+
+                                    <!-- UNITS INPUT -->
+
+                                    <div
+                                        onclick="event.stopPropagation();"
+                                        onkeydown="event.stopPropagation();"
+                                    >
+
+                                        <input
+                                            type="number"
+                                            name="products[<%= index %>][qty]"
+                                            min="1"
+                                            max="<%= product.units || 0 %>"
+                                            step="1"
+                                            placeholder="Units"
+                                            class="product-cart-qty"
+                                            aria-label="Units for <%= product.name %>"
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="products[<%= index %>][productId]"
+                                            value="<%= product._id %>"
+                                        >
+
+                                    </div>
+
+                                </div>
+
                             </td>
+
+
+                            <!-- ==================================
+                                 STOCK
+                            =================================== -->
 
                             <td>
                                 <%= number(product.stockAvailable) %>
                             </td>
 
+
+                            <!-- ==================================
+                                 MARKET
+                            =================================== -->
+
                             <td>
                                 <%= number(product.marketAvailable) %>
                             </td>
+
+
+                            <!-- ==================================
+                                 SALES
+                            =================================== -->
 
                             <td>
                                 <%= number(product.sales) %>
@@ -83,9 +187,14 @@ function number(value) {
                 <% } else { %>
 
                     <tr>
-                        <td colspan="5" class="sales-empty">
+
+                        <td
+                            colspan="5"
+                            class="sales-empty"
+                        >
                             No product analytics found for this period.
                         </td>
+
                     </tr>
 
                 <% } %>
@@ -96,4 +205,66 @@ function number(value) {
 
     </div>
 
-</div>
+</form>
+
+</div><script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        const form =
+            document.getElementById(
+                "addManyToCartForm"
+            );
+
+        const actions =
+            document.getElementById(
+                "addManyToCartActions"
+            );
+
+        const inputs =
+            form.querySelectorAll(
+                ".product-cart-qty"
+            );
+
+
+        function updateButton() {
+
+            let hasQuantity = false;
+
+
+            inputs.forEach(function (input) {
+
+                if (
+                    Number(input.value || 0) > 0
+                ) {
+
+                    hasQuantity = true;
+
+                }
+
+            });
+
+
+            actions.style.display =
+                hasQuantity
+                    ? "block"
+                    : "none";
+
+        }
+
+
+        inputs.forEach(function (input) {
+
+            input.addEventListener(
+                "input",
+                updateButton
+            );
+
+        });
+
+    }
+);
+
+</script>
