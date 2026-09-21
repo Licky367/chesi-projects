@@ -42,10 +42,26 @@ function number(value) {
                             tabindex="0"
                             role="link"
                         >
-                            <td><%= index + 1 %></td>
 
                             <td>
-                                <strong><%= product.name %></strong>
+                                <%= index + 1 %>
+                            </td>
+
+                            <td>
+                                <strong>
+                                    <%= product.name %>
+                                </strong>
+
+                                <small
+                                    style="
+                                        display:block;
+                                        margin-top:3px;
+                                        font-size:0.75rem;
+                                        opacity:0.7;
+                                    "
+                                >
+                                    KSh <%= number(product.unitSellPrice) %>
+                                </small>
                             </td>
 
                             <td>
@@ -59,6 +75,7 @@ function number(value) {
                             <td>
                                 <%= number(product.sales) %>
                             </td>
+
                         </tr>
 
                     <% }); %>
