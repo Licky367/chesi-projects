@@ -491,27 +491,23 @@ function calculateSubstationTotals(
 // UPDATE DAILY CASH SALES
 // ==========================================================
 //
-// Uses ONLY the day period.
+// DATABASE UPDATE ONLY.
 //
 // For each substation:
 //
 //     dailyCashSales = [
 //         {
-//             amount: sale.totalAmount,
-//             date: sale.createdAt
+//             _id: auto-generated,
+//             amount: cumulative sales for the day,
+//             date: selected day,
+//             isDeposited: existing value / false for new record
 //         }
 //     ]
 //
-// The same substation-resolution rule is used:
+// The frontend sales data is NOT modified.
 //
-//     salesSubstation
-//
-// fallback:
-//
-//     soldBy.assignedSubstation
-//
-// When filter.substation is supplied, only that substation
-// is updated.
+// Existing daily records are preserved. Only the amount for
+// the matching date is updated.
 //
 // ==========================================================
 
@@ -526,7 +522,7 @@ async function updateDailyCashSales(
 
 
     // ======================================================
-    // GROUP DAY SALES BY SUBSTATION
+    // CALCULATE CUMULATIVE DAY TOTAL PER SUBSTATION
     // ======================================================
 
     daySales.forEach(
@@ -548,38 +544,22 @@ async function updateDailyCashSales(
             }
 
 
-            if (
-                !dailySalesBySubstation.has(
+            const currentTotal =
+                dailySalesBySubstation.get(
                     substationId
-                )
-            ) {
-
-                dailySalesBySubstation.set(
-
-                    substationId,
-
-                    []
-
-                );
-
-            }
+                ) || 0;
 
 
-            dailySalesBySubstation
-                .get(
-                    substationId
-                )
-                .push({
+            dailySalesBySubstation.set(
 
-                    amount:
-                        Number(
-                            sale.totalAmount || 0
-                        ),
+                substationId,
 
-                    date:
-                        sale.createdAt
+                currentTotal +
+                    Number(
+                        sale.totalAmount || 0
+                    )
 
-                });
+            );
 
         }
 
@@ -619,14 +599,14 @@ async function updateDailyCashSales(
 
 
     // ======================================================
-    // UPDATE DAILY CASH SALES
+    // UPDATE DATABASE ONLY
     // ======================================================
 
     await Promise.all(
 
         substationsToUpdate.map(
 
-            substation => {
+            async substation => {
 
                 const substationId =
                     String(
@@ -634,32 +614,124 @@ async function updateDailyCashSales(
                     );
 
 
-                const dailyCashSales =
-                    dailySalesBySubstation.get(
-                        substationId
-                    ) || [];
+                const amount =
+                    Number(
+                        dailySalesBySubstation.get(
+                            substationId
+                        ) || 0
+                    );
 
 
-                return Substation.updateOne(
+                const existingSubstation =
+                    await Substation.findById(
+                        substation._id
+                    );
 
-                    {
 
-                        _id:
-                            substation._id
+                if (
+                    !existingSubstation
+                ) {
 
-                    },
+                    return;
 
-                    {
+                }
 
-                        $set: {
 
-                            dailyCashSales
+                // ==================================================
+                // USE THE DATE OF THE SELECTED DAY
+                // ==================================================
+
+                const selectedDate =
+                    filter &&
+                    filter.date
+                        ? new Date(
+                            filter.date
+                        )
+                        : new Date();
+
+
+                selectedDate.setHours(
+                    0,
+                    0,
+                    0,
+                    0
+                );
+
+
+                // ==================================================
+                // FIND EXISTING RECORD FOR THIS DAY
+                // ==================================================
+
+                const existingDailySale =
+                    existingSubstation.dailyCashSales.find(
+
+                        dailySale => {
+
+                            const dailyDate =
+                                new Date(
+                                    dailySale.date
+                                );
+
+                            dailyDate.setHours(
+                                0,
+                                0,
+                                0,
+                                0
+                            );
+
+                            return (
+                                dailyDate.getTime() ===
+                                selectedDate.getTime()
+                            );
 
                         }
 
-                    }
+                    );
 
-                );
+
+                if (
+                    existingDailySale
+                ) {
+
+                    // ----------------------------------------------
+                    // UPDATE ONLY THE CUMULATIVE AMOUNT.
+                    //
+                    // _id remains unchanged.
+                    // isDeposited remains unchanged.
+                    // ----------------------------------------------
+
+                    existingDailySale.amount =
+                        amount;
+
+                } else {
+
+                    // ----------------------------------------------
+                    // CREATE ONE DAILY RECORD.
+                    //
+                    // Mongoose automatically generates _id.
+                    // ----------------------------------------------
+
+                    existingSubstation.dailyCashSales.push({
+
+                        amount:
+                            amount,
+
+                        date:
+                            selectedDate,
+
+                        isDeposited:
+                            false
+
+                    });
+
+                }
+
+
+                // ==================================================
+                // SAVE ONLY THE SUBSTATION DOCUMENT
+                // ==================================================
+
+                await existingSubstation.save();
 
             }
 
