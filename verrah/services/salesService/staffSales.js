@@ -270,6 +270,7 @@ async function buildSalesQuery(
         // OR:
         //
         //     soldBy.assignedSubstation
+        //
         // ==================================================
 
         query.$or = [
@@ -494,8 +495,12 @@ function calculateSubstationTotals(
 //
 // For each substation:
 //
-//     dailyCashSales = cumulative total of all
-//     sale.totalAmount values for that day.
+//     dailyCashSales = [
+//         {
+//             amount: sale.totalAmount,
+//             date: sale.createdAt
+//         }
+//     ]
 //
 // The same substation-resolution rule is used:
 //
@@ -543,22 +548,38 @@ async function updateDailyCashSales(
             }
 
 
-            const currentTotal =
-                dailySalesBySubstation.get(
+            if (
+                !dailySalesBySubstation.has(
                     substationId
-                ) || 0;
+                )
+            ) {
+
+                dailySalesBySubstation.set(
+
+                    substationId,
+
+                    []
+
+                );
+
+            }
 
 
-            dailySalesBySubstation.set(
+            dailySalesBySubstation
+                .get(
+                    substationId
+                )
+                .push({
 
-                substationId,
+                    amount:
+                        Number(
+                            sale.totalAmount || 0
+                        ),
 
-                currentTotal +
-                    Number(
-                        sale.totalAmount || 0
-                    )
+                    date:
+                        sale.createdAt
 
-            );
+                });
 
         }
 
@@ -614,11 +635,9 @@ async function updateDailyCashSales(
 
 
                 const dailyCashSales =
-                    Number(
-                        dailySalesBySubstation.get(
-                            substationId
-                        ) || 0
-                    );
+                    dailySalesBySubstation.get(
+                        substationId
+                    ) || [];
 
 
                 return Substation.updateOne(
@@ -892,4 +911,3 @@ module.exports = {
     getStaffSales
 
 };
-
