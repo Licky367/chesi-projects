@@ -16,6 +16,9 @@ const updateController =
 const addToCartController =
     require("./addToCart");
 
+const addManyToCartController =
+    require("./addManyToCart");
+
 
 const searchController =
     require("./search");
