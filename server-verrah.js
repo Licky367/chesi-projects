@@ -1139,6 +1139,27 @@ if (liabilityRoutes) {
     );
 }
 
+// ==========================================================
+//DEPOSIT 
+// ==========================================================
+
+if (depositRoutes) {
+
+    app.use(
+        "/deposit",
+       depositRoutes
+    );
+
+
+    console.log(
+        "✅ Mounted /deposit"
+    );
+} else {
+console.error(
+        "❌ /deposit was not mounted"
+    );
+}
+
 
 // ==========================================================
 // 404 HANDLER
