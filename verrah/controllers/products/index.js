@@ -63,6 +63,13 @@ module.exports = {
         addToCartController.addToCart,
 
 
+
+
+    addManyToCart:
+        addToCartController.addManyToCart,
+
+
+
     // --------------------------------------------------------
     // Product search
     // --------------------------------------------------------
