@@ -56,8 +56,8 @@ return Number(value || 0).toLocaleString("en-KE");
                 <tr>
                     <th>#</th>
                     <th>Product Name</th>
-                    <th>Marketplace Units</th>
-                    <th>Stock Units</th>
+                    <th>Items Available in Stock</th>
+                    <th>Items Available in Market</th>
                     <th>Number of Sales</th>
                 </tr>
             </thead>
@@ -155,20 +155,20 @@ return Number(value || 0).toLocaleString("en-KE");
 
 
                             <!-- ==================================
-                                 MARKET
-                            =================================== -->
-
-                            <td>
-                                <%= number(product.marketAvailable) %>
-                            </td>
-
-
-                            <!-- ==================================
                                  STOCK
                             =================================== -->
 
                             <td>
                                 <%= number(product.stockAvailable) %>
+                            </td>
+
+
+                            <!-- ==================================
+                                 MARKET
+                            =================================== -->
+
+                            <td>
+                                <%= number(product.marketAvailable) %>
                             </td>
 
 
