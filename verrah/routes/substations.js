@@ -104,6 +104,23 @@ router.post(
 );
 
 
+// ----------------------------------------------------------
+// UPDATE MULTIPLE PRODUCTS AT ONE SUBSTATION
+// POST /substations/productsUpdate/:id
+//
+// :id = substation ID
+//
+// Updates several product quantities belonging to the
+// specified substation in one request.
+// ----------------------------------------------------------
+
+router.post(
+    "/productsUpdate/:id",
+    requireAdmin,
+    controller.updateMultipleProductUnits
+);
+
+
 // ==========================================================
 // BRANCH / SUBSTATION EDITING
 // ==========================================================
@@ -145,18 +162,6 @@ router.post(
 // ----------------------------------------------------------
 
 router.get(
-    "/branch/icon/:id",
-    requireAdmin,
-    controller.editIconForm
-);
-
-
-// ----------------------------------------------------------
-// UPDATE ICON
-// POST /substations/branch/icon/:id
-// ----------------------------------------------------------
-
-router.post(
     "/branch/icon/:id",
     requireAdmin,
     substationsUpload.single(
