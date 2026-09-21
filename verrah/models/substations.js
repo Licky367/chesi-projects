@@ -100,6 +100,33 @@ const substationProductReductionSchema = new mongoose.Schema(
 );
 
 // ==========================================================
+// DAILY CASH SALES SCHEMA
+// ==========================================================
+
+const dailyCashSaleSchema = new mongoose.Schema(
+    {
+        amount: {
+            type: Number,
+            required: true,
+            default: 0
+        },
+
+        date: {
+            type: Date,
+            required: true
+        },
+
+        isDeposited: {
+            type: Boolean,
+            default: false
+        }
+    },
+    {
+        _id: false
+    }
+);
+
+// ==========================================================
 // GPS SCHEMA
 // ==========================================================
 
@@ -232,6 +259,15 @@ const substationSchema = new mongoose.Schema(
         isActive: {
             type: Boolean,
             default: true
+        },
+
+        // ------------------------------------------------
+        // DAILY CASH SALES
+        // ------------------------------------------------
+
+        dailyCashSales: {
+            type: [dailyCashSaleSchema],
+            default: []
         },
 
         // ------------------------------------------------
