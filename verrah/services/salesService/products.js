@@ -4,324 +4,511 @@
 // VERRAH COSMETICS
 // PRODUCT ANALYTICS SERVICE
 //
-// GLOBAL SUBSTATION FILTER
+// SUBSTATION-AWARE PRODUCT ANALYTICS
 //
-// When filter.substation is provided:
+// marketAvailable:
 //
-//     Stock
-//         -> NOT filtered by substation
+//     Staff
+//         -> Substation.productInventory.units
+//            for their assigned substation
 //
-//     Delivered Packages
-//         -> filtered by packageSubstation
+//     Admin + no substation filter
+//         -> Product.units
 //
-// Products themselves remain global product records.
+//     Admin + substation filter
+//         -> Substation.productInventory.units
+//            for the selected substation
+//
+// sales:
+//
+//     Delivered packages
+//         -> filtered by packageSubstation when a
+//            substation is active
+//
+// stockAvailable:
+//
+//     Remains GLOBAL and unchanged.
 // ==========================================================
 
+
 const Product =
-require("../../models/products");
+    require("../../models/products");
+
 
 const Stock =
-require("../../models/stock");
+    require("../../models/stock");
+
 
 const Package =
-require("../../models/package");
+    require("../../models/package");
+
+
+const Substation =
+    require("../../models/substations");
+
 
 // ==========================================================
 // BUILD SUBSTATION QUERY
 // ==========================================================
 
 function getSubstationQuery(
-filter,
-field
+    filter,
+    field
 ) {
 
-if (  
-    !filter ||  
-    !filter.substation  
-) {  
+    if (
+        !filter ||
+        !filter.substation
+    ) {
 
-    return {};  
+        return {};
 
-}  
+    }
 
 
-return {  
+    return {
 
-    [field]:  
-        filter.substation  
+        [field]:
+            filter.substation
 
-};
+    };
 
 }
+
+
+// ==========================================================
+// GET SUBSTATION PRODUCT INVENTORY
+// ==========================================================
+//
+// Returns:
+//
+//     Map {
+//         productId -> units
+//     }
+//
+// The inventory belongs to the selected substation.
+//
+// ==========================================================
+
+async function getSubstationProductInventory(
+    substationId
+) {
+
+    if (!substationId) {
+
+        return new Map();
+
+    }
+
+
+    const substation =
+        await Substation.findOne({
+
+            _id:
+                substationId,
+
+            isActive:
+                true
+
+        })
+
+            .select(
+                "productInventory"
+            )
+
+            .lean();
+
+
+    const inventoryByProduct =
+        new Map();
+
+
+    if (
+        !substation ||
+        !Array.isArray(
+            substation.productInventory
+        )
+    ) {
+
+        return inventoryByProduct;
+
+    }
+
+
+    for (
+        const inventory
+        of substation.productInventory
+    ) {
+
+        if (
+            !inventory.productId
+        ) {
+
+            continue;
+
+        }
+
+
+        inventoryByProduct.set(
+
+            String(
+                inventory.productId
+            ),
+
+            Number(
+                inventory.units || 0
+            )
+
+        );
+
+    }
+
+
+    return inventoryByProduct;
+
+}
+
 
 // ==========================================================
 // GET PRODUCT ANALYTICS
 // ==========================================================
 
 async function getProductAnalytics(
-filter
+    filter
 ) {
 
-// ======================================================  
-// LOAD ACTIVE PRODUCTS  
-//  
-// Products are global records and therefore are not  
-// filtered by substation.  
-// ======================================================  
+    // ======================================================
+    // LOAD ACTIVE PRODUCTS
+    //
+    // Products remain global records.
+    // ======================================================
 
-const products =  
-    await Product.find({  
+    const products =
+        await Product.find({
 
-        isActive:  
-            true  
+            isActive:
+                true
 
-    })  
+        })
 
-        .select(  
-            "_id name subcategory units buyPrice stock"  
-        )  
+            .select(
+                "_id name subcategory units stock"
+            )
 
-        .lean();  
+            .lean();
 
 
-// ======================================================  
-// LOAD ALL ACTIVE STOCK  
-//  
-// Stock is global.  
-//  
-// DO NOT filter stock by substation because there is  
-// no substation-specific stock inventory model.  
-// ======================================================  
+    // ======================================================
+    // LOAD ALL ACTIVE STOCK
+    //
+    // STOCK REMAINS GLOBAL.
+    //
+    // DO NOT filter stock by substation.
+    // ======================================================
 
-const stockRecords =  
-    await Stock.find({  
+    const stockRecords =
+        await Stock.find({
 
-        isActive:  
-            true  
+            isActive:
+                true
 
-    })  
+        })
 
-        .select(  
-            "subcategory units substation"  
-        )  
+            .select(
+                "subcategory units substation"
+            )
 
-        .lean();  
+            .lean();
 
 
-// ======================================================  
-// STOCK BY SUBCATEGORY  
-// ======================================================  
+    // ======================================================
+    // STOCK BY SUBCATEGORY
+    // ======================================================
 
-const stockBySubcategory =  
-    new Map();  
+    const stockBySubcategory =
+        new Map();
 
 
-for (  
-    const stock  
-    of stockRecords  
-) {  
+    for (
+        const stock
+        of stockRecords
+    ) {
 
-    const key =  
-        String(  
-            stock.subcategory || ""  
-        )  
-            .trim()  
-            .toLowerCase();  
+        const key =
+            String(
+                stock.subcategory || ""
+            )
+                .trim()
+                .toLowerCase();
 
 
-    if (!key) {  
+        if (!key) {
 
-        continue;  
+            continue;
 
-    }  
+        }
 
 
-    const existing =  
-        stockBySubcategory.get(  
-            key  
-        ) || 0;  
+        const existing =
+            stockBySubcategory.get(
+                key
+            ) || 0;
 
 
-    stockBySubcategory.set(  
+        stockBySubcategory.set(
 
-        key,  
+            key,
 
-        existing +  
-        Number(  
-            stock.units || 0  
-        )  
+            existing +
+            Number(
+                stock.units || 0
+            )
 
-    );  
+        );
 
-}  
+    }
 
 
-// ======================================================  
-// DELIVERED PACKAGES  
-//  
-// Packages are filtered by their packageSubstation.  
-//  
-// The date filter remains active exactly as before.  
-// ======================================================  
+    // ======================================================
+    // MARKET INVENTORY
+    // ======================================================
+    //
+    // NO SUBSTATION:
+    //
+    //     Use global Product.units.
+    //
+    // SUBSTATION SELECTED:
+    //
+    //     Use Substation.productInventory.units.
+    //
+    // For staff, filter.substation must contain their
+    // assigned substation.
+    // ======================================================
 
-const deliveredPackageQuery = {  
+    let marketInventoryByProduct =
+        new Map();
 
-    status:  
-        "delivered",  
 
-    createdAt: {  
+    if (
+        filter &&
+        filter.substation
+    ) {
 
-        $gte:  
-            filter.startDate,  
+        marketInventoryByProduct =
+            await getSubstationProductInventory(
+                filter.substation
+            );
 
-        $lt:  
-            filter.endDate  
+    }
 
-    },  
 
-    ...getSubstationQuery(  
-        filter,  
-        "packageSubstation"  
-    )  
+    // ======================================================
+    // DELIVERED PACKAGES
+    //
+    // The existing date filtering remains unchanged.
+    //
+    // If a substation is active, packages are filtered by
+    // packageSubstation.
+    // ======================================================
 
-};  
+    const deliveredPackageQuery = {
 
+        status:
+            "delivered",
 
-const deliveredPackages =  
-    await Package.find(  
-        deliveredPackageQuery  
-    )  
+        createdAt: {
 
-        .select(  
-            "items packageSubstation"  
-        )  
+            $gte:
+                filter.startDate,
 
-        .lean();  
+            $lt:
+                filter.endDate
 
+        },
 
-// ======================================================  
-// SALES BY PRODUCT  
-// ======================================================  
+        ...getSubstationQuery(
+            filter,
+            "packageSubstation"
+        )
 
-const salesByProduct =  
-    new Map();  
+    };
 
 
-for (  
-    const pkg  
-    of deliveredPackages  
-) {  
+    const deliveredPackages =
+        await Package.find(
+            deliveredPackageQuery
+        )
 
-    for (  
-        const item  
-        of pkg.items || []  
-    ) {  
+            .select(
+                "items packageSubstation"
+            )
 
-        if (  
-            !item.productId  
-        ) {  
+            .lean();
 
-            continue;  
 
-        }  
+    // ======================================================
+    // SALES BY PRODUCT
+    // ======================================================
 
+    const salesByProduct =
+        new Map();
 
-        const key =  
-            String(  
-                item.productId  
-            );  
 
+    for (
+        const pkg
+        of deliveredPackages
+    ) {
 
-        salesByProduct.set(  
+        for (
+            const item
+            of pkg.items || []
+        ) {
 
-            key,  
+            if (
+                !item.productId
+            ) {
 
-            (  
+                continue;
 
-                salesByProduct.get(  
-                    key  
-                ) || 0  
+            }
 
-            ) +  
 
-            Number(  
-                item.qty || 0  
-            )  
+            const key =
+                String(
+                    item.productId
+                );
 
-        );  
 
-    }  
+            salesByProduct.set(
 
-}  
+                key,
 
+                (
 
-// ======================================================  
-// RETURN PRODUCT ANALYTICS  
-// ======================================================  
+                    salesByProduct.get(
+                        key
+                    ) || 0
 
-return products  
+                ) +
 
-    .map(  
+                Number(
+                    item.qty || 0
+                )
 
-        product => {  
+            );
 
-            const subcategory =  
-                String(  
-                    product.subcategory || ""  
-                )  
-                    .trim()  
-                    .toLowerCase();  
+        }
 
+    }
 
-            return {  
 
-                _id:  
-                    product._id,  
+    // ======================================================
+    // RETURN PRODUCT ANALYTICS
+    // ======================================================
 
-                name:  
-                    product.name,  
+    return products
 
-                stockAvailable:  
-                    stockBySubcategory.get(  
-                        subcategory  
-                    ) || 0,  
+        .map(
 
-                marketAvailable:  
-                    Number(  
-                        product.units || 0  
-                    ),  
+            product => {
 
-                sales:  
-                    salesByProduct.get(  
+                const subcategory =
+                    String(
+                        product.subcategory || ""
+                    )
+                        .trim()
+                        .toLowerCase();
 
-                        String(  
-                            product._id  
-                        )  
 
-                    ) || 0  
+                const productId =
+                    String(
+                        product._id
+                    );
 
-            };  
 
-        }  
+                // ==================================================
+                // MARKET AVAILABLE
+                // ==================================================
+                //
+                // With a substation:
+                //
+                //     Substation.productInventory.units
+                //
+                // Without a substation:
+                //
+                //     Product.units
+                //
+                // Missing substation inventory means 0.
+                // ==================================================
 
-    )  
+                let marketAvailable;
 
-    .sort(  
 
-        (a, b) =>  
-            String(  
-                a.name  
-            ).localeCompare(  
+                if (
+                    filter &&
+                    filter.substation
+                ) {
 
-                String(  
-                    b.name  
-                )  
+                    marketAvailable =
+                        marketInventoryByProduct.get(
+                            productId
+                        ) || 0;
 
-            )  
+                } else {
 
-    );
+                    marketAvailable =
+                        Number(
+                            product.units || 0
+                        );
+
+                }
+
+
+                return {
+
+                    _id:
+                        product._id,
+
+                    name:
+                        product.name,
+
+                    stockAvailable:
+                        stockBySubcategory.get(
+                            subcategory
+                        ) || 0,
+
+                    marketAvailable:
+                        marketAvailable,
+
+                    sales:
+                        salesByProduct.get(
+                            productId
+                        ) || 0
+
+                };
+
+            }
+
+        )
+
+        .sort(
+
+            (a, b) =>
+
+                String(
+                    a.name
+                ).localeCompare(
+
+                    String(
+                        b.name
+                    )
+
+                )
+
+        );
 
 }
+
 
 // ==========================================================
 // EXPORTS
@@ -329,6 +516,6 @@ return products
 
 module.exports = {
 
-getProductAnalytics
+    getProductAnalytics
 
 };
