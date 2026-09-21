@@ -15,6 +15,44 @@ exports.list = async (req, res) => {
 
     try {
 
+        /*
+         * STAFF USERS
+         *
+         * Staff are restricted to their assigned substation.
+         *
+         * Redirect:
+         *
+         *     /products
+         *          ↓
+         *     /branch/:assignedSubstation
+         */
+
+        if (
+            req.user &&
+            req.user.role === "staff" &&
+            req.user.assignedSubstation
+        ) {
+
+            const assignedSubstation =
+                typeof req.user.assignedSubstation === "object" &&
+                req.user.assignedSubstation._id
+                    ? req.user.assignedSubstation._id
+                    : req.user.assignedSubstation;
+
+
+            return res.redirect(
+                `/branch/${assignedSubstation}`
+            );
+
+        }
+
+
+        /*
+         * NON-STAFF USERS
+         *
+         * Keep the existing global products page.
+         */
+
         const categories =
             await productService.getProductsByCategory();
 
