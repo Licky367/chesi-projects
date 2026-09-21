@@ -89,14 +89,6 @@ router.get(
 // ----------------------------------------------------------
 // CREATE CATEGORY
 // POST /products/category/add
-//
-// The middleware:
-//
-// 1. Parses multipart/form-data
-// 2. Accepts one category image
-// 3. Places it in public/uploads/categories
-// 4. Makes the file available as req.file
-// 5. Makes text fields available as req.body
 // ----------------------------------------------------------
 
 router.post(
@@ -111,14 +103,6 @@ router.post(
 // EDIT CATEGORY FORM
 // GET /products/category/add/:id
 // ----------------------------------------------------------
-//
-// Used by the admin Edit button.
-//
-// Example:
-//
-// /products/category/add/68abc123...
-//
-// ----------------------------------------------------------
 
 router.get(
   "/category/add/:id",
@@ -130,10 +114,6 @@ router.get(
 // ----------------------------------------------------------
 // UPDATE CATEGORY
 // POST /products/category/add/:id
-// ----------------------------------------------------------
-//
-// The same image upload middleware is used so the admin
-// can optionally replace the existing category image.
 // ----------------------------------------------------------
 
 router.post(
@@ -156,6 +136,31 @@ router.get(
 
 
 // ==========================================================
+// ADD MANY PRODUCTS TO CART
+// ==========================================================
+//
+// POST /products/addManyToCart
+//
+// ----------------------------------------------------------
+//
+// This route MUST come before:
+//
+//     /:id/update
+//     /:id
+//
+// Otherwise "addManyToCart" could be interpreted as a
+// product ID.
+//
+// ----------------------------------------------------------
+
+router.post(
+  "/addManyToCart",
+  requireLogin,
+  controller.addManyToCart
+);
+
+
+// ==========================================================
 // PRODUCT UPDATE
 // ==========================================================
 //
@@ -164,11 +169,6 @@ router.get(
 // POST /products/:id/update
 //
 // Admin only.
-//
-// IMPORTANT:
-// This must come BEFORE:
-//
-//     GET /products/:id
 //
 // ----------------------------------------------------------
 
