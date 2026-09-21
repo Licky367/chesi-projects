@@ -1,0 +1,390 @@
+<%
+/*
+ * ==========================================================
+ * DAILY CASH SALES
+ * ==========================================================
+ *
+ * DATA:
+ *
+ *     dailyCashSales
+ *
+ * Each entry contains:
+ *
+ *     amount
+ *     date
+ *     isDeposited
+ *
+ * ADMIN:
+ *
+ *     No substation selected
+ *         -> show "No substation selected"
+ *
+ *     Substation selected
+ *         -> show that substation's daily cash sales
+ *
+ * STAFF:
+ *
+ *     -> show daily cash sales for user.assignedSubstation
+ *
+ * PENDING SALES:
+ *
+ *     isDeposited === false
+ *         -> entire row links to:
+ *
+ *            /deposit/:id
+ *
+ * DEPOSITED SALES:
+ *
+ *     isDeposited === true
+ *         -> row is not clickable
+ *
+ * ==========================================================
+ */
+
+
+const isAdmin =
+    user &&
+    user.role === "admin";
+
+
+const isStaff =
+    user &&
+    user.role === "staff";
+
+
+/*
+ * ----------------------------------------------------------
+ * SELECTED SUBSTATION
+ * ----------------------------------------------------------
+ *
+ * Admin:
+ *     activeSubstationId
+ *
+ * Staff:
+ *     user.assignedSubstation
+ *
+ */
+
+let selectedSubstationId =
+    null;
+
+
+if (isAdmin) {
+
+    selectedSubstationId =
+        activeSubstationId
+            ? String(activeSubstationId)
+            : null;
+
+} else if (isStaff) {
+
+    if (
+        user.assignedSubstation
+    ) {
+
+        selectedSubstationId =
+            typeof user.assignedSubstation === "object" &&
+            user.assignedSubstation._id
+                ? String(
+                    user.assignedSubstation._id
+                )
+                : String(
+                    user.assignedSubstation
+                );
+
+    }
+
+}
+
+
+/*
+ * ----------------------------------------------------------
+ * ADMIN WITHOUT SUBSTATION
+ * ----------------------------------------------------------
+ */
+
+const adminNoSubstation =
+    isAdmin &&
+    !selectedSubstationId;
+
+
+/*
+ * ----------------------------------------------------------
+ * DAILY CASH SALES DATA
+ * ----------------------------------------------------------
+ *
+ * The controller/service may supply the selected
+ * substation's dailyCashSales directly.
+ *
+ */
+
+const rows =
+    Array.isArray(dailyCashSales)
+        ? dailyCashSales
+        : [];
+
+%>
+
+
+<!-- ========================================================
+     DAILY CASH SALES
+========================================================= -->
+
+<section class="sales-section">
+
+    <!-- ====================================================
+         SECTION HEADING
+    ===================================================== -->
+
+    <div class="sales-section-heading">
+
+        <div>
+
+            <h2>
+                Daily Cash Sales
+            </h2>
+
+        </div>
+
+    </div>
+
+
+    <!-- ====================================================
+         ADMIN — NO SUBSTATION SELECTED
+    ===================================================== -->
+
+    <% if (adminNoSubstation) { %>
+
+        <div class="sales-table-wrapper">
+
+            <table class="sales-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Amount
+                        </th>
+
+                        <th>
+                            Deposit Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr>
+
+                        <td
+                            colspan="3"
+                            class="sales-empty"
+                        >
+                            No substation selected.
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+    <!-- ====================================================
+         SELECTED SUBSTATION / STAFF
+    ===================================================== -->
+
+    <% } else if (rows.length > 0) { %>
+
+        <div class="sales-table-wrapper">
+
+            <table class="sales-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Amount
+                        </th>
+
+                        <th>
+                            Deposit Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    <% rows.forEach(function (sale) { %>
+
+                        <%
+                        const deposited =
+                            sale.isDeposited === true;
+
+
+                        const saleId =
+                            sale._id
+                                ? String(sale._id)
+                                : null;
+                        %>
+
+
+                        <% if (!deposited && saleId) { %>
+
+                            <tr
+                                class="sales-product-row"
+                                role="link"
+                                tabindex="0"
+                                onclick="window.location.href='/deposit/<%= saleId %>'"
+                                onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='/deposit/<%= saleId %>'; }"
+                            >
+
+                        <% } else { %>
+
+                            <tr>
+
+                        <% } %>
+
+
+                                <!-- ==================================
+                                     DATE
+                                =================================== -->
+
+                                <td>
+
+                                    <%= sale.date
+                                        ? new Date(
+                                            sale.date
+                                        ).toLocaleDateString(
+                                            "en-KE",
+                                            {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric"
+                                            }
+                                        )
+                                        : "—"
+                                    %>
+
+                                </td>
+
+
+                                <!-- ==================================
+                                     AMOUNT
+                                =================================== -->
+
+                                <td>
+
+                                    KSh
+                                    <%= Number(
+                                        sale.amount || 0
+                                    ).toLocaleString(
+                                        "en-KE",
+                                        {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        }
+                                    ) %>
+
+                                </td>
+
+
+                                <!-- ==================================
+                                     DEPOSIT STATUS
+                                =================================== -->
+
+                                <td>
+
+                                    <% if (deposited) { %>
+
+                                        Deposited
+
+                                    <% } else { %>
+
+                                        Pending
+
+                                    <% } %>
+
+                                </td>
+
+
+                            </tr>
+
+                    <% }); %>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+    <!-- ====================================================
+         NO DAILY CASH SALES
+    ===================================================== -->
+
+    <% } else { %>
+
+        <div class="sales-table-wrapper">
+
+            <table class="sales-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Amount
+                        </th>
+
+                        <th>
+                            Deposit Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr>
+
+                        <td
+                            colspan="3"
+                            class="sales-empty"
+                        >
+                            No daily cash sales found.
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    <% } %>
+
+</section>
