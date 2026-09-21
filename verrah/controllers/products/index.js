@@ -66,7 +66,7 @@ module.exports = {
 
 
     addManyToCart:
-        addToCartController.addManyToCart,
+        addManyToCartController.addManyToCart,
 
 
 
