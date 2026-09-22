@@ -1,16 +1,71 @@
 // ==========================================================
-// services/stockService/
+// services/stockService/index.js
+//
+// VERRAH COSMETICS
 // STOCK SERVICE ENTRY POINT
 //
-// This directory contains the same stock-service logic split
-// into smaller manageable modules. index.js remains the
-// service entry point so existing require("../services/stockService")
-// imports continue to work.
+// All stock-service modules are exported through this file so
+// existing imports such as:
+//
+//     require("../services/stockService")
+//
+// continue to work without modification.
 // ==========================================================
 
 module.exports = {
+
+    // ======================================================
+    // STOCK QUERIES
+    // ======================================================
+
     ...require("./queries"),
+
+
+    // ======================================================
+    // STOCK CRUD
+    // ======================================================
+
     ...require("./stockCrud"),
+
+
+    // ======================================================
+    // STOCK ALLOCATION
+    // ======================================================
+
     ...require("./allocation"),
-    ...require("./batchEdit")
+
+
+    // ======================================================
+    // FIFO BATCH EDITING
+    // ======================================================
+
+    ...require("./batchEdit"),
+
+
+    // ======================================================
+    // CATEGORY OPERATIONS
+    // ======================================================
+
+    ...require("./category"),
+
+
+    // ======================================================
+    // GENERAL STOCK HELPERS
+    // ======================================================
+
+    ...require("./helpers"),
+
+
+    // ======================================================
+    // PRODUCT FIFO OPERATIONS
+    // ======================================================
+
+    ...require("./productFifo"),
+
+
+    // ======================================================
+    // STOCK FIFO OPERATIONS
+    // ======================================================
+
+    ...require("./stockFifo")
 };
