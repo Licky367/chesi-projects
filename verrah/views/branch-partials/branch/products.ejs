@@ -21,14 +21,16 @@
 
    - Admin and staff can sell multiple products
    - First "Sell Items" tap enables quantity inputs
-   - Product cards become completely non-clickable
-   - User can enter quantities for several products
+   - Product cards cannot navigate while editing
+   - Quantity inputs remain clickable/editable
    - Second "Sell Items" tap:
-       1. Collects entered quantities
-       2. Adds them to the form
-       3. Closes quantity inputs
-       4. Makes cards clickable again
-       5. Submits to /products/addManyToCart
+       WITH quantities:
+           submit selected products
+       WITHOUT quantities:
+           exit sell mode only
+   - After exiting/submitting:
+       quantity inputs close
+       cards become clickable again
 
    - Admin also submits:
        cartSubstation = substation._id
@@ -72,10 +74,6 @@
         )
       ) { %>
 
-
-        <!-- ==================================================
-             SELL ITEMS BUTTON
-        =================================================== -->
 
         <button
           type="button"
@@ -140,13 +138,7 @@
 
     <!-- ======================================================
          SELL ITEMS FORM
-
-         This form is intentionally separate from the
-         product-card links.
-
-         Product quantities are copied into this form by
-         JavaScript before submission.
-    ======================================================= -->
+    ====================================================== -->
 
     <% if (
       user &&
@@ -182,7 +174,7 @@
 
     <!-- ======================================================
          GROUP PRODUCTS BY CATEGORY
-    =================================================== -->
+    ====================================================== -->
 
     <%
       const groupedProducts = {};
@@ -230,11 +222,6 @@
 
 
         <%
-          /*
-           * Divide products belonging to this category
-           * into rows of six.
-           */
-
           const productRows = [];
 
           for (
@@ -251,16 +238,12 @@
         %>
 
 
-        <!-- ==================================================
-             CATEGORY
-        ================================================== -->
-
         <section class="branch-inventory-category">
 
 
-          <!-- ================================================
+          <!-- ==================================================
                CATEGORY TITLE
-          ================================================= -->
+          ================================================== -->
 
           <div class="branch-category-title">
 
@@ -271,9 +254,9 @@
           </div>
 
 
-          <!-- ================================================
-               CATEGORY PRODUCT ROWS
-          ================================================= -->
+          <!-- ==================================================
+               PRODUCT ROWS
+          ================================================== -->
 
           <div class="branch-product-rows">
 
@@ -282,10 +265,6 @@
               (rowProducts) => {
             %>
 
-
-              <!-- ============================================
-                   HORIZONTAL PRODUCT ROW
-              ============================================= -->
 
               <div class="branch-product-row">
 
@@ -297,17 +276,9 @@
 
 
                     <%
-                      /*
-                       * All users use the normal product page.
-                       */
-
                       const productLink =
                         `/branch/${substation._id}/products/${product._id}`;
 
-
-                      /*
-                       * Resolve category name.
-                       */
 
                       const productCategory =
                         product.categoryName ||
@@ -321,10 +292,6 @@
                         "Other";
 
 
-                      /*
-                       * Resolve subcategory name.
-                       */
-
                       const productSubcategory =
                         product.subcategoryName ||
                         (
@@ -335,11 +302,6 @@
                         ) ||
                         "Other";
 
-
-                      /*
-                       * Product ID used by the add-many
-                       * cart form.
-                       */
 
                       const productId =
                         String(product._id);
@@ -364,7 +326,6 @@
 
                       <div class="branch-product-photo">
 
-
                         <% if (product.image) { %>
 
                           <img
@@ -383,7 +344,6 @@
 
                         <% } %>
 
-
                       </div>
 
 
@@ -394,20 +354,12 @@
                       <div class="branch-product-details">
 
 
-                        <!-- =================================
-                             PRODUCT NAME
-                        ================================== -->
-
                         <h4 class="branch-product-name">
 
                           <%= product.name %>
 
                         </h4>
 
-
-                        <!-- =================================
-                             CATEGORY / SUBCATEGORY
-                        ================================== -->
 
                         <div class="branch-product-meta">
 
@@ -432,10 +384,6 @@
                         </div>
 
 
-                        <!-- =================================
-                             STOCK
-                        ================================== -->
-
                         <div class="branch-product-quantity">
 
                           <strong>
@@ -453,9 +401,9 @@
                         </div>
 
 
-                        <!-- =================================
-                             SELL QUANTITY INPUT
-                        ================================== -->
+                        <!-- ==================================
+                             SELL QUANTITY
+                        =================================== -->
 
                         <% if (
                           user &&
@@ -507,7 +455,6 @@
 
 
                 </div>
-
 
               </div>
 
@@ -564,12 +511,6 @@
         );
 
 
-    const sellButtonText =
-        document.getElementById(
-            "branchSellItemsButtonText"
-        );
-
-
     const sellForm =
         document.getElementById(
             "branchAddManyToCartForm"
@@ -596,7 +537,6 @@
 
     if (
         !sellButton ||
-        !sellButtonText ||
         !sellForm
     ) {
 
@@ -647,19 +587,9 @@
         );
 
 
-        sellButton.classList.toggle(
-            "is-selling",
-            enabled
-        );
-
-
-        sellButtonText.textContent =
-            "Sell Items";
-
-
         /*
-         * When leaving sell mode manually,
-         * clear the visible quantity inputs.
+         * When leaving sell mode, clear the
+         * visible quantity inputs.
          */
 
         if (!enabled) {
@@ -678,199 +608,7 @@
 
 
     /* ======================================================
-       COMPLETELY BLOCK PRODUCT CARDS WHILE SELLING
-    ======================================================
-
-       This listener runs during the capture phase.
-
-       Therefore, when sellMode is true, clicking anywhere
-       on the product card cannot activate its <a> link.
-
-       The quantity input is explicitly allowed through.
-    ====================================================== */
-
-    productCards.forEach(
-        function (card) {
-
-            card.addEventListener(
-                "click",
-                function (event) {
-
-                    if (!sellMode) {
-
-                        return;
-
-                    }
-
-
-                    /*
-                     * Quantity input must remain clickable.
-                     */
-
-                    if (
-                        event.target.closest(
-                            ".branch-sell-quantity-input"
-                        )
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    event.preventDefault();
-
-                    event.stopPropagation();
-
-                },
-                true
-            );
-
-
-            /*
-             * Also block pointer activation while
-             * sell mode is active.
-             */
-
-            card.addEventListener(
-                "pointerup",
-                function (event) {
-
-                    if (!sellMode) {
-
-                        return;
-
-                    }
-
-
-                    if (
-                        event.target.closest(
-                            ".branch-sell-quantity-input"
-                        )
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    event.preventDefault();
-
-                    event.stopPropagation();
-
-                },
-                true
-            );
-
-        }
-    );
-
-
-    /* ======================================================
-       QUANTITY INPUTS
-    ====================================================== */
-
-    quantityInputs.forEach(
-        function (input) {
-
-
-            /*
-             * Do not allow the input click to reach
-             * the product card.
-             */
-
-            input.addEventListener(
-                "click",
-                function (event) {
-
-                    event.stopPropagation();
-
-                }
-            );
-
-
-            input.addEventListener(
-                "pointerdown",
-                function (event) {
-
-                    event.stopPropagation();
-
-                }
-            );
-
-
-            input.addEventListener(
-                "pointerup",
-                function (event) {
-
-                    event.stopPropagation();
-
-                }
-            );
-
-
-            input.addEventListener(
-                "keydown",
-                function (event) {
-
-                    event.stopPropagation();
-
-                }
-            );
-
-
-            /*
-             * Keep quantities within the available
-             * substation stock.
-             */
-
-            input.addEventListener(
-                "input",
-                function () {
-
-                    const max =
-                        Number(
-                            input.max || 0
-                        );
-
-
-                    let value =
-                        Number(
-                            input.value
-                        );
-
-
-                    if (
-                        Number.isNaN(value) ||
-                        value < 0
-                    ) {
-
-                        input.value = "";
-
-                        return;
-
-                    }
-
-
-                    if (
-                        max > 0 &&
-                        value > max
-                    ) {
-
-                        input.value =
-                            String(max);
-
-                    }
-
-                }
-            );
-
-        }
-    );
-
-
-    /* ======================================================
-       COLLECT SELECTED PRODUCTS
+       CHECK WHETHER ANY QUANTITY WAS ENTERED
     ====================================================== */
 
     function getSelectedProducts() {
@@ -906,9 +644,9 @@
 
                 selectedProducts.push({
 
-                    productId,
+                    productId: productId,
 
-                    quantity
+                    quantity: quantity
 
                 });
 
@@ -922,40 +660,200 @@
 
 
     /* ======================================================
-       SUBMIT SELECTED PRODUCTS
+       PREVENT PRODUCT NAVIGATION WHILE SELLING
+       
+       IMPORTANT:
+       The quantity input is EXCLUDED from this block.
+       
+       Therefore:
+       - card itself = blocked
+       - image = blocked
+       - product name = blocked
+       - category = blocked
+       - stock = blocked
+       - quantity input = usable
     ====================================================== */
 
-    function submitSelectedProducts() {
+    productCards.forEach(
+        function (card) {
 
-        /*
-         * Collect everything before changing
-         * the interface.
-         */
+            card.addEventListener(
+                "click",
+                function (event) {
 
-        const selectedProducts =
-            getSelectedProducts();
+                    if (!sellMode) {
+
+                        return;
+
+                    }
 
 
-        /*
-         * Nothing selected.
-         *
-         * Keep sell mode active so the user can
-         * enter quantities.
-         */
+                    /*
+                     * Allow the quantity input to receive
+                     * the click normally.
+                     */
 
-        if (!selectedProducts.length) {
+                    if (
+                        event.target.closest(
+                            ".branch-sell-quantity-input"
+                        )
+                    ) {
 
-            alert(
-                "Enter the number of units for at least one product."
+                        return;
+
+                    }
+
+
+                    /*
+                     * Everything else inside the
+                     * product card is blocked.
+                     */
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+                },
+                true
             );
 
-            return;
+        }
+    );
+
+
+    /* ======================================================
+       QUANTITY INPUTS
+    ====================================================== */
+
+    quantityInputs.forEach(
+        function (input) {
+
+
+            /*
+             * Stop the input's events from reaching
+             * the product-card <a>.
+             */
+
+            input.addEventListener(
+                "click",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "pointerdown",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "pointerup",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "mousedown",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "touchstart",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "keydown",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            /*
+             * Keep entered quantity within available stock.
+             */
+
+            input.addEventListener(
+                "input",
+                function () {
+
+                    let value =
+                        Number(
+                            input.value
+                        );
+
+
+                    const max =
+                        Number(
+                            input.max || 0
+                        );
+
+
+                    if (
+                        !Number.isFinite(value) ||
+                        value < 0
+                    ) {
+
+                        input.value = "";
+
+                        return;
+
+                    }
+
+
+                    if (
+                        max > 0 &&
+                        value > max
+                    ) {
+
+                        input.value =
+                            String(max);
+
+                    }
+
+                }
+            );
 
         }
+    );
 
+
+    /* ======================================================
+       BUILD ADD-MANY FORM
+    ====================================================== */
+
+    function prepareForm(
+        selectedProducts
+    ) {
 
         /*
-         * Remove previously generated product fields.
+         * Remove previously generated
+         * product fields.
          */
 
         sellForm
@@ -972,20 +870,17 @@
 
 
         /*
-         * Build:
+         * Create:
 
          * products[0][productId]
          * products[0][qty]
 
          * products[1][productId]
          * products[1][qty]
-
-         * etc.
          */
 
         selectedProducts.forEach(
             function (item, index) {
-
 
                 const productIdInput =
                     document.createElement(
@@ -1043,40 +938,22 @@
             }
         );
 
-
-        /*
-         * Close sell mode BEFORE submitting.
-         *
-         * This:
-         *
-         * - hides quantity inputs
-         * - removes selling card state
-         * - makes product cards clickable again
-         */
-
-        setSellMode(false);
-
-
-        /*
-         * Submit to:
-         *
-         * /products/addManyToCart
-         */
-
-        sellForm.submit();
-
     }
 
 
     /* ======================================================
-       SELL BUTTON
-    ======================================================
+       SELL ITEMS BUTTON
+       
+       FIRST CLICK:
+           Enter edit mode.
 
-       FIRST TAP:
-           Enable sell mode.
+       SECOND CLICK:
+           If quantities exist:
+               prepare + close mode + submit.
 
-       SECOND TAP:
-           Submit selected products.
+           If NO quantities exist:
+               simply close edit mode.
+               DO NOT submit.
     ====================================================== */
 
     sellButton.addEventListener(
@@ -1088,6 +965,10 @@
             event.stopPropagation();
 
 
+            /* ==============================================
+               FIRST CLICK
+            ============================================== */
+
             if (!sellMode) {
 
                 setSellMode(true);
@@ -1097,7 +978,58 @@
             }
 
 
-            submitSelectedProducts();
+            /* ==============================================
+               SECOND CLICK
+            ============================================== */
+
+            const selectedProducts =
+                getSelectedProducts();
+
+
+            /*
+             * NOTHING ENTERED:
+             *
+             * This is an exit/cancel action.
+             *
+             * Do NOT submit.
+             */
+
+            if (!selectedProducts.length) {
+
+                setSellMode(false);
+
+                return;
+
+            }
+
+
+            /*
+             * Quantities exist.
+             *
+             * Prepare the form.
+             */
+
+            prepareForm(
+                selectedProducts
+            );
+
+
+            /*
+             * Close edit mode BEFORE submitting.
+             *
+             * This hides the quantity inputs and
+             * removes the non-clickable card state.
+             */
+
+            setSellMode(false);
+
+
+            /*
+             * Submit only after the form has been
+             * completely prepared.
+             */
+
+            sellForm.submit();
 
         }
     );
