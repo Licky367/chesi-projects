@@ -15,6 +15,19 @@
    - Product card: 112px × 155px
    - All roles:
        /products/:id
+
+   ----------------------------------------------------------
+   SELL ITEMS:
+
+   - Admin and staff can sell multiple products
+   - First "Sell Items" tap enables quantity inputs
+   - User can enter quantities for several products
+   - Second "Sell Items" tap submits to:
+       /products/addManyToCart
+
+   - Admin also submits:
+       cartSubstation = substation._id
+
 ========================================================== -->
 
 
@@ -36,13 +49,47 @@
     </div>
 
 
-    <span class="branch-inventory-count">
+    <div class="branch-inventory-header-actions">
 
-      <%= substation.products
-        ? substation.products.length
-        : 0 %>
+      <span class="branch-inventory-count">
 
-    </span>
+        <%= substation.products
+          ? substation.products.length
+          : 0 %>
+
+      </span>
+
+
+      <% if (
+        user &&
+        ["admin", "staff"].includes(
+          String(user.role || "").toLowerCase()
+        )
+      ) { %>
+
+
+        <!-- ==================================================
+             SELL ITEMS BUTTON
+        =================================================== -->
+
+        <button
+          type="button"
+          class="branch-sell-items-btn"
+          id="branchSellItemsButton"
+        >
+
+          <i class="fas fa-cart-plus"></i>
+
+          <span id="branchSellItemsButtonText">
+            Sell Items
+          </span>
+
+        </button>
+
+
+      <% } %>
+
+    </div>
 
   </div>
 
@@ -56,7 +103,7 @@
 
   <!-- ========================================================
        EMPTY INVENTORY
-  ======================================================== -->
+  ========================================================= -->
 
   <% if (
     !substation.products ||
@@ -85,8 +132,50 @@
 
 
     <!-- ======================================================
+         SELL ITEMS FORM
+
+         This form is intentionally separate from the
+         product-card links.
+
+         Product quantities are copied into this form by
+         JavaScript before submission.
+    ======================================================= -->
+
+    <% if (
+      user &&
+      ["admin", "staff"].includes(
+        String(user.role || "").toLowerCase()
+      )
+    ) { %>
+
+
+      <form
+        action="/products/addManyToCart"
+        method="POST"
+        id="branchAddManyToCartForm"
+      >
+
+        <% if (
+          String(user.role || "").toLowerCase() === "admin"
+        ) { %>
+
+          <input
+            type="hidden"
+            name="cartSubstation"
+            value="<%= substation._id %>"
+          >
+
+        <% } %>
+
+      </form>
+
+
+    <% } %>
+
+
+    <!-- ======================================================
          GROUP PRODUCTS BY CATEGORY
-    ====================================================== -->
+    =================================================== -->
 
     <%
       const groupedProducts = {};
@@ -121,7 +210,7 @@
 
     <!-- ======================================================
          CATEGORY GROUPS
-    ====================================================== -->
+    =================================================== -->
 
     <div class="branch-inventory-categories">
 
@@ -204,7 +293,7 @@
                        */
 
                       const productLink =
-  `/branch/${substation._id}/products/${product._id}`;
+                        `/branch/${substation._id}/products/${product._id}`;
 
 
                       /*
@@ -236,6 +325,15 @@
                             : product.subcategory
                         ) ||
                         "Other";
+
+
+                      /*
+                       * Product ID used by the add-many
+                       * cart form.
+                       */
+
+                      const productId =
+                        String(product._id);
                     %>
 
 
@@ -246,6 +344,8 @@
                     <a
                       href="<%= productLink %>"
                       class="branch-product-card"
+                      data-product-card
+                      data-product-id="<%= productId %>"
                     >
 
 
@@ -346,6 +446,53 @@
                         </div>
 
 
+                        <!-- =================================
+                             SELL QUANTITY INPUT
+
+                             Hidden until Sell Items mode
+                             is activated.
+                        ================================== -->
+
+                        <% if (
+                          user &&
+                          ["admin", "staff"].includes(
+                            String(user.role || "").toLowerCase()
+                          )
+                        ) { %>
+
+
+                          <div
+                            class="branch-sell-quantity"
+                            data-sell-quantity
+                          >
+
+                            <label
+                              for="sellQty_<%= productId %>"
+                            >
+                              Units
+                            </label>
+
+
+                            <input
+                              type="number"
+                              id="sellQty_<%= productId %>"
+                              class="branch-sell-quantity-input"
+                              data-product-id="<%= productId %>"
+                              min="0"
+                              max="<%= Number(product.substationUnits || 0) %>"
+                              step="1"
+                              value=""
+                              inputmode="numeric"
+                              autocomplete="off"
+                              placeholder="0"
+                            >
+
+                          </div>
+
+
+                        <% } %>
+
+
                       </div>
 
 
@@ -380,3 +527,472 @@
 
 
 </div>
+
+
+<!-- ==========================================================
+     SELL ITEMS JAVASCRIPT
+========================================================== -->
+
+<% if (
+  user &&
+  ["admin", "staff"].includes(
+    String(user.role || "").toLowerCase()
+  ) &&
+  substation.products &&
+  substation.products.length
+) { %>
+
+
+<script>
+
+(function () {
+
+    const sellButton =
+        document.getElementById(
+            "branchSellItemsButton"
+        );
+
+
+    const sellButtonText =
+        document.getElementById(
+            "branchSellItemsButtonText"
+        );
+
+
+    const sellForm =
+        document.getElementById(
+            "branchAddManyToCartForm"
+        );
+
+
+    const productCards =
+        document.querySelectorAll(
+            "[data-product-card]"
+        );
+
+
+    const quantityInputs =
+        document.querySelectorAll(
+            "[data-sell-quantity]"
+        );
+
+
+    if (
+        !sellButton ||
+        !sellButtonText ||
+        !sellForm
+    ) {
+
+        return;
+
+    }
+
+
+    let sellMode = false;
+
+
+    /*
+     * ======================================================
+     * ENTER / EXIT SELL MODE
+     * ======================================================
+     */
+
+    function setSellMode(enabled) {
+
+        sellMode = enabled;
+
+
+        document.body.classList.toggle(
+            "branch-selling-items",
+            enabled
+        );
+
+
+        productCards.forEach(
+            function (card) {
+
+                card.classList.toggle(
+                    "branch-product-card-selling",
+                    enabled
+                );
+
+            }
+        );
+
+
+        quantityInputs.forEach(
+            function (wrapper) {
+
+                wrapper.classList.toggle(
+                    "is-visible",
+                    enabled
+                );
+
+            }
+        );
+
+
+        sellButton.classList.toggle(
+            "is-selling",
+            enabled
+        );
+
+
+        if (enabled) {
+
+            sellButtonText.textContent =
+                "Sell Items";
+
+        } else {
+
+            sellButtonText.textContent =
+                "Sell Items";
+
+
+            document
+                .querySelectorAll(
+                    ".branch-sell-quantity-input"
+                )
+                .forEach(
+                    function (input) {
+
+                        input.value = "";
+
+                    }
+                );
+
+        }
+
+    }
+
+
+    /*
+     * ======================================================
+     * PREVENT PRODUCT LINK NAVIGATION WHILE SELLING
+     * ======================================================
+     */
+
+    productCards.forEach(
+        function (card) {
+
+            card.addEventListener(
+                "click",
+                function (event) {
+
+                    if (!sellMode) {
+                        return;
+                    }
+
+
+                    /*
+                     * While selling, tapping the card
+                     * must not open the product page.
+                     *
+                     * The quantity input remains usable.
+                     */
+
+                    if (
+                        event.target.closest(
+                            ".branch-sell-quantity"
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    event.preventDefault();
+
+                }
+            );
+
+        }
+    );
+
+
+    /*
+     * ======================================================
+     * QUANTITY INPUTS
+     * ======================================================
+     */
+
+    document
+        .querySelectorAll(
+            ".branch-sell-quantity-input"
+        )
+        .forEach(
+            function (input) {
+
+                input.addEventListener(
+                    "click",
+                    function (event) {
+
+                        event.stopPropagation();
+
+                    }
+                );
+
+
+                input.addEventListener(
+                    "keydown",
+                    function (event) {
+
+                        event.stopPropagation();
+
+                    }
+                );
+
+
+                input.addEventListener(
+                    "input",
+                    function () {
+
+                        const max =
+                            Number(
+                                input.max || 0
+                            );
+
+
+                        let value =
+                            Number(
+                                input.value
+                            );
+
+
+                        if (
+                            Number.isNaN(value) ||
+                            value < 0
+                        ) {
+
+                            input.value = "";
+
+                            return;
+
+                        }
+
+
+                        if (max > 0 && value > max) {
+
+                            input.value =
+                                String(max);
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+    /*
+     * ======================================================
+     * SUBMIT SELECTED PRODUCTS
+     * ======================================================
+     */
+
+    function submitSelectedProducts() {
+
+        /*
+         * Remove any previously generated
+         * product fields.
+         */
+
+        sellForm
+            .querySelectorAll(
+                "[data-generated-product]"
+            )
+            .forEach(
+                function (field) {
+
+                    field.remove();
+
+                }
+            );
+
+
+        const selectedProducts = [];
+
+
+        document
+            .querySelectorAll(
+                ".branch-sell-quantity-input"
+            )
+            .forEach(
+                function (input) {
+
+                    const productId =
+                        String(
+                            input.dataset.productId || ""
+                        ).trim();
+
+
+                    const quantity =
+                        Number(
+                            input.value
+                        );
+
+
+                    /*
+                     * Only products with a valid
+                     * quantity greater than zero
+                     * are submitted.
+                     */
+
+                    if (
+                        !productId ||
+                        !Number.isFinite(quantity) ||
+                        quantity <= 0
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    selectedProducts.push({
+                        productId,
+                        quantity
+                    });
+
+                }
+            );
+
+
+        /*
+         * Nothing selected.
+         */
+
+        if (!selectedProducts.length) {
+
+            alert(
+                "Enter the number of units for at least one product."
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * Create the exact structure expected
+         * by /products/addManyToCart:
+         *
+         * products[0][productId]
+         * products[0][qty]
+         *
+         * products[1][productId]
+         * products[1][qty]
+         *
+         * etc.
+         */
+
+        selectedProducts.forEach(
+            function (item, index) {
+
+                const productIdInput =
+                    document.createElement(
+                        "input"
+                    );
+
+
+                productIdInput.type =
+                    "hidden";
+
+
+                productIdInput.name =
+                    `products[${index}][productId]`;
+
+
+                productIdInput.value =
+                    item.productId;
+
+
+                productIdInput.dataset.generatedProduct =
+                    "true";
+
+
+                const quantityInput =
+                    document.createElement(
+                        "input"
+                    );
+
+
+                quantityInput.type =
+                    "hidden";
+
+
+                quantityInput.name =
+                    `products[${index}][qty]`;
+
+
+                quantityInput.value =
+                    String(item.quantity);
+
+
+                quantityInput.dataset.generatedProduct =
+                    "true";
+
+
+                sellForm.appendChild(
+                    productIdInput
+                );
+
+
+                sellForm.appendChild(
+                    quantityInput
+                );
+
+            }
+        );
+
+
+        /*
+         * Submit the form to:
+         *
+         * /products/addManyToCart
+         */
+
+        sellForm.submit();
+
+    }
+
+
+    /*
+     * ======================================================
+     * SELL BUTTON
+     *
+     * First tap:
+     *     Enter selling mode.
+     *
+     * Second tap:
+     *     Submit selected products.
+     * ======================================================
+     */
+
+    sellButton.addEventListener(
+        "click",
+        function () {
+
+            if (!sellMode) {
+
+                setSellMode(true);
+
+                return;
+
+            }
+
+
+            submitSelectedProducts();
+
+        }
+    );
+
+
+})();
+
+</script>
+
+
+<% } %>
