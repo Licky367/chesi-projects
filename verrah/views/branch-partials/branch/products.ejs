@@ -349,8 +349,8 @@ const categoryGroups =
     <% } %>
 
     <!-- ======================================================
-         ADD MANY PRODUCTS TO CART FORM - CORRECTED
-         cartSubstation is substation document from /branch/:id
+         ADD MANY PRODUCTS TO CART FORM - FIXED
+         cartSubstation is from mother page /branch/:id
     ======================================================= -->
 
     <% if (
@@ -365,7 +365,7 @@ const categoryGroups =
             method="POST"
             id="branchAddManyToCartForm"
         >
-            <!-- cartSubstation - ID from mother page /branch/:id -->
+            <!-- FIXED: submit for BOTH admin and staff, not admin only -->
             <input
                 type="hidden"
                 name="cartSubstation"
@@ -470,7 +470,7 @@ document.addEventListener(
             if (sellButtonText) {
                 sellButtonText.textContent =
                     enabled
-                       ? "Done"
+                      ? "Done"
                         : "Sell Items";
             }
 
@@ -497,7 +497,7 @@ document.addEventListener(
                         Number(rawQuantity);
 
                     if (
-                       !Number.isFinite(quantity) ||
+                      !Number.isFinite(quantity) ||
                         quantity <= 0
                     ) {
                         return;
@@ -520,16 +520,16 @@ document.addEventListener(
         ) {
 
             sellForm
-               .querySelectorAll(
+              .querySelectorAll(
                     "[data-generated-product]"
                 )
-               .forEach(
+              .forEach(
                     function(field) {
                         field.remove();
                     }
                 );
 
-            // Ensure cartSubstation is correct ID from /branch/:id URL
+            // Ensure cartSubstation is the correct ID from URL /branch/:id
             if (cartSubstationInput) {
                 const match = window.location.pathname.match(/\/branch\/([^\/]+)/);
                 if (match && match[1]) {
@@ -557,7 +557,7 @@ document.addEventListener(
                         item.productId;
 
                     productIdInput.dataset
-                       .generatedProduct =
+                      .generatedProduct =
                         "true";
 
                     sellForm.appendChild(
@@ -581,7 +581,7 @@ document.addEventListener(
                         item.quantity;
 
                     quantityInput.dataset
-                       .generatedProduct =
+                      .generatedProduct =
                         "true";
 
                     sellForm.appendChild(
@@ -608,7 +608,7 @@ document.addEventListener(
                         getSelectedProducts();
 
                     if (
-                       !selectedProducts.length
+                      !selectedProducts.length
                     ) {
                         setSellMode(false);
                         return;
@@ -703,7 +703,7 @@ document.addEventListener(
                             Number(this.value);
 
                         if (
-                           !Number.isFinite(quantity)
+                          !Number.isFinite(quantity)
                         ) {
                             this.value = "";
                             return;
