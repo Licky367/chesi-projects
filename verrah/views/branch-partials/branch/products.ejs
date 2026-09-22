@@ -3,36 +3,12 @@
 ==========================================================
 VERRAH COSMETICS
 BRANCH PRODUCTS
-
-Displays products belonging to the current substation.
-
-Product card:
-- Product image
-- Product name
-- Unit selling price
-- Available units
-
-Admin / Staff:
-- Can activate Sell Items mode
-- Can enter quantities for multiple products
-- Can submit selected products to /products/addManyToCart
-
-Admin:
-- Sends the parent branch/substation ID as cartSubstation
-
-Staff:
-- Does not send cartSubstation
 ==========================================================
 */
 
-
-/* ==========================================================
-   GROUP PRODUCTS BY CATEGORY
-========================================================== */
-
 const groupedProducts = {};
 
-(substation.products || []).forEach(product => {
+(substation.products || []).forEach(function(product) {
 
     const categoryName =
         product.categoryName ||
@@ -44,7 +20,6 @@ const groupedProducts = {};
         ) ||
         "Other";
 
-
     if (!groupedProducts[categoryName]) {
         groupedProducts[categoryName] = [];
     }
@@ -52,7 +27,6 @@ const groupedProducts = {};
     groupedProducts[categoryName].push(product);
 
 });
-
 
 const categoryGroups =
     Object.entries(groupedProducts);
@@ -68,7 +42,6 @@ const categoryGroups =
     ======================================================= -->
 
     <div class="branch-inventory-header">
-
 
         <div class="branch-inventory-heading">
 
@@ -86,10 +59,6 @@ const categoryGroups =
         </div>
 
 
-        <!-- ==================================================
-             HEADER ACTIONS
-        =================================================== -->
-
         <div class="branch-inventory-header-actions">
 
             <% if (
@@ -98,7 +67,6 @@ const categoryGroups =
                     String(user.role || "").toLowerCase()
                 )
             ) { %>
-
 
                 <button
                     type="button"
@@ -113,7 +81,6 @@ const categoryGroups =
                     </span>
 
                 </button>
-
 
             <% } %>
 
@@ -140,7 +107,6 @@ const categoryGroups =
         !substation.products.length
     ) { %>
 
-
         <div class="branch-inventory-empty">
 
             <i class="fas fa-box-open"></i>
@@ -151,9 +117,7 @@ const categoryGroups =
 
         </div>
 
-
     <% } else { %>
-
 
 
         <!-- ==================================================
@@ -163,9 +127,19 @@ const categoryGroups =
         <div class="branch-inventory-categories">
 
 
-            <% categoryGroups.forEach(
-                ([categoryName, products])
-            => { %>
+            <%
+            for (
+                let categoryIndex = 0;
+                categoryIndex < categoryGroups.length;
+                categoryIndex++
+            ) {
+
+                const categoryName =
+                    categoryGroups[categoryIndex][0];
+
+                const products =
+                    categoryGroups[categoryIndex][1];
+            %>
 
 
                 <section
@@ -212,8 +186,16 @@ const categoryGroups =
                         %>
 
 
-                        <% productRows.forEach(
-                            productRow => { %>
+                        <%
+                        for (
+                            let rowIndex = 0;
+                            rowIndex < productRows.length;
+                            rowIndex++
+                        ) {
+
+                            const productRow =
+                                productRows[rowIndex];
+                        %>
 
 
                             <div class="branch-product-row">
@@ -222,15 +204,21 @@ const categoryGroups =
                                 <div class="branch-product-scroller">
 
 
-                                    <% productRow.forEach(
-                                        product => {
+                                    <%
+                                    for (
+                                        let productIndex = 0;
+                                        productIndex < productRow.length;
+                                        productIndex++
+                                    ) {
+
+                                        const product =
+                                            productRow[productIndex];
 
                                         const productId =
                                             String(product._id);
 
                                         const productLink =
                                             `/branch/${substation._id}/products/${product._id}`;
-
                                     %>
 
 
@@ -298,7 +286,6 @@ const categoryGroups =
 
                                                 <div class="branch-product-meta">
 
-
                                                     <span class="branch-product-category">
 
                                                         KSh <%= Number(
@@ -307,12 +294,10 @@ const categoryGroups =
 
                                                     </span>
 
-
                                                 </div>
 
 
                                                 <div class="branch-product-quantity">
-
 
                                                     <strong>
                                                         <%= Number(
@@ -320,11 +305,9 @@ const categoryGroups =
                                                         ).toLocaleString() %>
                                                     </strong>
 
-
                                                     <span>
                                                         units
                                                     </span>
-
 
                                                 </div>
 
@@ -353,7 +336,6 @@ const categoryGroups =
                                                 data-sell-quantity
                                             >
 
-
                                                 <label
                                                     for="sellQty_<%= productId %>"
                                                 >
@@ -375,14 +357,15 @@ const categoryGroups =
                                                     placeholder="0"
                                                 >
 
-
                                             </div>
 
 
                                         <% } %>
 
 
-                                    <% }) %>
+                                    <%
+                                    }
+                                    %>
 
 
                                 </div>
@@ -391,7 +374,9 @@ const categoryGroups =
                             </div>
 
 
-                        <% }) %>
+                        <%
+                        }
+                        %>
 
 
                     </div>
@@ -400,7 +385,9 @@ const categoryGroups =
                 </section>
 
 
-            <% }) %>
+            <%
+            }
+            %>
 
 
         </div>
@@ -513,7 +500,6 @@ document.addEventListener(
             );
 
 
-
         /* ======================================================
            SELL MODE
         ======================================================= */
@@ -537,37 +523,41 @@ document.addEventListener(
             );
 
 
-            productCards.forEach(card => {
+            productCards.forEach(
+                function(card) {
 
-                card.classList.toggle(
-                    "branch-product-card-selling",
-                    enabled
-                );
+                    card.classList.toggle(
+                        "branch-product-card-selling",
+                        enabled
+                    );
 
-            });
+                }
+            );
 
 
-            quantityWrappers.forEach(wrapper => {
+            quantityWrappers.forEach(
+                function(wrapper) {
 
-                wrapper.classList.toggle(
-                    "is-visible",
-                    enabled
-                );
+                    wrapper.classList.toggle(
+                        "is-visible",
+                        enabled
+                    );
 
-            });
-
+                }
+            );
 
 
             if (!enabled) {
 
-                quantityInputs.forEach(input => {
+                quantityInputs.forEach(
+                    function(input) {
 
-                    input.value = "";
+                        input.value = "";
 
-                });
+                    }
+                );
 
             }
-
 
 
             if (sellButtonText) {
@@ -592,41 +582,45 @@ document.addEventListener(
             const selectedProducts = [];
 
 
-            quantityInputs.forEach(input => {
+            quantityInputs.forEach(
+                function(input) {
 
-                const productId =
-                    input.dataset.productId;
-
-
-                const rawQuantity =
-                    input.value.trim();
+                    const productId =
+                        input.dataset.productId;
 
 
-                if (!rawQuantity) {
-                    return;
+                    const rawQuantity =
+                        input.value.trim();
+
+
+                    if (!rawQuantity) {
+                        return;
+                    }
+
+
+                    const quantity =
+                        Number(rawQuantity);
+
+
+                    if (
+                        !Number.isFinite(quantity) ||
+                        quantity <= 0
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    selectedProducts.push({
+
+                        productId: productId,
+                        quantity: quantity
+
+                    });
+
                 }
-
-
-                const quantity =
-                    Number(rawQuantity);
-
-
-                if (
-                    !Number.isFinite(quantity) ||
-                    quantity <= 0
-                ) {
-                    return;
-                }
-
-
-                selectedProducts.push({
-
-                    productId,
-                    quantity
-
-                });
-
-            });
+            );
 
 
             return selectedProducts;
@@ -644,27 +638,21 @@ document.addEventListener(
         ) {
 
 
-            /*
-             * Remove only dynamically generated
-             * product fields.
-             *
-             * cartSubstation remains untouched.
-             */
-
             sellForm
                 .querySelectorAll(
                     "[data-generated-product]"
                 )
-                .forEach(field => {
+                .forEach(
+                    function(field) {
 
-                    field.remove();
+                        field.remove();
 
-                });
-
+                    }
+                );
 
 
             selectedProducts.forEach(
-                (item, index) => {
+                function(item, index) {
 
 
                     const productIdInput =
@@ -678,7 +666,9 @@ document.addEventListener(
 
 
                     productIdInput.name =
-                        `products[${index}][productId]`;
+                        "products[" +
+                        index +
+                        "][productId]";
 
 
                     productIdInput.value =
@@ -707,7 +697,9 @@ document.addEventListener(
 
 
                     quantityInput.name =
-                        `products[${index}][qty]`;
+                        "products[" +
+                        index +
+                        "][qty]";
 
 
                     quantityInput.value =
@@ -723,7 +715,8 @@ document.addEventListener(
                         quantityInput
                     );
 
-                });
+                }
+            );
 
         }
 
@@ -735,15 +728,14 @@ document.addEventListener(
 
         if (sellButton) {
 
-
             sellButton.addEventListener(
                 "click",
                 function () {
 
 
                     /*
-                     * First click:
-                     * enter sell mode.
+                     * FIRST CLICK
+                     * Enter sell mode.
                      */
 
                     if (!sellMode) {
@@ -757,8 +749,8 @@ document.addEventListener(
 
 
                     /*
-                     * Second click:
-                     * collect selected products.
+                     * SECOND CLICK
+                     * Collect selected products.
                      */
 
                     const selectedProducts =
@@ -767,10 +759,8 @@ document.addEventListener(
 
 
                     /*
-                     * No quantities:
-                     * simply exit sell mode.
-                     *
-                     * Nothing is submitted.
+                     * No quantities entered.
+                     * Exit without submitting.
                      */
 
                     if (
@@ -786,8 +776,8 @@ document.addEventListener(
 
 
                     /*
-                     * Products selected:
-                     * prepare and submit form.
+                     * Products selected.
+                     * Prepare and submit.
                      */
 
                     prepareForm(
@@ -811,34 +801,29 @@ document.addEventListener(
            PRODUCT CARD CLICK
         ======================================================= */
 
-        productCards.forEach(card => {
+        productCards.forEach(
+            function(card) {
+
+                card.addEventListener(
+                    "click",
+                    function(event) {
 
 
-            card.addEventListener(
-                "click",
-                function (event) {
+                        if (!sellMode) {
+                            return;
+                        }
 
 
-                    /*
-                     * While selling, product cards
-                     * must not navigate to their
-                     * product pages.
-                     */
+                        event.preventDefault();
 
-                    if (!sellMode) {
-                        return;
-                    }
+                        event.stopPropagation();
 
+                    },
+                    true
+                );
 
-                    event.preventDefault();
-
-                    event.stopPropagation();
-
-                },
-                true
-            );
-
-        });
+            }
+        );
 
 
 
@@ -846,137 +831,128 @@ document.addEventListener(
            QUANTITY INPUT INTERACTION
         ======================================================= */
 
-        quantityInputs.forEach(input => {
+        quantityInputs.forEach(
+            function(input) {
 
 
-            /*
-             * Prevent input interaction from
-             * triggering surrounding controls.
-             */
+                input.addEventListener(
+                    "click",
+                    function(event) {
 
-            input.addEventListener(
-                "click",
-                function (event) {
-
-                    event.stopPropagation();
-
-                }
-            );
-
-
-            input.addEventListener(
-                "pointerdown",
-                function (event) {
-
-                    event.stopPropagation();
-
-                }
-            );
-
-
-            input.addEventListener(
-                "mousedown",
-                function (event) {
-
-                    event.stopPropagation();
-
-                }
-            );
-
-
-            input.addEventListener(
-                "touchstart",
-                function (event) {
-
-                    event.stopPropagation();
-
-                },
-                {
-                    passive: true
-                }
-            );
-
-
-            input.addEventListener(
-                "keydown",
-                function (event) {
-
-                    event.stopPropagation();
-
-                }
-            );
-
-
-
-            /* ==================================================
-               QUANTITY VALIDATION / CLAMPING
-            =================================================== */
-
-            input.addEventListener(
-                "input",
-                function () {
-
-
-                    /*
-                     * Allow empty input while
-                     * the user is typing.
-                     */
-
-                    if (
-                        this.value === ""
-                    ) {
-
-                        return;
+                        event.stopPropagation();
 
                     }
+                );
 
 
-                    let quantity =
-                        Number(this.value);
+                input.addEventListener(
+                    "pointerdown",
+                    function(event) {
 
-
-                    if (
-                        !Number.isFinite(quantity)
-                    ) {
-
-                        this.value = "";
-
-                        return;
+                        event.stopPropagation();
 
                     }
+                );
 
 
-                    const max =
-                        Number(this.max);
+                input.addEventListener(
+                    "mousedown",
+                    function(event) {
 
-
-                    if (
-                        Number.isFinite(max) &&
-                        quantity > max
-                    ) {
-
-                        quantity = max;
+                        event.stopPropagation();
 
                     }
+                );
 
 
-                    if (quantity < 0) {
+                input.addEventListener(
+                    "touchstart",
+                    function(event) {
 
-                        quantity = 0;
+                        event.stopPropagation();
+
+                    },
+                    {
+                        passive: true
+                    }
+                );
+
+
+                input.addEventListener(
+                    "keydown",
+                    function(event) {
+
+                        event.stopPropagation();
 
                     }
+                );
 
 
-                    this.value =
-                        String(
-                            Math.floor(quantity)
-                        );
 
-                }
-            );
+                /* ==============================================
+                   QUANTITY VALIDATION
+                =============================================== */
 
-        });
+                input.addEventListener(
+                    "input",
+                    function() {
 
+
+                        if (
+                            this.value === ""
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        let quantity =
+                            Number(this.value);
+
+
+                        if (
+                            !Number.isFinite(quantity)
+                        ) {
+
+                            this.value = "";
+
+                            return;
+
+                        }
+
+
+                        const max =
+                            Number(this.max);
+
+
+                        if (
+                            Number.isFinite(max) &&
+                            quantity > max
+                        ) {
+
+                            quantity = max;
+
+                        }
+
+
+                        if (quantity < 0) {
+
+                            quantity = 0;
+
+                        }
+
+
+                        this.value =
+                            String(
+                                Math.floor(quantity)
+                            );
+
+                    }
+                );
+
+            }
+        );
 
     }
 );
