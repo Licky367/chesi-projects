@@ -158,36 +158,23 @@
           String(user.role || "").toLowerCase() === "admin"
         ) { %>
 
-          <%
-            /*
-             * The parent branch page is:
+          <!--
+            The parent page is:
 
-                 /branch/:id
+                /branch/:id
 
-             * Therefore use the :id from the current
-             * parent URL.
+            The "substation" loaded for that page is the
+            document represented by that :id.
 
-             * Example:
+            Therefore substation._id IS the parent :id.
 
-                 /branch/68abc123/products
-
-             * parentBranchId becomes:
-
-                 68abc123
-            */
-
-            const parentBranchId =
-              String(
-                window.location.pathname
-              )
-              .split("/")
-              .filter(Boolean)[1];
-          %>
+            Only the MongoDB ID is submitted here.
+          -->
 
           <input
             type="hidden"
             name="cartSubstation"
-            value="<%= parentBranchId %>"
+            value="<%= String(substation._id) %>"
           >
 
         <% } %>
@@ -435,8 +422,6 @@
 
                     <!-- ======================================
                          SELL QUANTITY
-
-                         OUTSIDE THE PRODUCT LINK
                     ======================================= -->
 
                     <% if (
@@ -527,33 +512,6 @@
 (function () {
 
     "use strict";
-
-
-    /* ======================================================
-       GET PARENT /branch/:id ID
-       
-       The page is loaded under:
-
-           /branch/:id/products
-
-       or:
-
-           /branch/:id/products/:productId
-
-       Therefore the second URL segment is the parent
-       branch/substation ID.
-    ====================================================== */
-
-    const pathParts =
-        window.location.pathname
-            .split("/")
-            .filter(Boolean);
-
-
-    const parentBranchId =
-        String(
-            pathParts[1] || ""
-        ).trim();
 
 
     /* ======================================================
@@ -875,10 +833,9 @@
     ) {
 
         /*
-         * Remove only previously generated
-         * product fields.
+         * Remove only generated product fields.
          *
-         * cartSubstation is NOT removed.
+         * The cartSubstation hidden input is preserved.
          */
 
         sellForm
@@ -992,7 +949,7 @@
 
             /*
              * Nothing entered:
-             * exit without submitting.
+             * simply leave sell mode.
              */
 
             if (!selectedProducts.length) {
@@ -1005,60 +962,15 @@
 
 
             /*
-             * ADMIN ONLY:
-             *
-             * cartSubstation MUST be the ID from
-             * the parent /branch/:id URL.
-             */
-
-            if (
-                String(
-                    "<%= String(user.role || "").toLowerCase() %>"
-                ) === "admin"
-            ) {
-
-                if (!parentBranchId) {
-
-                    setSellMode(false);
-
-                    return;
-
-                }
-
-
-                const cartSubstationInput =
-                    sellForm.querySelector(
-                        'input[name="cartSubstation"]'
-                    );
-
-
-                if (!cartSubstationInput) {
-
-                    setSellMode(false);
-
-                    return;
-
-                }
-
-
-                cartSubstationInput.value =
-                    parentBranchId;
-
-            }
-
-
-            /*
-             * Add the selected products.
+             * The hidden cartSubstation field was rendered
+             * from substation._id, which is the :id of the
+             * parent /branch/:id page.
              */
 
             prepareForm(
                 selectedProducts
             );
 
-
-            /*
-             * Close sell mode.
-             */
 
             setSellMode(false);
 
