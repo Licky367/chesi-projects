@@ -1,35 +1,37 @@
+
+
 <%
-/*
+/_
 
 VERRAH COSMETICS
 BRANCH PRODUCTS
 
-*/
+_/
 
 const groupedProducts = {};
 
 (substation.products || []).forEach(function(product) {
 
     const categoryName =
-        product.categoryName ||
+        http://product.categoryName ||
         (
-            product.category &&
-            typeof product.category === "object"
-               ? product.category.name
-                : product.category
+            http://product.category &&
+            typeof http://product.category === "object"
+               ? http://product.category.name
+                : http://product.category
         ) ||
         "Other";
 
-    if (!groupedProducts[categoryName]) {
-        groupedProducts[categoryName] = [];
-    }
+    if (!groupedProducts) {
+        groupedProducts = [];
+    }[categoryName]
 
-    groupedProducts[categoryName].push(product);
+    http://groupedProducts.push(product);[categoryName]
 
 });
 
 const categoryGroups =
-    Object.entries(groupedProducts);
+    http://Object.entries(groupedProducts);
 
 %>
 
@@ -121,16 +123,16 @@ const categoryGroups =
             <%
             for (
                 let categoryIndex = 0;
-                categoryIndex < categoryGroups.length;
+                categoryIndex < http://categoryGroups.length;
                 categoryIndex++
             ) {
 
                 const categoryName =
-                    categoryGroups[categoryIndex][0];
+                    categoryGroups;[categoryIndex][0]
 
                 const products =
-                    categoryGroups[categoryIndex][1];
-            %>
+                    categoryGroups;
+            %>[categoryIndex][1]
 
                 <section
                     class="branch-inventory-category"
@@ -160,12 +162,12 @@ const categoryGroups =
 
                         for (
                             let i = 0;
-                            i < products.length;
+                            i < http://products.length;
                             i += 6
                         ) {
 
-                            productRows.push(
-                                products.slice(i, i + 6)
+                            http://productRows.push(
+                                http://products.slice(i, i + 6)
                             );
 
                         }
@@ -174,13 +176,13 @@ const categoryGroups =
                         <%
                         for (
                             let rowIndex = 0;
-                            rowIndex < productRows.length;
+                            rowIndex < http://productRows.length;
                             rowIndex++
                         ) {
 
                             const productRow =
-                                productRows[rowIndex];
-                        %>
+                                productRows;
+                        %>[rowIndex]
 
                             <div class="branch-product-row">
 
@@ -189,12 +191,12 @@ const categoryGroups =
                                     <%
                                     for (
                                         let productIndex = 0;
-                                        productIndex < productRow.length;
+                                        productIndex < http://productRow.length;
                                         productIndex++
                                     ) {
 
                                         const product =
-                                            productRow[productIndex];
+                                            productRow;[productIndex]
 
                                         const productId =
                                             String(product._id);
@@ -221,14 +223,14 @@ const categoryGroups =
                                             <div class="branch-product-photo">
 
                                                 <% if (
-                                                    product.image ||
-                                                    product.imageUrl ||
-                                                    product.photo
+                                                    http://product.image ||
+                                                    http://product.imageUrl ||
+                                                    http://product.photo
                                                 ) { %>
 
                                                     <img
-                                                        src="<%= product.image || product.imageUrl || product.photo %>"
-                                                        alt="<%= product.name %>"
+                                                        src="<%= http://product.image || http://product.imageUrl || http://product.photo %>"
+                                                        alt="<%= http://product.name %>"
                                                         loading="lazy"
                                                     >
 
@@ -251,7 +253,7 @@ const categoryGroups =
                                             <div class="branch-product-details">
 
                                                 <h4 class="branch-product-name">
-                                                    <%= product.name %>
+                                                    <%= http://product.name %>
                                                 </h4>
 
                                                 <div class="branch-product-meta">
@@ -259,7 +261,7 @@ const categoryGroups =
                                                     <span class="branch-product-category">
 
                                                         KSh <%= Number(
-                                                            product.unitSellPrice || 0
+                                                            http://product.unitSellPrice || 0
                                                         ).toLocaleString() %>
 
                                                     </span>
@@ -270,7 +272,7 @@ const categoryGroups =
 
                                                     <strong>
                                                         <%= Number(
-                                                            product.substationUnits || 0
+                                                            http://product.substationUnits || 0
                                                         ).toLocaleString() %>
                                                     </strong>
 
@@ -349,8 +351,7 @@ const categoryGroups =
     <% } %>
 
     <!-- ======================================================
-         ADD MANY PRODUCTS TO CART FORM - FIXED
-         cartSubstation is from mother page /branch/:id
+         ADD MANY PRODUCTS TO CART FORM
     ======================================================= -->
 
     <% if (
@@ -365,13 +366,19 @@ const categoryGroups =
             method="POST"
             id="branchAddManyToCartForm"
         >
-            <!-- FIXED: submit for BOTH admin and staff, not admin only -->
-            <input
-                type="hidden"
-                name="cartSubstation"
-                id="cartSubstationInput"
-                value="<%= substation._id %>"
-            >
+
+            <% if (
+                String(user.role || "").toLowerCase() === "admin"
+            ) { %>
+
+                <input
+                    type="hidden"
+                    name="cartSubstation"
+                    value="<%= String(substation._id) %>"
+                >
+
+            <% } %>
+
         </form>
 
     <% } %>
@@ -391,103 +398,124 @@ const categoryGroups =
 
 <script>
 
-document.addEventListener(
+http://document.addEventListener(
     "DOMContentLoaded",
     function () {
 
+        /_ ======================================================
+           ELEMENTS
+        ======================================================= _/
+
         const sellButton =
-            document.getElementById(
+            http://document.getElementById(
                 "branchSellItemsButton"
             );
 
         const sellButtonText =
-            document.getElementById(
+            http://document.getElementById(
                 "branchSellItemsButtonText"
             );
 
         const sellForm =
-            document.getElementById(
+            http://document.getElementById(
                 "branchAddManyToCartForm"
             );
 
         const productCards =
-            document.querySelectorAll(
+            http://document.querySelectorAll(
                 "[data-product-card]"
             );
 
         const quantityWrappers =
-            document.querySelectorAll(
+            http://document.querySelectorAll(
                 "[data-sell-quantity]"
             );
 
         const quantityInputs =
-            document.querySelectorAll(
+            http://document.querySelectorAll(
                 ".branch-sell-quantity-input"
             );
 
-        const cartSubstationInput =
-            document.getElementById(
-                "cartSubstationInput"
-            );
+        /_ ======================================================
+           SELL MODE
+        ======================================================= _/
 
         let sellMode = false;
+
+        /_ ======================================================
+           SET SELL MODE
+        ======================================================= _/
 
         function setSellMode(enabled) {
 
             sellMode = enabled;
 
-            document.body.classList.toggle(
+            http://document.body.classList.toggle(
                 "branch-selling-items",
                 enabled
             );
 
-            productCards.forEach(
+            http://productCards.forEach(
                 function(card) {
-                    card.classList.toggle(
+
+                    http://card.classList.toggle(
                         "branch-product-card-selling",
                         enabled
                     );
+
                 }
             );
 
-            quantityWrappers.forEach(
+            http://quantityWrappers.forEach(
                 function(wrapper) {
-                    wrapper.classList.toggle(
+
+                    http://wrapper.classList.toggle(
                         "is-visible",
                         enabled
                     );
+
                 }
             );
 
             if (!enabled) {
-                quantityInputs.forEach(
+
+                http://quantityInputs.forEach(
                     function(input) {
-                        input.value = "";
+
+                        http://input.value = "";
+
                     }
                 );
+
             }
 
             if (sellButtonText) {
-                sellButtonText.textContent =
+
+                http://sellButtonText.textContent =
                     enabled
-                      ? "Done"
+                       ? "Done"
                         : "Sell Items";
+
             }
 
         }
+
+        /_ ======================================================
+           GET SELECTED PRODUCTS
+        ======================================================= _/
 
         function getSelectedProducts() {
 
             const selectedProducts = [];
 
-            quantityInputs.forEach(
+            http://quantityInputs.forEach(
                 function(input) {
 
                     const productId =
-                        input.dataset.productId;
+                        http://input.dataset.productId;
 
                     const rawQuantity =
-                        input.value.trim();
+                        http://input.value.trim();
 
                     if (!rawQuantity) {
                         return;
@@ -497,15 +525,19 @@ document.addEventListener(
                         Number(rawQuantity);
 
                     if (
-                      !Number.isFinite(quantity) ||
+                       !Number.isFinite(quantity) ||
                         quantity <= 0
                     ) {
+
                         return;
+
                     }
 
-                    selectedProducts.push({
+                    http://selectedProducts.push({
+
                         productId: productId,
                         quantity: quantity
+
                     });
 
                 }
@@ -515,76 +547,74 @@ document.addEventListener(
 
         }
 
+        /_ ======================================================
+           PREPARE FORM
+        ======================================================= _/
+
         function prepareForm(
             selectedProducts
         ) {
 
             sellForm
-              .querySelectorAll(
+               .querySelectorAll(
                     "[data-generated-product]"
                 )
-              .forEach(
+               .forEach(
                     function(field) {
-                        field.remove();
+
+                        http://field.remove();
+
                     }
                 );
 
-            // Ensure cartSubstation is the correct ID from URL /branch/:id
-            if (cartSubstationInput) {
-                const match = window.location.pathname.match(/\/branch\/([^\/]+)/);
-                if (match && match[1]) {
-                    cartSubstationInput.value = match[1];
-                }
-            }
-
-            selectedProducts.forEach(
+            http://selectedProducts.forEach(
                 function(item, index) {
 
                     const productIdInput =
-                        document.createElement(
+                        http://document.createElement(
                             "input"
                         );
 
-                    productIdInput.type =
+                    http://productIdInput.type =
                         "hidden";
 
-                    productIdInput.name =
+                    http://productIdInput.name =
                         "products[" +
                         index +
-                        "][productId]";
+                        "]";[productId]
 
-                    productIdInput.value =
-                        item.productId;
+                    http://productIdInput.value =
+                        http://item.productId;
 
-                    productIdInput.dataset
-                      .generatedProduct =
+                    http://productIdInput.dataset
+                       .generatedProduct =
                         "true";
 
-                    sellForm.appendChild(
+                    http://sellForm.appendChild(
                         productIdInput
                     );
 
                     const quantityInput =
-                        document.createElement(
+                        http://document.createElement(
                             "input"
                         );
 
-                    quantityInput.type =
+                    http://quantityInput.type =
                         "hidden";
 
-                    quantityInput.name =
+                    http://quantityInput.name =
                         "products[" +
                         index +
-                        "][qty]";
+                        "]";[qty]
 
-                    quantityInput.value =
-                        item.quantity;
+                    http://quantityInput.value =
+                        http://item.quantity;
 
-                    quantityInput.dataset
-                      .generatedProduct =
+                    http://quantityInput.dataset
+                       .generatedProduct =
                         "true";
 
-                    sellForm.appendChild(
+                    http://sellForm.appendChild(
                         quantityInput
                     );
 
@@ -593,26 +623,56 @@ document.addEventListener(
 
         }
 
+        /_ ======================================================
+           SELL BUTTON
+        ======================================================= _/
+
         if (sellButton) {
 
-            sellButton.addEventListener(
+            http://sellButton.addEventListener(
                 "click",
                 function () {
 
+                    /_
+                     - FIRST CLICK
+                     - Enter sell mode.
+                     _/
+
                     if (!sellMode) {
+
                         setSellMode(true);
+
                         return;
+
                     }
+
+                    /_
+                     - SECOND CLICK
+                     - Collect selected products.
+                     _/
 
                     const selectedProducts =
                         getSelectedProducts();
 
+                    /_
+                     - No quantities entered.
+                     - Exit without submitting.
+                     _/
+
                     if (
-                      !selectedProducts.length
+                       !selectedProducts.length
                     ) {
+
                         setSellMode(false);
+
                         return;
+
                     }
+
+                    /_
+                     - Products selected.
+                     - Prepare and submit.
+                     _/
 
                     prepareForm(
                         selectedProducts
@@ -620,17 +680,21 @@ document.addEventListener(
 
                     setSellMode(false);
 
-                    sellForm.submit();
+                    http://sellForm.submit();
 
                 }
             );
 
         }
 
-        productCards.forEach(
+        /_ ======================================================
+           PRODUCT CARD CLICK
+        ======================================================= _/
+
+        http://productCards.forEach(
             function(card) {
 
-                card.addEventListener(
+                http://card.addEventListener(
                     "click",
                     function(event) {
 
@@ -638,8 +702,9 @@ document.addEventListener(
                             return;
                         }
 
-                        event.preventDefault();
-                        event.stopPropagation();
+                        http://event.preventDefault();
+
+                        http://event.stopPropagation();
 
                     },
                     true
@@ -648,84 +713,111 @@ document.addEventListener(
             }
         );
 
-        quantityInputs.forEach(
+        /_ ======================================================
+           QUANTITY INPUT INTERACTION
+        ======================================================= _/
+
+        http://quantityInputs.forEach(
             function(input) {
 
-                input.addEventListener(
+                http://input.addEventListener(
                     "click",
                     function(event) {
-                        event.stopPropagation();
+
+                        http://event.stopPropagation();
+
                     }
                 );
 
-                input.addEventListener(
+                http://input.addEventListener(
                     "pointerdown",
                     function(event) {
-                        event.stopPropagation();
+
+                        http://event.stopPropagation();
+
                     }
                 );
 
-                input.addEventListener(
+                http://input.addEventListener(
                     "mousedown",
                     function(event) {
-                        event.stopPropagation();
+
+                        http://event.stopPropagation();
+
                     }
                 );
 
-                input.addEventListener(
+                http://input.addEventListener(
                     "touchstart",
                     function(event) {
-                        event.stopPropagation();
+
+                        http://event.stopPropagation();
+
                     },
                     {
                         passive: true
                     }
                 );
 
-                input.addEventListener(
+                http://input.addEventListener(
                     "keydown",
                     function(event) {
-                        event.stopPropagation();
+
+                        http://event.stopPropagation();
+
                     }
                 );
 
-                input.addEventListener(
+                /_ ==============================================
+                   QUANTITY VALIDATION
+                =============================================== _/
+
+                http://input.addEventListener(
                     "input",
                     function() {
 
                         if (
-                            this.value === ""
+                            http://this.value === ""
                         ) {
+
                             return;
+
                         }
 
                         let quantity =
                             Number(this.value);
 
                         if (
-                          !Number.isFinite(quantity)
+                           !Number.isFinite(quantity)
                         ) {
-                            this.value = "";
+
+                            http://this.value = "";
+
                             return;
+
                         }
 
                         const max =
                             Number(this.max);
 
                         if (
-                            Number.isFinite(max) &&
+                            http://Number.isFinite(max) &&
                             quantity > max
                         ) {
+
                             quantity = max;
+
                         }
 
                         if (quantity < 0) {
+
                             quantity = 0;
+
                         }
 
-                        this.value =
+                        http://this.value =
                             String(
-                                Math.floor(quantity)
+                                http://Math.floor(quantity)
                             );
 
                     }
