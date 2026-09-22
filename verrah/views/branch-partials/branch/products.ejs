@@ -1,496 +1,457 @@
-<!-- ==========================================================
-   views/branch-partials/branch/products.ejs
+<%
+/*
+==========================================================
+VERRAH COSMETICS
+BRANCH PRODUCTS
 
-   VERRAH COSMETICS
-   SUBSTATION PRODUCTS / INVENTORY
+Displays products belonging to the current substation.
 
-   ----------------------------------------------------------
-   BEHAVIOUR:
+Product card:
+- Product image
+- Product name
+- Unit selling price
+- Available units
 
-   - Products grouped by category
-   - Each category has its own rows
-   - Maximum 6 products per row
-   - 7th product starts a new row
-   - Each row scrolls horizontally
-   - Product card: 112px × 155px
-   - All roles:
-       /branch/:substationId/products/:productId
+Admin / Staff:
+- Can activate Sell Items mode
+- Can enter quantities for multiple products
+- Can submit selected products to /products/addManyToCart
 
-   ----------------------------------------------------------
-   SELL ITEMS:
+Admin:
+- Sends the parent branch/substation ID as cartSubstation
 
-   - Admin and staff can sell multiple products
-   - First "Sell Items" tap enables quantity inputs
-   - Product cards cannot navigate while editing
-   - Quantity inputs remain clickable/editable
-   - Second "Sell Items" tap:
-       WITH quantities:
-           submit selected products
-       WITHOUT quantities:
-           exit sell mode only
-   - After exiting/submitting:
-       quantity inputs close
-       cards become clickable again
-
-   - Admin submits:
-       cartSubstation = parent /branch/:id ID
-
-========================================================== -->
+Staff:
+- Does not send cartSubstation
+==========================================================
+*/
 
 
-<div class="branch-inventory">
+/* ==========================================================
+   GROUP PRODUCTS BY CATEGORY
+========================================================== */
+
+const groupedProducts = {};
+
+(substation.products || []).forEach(product => {
+
+    const categoryName =
+        product.categoryName ||
+        (
+            product.category &&
+            typeof product.category === "object"
+                ? product.category.name
+                : product.category
+        ) ||
+        "Other";
 
 
-  <!-- ========================================================
-       INVENTORY HEADER
-  ========================================================= -->
+    if (!groupedProducts[categoryName]) {
+        groupedProducts[categoryName] = [];
+    }
 
-  <div class="branch-inventory-header">
+    groupedProducts[categoryName].push(product);
 
-    <div class="branch-inventory-heading">
-
-      <h2>
-        Products in this Substation
-      </h2>
-
-    </div>
+});
 
 
-    <div class="branch-inventory-header-actions">
+const categoryGroups =
+    Object.entries(groupedProducts);
 
-      <span class="branch-inventory-count">
-
-        <%= substation.products
-          ? substation.products.length
-          : 0 %>
-
-      </span>
+%>
 
 
-      <% if (
-        user &&
-        ["admin", "staff"].includes(
-          String(user.role || "").toLowerCase()
-        )
-      ) { %>
-
-
-        <button
-          type="button"
-          class="branch-sell-items-btn"
-          id="branchSellItemsButton"
-        >
-
-          <i class="fas fa-cart-plus"></i>
-
-          <span id="branchSellItemsButtonText">
-            Sell Items
-          </span>
-
-        </button>
-
-
-      <% } %>
-
-    </div>
-
-  </div>
-
-
-  <!-- ========================================================
-       SEARCH PRODUCTS
-  ========================================================= -->
-
-  <%- include("./productSearch") %>
-
-
-  <!-- ========================================================
-       EMPTY INVENTORY
-  ========================================================= -->
-
-  <% if (
-    !substation.products ||
-    !substation.products.length
-  ) { %>
-
-
-    <div class="branch-inventory-empty">
-
-      <div class="branch-inventory-empty-icon">
-
-        <i class="fas fa-box-open"></i>
-
-      </div>
-
-      <h3>
-        No products allocated
-      </h3>
-
-      <p>
-        No products have been allocated to this substation yet.
-      </p>
-
-    </div>
-
-
-  <% } else { %>
+<section class="branch-inventory">
 
 
     <!-- ======================================================
-         SELL ITEMS FORM
-    ====================================================== -->
+         INVENTORY HEADER
+    ======================================================= -->
+
+    <div class="branch-inventory-header">
+
+
+        <div class="branch-inventory-heading">
+
+            <h2>
+                Products
+            </h2>
+
+            <span class="branch-inventory-count">
+                <%= Number(
+                    (substation.products || []).length
+                ).toLocaleString() %>
+                products
+            </span>
+
+        </div>
+
+
+        <!-- ==================================================
+             HEADER ACTIONS
+        =================================================== -->
+
+        <div class="branch-inventory-header-actions">
+
+            <% if (
+                user &&
+                ["admin", "staff"].includes(
+                    String(user.role || "").toLowerCase()
+                )
+            ) { %>
+
+
+                <button
+                    type="button"
+                    class="branch-sell-items-btn"
+                    id="branchSellItemsButton"
+                >
+
+                    <i class="fas fa-cart-plus"></i>
+
+                    <span id="branchSellItemsButtonText">
+                        Sell Items
+                    </span>
+
+                </button>
+
+
+            <% } %>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ======================================================
+         PRODUCT SEARCH
+    ======================================================= -->
+
+    <%- include("./productSearch") %>
+
+
+
+    <!-- ======================================================
+         EMPTY INVENTORY
+    ======================================================= -->
 
     <% if (
-      user &&
-      ["admin", "staff"].includes(
-        String(user.role || "").toLowerCase()
-      )
+        !substation.products ||
+        !substation.products.length
     ) { %>
 
 
-      <form
-        action="/products/addManyToCart"
-        method="POST"
-        id="branchAddManyToCartForm"
-      >
+        <div class="branch-inventory-empty">
 
-        <% if (
-          String(user.role || "").toLowerCase() === "admin"
-        ) { %>
+            <i class="fas fa-box-open"></i>
 
-          <!--
-            The parent page is:
+            <p>
+                No products available at this branch.
+            </p>
 
-                /branch/:id
-
-            The "substation" loaded for that page is the
-            document represented by that :id.
-
-            Therefore substation._id IS the parent :id.
-
-            Only the MongoDB ID is submitted here.
-          -->
-
-          <input
-            type="hidden"
-            name="cartSubstation"
-            value="<%= String(substation._id) %>"
-          >
-
-        <% } %>
-
-      </form>
+        </div>
 
 
-    <% } %>
+    <% } else { %>
 
 
-    <!-- ======================================================
-         GROUP PRODUCTS BY CATEGORY
-    ====================================================== -->
 
-    <%
-      const groupedProducts = {};
+        <!-- ==================================================
+             PRODUCT CATEGORIES
+        =================================================== -->
 
-      substation.products.forEach((product) => {
-
-        const categoryName =
-          product.categoryName ||
-          (
-            product.category &&
-            typeof product.category === "object"
-              ? product.category.name
-              : product.category
-          ) ||
-          "Other";
+        <div class="branch-inventory-categories">
 
 
-        if (!groupedProducts[categoryName]) {
-
-          groupedProducts[categoryName] = [];
-
-        }
+            <% categoryGroups.forEach(
+                ([categoryName, products])
+            => { %>
 
 
-        groupedProducts[categoryName].push(product);
-
-      });
-
-
-      const categoryGroups =
-        Object.entries(groupedProducts);
-    %>
-
-
-    <!-- ======================================================
-         CATEGORY GROUPS
-    ====================================================== -->
-
-    <div class="branch-inventory-categories">
-
-
-      <% categoryGroups.forEach(
-        ([categoryName, products]) => {
-      %>
-
-
-        <%
-          const productRows = [];
-
-          for (
-            let i = 0;
-            i < products.length;
-            i += 6
-          ) {
-
-            productRows.push(
-              products.slice(i, i + 6)
-            );
-
-          }
-        %>
-
-
-        <section class="branch-inventory-category">
-
-
-          <!-- ==================================================
-               CATEGORY TITLE
-          ================================================== -->
-
-          <div class="branch-category-title">
-
-            <h3>
-              <%= categoryName %>
-            </h3>
-
-          </div>
-
-
-          <!-- ==================================================
-               PRODUCT ROWS
-          ================================================== -->
-
-          <div class="branch-product-rows">
-
-
-            <% productRows.forEach(
-              (rowProducts) => {
-            %>
-
-
-              <div class="branch-product-row">
-
-
-                <div class="branch-product-scroller">
-
-
-                  <% rowProducts.forEach((product) => { %>
-
-
-                    <%
-                      const productLink =
-                        `/branch/${substation._id}/products/${product._id}`;
-
-
-                      const productCategory =
-                        product.categoryName ||
-                        (
-                          product.category &&
-                          typeof product.category === "object"
-                            ? product.category.name
-                            : product.category
-                        ) ||
-                        categoryName ||
-                        "Other";
-
-
-                      const productSubcategory =
-                        product.subcategoryName ||
-                        (
-                          product.subcategory &&
-                          typeof product.subcategory === "object"
-                            ? product.subcategory.name
-                            : product.subcategory
-                        ) ||
-                        "Other";
-
-
-                      const productId =
-                        String(product._id);
-                    %>
+                <section
+                    class="branch-inventory-category"
+                    data-category="<%= categoryName %>"
+                >
 
 
                     <!-- ======================================
-                         PRODUCT CARD
+                         CATEGORY TITLE
                     ======================================= -->
 
-                    <a
-                      href="<%= productLink %>"
-                      class="branch-product-card"
-                      data-product-card
-                      data-product-id="<%= productId %>"
-                    >
+                    <div class="branch-category-title">
 
+                        <h3>
+                            <%= categoryName %>
+                        </h3>
 
-                      <!-- ==================================
-                           PRODUCT IMAGE
-                      =================================== -->
+                    </div>
 
-                      <div class="branch-product-photo">
-
-                        <% if (product.image) { %>
-
-                          <img
-                            src="<%= product.image %>"
-                            alt="<%= product.name %>"
-                            loading="lazy"
-                          >
-
-                        <% } else { %>
-
-                          <span class="branch-product-placeholder">
-
-                            <i class="fas fa-box"></i>
-
-                          </span>
-
-                        <% } %>
-
-                      </div>
-
-
-                      <!-- ==================================
-                           PRODUCT DETAILS
-                      =================================== -->
-
-                      <div class="branch-product-details">
-
-
-                        <h4 class="branch-product-name">
-
-                          <%= product.name %>
-
-                        </h4>
-
-
-                        <div class="branch-product-meta">
-
-                          <span class="branch-product-category">
-
-                            <%= productCategory %>
-
-                          </span>
-
-
-                          <span class="branch-product-separator">
-                            •
-                          </span>
-
-
-                          <span class="branch-product-subcategory">
-
-                            <%= productSubcategory %>
-
-                          </span>
-
-                        </div>
-
-
-                        <div class="branch-product-quantity">
-
-                          <strong>
-
-                            <%= Number(
-                              product.substationUnits || 0
-                            ).toLocaleString() %>
-
-                          </strong>
-
-                          <span>
-                            units
-                          </span>
-
-                        </div>
-
-
-                      </div>
-
-
-                    </a>
 
 
                     <!-- ======================================
-                         SELL QUANTITY
+                         PRODUCTS
                     ======================================= -->
 
-                    <% if (
-                      user &&
-                      ["admin", "staff"].includes(
-                        String(user.role || "").toLowerCase()
-                      )
-                    ) { %>
+                    <div class="branch-product-rows">
 
 
-                      <div
-                        class="branch-sell-quantity"
-                        data-sell-quantity
-                      >
+                        <%
+                        const productRows = [];
 
-                        <label
-                          for="sellQty_<%= productId %>"
-                        >
-                          Units
-                        </label>
+                        for (
+                            let i = 0;
+                            i < products.length;
+                            i += 6
+                        ) {
 
+                            productRows.push(
+                                products.slice(i, i + 6)
+                            );
 
-                        <input
-                          type="number"
-                          id="sellQty_<%= productId %>"
-                          class="branch-sell-quantity-input"
-                          data-product-id="<%= productId %>"
-                          min="0"
-                          max="<%= Number(product.substationUnits || 0) %>"
-                          step="1"
-                          value=""
-                          inputmode="numeric"
-                          autocomplete="off"
-                          placeholder="0"
-                        >
-
-                      </div>
+                        }
+                        %>
 
 
-                    <% } %>
+                        <% productRows.forEach(
+                            productRow => { %>
 
 
-                  <% }) %>
+                            <div class="branch-product-row">
 
 
-                </div>
+                                <div class="branch-product-scroller">
 
-              </div>
+
+                                    <% productRow.forEach(
+                                        product => {
+
+                                        const productId =
+                                            String(product._id);
+
+                                        const productLink =
+                                            `/branch/${substation._id}/products/${product._id}`;
+
+                                    %>
+
+
+                                        <!-- ==================================
+                                             PRODUCT CARD
+                                        =================================== -->
+
+                                        <a
+                                            href="<%= productLink %>"
+                                            class="branch-product-card"
+                                            data-product-card
+                                            data-product-id="<%= productId %>"
+                                        >
+
+
+                                            <!-- ==============================
+                                                 PRODUCT IMAGE
+                                            =============================== -->
+
+                                            <div class="branch-product-photo">
+
+
+                                                <% if (
+                                                    product.image ||
+                                                    product.imageUrl ||
+                                                    product.photo
+                                                ) { %>
+
+
+                                                    <img
+                                                        src="<%= product.image || product.imageUrl || product.photo %>"
+                                                        alt="<%= product.name %>"
+                                                        loading="lazy"
+                                                    >
+
+
+                                                <% } else { %>
+
+
+                                                    <div class="branch-product-placeholder">
+
+                                                        <i class="fas fa-box"></i>
+
+                                                    </div>
+
+
+                                                <% } %>
+
+
+                                            </div>
+
+
+
+                                            <!-- ==============================
+                                                 PRODUCT DETAILS
+                                            =============================== -->
+
+                                            <div class="branch-product-details">
+
+
+                                                <h4 class="branch-product-name">
+                                                    <%= product.name %>
+                                                </h4>
+
+
+                                                <div class="branch-product-meta">
+
+
+                                                    <span class="branch-product-category">
+
+                                                        KSh <%= Number(
+                                                            product.unitSellPrice || 0
+                                                        ).toLocaleString() %>
+
+                                                    </span>
+
+
+                                                </div>
+
+
+                                                <div class="branch-product-quantity">
+
+
+                                                    <strong>
+                                                        <%= Number(
+                                                            product.substationUnits || 0
+                                                        ).toLocaleString() %>
+                                                    </strong>
+
+
+                                                    <span>
+                                                        units
+                                                    </span>
+
+
+                                                </div>
+
+
+                                            </div>
+
+
+                                        </a>
+
+
+
+                                        <!-- ==================================
+                                             SELL QUANTITY
+                                        =================================== -->
+
+                                        <% if (
+                                            user &&
+                                            ["admin", "staff"].includes(
+                                                String(user.role || "").toLowerCase()
+                                            )
+                                        ) { %>
+
+
+                                            <div
+                                                class="branch-sell-quantity"
+                                                data-sell-quantity
+                                            >
+
+
+                                                <label
+                                                    for="sellQty_<%= productId %>"
+                                                >
+                                                    Units
+                                                </label>
+
+
+                                                <input
+                                                    type="number"
+                                                    id="sellQty_<%= productId %>"
+                                                    class="branch-sell-quantity-input"
+                                                    data-product-id="<%= productId %>"
+                                                    min="0"
+                                                    max="<%= Number(product.substationUnits || 0) %>"
+                                                    step="1"
+                                                    value=""
+                                                    inputmode="numeric"
+                                                    autocomplete="off"
+                                                    placeholder="0"
+                                                >
+
+
+                                            </div>
+
+
+                                        <% } %>
+
+
+                                    <% }) %>
+
+
+                                </div>
+
+
+                            </div>
+
+
+                        <% }) %>
+
+
+                    </div>
+
+
+                </section>
 
 
             <% }) %>
 
 
-          </div>
+        </div>
 
 
-        </section>
+    <% } %>
 
 
-      <% }) %>
+
+    <!-- ======================================================
+         ADD MANY PRODUCTS TO CART FORM
+    ======================================================= -->
+
+    <% if (
+        user &&
+        ["admin", "staff"].includes(
+            String(user.role || "").toLowerCase()
+        )
+    ) { %>
 
 
-    </div>
+        <form
+            action="/products/addManyToCart"
+            method="POST"
+            id="branchAddManyToCartForm"
+        >
 
 
-  <% } %>
+            <% if (
+                String(user.role || "").toLowerCase() === "admin"
+            ) { %>
 
 
-</div>
+                <input
+                    type="hidden"
+                    name="cartSubstation"
+                    value="<%= String(substation._id) %>"
+                >
+
+
+            <% } %>
+
+
+        </form>
+
+
+    <% } %>
+
+
+</section>
+
 
 
 <!-- ==========================================================
@@ -498,190 +459,374 @@
 ========================================================== -->
 
 <% if (
-  user &&
-  ["admin", "staff"].includes(
-    String(user.role || "").toLowerCase()
-  ) &&
-  substation.products &&
-  substation.products.length
+    user &&
+    ["admin", "staff"].includes(
+        String(user.role || "").toLowerCase()
+    )
 ) { %>
 
 
 <script>
 
-(function () {
-
-    "use strict";
-
-
-    /* ======================================================
-       ELEMENTS
-    ====================================================== */
-
-    const sellButton =
-        document.getElementById(
-            "branchSellItemsButton"
-        );
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
 
-    const sellForm =
-        document.getElementById(
-            "branchAddManyToCartForm"
-        );
+        /* ======================================================
+           ELEMENTS
+        ======================================================= */
+
+        const sellButton =
+            document.getElementById(
+                "branchSellItemsButton"
+            );
 
 
-    const productCards =
-        document.querySelectorAll(
-            "[data-product-card]"
-        );
+        const sellButtonText =
+            document.getElementById(
+                "branchSellItemsButtonText"
+            );
 
 
-    const quantityWrappers =
-        document.querySelectorAll(
-            "[data-sell-quantity]"
-        );
+        const sellForm =
+            document.getElementById(
+                "branchAddManyToCartForm"
+            );
 
 
-    const quantityInputs =
-        document.querySelectorAll(
-            ".branch-sell-quantity-input"
-        );
+        const productCards =
+            document.querySelectorAll(
+                "[data-product-card]"
+            );
 
 
-    if (
-        !sellButton ||
-        !sellForm
-    ) {
-
-        return;
-
-    }
+        const quantityWrappers =
+            document.querySelectorAll(
+                "[data-sell-quantity]"
+            );
 
 
-    let sellMode = false;
+        const quantityInputs =
+            document.querySelectorAll(
+                ".branch-sell-quantity-input"
+            );
 
 
-    /* ======================================================
-       ENTER / EXIT SELL MODE
-    ====================================================== */
 
-    function setSellMode(enabled) {
+        /* ======================================================
+           SELL MODE
+        ======================================================= */
 
-        sellMode = enabled;
-
-
-        document.body.classList.toggle(
-            "branch-selling-items",
-            enabled
-        );
+        let sellMode = false;
 
 
-        productCards.forEach(
-            function (card) {
+
+        /* ======================================================
+           SET SELL MODE
+        ======================================================= */
+
+        function setSellMode(enabled) {
+
+            sellMode = enabled;
+
+
+            document.body.classList.toggle(
+                "branch-selling-items",
+                enabled
+            );
+
+
+            productCards.forEach(card => {
 
                 card.classList.toggle(
                     "branch-product-card-selling",
                     enabled
                 );
 
-            }
-        );
+            });
 
 
-        quantityWrappers.forEach(
-            function (wrapper) {
+            quantityWrappers.forEach(wrapper => {
 
                 wrapper.classList.toggle(
                     "is-visible",
                     enabled
                 );
 
-            }
-        );
+            });
 
 
-        if (!enabled) {
 
-            quantityInputs.forEach(
-                function (input) {
+            if (!enabled) {
+
+                quantityInputs.forEach(input => {
 
                     input.value = "";
+
+                });
+
+            }
+
+
+
+            if (sellButtonText) {
+
+                sellButtonText.textContent =
+                    enabled
+                        ? "Done"
+                        : "Sell Items";
+
+            }
+
+        }
+
+
+
+        /* ======================================================
+           GET SELECTED PRODUCTS
+        ======================================================= */
+
+        function getSelectedProducts() {
+
+            const selectedProducts = [];
+
+
+            quantityInputs.forEach(input => {
+
+                const productId =
+                    input.dataset.productId;
+
+
+                const rawQuantity =
+                    input.value.trim();
+
+
+                if (!rawQuantity) {
+                    return;
+                }
+
+
+                const quantity =
+                    Number(rawQuantity);
+
+
+                if (
+                    !Number.isFinite(quantity) ||
+                    quantity <= 0
+                ) {
+                    return;
+                }
+
+
+                selectedProducts.push({
+
+                    productId,
+                    quantity
+
+                });
+
+            });
+
+
+            return selectedProducts;
+
+        }
+
+
+
+        /* ======================================================
+           PREPARE FORM
+        ======================================================= */
+
+        function prepareForm(
+            selectedProducts
+        ) {
+
+
+            /*
+             * Remove only dynamically generated
+             * product fields.
+             *
+             * cartSubstation remains untouched.
+             */
+
+            sellForm
+                .querySelectorAll(
+                    "[data-generated-product]"
+                )
+                .forEach(field => {
+
+                    field.remove();
+
+                });
+
+
+
+            selectedProducts.forEach(
+                (item, index) => {
+
+
+                    const productIdInput =
+                        document.createElement(
+                            "input"
+                        );
+
+
+                    productIdInput.type =
+                        "hidden";
+
+
+                    productIdInput.name =
+                        `products[${index}][productId]`;
+
+
+                    productIdInput.value =
+                        item.productId;
+
+
+                    productIdInput.dataset
+                        .generatedProduct =
+                        "true";
+
+
+                    sellForm.appendChild(
+                        productIdInput
+                    );
+
+
+
+                    const quantityInput =
+                        document.createElement(
+                            "input"
+                        );
+
+
+                    quantityInput.type =
+                        "hidden";
+
+
+                    quantityInput.name =
+                        `products[${index}][qty]`;
+
+
+                    quantityInput.value =
+                        item.quantity;
+
+
+                    quantityInput.dataset
+                        .generatedProduct =
+                        "true";
+
+
+                    sellForm.appendChild(
+                        quantityInput
+                    );
+
+                });
+
+        }
+
+
+
+        /* ======================================================
+           SELL BUTTON
+        ======================================================= */
+
+        if (sellButton) {
+
+
+            sellButton.addEventListener(
+                "click",
+                function () {
+
+
+                    /*
+                     * First click:
+                     * enter sell mode.
+                     */
+
+                    if (!sellMode) {
+
+                        setSellMode(true);
+
+                        return;
+
+                    }
+
+
+
+                    /*
+                     * Second click:
+                     * collect selected products.
+                     */
+
+                    const selectedProducts =
+                        getSelectedProducts();
+
+
+
+                    /*
+                     * No quantities:
+                     * simply exit sell mode.
+                     *
+                     * Nothing is submitted.
+                     */
+
+                    if (
+                        !selectedProducts.length
+                    ) {
+
+                        setSellMode(false);
+
+                        return;
+
+                    }
+
+
+
+                    /*
+                     * Products selected:
+                     * prepare and submit form.
+                     */
+
+                    prepareForm(
+                        selectedProducts
+                    );
+
+
+                    setSellMode(false);
+
+
+                    sellForm.submit();
 
                 }
             );
 
         }
 
-    }
 
 
-    /* ======================================================
-       GET SELECTED PRODUCTS
-    ====================================================== */
+        /* ======================================================
+           PRODUCT CARD CLICK
+        ======================================================= */
 
-    function getSelectedProducts() {
+        productCards.forEach(card => {
 
-        const selectedProducts = [];
-
-
-        quantityInputs.forEach(
-            function (input) {
-
-                const productId =
-                    String(
-                        input.dataset.productId || ""
-                    ).trim();
-
-
-                const quantity =
-                    Number(
-                        input.value
-                    );
-
-
-                if (
-                    !productId ||
-                    !Number.isFinite(quantity) ||
-                    quantity <= 0
-                ) {
-
-                    return;
-
-                }
-
-
-                selectedProducts.push({
-
-                    productId: productId,
-
-                    quantity: quantity
-
-                });
-
-            }
-        );
-
-
-        return selectedProducts;
-
-    }
-
-
-    /* ======================================================
-       PREVENT PRODUCT NAVIGATION WHILE SELLING
-    ====================================================== */
-
-    productCards.forEach(
-        function (card) {
 
             card.addEventListener(
                 "click",
                 function (event) {
 
+
+                    /*
+                     * While selling, product cards
+                     * must not navigate to their
+                     * product pages.
+                     */
+
                     if (!sellMode) {
-
                         return;
-
                     }
 
 
@@ -693,17 +838,21 @@
                 true
             );
 
-        }
-    );
+        });
 
 
-    /* ======================================================
-       QUANTITY INPUTS
-    ====================================================== */
 
-    quantityInputs.forEach(
-        function (input) {
+        /* ======================================================
+           QUANTITY INPUT INTERACTION
+        ======================================================= */
 
+        quantityInputs.forEach(input => {
+
+
+            /*
+             * Prevent input interaction from
+             * triggering surrounding controls.
+             */
 
             input.addEventListener(
                 "click",
@@ -717,16 +866,6 @@
 
             input.addEventListener(
                 "pointerdown",
-                function (event) {
-
-                    event.stopPropagation();
-
-                }
-            );
-
-
-            input.addEventListener(
-                "pointerup",
                 function (event) {
 
                     event.stopPropagation();
@@ -751,6 +890,9 @@
 
                     event.stopPropagation();
 
+                },
+                {
+                    passive: true
                 }
             );
 
@@ -765,227 +907,79 @@
             );
 
 
+
+            /* ==================================================
+               QUANTITY VALIDATION / CLAMPING
+            =================================================== */
+
             input.addEventListener(
                 "input",
                 function () {
 
-                    if (input.value === "") {
+
+                    /*
+                     * Allow empty input while
+                     * the user is typing.
+                     */
+
+                    if (
+                        this.value === ""
+                    ) {
 
                         return;
 
                     }
 
 
-                    let value =
-                        Number(
-                            input.value
-                        );
+                    let quantity =
+                        Number(this.value);
+
+
+                    if (
+                        !Number.isFinite(quantity)
+                    ) {
+
+                        this.value = "";
+
+                        return;
+
+                    }
 
 
                     const max =
-                        Number(
-                            input.max || 0
+                        Number(this.max);
+
+
+                    if (
+                        Number.isFinite(max) &&
+                        quantity > max
+                    ) {
+
+                        quantity = max;
+
+                    }
+
+
+                    if (quantity < 0) {
+
+                        quantity = 0;
+
+                    }
+
+
+                    this.value =
+                        String(
+                            Math.floor(quantity)
                         );
 
-
-                    if (
-                        !Number.isFinite(value) ||
-                        value < 0
-                    ) {
-
-                        input.value = "";
-
-                        return;
-
-                    }
-
-
-                    value =
-                        Math.floor(value);
-
-
-                    if (
-                        max > 0 &&
-                        value > max
-                    ) {
-
-                        value = max;
-
-                    }
-
-
-                    input.value =
-                        String(value);
-
                 }
             );
 
-        }
-    );
+        });
 
-
-    /* ======================================================
-       BUILD ADD-MANY FORM
-    ====================================================== */
-
-    function prepareForm(
-        selectedProducts
-    ) {
-
-        /*
-         * Remove only generated product fields.
-         *
-         * The cartSubstation hidden input is preserved.
-         */
-
-        sellForm
-            .querySelectorAll(
-                "[data-generated-product]"
-            )
-            .forEach(
-                function (field) {
-
-                    field.remove();
-
-                }
-            );
-
-
-        selectedProducts.forEach(
-            function (item, index) {
-
-                const productIdInput =
-                    document.createElement(
-                        "input"
-                    );
-
-
-                productIdInput.type =
-                    "hidden";
-
-
-                productIdInput.name =
-                    `products[${index}][productId]`;
-
-
-                productIdInput.value =
-                    item.productId;
-
-
-                productIdInput.dataset.generatedProduct =
-                    "true";
-
-
-                const quantityInput =
-                    document.createElement(
-                        "input"
-                    );
-
-
-                quantityInput.type =
-                    "hidden";
-
-
-                quantityInput.name =
-                    `products[${index}][qty]`;
-
-
-                quantityInput.value =
-                    String(item.quantity);
-
-
-                quantityInput.dataset.generatedProduct =
-                    "true";
-
-
-                sellForm.appendChild(
-                    productIdInput
-                );
-
-
-                sellForm.appendChild(
-                    quantityInput
-                );
-
-            }
-        );
 
     }
-
-
-    /* ======================================================
-       SELL ITEMS BUTTON
-    ====================================================== */
-
-    sellButton.addEventListener(
-        "click",
-        function (event) {
-
-            event.preventDefault();
-
-            event.stopPropagation();
-
-
-            /* ==============================================
-               FIRST CLICK
-            ============================================== */
-
-            if (!sellMode) {
-
-                setSellMode(true);
-
-                return;
-
-            }
-
-
-            /* ==============================================
-               SECOND CLICK
-            ============================================== */
-
-            const selectedProducts =
-                getSelectedProducts();
-
-
-            /*
-             * Nothing entered:
-             * simply leave sell mode.
-             */
-
-            if (!selectedProducts.length) {
-
-                setSellMode(false);
-
-                return;
-
-            }
-
-
-            /*
-             * The hidden cartSubstation field was rendered
-             * from substation._id, which is the :id of the
-             * parent /branch/:id page.
-             */
-
-            prepareForm(
-                selectedProducts
-            );
-
-
-            setSellMode(false);
-
-
-            /*
-             * Submit the complete form.
-             */
-
-            sellForm.submit();
-
-        }
-    );
-
-
-})();
+);
 
 </script>
 
