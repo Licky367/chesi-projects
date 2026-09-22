@@ -37,6 +37,31 @@ const hideSellInput =
 
 /*
  * ==========================================================
+ * ACTIVE SUBSTATION ID
+ * ==========================================================
+ *
+ * IMPORTANT:
+ *
+ * activeSubstationId is the actual MongoDB _id of the
+ * currently selected substation.
+ *
+ * It is passed directly to the cart service.
+ *
+ * DO NOT convert this value to the substation name.
+ *
+ * The cart service will store this ID as cartSubstation.
+ *
+ * ==========================================================
+ */
+
+const selectedSubstationId =
+    hasSelectedSubstation
+        ? String(activeSubstationId).trim()
+        : "";
+
+
+/*
+ * ==========================================================
  * MARKET AVAILABLE EDIT VISIBILITY
  * ==========================================================
  *
@@ -91,23 +116,26 @@ const canEditMarketAvailable =
             id="addManyToCartForm"
         >
 
-            <% if (isAdmin && hasSelectedSubstation) { %>
+            <% if (hasSelectedSubstation) { %>
 
                 <!--
                     IMPORTANT:
-                    The sales page selects the active substation
-                    through the query/filter context.
 
-                    This hidden field carries that selected
-                    substation into the POST request so the
-                    cart service can save its NAME as
+                    This is the ACTIVE SUBSTATION ID.
+
+                    It is submitted unchanged as
+                    activeSubstationId.
+
+                    The cart service must save this ID as
                     cartSubstation.
+
+                    No substation name is submitted here.
                 -->
 
                 <input
                     type="hidden"
                     name="activeSubstationId"
-                    value="<%= activeSubstationId %>"
+                    value="<%= selectedSubstationId %>"
                 >
 
             <% } %>
@@ -147,7 +175,7 @@ const canEditMarketAvailable =
     <% if (canEditMarketAvailable) { %>
 
         <form
-            action="/substations/productsUpdate/<%= activeSubstationId %>"
+            action="/substations/productsUpdate/<%= selectedSubstationId %>"
             method="POST"
             id="updateMarketAvailableForm"
         >
@@ -155,7 +183,7 @@ const canEditMarketAvailable =
             <input
                 type="hidden"
                 name="substationId"
-                value="<%= activeSubstationId %>"
+                value="<%= selectedSubstationId %>"
             >
 
         </form>
