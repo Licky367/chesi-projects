@@ -1,9 +1,10 @@
 <%
 /*
-==========================================================
+
 VERRAH COSMETICS
 BRANCH PRODUCTS
-==========================================================
+SUBMITS cartSubstation AS DOCUMENT OBJECT
+
 */
 
 const groupedProducts = {};
@@ -15,7 +16,7 @@ const groupedProducts = {};
         (
             product.category &&
             typeof product.category === "object"
-                ? product.category.name
+               ? product.category.name
                 : product.category
         ) ||
         "Other";
@@ -33,9 +34,7 @@ const categoryGroups =
 
 %>
 
-
 <section class="branch-inventory">
-
 
     <!-- ======================================================
          INVENTORY HEADER
@@ -57,7 +56,6 @@ const categoryGroups =
             </span>
 
         </div>
-
 
         <div class="branch-inventory-header-actions">
 
@@ -88,23 +86,19 @@ const categoryGroups =
 
     </div>
 
-
-
     <!-- ======================================================
          PRODUCT SEARCH
     ======================================================= -->
 
     <%- include("./productSearch") %>
 
-
-
     <!-- ======================================================
          EMPTY INVENTORY
     ======================================================= -->
 
     <% if (
-        !substation.products ||
-        !substation.products.length
+       !substation.products ||
+       !substation.products.length
     ) { %>
 
         <div class="branch-inventory-empty">
@@ -119,13 +113,11 @@ const categoryGroups =
 
     <% } else { %>
 
-
         <!-- ==================================================
              PRODUCT CATEGORIES
         =================================================== -->
 
         <div class="branch-inventory-categories">
-
 
             <%
             for (
@@ -141,12 +133,10 @@ const categoryGroups =
                     categoryGroups[categoryIndex][1];
             %>
 
-
                 <section
                     class="branch-inventory-category"
                     data-category="<%= categoryName %>"
                 >
-
 
                     <!-- ======================================
                          CATEGORY TITLE
@@ -160,14 +150,11 @@ const categoryGroups =
 
                     </div>
 
-
-
                     <!-- ======================================
                          PRODUCTS
                     ======================================= -->
 
                     <div class="branch-product-rows">
-
 
                         <%
                         const productRows = [];
@@ -185,7 +172,6 @@ const categoryGroups =
                         }
                         %>
 
-
                         <%
                         for (
                             let rowIndex = 0;
@@ -197,12 +183,9 @@ const categoryGroups =
                                 productRows[rowIndex];
                         %>
 
-
                             <div class="branch-product-row">
 
-
                                 <div class="branch-product-scroller">
-
 
                                     <%
                                     for (
@@ -221,7 +204,6 @@ const categoryGroups =
                                             `/branch/${substation._id}/products/${product._id}`;
                                     %>
 
-
                                         <!-- ==================================
                                              PRODUCT CARD
                                         =================================== -->
@@ -233,13 +215,11 @@ const categoryGroups =
                                             data-product-id="<%= productId %>"
                                         >
 
-
                                             <!-- ==============================
                                                  PRODUCT IMAGE
                                             =============================== -->
 
                                             <div class="branch-product-photo">
-
 
                                                 <% if (
                                                     product.image ||
@@ -247,16 +227,13 @@ const categoryGroups =
                                                     product.photo
                                                 ) { %>
 
-
                                                     <img
                                                         src="<%= product.image || product.imageUrl || product.photo %>"
                                                         alt="<%= product.name %>"
                                                         loading="lazy"
                                                     >
 
-
                                                 <% } else { %>
-
 
                                                     <div class="branch-product-placeholder">
 
@@ -264,13 +241,9 @@ const categoryGroups =
 
                                                     </div>
 
-
                                                 <% } %>
 
-
                                             </div>
-
-
 
                                             <!-- ==============================
                                                  PRODUCT DETAILS
@@ -278,11 +251,9 @@ const categoryGroups =
 
                                             <div class="branch-product-details">
 
-
                                                 <h4 class="branch-product-name">
                                                     <%= product.name %>
                                                 </h4>
-
 
                                                 <div class="branch-product-meta">
 
@@ -295,7 +266,6 @@ const categoryGroups =
                                                     </span>
 
                                                 </div>
-
 
                                                 <div class="branch-product-quantity">
 
@@ -311,13 +281,9 @@ const categoryGroups =
 
                                                 </div>
 
-
                                             </div>
 
-
                                         </a>
-
-
 
                                         <!-- ==================================
                                              SELL QUANTITY
@@ -330,7 +296,6 @@ const categoryGroups =
                                             )
                                         ) { %>
 
-
                                             <div
                                                 class="branch-sell-quantity"
                                                 data-sell-quantity
@@ -341,7 +306,6 @@ const categoryGroups =
                                                 >
                                                     Units
                                                 </label>
-
 
                                                 <input
                                                     type="number"
@@ -359,46 +323,35 @@ const categoryGroups =
 
                                             </div>
 
-
                                         <% } %>
-
 
                                     <%
                                     }
                                     %>
 
-
                                 </div>
 
-
                             </div>
-
 
                         <%
                         }
                         %>
 
-
                     </div>
 
-
                 </section>
-
 
             <%
             }
             %>
 
-
         </div>
-
 
     <% } %>
 
-
-
     <!-- ======================================================
          ADD MANY PRODUCTS TO CART FORM
+         NOW SUBMITS SUBSTATION DOCUMENT OBJECT
     ======================================================= -->
 
     <% if (
@@ -408,38 +361,28 @@ const categoryGroups =
         )
     ) { %>
 
-
         <form
             action="/products/addManyToCart"
             method="POST"
             id="branchAddManyToCartForm"
         >
-
-
-            <% if (
-                String(user.role || "").toLowerCase() === "admin"
-            ) { %>
-
-
-                <input
-                    type="hidden"
-                    name="cartSubstation"
-                    value="<%= String(substation._id) %>"
-                >
-
-
-            <% } %>
-
-
+            <%
+                // Parent page supplies the full substation document
+                const _subDoc = typeof substation.toObject === 'function'? substation.toObject() : substation;
+            %>
+            <!-- Submit as document object using bracket notation -->
+            <input type="hidden" name="cartSubstation[_id]" value="<%= String(_subDoc._id) %>" id="cartSubstationId">
+            <input type="hidden" name="cartSubstation[name]" value="<%= _subDoc.name || '' %>">
+            <input type="hidden" name="cartSubstation[branchName]" value="<%= _subDoc.branchName || _subDoc.name || '' %>">
+            <input type="hidden" name="cartSubstation[location]" value="<%= _subDoc.location || '' %>">
+            <input type="hidden" name="cartSubstation[type]" value="<%= _subDoc.type || '' %>">
+            <!-- Keep full JSON as fallback -->
+            <input type="hidden" name="cartSubstationJson" id="cartSubstationJson" value='<%- JSON.stringify(_subDoc).replace(/'/g, "&#39;") %>'>
         </form>
-
 
     <% } %>
 
-
 </section>
-
-
 
 <!-- ==========================================================
      SELL ITEMS JAVASCRIPT
@@ -452,135 +395,91 @@ const categoryGroups =
     )
 ) { %>
 
-
 <script>
 
 document.addEventListener(
     "DOMContentLoaded",
     function () {
 
-
-        /* ======================================================
-           ELEMENTS
-        ======================================================= */
-
         const sellButton =
             document.getElementById(
                 "branchSellItemsButton"
             );
-
 
         const sellButtonText =
             document.getElementById(
                 "branchSellItemsButtonText"
             );
 
-
         const sellForm =
             document.getElementById(
                 "branchAddManyToCartForm"
             );
-
 
         const productCards =
             document.querySelectorAll(
                 "[data-product-card]"
             );
 
-
         const quantityWrappers =
             document.querySelectorAll(
                 "[data-sell-quantity]"
             );
-
 
         const quantityInputs =
             document.querySelectorAll(
                 ".branch-sell-quantity-input"
             );
 
-
-        /* ======================================================
-           SELL MODE
-        ======================================================= */
-
         let sellMode = false;
-
-
-
-        /* ======================================================
-           SET SELL MODE
-        ======================================================= */
 
         function setSellMode(enabled) {
 
             sellMode = enabled;
-
 
             document.body.classList.toggle(
                 "branch-selling-items",
                 enabled
             );
 
-
             productCards.forEach(
                 function(card) {
-
                     card.classList.toggle(
                         "branch-product-card-selling",
                         enabled
                     );
-
                 }
             );
 
-
             quantityWrappers.forEach(
                 function(wrapper) {
-
                     wrapper.classList.toggle(
                         "is-visible",
                         enabled
                     );
-
                 }
             );
 
-
             if (!enabled) {
-
                 quantityInputs.forEach(
                     function(input) {
-
                         input.value = "";
-
                     }
                 );
-
             }
 
-
             if (sellButtonText) {
-
                 sellButtonText.textContent =
                     enabled
-                        ? "Done"
+                       ? "Done"
                         : "Sell Items";
-
             }
 
         }
 
-
-
-        /* ======================================================
-           GET SELECTED PRODUCTS
-        ======================================================= */
-
         function getSelectedProducts() {
 
             const selectedProducts = [];
-
 
             quantityInputs.forEach(
                 function(input) {
@@ -588,128 +487,114 @@ document.addEventListener(
                     const productId =
                         input.dataset.productId;
 
-
                     const rawQuantity =
                         input.value.trim();
-
 
                     if (!rawQuantity) {
                         return;
                     }
 
-
                     const quantity =
                         Number(rawQuantity);
 
-
                     if (
-                        !Number.isFinite(quantity) ||
+                       !Number.isFinite(quantity) ||
                         quantity <= 0
                     ) {
-
                         return;
-
                     }
 
-
                     selectedProducts.push({
-
                         productId: productId,
                         quantity: quantity
-
                     });
 
                 }
             );
 
-
             return selectedProducts;
 
         }
-
-
-
-        /* ======================================================
-           PREPARE FORM
-        ======================================================= */
 
         function prepareForm(
             selectedProducts
         ) {
 
-
             sellForm
-                .querySelectorAll(
+               .querySelectorAll(
                     "[data-generated-product]"
                 )
-                .forEach(
+               .forEach(
                     function(field) {
-
                         field.remove();
-
                     }
                 );
 
+            // FORCE ID from mother page URL /branch/:id - ensures correct document
+            const urlMatch = window.location.pathname.match(/\/branch\/([^\/]+)/);
+            const correctId = urlMatch? urlMatch[1] : "";
+
+            const idField = document.getElementById("cartSubstationId");
+            if (idField && correctId) {
+                idField.value = correctId;
+            }
+
+            // Also update JSON fallback
+            const jsonField = document.getElementById("cartSubstationJson");
+            if (jsonField && correctId) {
+                try {
+                    const doc = JSON.parse(jsonField.value);
+                    doc._id = correctId;
+                    jsonField.value = JSON.stringify(doc);
+                } catch(e) {}
+            }
 
             selectedProducts.forEach(
                 function(item, index) {
-
 
                     const productIdInput =
                         document.createElement(
                             "input"
                         );
 
-
                     productIdInput.type =
                         "hidden";
-
 
                     productIdInput.name =
                         "products[" +
                         index +
                         "][productId]";
 
-
                     productIdInput.value =
                         item.productId;
 
-
                     productIdInput.dataset
-                        .generatedProduct =
+                       .generatedProduct =
                         "true";
-
 
                     sellForm.appendChild(
                         productIdInput
                     );
-
-
 
                     const quantityInput =
                         document.createElement(
                             "input"
                         );
 
-
                     quantityInput.type =
                         "hidden";
-
 
                     quantityInput.name =
                         "products[" +
                         index +
                         "][qty]";
 
-
                     quantityInput.value =
                         item.quantity;
 
-
                     quantityInput.dataset
-                        .generatedProduct =
+                       .generatedProduct =
                         "true";
-
 
                     sellForm.appendChild(
                         quantityInput
@@ -720,73 +605,32 @@ document.addEventListener(
 
         }
 
-
-
-        /* ======================================================
-           SELL BUTTON
-        ======================================================= */
-
         if (sellButton) {
 
             sellButton.addEventListener(
                 "click",
                 function () {
 
-
-                    /*
-                     * FIRST CLICK
-                     * Enter sell mode.
-                     */
-
                     if (!sellMode) {
-
                         setSellMode(true);
-
                         return;
-
                     }
-
-
-
-                    /*
-                     * SECOND CLICK
-                     * Collect selected products.
-                     */
 
                     const selectedProducts =
                         getSelectedProducts();
 
-
-
-                    /*
-                     * No quantities entered.
-                     * Exit without submitting.
-                     */
-
                     if (
-                        !selectedProducts.length
+                       !selectedProducts.length
                     ) {
-
                         setSellMode(false);
-
                         return;
-
                     }
-
-
-
-                    /*
-                     * Products selected.
-                     * Prepare and submit.
-                     */
 
                     prepareForm(
                         selectedProducts
                     );
 
-
                     setSellMode(false);
-
 
                     sellForm.submit();
 
@@ -795,12 +639,6 @@ document.addEventListener(
 
         }
 
-
-
-        /* ======================================================
-           PRODUCT CARD CLICK
-        ======================================================= */
-
         productCards.forEach(
             function(card) {
 
@@ -808,14 +646,11 @@ document.addEventListener(
                     "click",
                     function(event) {
 
-
                         if (!sellMode) {
                             return;
                         }
 
-
                         event.preventDefault();
-
                         event.stopPropagation();
 
                     },
@@ -825,123 +660,80 @@ document.addEventListener(
             }
         );
 
-
-
-        /* ======================================================
-           QUANTITY INPUT INTERACTION
-        ======================================================= */
-
         quantityInputs.forEach(
             function(input) {
-
 
                 input.addEventListener(
                     "click",
                     function(event) {
-
                         event.stopPropagation();
-
                     }
                 );
-
 
                 input.addEventListener(
                     "pointerdown",
                     function(event) {
-
                         event.stopPropagation();
-
                     }
                 );
-
 
                 input.addEventListener(
                     "mousedown",
                     function(event) {
-
                         event.stopPropagation();
-
                     }
                 );
-
 
                 input.addEventListener(
                     "touchstart",
                     function(event) {
-
                         event.stopPropagation();
-
                     },
                     {
                         passive: true
                     }
                 );
 
-
                 input.addEventListener(
                     "keydown",
                     function(event) {
-
                         event.stopPropagation();
-
                     }
                 );
-
-
-
-                /* ==============================================
-                   QUANTITY VALIDATION
-                =============================================== */
 
                 input.addEventListener(
                     "input",
                     function() {
 
-
                         if (
                             this.value === ""
                         ) {
-
                             return;
-
                         }
-
 
                         let quantity =
                             Number(this.value);
 
-
                         if (
-                            !Number.isFinite(quantity)
+                           !Number.isFinite(quantity)
                         ) {
-
                             this.value = "";
-
                             return;
-
                         }
-
 
                         const max =
                             Number(this.max);
-
 
                         if (
                             Number.isFinite(max) &&
                             quantity > max
                         ) {
-
                             quantity = max;
-
                         }
-
 
                         if (quantity < 0) {
-
                             quantity = 0;
-
                         }
-
 
                         this.value =
                             String(
@@ -958,6 +750,5 @@ document.addEventListener(
 );
 
 </script>
-
 
 <% } %>
