@@ -2362,11 +2362,9 @@ body.substation-viewer-open {
     }
 
 }
-
-
 /* ==========================================================
    INVENTORY HEADER ACTIONS
-   Sell Items mode
+   SELL ITEMS MODE
 ========================================================== */
 
 .branch-inventory-header-actions {
@@ -2466,20 +2464,125 @@ body.substation-viewer-open {
 
 
 /* ==========================================================
-   SELL QUANTITY CONTROL
-   Hidden until Sell Items mode is enabled.
+   SELL MODE PRODUCT SCROLLER
 
    IMPORTANT:
-   This element is outside .branch-product-card.
+   The product card and its quantity input are separate
+   siblings in the HTML:
+
+       card
+       quantity
+       card
+       quantity
+       ...
+
+   CSS Grid places them as:
+
+       card      card      card
+       quantity  quantity  quantity
+
+   while preserving horizontal scrolling.
+========================================================== */
+
+.branch-product-scroller {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+}
+
+
+/*
+ * Only change the layout while Sell Items mode
+ * is active.
+ */
+
+.branch-product-scroller:has(.branch-sell-quantity.is-visible) {
+
+    display: grid;
+
+    grid-template-rows:
+        155px
+        auto;
+
+    grid-auto-flow: column;
+
+    grid-auto-columns: 112px;
+
+    column-gap: 10px;
+
+    row-gap: 5px;
+
+    align-items: start;
+
+    justify-content: start;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+}
+
+
+/* ==========================================================
+   PRODUCT CARD IN SELL MODE
+========================================================== */
+
+.branch-product-scroller:has(.branch-sell-quantity.is-visible)
+.branch-product-card {
+
+    grid-row: 1;
+
+    grid-column: auto;
+
+    width: 112px;
+
+    height: 155px;
+
+    min-width: 112px;
+
+    max-width: 112px;
+
+    flex: none;
+
+    cursor: default;
+}
+
+
+.branch-product-scroller:has(.branch-sell-quantity.is-visible)
+.branch-product-card:hover {
+
+    transform: none;
+
+    border-color: #b99880;
+
+    box-shadow:
+        0 4px 12px rgba(50, 27, 16, 0.10);
+}
+
+
+/* ==========================================================
+   SELL QUANTITY CONTROL
 ========================================================== */
 
 .branch-sell-quantity {
 
     display: none;
 
-    width: 100%;
+    width: 112px;
 
-    margin-top: 5px;
+    min-width: 112px;
+
+    max-width: 112px;
+
+    margin: 0;
+
+    padding: 0 2px;
 
     box-sizing: border-box;
 }
@@ -2491,9 +2594,35 @@ body.substation-viewer-open {
 }
 
 
+/*
+ * In the two-row grid, every quantity control occupies
+ * the second row of its product column.
+ */
+
+.branch-product-scroller:has(.branch-sell-quantity.is-visible)
+.branch-sell-quantity.is-visible {
+
+    grid-row: 2;
+
+    grid-column: auto;
+
+    width: 112px;
+
+    min-width: 112px;
+
+    max-width: 112px;
+}
+
+
+/* ==========================================================
+   QUANTITY LABEL
+========================================================== */
+
 .branch-sell-quantity label {
 
     display: block;
+
+    width: 100%;
 
     margin: 0 0 3px;
 
@@ -2506,8 +2635,14 @@ body.substation-viewer-open {
     line-height: 1;
 
     text-align: center;
+
+    box-sizing: border-box;
 }
 
+
+/* ==========================================================
+   QUANTITY INPUT
+========================================================== */
 
 .branch-sell-quantity-input {
 
@@ -2568,9 +2703,6 @@ body.substation-viewer-open {
 
 /* ==========================================================
    PRODUCT CARD WHILE SELL MODE IS ACTIVE
-
-   Card remains visually stable and is not clickable
-   because JavaScript prevents navigation.
 ========================================================== */
 
 .branch-product-card-selling {
@@ -2596,7 +2728,7 @@ body.substation-viewer-open {
 
 
 /* ==========================================================
-   SELL MODE
+   SELL MODE BODY STATE
 ========================================================== */
 
 .branch-selling-items .branch-product-card {
@@ -2639,9 +2771,29 @@ body.substation-viewer-open {
     }
 
 
-    .branch-sell-quantity {
+    .branch-product-scroller:has(.branch-sell-quantity.is-visible) {
 
-        margin-top: 5px;
+        grid-template-rows:
+            155px
+            auto;
+
+        grid-auto-columns: 112px;
+
+        column-gap: 8px;
+
+        row-gap: 5px;
+    }
+
+
+    .branch-sell-quantity,
+    .branch-product-scroller:has(.branch-sell-quantity.is-visible)
+    .branch-sell-quantity.is-visible {
+
+        width: 112px;
+
+        min-width: 112px;
+
+        max-width: 112px;
     }
 
 
@@ -2683,9 +2835,29 @@ body.substation-viewer-open {
     }
 
 
-    .branch-sell-quantity {
+    .branch-product-scroller:has(.branch-sell-quantity.is-visible) {
 
-        margin-top: 4px;
+        grid-template-rows:
+            155px
+            auto;
+
+        grid-auto-columns: 112px;
+
+        column-gap: 8px;
+
+        row-gap: 4px;
+    }
+
+
+    .branch-sell-quantity,
+    .branch-product-scroller:has(.branch-sell-quantity.is-visible)
+    .branch-sell-quantity.is-visible {
+
+        width: 112px;
+
+        min-width: 112px;
+
+        max-width: 112px;
     }
 
 
