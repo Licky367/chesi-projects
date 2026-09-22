@@ -1,402 +1,507 @@
-<%
-/*
-==========================================================
-VERRAH COSMETICS
-BRANCH PRODUCTS
-==========================================================
-
-SELL ITEMS MODE
-- Admin and staff can sell items.
-- First tap: enter sell mode.
-- Quantity inputs become visible.
-- Product cards cannot navigate while selling.
-- Quantity inputs remain fully interactive.
-- Second tap:
-    - quantities entered -> submit to addManyToCart
-    - no quantities -> exit sell mode only
-- Admin submits cartSubstation.
-- Staff does not submit cartSubstation.
-==========================================================
-*/
-
-const canSellItems =
-    user &&
-    (
-        user.role === "admin" ||
-        user.role === "staff"
-    );
-
-const isAdmin =
-    user &&
-    user.role === "admin";
-
-const branchSubstationId =
-    substation &&
-    substation._id
-        ? String(substation._id)
-        : "";
-%>
-
-
 <!-- ==========================================================
-     PRODUCTS SECTION
-=========================================================== -->
+   views/branch-partials/branch/products.ejs
 
-<section class="branch-products-section">
+   VERRAH COSMETICS
+   SUBSTATION PRODUCTS / INVENTORY
 
-    <!-- ======================================================
-         PRODUCTS HEADER
-    ======================================================= -->
+   ----------------------------------------------------------
+   BEHAVIOUR:
 
-    <div class="branch-inventory-header">
+   - Products grouped by category
+   - Each category has its own rows
+   - Maximum 6 products per row
+   - 7th product starts a new row
+   - Each row scrolls horizontally
+   - Product card: 112px × 155px
+   - All roles:
+       /branch/:substationId/products/:productId
 
-        <div class="branch-inventory-header-title">
+   ----------------------------------------------------------
+   SELL ITEMS:
 
-            <h1>
-                Products
-            </h1>
+   - Admin and staff can sell multiple products
+   - First "Sell Items" tap enables quantity inputs
+   - Product cards cannot navigate while editing
+   - Quantity inputs remain clickable/editable
+   - Second "Sell Items" tap:
+       WITH quantities:
+           submit selected products
+       WITHOUT quantities:
+           exit sell mode only
+   - After exiting/submitting:
+       quantity inputs close
+       cards become clickable again
 
-            <p>
-                Products available at
-                <strong>
-                    <%= substation?.name || "Substation" %>
-                </strong>
-            </p>
+   - Admin also submits:
+       cartSubstation = substation._id
 
-        </div>
+========================================================== -->
 
 
-        <% if (canSellItems) { %>
+<div class="branch-inventory">
 
-            <div class="branch-inventory-header-actions">
 
-                <button
-                    type="button"
-                    id="branchSellItemsButton"
-                    class="branch-sell-items-btn"
-                >
+  <!-- ========================================================
+       INVENTORY HEADER
+  ========================================================= -->
 
-                    <i class="fas fa-shopping-cart"></i>
+  <div class="branch-inventory-header">
 
-                    <span id="branchSellButtonText">
-                        Sell Items
-                    </span>
+    <div class="branch-inventory-heading">
 
-                </button>
-
-            </div>
-
-        <% } %>
+      <h2>
+        Products in this Substation
+      </h2>
 
     </div>
 
 
-    <!-- ======================================================
-         PRODUCT SEARCH
-    ======================================================= -->
+    <div class="branch-inventory-header-actions">
 
-    <%- include("productSearch") %>
+      <span class="branch-inventory-count">
+
+        <%= substation.products
+          ? substation.products.length
+          : 0 %>
+
+      </span>
 
 
-    <!-- ======================================================
-         ADD MANY TO CART FORM
+      <% if (
+        user &&
+        ["admin", "staff"].includes(
+          String(user.role || "").toLowerCase()
+        )
+      ) { %>
 
-         IMPORTANT:
-         Admin gets cartSubstation.
-         Staff does not.
-    ======================================================= -->
 
-    <% if (canSellItems) { %>
-
-        <form
-            id="branchAddManyToCartForm"
-            action="/products/addManyToCart"
-            method="POST"
+        <button
+          type="button"
+          class="branch-sell-items-btn"
+          id="branchSellItemsButton"
         >
 
-            <% if (isAdmin) { %>
+          <i class="fas fa-cart-plus"></i>
 
-                <input
-                    type="hidden"
-                    name="cartSubstation"
-                    value="<%= substation._id %>"
-                >
+          <span id="branchSellItemsButtonText">
+            Sell Items
+          </span>
 
-            <% } %>
+        </button>
 
-        </form>
+
+      <% } %>
+
+    </div>
+
+  </div>
+
+
+  <!-- ========================================================
+       SEARCH PRODUCTS
+  ========================================================= -->
+
+  <%- include("./productSearch") %>
+
+
+  <!-- ========================================================
+       EMPTY INVENTORY
+  ========================================================= -->
+
+  <% if (
+    !substation.products ||
+    !substation.products.length
+  ) { %>
+
+
+    <div class="branch-inventory-empty">
+
+      <div class="branch-inventory-empty-icon">
+
+        <i class="fas fa-box-open"></i>
+
+      </div>
+
+      <h3>
+        No products allocated
+      </h3>
+
+      <p>
+        No products have been allocated to this substation yet.
+      </p>
+
+    </div>
+
+
+  <% } else { %>
+
+
+    <!-- ======================================================
+         SELL ITEMS FORM
+    ====================================================== -->
+
+    <% if (
+      user &&
+      ["admin", "staff"].includes(
+        String(user.role || "").toLowerCase()
+      )
+    ) { %>
+
+
+      <form
+        action="/products/addManyToCart"
+        method="POST"
+        id="branchAddManyToCartForm"
+      >
+
+        <% if (
+          String(user.role || "").toLowerCase() === "admin"
+        ) { %>
+
+          <input
+            type="hidden"
+            name="cartSubstation"
+            value="<%= substation._id %>"
+          >
+
+        <% } %>
+
+      </form>
+
 
     <% } %>
 
 
     <!-- ======================================================
+         GROUP PRODUCTS BY CATEGORY
+    ====================================================== -->
+
+    <%
+      const groupedProducts = {};
+
+      substation.products.forEach((product) => {
+
+        const categoryName =
+          product.categoryName ||
+          (
+            product.category &&
+            typeof product.category === "object"
+              ? product.category.name
+              : product.category
+          ) ||
+          "Other";
+
+
+        if (!groupedProducts[categoryName]) {
+
+          groupedProducts[categoryName] = [];
+
+        }
+
+
+        groupedProducts[categoryName].push(product);
+
+      });
+
+
+      const categoryGroups =
+        Object.entries(groupedProducts);
+    %>
+
+
+    <!-- ======================================================
          CATEGORY GROUPS
-    ======================================================= -->
+    ====================================================== -->
 
-    <div
-        class="branch-products-container"
-        id="branchProductsContainer"
-    >
+    <div class="branch-inventory-categories">
 
-        <% if (categoryGroups && categoryGroups.length) { %>
 
-            <% categoryGroups.forEach(function([category, products]) { %>
+      <% categoryGroups.forEach(
+        ([categoryName, products]) => {
+      %>
 
-                <section class="branch-product-category">
+
+        <%
+          const productRows = [];
+
+          for (
+            let i = 0;
+            i < products.length;
+            i += 6
+          ) {
+
+            productRows.push(
+              products.slice(i, i + 6)
+            );
+
+          }
+        %>
+
+
+        <section class="branch-inventory-category">
+
+
+          <!-- ==================================================
+               CATEGORY TITLE
+          ================================================== -->
+
+          <div class="branch-category-title">
+
+            <h3>
+              <%= categoryName %>
+            </h3>
+
+          </div>
+
+
+          <!-- ==================================================
+               PRODUCT ROWS
+          ================================================== -->
+
+          <div class="branch-product-rows">
+
+
+            <% productRows.forEach(
+              (rowProducts) => {
+            %>
+
+
+              <div class="branch-product-row">
+
+
+                <div class="branch-product-scroller">
+
+
+                  <% rowProducts.forEach((product) => { %>
+
+
+                    <%
+                      const productLink =
+                        `/branch/${substation._id}/products/${product._id}`;
+
+
+                      const productCategory =
+                        product.categoryName ||
+                        (
+                          product.category &&
+                          typeof product.category === "object"
+                            ? product.category.name
+                            : product.category
+                        ) ||
+                        categoryName ||
+                        "Other";
+
+
+                      const productSubcategory =
+                        product.subcategoryName ||
+                        (
+                          product.subcategory &&
+                          typeof product.subcategory === "object"
+                            ? product.subcategory.name
+                            : product.subcategory
+                        ) ||
+                        "Other";
+
+
+                      const productId =
+                        String(product._id);
+                    %>
+
 
                     <!-- ======================================
-                         CATEGORY HEADER
+                         PRODUCT CARD
                     ======================================= -->
 
-                    <div class="branch-product-category-header">
+                    <a
+                      href="<%= productLink %>"
+                      class="branch-product-card"
+                      data-product-card
+                      data-product-id="<%= productId %>"
+                    >
 
-                        <h2>
-                            <%= category %>
-                        </h2>
 
-                    </div>
+                      <!-- ==================================
+                           PRODUCT IMAGE
+                      =================================== -->
+
+                      <div class="branch-product-photo">
+
+                        <% if (product.image) { %>
+
+                          <img
+                            src="<%= product.image %>"
+                            alt="<%= product.name %>"
+                            loading="lazy"
+                          >
+
+                        <% } else { %>
+
+                          <span class="branch-product-placeholder">
+
+                            <i class="fas fa-box"></i>
+
+                          </span>
+
+                        <% } %>
+
+                      </div>
+
+
+                      <!-- ==================================
+                           PRODUCT DETAILS
+                      =================================== -->
+
+                      <div class="branch-product-details">
+
+
+                        <h4 class="branch-product-name">
+
+                          <%= product.name %>
+
+                        </h4>
+
+
+                        <div class="branch-product-meta">
+
+                          <span class="branch-product-category">
+
+                            <%= productCategory %>
+
+                          </span>
+
+
+                          <span class="branch-product-separator">
+                            •
+                          </span>
+
+
+                          <span class="branch-product-subcategory">
+
+                            <%= productSubcategory %>
+
+                          </span>
+
+                        </div>
+
+
+                        <div class="branch-product-quantity">
+
+                          <strong>
+
+                            <%= Number(
+                              product.substationUnits || 0
+                            ).toLocaleString() %>
+
+                          </strong>
+
+                          <span>
+                            units
+                          </span>
+
+                        </div>
+
+
+                      </div>
+
+
+                    </a>
 
 
                     <!-- ======================================
-                         PRODUCT ROWS
+                         SELL QUANTITY
 
-                         MAXIMUM 6 PRODUCTS PER ROW
+                         IMPORTANT:
+                         THIS IS OUTSIDE THE <a>.
+
+                         Therefore the input is a normal,
+                         independently clickable form control.
                     ======================================= -->
 
-                    <div class="branch-product-rows">
+                    <% if (
+                      user &&
+                      ["admin", "staff"].includes(
+                        String(user.role || "").toLowerCase()
+                      )
+                    ) { %>
 
-                        <%
-                        const productRows = [];
 
-                        for (
-                            let i = 0;
-                            i < products.length;
-                            i += 6
-                        ) {
+                      <div
+                        class="branch-sell-quantity"
+                        data-sell-quantity
+                      >
 
-                            productRows.push(
-                                products.slice(i, i + 6)
-                            );
+                        <label
+                          for="sellQty_<%= productId %>"
+                        >
+                          Units
+                        </label>
 
-                        }
-                        %>
 
+                        <input
+                          type="number"
+                          id="sellQty_<%= productId %>"
+                          class="branch-sell-quantity-input"
+                          data-product-id="<%= productId %>"
+                          min="0"
+                          max="<%= Number(product.substationUnits || 0) %>"
+                          step="1"
+                          value=""
+                          inputmode="numeric"
+                          autocomplete="off"
+                          placeholder="0"
+                        >
 
-                        <% productRows.forEach(function(rowProducts) { %>
+                      </div>
 
-                            <div class="branch-product-row">
 
-                                <% rowProducts.forEach(function(product) { %>
+                    <% } %>
 
-                                    <%
-                                    const productId =
-                                        product &&
-                                        product._id
-                                            ? String(product._id)
-                                            : "";
 
-                                    const productLink =
-                                        "/branch/" +
-                                        String(substation._id) +
-                                        "/products/" +
-                                        productId;
+                  <% }) %>
 
-                                    const productCategory =
-                                        product.category ||
-                                        category ||
-                                        "";
 
-                                    const productSubcategory =
-                                        product.subcategory ||
-                                        "";
+                </div>
 
-                                    const stock =
-                                        Number(
-                                            product.stockAvailable ?? 0
-                                        );
-                                    %>
+              </div>
 
 
-                                    <!-- ==================================
-                                         PRODUCT UNIT
+            <% }) %>
 
-                                         The quantity control is deliberately
-                                         OUTSIDE the <a>.
-                                    =================================== -->
 
-                                    <div
-                                        class="branch-product-unit"
-                                        data-product-id="<%= productId %>"
-                                        data-stock="<%= stock %>"
-                                    >
+          </div>
 
 
-                                        <!-- ==============================
-                                             CLICKABLE PRODUCT CARD
-                                        =============================== -->
+        </section>
 
-                                        <a
-                                            href="<%= productLink %>"
-                                            class="branch-product-card"
-                                            data-product-link
-                                        >
 
-                                            <!-- PRODUCT IMAGE -->
+      <% }) %>
 
-                                            <div class="branch-product-image">
-
-                                                <% if (product.image) { %>
-
-                                                    <img
-                                                        src="<%= product.image %>"
-                                                        alt="<%= product.name %>"
-                                                        loading="lazy"
-                                                    >
-
-                                                <% } else { %>
-
-                                                    <div class="branch-product-no-image">
-
-                                                        <i class="fas fa-box"></i>
-
-                                                    </div>
-
-                                                <% } %>
-
-                                            </div>
-
-
-                                            <!-- PRODUCT INFORMATION -->
-
-                                            <div class="branch-product-info">
-
-                                                <h3>
-                                                    <%= product.name %>
-                                                </h3>
-
-
-                                                <% if (productCategory) { %>
-
-                                                    <div class="branch-product-category-name">
-
-                                                        <%= productCategory %>
-
-                                                    </div>
-
-                                                <% } %>
-
-
-                                                <% if (productSubcategory) { %>
-
-                                                    <div class="branch-product-subcategory">
-
-                                                        <%= productSubcategory %>
-
-                                                    </div>
-
-                                                <% } %>
-
-
-                                                <div class="branch-product-stock">
-
-                                                    Stock:
-                                                    <strong>
-                                                        <%= stock %>
-                                                    </strong>
-
-                                                </div>
-
-                                            </div>
-
-                                        </a>
-
-
-                                        <!-- ==================================
-                                             QUANTITY CONTROL
-
-                                             OUTSIDE THE ANCHOR.
-
-                                             THIS IS THE IMPORTANT FIX.
-                                        =================================== -->
-
-                                        <% if (canSellItems) { %>
-
-                                            <div
-                                                class="branch-sell-quantity"
-                                                data-quantity-wrapper
-                                            >
-
-                                                <label
-                                                    for="branchQty_<%= productId %>"
-                                                >
-                                                    Quantity
-                                                </label>
-
-                                                <input
-                                                    type="number"
-                                                    id="branchQty_<%= productId %>"
-                                                    class="branch-sell-quantity-input"
-                                                    data-product-id="<%= productId %>"
-                                                    data-stock="<%= stock %>"
-                                                    min="0"
-                                                    max="<%= stock %>"
-                                                    step="1"
-                                                    value=""
-                                                    inputmode="numeric"
-                                                    autocomplete="off"
-                                                    placeholder="0"
-                                                >
-
-                                            </div>
-
-                                        <% } %>
-
-                                    </div>
-
-                                <% }); %>
-
-                            </div>
-
-                        <% }); %>
-
-                    </div>
-
-                </section>
-
-            <% }); %>
-
-
-        <% } else { %>
-
-            <!-- ==================================================
-                 NO PRODUCTS
-            =================================================== -->
-
-            <div class="branch-products-empty">
-
-                <i class="fas fa-box-open"></i>
-
-                <h2>
-                    No products available
-                </h2>
-
-                <p>
-                    There are currently no products available
-                    at this substation.
-                </p>
-
-            </div>
-
-        <% } %>
 
     </div>
 
-</section>
+
+  <% } %>
 
 
-<% if (canSellItems) { %>
+</div>
+
+
+<!-- ==========================================================
+     SELL ITEMS JAVASCRIPT
+========================================================== -->
+
+<% if (
+  user &&
+  ["admin", "staff"].includes(
+    String(user.role || "").toLowerCase()
+  ) &&
+  substation.products &&
+  substation.products.length
+) { %>
+
 
 <script>
+
 (function () {
 
     "use strict";
@@ -411,70 +516,46 @@ const branchSubstationId =
             "branchSellItemsButton"
         );
 
-    const sellButtonText =
-        document.getElementById(
-            "branchSellButtonText"
-        );
 
     const sellForm =
         document.getElementById(
             "branchAddManyToCartForm"
         );
 
-    const productsContainer =
-        document.getElementById(
-            "branchProductsContainer"
+
+    const productCards =
+        document.querySelectorAll(
+            "[data-product-card]"
+        );
+
+
+    const quantityWrappers =
+        document.querySelectorAll(
+            "[data-sell-quantity]"
+        );
+
+
+    const quantityInputs =
+        document.querySelectorAll(
+            ".branch-sell-quantity-input"
         );
 
 
     if (
         !sellButton ||
-        !sellForm ||
-        !productsContainer
+        !sellForm
     ) {
+
         return;
+
     }
 
-
-    /* ======================================================
-       STATE
-    ====================================================== */
 
     let sellMode = false;
 
 
     /* ======================================================
-       PRODUCT UNITS
-    ====================================================== */
-
-    function getProductUnits() {
-
-        return Array.from(
-            productsContainer.querySelectorAll(
-                ".branch-product-unit"
-            )
-        );
-
-    }
-
-
-    /* ======================================================
-       QUANTITY INPUTS
-    ====================================================== */
-
-    function getQuantityInputs() {
-
-        return Array.from(
-            productsContainer.querySelectorAll(
-                ".branch-sell-quantity-input"
-            )
-        );
-
-    }
-
-
-    /* ======================================================
-       SET SELL MODE
+       ENTER / EXIT SELL MODE
     ====================================================== */
 
     function setSellMode(enabled) {
@@ -488,25 +569,20 @@ const branchSubstationId =
         );
 
 
-        getProductUnits().forEach(function (unit) {
+        productCards.forEach(
+            function (card) {
 
-            unit.classList.toggle(
-                "branch-product-unit-selling",
-                enabled
-            );
-
-        });
-
-
-        getQuantityInputs().forEach(function (input) {
-
-            const wrapper =
-                input.closest(
-                    ".branch-sell-quantity"
+                card.classList.toggle(
+                    "branch-product-card-selling",
+                    enabled
                 );
 
+            }
+        );
 
-            if (wrapper) {
+
+        quantityWrappers.forEach(
+            function (wrapper) {
 
                 wrapper.classList.toggle(
                     "is-visible",
@@ -514,29 +590,23 @@ const branchSubstationId =
                 );
 
             }
-
-
-            if (!enabled) {
-
-                input.value = "";
-
-            }
-
-        });
-
-
-        sellButton.classList.toggle(
-            "is-selling",
-            enabled
         );
 
 
-        if (sellButtonText) {
+        /*
+         * When leaving sell mode, clear the
+         * visible quantity inputs.
+         */
 
-            sellButtonText.textContent =
-                enabled
-                    ? "Finish Selling"
-                    : "Sell Items";
+        if (!enabled) {
+
+            quantityInputs.forEach(
+                function (input) {
+
+                    input.value = "";
+
+                }
+            );
 
         }
 
@@ -544,7 +614,7 @@ const branchSubstationId =
 
 
     /* ======================================================
-       COLLECT QUANTITIES
+       CHECK WHETHER ANY QUANTITY WAS ENTERED
     ====================================================== */
 
     function getSelectedProducts() {
@@ -552,66 +622,42 @@ const branchSubstationId =
         const selectedProducts = [];
 
 
-        getQuantityInputs().forEach(function (input) {
+        quantityInputs.forEach(
+            function (input) {
 
-            const productId =
-                String(
-                    input.dataset.productId || ""
-                ).trim();
-
-
-            const stock =
-                Number(
-                    input.dataset.stock || 0
-                );
+                const productId =
+                    String(
+                        input.dataset.productId || ""
+                    ).trim();
 
 
-            if (!productId) {
-                return;
-            }
+                const quantity =
+                    Number(
+                        input.value
+                    );
 
 
-            if (input.value === "") {
-                return;
-            }
+                if (
+                    !productId ||
+                    !Number.isFinite(quantity) ||
+                    quantity <= 0
+                ) {
+
+                    return;
+
+                }
 
 
-            let quantity =
-                Number(input.value);
+                selectedProducts.push({
 
+                    productId: productId,
 
-            if (!Number.isFinite(quantity)) {
-                return;
-            }
+                    quantity: quantity
 
-
-            quantity =
-                Math.floor(quantity);
-
-
-            if (quantity <= 0) {
-                return;
-            }
-
-
-            if (quantity > stock) {
-
-                quantity = stock;
+                });
 
             }
-
-
-            if (quantity <= 0) {
-                return;
-            }
-
-
-            selectedProducts.push({
-                productId: productId,
-                qty: quantity
-            });
-
-        });
+        );
 
 
         return selectedProducts;
@@ -620,21 +666,210 @@ const branchSubstationId =
 
 
     /* ======================================================
-       PREPARE POST FORM
+       PREVENT PRODUCT NAVIGATION WHILE SELLING
+       
+       The quantity input is now OUTSIDE the product card,
+       so it does not need to be excluded here.
     ====================================================== */
 
-    function prepareForm(selectedProducts) {
+    productCards.forEach(
+        function (card) {
+
+            card.addEventListener(
+                "click",
+                function (event) {
+
+                    if (!sellMode) {
+
+                        return;
+
+                    }
+
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+                },
+                true
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       QUANTITY INPUTS
+    ====================================================== */
+
+    quantityInputs.forEach(
+        function (input) {
+
+
+            /*
+             * The input is outside the product-card <a>,
+             * but stop propagation anyway so no surrounding
+             * row/container click handler can interfere.
+             */
+
+            input.addEventListener(
+                "click",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "pointerdown",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "pointerup",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "mousedown",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "touchstart",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "keydown",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            /*
+             * Keep entered quantity within available stock.
+             */
+
+            input.addEventListener(
+                "input",
+                function () {
+
+                    if (input.value === "") {
+
+                        return;
+
+                    }
+
+
+                    let value =
+                        Number(
+                            input.value
+                        );
+
+
+                    const max =
+                        Number(
+                            input.max || 0
+                        );
+
+
+                    if (
+                        !Number.isFinite(value) ||
+                        value < 0
+                    ) {
+
+                        input.value = "";
+
+                        return;
+
+                    }
+
+
+                    value =
+                        Math.floor(value);
+
+
+                    if (
+                        max > 0 &&
+                        value > max
+                    ) {
+
+                        value = max;
+
+                    }
+
+
+                    input.value =
+                        String(value);
+
+                }
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       BUILD ADD-MANY FORM
+    ====================================================== */
+
+    function prepareForm(
+        selectedProducts
+    ) {
+
+        /*
+         * Remove previously generated
+         * product fields.
+         */
 
         sellForm
             .querySelectorAll(
-                ".branch-add-many-product-field"
+                "[data-generated-product]"
             )
-            .forEach(function (field) {
+            .forEach(
+                function (field) {
 
-                field.remove();
+                    field.remove();
 
-            });
+                }
+            );
 
+
+        /*
+         * Create:
+
+         * products[0][productId]
+         * products[0][qty]
+
+         * products[1][productId]
+         * products[1][qty]
+         */
 
         selectedProducts.forEach(
             function (item, index) {
@@ -644,47 +879,52 @@ const branchSubstationId =
                         "input"
                     );
 
+
                 productIdInput.type =
                     "hidden";
 
+
                 productIdInput.name =
-                    "products[" +
-                    index +
-                    "][productId]";
+                    `products[${index}][productId]`;
+
 
                 productIdInput.value =
                     item.productId;
 
-                productIdInput.className =
-                    "branch-add-many-product-field";
+
+                productIdInput.dataset.generatedProduct =
+                    "true";
 
 
-                const qtyInput =
+                const quantityInput =
                     document.createElement(
                         "input"
                     );
 
-                qtyInput.type =
+
+                quantityInput.type =
                     "hidden";
 
-                qtyInput.name =
-                    "products[" +
-                    index +
-                    "][qty]";
 
-                qtyInput.value =
-                    item.qty;
+                quantityInput.name =
+                    `products[${index}][qty]`;
 
-                qtyInput.className =
-                    "branch-add-many-product-field";
+
+                quantityInput.value =
+                    String(item.quantity);
+
+
+                quantityInput.dataset.generatedProduct =
+                    "true";
 
 
                 sellForm.appendChild(
                     productIdInput
                 );
 
+
                 sellForm.appendChild(
-                    qtyInput
+                    quantityInput
                 );
 
             }
@@ -694,7 +934,18 @@ const branchSubstationId =
 
 
     /* ======================================================
-       SELL BUTTON
+       SELL ITEMS BUTTON
+       
+       FIRST CLICK:
+           Enter edit mode.
+
+       SECOND CLICK:
+           If quantities exist:
+               prepare + close mode + submit.
+
+           If NO quantities exist:
+               simply close edit mode.
+               DO NOT submit.
     ====================================================== */
 
     sellButton.addEventListener(
@@ -706,11 +957,9 @@ const branchSubstationId =
             event.stopPropagation();
 
 
-            /*
-             * FIRST TAP
-             *
-             * Enter sell mode.
-             */
+            /* ==============================================
+               FIRST CLICK
+            ============================================== */
 
             if (!sellMode) {
 
@@ -721,26 +970,22 @@ const branchSubstationId =
             }
 
 
-            /*
-             * SECOND TAP
-             *
-             * Collect entered quantities.
-             */
+            /* ==============================================
+               SECOND CLICK
+            ============================================== */
 
             const selectedProducts =
                 getSelectedProducts();
 
 
             /*
-             * NOTHING ENTERED
+             * NOTHING ENTERED:
              *
-             * Simply leave sell mode.
-             * Do not submit.
+             * Simply exit.
+             * DO NOT submit.
              */
 
-            if (
-                selectedProducts.length === 0
-            ) {
+            if (!selectedProducts.length) {
 
                 setSellMode(false);
 
@@ -750,9 +995,9 @@ const branchSubstationId =
 
 
             /*
-             * QUANTITIES EXIST
+             * Quantities exist.
              *
-             * Build the POST request.
+             * Prepare the form.
              */
 
             prepareForm(
@@ -761,12 +1006,15 @@ const branchSubstationId =
 
 
             /*
-             * Hide quantity controls and restore
-             * normal card behaviour before submit.
+             * Close sell mode before submitting.
              */
 
             setSellMode(false);
 
+
+            /*
+             * Submit.
+             */
 
             sellForm.submit();
 
@@ -774,200 +1022,9 @@ const branchSubstationId =
     );
 
 
-    /* ======================================================
-       PRODUCT CARD BEHAVIOUR
-    ====================================================== */
-
-    getProductUnits().forEach(function (unit) {
-
-        const card =
-            unit.querySelector(
-                "[data-product-link]"
-            );
-
-
-        if (!card) {
-            return;
-        }
-
-
-        card.addEventListener(
-            "click",
-            function (event) {
-
-                if (!sellMode) {
-                    return;
-                }
-
-
-                event.preventDefault();
-
-                event.stopPropagation();
-
-            },
-            true
-        );
-
-    });
-
-
-    /* ======================================================
-       QUANTITY INPUT BEHAVIOUR
-    ====================================================== */
-
-    getQuantityInputs().forEach(function (input) {
-
-        /*
-         * These events belong to the input itself.
-         * Stop them from reaching the product card.
-         */
-
-        [
-            "click",
-            "dblclick",
-            "mousedown",
-            "mouseup",
-            "pointerdown",
-            "pointerup",
-            "touchstart",
-            "touchend",
-            "keydown",
-            "keypress",
-            "keyup",
-            "input",
-            "change"
-        ].forEach(function (eventName) {
-
-            input.addEventListener(
-                eventName,
-                function (event) {
-
-                    event.stopPropagation();
-
-                }
-            );
-
-        });
-
-
-        /* ==============================================
-           QUANTITY VALIDATION
-        =============================================== */
-
-        input.addEventListener(
-            "input",
-            function () {
-
-                const stock =
-                    Number(
-                        input.dataset.stock || 0
-                    );
-
-
-                if (input.value === "") {
-                    return;
-                }
-
-
-                let quantity =
-                    Number(input.value);
-
-
-                if (!Number.isFinite(quantity)) {
-
-                    input.value = "";
-
-                    return;
-
-                }
-
-
-                quantity =
-                    Math.floor(quantity);
-
-
-                if (quantity < 0) {
-
-                    quantity = 0;
-
-                }
-
-
-                if (quantity > stock) {
-
-                    quantity = stock;
-
-                }
-
-
-                input.value =
-                    quantity;
-
-            }
-        );
-
-
-        /* ==============================================
-           KEYBOARD VALIDATION
-        =============================================== */
-
-        input.addEventListener(
-            "keydown",
-            function (event) {
-
-                const allowedKeys = [
-                    "Backspace",
-                    "Delete",
-                    "Tab",
-                    "ArrowLeft",
-                    "ArrowRight",
-                    "ArrowUp",
-                    "ArrowDown",
-                    "Home",
-                    "End"
-                ];
-
-
-                if (
-                    allowedKeys.includes(
-                        event.key
-                    )
-                ) {
-                    return;
-                }
-
-
-                if (
-                    event.ctrlKey ||
-                    event.metaKey
-                ) {
-                    return;
-                }
-
-
-                if (
-                    !/^[0-9]$/.test(
-                        event.key
-                    )
-                ) {
-
-                    event.preventDefault();
-
-                }
-
-            }
-        );
-
-    });
-
-
-    /* ======================================================
-       INITIAL STATE
-    ====================================================== */
-
-    setSellMode(false);
-
 })();
+
 </script>
+
 
 <% } %>
