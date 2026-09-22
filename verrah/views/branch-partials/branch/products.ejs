@@ -14,16 +14,21 @@
    - Each row scrolls horizontally
    - Product card: 112px × 155px
    - All roles:
-       /products/:id
+       /branch/:substationId/products/:productId
 
    ----------------------------------------------------------
    SELL ITEMS:
 
    - Admin and staff can sell multiple products
    - First "Sell Items" tap enables quantity inputs
+   - Product cards become completely non-clickable
    - User can enter quantities for several products
-   - Second "Sell Items" tap submits to:
-       /products/addManyToCart
+   - Second "Sell Items" tap:
+       1. Collects entered quantities
+       2. Adds them to the form
+       3. Closes quantity inputs
+       4. Makes cards clickable again
+       5. Submits to /products/addManyToCart
 
    - Admin also submits:
        cartSubstation = substation._id
@@ -114,7 +119,9 @@
     <div class="branch-inventory-empty">
 
       <div class="branch-inventory-empty-icon">
+
         <i class="fas fa-box-open"></i>
+
       </div>
 
       <h3>
@@ -194,7 +201,9 @@
 
 
         if (!groupedProducts[categoryName]) {
+
           groupedProducts[categoryName] = [];
+
         }
 
 
@@ -210,7 +219,7 @@
 
     <!-- ======================================================
          CATEGORY GROUPS
-    =================================================== -->
+    ====================================================== -->
 
     <div class="branch-inventory-categories">
 
@@ -402,7 +411,6 @@
 
                         <div class="branch-product-meta">
 
-
                           <span class="branch-product-category">
 
                             <%= productCategory %>
@@ -420,7 +428,6 @@
                             <%= productSubcategory %>
 
                           </span>
-
 
                         </div>
 
@@ -448,9 +455,6 @@
 
                         <!-- =================================
                              SELL QUANTITY INPUT
-
-                             Hidden until Sell Items mode
-                             is activated.
                         ================================== -->
 
                         <% if (
@@ -547,6 +551,13 @@
 
 (function () {
 
+    "use strict";
+
+
+    /* ======================================================
+       ELEMENTS
+    ====================================================== */
+
     const sellButton =
         document.getElementById(
             "branchSellItemsButton"
@@ -571,9 +582,15 @@
         );
 
 
-    const quantityInputs =
+    const quantityWrappers =
         document.querySelectorAll(
             "[data-sell-quantity]"
+        );
+
+
+    const quantityInputs =
+        document.querySelectorAll(
+            ".branch-sell-quantity-input"
         );
 
 
@@ -591,11 +608,9 @@
     let sellMode = false;
 
 
-    /*
-     * ======================================================
-     * ENTER / EXIT SELL MODE
-     * ======================================================
-     */
+    /* ======================================================
+       ENTER / EXIT SELL MODE
+    ====================================================== */
 
     function setSellMode(enabled) {
 
@@ -620,7 +635,7 @@
         );
 
 
-        quantityInputs.forEach(
+        quantityWrappers.forEach(
             function (wrapper) {
 
                 wrapper.classList.toggle(
@@ -638,39 +653,41 @@
         );
 
 
-        if (enabled) {
-
-            sellButtonText.textContent =
-                "Sell Items";
-
-        } else {
-
-            sellButtonText.textContent =
-                "Sell Items";
+        sellButtonText.textContent =
+            "Sell Items";
 
 
-            document
-                .querySelectorAll(
-                    ".branch-sell-quantity-input"
-                )
-                .forEach(
-                    function (input) {
+        /*
+         * When leaving sell mode manually,
+         * clear the visible quantity inputs.
+         */
 
-                        input.value = "";
+        if (!enabled) {
 
-                    }
-                );
+            quantityInputs.forEach(
+                function (input) {
+
+                    input.value = "";
+
+                }
+            );
 
         }
 
     }
 
 
-    /*
-     * ======================================================
-     * PREVENT PRODUCT LINK NAVIGATION WHILE SELLING
-     * ======================================================
-     */
+    /* ======================================================
+       COMPLETELY BLOCK PRODUCT CARDS WHILE SELLING
+    ======================================================
+
+       This listener runs during the capture phase.
+
+       Therefore, when sellMode is true, clicking anywhere
+       on the product card cannot activate its <a> link.
+
+       The quantity input is explicitly allowed through.
+    ====================================================== */
 
     productCards.forEach(
         function (card) {
@@ -680,20 +697,19 @@
                 function (event) {
 
                     if (!sellMode) {
+
                         return;
+
                     }
 
 
                     /*
-                     * While selling, tapping the card
-                     * must not open the product page.
-                     *
-                     * The quantity input remains usable.
+                     * Quantity input must remain clickable.
                      */
 
                     if (
                         event.target.closest(
-                            ".branch-sell-quantity"
+                            ".branch-sell-quantity-input"
                         )
                     ) {
 
@@ -704,6 +720,148 @@
 
                     event.preventDefault();
 
+                    event.stopPropagation();
+
+                },
+                true
+            );
+
+
+            /*
+             * Also block pointer activation while
+             * sell mode is active.
+             */
+
+            card.addEventListener(
+                "pointerup",
+                function (event) {
+
+                    if (!sellMode) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        event.target.closest(
+                            ".branch-sell-quantity-input"
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+                },
+                true
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       QUANTITY INPUTS
+    ====================================================== */
+
+    quantityInputs.forEach(
+        function (input) {
+
+
+            /*
+             * Do not allow the input click to reach
+             * the product card.
+             */
+
+            input.addEventListener(
+                "click",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "pointerdown",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "pointerup",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            input.addEventListener(
+                "keydown",
+                function (event) {
+
+                    event.stopPropagation();
+
+                }
+            );
+
+
+            /*
+             * Keep quantities within the available
+             * substation stock.
+             */
+
+            input.addEventListener(
+                "input",
+                function () {
+
+                    const max =
+                        Number(
+                            input.max || 0
+                        );
+
+
+                    let value =
+                        Number(
+                            input.value
+                        );
+
+
+                    if (
+                        Number.isNaN(value) ||
+                        value < 0
+                    ) {
+
+                        input.value = "";
+
+                        return;
+
+                    }
+
+
+                    if (
+                        max > 0 &&
+                        value > max
+                    ) {
+
+                        input.value =
+                            String(max);
+
+                    }
+
                 }
             );
 
@@ -711,92 +869,93 @@
     );
 
 
-    /*
-     * ======================================================
-     * QUANTITY INPUTS
-     * ======================================================
-     */
+    /* ======================================================
+       COLLECT SELECTED PRODUCTS
+    ====================================================== */
 
-    document
-        .querySelectorAll(
-            ".branch-sell-quantity-input"
-        )
-        .forEach(
+    function getSelectedProducts() {
+
+        const selectedProducts = [];
+
+
+        quantityInputs.forEach(
             function (input) {
 
-                input.addEventListener(
-                    "click",
-                    function (event) {
-
-                        event.stopPropagation();
-
-                    }
-                );
+                const productId =
+                    String(
+                        input.dataset.productId || ""
+                    ).trim();
 
 
-                input.addEventListener(
-                    "keydown",
-                    function (event) {
-
-                        event.stopPropagation();
-
-                    }
-                );
+                const quantity =
+                    Number(
+                        input.value
+                    );
 
 
-                input.addEventListener(
-                    "input",
-                    function () {
+                if (
+                    !productId ||
+                    !Number.isFinite(quantity) ||
+                    quantity <= 0
+                ) {
 
-                        const max =
-                            Number(
-                                input.max || 0
-                            );
+                    return;
 
-
-                        let value =
-                            Number(
-                                input.value
-                            );
+                }
 
 
-                        if (
-                            Number.isNaN(value) ||
-                            value < 0
-                        ) {
+                selectedProducts.push({
 
-                            input.value = "";
+                    productId,
 
-                            return;
+                    quantity
 
-                        }
-
-
-                        if (max > 0 && value > max) {
-
-                            input.value =
-                                String(max);
-
-                        }
-
-                    }
-                );
+                });
 
             }
         );
 
 
-    /*
-     * ======================================================
-     * SUBMIT SELECTED PRODUCTS
-     * ======================================================
-     */
+        return selectedProducts;
+
+    }
+
+
+    /* ======================================================
+       SUBMIT SELECTED PRODUCTS
+    ====================================================== */
 
     function submitSelectedProducts() {
 
         /*
-         * Remove any previously generated
-         * product fields.
+         * Collect everything before changing
+         * the interface.
+         */
+
+        const selectedProducts =
+            getSelectedProducts();
+
+
+        /*
+         * Nothing selected.
+         *
+         * Keep sell mode active so the user can
+         * enter quantities.
+         */
+
+        if (!selectedProducts.length) {
+
+            alert(
+                "Enter the number of units for at least one product."
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * Remove previously generated product fields.
          */
 
         sellForm
@@ -812,84 +971,21 @@
             );
 
 
-        const selectedProducts = [];
-
-
-        document
-            .querySelectorAll(
-                ".branch-sell-quantity-input"
-            )
-            .forEach(
-                function (input) {
-
-                    const productId =
-                        String(
-                            input.dataset.productId || ""
-                        ).trim();
-
-
-                    const quantity =
-                        Number(
-                            input.value
-                        );
-
-
-                    /*
-                     * Only products with a valid
-                     * quantity greater than zero
-                     * are submitted.
-                     */
-
-                    if (
-                        !productId ||
-                        !Number.isFinite(quantity) ||
-                        quantity <= 0
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    selectedProducts.push({
-                        productId,
-                        quantity
-                    });
-
-                }
-            );
-
-
         /*
-         * Nothing selected.
-         */
+         * Build:
 
-        if (!selectedProducts.length) {
-
-            alert(
-                "Enter the number of units for at least one product."
-            );
-
-            return;
-
-        }
-
-
-        /*
-         * Create the exact structure expected
-         * by /products/addManyToCart:
-         *
          * products[0][productId]
          * products[0][qty]
-         *
+
          * products[1][productId]
          * products[1][qty]
-         *
+
          * etc.
          */
 
         selectedProducts.forEach(
             function (item, index) {
+
 
                 const productIdInput =
                     document.createElement(
@@ -949,7 +1045,20 @@
 
 
         /*
-         * Submit the form to:
+         * Close sell mode BEFORE submitting.
+         *
+         * This:
+         *
+         * - hides quantity inputs
+         * - removes selling card state
+         * - makes product cards clickable again
+         */
+
+        setSellMode(false);
+
+
+        /*
+         * Submit to:
          *
          * /products/addManyToCart
          */
@@ -959,21 +1068,25 @@
     }
 
 
-    /*
-     * ======================================================
-     * SELL BUTTON
-     *
-     * First tap:
-     *     Enter selling mode.
-     *
-     * Second tap:
-     *     Submit selected products.
-     * ======================================================
-     */
+    /* ======================================================
+       SELL BUTTON
+    ======================================================
+
+       FIRST TAP:
+           Enable sell mode.
+
+       SECOND TAP:
+           Submit selected products.
+    ====================================================== */
 
     sellButton.addEventListener(
         "click",
-        function () {
+        function (event) {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
 
             if (!sellMode) {
 
