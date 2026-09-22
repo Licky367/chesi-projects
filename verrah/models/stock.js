@@ -1,4 +1,4 @@
- // ==========================================================
+// ==========================================================
 // models/stock.js
 // STOCK MODEL
 //
@@ -15,16 +15,16 @@
 //
 // purchaseBatches:
 // [
-//     {
-//         units: 100,
-//         buyPrice: 100,
-//         purchasedAt: Date
-//     },
-//     {
-//         units: 50,
-//         buyPrice: 120,
-//         purchasedAt: Date
-//     }
+// {
+// units: 100,
+// buyPrice: 100,
+// purchasedAt: Date
+// },
+// {
+// units: 50,
+// buyPrice: 120,
+// purchasedAt: Date
+// }
 // ]
 //
 // The stock service consumes these batches using FIFO.
@@ -84,29 +84,6 @@ const directionsOfUseSchema =
 // ==========================================================
 // FIFO PURCHASE BATCH
 // ==========================================================
-//
-// Every time stock is purchased/added, a new batch is
-// created.
-//
-// IMPORTANT:
-//
-// `units` represents the CURRENT REMAINING units in that
-// purchase batch.
-//
-// Example:
-//
-// Original purchase:
-//
-// 100 units @ 100
-//
-// After 30 units are consumed:
-//
-// 70 units @ 100
-//
-// The batch remains in the FIFO queue with 70 units.
-//
-// The original buy price is NEVER changed.
-// ==========================================================
 
 const purchaseBatchSchema =
     new mongoose.Schema(
@@ -125,12 +102,6 @@ const purchaseBatchSchema =
             // --------------------------------------------------
             // PURCHASE PRICE PER UNIT
             // --------------------------------------------------
-            //
-            // This price belongs ONLY to this batch.
-            //
-            // It must never be changed when another purchase
-            // is added.
-            // --------------------------------------------------
 
             buyPrice: {
                 type: Number,
@@ -141,16 +112,6 @@ const purchaseBatchSchema =
 
             // --------------------------------------------------
             // PURCHASE DATE
-            // --------------------------------------------------
-            //
-            // FIFO uses this field to determine which batch
-            // is oldest.
-            //
-            // IMPORTANT:
-            //
-            // Do not add `index: true` here.
-            // The parent Stock schema defines the single
-            // index for purchaseBatches.purchasedAt below.
             // --------------------------------------------------
 
             purchasedAt: {
@@ -183,15 +144,7 @@ const stockSchema =
             },
 
             // ------------------------------------------------------
-            // CATEGORY
-            //
-            // Stores Category.name.
-            //
-            // Example:
-            // "laboratory"
-            //
-            // NOT:
-            // ObjectId("...")
+            // CATEGORY - Stores Category.name
             // ------------------------------------------------------
 
             category: {
@@ -236,13 +189,7 @@ const stockSchema =
             },
 
             // ------------------------------------------------------
-            // WAREHOUSE UNITS
-            // ------------------------------------------------------
-            //
-            // This is the total current warehouse balance.
-            //
-            // It must equal the sum of all remaining
-            // purchaseBatches.units.
+            // WAREHOUSE UNITS - equals sum of purchaseBatches.units
             // ------------------------------------------------------
 
             units: {
@@ -253,19 +200,8 @@ const stockSchema =
             },
 
             // ------------------------------------------------------
-            // BUY PRICE
-            // ------------------------------------------------------
-            //
-            // Legacy/current purchase price field.
-            //
-            // FIFO calculations DO NOT use this field when
-            // purchaseBatches are available.
-            //
-            // It is retained for compatibility with the existing
-            // application and UI.
-            //
-            // When new stock is purchased, the stock service
-            // updates this field to the latest purchase price.
+            // BUY PRICE - Legacy field, FIFO does NOT use this
+            // when purchaseBatches exist
             // ------------------------------------------------------
 
             buyPrice: {
@@ -276,36 +212,6 @@ const stockSchema =
 
             // ------------------------------------------------------
             // FIFO PURCHASE BATCHES
-            // ------------------------------------------------------
-            //
-            // Each purchase is stored independently.
-            //
-            // The stock service consumes these batches from
-            // oldest to newest.
-            //
-            // Example:
-            //
-            // [
-            //     {
-            //         units: 100,
-            //         buyPrice: 100,
-            //         purchasedAt: ...
-            //     },
-            //     {
-            //         units: 50,
-            //         buyPrice: 120,
-            //         purchasedAt: ...
-            //     }
-            // ]
-            //
-            // Current warehouse units:
-            //
-            // 150
-            //
-            // FIFO value:
-            //
-            // (100 × 100) + (50 × 120)
-            // = 16,000
             // ------------------------------------------------------
 
             purchaseBatches: {
@@ -359,21 +265,6 @@ stockSchema.index({
     subcategory: 1
 });
 
-// ==========================================================
-// FIFO INDEX
-// ==========================================================
-//
-// Helps MongoDB locate stock records containing FIFO batches.
-// The service itself determines FIFO ordering by
-// purchaseBatches.purchasedAt.
-//
-// This is the SINGLE index definition for:
-//     purchaseBatches.purchasedAt
-//
-// Do not also use `index: true` on purchasedAt inside
-// purchaseBatchSchema.
-// ==========================================================
-
 stockSchema.index({
     "purchaseBatches.purchasedAt": 1
 });
@@ -381,39 +272,19 @@ stockSchema.index({
 // ==========================================================
 // FIFO VALIDATION
 // ==========================================================
-//
-// Ensure that a stock record's warehouse balance agrees with
-// its FIFO purchase batches.
-//
-// This validation intentionally does NOT reject legacy records
-// where purchaseBatches is empty, because the service contains
-// migration logic for existing stock records.
-//
-// Once FIFO batches exist, their total must equal Stock.units.
-// ==========================================================
 
 stockSchema.pre(
     "validate",
     function (next) {
-        // ------------------------------------------------------
-        // No FIFO batches
-        //
-        // Allow this for existing/legacy records.
-        // The service will initialize them when required.
-        // ------------------------------------------------------
 
         if (
-            !Array.isArray(
+          !Array.isArray(
                 this.purchaseBatches
             ) ||
             this.purchaseBatches.length === 0
         ) {
             return next();
         }
-
-        // ------------------------------------------------------
-        // CALCULATE FIFO TOTAL
-        // ------------------------------------------------------
 
         const fifoUnits =
             this.purchaseBatches.reduce(
@@ -425,12 +296,8 @@ stockSchema.pre(
                 0
             );
 
-        // ------------------------------------------------------
-        // COMPARE WITH STOCK BALANCE
-        // ------------------------------------------------------
-
         if (
-            fifoUnits !==
+            fifoUnits!==
             Number(
                 this.units || 0
             )
@@ -445,6 +312,62 @@ stockSchema.pre(
         next();
     }
 );
+
+// ==========================================================
+// FIFO IMPLEMENTATION - CURRENT BATCH PRICE
+// Price taken from current batch, not fixed unit
+// ==========================================================
+
+// Get current FIFO batch - oldest batch with units > 0
+stockSchema.methods.getCurrentBatch = function () {
+    if (
+      !Array.isArray(this.purchaseBatches) ||
+      !this.purchaseBatches.length
+    ) {
+        return null;
+    }
+
+    const available = this.purchaseBatches
+      .filter(b => Number(b.units || 0) > 0)
+      .sort((a, b) => new Date(a.purchasedAt) - new Date(b.purchasedAt));
+
+    return available[0] || null;
+};
+
+// Get current buy price from current batch
+stockSchema.methods.getCurrentPrice = function () {
+    const batch = this.getCurrentBatch();
+    if (batch) {
+        return Number(batch.buyPrice || 0);
+    }
+    // Fallback for legacy records with no batches
+    return Number(this.buyPrice || 0);
+};
+
+// Get current batch units
+stockSchema.methods.getCurrentBatchUnits = function () {
+    const batch = this.getCurrentBatch();
+    if (batch) {
+        return Number(batch.units || 0);
+    }
+    return Number(this.units || 0);
+};
+
+// Virtuals for EJS
+stockSchema.virtual("currentBatchPrice").get(function () {
+    return this.getCurrentPrice();
+});
+
+stockSchema.virtual("currentBatch").get(function () {
+    return this.getCurrentBatch();
+});
+
+stockSchema.virtual("currentBatchUnits").get(function () {
+    return this.getCurrentBatchUnits();
+});
+
+stockSchema.set("toJSON", { virtuals: true });
+stockSchema.set("toObject", { virtuals: true });
 
 // ==========================================================
 // EXPORT
