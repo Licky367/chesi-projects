@@ -8,11 +8,14 @@
 const userRole =
     String(user?.role || "").toLowerCase();
 
+
 const isStaff =
     ["admin", "staff"].includes(userRole);
 
+
 const isAdmin =
     userRole === "admin";
+
 
 const staffBranchUrl =
     isStaff && user?.assignedSubstation
@@ -30,16 +33,27 @@ const hasItems =
     cartItems.length > 0;
 
 
+/*
+ * ==========================================================
+ * CART TOTAL
+ * ==========================================================
+ *
+ * The Cart model stores the calculated cart total in:
+ *
+ *     cart.totalPrice
+ *
+ * Therefore this page uses totalPrice directly.
+ *
+ * No separate `total` variable is required.
+ */
 const cartTotal =
-    Number(
-        total ??
-        cart?.totalPrice ??
-        0
-    );
+    Number(cart?.totalPrice || 0);
 
 
 /*
- * Existing saved payment mode.
+ * ==========================================================
+ * PAYMENT MODE
+ * ==========================================================
  *
  * true  = Mpesa
  * false = Cash
@@ -49,21 +63,22 @@ const isMobile =
 
 
 /*
- * IMPORTANT:
+ * ==========================================================
+ * CART SUBSTATION
+ * ==========================================================
  *
- * cartSubstation is expected to contain
- * the SUBSTATION ID.
+ * cartSubstation stores the MongoDB SUBSTATION ID.
  *
- * The value is submitted directly as:
+ * It is NOT the substation name.
+ *
+ * For admin cash sales, this exact ID is submitted as:
  *
  *     salesSubstation
- *
- * for admin cash sales.
  */
 const cartSubstation =
-    String(
-        cart?.cartSubstation || ""
-    ).trim();
+    cart?.cartSubstation
+        ? String(cart.cartSubstation).trim()
+        : "";
 
 
 const checkoutProductId =
@@ -640,23 +655,11 @@ const checkoutProductId =
 
             <div class="staff-sale-modal-body">
 
-                <% if (isAdmin) { %>
+                <p class="staff-sale-modal-description">
 
-                    <p class="staff-sale-modal-description">
+                    Enter the name for this sale.
 
-                        Enter the sales name to record this sale.
-
-                    </p>
-
-                <% } else { %>
-
-                    <p class="staff-sale-modal-description">
-
-                        Enter the name for this sale.
-
-                    </p>
-
-                <% } %>
+                </p>
 
 
                 <form
@@ -665,7 +668,6 @@ const checkoutProductId =
                     id="staffSaleForm"
                     class="staff-sale-form"
                 >
-
 
                     <!-- ==================================================
                          PAYMENT MODE
@@ -681,8 +683,9 @@ const checkoutProductId =
                     <!-- ==================================================
                          ADMIN CART SUBSTATION
                          
-                         cartSubstation MUST be the SUBSTATION ID.
-                         It is submitted directly as salesSubstation.
+                         cartSubstation is the MongoDB SUBSTATION ID.
+                         
+                         Submit that exact ID as salesSubstation.
                     =================================================== -->
 
                     <% if (isAdmin) { %>
