@@ -1,147 +1,178 @@
 <section class="sales-page"><!-- =====================================================
      SALES HEADER
-====================================================== --><header class="sales-header"><div class="sales-header-icon">
-    <i class="fas fa-chart-line"></i>
-</div>
+====================================================== -->
 
-<div>
-    <h1 class="sales-title">
-        Admin Dashboard 
-    </h1>
+<header class="sales-header">
 
-    <p class="sales-subtitle">
-        Monitor sales, products, staff sales, deposits and customer arrears.
-    </p>
-</div>
+    <div class="sales-header-icon">
+        <i class="fas fa-chart-line"></i>
+    </div>
 
-</header><!-- =====================================================
+    <div>
+
+        <h1 class="sales-title">
+            Admin Dashboard
+        </h1>
+
+        <p class="sales-subtitle">
+            Monitor sales, products, staff sales, deposits and customer arrears.
+        </p>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
      SALES NAVIGATION
-====================================================== --><nav
+====================================================== -->
+
+<nav
     class="sales-navigation"
     id="sales-navigation"
-><a
-    href="/sales?tab=summary<%= salesQuerySuffix %>"
-    class="sales-navigation-tab <%= activeTab === 'summary' ? 'active' : '' %>"
 >
-    <i class="fas fa-chart-pie"></i>
-    <span>Sales Summary</span>
-</a>
+
+    <a
+        href="/sales?tab=products<%= salesQuerySuffix %>"
+        class="sales-navigation-tab <%= activeTab === 'products' ? 'active' : '' %>"
+    >
+        <i class="fas fa-boxes-stacked"></i>
+        <span>Products</span>
+    </a>
 
 
-<a
-    href="/sales?tab=products<%= salesQuerySuffix %>"
-    class="sales-navigation-tab <%= activeTab === 'products' ? 'active' : '' %>"
->
-    <i class="fas fa-boxes-stacked"></i>
-    <span>Products</span>
-</a>
+    <a
+        href="/sales?tab=summary<%= salesQuerySuffix %>"
+        class="sales-navigation-tab <%= activeTab === 'summary' ? 'active' : '' %>"
+    >
+        <i class="fas fa-chart-pie"></i>
+        <span>Sales Summary</span>
+    </a>
 
 
-<a
-    href="/sales?tab=staff-sales<%= salesQuerySuffix %>"
-    class="sales-navigation-tab <%= activeTab === 'staff-sales' ? 'active' : '' %>"
->
-    <i class="fas fa-user-tie"></i>
-    <span>Sales Report</span>
-</a>
+    <a
+        href="/sales?tab=staff-sales<%= salesQuerySuffix %>"
+        class="sales-navigation-tab <%= activeTab === 'staff-sales' ? 'active' : '' %>"
+    >
+        <i class="fas fa-user-tie"></i>
+        <span>Sales Report</span>
+    </a>
 
 
-<a
-    href="/sales?tab=daily-cash-sales<%= salesQuerySuffix %>"
-    class="sales-navigation-tab <%= activeTab === 'daily-cash-sales' ? 'active' : '' %>"
->
-    <i class="fas fa-money-bill-transfer"></i>
-    <span>Deposit Funds</span>
-</a>
+    <a
+        href="/sales?tab=daily-cash-sales<%= salesQuerySuffix %>"
+        class="sales-navigation-tab <%= activeTab === 'daily-cash-sales' ? 'active' : '' %>"
+    >
+        <i class="fas fa-money-bill-transfer"></i>
+        <span>Deposit Funds</span>
+    </a>
 
 
-<a
-    href="/sales?tab=arrears<%= salesQuerySuffix %>"
-    class="sales-navigation-tab <%= activeTab === 'arrears' ? 'active' : '' %>"
->
-    <i class="fas fa-hand-holding-dollar"></i>
-    <span>Customer Arrears</span>
-</a>
+    <a
+        href="/sales?tab=arrears<%= salesQuerySuffix %>"
+        class="sales-navigation-tab <%= activeTab === 'arrears' ? 'active' : '' %>"
+    >
+        <i class="fas fa-hand-holding-dollar"></i>
+        <span>Customer Arrears</span>
+    </a>
 
-</nav><!-- =====================================================
+</nav>
+
+
+<!-- =====================================================
      FILTER
-====================================================== --><div class="sales-filter-wrapper"><%- include("sales-partials/filter") %>
+====================================================== -->
 
-</div><!-- =====================================================
+<div class="sales-filter-wrapper">
+
+    <%- include("sales-partials/filter") %>
+
+</div>
+
+
+<!-- =====================================================
      SALES CONTENT
-====================================================== --><main class="sales-content"><!-- =================================================
-     SALES SUMMARY
-================================================== -->
+====================================================== -->
 
-<section
-    class="sales-panel <%= activeTab === 'summary' ? 'active' : '' %>"
-    <%= activeTab === 'summary' ? '' : 'hidden' %>
->
+<main class="sales-content">
 
-    <%- include("sales-partials/summary") %>
+    <!-- =================================================
+         PRODUCTS
+    ================================================== -->
 
-</section>
+    <section
+        class="sales-panel <%= activeTab === 'products' ? 'active' : '' %>"
+        <%= activeTab === 'products' ? '' : 'hidden' %>
+    >
 
+        <%- include("sales-partials/products") %>
 
-<!-- =================================================
-     STAFF SALES / SALES REPORT
-================================================== -->
-
-<section
-    class="sales-panel <%= activeTab === 'staff-sales' ? 'active' : '' %>"
-    <%= activeTab === 'staff-sales' ? '' : 'hidden' %>
->
-
-    <%- include("sales-partials/staff-sales") %>
-
-</section>
+    </section>
 
 
-<!-- =================================================
-     PRODUCTS
-================================================== -->
+    <!-- =================================================
+         SALES SUMMARY
+    ================================================== -->
 
-<section
-    class="sales-panel <%= activeTab === 'products' ? 'active' : '' %>"
-    <%= activeTab === 'products' ? '' : 'hidden' %>
->
+    <section
+        class="sales-panel <%= activeTab === 'summary' ? 'active' : '' %>"
+        <%= activeTab === 'summary' ? '' : 'hidden' %>
+    >
 
-    <%- include("sales-partials/products") %>
+        <%- include("sales-partials/summary") %>
 
-</section>
-
-
-<!-- =================================================
-     DAILY CASH SALES / DEPOSIT FUNDS
-================================================== -->
-
-<section
-    class="sales-panel <%= activeTab === 'daily-cash-sales' ? 'active' : '' %>"
-    <%= activeTab === 'daily-cash-sales' ? '' : 'hidden' %>
->
-
-    <%- include("sales-partials/dailyCashSales") %>
-
-</section>
+    </section>
 
 
-<!-- =================================================
-     CUSTOMER ARREARS
-================================================== -->
+    <!-- =================================================
+         STAFF SALES / SALES REPORT
+    ================================================== -->
 
-<section
-    class="sales-panel <%= activeTab === 'arrears' ? 'active' : '' %>"
-    <%= activeTab === 'arrears' ? '' : 'hidden' %>
->
+    <section
+        class="sales-panel <%= activeTab === 'staff-sales' ? 'active' : '' %>"
+        <%= activeTab === 'staff-sales' ? '' : 'hidden' %>
+    >
 
-    <%- include("sales-partials/arrears") %>
+        <%- include("sales-partials/staff-sales") %>
 
-</section>
+    </section>
 
-</main></section><script>
+
+    <!-- =================================================
+         DAILY CASH SALES / DEPOSIT FUNDS
+    ================================================== -->
+
+    <section
+        class="sales-panel <%= activeTab === 'daily-cash-sales' ? 'active' : '' %>"
+        <%= activeTab === 'daily-cash-sales' ? '' : 'hidden' %>
+    >
+
+        <%- include("sales-partials/dailyCashSales") %>
+
+    </section>
+
+
+    <!-- =================================================
+         CUSTOMER ARREARS
+    ================================================== -->
+
+    <section
+        class="sales-panel <%= activeTab === 'arrears' ? 'active' : '' %>"
+        <%= activeTab === 'arrears' ? '' : 'hidden' %>
+    >
+
+        <%- include("sales-partials/arrears") %>
+
+    </section>
+
+</main>
+
+</section><script>
+
 document.addEventListener("DOMContentLoaded", function () {
 
-    const navigation = document.getElementById("sales-navigation");
+    const navigation =
+        document.getElementById("sales-navigation");
 
     if (!navigation) {
         return;
@@ -158,13 +189,16 @@ document.addEventListener("DOMContentLoaded", function () {
      */
 
     const savedScrollLeft =
-        sessionStorage.getItem("salesNavigationScrollLeft");
+        sessionStorage.getItem(
+            "salesNavigationScrollLeft"
+        );
 
     if (savedScrollLeft !== null) {
 
         requestAnimationFrame(function () {
 
-            navigation.scrollLeft = Number(savedScrollLeft);
+            navigation.scrollLeft =
+                Number(savedScrollLeft);
 
         });
 
@@ -179,9 +213,10 @@ document.addEventListener("DOMContentLoaded", function () {
      * navigating to another sales tab.
      */
 
-    const tabs = navigation.querySelectorAll(
-        ".sales-navigation-tab"
-    );
+    const tabs =
+        navigation.querySelectorAll(
+            ".sales-navigation-tab"
+        );
 
     tabs.forEach(function (tab) {
 
@@ -197,4 +232,5 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
+
 </script>
