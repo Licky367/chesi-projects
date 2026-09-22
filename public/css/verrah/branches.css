@@ -2366,7 +2366,7 @@ body.substation-viewer-open {
 
 /* ==========================================================
    INVENTORY HEADER ACTIONS
-   Added for Sell Items mode
+   Sell Items mode
 ========================================================== */
 
 .branch-inventory-header-actions {
@@ -2380,6 +2380,8 @@ body.substation-viewer-open {
     gap: 10px;
 
     flex: 0 0 auto;
+
+    box-sizing: border-box;
 }
 
 
@@ -2429,6 +2431,8 @@ body.substation-viewer-open {
 .branch-sell-items-btn i {
 
     font-size: 12px;
+
+    line-height: 1;
 }
 
 
@@ -2462,8 +2466,11 @@ body.substation-viewer-open {
 
 
 /* ==========================================================
-   SELL MODE
-   Quantity controls are hidden until Sell Items is tapped.
+   SELL QUANTITY CONTROL
+   Hidden until Sell Items mode is enabled.
+
+   IMPORTANT:
+   This element is outside .branch-product-card.
 ========================================================== */
 
 .branch-sell-quantity {
@@ -2488,7 +2495,7 @@ body.substation-viewer-open {
 
     display: block;
 
-    margin-bottom: 3px;
+    margin: 0 0 3px;
 
     color: #765f50;
 
@@ -2497,6 +2504,8 @@ body.substation-viewer-open {
     font-weight: 700;
 
     line-height: 1;
+
+    text-align: center;
 }
 
 
@@ -2508,6 +2517,8 @@ body.substation-viewer-open {
 
     height: 25px;
 
+    margin: 0;
+
     padding: 3px 5px;
 
     border: 1px solid #cdb9aa;
@@ -2517,6 +2528,8 @@ body.substation-viewer-open {
     background: #ffffff;
 
     color: #4f2d1b;
+
+    font-family: inherit;
 
     font-size: 11px;
 
@@ -2529,6 +2542,18 @@ body.substation-viewer-open {
     box-sizing: border-box;
 
     outline: none;
+
+    cursor: text;
+
+    appearance: auto;
+
+    -webkit-appearance: auto;
+}
+
+
+.branch-sell-quantity-input:hover {
+
+    border-color: #b99880;
 }
 
 
@@ -2543,6 +2568,9 @@ body.substation-viewer-open {
 
 /* ==========================================================
    PRODUCT CARD WHILE SELL MODE IS ACTIVE
+
+   Card remains visually stable and is not clickable
+   because JavaScript prevents navigation.
 ========================================================== */
 
 .branch-product-card-selling {
@@ -2564,6 +2592,22 @@ body.substation-viewer-open {
 
     box-shadow:
         0 4px 12px rgba(50, 27, 16, 0.10);
+}
+
+
+/* ==========================================================
+   SELL MODE
+========================================================== */
+
+.branch-selling-items .branch-product-card {
+
+    cursor: default;
+}
+
+
+.branch-selling-items .branch-product-card:hover {
+
+    transform: none;
 }
 
 
@@ -2594,6 +2638,20 @@ body.substation-viewer-open {
         font-size: 11px;
     }
 
+
+    .branch-sell-quantity {
+
+        margin-top: 5px;
+    }
+
+
+    .branch-sell-quantity-input {
+
+        height: 25px;
+
+        font-size: 11px;
+    }
+
 }
 
 
@@ -2616,6 +2674,32 @@ body.substation-viewer-open {
         padding: 7px 9px;
 
         font-size: 11px;
+    }
+
+
+    .branch-sell-items-btn i {
+
+        font-size: 10px;
+    }
+
+
+    .branch-sell-quantity {
+
+        margin-top: 4px;
+    }
+
+
+    .branch-sell-quantity label {
+
+        font-size: 8px;
+    }
+
+
+    .branch-sell-quantity-input {
+
+        height: 24px;
+
+        font-size: 10px;
     }
 
 }
