@@ -48,6 +48,24 @@ const isMobile =
     cart?.isMobile === true;
 
 
+/*
+ * IMPORTANT:
+ *
+ * cartSubstation is expected to contain
+ * the SUBSTATION ID.
+ *
+ * The value is submitted directly as:
+ *
+ *     salesSubstation
+ *
+ * for admin cash sales.
+ */
+const cartSubstation =
+    String(
+        cart?.cartSubstation || ""
+    ).trim();
+
+
 const checkoutProductId =
     hasItems
         ? String(
@@ -57,24 +75,6 @@ const checkoutProductId =
             ""
         )
         : "";
-
-
-/*
- * Substations supplied by the backend.
- *
- * Expected variable:
- *
- *     substations
- *
- * Each substation should contain:
- *
- *     _id
- *     name
- */
-const availableSubstations =
-    Array.isArray(substations)
-        ? substations
-        : [];
 %>
 
 
@@ -604,11 +604,14 @@ const availableSubstations =
                 <div>
 
                     <span class="staff-sale-modal-kicker">
+
                         <%= isAdmin
                             ? "ADMIN SALE"
                             : "STAFF SALE"
                         %>
+
                     </span>
+
 
                     <h2 id="staffSaleModalTitle">
                         Record Sale
@@ -641,8 +644,7 @@ const availableSubstations =
 
                     <p class="staff-sale-modal-description">
 
-                        Enter the sales name and select the
-                        substation where the sale is recorded.
+                        Enter the sales name to record this sale.
 
                     </p>
 
@@ -677,6 +679,24 @@ const availableSubstations =
 
 
                     <!-- ==================================================
+                         ADMIN CART SUBSTATION
+                         
+                         cartSubstation MUST be the SUBSTATION ID.
+                         It is submitted directly as salesSubstation.
+                    =================================================== -->
+
+                    <% if (isAdmin) { %>
+
+                        <input
+                            type="hidden"
+                            name="salesSubstation"
+                            value="<%= cartSubstation %>"
+                        >
+
+                    <% } %>
+
+
+                    <!-- ==================================================
                          SALES NAME
                     =================================================== -->
 
@@ -704,76 +724,6 @@ const availableSubstations =
                         </div>
 
                     </div>
-
-
-                    <!-- ==================================================
-                         ADMIN SUBSTATION
-                    =================================================== -->
-
-                    <% if (isAdmin) { %>
-
-                        <div class="cart-payment-mode">
-
-                            <label for="salesSubstation">
-                                Substation
-                            </label>
-
-
-                            <div class="cart-payment-mode-label">
-
-                                <i class="fas fa-location-dot"></i>
-
-
-                                <select
-                                    id="salesSubstation"
-                                    name="salesSubstation"
-                                    required
-                                >
-
-                                    <option
-                                        value=""
-                                        disabled
-                                        selected
-                                    >
-                                        Select substation
-                                    </option>
-
-
-                                    <% availableSubstations.forEach(substation => { %>
-
-                                        <%
-                                            const substationId =
-                                                String(
-                                                    substation?._id ||
-                                                    substation?.id ||
-                                                    ""
-                                                );
-
-
-                                            const substationName =
-                                                substation?.name ||
-                                                "Unnamed Substation";
-                                        %>
-
-                                        <% if (substationId) { %>
-
-                                            <option
-                                                value="<%= substationId %>"
-                                            >
-                                                <%= substationName %>
-                                            </option>
-
-                                        <% } %>
-
-                                    <% }) %>
-
-                                </select>
-
-                            </div>
-
-                        </div>
-
-                    <% } %>
 
 
                     <!-- ==================================================
