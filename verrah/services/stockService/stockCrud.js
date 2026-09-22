@@ -64,7 +64,7 @@ async function createStock(body) {
     const unitBuyPrice = totalPurchaseCost / units;
     if (!Number.isFinite(unitBuyPrice)) throw new Error("Unable to calculate the unit buy price.");
 
-    const unitSellPrice = number(body.unitSellPrice ?? body.sellPrice, "Selling price", true);
+    const unitSellPrice = number(body.unitSellPrice?? body.sellPrice, "Selling price", true);
     const days = wholeNumber(body.days || 0, "Delivery days");
     const image = text(body.image);
     const description = text(body.description);
@@ -83,7 +83,10 @@ async function createStock(body) {
         await session.withTransaction(async () => {
             const stockResult = await Stock.create([{
                 name, category, subcategory, days, image, units,
-                buyPrice: unitBuyPrice, unitBuyPrice, purchaseBatches, description
+                buyPrice: unitBuyPrice,
+                unitBuyPrice,
+                purchaseBatches,
+                description
             }], { session });
             createdStock = stockResult[0];
 
@@ -149,8 +152,8 @@ async function updateStockEntry(stockId, body) {
             const stockName = cleanSubcategory(body.name || stock.name || subcategory);
             if (!stockName) throw new Error("Stock name is required.");
 
-            const unitSellPrice = number(body.unitSellPrice ?? body.sellPrice ?? 0, "Selling price");
-            const days = wholeNumber(body.days ?? stock.days ?? 0, "Delivery days");
+            const unitSellPrice = number(body.unitSellPrice?? body.sellPrice?? 0, "Selling price");
+            const days = wholeNumber(body.days?? stock.days?? 0, "Delivery days");
             const image = text(body.image);
             const description = text(body.description);
 
@@ -168,20 +171,18 @@ async function updateStockEntry(stockId, body) {
             stock.description = description;
             if (image) stock.image = image;
 
+            // BUY PRICE -> FIFO BATCH ONLY
             if (additionalUnits > 0) {
                 stock.purchaseBatches.push({
                     units: additionalUnits,
                     buyPrice: additionalUnitBuyPrice,
                     purchasedAt: new Date()
                 });
+                stock.units = currentUnits + additionalUnits;
+                stock.purchaseBatches = sortFifoBatches(stock.purchaseBatches);
+                stock.unitBuyPrice = calculateUnitBuyPrice(stock);
             }
 
-            stock.units = currentUnits + additionalUnits;
-            stock.purchaseBatches = sortFifoBatches(stock.purchaseBatches);
-
-            const calculatedUnitBuyPrice = calculateUnitBuyPrice(stock);
-            stock.unitBuyPrice = calculatedUnitBuyPrice;
-            stock.buyPrice = calculatedUnitBuyPrice;
             await stock.save({ session });
 
             const categoryDocument = await getCategoryByName(stock.category, session);
