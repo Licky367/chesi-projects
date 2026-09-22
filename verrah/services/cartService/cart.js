@@ -14,13 +14,15 @@
 // activeSubstationId is OPTIONAL.
 //
 // If supplied:
-//     -> Resolve the substation
-//     -> Save its NAME as cartSubstation
+//     -> Validate the supplied substation ID
+//     -> Save the ID directly as cartSubstation
 //
 // If NOT supplied:
 //     -> Do not require it
 //     -> Do not throw an error
 //     -> Preserve normal cart behavior
+//
+// cartSubstation stores the SUBSTATION ID, never the name.
 //
 // This works for admin, staff, and other roles.
 // ==========================================================
@@ -51,7 +53,7 @@ const {
 
 
 // ==========================================================
-// GET OPTIONAL ACTIVE SUBSTATION
+// GET OPTIONAL ACTIVE SUBSTATION ID
 // ==========================================================
 //
 // The active substation can come from:
@@ -63,18 +65,24 @@ const {
 // addManyToCart explicitly carry the selected substation.
 //
 // IMPORTANT:
+//
 // Neither source is compulsory.
 //
 // If neither exists:
 //     return null
 //
 // If an ID is supplied:
-//     resolve the actual substation name from MongoDB.
+//     validate the ID
+//     verify that the substation exists
+//     return the ID itself
 //
-// We never trust a substation NAME supplied by the client.
+// DO NOT resolve the name.
+// DO NOT save the name.
 // ==========================================================
 
-async function getOptionalCartSubstation(req) {
+async function getOptionalCartSubstation(
+    req
+) {
 
     const bodySubstationId =
         req.body &&
@@ -83,6 +91,7 @@ async function getOptionalCartSubstation(req) {
                 req.body.activeSubstationId
             ).trim()
             : "";
+
 
     const querySubstationId =
         req.query &&
@@ -130,19 +139,23 @@ async function getOptionalCartSubstation(req) {
 
 
     // ------------------------------------------------------
-    // Resolve the actual substation.
+    // Verify that the supplied substation ID exists.
+    //
+    // IMPORTANT:
+    //
+    // We do NOT retrieve the name.
+    //
+    // The ID itself is what gets stored in the cart.
     // ------------------------------------------------------
 
-    const substation =
-        await Substation
-            .findById(
+    const substationExists =
+        await Substation.exists({
+            _id:
                 activeSubstationId
-            )
-            .select("name")
-            .lean();
+        });
 
 
-    if (!substation) {
+    if (!substationExists) {
 
         throw new Error(
             "Active substation not found."
@@ -152,16 +165,10 @@ async function getOptionalCartSubstation(req) {
 
 
     // ------------------------------------------------------
-    // Return the actual database name.
+    // Return ONLY the ID.
     // ------------------------------------------------------
 
-    return {
-        id:
-            activeSubstationId,
-
-        name:
-            substation.name
-    };
+    return activeSubstationId;
 
 }
 
@@ -176,7 +183,7 @@ async function getOptionalCartSubstation(req) {
 // Therefore:
 //
 //     activeSubstation supplied
-//         -> cartSubstation = actual substation name
+//         -> cartSubstation = active substation ID
 //
 //     activeSubstation NOT supplied
 //         -> leave existing cartSubstation untouched
@@ -191,7 +198,7 @@ async function applyOptionalCartSubstation(
     session = null
 ) {
 
-    const activeSubstation =
+    const activeSubstationId =
         await getOptionalCartSubstation(
             req
         );
@@ -204,7 +211,7 @@ async function applyOptionalCartSubstation(
     // Do NOT overwrite an existing cartSubstation.
     // ------------------------------------------------------
 
-    if (!activeSubstation) {
+    if (!activeSubstationId) {
 
         return cart;
 
@@ -212,27 +219,54 @@ async function applyOptionalCartSubstation(
 
 
     // ------------------------------------------------------
-    // Save the actual substation NAME.
+    // Save the SUBSTATION ID directly.
+    //
+    // NEVER save the substation name here.
     // ------------------------------------------------------
 
-    cart.cartSubstation =
-        activeSubstation.name;
-
-
-    // ------------------------------------------------------
-    // Preserve transaction/session support.
-    // ------------------------------------------------------
-
-    if (session) {
-
-        cart.$session(
-            session
+    const newSubstationId =
+        new mongoose.Types.ObjectId(
+            activeSubstationId
         );
 
+
+    const currentSubstationId =
+        cart.cartSubstation
+            ? String(
+                cart.cartSubstation
+            )
+            : "";
+
+
+    const newSubstationIdString =
+        String(
+            newSubstationId
+        );
+
+
+    // ------------------------------------------------------
+    // Only save when the active substation actually changed.
+    // ------------------------------------------------------
+
+    if (
+        currentSubstationId !==
+        newSubstationIdString
+    ) {
+
+        cart.cartSubstation =
+            newSubstationId;
+
+        if (session) {
+
+            cart.$session(
+                session
+            );
+
+        }
+
+        await cart.save();
+
     }
-
-
-    await cart.save();
 
 
     return cart;
@@ -250,7 +284,7 @@ async function applyOptionalCartSubstation(
 //     create it.
 //
 // If activeSubstationId was supplied:
-//     save the resolved substation name.
+//     save that ID as cartSubstation.
 //
 // If activeSubstationId was NOT supplied:
 //     continue normally.
@@ -278,13 +312,13 @@ async function getOrCreateCart(
 
 
     // ------------------------------------------------------
-    // Resolve optional active substation.
+    // Resolve optional active substation ID.
     //
     // This happens before cart creation so the value can
     // be included directly when creating a new cart.
     // ------------------------------------------------------
 
-    const activeSubstation =
+    const activeSubstationId =
         await getOptionalCartSubstation(
             req
         );
@@ -325,15 +359,16 @@ async function getOrCreateCart(
         // --------------------------------------------------
         // Only add cartSubstation when an active substation
         // was actually supplied.
+        //
+        // Store the ID directly.
         // --------------------------------------------------
 
-        if (
-            activeSubstation &&
-            activeSubstation.name
-        ) {
+        if (activeSubstationId) {
 
             cartData.cartSubstation =
-                activeSubstation.name;
+                new mongoose.Types.ObjectId(
+                    activeSubstationId
+                );
 
         }
 
@@ -377,37 +412,36 @@ async function getOrCreateCart(
     // cartSubstation untouched.
     // ------------------------------------------------------
 
-    if (
-        activeSubstation &&
-        activeSubstation.name
-    ) {
+    if (activeSubstationId) {
 
-        const currentName =
+        const currentSubstationId =
             cart.cartSubstation
                 ? String(
                     cart.cartSubstation
-                ).trim()
+                )
                 : "";
 
 
-        const newName =
+        const newSubstationId =
             String(
-                activeSubstation.name
-            ).trim();
+                activeSubstationId
+            );
 
 
         // --------------------------------------------------
-        // Avoid unnecessary database writes when the
-        // cart already contains the correct substation.
+        // Avoid unnecessary database writes when the cart
+        // already contains the correct substation ID.
         // --------------------------------------------------
 
         if (
-            currentName !==
-            newName
+            currentSubstationId !==
+            newSubstationId
         ) {
 
             cart.cartSubstation =
-                newName;
+                new mongoose.Types.ObjectId(
+                    activeSubstationId
+                );
 
 
             if (session) {
