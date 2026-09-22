@@ -14,7 +14,7 @@
 //
 // CART SUBSTATION
 //
-// cartSubstation stores the NAME of the active substation
+// cartSubstation stores the ID of the active substation
 // associated with the cart.
 //
 // This field is OPTIONAL.
@@ -22,8 +22,11 @@
 // A cart can therefore exist without a substation when the
 // route does not provide an activeSubstationId.
 //
-// The cart service is responsible for resolving the active
-// substation ID to its actual name before saving it here.
+// When activeSubstationId is supplied, the cart service
+// stores that substation's MongoDB ObjectId directly in
+// cartSubstation.
+//
+// No substation name is stored in this field.
 //
 // CART ITEM FIELDS
 //
@@ -163,33 +166,27 @@ const cartSchema = new mongoose.Schema(
         // --------------------------------------------------
         // CART SUBSTATION
         //
-        // Stores the NAME of the active substation associated
-        // with the cart.
+        // Stores the MongoDB ObjectId of the active
+        // substation associated with the cart.
         //
-        // OPTIONAL:
+        // IMPORTANT:
         //
-        // Not every route provides an active substation.
-        //
-        // The cart service resolves the supplied
-        // activeSubstationId to the substation name and saves
-        // that name here.
+        // This is an ID, NOT the substation name.
         //
         // Example:
         //
-        //     "Machakos"
+        //     "68c123456789abcdef123456"
         //
-        // or:
-        //
-        //     "Nairobi CBD"
-        //
-        // No substation supplied:
+        // When no activeSubstationId is supplied:
         //
         //     cartSubstation remains unset.
+        //
+        // The field is optional so routes that do not provide
+        // an active substation remain valid.
         // --------------------------------------------------
 
         cartSubstation: {
-            type: String,
-            trim: true,
+            type: mongoose.Schema.Types.ObjectId,
             default: undefined
         },
 
