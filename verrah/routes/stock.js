@@ -31,7 +31,7 @@ router.get(
 
 // POST /stock - create or update stock.
 router.post(
-    "/",
+    "/new",
     requireAdmin,
     controller.createOrUpdateStock
 );
