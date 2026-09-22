@@ -32,8 +32,8 @@
        quantity inputs close
        cards become clickable again
 
-   - Admin also submits:
-       cartSubstation = substation._id
+   - Admin submits:
+       cartSubstation = parent /branch/:id ID
 
 ========================================================== -->
 
@@ -158,10 +158,36 @@
           String(user.role || "").toLowerCase() === "admin"
         ) { %>
 
+          <%
+            /*
+             * The parent branch page is:
+
+                 /branch/:id
+
+             * Therefore use the :id from the current
+             * parent URL.
+
+             * Example:
+
+                 /branch/68abc123/products
+
+             * parentBranchId becomes:
+
+                 68abc123
+            */
+
+            const parentBranchId =
+              String(
+                window.location.pathname
+              )
+              .split("/")
+              .filter(Boolean)[1];
+          %>
+
           <input
             type="hidden"
             name="cartSubstation"
-            value="<%= substation._id %>"
+            value="<%= parentBranchId %>"
           >
 
         <% } %>
@@ -410,11 +436,7 @@
                     <!-- ======================================
                          SELL QUANTITY
 
-                         IMPORTANT:
-                         THIS IS OUTSIDE THE <a>.
-
-                         Therefore the input is a normal,
-                         independently clickable form control.
+                         OUTSIDE THE PRODUCT LINK
                     ======================================= -->
 
                     <% if (
@@ -508,6 +530,33 @@
 
 
     /* ======================================================
+       GET PARENT /branch/:id ID
+       
+       The page is loaded under:
+
+           /branch/:id/products
+
+       or:
+
+           /branch/:id/products/:productId
+
+       Therefore the second URL segment is the parent
+       branch/substation ID.
+    ====================================================== */
+
+    const pathParts =
+        window.location.pathname
+            .split("/")
+            .filter(Boolean);
+
+
+    const parentBranchId =
+        String(
+            pathParts[1] || ""
+        ).trim();
+
+
+    /* ======================================================
        ELEMENTS
     ====================================================== */
 
@@ -593,11 +642,6 @@
         );
 
 
-        /*
-         * When leaving sell mode, clear the
-         * visible quantity inputs.
-         */
-
         if (!enabled) {
 
             quantityInputs.forEach(
@@ -614,7 +658,7 @@
 
 
     /* ======================================================
-       CHECK WHETHER ANY QUANTITY WAS ENTERED
+       GET SELECTED PRODUCTS
     ====================================================== */
 
     function getSelectedProducts() {
@@ -667,9 +711,6 @@
 
     /* ======================================================
        PREVENT PRODUCT NAVIGATION WHILE SELLING
-       
-       The quantity input is now OUTSIDE the product card,
-       so it does not need to be excluded here.
     ====================================================== */
 
     productCards.forEach(
@@ -705,12 +746,6 @@
     quantityInputs.forEach(
         function (input) {
 
-
-            /*
-             * The input is outside the product-card <a>,
-             * but stop propagation anyway so no surrounding
-             * row/container click handler can interfere.
-             */
 
             input.addEventListener(
                 "click",
@@ -771,10 +806,6 @@
                 }
             );
 
-
-            /*
-             * Keep entered quantity within available stock.
-             */
 
             input.addEventListener(
                 "input",
@@ -844,8 +875,10 @@
     ) {
 
         /*
-         * Remove previously generated
+         * Remove only previously generated
          * product fields.
+         *
+         * cartSubstation is NOT removed.
          */
 
         sellForm
@@ -860,16 +893,6 @@
                 }
             );
 
-
-        /*
-         * Create:
-
-         * products[0][productId]
-         * products[0][qty]
-
-         * products[1][productId]
-         * products[1][qty]
-         */
 
         selectedProducts.forEach(
             function (item, index) {
@@ -935,17 +958,6 @@
 
     /* ======================================================
        SELL ITEMS BUTTON
-       
-       FIRST CLICK:
-           Enter edit mode.
-
-       SECOND CLICK:
-           If quantities exist:
-               prepare + close mode + submit.
-
-           If NO quantities exist:
-               simply close edit mode.
-               DO NOT submit.
     ====================================================== */
 
     sellButton.addEventListener(
@@ -979,10 +991,8 @@
 
 
             /*
-             * NOTHING ENTERED:
-             *
-             * Simply exit.
-             * DO NOT submit.
+             * Nothing entered:
+             * exit without submitting.
              */
 
             if (!selectedProducts.length) {
@@ -995,9 +1005,50 @@
 
 
             /*
-             * Quantities exist.
+             * ADMIN ONLY:
              *
-             * Prepare the form.
+             * cartSubstation MUST be the ID from
+             * the parent /branch/:id URL.
+             */
+
+            if (
+                String(
+                    "<%= String(user.role || "").toLowerCase() %>"
+                ) === "admin"
+            ) {
+
+                if (!parentBranchId) {
+
+                    setSellMode(false);
+
+                    return;
+
+                }
+
+
+                const cartSubstationInput =
+                    sellForm.querySelector(
+                        'input[name="cartSubstation"]'
+                    );
+
+
+                if (!cartSubstationInput) {
+
+                    setSellMode(false);
+
+                    return;
+
+                }
+
+
+                cartSubstationInput.value =
+                    parentBranchId;
+
+            }
+
+
+            /*
+             * Add the selected products.
              */
 
             prepareForm(
@@ -1006,14 +1057,14 @@
 
 
             /*
-             * Close sell mode before submitting.
+             * Close sell mode.
              */
 
             setSellMode(false);
 
 
             /*
-             * Submit.
+             * Submit the complete form.
              */
 
             sellForm.submit();
