@@ -3,7 +3,6 @@
 
 VERRAH COSMETICS
 BRANCH PRODUCTS
-SUBMITS cartSubstation AS DOCUMENT OBJECT
 
 */
 
@@ -350,8 +349,8 @@ const categoryGroups =
     <% } %>
 
     <!-- ======================================================
-         ADD MANY PRODUCTS TO CART FORM
-         NOW SUBMITS SUBSTATION DOCUMENT OBJECT
+         ADD MANY PRODUCTS TO CART FORM - CORRECTED
+         cartSubstation is substation document from /branch/:id
     ======================================================= -->
 
     <% if (
@@ -366,18 +365,13 @@ const categoryGroups =
             method="POST"
             id="branchAddManyToCartForm"
         >
-            <%
-                // Parent page supplies the full substation document
-                const _subDoc = typeof substation.toObject === 'function'? substation.toObject() : substation;
-            %>
-            <!-- Submit as document object using bracket notation -->
-            <input type="hidden" name="cartSubstation[_id]" value="<%= String(_subDoc._id) %>" id="cartSubstationId">
-            <input type="hidden" name="cartSubstation[name]" value="<%= _subDoc.name || '' %>">
-            <input type="hidden" name="cartSubstation[branchName]" value="<%= _subDoc.branchName || _subDoc.name || '' %>">
-            <input type="hidden" name="cartSubstation[location]" value="<%= _subDoc.location || '' %>">
-            <input type="hidden" name="cartSubstation[type]" value="<%= _subDoc.type || '' %>">
-            <!-- Keep full JSON as fallback -->
-            <input type="hidden" name="cartSubstationJson" id="cartSubstationJson" value='<%- JSON.stringify(_subDoc).replace(/'/g, "&#39;") %>'>
+            <!-- cartSubstation - ID from mother page /branch/:id -->
+            <input
+                type="hidden"
+                name="cartSubstation"
+                id="cartSubstationInput"
+                value="<%= substation._id %>"
+            >
         </form>
 
     <% } %>
@@ -429,6 +423,11 @@ document.addEventListener(
         const quantityInputs =
             document.querySelectorAll(
                 ".branch-sell-quantity-input"
+            );
+
+        const cartSubstationInput =
+            document.getElementById(
+                "cartSubstationInput"
             );
 
         let sellMode = false;
@@ -530,23 +529,12 @@ document.addEventListener(
                     }
                 );
 
-            // FORCE ID from mother page URL /branch/:id - ensures correct document
-            const urlMatch = window.location.pathname.match(/\/branch\/([^\/]+)/);
-            const correctId = urlMatch? urlMatch[1] : "";
-
-            const idField = document.getElementById("cartSubstationId");
-            if (idField && correctId) {
-                idField.value = correctId;
-            }
-
-            // Also update JSON fallback
-            const jsonField = document.getElementById("cartSubstationJson");
-            if (jsonField && correctId) {
-                try {
-                    const doc = JSON.parse(jsonField.value);
-                    doc._id = correctId;
-                    jsonField.value = JSON.stringify(doc);
-                } catch(e) {}
+            // Ensure cartSubstation is correct ID from /branch/:id URL
+            if (cartSubstationInput) {
+                const match = window.location.pathname.match(/\/branch\/([^\/]+)/);
+                if (match && match[1]) {
+                    cartSubstationInput.value = match[1];
+                }
             }
 
             selectedProducts.forEach(
