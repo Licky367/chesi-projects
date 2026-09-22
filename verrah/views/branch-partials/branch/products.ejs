@@ -3,45 +3,50 @@
 ==========================================================
 VERRAH COSMETICS
 BRANCH PRODUCTS
+==========================================================
 
 SELL ITEMS MODE
-- Admin and staff can enter sell mode.
-- First tap: show quantity inputs.
-- While selling: product links are disabled.
+- Admin and staff can sell items.
+- First tap: enter sell mode.
+- Quantity inputs become visible.
+- Product cards cannot navigate while selling.
 - Quantity inputs remain fully interactive.
 - Second tap:
     - quantities entered -> submit to addManyToCart
-    - no quantities -> simply exit sell mode
+    - no quantities -> exit sell mode only
 - Admin submits cartSubstation.
 - Staff does not submit cartSubstation.
 ==========================================================
 */
 
-const currentUserRole =
-    String(user?.role || "").toLowerCase();
-
 const canSellItems =
-    currentUserRole === "admin" ||
-    currentUserRole === "staff";
+    user &&
+    (
+        user.role === "admin" ||
+        user.role === "staff"
+    );
 
 const isAdmin =
-    currentUserRole === "admin";
+    user &&
+    user.role === "admin";
 
 const branchSubstationId =
-    substation?._id
+    substation &&
+    substation._id
         ? String(substation._id)
         : "";
-
-const groupedProducts =
-    productsByCategory || {};
 %>
 
 
-<section class="branch-products-page">
+<!-- ==========================================================
+     PRODUCTS SECTION
+=========================================================== -->
 
-    <!-- ==================================================
-         INVENTORY HEADER
-    =================================================== -->
+<section class="branch-products-section">
+
+    <!-- ======================================================
+         PRODUCTS HEADER
+    ======================================================= -->
 
     <div class="branch-inventory-header">
 
@@ -67,14 +72,16 @@ const groupedProducts =
 
                 <button
                     type="button"
-                    class="branch-sell-items-btn"
                     id="branchSellItemsButton"
+                    class="branch-sell-items-btn"
                 >
+
                     <i class="fas fa-shopping-cart"></i>
 
                     <span id="branchSellButtonText">
                         Sell Items
                     </span>
+
                 </button>
 
             </div>
@@ -84,23 +91,27 @@ const groupedProducts =
     </div>
 
 
-    <!-- ==================================================
+    <!-- ======================================================
          PRODUCT SEARCH
-    =================================================== -->
+    ======================================================= -->
 
-    <%- include("../partials/productSearch") %>
+    <%- include("../../partials/productSearch") %>
 
 
-    <!-- ==================================================
+    <!-- ======================================================
          ADD MANY TO CART FORM
-    =================================================== -->
+
+         IMPORTANT:
+         Admin gets cartSubstation.
+         Staff does not.
+    ======================================================= -->
 
     <% if (canSellItems) { %>
 
         <form
+            id="branchAddManyToCartForm"
             action="/products/addManyToCart"
             method="POST"
-            id="branchAddManyToCartForm"
         >
 
             <% if (isAdmin) { %>
@@ -108,7 +119,7 @@ const groupedProducts =
                 <input
                     type="hidden"
                     name="cartSubstation"
-                    value="<%= branchSubstationId %>"
+                    value="<%= substation._id %>"
                 >
 
             <% } %>
@@ -118,235 +129,248 @@ const groupedProducts =
     <% } %>
 
 
-    <!-- ==================================================
-         PRODUCTS
-    =================================================== -->
+    <!-- ======================================================
+         CATEGORY GROUPS
+    ======================================================= -->
 
     <div
         class="branch-products-container"
         id="branchProductsContainer"
     >
 
-        <% Object.keys(groupedProducts).forEach(function(category) { %>
+        <% if (categoryGroups && categoryGroups.length) { %>
 
-            <section class="branch-product-category">
+            <% categoryGroups.forEach(function([category, products]) { %>
 
-                <div class="branch-product-category-header">
+                <section class="branch-product-category">
 
-                    <h2>
-                        <%= category %>
-                    </h2>
+                    <!-- ======================================
+                         CATEGORY HEADER
+                    ======================================= -->
 
-                </div>
+                    <div class="branch-product-category-header">
+
+                        <h2>
+                            <%= category %>
+                        </h2>
+
+                    </div>
 
 
-                <div class="branch-product-rows">
+                    <!-- ======================================
+                         PRODUCT ROWS
 
-                    <%
-                    const categoryProducts =
-                        groupedProducts[category] || [];
+                         MAXIMUM 6 PRODUCTS PER ROW
+                    ======================================= -->
 
-                    for (
-                        let rowStart = 0;
-                        rowStart < categoryProducts.length;
-                        rowStart += 6
-                    ) {
+                    <div class="branch-product-rows">
 
-                        const rowProducts =
-                            categoryProducts.slice(
-                                rowStart,
-                                rowStart + 6
+                        <%
+                        const productRows = [];
+
+                        for (
+                            let i = 0;
+                            i < products.length;
+                            i += 6
+                        ) {
+
+                            productRows.push(
+                                products.slice(i, i + 6)
                             );
-                    %>
 
-                        <div class="branch-product-row">
-
-                            <% rowProducts.forEach(function(product) { %>
-
-                                <%
-                                const productId =
-                                    product?._id
-                                        ? String(product._id)
-                                        : "";
-
-                                const stock =
-                                    Number(
-                                        product?.stockAvailable ?? 0
-                                    );
-
-                                const productUrl =
-                                    "/branch/" +
-                                    branchSubstationId +
-                                    "/products/" +
-                                    productId;
-                                %>
+                        }
+                        %>
 
 
-                                <!-- ==========================================
-                                     PRODUCT UNIT
+                        <% productRows.forEach(function(rowProducts) { %>
 
-                                     IMPORTANT:
-                                     The quantity control is OUTSIDE the
-                                     clickable <a>.
+                            <div class="branch-product-row">
 
-                                     This is what allows the input to receive
-                                     focus and keyboard input normally.
-                                =========================================== -->
+                                <% rowProducts.forEach(function(product) { %>
 
-                                <div
-                                    class="branch-product-unit"
-                                    data-product-id="<%= productId %>"
-                                    data-stock="<%= stock %>"
-                                >
+                                    <%
+                                    const productId =
+                                        product &&
+                                        product._id
+                                            ? String(product._id)
+                                            : "";
+
+                                    const productLink =
+                                        "/branch/" +
+                                        String(substation._id) +
+                                        "/products/" +
+                                        productId;
+
+                                    const productCategory =
+                                        product.category ||
+                                        category ||
+                                        "";
+
+                                    const productSubcategory =
+                                        product.subcategory ||
+                                        "";
+
+                                    const stock =
+                                        Number(
+                                            product.stockAvailable ?? 0
+                                        );
+                                    %>
 
 
-                                    <!-- ======================================
-                                         CLICKABLE PRODUCT CARD
-                                    ======================================= -->
+                                    <!-- ==================================
+                                         PRODUCT UNIT
 
-                                    <a
-                                        href="<%= productUrl %>"
-                                        class="branch-product-card"
-                                        data-product-link
+                                         The quantity control is deliberately
+                                         OUTSIDE the <a>.
+                                    =================================== -->
+
+                                    <div
+                                        class="branch-product-unit"
+                                        data-product-id="<%= productId %>"
+                                        data-stock="<%= stock %>"
                                     >
 
-                                        <!-- IMAGE -->
 
-                                        <div class="branch-product-image">
+                                        <!-- ==============================
+                                             CLICKABLE PRODUCT CARD
+                                        =============================== -->
 
-                                            <% if (product?.image) { %>
+                                        <a
+                                            href="<%= productLink %>"
+                                            class="branch-product-card"
+                                            data-product-link
+                                        >
 
-                                                <img
-                                                    src="<%= product.image %>"
-                                                    alt="<%= product?.name || 'Product' %>"
-                                                    loading="lazy"
-                                                >
+                                            <!-- PRODUCT IMAGE -->
 
-                                            <% } else { %>
+                                            <div class="branch-product-image">
 
-                                                <div class="branch-product-no-image">
+                                                <% if (product.image) { %>
 
-                                                    <i class="fas fa-box"></i>
+                                                    <img
+                                                        src="<%= product.image %>"
+                                                        alt="<%= product.name %>"
+                                                        loading="lazy"
+                                                    >
 
-                                                </div>
+                                                <% } else { %>
 
-                                            <% } %>
+                                                    <div class="branch-product-no-image">
 
-                                        </div>
+                                                        <i class="fas fa-box"></i>
 
+                                                    </div>
 
-                                        <!-- PRODUCT INFORMATION -->
-
-                                        <div class="branch-product-info">
-
-                                            <h3>
-                                                <%= product?.name || "Unnamed Product" %>
-                                            </h3>
-
-
-                                            <% if (product?.category) { %>
-
-                                                <div class="branch-product-category-name">
-
-                                                    <%= product.category %>
-
-                                                </div>
-
-                                            <% } %>
-
-
-                                            <% if (product?.subcategory) { %>
-
-                                                <div class="branch-product-subcategory">
-
-                                                    <%= product.subcategory %>
-
-                                                </div>
-
-                                            <% } %>
-
-
-                                            <div class="branch-product-stock">
-
-                                                Stock:
-                                                <strong>
-                                                    <%= stock %>
-                                                </strong>
+                                                <% } %>
 
                                             </div>
 
-                                        </div>
 
-                                    </a>
+                                            <!-- PRODUCT INFORMATION -->
+
+                                            <div class="branch-product-info">
+
+                                                <h3>
+                                                    <%= product.name %>
+                                                </h3>
 
 
-                                    <!-- ======================================
-                                         QUANTITY INPUT
+                                                <% if (productCategory) { %>
 
-                                         OUTSIDE THE ANCHOR.
+                                                    <div class="branch-product-category-name">
 
-                                         Therefore:
-                                         - can be focused
-                                         - can be typed into
-                                         - can be edited
-                                         - can be selected
-                                         - cannot trigger product navigation
-                                    ======================================= -->
+                                                        <%= productCategory %>
 
-                                    <% if (canSellItems) { %>
+                                                    </div>
 
-                                        <div
-                                            class="branch-sell-quantity"
-                                            data-quantity-wrapper
-                                        >
+                                                <% } %>
 
-                                            <label
-                                                for="branchQty_<%= productId %>"
+
+                                                <% if (productSubcategory) { %>
+
+                                                    <div class="branch-product-subcategory">
+
+                                                        <%= productSubcategory %>
+
+                                                    </div>
+
+                                                <% } %>
+
+
+                                                <div class="branch-product-stock">
+
+                                                    Stock:
+                                                    <strong>
+                                                        <%= stock %>
+                                                    </strong>
+
+                                                </div>
+
+                                            </div>
+
+                                        </a>
+
+
+                                        <!-- ==================================
+                                             QUANTITY CONTROL
+
+                                             OUTSIDE THE ANCHOR.
+
+                                             THIS IS THE IMPORTANT FIX.
+                                        =================================== -->
+
+                                        <% if (canSellItems) { %>
+
+                                            <div
+                                                class="branch-sell-quantity"
+                                                data-quantity-wrapper
                                             >
-                                                Quantity
-                                            </label>
 
-                                            <input
-                                                type="number"
-                                                id="branchQty_<%= productId %>"
-                                                class="branch-sell-quantity-input"
-                                                data-product-id="<%= productId %>"
-                                                data-stock="<%= stock %>"
-                                                min="0"
-                                                max="<%= stock %>"
-                                                step="1"
-                                                value=""
-                                                inputmode="numeric"
-                                                autocomplete="off"
-                                                placeholder="0"
-                                            >
+                                                <label
+                                                    for="branchQty_<%= productId %>"
+                                                >
+                                                    Quantity
+                                                </label>
 
-                                        </div>
+                                                <input
+                                                    type="number"
+                                                    id="branchQty_<%= productId %>"
+                                                    class="branch-sell-quantity-input"
+                                                    data-product-id="<%= productId %>"
+                                                    data-stock="<%= stock %>"
+                                                    min="0"
+                                                    max="<%= stock %>"
+                                                    step="1"
+                                                    value=""
+                                                    inputmode="numeric"
+                                                    autocomplete="off"
+                                                    placeholder="0"
+                                                >
 
-                                    <% } %>
+                                            </div>
 
-                                </div>
+                                        <% } %>
 
-                            <% }); %>
+                                    </div>
 
-                        </div>
+                                <% }); %>
 
-                    <% } %>
+                            </div>
 
-                </div>
+                        <% }); %>
 
-            </section>
+                    </div>
 
-        <% }); %>
+                </section>
+
+            <% }); %>
 
 
-        <!-- ==================================================
-             NO PRODUCTS
-        =================================================== -->
+        <% } else { %>
 
-        <% if (
-            !Object.keys(groupedProducts).length
-        ) { %>
+            <!-- ==================================================
+                 NO PRODUCTS
+            =================================================== -->
 
             <div class="branch-products-empty">
 
@@ -450,7 +474,7 @@ const groupedProducts =
 
 
     /* ======================================================
-       SELL MODE
+       SET SELL MODE
     ====================================================== */
 
     function setSellMode(enabled) {
@@ -492,10 +516,6 @@ const groupedProducts =
             }
 
 
-            /*
-             * When leaving sell mode, clear the inputs.
-             */
-
             if (!enabled) {
 
                 input.value = "";
@@ -524,7 +544,7 @@ const groupedProducts =
 
 
     /* ======================================================
-       COLLECT SELECTED PRODUCTS
+       COLLECT QUANTITIES
     ====================================================== */
 
     function getSelectedProducts() {
@@ -540,10 +560,6 @@ const groupedProducts =
                 ).trim();
 
 
-            let quantity =
-                Number(input.value);
-
-
             const stock =
                 Number(
                     input.dataset.stock || 0
@@ -553,6 +569,15 @@ const groupedProducts =
             if (!productId) {
                 return;
             }
+
+
+            if (input.value === "") {
+                return;
+            }
+
+
+            let quantity =
+                Number(input.value);
 
 
             if (!Number.isFinite(quantity)) {
@@ -568,10 +593,6 @@ const groupedProducts =
                 return;
             }
 
-
-            /*
-             * Never allow a quantity greater than available stock.
-             */
 
             if (quantity > stock) {
 
@@ -603,11 +624,6 @@ const groupedProducts =
     ====================================================== */
 
     function prepareForm(selectedProducts) {
-
-        /*
-         * Remove only dynamically-created product fields.
-         * The admin cartSubstation hidden input remains untouched.
-         */
 
         sellForm
             .querySelectorAll(
@@ -693,7 +709,7 @@ const groupedProducts =
             /*
              * FIRST TAP
              *
-             * Enter sell mode only.
+             * Enter sell mode.
              */
 
             if (!sellMode) {
@@ -708,7 +724,7 @@ const groupedProducts =
             /*
              * SECOND TAP
              *
-             * Check whether anything was entered.
+             * Collect entered quantities.
              */
 
             const selectedProducts =
@@ -716,10 +732,10 @@ const groupedProducts =
 
 
             /*
-             * Nothing entered:
+             * NOTHING ENTERED
              *
-             * Exit sell mode.
-             * DO NOT submit anything.
+             * Simply leave sell mode.
+             * Do not submit.
              */
 
             if (
@@ -734,7 +750,7 @@ const groupedProducts =
 
 
             /*
-             * Something was entered:
+             * QUANTITIES EXIST
              *
              * Build the POST request.
              */
@@ -745,19 +761,12 @@ const groupedProducts =
 
 
             /*
-             * Hide inputs and restore normal
-             * product-card behaviour BEFORE
-             * submitting.
+             * Hide quantity controls and restore
+             * normal card behaviour before submit.
              */
 
             setSellMode(false);
 
-
-            /*
-             * Submit to:
-             *
-             * POST /products/addManyToCart
-             */
 
             sellForm.submit();
 
@@ -766,7 +775,7 @@ const groupedProducts =
 
 
     /* ======================================================
-       PRODUCT CARD NAVIGATION
+       PRODUCT CARD BEHAVIOUR
     ====================================================== */
 
     getProductUnits().forEach(function (unit) {
@@ -786,11 +795,6 @@ const groupedProducts =
             "click",
             function (event) {
 
-                /*
-                 * In sell mode the product card
-                 * must not navigate.
-                 */
-
                 if (!sellMode) {
                     return;
                 }
@@ -808,14 +812,14 @@ const groupedProducts =
 
 
     /* ======================================================
-       QUANTITY INPUT INTERACTION
+       QUANTITY INPUT BEHAVIOUR
     ====================================================== */
 
     getQuantityInputs().forEach(function (input) {
 
         /*
-         * Stop the input's events from reaching
-         * the product-card/link.
+         * These events belong to the input itself.
+         * Stop them from reaching the product card.
          */
 
         [
@@ -847,7 +851,7 @@ const groupedProducts =
 
 
         /* ==============================================
-           VALIDATE QUANTITY
+           QUANTITY VALIDATION
         =============================================== */
 
         input.addEventListener(
@@ -860,22 +864,13 @@ const groupedProducts =
                     );
 
 
-                let value =
-                    input.value;
-
-
-                /*
-                 * Allow the field to be temporarily
-                 * empty while the user is typing.
-                 */
-
-                if (value === "") {
+                if (input.value === "") {
                     return;
                 }
 
 
                 let quantity =
-                    Number(value);
+                    Number(input.value);
 
 
                 if (!Number.isFinite(quantity)) {
@@ -913,22 +908,12 @@ const groupedProducts =
 
 
         /* ==============================================
-           PREVENT INVALID KEYS
+           KEYBOARD VALIDATION
         =============================================== */
 
         input.addEventListener(
             "keydown",
             function (event) {
-
-                /*
-                 * Allow:
-                 * Backspace
-                 * Delete
-                 * Tab
-                 * Arrow keys
-                 * Home
-                 * End
-                 */
 
                 const allowedKeys = [
                     "Backspace",
@@ -952,10 +937,6 @@ const groupedProducts =
                 }
 
 
-                /*
-                 * Allow Ctrl/Cmd combinations.
-                 */
-
                 if (
                     event.ctrlKey ||
                     event.metaKey
@@ -963,10 +944,6 @@ const groupedProducts =
                     return;
                 }
 
-
-                /*
-                 * Only numeric keys.
-                 */
 
                 if (
                     !/^[0-9]$/.test(
