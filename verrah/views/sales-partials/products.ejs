@@ -90,6 +90,28 @@ const canEditMarketAvailable =
             method="POST"
             id="addManyToCartForm"
         >
+
+            <% if (isAdmin && hasSelectedSubstation) { %>
+
+                <!--
+                    IMPORTANT:
+                    The sales page selects the active substation
+                    through the query/filter context.
+
+                    This hidden field carries that selected
+                    substation into the POST request so the
+                    cart service can save its NAME as
+                    cartSubstation.
+                -->
+
+                <input
+                    type="hidden"
+                    name="activeSubstationId"
+                    value="<%= activeSubstationId %>"
+                >
+
+            <% } %>
+
         </form>
 
 
