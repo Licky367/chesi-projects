@@ -2362,3 +2362,260 @@ body.substation-viewer-open {
     }
 
 }
+
+
+/* ==========================================================
+   INVENTORY HEADER ACTIONS
+   Added for Sell Items mode
+========================================================== */
+
+.branch-inventory-header-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    flex: 0 0 auto;
+}
+
+
+/* ==========================================================
+   SELL ITEMS BUTTON
+========================================================== */
+
+.branch-sell-items-btn {
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    min-height: 40px;
+
+    padding: 9px 14px;
+
+    border: 1px solid #7a4b2a;
+
+    border-radius: 9px;
+
+    background: #7a4b2a;
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    box-sizing: border-box;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.branch-sell-items-btn i {
+
+    font-size: 12px;
+}
+
+
+.branch-sell-items-btn:hover {
+
+    background: #5d351d;
+
+    border-color: #5d351d;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 4px 10px rgba(122, 75, 42, 0.18);
+}
+
+
+.branch-sell-items-btn:active {
+
+    transform: translateY(0);
+
+    box-shadow: none;
+}
+
+
+.branch-sell-items-btn:focus-visible {
+
+    outline: 2px solid #7a4b2a;
+
+    outline-offset: 2px;
+}
+
+
+/* ==========================================================
+   SELL MODE
+   Quantity controls are hidden until Sell Items is tapped.
+========================================================== */
+
+.branch-sell-quantity {
+
+    display: none;
+
+    width: 100%;
+
+    margin-top: 5px;
+
+    box-sizing: border-box;
+}
+
+
+.branch-sell-quantity.is-visible {
+
+    display: block;
+}
+
+
+.branch-sell-quantity label {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #765f50;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+    line-height: 1;
+}
+
+
+.branch-sell-quantity-input {
+
+    display: block;
+
+    width: 100%;
+
+    height: 25px;
+
+    padding: 3px 5px;
+
+    border: 1px solid #cdb9aa;
+
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    color: #4f2d1b;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    line-height: 1;
+
+    text-align: center;
+
+    box-sizing: border-box;
+
+    outline: none;
+}
+
+
+.branch-sell-quantity-input:focus {
+
+    border-color: #7a4b2a;
+
+    box-shadow:
+        0 0 0 2px rgba(122, 75, 42, 0.12);
+}
+
+
+/* ==========================================================
+   PRODUCT CARD WHILE SELL MODE IS ACTIVE
+========================================================== */
+
+.branch-product-card-selling {
+
+    cursor: default;
+
+    border-color: #b99880;
+
+    box-shadow:
+        0 4px 12px rgba(50, 27, 16, 0.10);
+}
+
+
+.branch-product-card-selling:hover {
+
+    transform: none;
+
+    border-color: #b99880;
+
+    box-shadow:
+        0 4px 12px rgba(50, 27, 16, 0.10);
+}
+
+
+/* ==========================================================
+   MOBILE SELL ITEMS
+========================================================== */
+
+@media (max-width: 700px) {
+
+    .branch-inventory-header-actions {
+
+        gap: 8px;
+    }
+
+
+    .branch-sell-items-btn {
+
+        min-height: 38px;
+
+        padding: 8px 11px;
+
+        font-size: 12px;
+    }
+
+
+    .branch-sell-items-btn i {
+
+        font-size: 11px;
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL SCREENS
+========================================================== */
+
+@media (max-width: 420px) {
+
+    .branch-inventory-header-actions {
+
+        gap: 6px;
+    }
+
+
+    .branch-sell-items-btn {
+
+        min-height: 36px;
+
+        padding: 7px 9px;
+
+        font-size: 11px;
+    }
+
+}
