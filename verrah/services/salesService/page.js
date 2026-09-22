@@ -52,7 +52,7 @@ async function getSalesPageData(
             query.tab
         )
             ? query.tab
-            : "summary";
+            : "products";
 
 
     // ======================================================
