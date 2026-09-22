@@ -1143,9 +1143,7 @@ exports.staffSale = async (
         // --------------------------------------------------
 
         return res.redirect(
-            `/branch/${encodeURIComponent(
-                salesSubstation
-            )}`
+            `/sales`
         );
 
     } catch (err) {
