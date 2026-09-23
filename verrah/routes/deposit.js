@@ -53,4 +53,16 @@ router.post(
 );
 
 
+// ==========================================================
+// Change Deposit Status
+//
+// POST /deposit/:id/depositToggle
+// ==========================================================
+
+router.post(
+    "/:id/toggleDeposit",
+    depositController.initiatePayment
+);
+
+
 module.exports = router;
