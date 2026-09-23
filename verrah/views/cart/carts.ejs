@@ -30,10 +30,6 @@ const hasItems =
     cartItems.length > 0;
 
 
-/*
- * The Cart model stores the cart total
- * in the totalPrice field.
- */
 const cartTotal =
     Number(
         cart?.totalPrice || 0
@@ -41,8 +37,6 @@ const cartTotal =
 
 
 /*
- * Existing saved payment mode.
- *
  * true  = Mpesa
  * false = Cash
  */
@@ -51,20 +45,22 @@ const isMobile =
 
 
 /*
- * IMPORTANT:
+ * ADMIN:
+ * cartSubstation is used as salesSubstation.
  *
- * cartSubstation is expected to contain
- * the SUBSTATION ID.
- *
- * The value is submitted directly as:
- *
- *     salesSubstation
- *
- * for admin cash sales.
+ * STAFF:
+ * salesSubstation MUST always be the
+ * logged-in user's assignedSubstation.
  */
 const cartSubstation =
     String(
         cart?.cartSubstation || ""
+    ).trim();
+
+
+const staffSalesSubstation =
+    String(
+        user?.assignedSubstation || ""
     ).trim();
 
 
@@ -511,7 +507,7 @@ const checkoutProductId =
                         <a
                             class="primary-btn cart-checkout-btn"
                             id="staffMpesaCheckout"
-                            href="/carts/<%= checkoutProductId %>"
+                            href="/carts/<%= checkoutProductId %>?salesSubstation=<%= encodeURIComponent(staffSalesSubstation) %>"
                         >
 
                             <i class="fas fa-credit-card"></i>
@@ -681,19 +677,28 @@ const checkoutProductId =
 
 
                     <!-- ==================================================
-                         ADMIN CART SUBSTATION
+                         SALES SUBSTATION
+                    ================================================== -->
 
-                         cartSubstation MUST be the SUBSTATION ID.
-                         It is submitted directly as salesSubstation.
-                    =================================================== -->
+                    <% if (isStaff) { %>
 
-                    <% if (isAdmin) { %>
+                        <% if (isAdmin) { %>
 
-                        <input
-                            type="hidden"
-                            name="salesSubstation"
-                            value="<%= cartSubstation %>"
-                        >
+                            <input
+                                type="hidden"
+                                name="salesSubstation"
+                                value="<%= cartSubstation %>"
+                            >
+
+                        <% } else { %>
+
+                            <input
+                                type="hidden"
+                                name="salesSubstation"
+                                value="<%= staffSalesSubstation %>"
+                            >
+
+                        <% } %>
 
                     <% } %>
 
