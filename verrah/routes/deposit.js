@@ -16,6 +16,8 @@ const depositController =
 const depositToggle =
     require("../controllers/depositToggle");
 
+const requireAdmin = require("../middleware/requireAdmin");
+
 
 // ==========================================================
 // M-PESA CALLBACK
@@ -61,7 +63,8 @@ router.post(
 
 router.post(
     "/:id/toggleDeposit",
-    depositController.initiatePayment
+    requireAdmin,
+    toggleDailyCashSaleDeposit
 );
 
 
