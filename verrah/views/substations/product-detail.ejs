@@ -53,6 +53,7 @@
 
     <div class="verrah-tab-content">
 
+
         <!-- =================================================
              PRODUCT CARD PANEL
         ================================================== -->
@@ -64,7 +65,16 @@
             aria-labelledby="tab-product-card"
         >
 
-            <%- include("substationProduct/product-card") %>
+            <%- include(
+                "substationProduct/product-card",
+                {
+                    product: product,
+                    substation: substation,
+                    substationId: substationId,
+                    role: role,
+                    user: user
+                }
+            ) %>
 
         </div>
 
@@ -81,7 +91,16 @@
             hidden
         >
 
-            <%- include("substationProduct/substation-balances") %>
+            <%- include(
+                "substationProduct/substation-balances",
+                {
+                    product: product,
+                    substation: substation,
+                    substationId: substationId,
+                    role: role,
+                    user: user
+                }
+            ) %>
 
         </div>
 
@@ -101,20 +120,24 @@
     "use strict";
 
 
-    const tabs = document.querySelectorAll(
-        ".verrah-tabs .verrah-tab"
-    );
+    // ========================================================
+    // ELEMENTS
+    // ========================================================
 
-    const panels = document.querySelectorAll(
-        ".verrah-tab-content .verrah-tab-panel"
-    );
+    const tabs =
+        document.querySelectorAll(
+            ".verrah-tabs .verrah-tab"
+        );
+
+    const panels =
+        document.querySelectorAll(
+            ".verrah-tab-content .verrah-tab-panel"
+        );
 
 
-    /*
-     * --------------------------------------------------------
-     * SWITCH TAB
-     * --------------------------------------------------------
-     */
+    // ========================================================
+    // SWITCH TAB
+    // ========================================================
 
     function switchTab(tab) {
 
@@ -123,7 +146,8 @@
         }
 
 
-        const targetId = tab.dataset.tab;
+        const targetId =
+            tab.dataset.tab;
 
 
         if (!targetId) {
@@ -131,48 +155,53 @@
         }
 
 
-        /*
-         * ----------------------------------------------------
-         * UPDATE TABS
-         * ----------------------------------------------------
-         */
+        // ----------------------------------------------------
+        // UPDATE TABS
+        // ----------------------------------------------------
 
         tabs.forEach(function (item) {
 
             const isActive =
                 item === tab;
 
+
             item.classList.toggle(
                 "active",
                 isActive
             );
 
+
             item.setAttribute(
                 "aria-selected",
-                isActive ? "true" : "false"
+                isActive
+                    ? "true"
+                    : "false"
             );
 
+
             item.tabIndex =
-                isActive ? 0 : -1;
+                isActive
+                    ? 0
+                    : -1;
 
         });
 
 
-        /*
-         * ----------------------------------------------------
-         * UPDATE PANELS
-         * ----------------------------------------------------
-         */
+        // ----------------------------------------------------
+        // UPDATE PANELS
+        // ----------------------------------------------------
 
         panels.forEach(function (panel) {
 
             const isActive =
                 panel.id === targetId;
 
+
             panel.classList.toggle(
                 "active",
                 isActive
             );
+
 
             panel.hidden =
                 !isActive;
@@ -180,11 +209,9 @@
         });
 
 
-        /*
-         * ----------------------------------------------------
-         * KEEP SELECTED TAB VISIBLE
-         * ----------------------------------------------------
-         */
+        // ----------------------------------------------------
+        // KEEP SELECTED TAB VISIBLE
+        // ----------------------------------------------------
 
         tab.scrollIntoView({
             behavior: "smooth",
@@ -195,11 +222,9 @@
     }
 
 
-    /*
-     * --------------------------------------------------------
-     * CLICK EVENTS
-     * --------------------------------------------------------
-     */
+    // ========================================================
+    // CLICK EVENTS
+    // ========================================================
 
     tabs.forEach(function (tab) {
 
@@ -215,21 +240,9 @@
     });
 
 
-    /*
-     * --------------------------------------------------------
-     * KEYBOARD NAVIGATION
-     * --------------------------------------------------------
-     *
-     * ArrowLeft / ArrowRight:
-     * Move between tabs.
-     *
-     * Home:
-     * First tab.
-     *
-     * End:
-     * Last tab.
-     *
-     */
+    // ========================================================
+    // KEYBOARD NAVIGATION
+    // ========================================================
 
     tabs.forEach(function (tab, index) {
 
@@ -237,43 +250,59 @@
             "keydown",
             function (event) {
 
-                let newIndex = index;
+                let newIndex =
+                    index;
 
 
-                if (event.key === "ArrowRight") {
-
-                    newIndex =
-                        (index + 1) % tabs.length;
-
-                }
-
-
-                else if (event.key === "ArrowLeft") {
+                if (
+                    event.key ===
+                    "ArrowRight"
+                ) {
 
                     newIndex =
-                        (index - 1 + tabs.length)
+                        (index + 1)
                         % tabs.length;
 
                 }
 
+                else if (
+                    event.key ===
+                    "ArrowLeft"
+                ) {
 
-                else if (event.key === "Home") {
+                    newIndex =
+                        (
+                            index -
+                            1 +
+                            tabs.length
+                        )
+                        % tabs.length;
+
+                }
+
+                else if (
+                    event.key ===
+                    "Home"
+                ) {
 
                     newIndex = 0;
 
                 }
 
-
-                else if (event.key === "End") {
+                else if (
+                    event.key ===
+                    "End"
+                ) {
 
                     newIndex =
                         tabs.length - 1;
 
                 }
 
-
-                else if (event.key === "Enter" ||
-                         event.key === " ") {
+                else if (
+                    event.key === "Enter" ||
+                    event.key === " "
+                ) {
 
                     event.preventDefault();
 
@@ -282,7 +311,6 @@
                     return;
 
                 }
-
 
                 else {
 
@@ -308,26 +336,55 @@
     });
 
 
-    /*
-     * --------------------------------------------------------
-     * INITIAL STATE
-     * --------------------------------------------------------
-     */
+    // ========================================================
+    // INITIAL TAB STATE
+    // ========================================================
 
     tabs.forEach(function (tab, index) {
 
         tab.tabIndex =
-            index === 0 ? 0 : -1;
+            index === 0
+                ? 0
+                : -1;
 
     });
+
+
+    // ========================================================
+    // INITIAL PANEL STATE
+    // ========================================================
 
     panels.forEach(function (panel) {
 
         panel.hidden =
-            !panel.classList.contains("active");
+            !panel.classList.contains(
+                "active"
+            );
 
     });
 
 })();
 
 </script>
+
+Then the Add to Cart form inside "substationProduct/product-card.ejs" should submit the ID specifically as "cartSubstation":
+
+<form
+    action="/carts/<%= product._id %>"
+    method="POST"
+>
+
+    <input
+        type="hidden"
+        name="cartSubstation"
+        value="<%= substationId || substation._id %>"
+    >
+
+    <!-- Existing cart fields -->
+
+    <button type="submit">
+        Add to Cart
+    </button>
+
+</form>
+
