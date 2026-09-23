@@ -198,18 +198,16 @@
     <!-- ====================================================
          ADMIN DEPOSIT CONFIRMATION
     ===================================================== -->
+
     <%
       const isAdmin =
         user &&
         String(user.role || "").toLowerCase() === "admin";
-
-      const isNotDeposited =
-        deposit.isDeposited === false;
     %>
 
-    <% if (isAdmin && isNotDeposited) { %>
+    <% if (isAdmin && deposit.isDeposited === false) { %>
 
-      <div class="sales-section">
+      <section class="sales-section">
 
         <div class="sales-section-heading">
 
@@ -228,24 +226,41 @@
         </div>
 
 
-        <div class="sales-liability-form-actions">
+        <!-- ==============================================
+             TOGGLE DEPOSIT FORM
+        =============================================== -->
 
-          <a
-            href="/deposit/<%= deposit.saleId %>/toggleDeposit"
-            class="sales-liability-submit"
+        <div class="sales-liability-entry">
+
+          <form
+            method="POST"
+            action="/deposit/<%= deposit.saleId %>/toggleDeposit"
+            class="sales-liability-form"
           >
 
-            <i class="fas fa-check-circle"></i>
+            <div class="sales-liability-form-actions">
 
-            Mark as Deposited
+              <button
+                type="submit"
+                class="sales-liability-submit"
+              >
 
-          </a>
+                <i class="fas fa-check-circle"></i>
+
+                Mark as Deposited
+
+              </button>
+
+            </div>
+
+          </form>
 
         </div>
 
-      </div>
+      </section>
 
     <% } %>
+
 
   </div>
 
