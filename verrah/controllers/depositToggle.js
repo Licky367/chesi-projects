@@ -7,6 +7,7 @@
 const mongoose = require("mongoose");
 const Substation = require("../models/substations");
 
+
 // ==========================================================
 // TOGGLE DAILY CASH SALE DEPOSIT STATUS
 // ==========================================================
@@ -17,20 +18,10 @@ const Substation = require("../models/substations");
 //
 // The :id is the _id of the embedded dailyCashSales record.
 //
-// Example:
-//
-// dailyCashSales: [
-//     {
-//         _id: ObjectId("..."),
-//         amount: 18500,
-//         date: Date("2026-09-21"),
-//         isDeposited: false
-//     }
-// ]
-//
 // ==========================================================
 
 async function toggleDailyCashSaleDeposit(req, res) {
+
     try {
 
         const { id } = req.params;
@@ -42,16 +33,15 @@ async function toggleDailyCashSaleDeposit(req, res) {
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
 
-            return res.status(400).json({
-                success: false,
-                message: "Invalid daily cash sale ID"
-            });
+            return res.redirect(
+                "/deposit?error=Invalid%20daily%20cash%20sale%20ID"
+            );
 
         }
 
 
         // --------------------------------------------------
-        // FIND THE SUBSTATION CONTAINING THE DAILY SALE
+        // FIND SUBSTATION CONTAINING THE DAILY SALE
         // --------------------------------------------------
 
         const substation =
@@ -62,16 +52,15 @@ async function toggleDailyCashSaleDeposit(req, res) {
 
         if (!substation) {
 
-            return res.status(404).json({
-                success: false,
-                message: "Daily cash sale not found"
-            });
+            return res.redirect(
+                "/deposit?error=Daily%20cash%20sale%20not%20found"
+            );
 
         }
 
 
         // --------------------------------------------------
-        // FIND THE EMBEDDED DAILY CASH SALE
+        // FIND EMBEDDED DAILY CASH SALE
         // --------------------------------------------------
 
         const dailySale =
@@ -80,10 +69,9 @@ async function toggleDailyCashSaleDeposit(req, res) {
 
         if (!dailySale) {
 
-            return res.status(404).json({
-                success: false,
-                message: "Daily cash sale not found"
-            });
+            return res.redirect(
+                "/deposit?error=Daily%20cash%20sale%20not%20found"
+            );
 
         }
 
@@ -104,26 +92,17 @@ async function toggleDailyCashSaleDeposit(req, res) {
 
 
         // --------------------------------------------------
-        // RESPONSE
+        // REDIRECT AFTER SUCCESS
         // --------------------------------------------------
 
-        return res.status(200).json({
-
-            success: true,
-
-            message:
+        return res.redirect(
+            `/deposit?success=${
                 dailySale.isDeposited
-                    ? "Daily cash sale marked as deposited"
-                    : "Daily cash sale marked as not deposited",
+                    ? "Daily%20cash%20sale%20marked%20as%20deposited"
+                    : "Daily%20cash%20sale%20marked%20as%20not%20deposited"
+            }`
+        );
 
-            sale: {
-                _id: dailySale._id,
-                amount: dailySale.amount,
-                date: dailySale.date,
-                isDeposited: dailySale.isDeposited
-            }
-
-        });
 
     } catch (error) {
 
@@ -133,12 +112,12 @@ async function toggleDailyCashSaleDeposit(req, res) {
         );
 
 
-        return res.status(500).json({
-            success: false,
-            message: "Failed to change deposit status"
-        });
+        return res.redirect(
+            "/deposit?error=Failed%20to%20change%20deposit%20status"
+        );
 
     }
+
 }
 
 
