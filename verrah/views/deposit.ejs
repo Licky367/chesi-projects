@@ -1,277 +1,254 @@
-<link rel="stylesheet" href="/css/sales.css">
-
-<div class="sales-page">
-
-  <!-- ======================================================
+<link rel="stylesheet" href="/css/sales.css"><div class="sales-page">  <!-- ======================================================
        HEADER
-  ======================================================= -->
-
-  <div class="sales-header">
-
-    <div class="sales-header-icon">
-      <i class="fas fa-money-bill-transfer"></i>
-    </div>
-
-    <div>
-
-      <h1 class="sales-title">
-        Deposit Funds
-      </h1>
-
-      <p class="sales-subtitle">
-        Deposit the daily cash sale through M-Pesa.
-      </p>
-
-    </div>
-
-  </div>
-
-
-  <!-- ======================================================
-       DEPOSIT CONTENT
-  ======================================================= -->
-
-  <div class="sales-content">
-
-    <section class="sales-section">
-
-      <div class="sales-section-heading">
-
-        <div>
-
-          <h2>
-            Cash Sale Deposit
-          </h2>
-
-        </div>
-
-      </div>
-
-
-      <!-- ==================================================
-           DEPOSIT CARD
-      =================================================== -->
-
-      <div class="sales-liability-entry">
-
-        <form
-          id="deposit-form"
-          class="sales-liability-form"
-          method="POST"
-          action="/deposit/<%= deposit.saleId %>/pay"
-        >
-
-          <!-- ==============================================
-               AMOUNT
-          =============================================== -->
-
-          <div class="sales-liability-field">
-
-            <label for="deposit-amount">
-              Deposit Amount
-            </label>
-
-            <input
-              id="deposit-amount"
-              type="number"
-              name="amount"
-              value="<%= deposit.amount %>"
-              min="1"
-              step="1"
-              readonly
-              required
-            >
-
-          </div>
-
-
-          <!-- ==============================================
-               PHONE NUMBER
-          =============================================== -->
-
-          <div class="sales-liability-field">
-
-            <label for="deposit-phone">
-              M-Pesa Phone Number
-            </label>
-
-            <input
-              id="deposit-phone"
-              type="tel"
-              name="phone"
-              value="<%= user && user.phone ? user.phone : '' %>"
-              placeholder="07XXXXXXXX"
-              autocomplete="tel"
-              required
-            >
-
-          </div>
-
-
-          <!-- ==============================================
-               SALE DATE
-          =============================================== -->
-
-          <div class="sales-liability-field">
-
-            <label>
-              Cash Sale Date
-            </label>
-
-            <div class="sales-liability-assigned">
-
-              <span class="sales-liability-assigned-label">
-                DATE
-              </span>
-
-              <strong>
-                <%= new Date(deposit.date).toLocaleDateString(
-                  "en-KE",
-                  {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric"
-                  }
-                ) %>
-              </strong>
-
-            </div>
-
-          </div>
-
-
-          <!-- ==============================================
-               STATUS
-          =============================================== -->
-
-          <div class="sales-liability-field">
-
-            <label>
-              Deposit Status
-            </label>
-
-            <div class="sales-liability-assigned">
-
-              <span class="sales-liability-assigned-label">
-                STATUS
-              </span>
-
-              <strong>
-                <%= deposit.isDeposited
-                  ? "Deposited"
-                  : "Awaiting Deposit"
-                %>
-              </strong>
-
-            </div>
-
-          </div>
-
-
-          <!-- ==============================================
-               ACTION
-          =============================================== -->
-
-          <div class="sales-liability-form-actions">
-
-            <button
-              type="submit"
-              class="sales-liability-submit"
-              id="deposit-submit"
-            >
-
-              <i class="fas fa-mobile-screen-button"></i>
-
-              Pay with M-Pesa
-
-            </button>
-
-          </div>
-
-        </form>
-
-      </div>
-
-    </section>
-
-
-    <!-- ====================================================
-         ADMIN DEPOSIT CONFIRMATION
-    ===================================================== -->
-
-    <%
-      const isAdmin =
-        user &&
-        String(user.role || "").toLowerCase() === "admin";
-    %>
-
-    <% if (isAdmin && deposit.isDeposited === false) { %>
-
-      <section class="sales-section">
-
-        <div class="sales-section-heading">
-
-          <div>
-
-            <h2>
-              Deposit Confirmation
-            </h2>
-
-            <p>
-              Confirm that this daily cash sale has been deposited.
-            </p>
-
-          </div>
-
-        </div>
-
-
-        <!-- ==============================================
-             TOGGLE DEPOSIT FORM
-        =============================================== -->
-
-        <div class="sales-liability-entry">
-
-          <form
-            method="POST"
-            action="/deposit/<%= deposit.saleId %>/toggleDeposit"
-            class="sales-liability-form"
-          >
-
-            <div class="sales-liability-form-actions">
-
-              <button
-                type="submit"
-                class="sales-liability-submit"
-              >
-
-                <i class="fas fa-check-circle"></i>
-
-                Mark as Deposited
-
-              </button>
-
-            </div>
-
-          </form>
-
-        </div>
-
-      </section>
-
-    <% } %>
-
-
-  </div>
+  ======================================================= -->  <div class="sales-header"><div class="sales-header-icon">
+  <i class="fas fa-money-bill-transfer"></i>
+</div>
+
+<div>
+
+  <h1 class="sales-title">
+    Deposit Funds
+  </h1>
+
+  <p class="sales-subtitle">
+    Deposit the daily cash sale through M-Pesa.
+  </p>
 
 </div>
 
+  </div>  <!-- ======================================================
+       DEPOSIT CONTENT
+  ======================================================= -->  <div class="sales-content"><section class="sales-section">
 
-<!-- ========================================================
+  <div class="sales-section-heading">
+
+    <div>
+
+      <h2>
+        Cash Sale Deposit
+      </h2>
+
+    </div>
+
+  </div>
+
+
+  <!-- ==================================================
+       DEPOSIT CARD
+  =================================================== -->
+
+  <div class="sales-liability-entry">
+
+    <form
+      id="deposit-form"
+      class="sales-liability-form"
+      method="POST"
+      action="/deposit/<%= deposit.saleId %>/pay"
+    >
+
+      <!-- ==============================================
+           AMOUNT
+      =============================================== -->
+
+      <div class="sales-liability-field">
+
+        <label for="deposit-amount">
+          Deposit Amount
+        </label>
+
+        <input
+          id="deposit-amount"
+          type="number"
+          name="amount"
+          value="<%= deposit.amount %>"
+          min="1"
+          step="1"
+          readonly
+          required
+        >
+
+      </div>
+
+
+      <!-- ==============================================
+           PHONE NUMBER
+      =============================================== -->
+
+      <div class="sales-liability-field">
+
+        <label for="deposit-phone">
+          M-Pesa Phone Number
+        </label>
+
+        <input
+          id="deposit-phone"
+          type="tel"
+          name="phone"
+          value="<%= user && user.phone ? user.phone : '' %>"
+          placeholder="07XXXXXXXX"
+          autocomplete="tel"
+          required
+        >
+
+      </div>
+
+
+      <!-- ==============================================
+           SALE DATE
+      =============================================== -->
+
+      <div class="sales-liability-field">
+
+        <label>
+          Cash Sale Date
+        </label>
+
+        <div class="sales-liability-assigned">
+
+          <span class="sales-liability-assigned-label">
+            DATE
+          </span>
+
+          <strong>
+            <%= new Date(deposit.date).toLocaleDateString(
+              "en-KE",
+              {
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+              }
+            ) %>
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- ==============================================
+           STATUS
+      =============================================== -->
+
+      <div class="sales-liability-field">
+
+        <label>
+          Deposit Status
+        </label>
+
+        <div class="sales-liability-assigned">
+
+          <span class="sales-liability-assigned-label">
+            STATUS
+          </span>
+
+          <strong>
+            <%= deposit.isDeposited
+              ? "Deposited"
+              : "Awaiting Deposit"
+            %>
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- ==============================================
+           ACTION
+      =============================================== -->
+
+      <div class="sales-liability-form-actions">
+
+        <button
+          type="submit"
+          class="sales-liability-submit"
+          id="deposit-submit"
+        >
+
+          <i class="fas fa-mobile-screen-button"></i>
+
+          Pay with M-Pesa
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</section>
+
+
+<!-- ====================================================
+     ADMIN DEPOSIT CONFIRMATION
+===================================================== -->
+
+<%
+  const isAdmin =
+    user &&
+    String(user.role || "").toLowerCase() === "admin";
+%>
+
+<% if (isAdmin && deposit.isDeposited === false) { %>
+
+  <section class="sales-section">
+
+    <div class="sales-section-heading">
+
+      <div>
+
+        <h2>
+          Deposit Confirmation
+        </h2>
+
+        <p>
+          Confirm that this daily cash sale has been deposited.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <!-- ==============================================
+         TOGGLE DEPOSIT FORM
+    =============================================== -->
+
+    <div class="sales-liability-entry">
+
+      <form
+        method="POST"
+        action="/deposit/<%= deposit.saleId %>/toggleDeposit"
+        class="sales-liability-form"
+      >
+
+        <div class="sales-liability-form-actions">
+
+          <button
+            type="submit"
+            class="sales-liability-submit"
+          >
+
+            <i class="fas fa-check-circle"></i>
+
+            Mark as Deposited
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </section>
+
+<% } %>
+
+  </div></div><!-- ========================================================
      STK PUSH HANDLER
-========================================================= -->
-
-<script>
+========================================================= --><script>
 
 (function () {
 
@@ -294,15 +271,6 @@
             event.preventDefault();
 
 
-            /*
-             * Use URLSearchParams instead of FormData.
-             *
-             * This makes the request
-             * application/x-www-form-urlencoded,
-             * which Express's normal urlencoded
-             * body parser can read as req.body.
-             */
-
             const formData =
                 new URLSearchParams(
                     new FormData(form)
@@ -324,8 +292,6 @@
                             method: "POST",
 
                             headers: {
-                                "Accept": "application/json",
-
                                 "Content-Type":
                                     "application/x-www-form-urlencoded"
                             },
@@ -335,19 +301,12 @@
                     );
 
 
-                const result =
-                    await response.json();
-
-
-                if (
-                    !response.ok ||
-                    !result.success
-                ) {
+                if (!response.ok) {
 
                     throw new Error(
-                        result.message ||
                         "Unable to initiate M-Pesa payment."
                     );
+
                 }
 
 
@@ -356,7 +315,6 @@
 
 
                 alert(
-                    result.customerMessage ||
                     "An M-Pesa payment prompt has been sent to your phone."
                 );
 
