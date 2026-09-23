@@ -11,12 +11,12 @@
       <div>
 
         <h1>
-          <%= old ? "Edit Stock" : "Add Stock" %>
+          <%= old ? "Edit/Update Stock" : "Add Stock" %>
         </h1>
 
         <p>
           <%= old
-            ? "Update the stock item and add additional warehouse quantity."
+            ? "Update the stock item and/or add additional warehouse quantity."
             : "Add a new stock item to the warehouse."
           %>
         </p>
@@ -205,7 +205,7 @@
         <div class="field">
 
           <label for="buyPrice">
-            Buy price
+            Buy price (for the whole batch)
           </label>
 
           <input
@@ -247,7 +247,7 @@
         <div class="field">
 
           <label for="sellPrice">
-            Sell price
+            Sell price (Per Unit)
           </label>
 
           <input
