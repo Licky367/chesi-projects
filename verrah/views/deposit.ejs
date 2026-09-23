@@ -157,7 +157,10 @@
               </span>
 
               <strong>
-                Awaiting Deposit
+                <%= deposit.isDeposited
+                  ? "Deposited"
+                  : "Awaiting Deposit"
+                %>
               </strong>
 
             </div>
@@ -190,6 +193,59 @@
       </div>
 
     </section>
+
+
+    <!-- ====================================================
+         ADMIN DEPOSIT CONFIRMATION
+    ===================================================== -->
+    <%
+      const isAdmin =
+        user &&
+        String(user.role || "").toLowerCase() === "admin";
+
+      const isNotDeposited =
+        deposit.isDeposited === false;
+    %>
+
+    <% if (isAdmin && isNotDeposited) { %>
+
+      <div class="sales-section">
+
+        <div class="sales-section-heading">
+
+          <div>
+
+            <h2>
+              Deposit Confirmation
+            </h2>
+
+            <p>
+              Confirm that this daily cash sale has been deposited.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="sales-liability-form-actions">
+
+          <a
+            href="/deposit/<%= deposit.saleId %>/toggleDeposit"
+            class="sales-liability-submit"
+          >
+
+            <i class="fas fa-check-circle"></i>
+
+            Mark as Deposited
+
+          </a>
+
+        </div>
+
+      </div>
+
+    <% } %>
 
   </div>
 
