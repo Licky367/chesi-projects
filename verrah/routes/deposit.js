@@ -64,7 +64,7 @@ router.post(
 router.post(
     "/:id/toggleDeposit",
     requireAdmin,
-    toggleDailyCashSaleDeposit
+    toggleDailyCashSaleDeposit.depositToggle
 );
 
 
