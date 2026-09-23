@@ -13,6 +13,10 @@ const depositController =
     require("../controllers/deposit");
 
 
+const depositToggle =
+    require("../controllers/depositToggle");
+
+
 // ==========================================================
 // M-PESA CALLBACK
 //
