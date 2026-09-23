@@ -1,73 +1,260 @@
 // ==========================================================
-// utils/remove.js
+// verrah/utils/salesSubstation.js
+// VERRAH COSMETICS
+//
+// Assign salesSubstation to existing StaffSale records.
+//
+// SOURCE:
+//     VerrahUser.assignedSubstation
+//
+// TARGET:
+//     StaffSale.salesSubstation
+//
+// Run:
+//     node utils/salesSubstation.js
+//
+// This script only updates StaffSale records where
+// salesSubstation is currently missing.
 // ==========================================================
-// ONE-TIME DATABASE CLEANUP
-//
-// Removes the obsolete sessionId_1 index from VerrahDB.carts.
-//
-// Run from the project root:
-//
-//     node utils/remove.js
-//
-// After successful execution, this file can be deleted.
-// ==========================================================
-
-require("dotenv").config();
 
 const mongoose = require("mongoose");
 
-const MONGO_URI = process.env.MONGO_URI;
+// ==========================================================
+// MODELS
+// ==========================================================
+
+const User = require("../models/user");
+const StaffSale = require("../models/staff-sales");
+
+
+// ==========================================================
+// DATABASE CONNECTION
+// ==========================================================
+
+const MONGO_URI =
+    process.env.MONGO_URI;
 
 if (!MONGO_URI) {
-    console.error("❌ MONGO_URI is not defined in .env");
+    console.error(
+        "ERROR: MONGO_URI environment variable is not set."
+    );
+
     process.exit(1);
 }
 
-async function removeObsoleteCartIndex() {
+
+// ==========================================================
+// MAIN
+// ==========================================================
+
+async function assignSalesSubstations() {
+
     try {
-        console.log("Connecting to MongoDB...");
 
-        await mongoose.connect(MONGO_URI);
-
-        console.log("✅ Connected to MongoDB");
-
-        const db = mongoose.connection.db;
-        const carts = db.collection("carts");
-
-        const indexes = await carts.indexes();
-
-        const oldIndex = indexes.find(
-            (index) => index.name === "sessionId_1"
+        console.log(
+            "Connecting to MongoDB..."
         );
 
-        if (!oldIndex) {
+        await mongoose.connect(
+            MONGO_URI
+        );
+
+        console.log(
+            "Connected to MongoDB."
+        );
+
+
+        // --------------------------------------------------
+        // FIND STAFF SALES WITHOUT SALES SUBSTATION
+        // --------------------------------------------------
+
+        const sales =
+            await StaffSale.find({
+                $or: [
+                    {
+                        salesSubstation: {
+                            $exists: false
+                        }
+                    },
+                    {
+                        salesSubstation: null
+                    }
+                ]
+            })
+            .select(
+                "_id salesName soldBy salesSubstation"
+            )
+            .lean();
+
+
+        console.log(
+            `Found ${sales.length} StaffSale record(s) without salesSubstation.`
+        );
+
+
+        if (!sales.length) {
+
             console.log(
-                "ℹ️ sessionId_1 index does not exist. Nothing to remove."
+                "Nothing to update."
             );
 
             return;
         }
 
-        console.log("Found obsolete index:");
-        console.log(oldIndex);
 
-        await carts.dropIndex("sessionId_1");
+        // --------------------------------------------------
+        // PROCESS SALES
+        // --------------------------------------------------
 
-        console.log("✅ Removed obsolete index: sessionId_1");
+        let updated = 0;
+        let skipped = 0;
+
+
+        for (const sale of sales) {
+
+            if (!sale.soldBy) {
+
+                console.warn(
+                    `SKIPPED ${sale._id}: soldBy is missing.`
+                );
+
+                skipped++;
+
+                continue;
+            }
+
+
+            // ----------------------------------------------
+            // GET STAFF USER
+            // ----------------------------------------------
+
+            const user =
+                await User.findById(
+                    sale.soldBy
+                )
+                .select(
+                    "_id name email role assignedSubstation"
+                )
+                .lean();
+
+
+            if (!user) {
+
+                console.warn(
+                    `SKIPPED ${sale._id}: user ${sale.soldBy} was not found.`
+                );
+
+                skipped++;
+
+                continue;
+            }
+
+
+            // ----------------------------------------------
+            // STAFF MUST HAVE ASSIGNED SUBSTATION
+            // ----------------------------------------------
+
+            if (!user.assignedSubstation) {
+
+                console.warn(
+                    `SKIPPED ${sale._id}: ${user.name || user.email || user._id} has no assignedSubstation.`
+                );
+
+                skipped++;
+
+                continue;
+            }
+
+
+            // ----------------------------------------------
+            // ASSIGN SALES SUBSTATION
+            // ----------------------------------------------
+
+            await StaffSale.updateOne(
+                {
+                    _id: sale._id,
+
+                    $or: [
+                        {
+                            salesSubstation: {
+                                $exists: false
+                            }
+                        },
+                        {
+                            salesSubstation: null
+                        }
+                    ]
+                },
+                {
+                    $set: {
+                        salesSubstation:
+                            user.assignedSubstation
+                    }
+                }
+            );
+
+
+            updated++;
+
+            console.log(
+                `UPDATED ${sale._id} | ${sale.salesName} | substation: ${user.assignedSubstation}`
+            );
+        }
+
+
+        // --------------------------------------------------
+        // SUMMARY
+        // --------------------------------------------------
+
+        console.log("");
         console.log(
-            "✅ The carts collection now uses the current user-based cart architecture."
+            "=========================================="
+        );
+        console.log(
+            "SALES SUBSTATION ASSIGNMENT COMPLETE"
+        );
+        console.log(
+            "=========================================="
+        );
+
+        console.log(
+            `Found:   ${sales.length}`
+        );
+
+        console.log(
+            `Updated: ${updated}`
+        );
+
+        console.log(
+            `Skipped: ${skipped}`
         );
 
     } catch (error) {
-        console.error("❌ Failed to remove sessionId_1:");
-        console.error(error.message);
+
+        console.error("");
+        console.error(
+            "ERROR ASSIGNING SALES SUBSTATIONS:"
+        );
+
+        console.error(
+            error
+        );
 
         process.exitCode = 1;
 
     } finally {
+
         await mongoose.disconnect();
-        console.log("MongoDB connection closed.");
+
+        console.log(
+            "MongoDB connection closed."
+        );
     }
 }
 
-removeObsoleteCartIndex();
+
+// ==========================================================
+// RUN SCRIPT
+// ==========================================================
+
+assignSalesSubstations();
