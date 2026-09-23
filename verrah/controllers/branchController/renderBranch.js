@@ -1,83 +1,158 @@
 // ==========================================================
-// controllers/branchController/getBranch.js
+// controllers/branchController/renderBranch.js
 // VERRAH COSMETICS
-// GET BRANCH / SUBSTATION
+// BRANCH / SUBSTATION RENDERER
+// ==========================================================
+//
+// RESPONSIBILITIES:
+//
+//     • Render successful branch pages
+//     • Render not-found branch pages
+//     • Render branch server-error pages
+//     • Provide both branch and substation
+//
+// IMPORTANT:
+//
+//     Existing branch partials use branch.
+//     Other views/controllers may use substation.
+//
+//     Therefore BOTH variables are intentionally supplied.
+//
 // ==========================================================
 
-const substationService =
-    require("../../services/substationService");
-
-const renderBranch =
-    require("./renderBranch");
-
-
 // ==========================================================
-// GET BRANCH / SUBSTATION DETAILS
+// CURRENT USER HELPER
 // ==========================================================
 
-exports.getBranch = async function (req, res) {
+function getCurrentUser(req) {
 
-    try {
+return req.session?.user || null;
 
-        // ----------------------------------------------------
-        // GET SUBSTATION USING /branch/:id
-        // ----------------------------------------------------
+}
 
-        const substation =
-            await substationService.getWithProducts(
-                req.params.id
-            );
+// ==========================================================
+// RENDER SUCCESS
+// ==========================================================
 
+exports.success = function (
+req,
+res,
+substation
+) {
 
-        // ----------------------------------------------------
-        // SUBSTATION NOT FOUND
-        // ----------------------------------------------------
+return res.render(  
+    "branch",  
+    {  
+        title:  
+            `${substation.name} | Verrah Cosmetics`,  
 
-        if (!substation) {
+        // ------------------------------------------------  
+        // MAIN SUBSTATION OBJECT  
+        // ------------------------------------------------  
 
-            return renderBranch.notFound(
-                req,
-                res
-            );
-        }
+        substation,  
 
+        // ------------------------------------------------  
+        // BACKWARD-COMPATIBILITY ALIAS  
+        // ------------------------------------------------  
+        //  
+        // Existing branch partials expect `branch`.  
+        //  
+        // Do not remove this unless those partials are  
+        // also changed to use `substation`.  
+        //  
+        branch:  
+            substation,  
 
-        // ----------------------------------------------------
-        // RENDER BRANCH / SUBSTATION
-        // ----------------------------------------------------
-        //
-        // The complete substation document is passed to the
-        // renderer. The renderer exposes:
-        //
-        //     substation
-        //     branch
-        //     substationId
-        //
-        // to the EJS view.
-        // ----------------------------------------------------
+        // ------------------------------------------------  
+        // SUBSTATIONS COLLECTION  
+        // ------------------------------------------------  
 
-        return renderBranch.success(
-            req,
-            res,
-            substation
-        );
+        substations:  
+            [substation],  
 
+        // ------------------------------------------------  
+        // CURRENT USER  
+        // ------------------------------------------------  
 
-    } catch (error) {
+        currentUser:  
+            getCurrentUser(req),  
 
-        console.error(
-            "GET BRANCH ERROR:",
-            error
-        );
+        error:  
+            null  
+    }  
+);
 
+};
 
-        // ----------------------------------------------------
-        // SERVER ERROR
-        // ----------------------------------------------------
+// ==========================================================
+// RENDER NOT FOUND
+// ==========================================================
 
-        return renderBranch.error(
-            req,
-            res
-        );
-    }
+exports.notFound = function (
+req,
+res
+) {
+
+return res.status(404).render(  
+    "branch",  
+    {  
+        title:  
+            "Location Not Found | Verrah Cosmetics",  
+
+        substation:  
+            null,  
+
+        // Existing partials may still try to access  
+        // `branch`, so provide it explicitly.  
+        branch:  
+            null,  
+
+        substations:  
+            [],  
+
+        currentUser:  
+            getCurrentUser(req),  
+
+        error:  
+            "The requested Verrah Cosmetics location could not be found."  
+    }  
+);
+
+};
+
+// ==========================================================
+// RENDER SERVER ERROR
+// ==========================================================
+
+exports.error = function (
+req,
+res
+) {
+
+return res.status(500).render(  
+    "branch",  
+    {  
+        title:  
+            "Branch | Verrah Cosmetics",  
+
+        substation:  
+            null,  
+
+        // Keep the variable available to all branch  
+        // partials even when loading failed.  
+        branch:  
+            null,  
+
+        substations:  
+            [],  
+
+        currentUser:  
+            getCurrentUser(req),  
+
+        error:  
+            "Unable to load this location."  
+    }  
+);
+
 };
