@@ -9,21 +9,22 @@
 //
 //     StaffSale.salesSubstation
 //
-// FALLBACK:
+// IMPORTANT:
 //
-//     StaffSale.soldBy.assignedSubstation
+//     salesSubstation is the ONLY authoritative substation
+//     for staff sales.
 //
-// RULE:
+//     soldBy.assignedSubstation is NOT used.
 //
-//     If salesSubstation exists, use it.
-//     If salesSubstation is missing, use assignedSubstation.
+// This rule is used consistently for:
 //
-// This rule is used consistently for filtering, grouping,
-// and displaying staff sales.
+//     1. Filtering
+//     2. Grouping
+//     3. Displaying
+//     4. Daily cash sales
+//
 // ==========================================================
 
-const mongoose =
-    require("mongoose");
 
 const StaffSale =
     require("../../models/staff-sales");
@@ -39,23 +40,16 @@ const filterService =
 
 
 // ==========================================================
-// USER MODEL
-// ==========================================================
-
-const VerrahUser =
-    mongoose.model(
-        "VerrahUser"
-    );
-
-
-// ==========================================================
 // GET SALE SUBSTATION
 // ==========================================================
 //
-// Priority:
+// The authoritative source is:
 //
-//     1. salesSubstation
-//     2. soldBy.assignedSubstation
+//     sale.salesSubstation
+//
+// No fallback to:
+//
+//     sale.soldBy.assignedSubstation
 //
 // ==========================================================
 
@@ -64,33 +58,35 @@ function getSaleSubstation(
 ) {
 
     if (
-        sale &&
-        sale.salesSubstation
+        !sale ||
+        !sale.salesSubstation
     ) {
 
-        return sale.salesSubstation;
+        return null;
 
     }
 
 
-    if (
-        sale &&
-        sale.soldBy &&
-        sale.soldBy.assignedSubstation
-    ) {
-
-        return sale.soldBy.assignedSubstation;
-
-    }
-
-
-    return null;
+    return sale.salesSubstation;
 
 }
 
 
 // ==========================================================
 // GET SALE SUBSTATION ID
+// ==========================================================
+//
+// Handles both:
+//
+//     salesSubstation: ObjectId
+//
+// and populated:
+//
+//     salesSubstation: {
+//         _id,
+//         name
+//     }
+//
 // ==========================================================
 
 function getSaleSubstationId(
@@ -159,68 +155,21 @@ function calculateTotal(
 
 
 // ==========================================================
-// GET STAFF IDS FOR SUBSTATION
-// ==========================================================
-//
-// This remains useful for resolving the fallback:
-//
-//     soldBy.assignedSubstation
-//
-// ==========================================================
-
-async function getStaffIdsForSubstation(
-    substationId
-) {
-
-    if (
-        !substationId
-    ) {
-
-        return [];
-
-    }
-
-
-    const users =
-        await VerrahUser.find({
-
-            assignedSubstation:
-                substationId
-
-        })
-
-            .select(
-                "_id"
-            )
-
-            .lean();
-
-
-    return users.map(
-
-        user =>
-            user._id
-
-    );
-
-}
-
-
-// ==========================================================
 // BUILD SALES QUERY
 // ==========================================================
 //
-// Substation filter:
+// Substation filtering uses ONLY:
 //
-//     salesSubstation
+//     StaffSale.salesSubstation
 //
-// OR, when salesSubstation is missing:
+// There is NO:
 //
-//     soldBy.assignedSubstation
+//     User lookup
+//     soldBy.assignedSubstation fallback
 //
 // ==========================================================
 
-async function buildSalesQuery(
+function buildSalesQuery(
     filter,
     startDate,
     endDate
@@ -250,57 +199,8 @@ async function buildSalesQuery(
         filter.substation
     ) {
 
-        const substationId =
+        query.salesSubstation =
             filter.substation;
-
-
-        const staffIds =
-            await getStaffIdsForSubstation(
-
-                substationId
-
-            );
-
-
-        // ==================================================
-        // MATCH EITHER:
-        //
-        //     salesSubstation
-        //
-        // OR:
-        //
-        //     soldBy.assignedSubstation
-        //
-        // ==================================================
-
-        query.$or = [
-
-            {
-
-                salesSubstation:
-                    substationId
-
-            },
-
-            {
-
-                salesSubstation: {
-
-                    $exists:
-                        false
-
-                },
-
-                soldBy: {
-
-                    $in:
-                        staffIds
-
-                }
-
-            }
-
-        ];
 
     }
 
@@ -321,7 +221,7 @@ async function getSalesForRange(
 ) {
 
     const query =
-        await buildSalesQuery(
+        buildSalesQuery(
 
             filter,
 
@@ -346,7 +246,7 @@ async function getSalesForRange(
                 "soldBy",
 
             select:
-                "name fullName username assignedSubstation"
+                "name fullName username"
 
         })
 
@@ -376,13 +276,11 @@ async function getSalesForRange(
 // CALCULATE TOTALS PER SUBSTATION
 // ==========================================================
 //
-// Uses:
+// Uses ONLY:
 //
 //     sale.salesSubstation
 //
-// and falls back to:
-//
-//     sale.soldBy.assignedSubstation
+// No fallback is used.
 //
 // ==========================================================
 
@@ -763,7 +661,7 @@ async function getStaffSales(
     // ======================================================
 
     const salesQuery =
-        await buildSalesQuery(
+        buildSalesQuery(
 
             filter,
 
@@ -785,7 +683,7 @@ async function getStaffSales(
                     "soldBy",
 
                 select:
-                    "name fullName username assignedSubstation"
+                    "name fullName username"
 
             })
 
@@ -896,7 +794,7 @@ async function getStaffSales(
     //
     // Only the "day" period is used here.
     //
-    // Existing month/year calculations remain untouched.
+    // The same salesSubstation source is used throughout.
     //
     // ======================================================
 
