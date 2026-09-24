@@ -14,7 +14,7 @@ const requireLogin = require("../middleware/requireLogin");
 
 router.get(
     "/",
-    reqireLogin,
+    requireLogin,
     indexController.getHome
 );
 
