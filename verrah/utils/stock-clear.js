@@ -1,244 +1,79 @@
-// =========================================================
-// verrah/utils/salesSubstation.js
+// ==========================================================
+// verrah/utils/security.js
 // VERRAH COSMETICS
-//
-// Assign salesSubstation to existing StaffSale records.
-//
-// SOURCE:
-//     VerrahUser.assignedSubstation
-//
-// TARGET:
-//     StaffSale.salesSubstation
+// SECURITY KEY SETUP UTILITY
 //
 // Run:
-//     node utils/salesSubstation.js
-//
-// This script only updates StaffSale records where
-// salesSubstation is currently missing.
+// node utils/security.js
 // ==========================================================
 
 const mongoose = require("mongoose");
-
-// ==========================================================
-// MODELS
-// ==========================================================
-
-const User = require("../models/user");
-const StaffSale = require("../models/staff-sales");
-
+const SecurityKey = require("../models/securityKey");
 
 // ==========================================================
 // DATABASE CONNECTION
 // ==========================================================
 
-const MONGO_URI =
-    process.env.MONGO_URI;
+const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
-    console.error(
-        "ERROR: MONGO_URI environment variable is not set."
-    );
-
+    console.error("MONGO_URI is not defined.");
     process.exit(1);
 }
 
+// ==========================================================
+// SECURITY KEY
+// ==========================================================
+
+const SECURITY_KEY = "Verrah@123";
 
 // ==========================================================
 // MAIN
 // ==========================================================
 
-async function assignSalesSubstations() {
+async function setSecurityKey() {
 
     try {
 
-        console.log(
-            "Connecting to MongoDB..."
-        );
+        await mongoose.connect(MONGO_URI);
 
-        await mongoose.connect(
-            MONGO_URI
-        );
+        console.log("Connected to MongoDB.");
 
-        console.log(
-            "Connected to MongoDB."
-        );
+        const existingKey =
+            await SecurityKey.findOne({});
 
+        if (existingKey) {
 
-        // --------------------------------------------------
-        // FIND STAFF SALES WITHOUT SALES SUBSTATION
-        // --------------------------------------------------
+            existingKey.securityKey = SECURITY_KEY;
 
-        const sales =
-            await StaffSale.find({
-                $or: [
-                    {
-                        salesSubstation: {
-                            $exists: false
-                        }
-                    },
-                    {
-                        salesSubstation: null
-                    }
-                ]
-            })
-            .select(
-                "_id salesName soldBy salesSubstation"
-            )
-            .lean();
-
-
-        console.log(
-            `Found ${sales.length} StaffSale record(s) without salesSubstation.`
-        );
-
-
-        if (!sales.length) {
+            await existingKey.save();
 
             console.log(
-                "Nothing to update."
+                "Security key updated successfully."
             );
 
-            return;
-        }
+        } else {
 
-
-        // --------------------------------------------------
-        // PROCESS SALES
-        // --------------------------------------------------
-
-        let updated = 0;
-        let skipped = 0;
-
-
-        for (const sale of sales) {
-
-            if (!sale.soldBy) {
-
-                console.warn(
-                    `SKIPPED ${sale._id}: soldBy is missing.`
-                );
-
-                skipped++;
-
-                continue;
-            }
-
-
-            // ----------------------------------------------
-            // GET STAFF USER
-            // ----------------------------------------------
-
-            const user =
-                await User.findById(
-                    sale.soldBy
-                )
-                .select(
-                    "_id name email role assignedSubstation"
-                )
-                .lean();
-
-
-            if (!user) {
-
-                console.warn(
-                    `SKIPPED ${sale._id}: user ${sale.soldBy} was not found.`
-                );
-
-                skipped++;
-
-                continue;
-            }
-
-
-            // ----------------------------------------------
-            // STAFF MUST HAVE ASSIGNED SUBSTATION
-            // ----------------------------------------------
-
-            if (!user.assignedSubstation) {
-
-                console.warn(
-                    `SKIPPED ${sale._id}: ${user.name || user.email || user._id} has no assignedSubstation.`
-                );
-
-                skipped++;
-
-                continue;
-            }
-
-
-            // ----------------------------------------------
-            // ASSIGN SALES SUBSTATION
-            // ----------------------------------------------
-
-            await StaffSale.updateOne(
-                {
-                    _id: sale._id,
-
-                    $or: [
-                        {
-                            salesSubstation: {
-                                $exists: false
-                            }
-                        },
-                        {
-                            salesSubstation: null
-                        }
-                    ]
-                },
-                {
-                    $set: {
-                        salesSubstation:
-                            user.assignedSubstation
-                    }
-                }
-            );
-
-
-            updated++;
+            await SecurityKey.create({
+                securityKey: SECURITY_KEY
+            });
 
             console.log(
-                `UPDATED ${sale._id} | ${sale.salesName} | substation: ${user.assignedSubstation}`
+                "Security key created successfully."
             );
         }
 
-
-        // --------------------------------------------------
-        // SUMMARY
-        // --------------------------------------------------
-
-        console.log("");
         console.log(
-            "=========================================="
-        );
-        console.log(
-            "SALES SUBSTATION ASSIGNMENT COMPLETE"
-        );
-        console.log(
-            "=========================================="
-        );
-
-        console.log(
-            `Found:   ${sales.length}`
-        );
-
-        console.log(
-            `Updated: ${updated}`
-        );
-
-        console.log(
-            `Skipped: ${skipped}`
+            "Security key is set to: Verrah@123"
         );
 
     } catch (error) {
 
-        console.error("");
         console.error(
-            "ERROR ASSIGNING SALES SUBSTATIONS:"
+            "Failed to set security key:"
         );
 
-        console.error(
-            error
-        );
+        console.error(error);
 
         process.exitCode = 1;
 
@@ -247,14 +82,13 @@ async function assignSalesSubstations() {
         await mongoose.disconnect();
 
         console.log(
-            "MongoDB connection closed."
+            "Disconnected from MongoDB."
         );
     }
 }
 
-
 // ==========================================================
-// RUN SCRIPT
+// RUN
 // ==========================================================
 
-assignSalesSubstations();
+setSecurityKey();
