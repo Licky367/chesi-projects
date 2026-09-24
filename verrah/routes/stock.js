@@ -21,7 +21,7 @@ const requireAdminOrStaff =
 // GET /stock - display all active stock records.
 router.get(
     "/",
-    requireAdmin,
+    requireAdminOrStaff,
     controller.list
 );
 
@@ -91,7 +91,7 @@ router.post(
 // GET /stock/:id/batch/:batchId - edit a specific FIFO batch.
 router.get(
     "/:id/batch/:batchId",
-    requireAccess,
+    requireAdminOrStaff,
     controller.batch
 );
 
