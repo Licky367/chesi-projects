@@ -99,7 +99,7 @@ router.get(
 
 router.post(
     "/product/:id",
-    requireAdmin,
+    requireAdminOrStaff,
     controller.updateProductUnits
 );
 
