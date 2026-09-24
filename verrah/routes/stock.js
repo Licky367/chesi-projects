@@ -99,7 +99,6 @@ router.get(
 // POST /stock/:id/batches/:batchId - save changes to FIFO batch.
 router.post(
     "/:id/batches/:batchId",
-    requireAccess,
     controller.editBatches
 );
 
