@@ -105,15 +105,6 @@ const substationProductReductionSchema = new mongoose.Schema(
 //
 // Mongoose automatically creates an _id for every record.
 //
-// Example:
-//
-// {
-//     _id: ObjectId("..."),
-//     amount: 18500,
-//     date: Date("2026-09-21"),
-//     isDeposited: false
-// }
-//
 // ==========================================================
 
 const dailyCashSaleSchema = new mongoose.Schema(
@@ -138,19 +129,6 @@ const dailyCashSaleSchema = new mongoose.Schema(
 
 // ==========================================================
 // GPS SCHEMA
-// ==========================================================
-//
-// Stores the exact geographical coordinates of the
-// substation.
-//
-// Example:
-//
-// latitude:  -1.28333
-// longitude: 36.81667
-//
-// These coordinates can later be used to generate a
-// Google Maps "Get Directions" link.
-//
 // ==========================================================
 
 const gpsSchema = new mongoose.Schema(
@@ -191,18 +169,6 @@ const substationSchema = new mongoose.Schema(
             unique: true,
             index: true
         },
-
-        // ------------------------------------------------
-        // SUBSTATION SECURITY KEY
-        // ------------------------------------------------
-        //
-        // Automatically receives the current global
-        // SecurityKey.securityKey when a new substation
-        // is created.
-        //
-        // An explicitly supplied substationKey is preserved.
-        //
-        // ------------------------------------------------
 
         substationKey: {
             type: String,
@@ -249,16 +215,6 @@ const substationSchema = new mongoose.Schema(
         // DIRECTIONS
         // ------------------------------------------------
 
-        // Can contain human-readable directions or a
-        // directions/map URL.
-        //
-        // Example:
-        // "Next to the main shopping centre"
-        //
-        // Or:
-        // "https://www.google.com/maps/..."
-        // ------------------------------------------------
-
         directions: {
             type: String,
             trim: true,
@@ -267,10 +223,6 @@ const substationSchema = new mongoose.Schema(
 
         // ------------------------------------------------
         // GPS LOCATION
-        // ------------------------------------------------
-
-        // Stores the actual coordinates separately from
-        // the human-readable location/directions.
         // ------------------------------------------------
 
         gps: {
@@ -292,15 +244,6 @@ const substationSchema = new mongoose.Schema(
 
         // ------------------------------------------------
         // DAILY CASH SALES
-        // ------------------------------------------------
-        //
-        // Each item represents one day.
-        //
-        // The amount is the cumulative cash sales total
-        // for that particular date.
-        //
-        // Each item automatically receives an _id.
-        //
         // ------------------------------------------------
 
         dailyCashSales: {
@@ -335,15 +278,13 @@ const substationSchema = new mongoose.Schema(
 // DEFAULT SUBSTATION KEY
 // ==========================================================
 //
-// For a NEW substation:
+// New substations inherit the CURRENT securityKey from:
 //
-//     substationKey
-//         ↓
-//     SecurityKey.securityKey
+//     models/securityKey.js
 //
-// Existing substations are not modified.
+// An explicitly supplied substationKey is preserved.
 //
-// If a substationKey is explicitly supplied, it is preserved.
+// Existing substations are not changed.
 //
 // ==========================================================
 
