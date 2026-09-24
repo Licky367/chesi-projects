@@ -7,15 +7,45 @@ async function createOrUpdateStock(req, res) {
         const stockId = String(req.body.stockId || "").trim();
         const categoryId = await resolveCategoryId(req.body.category);
         const body = {...req.body, category: categoryId};
-        if (stockId) await service.updateStockEntry(stockId, body);
-        else await service.createStock(body);
+
+        if (stockId) {
+            await service.updateStockEntry(stockId, body);
+        } else {
+            await service.createStock(body);
+        }
+
+        // ----------------------------------------------------
+        // STAFF -> ASSIGNED SUBSTATION BRANCH
+        // ----------------------------------------------------
+        if (
+            req.user &&
+            req.user.role === "staff" &&
+            req.user.assignedSubstation
+        ) {
+            return res.redirect(
+                `/branch/${req.user.assignedSubstation}?saved=1`
+            );
+        }
+
+        // ----------------------------------------------------
+        // OTHER ROLES -> EXISTING REDIRECT
+        // ----------------------------------------------------
         return res.redirect("/stock?saved=1");
+
     } catch (error) {
         console.error("Create/update stock error:", error);
+
         return renderForm(res, {
-            title: req.body.stockId ? "Update Stock Subcategory" : "Add Stock Subcategory",
-            error: error.message, old: req.body, selectedStockId: req.body.stockId || ""
+            title: req.body.stockId
+                ? "Update Stock Subcategory"
+                : "Add Stock Subcategory",
+            error: error.message,
+            old: req.body,
+            selectedStockId: req.body.stockId || ""
         }, 400);
     }
 }
-module.exports = {createOrUpdateStock};
+
+module.exports = {
+    createOrUpdateStock
+};
